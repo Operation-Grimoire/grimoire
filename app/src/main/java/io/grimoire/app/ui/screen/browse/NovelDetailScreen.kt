@@ -94,8 +94,11 @@ fun NovelDetailScreen(
     val isFavorite by viewModel.isFavorite.collectAsState()
     val chapterPage by viewModel.chapterPage.collectAsState()
     val chapterSort by viewModel.chapterSort.collectAsState()
+    val categoryId by viewModel.categoryId.collectAsState()
+    val categories by viewModel.categories.collectAsState()
 
     var descriptionExpanded by remember { mutableStateOf(false) }
+    var showCategoryDialog by remember { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -123,10 +126,11 @@ fun NovelDetailScreen(
     val keyboard = LocalSoftwareKeyboardController.current
 
     // Number of LazyColumn items before chapter items — used for fast scroller label
-    val chapterHeaderOffset by remember(isLoadingNovel, novelError, novel, chaptersError) {
+    val chapterHeaderOffset by remember(isLoadingNovel, novelError, novel, chaptersError, isFavorite, categories) {
         derivedStateOf {
             var count = 1 // novel header / skeleton / error
             if (!isLoadingNovel && novelError == null) {
+                if (isFavorite && categories.isNotEmpty()) count++ // category row
                 if (novel.genres.isNotEmpty()) count++
                 if (!novel.description.isNullOrBlank()) count++
             }
@@ -134,6 +138,37 @@ fun NovelDetailScreen(
             if (chaptersError != null) count++
             count
         }
+    }
+
+    if (showCategoryDialog && categories.isNotEmpty()) {
+        val defaultCat = categories.firstOrNull { it.isDefault }
+        AlertDialog(
+            onDismissRequest = { showCategoryDialog = false },
+            title = { Text("Move to category") },
+            text = {
+                Column {
+                    categories.forEach { cat ->
+                        val targetId = if (cat.isDefault) null else cat.id
+                        val isSelected = if (cat.isDefault) categoryId == null else categoryId == cat.id
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.setCategory(targetId); showCategoryDialog = false }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            androidx.compose.material3.RadioButton(
+                                selected = isSelected,
+                                onClick = { viewModel.setCategory(targetId); showCategoryDialog = false },
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(cat.name)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showCategoryDialog = false }) { Text("Cancel") } },
+        )
     }
 
     if (showJumpDialog) {
@@ -205,6 +240,33 @@ fun NovelDetailScreen(
                                 TextButton(onClick = viewModel::retryNovel) { Text("Retry") }
                             }
                             else -> NovelHeader(novel = novel)
+                        }
+                    }
+
+                    // Category (when in library)
+                    if (!isLoadingNovel && novelError == null && isFavorite && categories.isNotEmpty()) {
+                        item {
+                            val currentCat = categories.firstOrNull { cat ->
+                                if (cat.isDefault) categoryId == null else cat.id == categoryId
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showCategoryDialog = true }
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "Category: ",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    currentCat?.name ?: "—",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
                     }
 

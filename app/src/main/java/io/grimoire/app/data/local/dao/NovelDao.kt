@@ -24,6 +24,12 @@ interface NovelDao {
     @Query("UPDATE novels SET chapterSortOrder = :order WHERE id = :id")
     suspend fun updateChapterSort(id: Long, order: Int)
 
+    @Query("UPDATE novels SET categoryId = :categoryId WHERE id = :id")
+    suspend fun updateCategory(id: Long, categoryId: Long?)
+
+    @Query("UPDATE novels SET categoryId = NULL WHERE categoryId = :categoryId")
+    suspend fun clearCategory(categoryId: Long)
+
     @Delete
     suspend fun delete(novel: NovelEntity)
 }

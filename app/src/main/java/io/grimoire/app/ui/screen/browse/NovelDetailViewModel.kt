@@ -9,16 +9,20 @@ import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
 import io.grimoire.api.source.PaginatedSource
 import io.grimoire.api.source.Source
+import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
+import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -31,6 +35,7 @@ class NovelDetailViewModel @Inject constructor(
     private val extensionManager: ExtensionManager,
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
+    private val categoryDao: CategoryDao,
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
@@ -65,6 +70,12 @@ class NovelDetailViewModel @Inject constructor(
 
     private val _chapterSort = MutableStateFlow(ChapterSort.NUMBER_ASC)
     val chapterSort: StateFlow<ChapterSort> = _chapterSort.asStateFlow()
+
+    private val _categoryId = MutableStateFlow<Long?>(null)
+    val categoryId: StateFlow<Long?> = _categoryId.asStateFlow()
+
+    val categories: StateFlow<List<CategoryEntity>> = categoryDao.getAll()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private var cachedNovelId: Long = -1L
     private var loadJob: Job? = null
@@ -115,6 +126,7 @@ class NovelDetailViewModel @Inject constructor(
                     _novel.value = existing.toNovel()
                     _isFavorite.value = existing.favorite
                     _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
+                    _categoryId.value = existing.categoryId
                     _isLoadingNovel.value = false
                     loadChaptersFromDb(existing.id, src, existing.toNovel())
                     return
@@ -146,10 +158,11 @@ class NovelDetailViewModel @Inject constructor(
         }.onSuccess { novel ->
             _novel.value = novel
             val existing = novelDao.getBySourceUrl(src.id, novelUrl)
-            val upsertId = novelDao.upsert(novel.toEntity(src.id, existing?.id ?: 0L, existing?.favorite ?: false, existing?.chapterSortOrder ?: 0, novelUrl))
+            val upsertId = novelDao.upsert(novel.toEntity(src.id, existing?.id ?: 0L, existing?.favorite ?: false, existing?.chapterSortOrder ?: 0, existing?.categoryId, novelUrl))
             cachedNovelId = existing?.id ?: upsertId
             _isFavorite.value = existing?.favorite ?: false
             _chapterSort.value = ChapterSort.entries.getOrElse(existing?.chapterSortOrder ?: 0) { ChapterSort.NUMBER_ASC }
+            _categoryId.value = existing?.categoryId
         }.onFailure { e ->
             _novelError.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
         }.getOrNull()
@@ -196,6 +209,13 @@ class NovelDetailViewModel @Inject constructor(
         return all
     }
 
+    fun setCategory(categoryId: Long?) {
+        _categoryId.value = categoryId
+        if (cachedNovelId > 0L) viewModelScope.launch {
+            novelDao.updateCategory(cachedNovelId, categoryId)
+        }
+    }
+
     fun setSort(sort: ChapterSort) {
         _chapterSort.value = sort
         if (cachedNovelId > 0L) viewModelScope.launch {
@@ -225,7 +245,7 @@ private fun NovelEntity.toNovel() = Novel(
     initialized = true,
 )
 
-private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, chapterSortOrder: Int = 0, url: String = this.url) = NovelEntity(
+private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, chapterSortOrder: Int = 0, categoryId: Long? = null, url: String = this.url) = NovelEntity(
     id = existingId,
     sourceId = sourceId,
     url = url,
@@ -238,6 +258,7 @@ private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, 
     favorite = favorite,
     lastUpdated = System.currentTimeMillis(),
     chapterSortOrder = chapterSortOrder,
+    categoryId = categoryId,
 )
 
 private fun ChapterEntity.toChapter() = Chapter(

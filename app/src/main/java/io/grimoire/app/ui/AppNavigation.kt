@@ -109,7 +109,13 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             popExitTransition = { scaleOut(tween(POP_MS), targetScale = 0.92f) + fadeOut(tween(POP_MS)) },
         ) {
             composable(route = TopLevelDestination.Library.route) {
-                LibraryScreen()
+                LibraryScreen(
+                    onNovelClick = { pkg, url ->
+                        navController.navigate(
+                            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(url)}"
+                        )
+                    },
+                )
             }
 
             composable(route = TopLevelDestination.Browse.route) {
