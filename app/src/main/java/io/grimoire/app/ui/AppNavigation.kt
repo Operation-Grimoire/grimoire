@@ -25,10 +25,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import io.grimoire.app.ui.screen.BrowseScreen
-import io.grimoire.app.ui.screen.ExtensionsScreen
-import io.grimoire.app.ui.screen.LibraryScreen
-import io.grimoire.app.ui.screen.SourceBrowseScreen
+import io.grimoire.app.ui.screen.browse.BrowseScreen
+import io.grimoire.app.ui.screen.browse.SourceBrowseScreen
+import io.grimoire.app.ui.screen.extensions.ExtensionsScreen
+import io.grimoire.app.ui.screen.library.LibraryScreen
 
 private enum class TopLevelDestination(
     val route: String,

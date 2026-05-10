@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.screen
+package io.grimoire.app.ui.component
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -22,7 +22,7 @@ import androidx.core.graphics.drawable.toBitmap
  * (e.g. extension not yet installed).
  */
 @Composable
-internal fun ExtensionIcon(packageName: String, lang: String, modifier: Modifier = Modifier) {
+fun ExtensionIcon(packageName: String, lang: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val bitmap: ImageBitmap? = remember(packageName) {
         runCatching {
@@ -42,7 +42,7 @@ internal fun ExtensionIcon(packageName: String, lang: String, modifier: Modifier
 }
 
 @Composable
-internal fun LangBadge(lang: String, modifier: Modifier = Modifier) {
+fun LangBadge(lang: String, modifier: Modifier = Modifier) {
     Surface(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.primaryContainer,

@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.screen
+package io.grimoire.app.ui.screen.browse
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel

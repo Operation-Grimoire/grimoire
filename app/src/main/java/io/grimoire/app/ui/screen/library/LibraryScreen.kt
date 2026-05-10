@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.screen
+package io.grimoire.app.ui.screen.library
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.screen
+package io.grimoire.app.ui.screen.extensions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

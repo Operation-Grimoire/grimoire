@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.screen
+package io.grimoire.app.ui.screen.extensions
 
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -59,6 +59,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
+import io.grimoire.app.ui.component.ExtensionIcon
+import io.grimoire.app.ui.component.LangBadge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

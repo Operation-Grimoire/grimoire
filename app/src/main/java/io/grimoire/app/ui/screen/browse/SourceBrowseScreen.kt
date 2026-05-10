@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.screen
+package io.grimoire.app.ui.screen.browse
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
