@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -62,6 +64,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.preferences.LibraryDisplayMode
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,13 +76,19 @@ fun LibraryScreen(
 ) {
     val categories by viewModel.categories.collectAsState()
     val novels by viewModel.novels.collectAsState()
+    val displayMode by viewModel.displayMode.collectAsState()
+    val gridColumns by viewModel.gridColumns.collectAsState()
+    val showAllTab by viewModel.showAllTab.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     var showManage by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState()
 
-    val tabs = listOf("All") + categories.map { it.name }
+    val tabs = buildList {
+        if (showAllTab) add("All")
+        addAll(categories.map { it.name })
+    }
 
     LaunchedEffect(tabs.size) {
         if (selectedTab >= tabs.size) selectedTab = 0
@@ -87,10 +96,12 @@ fun LibraryScreen(
 
     val defaultCategory = categories.firstOrNull { it.isDefault }
 
-    val displayedNovels = remember(novels, selectedTab, categories) {
-        if (selectedTab == 0) novels
+    val displayedNovels = remember(novels, selectedTab, categories, showAllTab) {
+        val allTabOffset = if (showAllTab) 1 else 0
+        if (showAllTab && selectedTab == 0) novels
         else {
-            val cat = categories.getOrNull(selectedTab - 1) ?: return@remember novels
+            val catIndex = selectedTab - allTabOffset
+            val cat = categories.getOrNull(catIndex) ?: return@remember novels
             if (cat.isDefault) novels.filter { it.categoryId == null }
             else novels.filter { it.categoryId == cat.id }
         }
@@ -132,26 +143,42 @@ fun LibraryScreen(
                     )
                 }
             } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(110.dp),
-                    contentPadding = PaddingValues(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    items(displayedNovels, key = { it.id }) { novel ->
-                        NovelCard(
-                            novel = novel,
-                            categories = categories,
-                            defaultCategory = defaultCategory,
-                            onClick = {
-                                val pkg = viewModel.pkgForNovel(novel)
-                                if (pkg.isNotEmpty()) onNovelClick(pkg, novel.url)
-                                else scope.launch { snackbarHostState.showSnackbar("Extension not installed") }
-                            },
-                            onMove = { categoryId -> viewModel.moveNovel(novel, categoryId) },
-                            onRemove = { viewModel.removeFromLibrary(novel) },
-                        )
+                val onNovelClickWrapped: (NovelEntity) -> Unit = { novel ->
+                    val pkg = viewModel.pkgForNovel(novel)
+                    if (pkg.isNotEmpty()) onNovelClick(pkg, novel.url)
+                    else scope.launch { snackbarHostState.showSnackbar("Extension not installed") }
+                }
+                if (displayMode == LibraryDisplayMode.GRID) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(gridColumns),
+                        contentPadding = PaddingValues(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(displayedNovels, key = { it.id }) { novel ->
+                            NovelCard(
+                                novel = novel,
+                                categories = categories,
+                                defaultCategory = defaultCategory,
+                                onClick = { onNovelClickWrapped(novel) },
+                                onMove = { categoryId -> viewModel.moveNovel(novel, categoryId) },
+                                onRemove = { viewModel.removeFromLibrary(novel) },
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(Modifier.fillMaxSize()) {
+                        items(displayedNovels, key = { it.id }) { novel ->
+                            NovelRow(
+                                novel = novel,
+                                categories = categories,
+                                defaultCategory = defaultCategory,
+                                onClick = { onNovelClickWrapped(novel) },
+                                onMove = { categoryId -> viewModel.moveNovel(novel, categoryId) },
+                                onRemove = { viewModel.removeFromLibrary(novel) },
+                            )
+                        }
                     }
                 }
             }
@@ -209,6 +236,65 @@ private fun NovelCard(
             )
         }
 
+        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+            DropdownMenuItem(
+                text = { Text("Move to category") },
+                onClick = { showMoveDialog = true; showMenu = false },
+            )
+            DropdownMenuItem(
+                text = { Text("Remove from library") },
+                onClick = { onRemove(); showMenu = false },
+                leadingIcon = {
+                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
+                },
+            )
+        }
+    }
+
+    if (showMoveDialog) {
+        MoveToCategoryDialog(
+            categories = categories,
+            defaultCategory = defaultCategory,
+            currentCategoryId = novel.categoryId,
+            onSelect = { catId -> onMove(catId); showMoveDialog = false },
+            onDismiss = { showMoveDialog = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun NovelRow(
+    novel: NovelEntity,
+    categories: List<CategoryEntity>,
+    defaultCategory: CategoryEntity?,
+    onClick: () -> Unit,
+    onMove: (Long?) -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    var showMoveDialog by remember { mutableStateOf(false) }
+
+    Box(modifier) {
+        ListItem(
+            headlineContent = { Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            supportingContent = if (!novel.author.isNullOrBlank()) {
+                { Text(novel.author!!, maxLines = 1) }
+            } else null,
+            leadingContent = {
+                AsyncImage(
+                    model = novel.thumbnailUrl,
+                    contentDescription = novel.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .width(48.dp)
+                        .aspectRatio(2f / 3f)
+                        .clip(RoundedCornerShape(4.dp)),
+                )
+            },
+            modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = { showMenu = true }),
+        )
         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
             DropdownMenuItem(
                 text = { Text("Move to category") },

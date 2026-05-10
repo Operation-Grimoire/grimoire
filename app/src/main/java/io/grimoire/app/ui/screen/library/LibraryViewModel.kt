@@ -7,6 +7,9 @@ import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.preferences.LibraryDisplayMode
+import io.grimoire.app.data.preferences.LibraryPreferences
+import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +22,7 @@ class LibraryViewModel @Inject constructor(
     private val novelDao: NovelDao,
     private val categoryDao: CategoryDao,
     private val extensionManager: ExtensionManager,
+    libraryPreferences: LibraryPreferences,
 ) : ViewModel() {
 
     val categories: StateFlow<List<CategoryEntity>> = categoryDao.getAll()
@@ -26,6 +30,10 @@ class LibraryViewModel @Inject constructor(
 
     val novels: StateFlow<List<NovelEntity>> = novelDao.getFavorites()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val displayMode: StateFlow<LibraryDisplayMode> = libraryPreferences.displayMode.stateIn(viewModelScope)
+    val gridColumns: StateFlow<Int> = libraryPreferences.gridColumns.stateIn(viewModelScope)
+    val showAllTab: StateFlow<Boolean> = libraryPreferences.showAllTab.stateIn(viewModelScope)
 
     fun pkgForNovel(novel: NovelEntity): String =
         extensionManager.extensions.value

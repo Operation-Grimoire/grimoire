@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 @Composable
 fun SettingsScreen(
     onNavigateToAppearance: () -> Unit,
+    onNavigateToLibrary: () -> Unit,
     onNavigateToBrowse: () -> Unit,
     onNavigateToReader: () -> Unit,
     onNavigateToAbout: () -> Unit,
@@ -39,6 +41,14 @@ fun SettingsScreen(
                     title = "Appearance",
                     subtitle = "Theme, dynamic color",
                     onClick = onNavigateToAppearance,
+                )
+            }
+            item {
+                SettingsNavItem(
+                    icon = Icons.Default.LocalLibrary,
+                    title = "Library",
+                    subtitle = "Display mode, grid columns",
+                    onClick = onNavigateToLibrary,
                 )
             }
             item {
