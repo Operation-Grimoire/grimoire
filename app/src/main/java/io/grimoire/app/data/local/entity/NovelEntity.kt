@@ -20,4 +20,5 @@ data class NovelEntity(
     val status: Int = 0,
     val favorite: Boolean = false,
     val lastUpdated: Long = 0L,
+    val chapterSortOrder: Int = 0,
 )

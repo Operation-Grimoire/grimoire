@@ -21,6 +21,9 @@ interface NovelDao {
     @Upsert
     suspend fun upsert(novel: NovelEntity): Long
 
+    @Query("UPDATE novels SET chapterSortOrder = :order WHERE id = :id")
+    suspend fun updateChapterSort(id: Long, order: Int)
+
     @Delete
     suspend fun delete(novel: NovelEntity)
 }

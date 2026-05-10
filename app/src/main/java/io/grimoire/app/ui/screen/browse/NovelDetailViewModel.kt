@@ -63,6 +63,9 @@ class NovelDetailViewModel @Inject constructor(
     private val _chapterPage = MutableStateFlow(0)
     val chapterPage: StateFlow<Int> = _chapterPage.asStateFlow()
 
+    private val _chapterSort = MutableStateFlow(ChapterSort.NUMBER_ASC)
+    val chapterSort: StateFlow<ChapterSort> = _chapterSort.asStateFlow()
+
     private var cachedNovelId: Long = -1L
     private var loadJob: Job? = null
 
@@ -111,6 +114,7 @@ class NovelDetailViewModel @Inject constructor(
                     cachedNovelId = existing.id
                     _novel.value = existing.toNovel()
                     _isFavorite.value = existing.favorite
+                    _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
                     _isLoadingNovel.value = false
                     loadChaptersFromDb(existing.id, src, existing.toNovel())
                     return
@@ -142,9 +146,10 @@ class NovelDetailViewModel @Inject constructor(
         }.onSuccess { novel ->
             _novel.value = novel
             val existing = novelDao.getBySourceUrl(src.id, novelUrl)
-            val upsertId = novelDao.upsert(novel.toEntity(src.id, existing?.id ?: 0L, existing?.favorite ?: false, novelUrl))
+            val upsertId = novelDao.upsert(novel.toEntity(src.id, existing?.id ?: 0L, existing?.favorite ?: false, existing?.chapterSortOrder ?: 0, novelUrl))
             cachedNovelId = existing?.id ?: upsertId
             _isFavorite.value = existing?.favorite ?: false
+            _chapterSort.value = ChapterSort.entries.getOrElse(existing?.chapterSortOrder ?: 0) { ChapterSort.NUMBER_ASC }
         }.onFailure { e ->
             _novelError.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
         }.getOrNull()
@@ -163,7 +168,7 @@ class NovelDetailViewModel @Inject constructor(
         }.onSuccess { list ->
             _chapters.value = list
             if (cachedNovelId > 0L) {
-                chapterDao.upsertAll(list.map { it.toEntity(cachedNovelId) })
+                chapterDao.replaceChapters(cachedNovelId, list.map { it.toEntity(cachedNovelId) })
             }
         }.onFailure { e ->
             _chaptersError.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
@@ -191,6 +196,13 @@ class NovelDetailViewModel @Inject constructor(
         return all
     }
 
+    fun setSort(sort: ChapterSort) {
+        _chapterSort.value = sort
+        if (cachedNovelId > 0L) viewModelScope.launch {
+            novelDao.updateChapterSort(cachedNovelId, sort.ordinal)
+        }
+    }
+
     fun toggleFavorite() {
         val src = source ?: return
         val next = !_isFavorite.value
@@ -213,7 +225,7 @@ private fun NovelEntity.toNovel() = Novel(
     initialized = true,
 )
 
-private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, url: String = this.url) = NovelEntity(
+private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, chapterSortOrder: Int = 0, url: String = this.url) = NovelEntity(
     id = existingId,
     sourceId = sourceId,
     url = url,
@@ -225,6 +237,7 @@ private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, 
     status = status.ordinal,
     favorite = favorite,
     lastUpdated = System.currentTimeMillis(),
+    chapterSortOrder = chapterSortOrder,
 )
 
 private fun ChapterEntity.toChapter() = Chapter(
