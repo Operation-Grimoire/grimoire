@@ -14,6 +14,7 @@ import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.extension.ExtensionManager
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -63,9 +64,10 @@ class NovelDetailViewModel @Inject constructor(
     val chapterPage: StateFlow<Int> = _chapterPage.asStateFlow()
 
     private var cachedNovelId: Long = -1L
+    private var loadJob: Job? = null
 
     init {
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             extensionManager.extensions
                 .filter { list -> list.any { it.info.packageName == pkg } }
                 .take(1)
@@ -74,11 +76,13 @@ class NovelDetailViewModel @Inject constructor(
     }
 
     fun refresh() {
-        viewModelScope.launch { loadNovel(forceRefresh = true) }
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch { loadNovel(forceRefresh = true) }
     }
 
     fun retryNovel() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             val src = source ?: run { _novelError.value = "Source not available"; return@launch }
             fetchFromNetwork(src)
         }
@@ -87,7 +91,8 @@ class NovelDetailViewModel @Inject constructor(
     fun retryChapters() {
         val src = source ?: return
         val novel = _novel.value.takeIf { it.initialized } ?: return
-        viewModelScope.launch { fetchChapters(src, novel) }
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch { fetchChapters(src, novel) }
     }
 
     private suspend fun loadNovel(forceRefresh: Boolean) {

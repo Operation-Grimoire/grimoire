@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
@@ -109,12 +111,7 @@ fun NovelDetailScreen(
             // Novel header — loading or error or content
             item {
                 when {
-                    isLoadingNovel -> Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentAlignment = Alignment.Center,
-                    ) { CircularProgressIndicator() }
+                    isLoadingNovel -> NovelHeaderSkeleton()
 
                     novelError != null -> Column(
                         modifier = Modifier
@@ -215,6 +212,33 @@ fun NovelDetailScreen(
             }
         }
         } // PullToRefreshBox
+    }
+}
+
+@Composable
+private fun NovelHeaderSkeleton(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        ShimmerBox(
+            modifier = Modifier
+                .width(120.dp)
+                .aspectRatio(2f / 3f),
+            shape = RoundedCornerShape(8.dp),
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ShimmerBox(modifier = Modifier.fillMaxWidth().height(20.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.6f).height(14.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.35f).height(12.dp))
+        }
     }
 }
 
