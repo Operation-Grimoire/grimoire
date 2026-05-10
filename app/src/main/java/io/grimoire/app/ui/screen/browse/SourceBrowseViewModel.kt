@@ -133,7 +133,7 @@ class SourceBrowseViewModel @Inject constructor(
                     BrowseMode.SEARCH -> src.searchNovels(_query.value, page, _activeFilters.value)
                 }
                 if (reset) _novels.value = result
-                else _novels.value = _novels.value + result
+                else _novels.value = (_novels.value + result).distinctBy { it.url }
                 _hasMore.value = result.isNotEmpty()
             }.onFailure { e ->
                 Log.e(TAG, "Load failed [mode=${_mode.value} page=$page pkg=$packageName]", e)
