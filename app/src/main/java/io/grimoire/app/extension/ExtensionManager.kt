@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 @Singleton
 class ExtensionManager @Inject constructor(
@@ -22,7 +24,15 @@ class ExtensionManager @Inject constructor(
     private val _extensions = MutableStateFlow<List<LoadedExtension>>(emptyList())
     val extensions: StateFlow<List<LoadedExtension>> = _extensions.asStateFlow()
 
-    suspend fun refresh() = withContext(Dispatchers.IO) {
+    init {
+        // Eagerly scan installed extensions so the list is ready before the first refresh().
+        @Suppress("OPT_IN_USAGE")
+        GlobalScope.launch(Dispatchers.IO) { scanPackages() }
+    }
+
+    suspend fun refresh() = withContext(Dispatchers.IO) { scanPackages() }
+
+    private fun scanPackages() {
         val pm = context.packageManager
         _extensions.value = pm.getInstalledPackagesCompat().mapNotNull { pkg ->
             val meta = pkg.applicationInfo?.metaData ?: return@mapNotNull null

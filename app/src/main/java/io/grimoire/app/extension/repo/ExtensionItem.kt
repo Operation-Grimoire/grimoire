@@ -12,7 +12,7 @@ sealed interface ExtensionItem {
         val loaded: LoadedExtension,
     ) : ExtensionItem {
         override val packageName = loaded.info.packageName
-        override val name = loaded.info.label
+        override val name = loaded.info.label.substringAfter(": ", loaded.info.label)
         override val lang = loaded.source.lang
         override val versionName = loaded.info.versionName
     }
@@ -31,7 +31,7 @@ sealed interface ExtensionItem {
         val remote: RemoteExtension,
     ) : ExtensionItem {
         override val packageName = loaded.info.packageName
-        override val name = loaded.info.label
+        override val name = remote.name
         override val lang = loaded.source.lang
         override val versionName = loaded.info.versionName
         val hasUpdate: Boolean = remote.versionCode > loaded.info.versionCode

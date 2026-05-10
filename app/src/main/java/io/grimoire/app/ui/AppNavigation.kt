@@ -2,7 +2,6 @@ package io.grimoire.app.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material3.Icon
@@ -30,8 +29,9 @@ private enum class TopLevelDestination(
 ) {
     Library("library", Icons.Default.LocalLibrary, "Library"),
     Browse("browse", Icons.Default.Explore, "Browse"),
-    Extensions("extensions", Icons.Default.Extension, "Extensions"),
 }
+
+private const val ROUTE_EXTENSION_MANAGE = "extensions"
 
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier) {
@@ -39,25 +39,29 @@ fun AppNavigation(modifier: Modifier = Modifier) {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
 
+    val isTopLevel = currentRoute in TopLevelDestination.entries.map { it.route }
+
     Scaffold(
         modifier = modifier,
         bottomBar = {
-            NavigationBar {
-                TopLevelDestination.entries.forEach { dest ->
-                    NavigationBarItem(
-                        selected = currentRoute == dest.route,
-                        onClick = {
-                            navController.navigate(dest.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+            if (isTopLevel) {
+                NavigationBar {
+                    TopLevelDestination.entries.forEach { dest ->
+                        NavigationBarItem(
+                            selected = currentRoute == dest.route,
+                            onClick = {
+                                navController.navigate(dest.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(dest.icon, contentDescription = dest.label) },
-                        label = { Text(dest.label) },
-                    )
+                            },
+                            icon = { Icon(dest.icon, contentDescription = dest.label) },
+                            label = { Text(dest.label) },
+                        )
+                    }
                 }
             }
         },
@@ -68,8 +72,16 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(padding),
         ) {
             composable(TopLevelDestination.Library.route) { LibraryScreen() }
-            composable(TopLevelDestination.Browse.route) { BrowseScreen() }
-            composable(TopLevelDestination.Extensions.route) { ExtensionsScreen() }
+            composable(TopLevelDestination.Browse.route) {
+                BrowseScreen(
+                    onNavigateToManage = { navController.navigate(ROUTE_EXTENSION_MANAGE) },
+                )
+            }
+            composable(ROUTE_EXTENSION_MANAGE) {
+                ExtensionsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
         }
     }
 }

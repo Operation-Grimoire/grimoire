@@ -3,6 +3,7 @@ package io.grimoire.app.extension.repo
 import io.grimoire.app.data.local.dao.RepoDao
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.app.extension.LoadedExtension
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,31 +35,44 @@ class ExtensionRepository @Inject constructor(
             extensionManager.refresh()
             val installed = extensionManager.extensions.value
                 .associateBy { it.info.packageName }
+            val enabledRepos = repoDao.getEnabled()
 
-            val remoteAll = mutableMapOf<String, RemoteExtension>()
+            // Fast path: emit cached index immediately so UI isn't blank.
+            val cached = mutableMapOf<String, RemoteExtension>()
+            for (repo in enabledRepos) {
+                fetcher.loadCached(repo.indexUrl)?.forEach { cached[it.pkg] = it }
+            }
+            if (cached.isNotEmpty()) _items.value = merge(installed, cached)
+
+            // Slow path: fetch fresh index, then re-emit.
+            val fresh = mutableMapOf<String, RemoteExtension>()
             val errors = mutableListOf<String>()
-
-            for (repo in repoDao.getEnabled()) {
+            for (repo in enabledRepos) {
                 fetcher.fetch(repo.indexUrl)
-                    .onSuccess { list -> list.forEach { remoteAll[it.pkg] = it } }
+                    .onSuccess { list -> list.forEach { fresh[it.pkg] = it } }
                     .onFailure { errors.add("${repo.name}: ${it.message}") }
             }
 
             if (errors.isNotEmpty()) _fetchError.value = errors.joinToString("\n")
-
-            val merged = mutableListOf<ExtensionItem>()
-            for ((pkg, remote) in remoteAll) {
-                val load = installed[pkg]
-                merged.add(if (load != null) ExtensionItem.Installed(load, remote) else ExtensionItem.Available(remote))
-            }
-            for ((pkg, load) in installed) {
-                if (pkg !in remoteAll) merged.add(ExtensionItem.InstalledOnly(load))
-            }
-
-            _items.value = merged.sortedBy { it.name.lowercase() }
+            _items.value = merge(installed, fresh)
         } finally {
             _isFetching.value = false
         }
+    }
+
+    private fun merge(
+        installed: Map<String, LoadedExtension>,
+        remote: Map<String, RemoteExtension>,
+    ): List<ExtensionItem> {
+        val merged = mutableListOf<ExtensionItem>()
+        for ((pkg, rem) in remote) {
+            val load = installed[pkg]
+            merged.add(if (load != null) ExtensionItem.Installed(load, rem) else ExtensionItem.Available(rem))
+        }
+        for ((pkg, load) in installed) {
+            if (pkg !in remote) merged.add(ExtensionItem.InstalledOnly(load))
+        }
+        return merged.sortedBy { it.name.lowercase() }
     }
 
     suspend fun addRepo(name: String, indexUrl: String) =
