@@ -23,8 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -88,11 +88,6 @@ fun NovelDetailScreen(
                     Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 actions = {
-                    if (!isLoadingNovel && novelError == null) {
-                        IconButton(onClick = viewModel::refresh) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                        }
-                    }
                     IconButton(onClick = viewModel::toggleFavorite) {
                         Icon(
                             if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
@@ -103,9 +98,13 @@ fun NovelDetailScreen(
             )
         },
     ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = isLoadingNovel && novel.initialized,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.padding(padding),
+        ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = padding,
         ) {
             // Novel header — loading or error or content
             item {
@@ -215,6 +214,7 @@ fun NovelDetailScreen(
                 ChapterItem(chapter = chapter)
             }
         }
+        } // PullToRefreshBox
     }
 }
 
