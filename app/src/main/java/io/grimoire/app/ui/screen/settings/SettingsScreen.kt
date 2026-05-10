@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 @Composable
 fun SettingsScreen(
     onNavigateToAppearance: () -> Unit,
+    onNavigateToBrowse: () -> Unit,
     onNavigateToReader: () -> Unit,
     onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
@@ -37,6 +39,14 @@ fun SettingsScreen(
                     title = "Appearance",
                     subtitle = "Theme, dynamic color",
                     onClick = onNavigateToAppearance,
+                )
+            }
+            item {
+                SettingsNavItem(
+                    icon = Icons.Default.Explore,
+                    title = "Browse",
+                    subtitle = "Display mode, grid columns",
+                    onClick = onNavigateToBrowse,
                 )
             }
             item {

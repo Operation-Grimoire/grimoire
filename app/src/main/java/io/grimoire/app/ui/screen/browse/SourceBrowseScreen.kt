@@ -70,6 +70,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import io.grimoire.api.model.Filter
 import io.grimoire.api.model.Novel
+import io.grimoire.app.data.preferences.BrowseDisplayMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,6 +87,8 @@ fun SourceBrowseScreen(
     val error by viewModel.error.collectAsState()
     val mode by viewModel.mode.collectAsState()
     val query by viewModel.query.collectAsState()
+    val displayMode by viewModel.displayMode.collectAsState()
+    val gridColumns by viewModel.gridColumns.collectAsState()
 
     var searchActive by remember { mutableStateOf(false) }
     var showFilters by remember { mutableStateOf(false) }
@@ -208,7 +211,7 @@ fun SourceBrowseScreen(
                     }
                 }
                 else -> LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = if (displayMode == BrowseDisplayMode.GRID) GridCells.Fixed(gridColumns) else GridCells.Fixed(1),
                     state = gridState,
                     contentPadding = PaddingValues(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -216,10 +219,14 @@ fun SourceBrowseScreen(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     items(novels, key = { it.url }) { novel ->
-                        NovelCard(novel = novel, onClick = { onNovelClick(novel) })
+                        if (displayMode == BrowseDisplayMode.GRID) {
+                            NovelCard(novel = novel, onClick = { onNovelClick(novel) })
+                        } else {
+                            NovelListItem(novel = novel, onClick = { onNovelClick(novel) })
+                        }
                     }
                     if (isLoadingMore || (hasMore && novels.isNotEmpty())) {
-                        item(span = { GridItemSpan(2) }) {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
                             Box(
                                 Modifier
                                     .fillMaxWidth()
@@ -279,6 +286,33 @@ private fun NovelCard(novel: Novel, onClick: () -> Unit, modifier: Modifier = Mo
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun NovelListItem(novel: Novel, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        AsyncImage(
+            model = novel.thumbnailUrl,
+            contentDescription = novel.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(width = 56.dp, height = 80.dp)
+                .clip(RoundedCornerShape(4.dp)),
+        )
+        Text(
+            text = novel.title,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 

@@ -7,6 +7,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.model.Filter
 import io.grimoire.api.model.Novel
 import io.grimoire.api.source.CatalogueSource
+import io.grimoire.app.data.preferences.BrowseDisplayMode
+import io.grimoire.app.data.preferences.BrowsePreferences
+import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +28,11 @@ enum class BrowseMode { POPULAR, LATEST, SEARCH }
 class SourceBrowseViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
+    browsePreferences: BrowsePreferences,
 ) : ViewModel() {
+
+    val displayMode: StateFlow<BrowseDisplayMode> = browsePreferences.displayMode.stateIn(viewModelScope)
+    val gridColumns: StateFlow<Int> = browsePreferences.gridColumns.stateIn(viewModelScope)
 
     val packageName: String = checkNotNull(savedStateHandle["pkg"])
 
