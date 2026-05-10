@@ -19,9 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -29,33 +26,31 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,9 +59,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
-import kotlinx.coroutines.launch
-
-private val tabs = listOf("Installed", "Available", "Repos")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,9 +72,6 @@ fun ExtensionsScreen(
     val isFetching by viewModel.isFetching.collectAsState()
     val installStates by viewModel.installStates.collectAsState()
 
-    val pagerState = rememberPagerState { tabs.size }
-    val scope = rememberCoroutineScope()
-
     val installed = items.filterIsInstance<ExtensionItem.Installed>() +
             items.filterIsInstance<ExtensionItem.InstalledOnly>()
     val available = items.filterIsInstance<ExtensionItem.Available>()
@@ -94,7 +83,6 @@ fun ExtensionsScreen(
         ActivityResultContracts.StartActivityForResult()
     ) { viewModel.onInstallResult() }
 
-    // Refresh only after returning from another activity (PAUSE → RESUME), not on initial compose.
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         var wasPaused = false
@@ -109,7 +97,6 @@ fun ExtensionsScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Launched from Composable context (foreground) to satisfy Android BAL restrictions.
     LaunchedEffect(pendingInstall) {
         pendingInstall?.let { file ->
             viewModel.consumePendingInstall()
@@ -122,8 +109,10 @@ fun ExtensionsScreen(
         }
     }
 
+    var showRepos by remember { mutableStateOf(false) }
     var showAddRepo by remember { mutableStateOf(false) }
     var editRepo by remember { mutableStateOf<RepoEntity?>(null) }
+    val repoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Column(modifier.fillMaxSize()) {
         Row(
@@ -149,41 +138,168 @@ fun ExtensionsScreen(
                     Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                 }
             }
-        }
-
-        PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
-            tabs.forEachIndexed { index, title ->
-                val badge = when (index) {
-                    1 -> if (available.isNotEmpty()) " (${available.size})" else ""
-                    else -> ""
-                }
-                Tab(
-                    selected = pagerState.currentPage == index,
-                    onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                    text = { Text(title + badge) },
-                )
+            IconButton(onClick = { showRepos = true }) {
+                Icon(Icons.Default.Storage, contentDescription = "Repositories")
             }
         }
 
-        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
-            when (page) {
-                0 -> InstalledTab(
-                    items = installed,
-                    installStates = installStates,
-                    onUpdate = { viewModel.update(it as ExtensionItem.Installed) },
+        HorizontalDivider()
+
+        if (installed.isEmpty() && available.isEmpty()) {
+            EmptyState("No extensions found\nAdd a repository to discover extensions")
+        } else {
+            LazyColumn(Modifier.fillMaxSize()) {
+                if (installed.isNotEmpty()) {
+                    item {
+                        SectionHeader("Installed")
+                    }
+                    items(installed, key = { it.packageName }) { item ->
+                        val state = installStates[item.packageName]
+                        ListItem(
+                            headlineContent = { Text(item.name) },
+                            supportingContent = {
+                                Column {
+                                    Text("${item.lang.uppercase()} · v${item.versionName}")
+                                    if (item is ExtensionItem.Installed && item.hasUpdate) {
+                                        Text(
+                                            "Update available: v${item.remoteVersionName}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                }
+                            },
+                            leadingContent = { ExtensionIcon(item.packageName, item.lang) },
+                            trailingContent = {
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    if (item is ExtensionItem.Installed && item.hasUpdate) {
+                                        if (state == InstallState.DOWNLOADING) {
+                                            CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                                        } else {
+                                            OutlinedButton(onClick = { viewModel.update(item) }) { Text("Update") }
+                                        }
+                                    }
+                                    TextButton(onClick = {
+                                        @Suppress("DEPRECATION")
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
+                                                data = android.net.Uri.parse("package:${item.packageName}")
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                        )
+                                    }) { Text("Remove") }
+                                }
+                            },
+                        )
+                        HorizontalDivider()
+                    }
+                }
+
+                if (available.isNotEmpty()) {
+                    item {
+                        SectionHeader("Available")
+                    }
+                    items(available, key = { it.packageName }) { item ->
+                        val state = installStates[item.packageName]
+                        ListItem(
+                            headlineContent = { Text(item.name) },
+                            supportingContent = { Text("${item.lang.uppercase()} · v${item.versionName}") },
+                            leadingContent = { LangBadge(item.lang) },
+                            trailingContent = {
+                                if (state == InstallState.DOWNLOADING) {
+                                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Button(onClick = { viewModel.install(item) }) { Text("Install") }
+                                }
+                            },
+                        )
+                        HorizontalDivider()
+                    }
+                }
+            }
+        }
+    }
+
+    if (showRepos) {
+        ModalBottomSheet(
+            onDismissRequest = { showRepos = false },
+            sheetState = repoSheetState,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Repositories",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
                 )
-                1 -> AvailableTab(
-                    items = available,
-                    installStates = installStates,
-                    onInstall = { viewModel.install(it) },
-                )
-                2 -> ReposTab(
-                    repos = repos,
-                    onToggle = { viewModel.toggleRepo(it) },
-                    onEdit = { editRepo = it },
-                    onDelete = { viewModel.deleteRepo(it) },
-                    onAdd = { showAddRepo = true },
-                )
+                IconButton(onClick = { showAddRepo = true }) {
+                    Icon(Icons.Default.Add, contentDescription = "Add repository")
+                }
+            }
+            HorizontalDivider()
+            if (repos.isEmpty()) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(48.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "No repositories\nTap + to add one",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                LazyColumn {
+                    items(repos, key = { it.id }) { repo ->
+                        var menuExpanded by remember { mutableStateOf(false) }
+                        ListItem(
+                            headlineContent = { Text(repo.name) },
+                            supportingContent = {
+                                Text(
+                                    repo.indexUrl,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                )
+                            },
+                            trailingContent = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Switch(
+                                        checked = repo.enabled,
+                                        onCheckedChange = { viewModel.toggleRepo(repo) },
+                                    )
+                                    Box {
+                                        IconButton(onClick = { menuExpanded = true }) {
+                                            Icon(Icons.Default.MoreVert, contentDescription = "Options")
+                                        }
+                                        DropdownMenu(
+                                            expanded = menuExpanded,
+                                            onDismissRequest = { menuExpanded = false },
+                                        ) {
+                                            DropdownMenuItem(
+                                                text = { Text("Edit") },
+                                                leadingIcon = { Icon(Icons.Default.Edit, null) },
+                                                onClick = { menuExpanded = false; editRepo = repo },
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text("Delete") },
+                                                leadingIcon = { Icon(Icons.Default.Delete, null) },
+                                                onClick = { menuExpanded = false; viewModel.deleteRepo(repo) },
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                        )
+                        HorizontalDivider()
+                    }
+                }
             }
         }
     }
@@ -206,155 +322,15 @@ fun ExtensionsScreen(
 }
 
 @Composable
-private fun InstalledTab(
-    items: List<ExtensionItem>,
-    installStates: Map<String, InstallState>,
-    onUpdate: (ExtensionItem) -> Unit,
-) {
-    val context = LocalContext.current
-    if (items.isEmpty()) {
-        EmptyState("No extensions installed")
-        return
-    }
-    LazyColumn(Modifier.fillMaxSize()) {
-        items(items, key = { it.packageName }) { item ->
-            val state = installStates[item.packageName]
-            ListItem(
-                headlineContent = { Text(item.name) },
-                supportingContent = {
-                    Column {
-                        Text("${item.lang.uppercase()} · v${item.versionName}")
-                        if (item is ExtensionItem.Installed && item.hasUpdate) {
-                            Text(
-                                "Update available: v${item.remoteVersionName}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                },
-                leadingContent = { ExtensionIcon(item.packageName, item.lang) },
-                trailingContent = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        if (item is ExtensionItem.Installed && item.hasUpdate) {
-                            if (state == InstallState.DOWNLOADING) {
-                                CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                            } else {
-                                OutlinedButton(onClick = { onUpdate(item) }) { Text("Update") }
-                            }
-                        }
-                        TextButton(onClick = {
-                            @Suppress("DEPRECATION")
-                            context.startActivity(
-                                Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
-                                    data = android.net.Uri.parse("package:${item.packageName}")
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                }
-                            )
-                        }) { Text("Remove") }
-                    }
-                },
-            )
-            HorizontalDivider()
-        }
-    }
-}
-
-@Composable
-private fun AvailableTab(
-    items: List<ExtensionItem.Available>,
-    installStates: Map<String, InstallState>,
-    onInstall: (ExtensionItem.Available) -> Unit,
-) {
-    if (items.isEmpty()) {
-        EmptyState("No extensions available\nAdd a repository in the Repos tab")
-        return
-    }
-    LazyColumn(Modifier.fillMaxSize()) {
-        items(items, key = { it.packageName }) { item ->
-            val state = installStates[item.packageName]
-            ListItem(
-                headlineContent = { Text(item.name) },
-                supportingContent = { Text("${item.lang.uppercase()} · v${item.versionName}") },
-                leadingContent = { LangBadge(item.lang) },
-                trailingContent = {
-                    if (state == InstallState.DOWNLOADING) {
-                        CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                    } else {
-                        Button(onClick = { onInstall(item) }) { Text("Install") }
-                    }
-                },
-            )
-            HorizontalDivider()
-        }
-    }
-}
-
-@Composable
-private fun ReposTab(
-    repos: List<RepoEntity>,
-    onToggle: (RepoEntity) -> Unit,
-    onEdit: (RepoEntity) -> Unit,
-    onDelete: (RepoEntity) -> Unit,
-    onAdd: () -> Unit,
-) {
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = onAdd) {
-                Icon(Icons.Default.Add, contentDescription = "Add repo")
-            }
-        },
-    ) { padding ->
-        if (repos.isEmpty()) {
-            EmptyState("No repositories\nTap + to add one", Modifier.padding(padding))
-            return@Scaffold
-        }
-        LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-            items(repos, key = { it.id }) { repo ->
-                var menuExpanded by remember { mutableStateOf(false) }
-                ListItem(
-                    headlineContent = { Text(repo.name) },
-                    supportingContent = {
-                        Text(
-                            repo.indexUrl,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                        )
-                    },
-                    trailingContent = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Switch(
-                                checked = repo.enabled,
-                                onCheckedChange = { onToggle(repo) },
-                            )
-                            Box {
-                                IconButton(onClick = { menuExpanded = true }) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = "Options")
-                                }
-                                DropdownMenu(
-                                    expanded = menuExpanded,
-                                    onDismissRequest = { menuExpanded = false },
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Edit") },
-                                        leadingIcon = { Icon(Icons.Default.Edit, null) },
-                                        onClick = { menuExpanded = false; onEdit(repo) },
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Delete") },
-                                        leadingIcon = { Icon(Icons.Default.Delete, null) },
-                                        onClick = { menuExpanded = false; onDelete(repo) },
-                                    )
-                                }
-                            }
-                        }
-                    },
-                )
-                HorizontalDivider()
-            }
-        }
-    }
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    )
 }
 
 @Composable
