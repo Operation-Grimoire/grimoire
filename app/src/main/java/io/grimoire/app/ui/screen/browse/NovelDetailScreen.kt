@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -87,6 +88,11 @@ fun NovelDetailScreen(
                     Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 actions = {
+                    if (!isLoadingNovel && novelError == null) {
+                        IconButton(onClick = viewModel::refresh) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        }
+                    }
                     IconButton(onClick = viewModel::toggleFavorite) {
                         Icon(
                             if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
@@ -122,7 +128,7 @@ fun NovelDetailScreen(
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodyMedium,
                         )
-                        TextButton(onClick = viewModel::fetchNovel) { Text("Retry") }
+                        TextButton(onClick = viewModel::retryNovel) { Text("Retry") }
                     }
 
                     else -> NovelHeader(novel = novel)
@@ -199,7 +205,7 @@ fun NovelDetailScreen(
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Spacer(Modifier.height(4.dp))
-                        TextButton(onClick = viewModel::fetchChapters) { Text("Retry") }
+                        TextButton(onClick = viewModel::retryChapters) { Text("Retry") }
                     }
                 }
             }

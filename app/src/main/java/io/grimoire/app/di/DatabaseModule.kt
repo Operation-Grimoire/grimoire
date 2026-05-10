@@ -15,6 +15,13 @@ import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.RepoDao
 import javax.inject.Singleton
 
+private val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE novels ADD COLUMN author TEXT")
+        db.execSQL("ALTER TABLE novels ADD COLUMN genres TEXT NOT NULL DEFAULT ''")
+    }
+}
+
 private val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
@@ -40,7 +47,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "grimoire.db")
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
 
     @Provides fun provideNovelDao(db: AppDatabase): NovelDao = db.novelDao()
