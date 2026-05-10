@@ -3,12 +3,13 @@ package io.grimoire.app.ui
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.LocalLibrary
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -29,6 +30,10 @@ import io.grimoire.app.ui.screen.browse.BrowseScreen
 import io.grimoire.app.ui.screen.browse.SourceBrowseScreen
 import io.grimoire.app.ui.screen.extensions.ExtensionsScreen
 import io.grimoire.app.ui.screen.library.LibraryScreen
+import io.grimoire.app.ui.screen.settings.SettingsScreen
+import io.grimoire.app.ui.screen.settings.about.AboutSettingsScreen
+import io.grimoire.app.ui.screen.settings.appearance.AppearanceSettingsScreen
+import io.grimoire.app.ui.screen.settings.reader.ReaderSettingsScreen
 
 private enum class TopLevelDestination(
     val route: String,
@@ -37,15 +42,18 @@ private enum class TopLevelDestination(
 ) {
     Library("library", Icons.Default.LocalLibrary, "Library"),
     Browse("browse", Icons.Default.Explore, "Browse"),
+    Settings("settings", Icons.Default.Settings, "Settings"),
 }
 
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
 
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
 private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}"
+private const val ROUTE_SETTINGS_APPEARANCE = "settings/appearance"
+private const val ROUTE_SETTINGS_READER = "settings/reader"
+private const val ROUTE_SETTINGS_ABOUT = "settings/about"
 
-private const val FADE_MS = 200
-private const val SLIDE_MS = 300
+private const val POP_MS = 120
 
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier) {
@@ -84,55 +92,51 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             navController = navController,
             startDestination = TopLevelDestination.Library.route,
             modifier = Modifier.padding(padding),
-            enterTransition = { slideInHorizontally(tween(SLIDE_MS)) { it } + fadeIn(tween(SLIDE_MS)) },
-            exitTransition = { slideOutHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeOut(tween(SLIDE_MS)) },
-            popEnterTransition = { slideInHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeIn(tween(SLIDE_MS)) },
-            popExitTransition = { slideOutHorizontally(tween(SLIDE_MS)) { it } + fadeOut(tween(SLIDE_MS)) },
+            enterTransition = { scaleIn(tween(POP_MS), initialScale = 0.92f) + fadeIn(tween(POP_MS)) },
+            exitTransition = { scaleOut(tween(POP_MS), targetScale = 1.08f) + fadeOut(tween(POP_MS)) },
+            popEnterTransition = { scaleIn(tween(POP_MS), initialScale = 0.92f) + fadeIn(tween(POP_MS)) },
+            popExitTransition = { scaleOut(tween(POP_MS), targetScale = 0.92f) + fadeOut(tween(POP_MS)) },
         ) {
-            composable(
-                route = TopLevelDestination.Library.route,
-                enterTransition = { fadeIn(tween(FADE_MS)) },
-                exitTransition = {
-                    if (targetState.destination.route in topLevelRoutes) fadeOut(tween(FADE_MS))
-                    else slideOutHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeOut(tween(SLIDE_MS))
-                },
-                popEnterTransition = { fadeIn(tween(FADE_MS)) },
-                popExitTransition = { fadeOut(tween(FADE_MS)) },
-            ) {
+            composable(route = TopLevelDestination.Library.route) {
                 LibraryScreen()
             }
 
-            composable(
-                route = TopLevelDestination.Browse.route,
-                enterTransition = { fadeIn(tween(FADE_MS)) },
-                exitTransition = {
-                    if (targetState.destination.route in topLevelRoutes) fadeOut(tween(FADE_MS))
-                    else slideOutHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeOut(tween(SLIDE_MS))
-                },
-                popEnterTransition = { slideInHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeIn(tween(SLIDE_MS)) },
-                popExitTransition = { fadeOut(tween(FADE_MS)) },
-            ) {
+            composable(route = TopLevelDestination.Browse.route) {
                 BrowseScreen(
                     onNavigateToManage = { navController.navigate(ROUTE_EXTENSION_MANAGE) },
-                    onNavigateToSource = { pkg ->
-                        navController.navigate("browse/$pkg")
-                    },
+                    onNavigateToSource = { pkg -> navController.navigate("browse/$pkg") },
                 )
             }
 
-            composable(route = ROUTE_EXTENSION_MANAGE) {
-                ExtensionsScreen(
-                    onNavigateBack = { navController.popBackStack() },
+            composable(route = TopLevelDestination.Settings.route) {
+                SettingsScreen(
+                    onNavigateToAppearance = { navController.navigate(ROUTE_SETTINGS_APPEARANCE) },
+                    onNavigateToReader = { navController.navigate(ROUTE_SETTINGS_READER) },
+                    onNavigateToAbout = { navController.navigate(ROUTE_SETTINGS_ABOUT) },
                 )
+            }
+
+            composable(route = ROUTE_SETTINGS_APPEARANCE) {
+                AppearanceSettingsScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(route = ROUTE_SETTINGS_READER) {
+                ReaderSettingsScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(route = ROUTE_SETTINGS_ABOUT) {
+                AboutSettingsScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(route = ROUTE_EXTENSION_MANAGE) {
+                ExtensionsScreen(onNavigateBack = { navController.popBackStack() })
             }
 
             composable(
                 route = ROUTE_SOURCE_BROWSE,
                 arguments = listOf(navArgument("pkg") { type = NavType.StringType }),
             ) {
-                SourceBrowseScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                )
+                SourceBrowseScreen(onNavigateBack = { navController.popBackStack() })
             }
         }
     }
