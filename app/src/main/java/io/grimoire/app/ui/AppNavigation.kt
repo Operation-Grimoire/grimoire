@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import android.net.Uri
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -32,6 +33,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.browse.BrowseScreen
+import io.grimoire.app.ui.screen.browse.NovelDetailScreen
 import io.grimoire.app.ui.screen.browse.SourceBrowseScreen
 import io.grimoire.app.ui.screen.extensions.ExtensionsScreen
 import io.grimoire.app.ui.screen.library.LibraryScreen
@@ -55,6 +57,7 @@ private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet(
 
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
 private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}"
+private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}"
 private const val ROUTE_SETTINGS_APPEARANCE = "settings/appearance"
 private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
 private const val ROUTE_SETTINGS_READER = "settings/reader"
@@ -159,8 +162,26 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             composable(
                 route = ROUTE_SOURCE_BROWSE,
                 arguments = listOf(navArgument("pkg") { type = NavType.StringType }),
+            ) { entry ->
+                val pkg = entry.arguments?.getString("pkg") ?: ""
+                SourceBrowseScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNovelClick = { novel ->
+                        navController.navigate(
+                            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novel.url)}"
+                        )
+                    },
+                )
+            }
+
+            composable(
+                route = ROUTE_NOVEL_DETAIL,
+                arguments = listOf(
+                    navArgument("pkg") { type = NavType.StringType },
+                    navArgument("url") { type = NavType.StringType },
+                ),
             ) {
-                SourceBrowseScreen(onNavigateBack = { navController.popBackStack() })
+                NovelDetailScreen(onNavigateBack = { navController.popBackStack() })
             }
         }
     }
