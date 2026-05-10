@@ -19,13 +19,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.browse.BrowseScreen
 import io.grimoire.app.ui.screen.browse.SourceBrowseScreen
 import io.grimoire.app.ui.screen.extensions.ExtensionsScreen
@@ -108,24 +112,33 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 )
             }
 
-            composable(route = TopLevelDestination.Settings.route) {
-                SettingsScreen(
-                    onNavigateToAppearance = { navController.navigate(ROUTE_SETTINGS_APPEARANCE) },
-                    onNavigateToReader = { navController.navigate(ROUTE_SETTINGS_READER) },
-                    onNavigateToAbout = { navController.navigate(ROUTE_SETTINGS_ABOUT) },
-                )
-            }
+            navigation(
+                startDestination = TopLevelDestination.Settings.route,
+                route = "settings_graph",
+            ) {
+                composable(route = TopLevelDestination.Settings.route) { entry ->
+                    val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
+                    val vm: SettingsViewModel = hiltViewModel(graphEntry)
+                    SettingsScreen(
+                        onNavigateToAppearance = { navController.navigate(ROUTE_SETTINGS_APPEARANCE) },
+                        onNavigateToReader = { navController.navigate(ROUTE_SETTINGS_READER) },
+                        onNavigateToAbout = { navController.navigate(ROUTE_SETTINGS_ABOUT) },
+                    )
+                }
 
-            composable(route = ROUTE_SETTINGS_APPEARANCE) {
-                AppearanceSettingsScreen(onNavigateBack = { navController.popBackStack() })
-            }
+                composable(route = ROUTE_SETTINGS_APPEARANCE) { entry ->
+                    val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
+                    val vm: SettingsViewModel = hiltViewModel(graphEntry)
+                    AppearanceSettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
+                }
 
-            composable(route = ROUTE_SETTINGS_READER) {
-                ReaderSettingsScreen(onNavigateBack = { navController.popBackStack() })
-            }
+                composable(route = ROUTE_SETTINGS_READER) {
+                    ReaderSettingsScreen(onNavigateBack = { navController.popBackStack() })
+                }
 
-            composable(route = ROUTE_SETTINGS_ABOUT) {
-                AboutSettingsScreen(onNavigateBack = { navController.popBackStack() })
+                composable(route = ROUTE_SETTINGS_ABOUT) {
+                    AboutSettingsScreen(onNavigateBack = { navController.popBackStack() })
+                }
             }
 
             composable(route = ROUTE_EXTENSION_MANAGE) {

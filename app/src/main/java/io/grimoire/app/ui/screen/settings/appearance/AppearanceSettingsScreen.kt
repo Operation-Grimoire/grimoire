@@ -24,7 +24,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.preferences.ThemeMode
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 
@@ -33,7 +32,7 @@ import io.grimoire.app.ui.screen.settings.SettingsViewModel
 fun AppearanceSettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SettingsViewModel = hiltViewModel(),
+    viewModel: SettingsViewModel,
 ) {
     val prefs by viewModel.preferences.collectAsState()
 
