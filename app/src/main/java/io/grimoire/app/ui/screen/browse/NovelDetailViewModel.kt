@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
@@ -47,8 +49,10 @@ class NovelDetailViewModel @Inject constructor(
     private val _novel = MutableStateFlow(Novel(url = novelUrl, title = ""))
     val novel: StateFlow<Novel> = _novel.asStateFlow()
 
-    private val _chapters = MutableStateFlow<List<Chapter>>(emptyList())
-    val chapters: StateFlow<List<Chapter>> = _chapters.asStateFlow()
+    private val _liveNovelId = MutableStateFlow(-1L)
+    val chapters: StateFlow<List<ChapterEntity>> = _liveNovelId
+        .flatMapLatest { id -> if (id > 0L) chapterDao.getChapters(id) else flowOf(emptyList()) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _isLoadingNovel = MutableStateFlow(true)
     val isLoadingNovel: StateFlow<Boolean> = _isLoadingNovel.asStateFlow()
@@ -123,6 +127,7 @@ class NovelDetailViewModel @Inject constructor(
                 val fresh = existing.favorite || age < BROWSE_TTL_MS
                 if (fresh) {
                     cachedNovelId = existing.id
+                    _liveNovelId.value = existing.id
                     _novel.value = existing.toNovel()
                     _isFavorite.value = existing.favorite
                     _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
@@ -138,11 +143,11 @@ class NovelDetailViewModel @Inject constructor(
     }
 
     private suspend fun loadChaptersFromDb(novelId: Long, src: Source, novel: Novel) {
+        _liveNovelId.value = novelId
         _isLoadingChapters.value = true
         _chaptersError.value = null
         val cached = chapterDao.getChaptersOnce(novelId)
         if (cached.isNotEmpty()) {
-            _chapters.value = cached.map { it.toChapter() }
             _isLoadingChapters.value = false
         } else {
             fetchChapters(src, novel)
@@ -160,6 +165,7 @@ class NovelDetailViewModel @Inject constructor(
             val existing = novelDao.getBySourceUrl(src.id, novelUrl)
             val upsertId = novelDao.upsert(novel.toEntity(src.id, existing?.id ?: 0L, existing?.favorite ?: false, existing?.chapterSortOrder ?: 0, existing?.categoryId, novelUrl))
             cachedNovelId = existing?.id ?: upsertId
+            _liveNovelId.value = cachedNovelId
             _isFavorite.value = existing?.favorite ?: false
             _chapterSort.value = ChapterSort.entries.getOrElse(existing?.chapterSortOrder ?: 0) { ChapterSort.NUMBER_ASC }
             _categoryId.value = existing?.categoryId
@@ -179,7 +185,6 @@ class NovelDetailViewModel @Inject constructor(
         runCatching {
             fetchAllChapters(src, novel)
         }.onSuccess { list ->
-            _chapters.value = list
             if (cachedNovelId > 0L) {
                 chapterDao.replaceChapters(cachedNovelId, list.map { it.toEntity(cachedNovelId) })
             }
@@ -207,6 +212,25 @@ class NovelDetailViewModel @Inject constructor(
             page++
         }
         return all
+    }
+
+    fun markChapterRead(chapter: ChapterEntity, read: Boolean) = viewModelScope.launch {
+        chapterDao.setRead(chapter.id, read)
+    }
+
+    fun markAllRead(read: Boolean) {
+        if (cachedNovelId <= 0L) return
+        viewModelScope.launch { chapterDao.markAllRead(cachedNovelId, read) }
+    }
+
+    fun markAllBefore(chapter: ChapterEntity, read: Boolean) {
+        if (cachedNovelId <= 0L) return
+        viewModelScope.launch { chapterDao.markAllBefore(cachedNovelId, chapter.chapterNumber, read) }
+    }
+
+    fun markAllAfter(chapter: ChapterEntity, read: Boolean) {
+        if (cachedNovelId <= 0L) return
+        viewModelScope.launch { chapterDao.markAllAfter(cachedNovelId, chapter.chapterNumber, read) }
     }
 
     fun setCategory(categoryId: Long?) {

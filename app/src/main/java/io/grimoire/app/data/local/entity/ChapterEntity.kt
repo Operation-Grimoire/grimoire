@@ -24,4 +24,5 @@ data class ChapterEntity(
     val chapterNumber: Float = -1f,
     val translator: String? = null,
     val read: Boolean = false,
+    val readProgress: Float = 0f,
 )

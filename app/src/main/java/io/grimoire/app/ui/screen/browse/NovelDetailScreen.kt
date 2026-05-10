@@ -1,7 +1,9 @@
 package io.grimoire.app.ui.screen.browse
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,9 +32,12 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -68,9 +73,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
+import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ShimmerBox
 import kotlinx.coroutines.launch
@@ -78,10 +83,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun NovelDetailScreen(
     onNavigateBack: () -> Unit,
+    onChapterClick: (pkg: String, novelUrl: String, chapterUrl: String) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: NovelDetailViewModel = hiltViewModel(),
 ) {
@@ -100,12 +106,20 @@ fun NovelDetailScreen(
     var descriptionExpanded by remember { mutableStateOf(false) }
     var showCategoryDialog by remember { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
+    var bulkMenuExpanded by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var showJumpDialog by remember { mutableStateOf(false) }
 
     val hasUploadDates by remember(chapters) {
         derivedStateOf { chapters.any { it.uploadDate > 0L } }
+    }
+
+    val continueChapter by remember(chapters) {
+        derivedStateOf {
+            val sorted = chapters.sortedBy { it.chapterNumber }
+            sorted.firstOrNull { !it.read } ?: sorted.lastOrNull()
+        }
     }
 
     val displayedChapters by remember(chapters, chapterSort, searchQuery) {
@@ -124,6 +138,8 @@ fun NovelDetailScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val keyboard = LocalSoftwareKeyboardController.current
+
+    val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex < 2 } }
 
     // Number of LazyColumn items before chapter items — used for fast scroller label
     val chapterHeaderOffset by remember(isLoadingNovel, novelError, novel, chaptersError, isFavorite, categories) {
@@ -189,6 +205,18 @@ fun NovelDetailScreen(
 
     Scaffold(
         modifier = modifier,
+        floatingActionButton = {
+            if (continueChapter != null) {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        onChapterClick(viewModel.pkg, novel.url, continueChapter!!.url)
+                    },
+                    icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
+                    text = { Text(if (chapters.none { it.read }) "Start" else "Continue") },
+                    expanded = fabExpanded,
+                )
+            }
+        },
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -226,6 +254,7 @@ fun NovelDetailScreen(
             ) {
                 LazyColumn(
                     state = listState,
+                    contentPadding = PaddingValues(bottom = if (continueChapter != null) 88.dp else 0.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     // Novel header
@@ -361,6 +390,24 @@ fun NovelDetailScreen(
                                             }
                                         }
                                     }
+                                    Box {
+                                        IconButton(onClick = { bulkMenuExpanded = true }) {
+                                            Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                                        }
+                                        DropdownMenu(
+                                            expanded = bulkMenuExpanded,
+                                            onDismissRequest = { bulkMenuExpanded = false },
+                                        ) {
+                                            DropdownMenuItem(
+                                                text = { Text("Mark all as read") },
+                                                onClick = { viewModel.markAllRead(true); bulkMenuExpanded = false },
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text("Mark all as unread") },
+                                                onClick = { viewModel.markAllRead(false); bulkMenuExpanded = false },
+                                            )
+                                        }
+                                    }
                                 }
                             }
                             AnimatedVisibility(visible = searchActive) {
@@ -395,7 +442,13 @@ fun NovelDetailScreen(
 
                     // Chapter list
                     items(displayedChapters, key = { it.url }) { chapter ->
-                        ChapterItem(chapter = chapter)
+                        ChapterItem(
+                            chapter = chapter,
+                            onClick = { onChapterClick(viewModel.pkg, novel.url, chapter.url) },
+                            onMarkRead = { read -> viewModel.markChapterRead(chapter, read) },
+                            onMarkAllBefore = { viewModel.markAllBefore(chapter, true) },
+                            onMarkAllAfter = { viewModel.markAllAfter(chapter, true) },
+                        )
                     }
                 }
             }
@@ -472,15 +525,58 @@ private fun NovelHeader(novel: Novel, modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ChapterItem(chapter: Chapter, modifier: Modifier = Modifier) {
-    ListItem(
-        headlineContent = { Text(chapter.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        supportingContent = if (chapter.uploadDate > 0L) {
-            { Text(remember(chapter.uploadDate) { formatDate(chapter.uploadDate) }) }
-        } else null,
-        modifier = modifier.clickable { },
-    )
+private fun ChapterItem(
+    chapter: ChapterEntity,
+    onClick: () -> Unit,
+    onMarkRead: (Boolean) -> Unit,
+    onMarkAllBefore: () -> Unit,
+    onMarkAllAfter: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    val contentAlpha = if (chapter.read) 0.38f else 1f
+    val dateText = remember(chapter.uploadDate) { if (chapter.uploadDate > 0L) formatDate(chapter.uploadDate) else null }
+    val progressText = if (!chapter.read && chapter.readProgress > 0f) "${(chapter.readProgress * 100).toInt()}%" else null
+    val subText = listOfNotNull(dateText, progressText).joinToString(" · ").takeIf { it.isNotEmpty() }
+
+    Box {
+        ListItem(
+            headlineContent = {
+                Text(
+                    chapter.name,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
+                )
+            },
+            supportingContent = if (subText != null) {
+                { Text(subText, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha)) }
+            } else null,
+            modifier = modifier.combinedClickable(
+                onClick = onClick,
+                onLongClick = { menuExpanded = true },
+            ),
+        )
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false },
+        ) {
+            DropdownMenuItem(
+                text = { Text(if (chapter.read) "Mark as unread" else "Mark as read") },
+                onClick = { onMarkRead(!chapter.read); menuExpanded = false },
+            )
+            DropdownMenuItem(
+                text = { Text("Mark all before as read") },
+                onClick = { onMarkAllBefore(); menuExpanded = false },
+            )
+            DropdownMenuItem(
+                text = { Text("Mark all after as read") },
+                onClick = { onMarkAllAfter(); menuExpanded = false },
+            )
+        }
+    }
 }
 
 private val NovelStatus.displayName: String

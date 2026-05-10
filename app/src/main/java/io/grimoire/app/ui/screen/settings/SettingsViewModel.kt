@@ -7,6 +7,7 @@ import io.grimoire.app.data.preferences.BrowseDisplayMode
 import io.grimoire.app.data.preferences.BrowsePreferences
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
+import io.grimoire.app.data.preferences.ReaderPreferences
 import io.grimoire.app.data.preferences.ThemeMode
 import io.grimoire.app.data.preferences.UiPreferences
 import io.grimoire.app.data.preferences.stateIn
@@ -18,6 +19,7 @@ class SettingsViewModel @Inject constructor(
     private val uiPreferences: UiPreferences,
     private val browsePreferences: BrowsePreferences,
     private val libraryPreferences: LibraryPreferences,
+    private val readerPreferences: ReaderPreferences,
 ) : ViewModel() {
 
     val themeMode = uiPreferences.themeMode.stateIn(viewModelScope)
@@ -35,4 +37,7 @@ class SettingsViewModel @Inject constructor(
     fun setLibraryDisplayMode(mode: LibraryDisplayMode) = viewModelScope.launch { libraryPreferences.displayMode.set(mode) }
     fun setLibraryGridColumns(columns: Int) = viewModelScope.launch { libraryPreferences.gridColumns.set(columns.coerceIn(2, 5)) }
     fun setLibraryShowAllTab(show: Boolean) = viewModelScope.launch { libraryPreferences.showAllTab.set(show) }
+
+    val readerMarkAsReadThreshold = readerPreferences.markAsReadThreshold.stateIn(viewModelScope)
+    fun setReaderMarkAsReadThreshold(value: Int) = viewModelScope.launch { readerPreferences.markAsReadThreshold.set(value.coerceIn(50, 100)) }
 }

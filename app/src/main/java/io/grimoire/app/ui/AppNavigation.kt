@@ -35,6 +35,7 @@ import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.browse.BrowseScreen
 import io.grimoire.app.ui.screen.browse.NovelDetailScreen
 import io.grimoire.app.ui.screen.browse.SourceBrowseScreen
+import io.grimoire.app.ui.screen.reader.ReaderScreen
 import io.grimoire.app.ui.screen.extensions.ExtensionsScreen
 import io.grimoire.app.ui.screen.library.LibraryScreen
 import io.grimoire.app.ui.screen.settings.SettingsScreen
@@ -64,6 +65,7 @@ private const val ROUTE_SETTINGS_LIBRARY = "settings/library"
 private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
 private const val ROUTE_SETTINGS_READER = "settings/reader"
 private const val ROUTE_SETTINGS_ABOUT = "settings/about"
+private const val ROUTE_READER = "reader?pkg={pkg}&novelUrl={novelUrl}&chapterUrl={chapterUrl}"
 
 private const val POP_MS = 120
 
@@ -161,8 +163,10 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     BrowseSettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
                 }
 
-                composable(route = ROUTE_SETTINGS_READER) {
-                    ReaderSettingsScreen(onNavigateBack = { navController.popBackStack() })
+                composable(route = ROUTE_SETTINGS_READER) { entry ->
+                    val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
+                    val vm: SettingsViewModel = hiltViewModel(graphEntry)
+                    ReaderSettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
                 }
 
                 composable(route = ROUTE_SETTINGS_ABOUT) {
@@ -196,7 +200,25 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     navArgument("url") { type = NavType.StringType },
                 ),
             ) {
-                NovelDetailScreen(onNavigateBack = { navController.popBackStack() })
+                NovelDetailScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onChapterClick = { pkg, novelUrl, chapterUrl ->
+                        navController.navigate(
+                            "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}"
+                        )
+                    },
+                )
+            }
+
+            composable(
+                route = ROUTE_READER,
+                arguments = listOf(
+                    navArgument("pkg") { type = NavType.StringType },
+                    navArgument("novelUrl") { type = NavType.StringType },
+                    navArgument("chapterUrl") { type = NavType.StringType },
+                ),
+            ) {
+                ReaderScreen(onNavigateBack = { navController.popBackStack() })
             }
         }
     }

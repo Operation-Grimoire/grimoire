@@ -19,6 +19,9 @@ interface ChapterDao {
     @Query("SELECT * FROM chapters WHERE novelId = :novelId AND url = :url")
     suspend fun getByUrl(novelId: Long, url: String): ChapterEntity?
 
+    @Query("SELECT * FROM chapters WHERE url = :url LIMIT 1")
+    suspend fun getByUrl(url: String): ChapterEntity?
+
     @Insert
     suspend fun insertAll(chapters: List<ChapterEntity>)
 
@@ -36,4 +39,16 @@ interface ChapterDao {
 
     @Query("UPDATE chapters SET read = :read WHERE id = :id")
     suspend fun setRead(id: Long, read: Boolean)
+
+    @Query("UPDATE chapters SET readProgress = :progress WHERE id = :id")
+    suspend fun setReadProgress(id: Long, progress: Float)
+
+    @Query("UPDATE chapters SET read = :read WHERE novelId = :novelId")
+    suspend fun markAllRead(novelId: Long, read: Boolean)
+
+    @Query("UPDATE chapters SET read = :read WHERE novelId = :novelId AND chapterNumber <= :chapterNumber")
+    suspend fun markAllBefore(novelId: Long, chapterNumber: Float, read: Boolean)
+
+    @Query("UPDATE chapters SET read = :read WHERE novelId = :novelId AND chapterNumber >= :chapterNumber")
+    suspend fun markAllAfter(novelId: Long, chapterNumber: Float, read: Boolean)
 }
