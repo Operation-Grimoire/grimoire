@@ -1,5 +1,10 @@
 package io.grimoire.app.ui
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
@@ -31,7 +36,12 @@ private enum class TopLevelDestination(
     Browse("browse", Icons.Default.Explore, "Browse"),
 }
 
+private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
+
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
+
+private const val FADE_MS = 200
+private const val SLIDE_MS = 300
 
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier) {
@@ -39,7 +49,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
 
-    val isTopLevel = currentRoute in TopLevelDestination.entries.map { it.route }
+    val isTopLevel = currentRoute in topLevelRoutes
 
     Scaffold(
         modifier = modifier,
@@ -70,14 +80,41 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             navController = navController,
             startDestination = TopLevelDestination.Library.route,
             modifier = Modifier.padding(padding),
+            // Defaults for sub-routes (Extensions): slide in from right, pop back to right.
+            enterTransition = { slideInHorizontally(tween(SLIDE_MS)) { it } + fadeIn(tween(SLIDE_MS)) },
+            exitTransition = { slideOutHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeOut(tween(SLIDE_MS)) },
+            popEnterTransition = { slideInHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeIn(tween(SLIDE_MS)) },
+            popExitTransition = { slideOutHorizontally(tween(SLIDE_MS)) { it } + fadeOut(tween(SLIDE_MS)) },
         ) {
-            composable(TopLevelDestination.Library.route) { LibraryScreen() }
-            composable(TopLevelDestination.Browse.route) {
+            composable(
+                route = TopLevelDestination.Library.route,
+                enterTransition = { fadeIn(tween(FADE_MS)) },
+                exitTransition = {
+                    if (targetState.destination.route in topLevelRoutes) fadeOut(tween(FADE_MS))
+                    else slideOutHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeOut(tween(SLIDE_MS))
+                },
+                popEnterTransition = { fadeIn(tween(FADE_MS)) },
+                popExitTransition = { fadeOut(tween(FADE_MS)) },
+            ) {
+                LibraryScreen()
+            }
+
+            composable(
+                route = TopLevelDestination.Browse.route,
+                enterTransition = { fadeIn(tween(FADE_MS)) },
+                exitTransition = {
+                    if (targetState.destination.route in topLevelRoutes) fadeOut(tween(FADE_MS))
+                    else slideOutHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeOut(tween(SLIDE_MS))
+                },
+                popEnterTransition = { slideInHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeIn(tween(SLIDE_MS)) },
+                popExitTransition = { fadeOut(tween(FADE_MS)) },
+            ) {
                 BrowseScreen(
                     onNavigateToManage = { navController.navigate(ROUTE_EXTENSION_MANAGE) },
                 )
             }
-            composable(ROUTE_EXTENSION_MANAGE) {
+
+            composable(route = ROUTE_EXTENSION_MANAGE) {
                 ExtensionsScreen(
                     onNavigateBack = { navController.popBackStack() },
                 )
