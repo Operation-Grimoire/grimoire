@@ -19,13 +19,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import io.grimoire.app.ui.screen.BrowseScreen
 import io.grimoire.app.ui.screen.ExtensionsScreen
 import io.grimoire.app.ui.screen.LibraryScreen
+import io.grimoire.app.ui.screen.SourceBrowseScreen
 
 private enum class TopLevelDestination(
     val route: String,
@@ -39,6 +42,7 @@ private enum class TopLevelDestination(
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
 
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
+private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}"
 
 private const val FADE_MS = 200
 private const val SLIDE_MS = 300
@@ -80,7 +84,6 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             navController = navController,
             startDestination = TopLevelDestination.Library.route,
             modifier = Modifier.padding(padding),
-            // Defaults for sub-routes (Extensions): slide in from right, pop back to right.
             enterTransition = { slideInHorizontally(tween(SLIDE_MS)) { it } + fadeIn(tween(SLIDE_MS)) },
             exitTransition = { slideOutHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeOut(tween(SLIDE_MS)) },
             popEnterTransition = { slideInHorizontally(tween(SLIDE_MS)) { -it / 4 } + fadeIn(tween(SLIDE_MS)) },
@@ -111,11 +114,23 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             ) {
                 BrowseScreen(
                     onNavigateToManage = { navController.navigate(ROUTE_EXTENSION_MANAGE) },
+                    onNavigateToSource = { pkg ->
+                        navController.navigate("browse/$pkg")
+                    },
                 )
             }
 
             composable(route = ROUTE_EXTENSION_MANAGE) {
                 ExtensionsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(
+                route = ROUTE_SOURCE_BROWSE,
+                arguments = listOf(navArgument("pkg") { type = NavType.StringType }),
+            ) {
+                SourceBrowseScreen(
                     onNavigateBack = { navController.popBackStack() },
                 )
             }
