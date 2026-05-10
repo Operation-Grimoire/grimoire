@@ -43,6 +43,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -116,41 +117,37 @@ fun ExtensionsScreen(
     var editRepo by remember { mutableStateOf<RepoEntity?>(null) }
     val repoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    Column(modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(end = 4.dp, top = 8.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onNavigateBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-            }
-            Text(
-                "Extensions",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.weight(1f),
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                title = { Text("Extensions") },
+                actions = {
+                    if (isFetching) {
+                        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                        }
+                    } else {
+                        IconButton(onClick = viewModel::refresh) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        }
+                    }
+                    IconButton(onClick = { showRepos = true }) {
+                        Icon(Icons.Default.Storage, contentDescription = "Repositories")
+                    }
+                },
             )
-            if (isFetching) {
-                Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                }
-            } else {
-                IconButton(onClick = viewModel::refresh) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                }
-            }
-            IconButton(onClick = { showRepos = true }) {
-                Icon(Icons.Default.Storage, contentDescription = "Repositories")
-            }
-        }
-
-        HorizontalDivider()
-
+        },
+    ) { padding ->
         if (installed.isEmpty() && available.isEmpty()) {
-            EmptyState("No extensions found\nAdd a repository to discover extensions")
+            EmptyState("No extensions found\nAdd a repository to discover extensions", Modifier.padding(padding))
         } else {
-            LazyColumn(Modifier.fillMaxSize()) {
+            LazyColumn(Modifier.fillMaxSize().padding(padding)) {
                 if (installed.isNotEmpty()) {
                     item {
                         SectionHeader("Installed")
