@@ -30,6 +30,8 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v3
 
+      - run: chmod +x gradlew
+
       - name: Build release APK
         run: ./gradlew assembleRelease --build-cache
         env:
