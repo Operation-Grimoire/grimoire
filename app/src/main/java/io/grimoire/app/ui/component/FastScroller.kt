@@ -93,12 +93,28 @@ fun FastScroller(
         }
 
         // Track + thumb
+        val thumbHeightPx = 48f * 3f // dp → rough px (density ~3)
+        val maxOffsetPx = (trackHeightPx - thumbHeightPx).coerceAtLeast(0f)
+        val thumbOffsetPx = currentFraction * maxOffsetPx
+
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .fillMaxHeight()
                 .width(28.dp)
-                .onSizeChanged { trackHeightPx = it.height.toFloat() },
+                .onSizeChanged { trackHeightPx = it.height.toFloat() }
+                .draggable(
+                    orientation = Orientation.Vertical,
+                    state = rememberDraggableState { delta ->
+                        if (maxOffsetPx <= 0f) return@rememberDraggableState
+                        dragFraction = (dragFraction + delta / maxOffsetPx).coerceIn(0f, 1f)
+                        val target = (dragFraction * scrollableItems)
+                            .toInt().coerceIn(0, totalItems - 1)
+                        coroutineScope.launch { state.scrollToItem(target) }
+                    },
+                    onDragStarted = { isDragging = true; dragFraction = scrollFraction },
+                    onDragStopped = { isDragging = false },
+                ),
         ) {
             // Track line
             Box(
@@ -113,32 +129,16 @@ fun FastScroller(
                     )
             )
 
-            // Thumb
-            val thumbHeightPx = 48f * 3f // dp → rough px (density ~3)
-            val maxOffsetPx = (trackHeightPx - thumbHeightPx).coerceAtLeast(0f)
-            val thumbOffsetPx = currentFraction * maxOffsetPx
-
+            // Thumb pill (visual only — drag handled by parent)
             Box(
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.TopEnd)
                     .offset { IntOffset(0, thumbOffsetPx.roundToInt()) }
-                    .width(4.dp)
+                    .width(if (isDragging) 10.dp else 6.dp)
                     .height(thumbHeightDp)
                     .background(
                         MaterialTheme.colorScheme.primary.copy(alpha = thumbAlpha),
-                        RoundedCornerShape(2.dp),
-                    )
-                    .draggable(
-                        orientation = Orientation.Vertical,
-                        state = rememberDraggableState { delta ->
-                            if (maxOffsetPx <= 0f) return@rememberDraggableState
-                            dragFraction = (dragFraction + delta / maxOffsetPx).coerceIn(0f, 1f)
-                            val target = (dragFraction * scrollableItems)
-                                .toInt().coerceIn(0, totalItems - 1)
-                            coroutineScope.launch { state.scrollToItem(target) }
-                        },
-                        onDragStarted = { isDragging = true; dragFraction = scrollFraction },
-                        onDragStopped = { isDragging = false },
+                        RoundedCornerShape(3.dp),
                     )
             )
         }
