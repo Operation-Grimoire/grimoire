@@ -183,7 +183,7 @@ class NovelDetailViewModel @Inject constructor(
         }.onSuccess { novel ->
             _novel.value = novel
             val existing = novelDao.getBySourceUrl(src.id, novelUrl)
-            val upsertId = novelDao.upsert(novel.toEntity(src.id, existing?.id ?: 0L, existing?.favorite ?: false, existing?.chapterSortOrder ?: 0, existing?.categoryId, novelUrl))
+            val upsertId = novelDao.upsert(novel.toEntity(src.id, existing?.id ?: 0L, existing?.favorite ?: false, existing?.chapterSortOrder ?: 0, existing?.categoryId, novelUrl, existing?.lastReadAt ?: 0L))
             cachedNovelId = existing?.id ?: upsertId
             _liveNovelId.value = cachedNovelId
             _isFavorite.value = existing?.favorite ?: false
@@ -302,7 +302,7 @@ private fun NovelEntity.toNovel() = Novel(
     initialized = true,
 )
 
-private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, chapterSortOrder: Int = 0, categoryId: Long? = null, url: String = this.url) = NovelEntity(
+private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, chapterSortOrder: Int = 0, categoryId: Long? = null, url: String = this.url, lastReadAt: Long = 0L) = NovelEntity(
     id = existingId,
     sourceId = sourceId,
     url = url,
@@ -316,6 +316,7 @@ private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, 
     lastUpdated = System.currentTimeMillis(),
     chapterSortOrder = chapterSortOrder,
     categoryId = categoryId,
+    lastReadAt = lastReadAt,
 )
 
 private fun ChapterEntity.toChapter() = Chapter(
