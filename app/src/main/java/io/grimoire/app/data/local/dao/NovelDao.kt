@@ -12,6 +12,9 @@ interface NovelDao {
     @Query("SELECT * FROM novels WHERE favorite = 1 ORDER BY title ASC")
     fun getFavorites(): Flow<List<NovelEntity>>
 
+    @Query("SELECT url FROM novels WHERE favorite = 1")
+    fun getFavoriteUrls(): Flow<List<String>>
+
     @Query("SELECT * FROM novels WHERE id = :id")
     suspend fun getById(id: Long): NovelEntity?
 

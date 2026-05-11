@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +25,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Language
@@ -85,6 +87,7 @@ fun SourceBrowseScreen(
     viewModel: SourceBrowseViewModel = hiltViewModel(),
 ) {
     val novels by viewModel.novels.collectAsState()
+    val libraryUrls by viewModel.libraryUrls.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
     val hasMore by viewModel.hasMore.collectAsState()
@@ -238,9 +241,17 @@ fun SourceBrowseScreen(
                 ) {
                     items(novels, key = { it.url }) { novel ->
                         if (displayMode == BrowseDisplayMode.GRID) {
-                            NovelCard(novel = novel, onClick = { onNovelClick(novel) })
+                            NovelCard(
+                                novel = novel,
+                                inLibrary = novel.url in libraryUrls,
+                                onClick = { onNovelClick(novel) },
+                            )
                         } else {
-                            NovelListItem(novel = novel, onClick = { onNovelClick(novel) })
+                            NovelListItem(
+                                novel = novel,
+                                inLibrary = novel.url in libraryUrls,
+                                onClick = { onNovelClick(novel) },
+                            )
                         }
                     }
                     if (isLoadingMore || (hasMore && novels.isNotEmpty())) {
@@ -278,7 +289,7 @@ fun SourceBrowseScreen(
 }
 
 @Composable
-private fun NovelCard(novel: Novel, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun NovelCard(novel: Novel, inLibrary: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -287,15 +298,39 @@ private fun NovelCard(novel: Novel, onClick: () -> Unit, modifier: Modifier = Mo
         shape = RoundedCornerShape(8.dp),
     ) {
         Column {
-            AsyncImage(
-                model = novel.thumbnailUrl,
-                contentDescription = novel.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(2f / 3f)
-                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
-            )
+            Box {
+                AsyncImage(
+                    model = novel.thumbnailUrl,
+                    contentDescription = novel.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(2f / 3f)
+                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
+                )
+                if (inLibrary) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                            .background(Color.Black.copy(alpha = 0.4f)),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(5.dp)
+                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                            .padding(4.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.Bookmark,
+                            contentDescription = "In library",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
+                }
+            }
             Text(
                 text = novel.title,
                 style = MaterialTheme.typography.labelMedium,
@@ -308,22 +343,47 @@ private fun NovelCard(novel: Novel, onClick: () -> Unit, modifier: Modifier = Mo
 }
 
 @Composable
-private fun NovelListItem(novel: Novel, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun NovelListItem(novel: Novel, inLibrary: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        AsyncImage(
-            model = novel.thumbnailUrl,
-            contentDescription = novel.title,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(width = 56.dp, height = 80.dp)
-                .clip(RoundedCornerShape(4.dp)),
-        )
+        Box {
+            AsyncImage(
+                model = novel.thumbnailUrl,
+                contentDescription = novel.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(width = 56.dp, height = 80.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+            )
+            if (inLibrary) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.Black.copy(alpha = 0.4f)),
+                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(4.dp)
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                        .padding(4.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Bookmark,
+                        contentDescription = "In library",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
+            }
+        }
         Text(
             text = novel.title,
             style = MaterialTheme.typography.bodyMedium,

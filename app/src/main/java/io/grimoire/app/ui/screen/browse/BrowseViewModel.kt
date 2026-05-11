@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.model.Novel
 import io.grimoire.api.source.CatalogueSource
+import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.extension.repo.ExtensionRepository
@@ -33,7 +34,12 @@ data class GlobalSearchResult(
 class BrowseViewModel @Inject constructor(
     private val repository: ExtensionRepository,
     private val extensionManager: ExtensionManager,
+    private val novelDao: NovelDao,
 ) : ViewModel() {
+
+    val libraryUrls: StateFlow<Set<String>> = novelDao.getFavoriteUrls()
+        .map { it.toSet() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     val installed: StateFlow<List<ExtensionItem>> = repository.items
         .map { items -> items.filter { it is ExtensionItem.Installed || it is ExtensionItem.InstalledOnly } }

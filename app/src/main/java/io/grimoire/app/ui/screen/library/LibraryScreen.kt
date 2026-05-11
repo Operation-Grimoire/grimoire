@@ -446,6 +446,18 @@ private fun NovelCard(
                             .padding(horizontal = 4.dp, vertical = 2.dp),
                     )
                 }
+                if (stats != null && stats.downloadedCount > 0) {
+                    Text(
+                        text = "↓${stats.downloadedCount}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(4.dp)
+                            .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                    )
+                }
             }
             Text(
                 novel.title,

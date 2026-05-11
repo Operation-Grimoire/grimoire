@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,12 +21,13 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -50,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.grimoire.api.model.Novel
+import androidx.compose.material3.MaterialTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,6 +66,7 @@ fun GlobalSearchScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
+    val libraryUrls by viewModel.libraryUrls.collectAsState()
 
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -108,6 +112,7 @@ fun GlobalSearchScreen(
         when {
             searchResults.isNotEmpty() -> GlobalSearchResults(
                 results = searchResults,
+                libraryUrls = libraryUrls,
                 onNovelClick = onNovelClick,
                 onSeeAll = { pkg -> onNavigateToSourceSearch(pkg, searchQuery) },
                 modifier = Modifier.padding(padding),
@@ -145,6 +150,7 @@ fun GlobalSearchScreen(
 @Composable
 internal fun GlobalSearchResults(
     results: List<GlobalSearchResult>,
+    libraryUrls: Set<String>,
     onNovelClick: (Novel, String) -> Unit,
     onSeeAll: (packageName: String) -> Unit,
     modifier: Modifier = Modifier,
@@ -206,6 +212,7 @@ internal fun GlobalSearchResults(
                         items(group.novels.take(10), key = { it.url }) { novel ->
                             NovelCoverCard(
                                 novel = novel,
+                                inLibrary = novel.url in libraryUrls,
                                 onClick = { onNovelClick(novel, group.packageName) },
                             )
                         }
@@ -221,22 +228,46 @@ internal fun GlobalSearchResults(
 }
 
 @Composable
-internal fun NovelCoverCard(novel: Novel, onClick: () -> Unit) {
+internal fun NovelCoverCard(novel: Novel, inLibrary: Boolean = false, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .width(96.dp)
             .clickable(onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        AsyncImage(
-            model = novel.thumbnailUrl,
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(6.dp)),
-            contentScale = ContentScale.Crop,
-        )
+        Box {
+            AsyncImage(
+                model = novel.thumbnailUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(2f / 3f)
+                    .clip(RoundedCornerShape(6.dp)),
+                contentScale = ContentScale.Crop,
+            )
+            if (inLibrary) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color.Black.copy(alpha = 0.4f)),
+                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(5.dp)
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                        .padding(4.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Bookmark,
+                        contentDescription = "In library",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
+        }
         Text(
             text = novel.title,
             style = MaterialTheme.typography.labelSmall,

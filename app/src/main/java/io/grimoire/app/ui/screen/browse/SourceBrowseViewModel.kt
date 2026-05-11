@@ -8,15 +8,19 @@ import io.grimoire.api.model.Filter
 import io.grimoire.api.model.Novel
 import io.grimoire.api.source.CatalogueSource
 import io.grimoire.api.source.SourceInfo
+import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.preferences.BrowseDisplayMode
 import io.grimoire.app.data.preferences.BrowsePreferences
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,7 +34,12 @@ class SourceBrowseViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val browsePreferences: BrowsePreferences,
+    private val novelDao: NovelDao,
 ) : ViewModel() {
+
+    val libraryUrls: StateFlow<Set<String>> = novelDao.getFavoriteUrls()
+        .map { it.toSet() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     val displayMode: StateFlow<BrowseDisplayMode> = browsePreferences.displayMode.stateIn(viewModelScope)
     val gridColumns: StateFlow<Int> = browsePreferences.gridColumns.stateIn(viewModelScope)

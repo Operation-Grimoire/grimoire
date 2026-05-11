@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -67,7 +68,7 @@ class NovelDetailViewModel @Inject constructor(
     @OptIn(FlowPreview::class)
     val chapters: StateFlow<List<ChapterEntity>> = _liveNovelId
         .flatMapLatest { id -> if (id > 0L) chapterDao.getChapters(id) else flowOf(emptyList()) }
-        .debounce(150)
+        .debounce(50)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _isLoadingNovel = MutableStateFlow(true)
@@ -164,6 +165,9 @@ class NovelDetailViewModel @Inject constructor(
         _chaptersError.value = null
         val cached = chapterDao.getChaptersOnce(novelId)
         if (cached.isNotEmpty()) {
+            // Wait for the debounced StateFlow to actually emit before hiding skeleton,
+            // so there's no flash of empty chapter list.
+            chapters.first { it.isNotEmpty() }
             _isLoadingChapters.value = false
         } else {
             fetchChapters(src, novel)

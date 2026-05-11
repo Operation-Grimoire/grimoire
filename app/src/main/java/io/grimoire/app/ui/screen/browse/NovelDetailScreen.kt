@@ -273,7 +273,7 @@ fun NovelDetailScreen(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     // Novel header
-                    item {
+                    item(key = "novel_header") {
                         when {
                             isLoadingNovel -> NovelHeaderSkeleton()
                             novelError != null -> Column(
@@ -289,12 +289,13 @@ fun NovelDetailScreen(
 
                     // Category (when in library)
                     if (!isLoadingNovel && novelError == null && isFavorite && categories.isNotEmpty()) {
-                        item {
+                        item(key = "category") {
                             val currentCat = categories.firstOrNull { cat ->
                                 if (cat.isDefault) categoryId == null else cat.id == categoryId
                             }
                             Row(
                                 modifier = Modifier
+                                    .animateItem()
                                     .fillMaxWidth()
                                     .clickable { showCategoryDialog = true }
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -316,9 +317,10 @@ fun NovelDetailScreen(
 
                     // Genres
                     if (!isLoadingNovel && novelError == null && novel.genres.isNotEmpty()) {
-                        item {
+                        item(key = "genres") {
                             Row(
                                 modifier = Modifier
+                                    .animateItem()
                                     .horizontalScroll(rememberScrollState())
                                     .padding(horizontal = 16.dp, vertical = 4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -336,8 +338,8 @@ fun NovelDetailScreen(
 
                     // Description
                     if (!isLoadingNovel && novelError == null && !novel.description.isNullOrBlank()) {
-                        item {
-                            Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                        item(key = "description") {
+                            Column(Modifier.animateItem().padding(horizontal = 16.dp, vertical = 4.dp)) {
                                 Text(
                                     novel.description!!,
                                     style = MaterialTheme.typography.bodyMedium,
@@ -355,7 +357,7 @@ fun NovelDetailScreen(
                     }
 
                     // Chapter controls
-                    item {
+                    item(key = "chapter_controls") {
                         HorizontalDivider(Modifier.padding(top = 8.dp))
                         Column {
                             Row(
@@ -486,9 +488,9 @@ fun NovelDetailScreen(
 
                     // Chapters error
                     if (chaptersError != null) {
-                        item {
+                        item(key = "chapters_error") {
                             Column(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                modifier = Modifier.animateItem().fillMaxWidth().padding(16.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Text(chaptersError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
