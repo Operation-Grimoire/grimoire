@@ -28,11 +28,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Grant gradlew permission
-        run: chmod +x gradlew
+      - uses: gradle/actions/setup-gradle@v3
 
       - name: Build release APK
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease --build-cache
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
