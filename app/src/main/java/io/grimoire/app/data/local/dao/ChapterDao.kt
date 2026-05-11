@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ChapterDao {
-    @Query("SELECT * FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
     fun getChapters(novelId: Long): Flow<List<ChapterEntity>>
 
     @Query("SELECT * FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
@@ -53,8 +53,14 @@ interface ChapterDao {
     @Query("UPDATE chapters SET read = :read WHERE novelId = :novelId AND chapterNumber >= :chapterNumber")
     suspend fun markAllAfter(novelId: Long, chapterNumber: Float, read: Boolean)
 
+    @Query("UPDATE chapters SET read = :read WHERE id IN (:ids)")
+    suspend fun markChapters(ids: List<Long>, read: Boolean)
+
     @Query("UPDATE chapters SET downloadStatus = :status WHERE id = :id")
     suspend fun setDownloadStatus(id: Long, status: Int)
+
+    @Query("UPDATE chapters SET downloadStatus = :status WHERE id IN (:ids)")
+    suspend fun setDownloadStatusBatch(ids: List<Long>, status: Int)
 
     @Query("UPDATE chapters SET downloadStatus = :status, downloadedContent = :content WHERE id = :id")
     suspend fun setDownloadedContent(id: Long, content: String, status: Int)

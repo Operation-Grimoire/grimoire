@@ -5,6 +5,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -65,6 +68,7 @@ fun DownloadsScreen(
     val downloads by viewModel.downloads.collectAsState()
     val isPaused by viewModel.isPaused.collectAsState()
     var collapsedNovels by remember { mutableStateOf(setOf<Long>()) }
+    var statusFilter by remember { mutableStateOf<Int?>(null) }
 
     Scaffold(
         topBar = {
@@ -97,7 +101,33 @@ fun DownloadsScreen(
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+                item {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        val chips = listOf(
+                            "All" to null,
+                            "Downloading" to ChapterDownloadStatus.DOWNLOADING.ordinal,
+                            "Queued" to ChapterDownloadStatus.QUEUED.ordinal,
+                            "Done" to ChapterDownloadStatus.DOWNLOADED.ordinal,
+                            "Failed" to ChapterDownloadStatus.ERROR.ordinal,
+                        )
+                        items(chips) { (label, value) ->
+                            FilterChip(
+                                selected = statusFilter == value,
+                                onClick = { statusFilter = value },
+                                label = { Text(label) },
+                            )
+                        }
+                    }
+                }
+
                 downloads.forEach { novelDownloads ->
+                    val filtered = if (statusFilter == null) novelDownloads.chapters
+                        else novelDownloads.chapters.filter { it.downloadStatus == statusFilter }
+                    if (filtered.isEmpty()) return@forEach
+
                     val novelId = novelDownloads.novel.id
                     val isCollapsed = novelId in collapsedNovels
 
@@ -118,7 +148,7 @@ fun DownloadsScreen(
                     }
 
                     if (!isCollapsed) {
-                        items(items = novelDownloads.chapters, key = { it.id }) { chapter ->
+                        items(items = filtered, key = { it.id }) { chapter ->
                             ChapterDownloadItem(
                                 chapter = chapter,
                                 onCancel = { viewModel.cancel(chapter) },

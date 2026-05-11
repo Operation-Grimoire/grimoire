@@ -18,9 +18,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ShimmerBox(modifier: Modifier = Modifier, shape: Shape = RoundedCornerShape(4.dp)) {
+fun rememberShimmerAlpha(): Float {
     val transition = rememberInfiniteTransition(label = "shimmer")
-    val alpha by transition.animateFloat(
+    return transition.animateFloat(
         initialValue = 0.12f,
         targetValue = 0.30f,
         animationSpec = infiniteRepeatable(
@@ -28,7 +28,15 @@ fun ShimmerBox(modifier: Modifier = Modifier, shape: Shape = RoundedCornerShape(
             repeatMode = RepeatMode.Reverse,
         ),
         label = "shimmer_alpha",
-    )
+    ).value
+}
+
+@Composable
+fun ShimmerBox(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(4.dp),
+    alpha: Float = rememberShimmerAlpha(),
+) {
     Box(
         modifier = modifier
             .clip(shape)

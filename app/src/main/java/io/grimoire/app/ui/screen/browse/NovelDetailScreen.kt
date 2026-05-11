@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
@@ -85,6 +86,7 @@ import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ShimmerBox
+import io.grimoire.app.ui.component.rememberShimmerAlpha
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -486,8 +488,11 @@ fun NovelDetailScreen(
 
                     // Chapter list or skeleton
                     if (isLoadingChapters && chapters.isEmpty()) {
-                        items(14, key = { "skeleton_$it" }) {
-                            ChapterSkeletonItem()
+                        item(key = "skeletons") {
+                            val alpha = rememberShimmerAlpha()
+                            Column {
+                                repeat(14) { ChapterSkeletonItem(alpha = alpha) }
+                            }
                         }
                     } else {
                         items(displayedChapters, key = { it.url }) { chapter ->
@@ -495,8 +500,18 @@ fun NovelDetailScreen(
                                 chapter = chapter,
                                 onClick = { onChapterClick(viewModel.pkg, novel.url, chapter.url) },
                                 onMarkRead = { read -> viewModel.markChapterRead(chapter, read) },
-                                onMarkAllBefore = { viewModel.markAllBefore(chapter, true) },
-                                onMarkAllAfter = { viewModel.markAllAfter(chapter, true) },
+                                onMarkAllBefore = {
+                                    val idx = displayedChapters.indexOf(chapter)
+                                    if (idx > 0) viewModel.markChaptersRead(
+                                        displayedChapters.subList(0, idx).map { it.id }, true
+                                    )
+                                },
+                                onMarkAllAfter = {
+                                    val idx = displayedChapters.indexOf(chapter)
+                                    if (idx < displayedChapters.size - 1) viewModel.markChaptersRead(
+                                        displayedChapters.subList(idx + 1, displayedChapters.size).map { it.id }, true
+                                    )
+                                },
                                 onDownload = { viewModel.downloadChapter(chapter) },
                                 onCancelDownload = { viewModel.cancelDownload(chapter) },
                                 onDeleteDownload = { viewModel.deleteDownload(chapter) },
@@ -557,7 +572,7 @@ private fun NovelHeaderSkeleton(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ChapterSkeletonItem(modifier: Modifier = Modifier) {
+private fun ChapterSkeletonItem(alpha: Float, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -565,10 +580,10 @@ private fun ChapterSkeletonItem(modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            ShimmerBox(modifier = Modifier.fillMaxWidth(0.65f).height(15.dp))
-            ShimmerBox(modifier = Modifier.fillMaxWidth(0.35f).height(11.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.65f).height(15.dp), alpha = alpha)
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.35f).height(11.dp), alpha = alpha)
         }
-        ShimmerBox(modifier = Modifier.size(20.dp), shape = CircleShape)
+        ShimmerBox(modifier = Modifier.size(20.dp), shape = CircleShape, alpha = alpha)
     }
 }
 
@@ -652,9 +667,17 @@ private fun ChapterItem(
                     }
                 })
                 ChapterDownloadStatus.ERROR -> ({
-                    IconButton(onClick = onDownload) {
-                        Icon(Icons.Default.ErrorOutline, contentDescription = "Retry download",
-                            tint = MaterialTheme.colorScheme.error)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onDeleteDownload, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = "Cancel",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        IconButton(onClick = onDownload, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Retry",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.error)
+                        }
                     }
                 })
             },

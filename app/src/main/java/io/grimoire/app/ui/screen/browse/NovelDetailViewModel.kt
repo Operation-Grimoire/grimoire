@@ -17,11 +17,13 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.extension.ExtensionManager
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -52,8 +54,10 @@ class NovelDetailViewModel @Inject constructor(
     val novel: StateFlow<Novel> = _novel.asStateFlow()
 
     private val _liveNovelId = MutableStateFlow(-1L)
+    @OptIn(FlowPreview::class)
     val chapters: StateFlow<List<ChapterEntity>> = _liveNovelId
         .flatMapLatest { id -> if (id > 0L) chapterDao.getChapters(id) else flowOf(emptyList()) }
+        .debounce(150)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _isLoadingNovel = MutableStateFlow(true)
@@ -234,14 +238,11 @@ class NovelDetailViewModel @Inject constructor(
         viewModelScope.launch { chapterDao.markAllRead(cachedNovelId, read) }
     }
 
-    fun markAllBefore(chapter: ChapterEntity, read: Boolean) {
-        if (cachedNovelId <= 0L) return
-        viewModelScope.launch { chapterDao.markAllBefore(cachedNovelId, chapter.chapterNumber, read) }
-    }
-
-    fun markAllAfter(chapter: ChapterEntity, read: Boolean) {
-        if (cachedNovelId <= 0L) return
-        viewModelScope.launch { chapterDao.markAllAfter(cachedNovelId, chapter.chapterNumber, read) }
+    fun markChaptersRead(ids: List<Long>, read: Boolean) {
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            ids.chunked(999).forEach { chunk -> chapterDao.markChapters(chunk, read) }
+        }
     }
 
     fun setCategory(categoryId: Long?) {
@@ -251,8 +252,7 @@ class NovelDetailViewModel @Inject constructor(
         }
     }
 
-    fun downloadChapter(chapter: ChapterEntity) =
-        downloadManager.enqueue(listOf(chapter), priority = downloadManager.isPaused.value)
+    fun downloadChapter(chapter: ChapterEntity) = downloadManager.enqueue(listOf(chapter))
     fun downloadAll() = downloadManager.enqueue(chapters.value)
     fun downloadUnread() = downloadManager.enqueue(chapters.value.filter { !it.read })
     fun cancelDownload(chapter: ChapterEntity) = downloadManager.cancel(chapter)

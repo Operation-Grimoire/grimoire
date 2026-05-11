@@ -33,6 +33,7 @@ class DownloadService : Service() {
                 val text = if (remaining > 0) "$chapterName  (+$remaining queued)" else chapterName
                 showNotification(text)
             }
+            if (downloaded == -1) return@launch  // already processing in another coroutine — don't stop
             stopForeground(STOP_FOREGROUND_REMOVE)
             if (!downloadManager.isPaused.value && downloaded > 0) {
                 showCompletionNotification(downloaded)

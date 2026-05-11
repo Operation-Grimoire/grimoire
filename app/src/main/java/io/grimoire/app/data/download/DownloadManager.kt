@@ -40,15 +40,17 @@ class DownloadManager @Inject constructor(
         context.startForegroundService(Intent(context, DownloadService::class.java))
     }
 
-    fun enqueue(chapters: List<ChapterEntity>, priority: Boolean = false) {
+    fun enqueue(chapters: List<ChapterEntity>) {
         scope.launch {
-            val queueOrder = if (priority) System.currentTimeMillis() else 0L
-            chapters
-                .filter { it.downloadStatus == ChapterDownloadStatus.NONE.ordinal }
-                .forEach {
-                    chapterDao.setDownloadStatus(it.id, ChapterDownloadStatus.QUEUED.ordinal)
-                    if (priority) chapterDao.setChapterQueueOrder(it.id, queueOrder)
+            val ids = chapters
+                .filter {
+                    it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
+                        it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal
                 }
+                .map { it.id }
+            ids.chunked(999).forEach { chunk ->
+                chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.QUEUED.ordinal)
+            }
         }
         _isPaused.value = false
         context.startForegroundService(Intent(context, DownloadService::class.java))
@@ -77,7 +79,7 @@ class DownloadManager @Inject constructor(
     }
 
     suspend fun processQueue(onProgress: (chapterName: String, remaining: Int) -> Unit): Int {
-        if (!isProcessing.compareAndSet(false, true)) return 0
+        if (!isProcessing.compareAndSet(false, true)) return -1
         var downloaded = 0
         try {
             chapterDao.resetStuckDownloads()
