@@ -8,6 +8,8 @@ import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.NovelPage
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.preferences.ReaderColorTheme
+import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderPreferences
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager
@@ -26,7 +28,7 @@ class ReaderViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
-    readerPreferences: ReaderPreferences,
+    private val readerPreferences: ReaderPreferences,
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
@@ -59,7 +61,15 @@ class ReaderViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    // Reading behavior
     val markAsReadThreshold: StateFlow<Int> = readerPreferences.markAsReadThreshold.stateIn(viewModelScope)
+
+    // Appearance
+    val fontSize: StateFlow<Int> = readerPreferences.fontSize.stateIn(viewModelScope)
+    val lineHeightTimes10: StateFlow<Int> = readerPreferences.lineHeightTimes10.stateIn(viewModelScope)
+    val paragraphSpacing: StateFlow<Int> = readerPreferences.paragraphSpacing.stateIn(viewModelScope)
+    val readerFont: StateFlow<ReaderFont> = readerPreferences.readerFont.stateIn(viewModelScope)
+    val colorTheme: StateFlow<ReaderColorTheme> = readerPreferences.colorTheme.stateIn(viewModelScope)
 
     init {
         viewModelScope.launch {
@@ -102,6 +112,13 @@ class ReaderViewModel @Inject constructor(
 
     fun navigateNext() {
         if (_currentIndex.value < _chapters.value.size - 1) {
+            val chapter = _chapters.value.getOrNull(_currentIndex.value)
+            if (chapter != null && !chapter.read) {
+                viewModelScope.launch { chapterDao.setRead(chapter.id, true) }
+                _chapters.update { list ->
+                    list.map { if (it.id == chapter.id) it.copy(read = true, readProgress = 1f) else it }
+                }
+            }
             _currentIndex.value++
             loadPages()
         }
@@ -135,6 +152,26 @@ class ReaderViewModel @Inject constructor(
                 list.map { if (it.id == chapter.id) it.copy(read = next) else it }
             }
         }
+    }
+
+    fun setFontSize(sp: Int) = viewModelScope.launch {
+        readerPreferences.fontSize.set(sp.coerceIn(12, 32))
+    }
+
+    fun setLineHeight(times10: Int) = viewModelScope.launch {
+        readerPreferences.lineHeightTimes10.set(times10.coerceIn(10, 30))
+    }
+
+    fun setParagraphSpacing(dp: Int) = viewModelScope.launch {
+        readerPreferences.paragraphSpacing.set(dp.coerceIn(0, 32))
+    }
+
+    fun setReaderFont(font: ReaderFont) = viewModelScope.launch {
+        readerPreferences.readerFont.set(font)
+    }
+
+    fun setColorTheme(theme: ReaderColorTheme) = viewModelScope.launch {
+        readerPreferences.colorTheme.set(theme)
     }
 }
 
