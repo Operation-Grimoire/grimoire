@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. v1.0.0). Leave blank to publish as latest-dev.'
-        required: false
+        description: 'Release tag (e.g. v1.0.0). Must be vX.Y.Z.'
+        required: true
 
 concurrency:
   group: release
@@ -25,18 +25,37 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine release tag
+      - name: Resolve release tag
         id: tag
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
-            echo "name=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          elif [ -n "${{ github.event.inputs.tag }}" ]; then
-            echo "name=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            NAME="${{ github.ref_name }}"
           else
-            echo "name=latest-dev" >> "$GITHUB_OUTPUT"
-            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            NAME="${{ github.event.inputs.tag }}"
+          fi
+          if ! echo "$NAME" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Tag '$NAME' is not vX.Y.Z" >&2
+            exit 1
+          fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Create git tag if missing
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TAG: ${{ steps.tag.outputs.name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists locally."
+          elif git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists on origin; fetching."
+            git fetch origin "refs/tags/$TAG:refs/tags/$TAG"
+          else
+            echo "Creating and pushing tag $TAG at ${{ github.sha }}."
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "Release $TAG" "${{ github.sha }}"
+            git push origin "refs/tags/$TAG"
           fi
 
       - uses: actions/setup-java@v4
@@ -78,7 +97,7 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.name }}
           name: Grimoire ${{ steps.tag.outputs.name }}
-          prerelease: ${{ steps.tag.outputs.prerelease }}
+          prerelease: false
           body: |
             Auto-generated release from commit ${{ github.sha }}.
           files: app/build/outputs/apk/release/grimoire.apk
