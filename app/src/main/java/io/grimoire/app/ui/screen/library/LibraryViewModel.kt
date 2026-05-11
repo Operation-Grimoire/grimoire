@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.data.local.dao.CategoryDao
+import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.CategoryEntity
+import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
@@ -13,6 +15,7 @@ import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,6 +24,7 @@ import javax.inject.Inject
 class LibraryViewModel @Inject constructor(
     private val novelDao: NovelDao,
     private val categoryDao: CategoryDao,
+    private val chapterDao: ChapterDao,
     private val extensionManager: ExtensionManager,
     private val libraryPreferences: LibraryPreferences,
 ) : ViewModel() {
@@ -30,6 +34,10 @@ class LibraryViewModel @Inject constructor(
 
     val novels: StateFlow<List<NovelEntity>> = novelDao.getFavorites()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val chapterStats: StateFlow<Map<Long, NovelChapterStats>> = chapterDao.getStatsForAll()
+        .map { list -> list.associateBy { it.novelId } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     val displayMode: StateFlow<LibraryDisplayMode> = libraryPreferences.displayMode.stateIn(viewModelScope)
     val gridColumns: StateFlow<Int> = libraryPreferences.gridColumns.stateIn(viewModelScope)

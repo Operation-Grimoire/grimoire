@@ -27,4 +27,5 @@ data class ChapterEntity(
     val readProgress: Float = 0f,
     val downloadStatus: Int = 0,
     val downloadedContent: String? = null,
+    val queueOrder: Long = 0L,
 )

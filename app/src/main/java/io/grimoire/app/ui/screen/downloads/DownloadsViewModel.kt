@@ -61,6 +61,9 @@ class DownloadsViewModel @Inject constructor(
         if (downloadManager.isPaused.value) downloadManager.resume() else downloadManager.pause()
     }
 
+    fun cancelAll(novelId: Long) = downloadManager.cancelAll(novelId)
+    fun moveToTopOfQueue(novelId: Long) = downloadManager.moveToTopOfQueue(novelId)
+    fun deleteAllDownloads(novelId: Long) = downloadManager.deleteAllDownloads(novelId)
     fun cancel(chapter: ChapterEntity) = downloadManager.cancel(chapter)
     fun deleteDownload(chapter: ChapterEntity) = downloadManager.deleteDownload(chapter)
 }

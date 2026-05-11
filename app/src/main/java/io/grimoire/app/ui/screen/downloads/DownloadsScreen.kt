@@ -1,5 +1,7 @@
 package io.grimoire.app.ui.screen.downloads
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,8 +24,11 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -106,6 +111,9 @@ fun DownloadsScreen(
                                 else
                                     collapsedNovels + novelId
                             },
+                            onMoveToTop = { viewModel.moveToTopOfQueue(novelId) },
+                            onCancelAll = { viewModel.cancelAll(novelId) },
+                            onDeleteAll = { viewModel.deleteAllDownloads(novelId) },
                         )
                     }
 
@@ -128,11 +136,15 @@ fun DownloadsScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun NovelDownloadHeader(
     novelDownloads: NovelDownloads,
     collapsed: Boolean,
     onToggleCollapse: () -> Unit,
+    onMoveToTop: () -> Unit,
+    onCancelAll: () -> Unit,
+    onDeleteAll: () -> Unit,
 ) {
     val downloaded = novelDownloads.chapters.count { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
     val queued = novelDownloads.chapters.count { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }
@@ -146,42 +158,70 @@ private fun NovelDownloadHeader(
         if (error > 0) add("$error failed")
     }.joinToString(" • ")
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        AsyncImage(
-            model = novelDownloads.novel.thumbnailUrl,
-            contentDescription = null,
+    var showMenu by remember { mutableStateOf(false) }
+
+    Box {
+        Row(
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(6.dp)),
-            contentScale = ContentScale.Crop,
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = onToggleCollapse,
+                    onLongClick = { showMenu = true },
+                )
+                .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = novelDownloads.novel.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            AsyncImage(
+                model = novelDownloads.novel.thumbnailUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(6.dp)),
+                contentScale = ContentScale.Crop,
             )
-            Text(
-                text = stats,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        IconButton(onClick = onToggleCollapse) {
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = novelDownloads.novel.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = stats,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Icon(
                 if (collapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
-                contentDescription = if (collapsed) "Expand" else "Collapse",
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+            if (queued > 0) {
+                DropdownMenuItem(
+                    text = { Text("Move to top of queue") },
+                    onClick = { onMoveToTop(); showMenu = false },
+                    leadingIcon = { Icon(Icons.Default.KeyboardDoubleArrowUp, contentDescription = null) },
+                )
+                DropdownMenuItem(
+                    text = { Text("Cancel all queued") },
+                    onClick = { onCancelAll(); showMenu = false },
+                    leadingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                )
+            }
+            if (downloaded > 0) {
+                DropdownMenuItem(
+                    text = { Text("Delete all downloaded") },
+                    onClick = { onDeleteAll(); showMenu = false },
+                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                )
+            }
         }
     }
 }

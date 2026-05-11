@@ -422,9 +422,32 @@ fun NovelDetailScreen(
                                                 onClick = { viewModel.downloadUnread(); bulkMenuExpanded = false },
                                                 leadingIcon = { Icon(Icons.Default.Download, null) },
                                             )
+                                            if (chapters.any { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }) {
+                                                DropdownMenuItem(
+                                                    text = { Text("Cancel all downloads") },
+                                                    onClick = { viewModel.cancelAllDownloads(); bulkMenuExpanded = false },
+                                                    leadingIcon = { Icon(Icons.Default.Close, null) },
+                                                )
+                                            }
                                         }
                                     }
                                 }
+                            }
+                            if (!isLoadingChapters && chaptersError == null && chapters.isNotEmpty()) {
+                                val readCount = chapters.count { it.read }
+                                val downloadedCount = chapters.count {
+                                    it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
+                                }
+                                val parts = buildList {
+                                    add("$readCount/${chapters.size} read")
+                                    if (downloadedCount > 0) add("$downloadedCount downloaded")
+                                }
+                                Text(
+                                    text = parts.joinToString(" · "),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 16.dp, bottom = 6.dp),
+                                )
                             }
                             AnimatedVisibility(visible = searchActive) {
                                 OutlinedTextField(

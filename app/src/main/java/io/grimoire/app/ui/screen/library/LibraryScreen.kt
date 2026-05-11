@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.library
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -63,8 +64,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.graphics.Color
 import coil.compose.AsyncImage
 import io.grimoire.app.data.local.entity.CategoryEntity
+import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import kotlinx.coroutines.launch
@@ -78,6 +81,7 @@ fun LibraryScreen(
 ) {
     val categories by viewModel.categories.collectAsState()
     val novels by viewModel.novels.collectAsState()
+    val chapterStats by viewModel.chapterStats.collectAsState()
     val displayMode by viewModel.displayMode.collectAsState()
     val gridColumns by viewModel.gridColumns.collectAsState()
     val showAllTab by viewModel.showAllTab.collectAsState()
@@ -172,6 +176,7 @@ fun LibraryScreen(
                         items(displayedNovels, key = { it.id }) { novel ->
                             NovelCard(
                                 novel = novel,
+                                stats = chapterStats[novel.id],
                                 categories = categories,
                                 defaultCategory = defaultCategory,
                                 onClick = { onNovelClickWrapped(novel) },
@@ -185,6 +190,7 @@ fun LibraryScreen(
                         items(displayedNovels, key = { it.id }) { novel ->
                             NovelRow(
                                 novel = novel,
+                                stats = chapterStats[novel.id],
                                 categories = categories,
                                 defaultCategory = defaultCategory,
                                 onClick = { onNovelClickWrapped(novel) },
@@ -217,6 +223,7 @@ fun LibraryScreen(
 @Composable
 private fun NovelCard(
     novel: NovelEntity,
+    stats: NovelChapterStats?,
     categories: List<CategoryEntity>,
     defaultCategory: CategoryEntity?,
     onClick: () -> Unit,
@@ -231,15 +238,29 @@ private fun NovelCard(
         Column(
             Modifier.combinedClickable(onClick = onClick, onLongClick = { showMenu = true })
         ) {
-            AsyncImage(
-                model = novel.thumbnailUrl,
-                contentDescription = novel.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(2f / 3f)
-                    .clip(RoundedCornerShape(8.dp)),
-            )
+            Box {
+                AsyncImage(
+                    model = novel.thumbnailUrl,
+                    contentDescription = novel.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(2f / 3f)
+                        .clip(RoundedCornerShape(8.dp)),
+                )
+                if (stats != null && stats.total > 0) {
+                    Text(
+                        text = "${stats.readCount}/${stats.total}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(4.dp)
+                            .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                    )
+                }
+            }
             Text(
                 novel.title,
                 style = MaterialTheme.typography.bodySmall,
@@ -279,6 +300,7 @@ private fun NovelCard(
 @Composable
 private fun NovelRow(
     novel: NovelEntity,
+    stats: NovelChapterStats?,
     categories: List<CategoryEntity>,
     defaultCategory: CategoryEntity?,
     onClick: () -> Unit,
@@ -292,7 +314,15 @@ private fun NovelRow(
     Box(modifier) {
         ListItem(
             headlineContent = { Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-            supportingContent = if (!novel.author.isNullOrBlank()) {
+            supportingContent = if (stats != null && stats.total > 0) {
+                {
+                    val parts = buildList {
+                        add("${stats.readCount}/${stats.total} read")
+                        if (stats.downloadedCount > 0) add("${stats.downloadedCount} downloaded")
+                    }
+                    Text(parts.joinToString(" · "), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            } else if (!novel.author.isNullOrBlank()) {
                 { Text(novel.author!!, maxLines = 1) }
             } else null,
             leadingContent = {

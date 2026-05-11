@@ -194,6 +194,8 @@ class NovelDetailViewModel @Inject constructor(
                     ch.toEntity(cachedNovelId).copy(
                         read = prev?.read ?: false,
                         readProgress = prev?.readProgress ?: 0f,
+                        downloadStatus = prev?.downloadStatus ?: 0,
+                        downloadedContent = prev?.downloadedContent,
                     )
                 })
             }
@@ -253,6 +255,7 @@ class NovelDetailViewModel @Inject constructor(
     fun downloadAll() = downloadManager.enqueue(chapters.value)
     fun downloadUnread() = downloadManager.enqueue(chapters.value.filter { !it.read })
     fun cancelDownload(chapter: ChapterEntity) = downloadManager.cancel(chapter)
+    fun cancelAllDownloads() { if (cachedNovelId > 0L) downloadManager.cancelAll(cachedNovelId) }
     fun deleteDownload(chapter: ChapterEntity) = downloadManager.deleteDownload(chapter)
 
     fun setSort(sort: ChapterSort) {

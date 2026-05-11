@@ -46,6 +46,7 @@ class DownloadManager @Inject constructor(
                 .filter { it.downloadStatus == ChapterDownloadStatus.NONE.ordinal }
                 .forEach { chapterDao.setDownloadStatus(it.id, ChapterDownloadStatus.QUEUED.ordinal) }
         }
+        _isPaused.value = false
         context.startForegroundService(Intent(context, DownloadService::class.java))
     }
 
@@ -53,6 +54,18 @@ class DownloadManager @Inject constructor(
         if (chapter.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal) {
             scope.launch { chapterDao.setDownloadStatus(chapter.id, ChapterDownloadStatus.NONE.ordinal) }
         }
+    }
+
+    fun cancelAll(novelId: Long) {
+        scope.launch { chapterDao.cancelAllQueued(novelId) }
+    }
+
+    fun moveToTopOfQueue(novelId: Long) {
+        scope.launch { chapterDao.setQueueOrder(novelId, System.currentTimeMillis()) }
+    }
+
+    fun deleteAllDownloads(novelId: Long) {
+        scope.launch { chapterDao.deleteAllDownloads(novelId) }
     }
 
     fun deleteDownload(chapter: ChapterEntity) {

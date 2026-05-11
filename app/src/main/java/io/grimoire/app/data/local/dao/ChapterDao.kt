@@ -6,6 +6,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.local.entity.NovelChapterStats
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -61,8 +62,11 @@ interface ChapterDao {
     @Query("UPDATE chapters SET downloadStatus = 0, downloadedContent = NULL WHERE id = :id")
     suspend fun deleteDownload(id: Long)
 
-    @Query("SELECT * FROM chapters WHERE downloadStatus = 1 ORDER BY id ASC LIMIT 1")
+    @Query("SELECT * FROM chapters WHERE downloadStatus = 1 ORDER BY queueOrder DESC, id ASC LIMIT 1")
     suspend fun getNextQueued(): ChapterEntity?
+
+    @Query("UPDATE chapters SET queueOrder = :order WHERE novelId = :novelId AND downloadStatus = 1")
+    suspend fun setQueueOrder(novelId: Long, order: Long)
 
     @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus = 1")
     suspend fun getQueuedCount(): Int
@@ -70,6 +74,22 @@ interface ChapterDao {
     @Query("UPDATE chapters SET downloadStatus = 1 WHERE downloadStatus = 2")
     suspend fun resetStuckDownloads()
 
+    @Query("UPDATE chapters SET downloadStatus = 0 WHERE novelId = :novelId AND downloadStatus = 1")
+    suspend fun cancelAllQueued(novelId: Long)
+
+    @Query("UPDATE chapters SET downloadStatus = 0, downloadedContent = NULL WHERE novelId = :novelId AND downloadStatus = 3")
+    suspend fun deleteAllDownloads(novelId: Long)
+
     @Query("SELECT * FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
     fun getAllDownloads(): Flow<List<ChapterEntity>>
+
+    @Query("""
+        SELECT novelId,
+               COUNT(*) AS total,
+               SUM(read) AS readCount,
+               SUM(CASE WHEN downloadStatus = 3 THEN 1 ELSE 0 END) AS downloadedCount
+        FROM chapters
+        GROUP BY novelId
+    """)
+    fun getStatsForAll(): Flow<List<NovelChapterStats>>
 }
