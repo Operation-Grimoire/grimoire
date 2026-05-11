@@ -11,6 +11,7 @@ import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
+import io.grimoire.app.data.preferences.LibrarySort
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.flow.SharingStarted
@@ -42,6 +43,10 @@ class LibraryViewModel @Inject constructor(
     val displayMode: StateFlow<LibraryDisplayMode> = libraryPreferences.displayMode.stateIn(viewModelScope)
     val gridColumns: StateFlow<Int> = libraryPreferences.gridColumns.stateIn(viewModelScope)
     val showAllTab: StateFlow<Boolean> = libraryPreferences.showAllTab.stateIn(viewModelScope)
+    val sortOrder: StateFlow<LibrarySort> = libraryPreferences.sortOrder.stateIn(viewModelScope)
+    val filterStatus: StateFlow<Int> = libraryPreferences.filterStatus.stateIn(viewModelScope)
+    val filterUnreadOnly: StateFlow<Boolean> = libraryPreferences.filterUnreadOnly.stateIn(viewModelScope)
+    val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
 
     fun pkgForNovel(novel: NovelEntity): String =
         extensionManager.extensions.value
@@ -75,5 +80,21 @@ class LibraryViewModel @Inject constructor(
 
     fun setGridColumns(count: Int) = viewModelScope.launch {
         libraryPreferences.gridColumns.set(count.coerceIn(2, 5))
+    }
+
+    fun setSortOrder(sort: LibrarySort) = viewModelScope.launch {
+        libraryPreferences.sortOrder.set(sort)
+    }
+
+    fun setFilterStatus(status: Int) = viewModelScope.launch {
+        libraryPreferences.filterStatus.set(status)
+    }
+
+    fun setFilterUnreadOnly(value: Boolean) = viewModelScope.launch {
+        libraryPreferences.filterUnreadOnly.set(value)
+    }
+
+    fun setFilterDownloadedOnly(value: Boolean) = viewModelScope.launch {
+        libraryPreferences.filterDownloadedOnly.set(value)
     }
 }

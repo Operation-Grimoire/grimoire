@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -25,12 +27,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,7 +49,9 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -60,17 +68,37 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.ui.graphics.Color
 import coil.compose.AsyncImage
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryDisplayMode
+import io.grimoire.app.data.preferences.LibrarySort
 import kotlinx.coroutines.launch
+
+private val STATUS_OPTIONS = listOf(
+    -1 to "All",
+    1 to "Ongoing",
+    2 to "Completed",
+    3 to "Hiatus",
+    4 to "Cancelled",
+    0 to "Unknown",
+)
+
+private val SORT_OPTIONS = listOf(
+    LibrarySort.LAST_READ_DESC to "Last read",
+    LibrarySort.TITLE_ASC to "Title A → Z",
+    LibrarySort.TITLE_DESC to "Title Z → A",
+    LibrarySort.LAST_UPDATED_DESC to "Last updated (newest)",
+    LibrarySort.LAST_UPDATED_ASC to "Last updated (oldest)",
+    LibrarySort.UNREAD_DESC to "Unread chapters",
+    LibrarySort.TOTAL_DESC to "Total chapters",
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,11 +113,20 @@ fun LibraryScreen(
     val displayMode by viewModel.displayMode.collectAsState()
     val gridColumns by viewModel.gridColumns.collectAsState()
     val showAllTab by viewModel.showAllTab.collectAsState()
+    val sortOrder by viewModel.sortOrder.collectAsState()
+    val filterStatus by viewModel.filterStatus.collectAsState()
+    val filterUnreadOnly by viewModel.filterUnreadOnly.collectAsState()
+    val filterDownloadedOnly by viewModel.filterDownloadedOnly.collectAsState()
+
     var selectedTab by remember { mutableIntStateOf(0) }
     var showManage by remember { mutableStateOf(false) }
+    var showFilterSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState()
+    val filterSheetState = rememberModalBottomSheetState()
+
+    val isFilterActive = filterStatus != -1 || filterUnreadOnly || filterDownloadedOnly
 
     val tabs = buildList {
         if (showAllTab) add("All")
@@ -102,15 +139,45 @@ fun LibraryScreen(
 
     val defaultCategory = categories.firstOrNull { it.isDefault }
 
-    val displayedNovels = remember(novels, selectedTab, categories, showAllTab) {
+    val displayedNovels = remember(
+        novels, selectedTab, categories, showAllTab,
+        sortOrder, filterStatus, filterUnreadOnly, filterDownloadedOnly, chapterStats,
+    ) {
         val allTabOffset = if (showAllTab) 1 else 0
-        if (showAllTab && selectedTab == 0) novels
-        else {
-            val catIndex = selectedTab - allTabOffset
-            val cat = categories.getOrNull(catIndex) ?: return@remember novels
-            if (cat.isDefault) novels.filter { it.categoryId == null }
-            else novels.filter { it.categoryId == cat.id }
+        val tabFiltered = when {
+            showAllTab && selectedTab == 0 -> novels
+            else -> {
+                val catIndex = selectedTab - allTabOffset
+                val cat = categories.getOrNull(catIndex)
+                when {
+                    cat == null -> novels
+                    cat.isDefault -> novels.filter { it.categoryId == null }
+                    else -> novels.filter { it.categoryId == cat.id }
+                }
+            }
         }
+        val comparator: Comparator<NovelEntity> = when (sortOrder) {
+            LibrarySort.TITLE_ASC -> Comparator { a: NovelEntity, b: NovelEntity ->
+                String.CASE_INSENSITIVE_ORDER.compare(a.title, b.title)
+            }
+            LibrarySort.TITLE_DESC -> Comparator { a: NovelEntity, b: NovelEntity ->
+                String.CASE_INSENSITIVE_ORDER.compare(b.title, a.title)
+            }
+            LibrarySort.LAST_UPDATED_DESC -> compareByDescending<NovelEntity> { it.lastUpdated }
+            LibrarySort.LAST_UPDATED_ASC -> compareBy<NovelEntity> { it.lastUpdated }
+            LibrarySort.UNREAD_DESC -> compareByDescending<NovelEntity> {
+                chapterStats[it.id]?.let { s -> s.total - s.readCount } ?: 0
+            }
+            LibrarySort.TOTAL_DESC -> compareByDescending<NovelEntity> { chapterStats[it.id]?.total ?: 0 }
+            LibrarySort.LAST_READ_DESC -> compareByDescending<NovelEntity> { it.lastReadAt }
+        }
+        tabFiltered
+            .filter { novel ->
+                (filterStatus == -1 || novel.status == filterStatus) &&
+                (!filterUnreadOnly || (chapterStats[novel.id]?.let { it.total - it.readCount > 0 } == true)) &&
+                (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0)
+            }
+            .sortedWith(comparator)
     }
 
     Scaffold(
@@ -130,6 +197,11 @@ fun LibraryScreen(
                             if (displayMode == LibraryDisplayMode.GRID) Icons.Default.ViewList else Icons.Default.GridView,
                             contentDescription = "Toggle display mode",
                         )
+                    }
+                    IconButton(onClick = { showFilterSheet = true }) {
+                        BadgedBox(badge = { if (isFilterActive) Badge() }) {
+                            Icon(Icons.Default.FilterList, contentDescription = "Filter & sort")
+                        }
                     }
                     IconButton(onClick = { showManage = true }) {
                         Icon(Icons.Default.Edit, contentDescription = "Manage categories")
@@ -204,6 +276,24 @@ fun LibraryScreen(
         }
     }
 
+    if (showFilterSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showFilterSheet = false },
+            sheetState = filterSheetState,
+        ) {
+            FilterSortContent(
+                sortOrder = sortOrder,
+                filterStatus = filterStatus,
+                filterUnreadOnly = filterUnreadOnly,
+                filterDownloadedOnly = filterDownloadedOnly,
+                onSortChange = viewModel::setSortOrder,
+                onFilterStatusChange = viewModel::setFilterStatus,
+                onUnreadOnlyChange = viewModel::setFilterUnreadOnly,
+                onDownloadedOnlyChange = viewModel::setFilterDownloadedOnly,
+            )
+        }
+    }
+
     if (showManage) {
         ModalBottomSheet(
             onDismissRequest = { showManage = false },
@@ -214,6 +304,102 @@ fun LibraryScreen(
                 onAdd = viewModel::addCategory,
                 onRename = { cat, name -> viewModel.renameCategory(cat, name) },
                 onDelete = viewModel::deleteCategory,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilterSortContent(
+    sortOrder: LibrarySort,
+    filterStatus: Int,
+    filterUnreadOnly: Boolean,
+    filterDownloadedOnly: Boolean,
+    onSortChange: (LibrarySort) -> Unit,
+    onFilterStatusChange: (Int) -> Unit,
+    onUnreadOnlyChange: (Boolean) -> Unit,
+    onDownloadedOnlyChange: (Boolean) -> Unit,
+) {
+    var tab by remember { mutableIntStateOf(0) }
+    Column {
+        TabRow(selectedTabIndex = tab) {
+            Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Filter") })
+            Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Sort") })
+        }
+        when (tab) {
+            0 -> FilterTab(filterStatus, filterUnreadOnly, filterDownloadedOnly, onFilterStatusChange, onUnreadOnlyChange, onDownloadedOnlyChange)
+            1 -> SortTab(sortOrder, onSortChange)
+        }
+        Spacer(Modifier.height(32.dp))
+    }
+}
+
+@Composable
+private fun FilterTab(
+    filterStatus: Int,
+    filterUnreadOnly: Boolean,
+    filterDownloadedOnly: Boolean,
+    onFilterStatusChange: (Int) -> Unit,
+    onUnreadOnlyChange: (Boolean) -> Unit,
+    onDownloadedOnlyChange: (Boolean) -> Unit,
+) {
+    Column {
+        Text(
+            "Status",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+        )
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(STATUS_OPTIONS) { (ordinal, label) ->
+                FilterChip(
+                    selected = filterStatus == ordinal,
+                    onClick = {
+                        onFilterStatusChange(if (filterStatus == ordinal && ordinal != -1) -1 else ordinal)
+                    },
+                    label = { Text(label) },
+                )
+            }
+        }
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+        ListItem(
+            headlineContent = { Text("Unread only") },
+            supportingContent = { Text("Hide fully read novels") },
+            trailingContent = {
+                Switch(checked = filterUnreadOnly, onCheckedChange = onUnreadOnlyChange)
+            },
+            modifier = Modifier.clickable { onUnreadOnlyChange(!filterUnreadOnly) },
+        )
+        ListItem(
+            headlineContent = { Text("Has downloads") },
+            supportingContent = { Text("Show only novels with downloaded chapters") },
+            trailingContent = {
+                Switch(checked = filterDownloadedOnly, onCheckedChange = onDownloadedOnlyChange)
+            },
+            modifier = Modifier.clickable { onDownloadedOnlyChange(!filterDownloadedOnly) },
+        )
+    }
+}
+
+@Composable
+private fun SortTab(
+    sortOrder: LibrarySort,
+    onSortChange: (LibrarySort) -> Unit,
+) {
+    Column(Modifier.padding(vertical = 8.dp)) {
+        SORT_OPTIONS.forEach { (sort, label) ->
+            ListItem(
+                headlineContent = { Text(label) },
+                leadingContent = {
+                    RadioButton(
+                        selected = sortOrder == sort,
+                        onClick = { onSortChange(sort) },
+                    )
+                },
+                modifier = Modifier.clickable { onSortChange(sort) },
             )
         }
     }

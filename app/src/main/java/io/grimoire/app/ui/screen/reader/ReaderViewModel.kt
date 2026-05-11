@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.NovelPage
 import io.grimoire.app.data.local.dao.ChapterDao
+import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
@@ -30,6 +31,7 @@ class ReaderViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
+    private val novelDao: NovelDao,
     private val readerPreferences: ReaderPreferences,
 ) : ViewModel() {
 
@@ -77,6 +79,7 @@ class ReaderViewModel @Inject constructor(
                 _isLoading.value = false
                 return@launch
             }
+            novelDao.updateLastReadAt(chapter.novelId, System.currentTimeMillis())
             val allChapters = chapterDao.getChaptersOnce(chapter.novelId)
             _chapters.value = allChapters
             _currentIndex.value = allChapters.indexOfFirst { it.url == initialChapterUrl }.coerceAtLeast(0)

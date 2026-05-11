@@ -30,6 +30,9 @@ interface NovelDao {
     @Query("UPDATE novels SET categoryId = NULL WHERE categoryId = :categoryId")
     suspend fun clearCategory(categoryId: Long)
 
+    @Query("UPDATE novels SET lastReadAt = :timestamp WHERE id = :id")
+    suspend fun updateLastReadAt(id: Long, timestamp: Long)
+
     @Delete
     suspend fun delete(novel: NovelEntity)
 }

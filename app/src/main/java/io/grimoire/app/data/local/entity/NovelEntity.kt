@@ -22,4 +22,5 @@ data class NovelEntity(
     val lastUpdated: Long = 0L,
     val chapterSortOrder: Int = 0,
     val categoryId: Long? = null,
+    val lastReadAt: Long = 0L,
 )
