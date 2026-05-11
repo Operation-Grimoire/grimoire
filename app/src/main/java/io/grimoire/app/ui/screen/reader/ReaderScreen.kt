@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -162,7 +163,8 @@ fun ReaderScreen(
                     Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                     TextButton(onClick = viewModel::loadPages) { Text("Retry") }
                 }
-                else -> LazyColumn(
+                else -> SelectionContainer {
+                LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp),
                     modifier = Modifier.fillMaxSize(),
@@ -206,6 +208,7 @@ fun ReaderScreen(
                             }
                         }
                     }
+                }
                 }
             }
         }
