@@ -1,0 +1,88 @@
+name: Nightly Beta Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+jobs:
+  beta:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute beta version
+        id: ver
+        run: |
+          LATEST=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -n1)
+          LATEST=${LATEST:-v0.0.0}
+          SHORT=$(git rev-parse --short HEAD)
+          RUN=${{ github.run_number }}
+          VERSION_NAME="${LATEST#v}-beta.${RUN}+${SHORT}"
+          echo "base_tag=${LATEST}" >> "$GITHUB_OUTPUT"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "beta_number=${RUN}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHORT}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v3
+
+      - run: chmod +x gradlew
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease --build-cache
+        env:
+          APP_VERSION_TAG: ${{ steps.ver.outputs.base_tag }}
+          APP_VERSION_NAME: ${{ steps.ver.outputs.version_name }}
+          APP_BETA_NUMBER: ${{ steps.ver.outputs.beta_number }}
+          APP_GIT_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sign APK
+        env:
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" | base64 -d > keystore.jks
+          BUILD_TOOLS=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          APKSIGNER="$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner"
+          "$APKSIGNER" sign \
+            --ks keystore.jks \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass pass:"$KEY_STORE_PASSWORD" \
+            --key-pass pass:"$KEY_PASSWORD" \
+            --out app/build/outputs/apk/release/grimoire.apk \
+            app/build/outputs/apk/release/app-release-unsigned.apk
+
+      - name: Publish/refresh beta release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: beta
+          name: Grimoire ${{ steps.ver.outputs.version_name }}
+          prerelease: true
+          make_latest: 'false'
+          target_commitish: ${{ github.sha }}
+          body: |
+            Auto-built from `main` @ ${{ github.sha }}.
+
+            Version: `${{ steps.ver.outputs.version_name }}`
+
+            This is a rolling beta release. Each push to `main` replaces it with a fresh build.
+          files: app/build/outputs/apk/release/grimoire.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
