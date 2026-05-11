@@ -186,7 +186,14 @@ class NovelDetailViewModel @Inject constructor(
             fetchAllChapters(src, novel)
         }.onSuccess { list ->
             if (cachedNovelId > 0L) {
-                chapterDao.replaceChapters(cachedNovelId, list.map { it.toEntity(cachedNovelId) })
+                val existing = chapterDao.getChaptersOnce(cachedNovelId).associateBy { it.url }
+                chapterDao.replaceChapters(cachedNovelId, list.map { ch ->
+                    val prev = existing[ch.url]
+                    ch.toEntity(cachedNovelId).copy(
+                        read = prev?.read ?: false,
+                        readProgress = prev?.readProgress ?: 0f,
+                    )
+                })
             }
         }.onFailure { e ->
             _chaptersError.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
