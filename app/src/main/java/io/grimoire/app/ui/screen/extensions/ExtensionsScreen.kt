@@ -61,7 +61,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.component.ExtensionIcon
-import io.grimoire.app.ui.component.LangBadge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -168,7 +167,9 @@ fun ExtensionsScreen(
                                     }
                                 }
                             },
-                            leadingContent = { ExtensionIcon(item.packageName, item.lang) },
+                            leadingContent = {
+                                ExtensionIcon(item.packageName, item.lang, item.iconUrl)
+                            },
                             trailingContent = {
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     if (item is ExtensionItem.Installed && item.hasUpdate) {
@@ -203,7 +204,9 @@ fun ExtensionsScreen(
                         ListItem(
                             headlineContent = { Text(item.name) },
                             supportingContent = { Text("${item.lang.uppercase()} · v${item.versionName}") },
-                            leadingContent = { LangBadge(item.lang) },
+                            leadingContent = {
+                                ExtensionIcon(item.packageName, item.lang, item.iconUrl)
+                            },
                             trailingContent = {
                                 if (state == InstallState.DOWNLOADING) {
                                     CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
