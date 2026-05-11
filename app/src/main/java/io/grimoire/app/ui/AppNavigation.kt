@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -35,6 +36,8 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.grimoire.app.ui.screen.browse.BrowseScreen
+import io.grimoire.app.ui.screen.browse.BrowseViewModel
+import io.grimoire.app.ui.screen.browse.GlobalSearchScreen
 import io.grimoire.app.ui.screen.browse.NovelDetailScreen
 import io.grimoire.app.ui.screen.browse.SourceBrowseScreen
 import io.grimoire.app.ui.screen.downloads.DownloadsScreen
@@ -44,6 +47,7 @@ import io.grimoire.app.ui.screen.more.MoreScreen
 import io.grimoire.app.ui.screen.more.MoreViewModel
 import io.grimoire.app.ui.screen.reader.ReaderScreen
 import io.grimoire.app.ui.screen.settings.SettingsScreen
+import io.grimoire.app.ui.screen.webview.WebViewScreen
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.about.AboutSettingsScreen
 import io.grimoire.app.ui.screen.settings.appearance.AppearanceSettingsScreen
@@ -63,6 +67,8 @@ private enum class TopLevelDestination(
 
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
 
+private const val ROUTE_BROWSE_HOME = "browse_home"
+private const val ROUTE_GLOBAL_SEARCH = "global_search"
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
 private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}?q={q}"
 private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}"
@@ -74,6 +80,7 @@ private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
 private const val ROUTE_SETTINGS_READER = "settings/reader"
 private const val ROUTE_SETTINGS_ABOUT = "settings/about"
 private const val ROUTE_READER = "reader?pkg={pkg}&novelUrl={novelUrl}&chapterUrl={chapterUrl}"
+private const val ROUTE_WEBVIEW = "webview?url={url}"
 
 private const val POP_MS = 120
 
@@ -83,7 +90,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
 
-    val isTopLevel = currentRoute in topLevelRoutes
+    val isTopLevel = TopLevelDestination.entries.any { dest ->
+        backStack?.destination?.hierarchy?.any { it.route == dest.route } == true
+    }
 
     val moreVm: MoreViewModel = hiltViewModel()
     val activeDownloadCount by moreVm.activeDownloadCount.collectAsState()
@@ -96,14 +105,22 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 NavigationBar {
                     TopLevelDestination.entries.forEach { dest ->
                         NavigationBarItem(
-                            selected = currentRoute == dest.route,
+                            selected = backStack?.destination?.hierarchy?.any { it.route == dest.route } == true,
                             onClick = {
-                                navController.navigate(dest.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                                val alreadyOnTab = backStack?.destination?.hierarchy
+                                    ?.any { it.route == dest.route } == true
+                                if (alreadyOnTab && dest == TopLevelDestination.Browse) {
+                                    navController.navigate(ROUTE_GLOBAL_SEARCH) {
+                                        launchSingleTop = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                } else {
+                                    navController.navigate(dest.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
                             },
                             icon = {
@@ -142,19 +159,36 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 )
             }
 
-            composable(route = TopLevelDestination.Browse.route) {
-                BrowseScreen(
-                    onNavigateToManage = { navController.navigate(ROUTE_EXTENSION_MANAGE) },
-                    onNavigateToSource = { pkg -> navController.navigate("browse/$pkg") },
-                    onNavigateToSourceSearch = { pkg, query ->
-                        navController.navigate("browse/$pkg?q=${Uri.encode(query)}")
-                    },
-                    onNovelClick = { novel, pkg ->
-                        navController.navigate(
-                            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novel.url)}"
-                        )
-                    },
-                )
+            navigation(
+                startDestination = ROUTE_BROWSE_HOME,
+                route = TopLevelDestination.Browse.route,
+            ) {
+                composable(route = ROUTE_BROWSE_HOME) { entry ->
+                    val graphEntry = remember(entry) { navController.getBackStackEntry(TopLevelDestination.Browse.route) }
+                    val vm: BrowseViewModel = hiltViewModel(graphEntry)
+                    BrowseScreen(
+                        onNavigateToManage = { navController.navigate(ROUTE_EXTENSION_MANAGE) },
+                        onNavigateToSource = { pkg -> navController.navigate("browse/$pkg") },
+                        onNavigateToGlobalSearch = { navController.navigate(ROUTE_GLOBAL_SEARCH) },
+                        viewModel = vm,
+                    )
+                }
+                composable(route = ROUTE_GLOBAL_SEARCH) { entry ->
+                    val graphEntry = remember(entry) { navController.getBackStackEntry(TopLevelDestination.Browse.route) }
+                    val vm: BrowseViewModel = hiltViewModel(graphEntry)
+                    GlobalSearchScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onNovelClick = { novel, pkg ->
+                            navController.navigate(
+                                "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novel.url)}"
+                            )
+                        },
+                        onNavigateToSourceSearch = { pkg, query ->
+                            navController.navigate("browse/$pkg?q=${Uri.encode(query)}")
+                        },
+                        viewModel = vm,
+                    )
+                }
             }
 
             composable(route = TopLevelDestination.More.route) {
@@ -233,6 +267,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                             "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novel.url)}"
                         )
                     },
+                    onOpenWebView = { url ->
+                        navController.navigate("webview?url=${Uri.encode(url)}")
+                    },
                 )
             }
 
@@ -250,6 +287,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                             "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}"
                         )
                     },
+                    onOpenWebView = { url ->
+                        navController.navigate("webview?url=${Uri.encode(url)}")
+                    },
                 )
             }
 
@@ -261,7 +301,20 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     navArgument("chapterUrl") { type = NavType.StringType },
                 ),
             ) {
-                ReaderScreen(onNavigateBack = { navController.popBackStack() })
+                ReaderScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenWebView = { url ->
+                        navController.navigate("webview?url=${Uri.encode(url)}")
+                    },
+                )
+            }
+
+            composable(
+                route = ROUTE_WEBVIEW,
+                arguments = listOf(navArgument("url") { type = NavType.StringType }),
+            ) { entry ->
+                val url = entry.arguments?.getString("url") ?: ""
+                WebViewScreen(url = url, onNavigateBack = { navController.popBackStack() })
             }
         }
     }

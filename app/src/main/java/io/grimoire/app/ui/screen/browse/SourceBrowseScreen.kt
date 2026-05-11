@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
@@ -79,6 +80,7 @@ import io.grimoire.app.data.preferences.BrowseDisplayMode
 fun SourceBrowseScreen(
     onNavigateBack: () -> Unit,
     onNovelClick: (Novel) -> Unit = {},
+    onOpenWebView: (url: String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SourceBrowseViewModel = hiltViewModel(),
 ) {
@@ -160,6 +162,9 @@ fun SourceBrowseScreen(
                 },
                 actions = {
                     if (!searchActive) {
+                        IconButton(onClick = { onOpenWebView(viewModel.sourceBaseUrl) }) {
+                            Icon(Icons.Default.Language, contentDescription = "Open in WebView")
+                        }
                         IconButton(onClick = { searchActive = true }) {
                             Icon(Icons.Default.Search, contentDescription = "Search")
                         }

@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.model.Filter
 import io.grimoire.api.model.Novel
 import io.grimoire.api.source.CatalogueSource
+import io.grimoire.api.source.SourceInfo
 import io.grimoire.app.data.preferences.BrowseDisplayMode
 import io.grimoire.app.data.preferences.BrowsePreferences
 import io.grimoire.app.data.preferences.stateIn
@@ -43,6 +44,9 @@ class SourceBrowseViewModel @Inject constructor(
 
     val sourceName: String get() = loaded?.info?.label?.substringAfter(": ", loaded?.info?.label.orEmpty()).orEmpty()
         .ifEmpty { packageName }
+
+    val sourceBaseUrl: String get() = loaded?.source?.javaClass
+        ?.getAnnotation(SourceInfo::class.java)?.baseUrl ?: ""
 
     val filters: List<Filter<*>> get() = source?.getFilterList() ?: emptyList()
 

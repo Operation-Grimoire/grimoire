@@ -9,6 +9,7 @@ import io.grimoire.api.model.NovelPage
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.api.source.SourceInfo
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderPreferences
@@ -40,6 +41,15 @@ class ReaderViewModel @Inject constructor(
 
     private val source get() = extensionManager.extensions.value
         .firstOrNull { it.info.packageName == pkg }?.source
+
+    val chapterWebUrl: String get() {
+        val url = _chapters.value.getOrNull(_currentIndex.value)?.url ?: return ""
+        if (url.startsWith("http")) return url
+        val baseUrl = extensionManager.extensions.value
+            .firstOrNull { it.info.packageName == pkg }
+            ?.source?.javaClass?.getAnnotation(SourceInfo::class.java)?.baseUrl ?: return url
+        return "$baseUrl$url"
+    }
 
     private val _chapters = MutableStateFlow<List<ChapterEntity>>(emptyList())
     private val _currentIndex = MutableStateFlow(-1)

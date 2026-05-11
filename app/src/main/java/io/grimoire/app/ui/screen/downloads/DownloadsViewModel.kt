@@ -56,11 +56,15 @@ class DownloadsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val isPaused = downloadManager.isPaused
+    val concurrency = downloadManager.concurrency
 
     fun togglePause() {
         if (downloadManager.isPaused.value) downloadManager.resume() else downloadManager.pause()
     }
 
+    fun setConcurrency(value: Int) = downloadManager.setConcurrency(value)
+    fun retryChapter(chapter: ChapterEntity) = downloadManager.retryChapter(chapter)
+    fun retryAll(novelId: Long) = downloadManager.retryAll(novelId)
     fun cancelAll(novelId: Long) = downloadManager.cancelAll(novelId)
     fun moveToTopOfQueue(novelId: Long) = downloadManager.moveToTopOfQueue(novelId)
     fun deleteAllDownloads(novelId: Long) = downloadManager.deleteAllDownloads(novelId)

@@ -1,4 +1,4 @@
-﻿package io.grimoire.app.data.download
+package io.grimoire.app.data.download
 
 import android.content.Context
 import android.content.Intent
@@ -7,15 +7,22 @@ import io.grimoire.api.model.Chapter
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.preferences.DownloadPreferences
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,11 +32,16 @@ class DownloadManager @Inject constructor(
     private val chapterDao: ChapterDao,
     private val novelDao: NovelDao,
     private val extensionManager: ExtensionManager,
+    private val downloadPreferences: DownloadPreferences,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val isProcessing = AtomicBoolean(false)
     private val _isPaused = MutableStateFlow(false)
     val isPaused: StateFlow<Boolean> = _isPaused.asStateFlow()
+
+    val concurrency: StateFlow<Int> = downloadPreferences.concurrency
+        .changes()
+        .stateIn(scope, SharingStarted.Eagerly, downloadPreferences.concurrency.defaultValue())
 
     fun pause() {
         _isPaused.value = true
@@ -38,6 +50,10 @@ class DownloadManager @Inject constructor(
     fun resume() {
         _isPaused.value = false
         context.startForegroundService(Intent(context, DownloadService::class.java))
+    }
+
+    fun setConcurrency(value: Int) {
+        scope.launch { downloadPreferences.concurrency.set(value.coerceIn(1, 5)) }
     }
 
     fun enqueue(chapters: List<ChapterEntity>) {
@@ -78,33 +94,56 @@ class DownloadManager @Inject constructor(
         scope.launch { chapterDao.deleteDownload(chapter.id) }
     }
 
+    fun retryChapter(chapter: ChapterEntity) {
+        if (chapter.downloadStatus != ChapterDownloadStatus.ERROR.ordinal) return
+        scope.launch { chapterDao.setDownloadStatus(chapter.id, ChapterDownloadStatus.QUEUED.ordinal) }
+        _isPaused.value = false
+        context.startForegroundService(Intent(context, DownloadService::class.java))
+    }
+
+    fun retryAll(novelId: Long) {
+        scope.launch { chapterDao.retryAllFailed(novelId) }
+        _isPaused.value = false
+        context.startForegroundService(Intent(context, DownloadService::class.java))
+    }
+
     suspend fun processQueue(onProgress: (chapterName: String, remaining: Int) -> Unit): Int {
         if (!isProcessing.compareAndSet(false, true)) return -1
-        var downloaded = 0
+        val n = concurrency.value.coerceIn(1, 5)
+        val downloaded = AtomicInteger(0)
+        val mutex = Mutex()
         try {
             chapterDao.resetStuckDownloads()
-            while (true) {
-                if (_isPaused.value) break
-                val chapter = chapterDao.getNextQueued() ?: break
-                chapterDao.setDownloadStatus(chapter.id, ChapterDownloadStatus.DOWNLOADING.ordinal)
-                onProgress(chapter.name, chapterDao.getQueuedCount())
-                runCatching {
-                    val novel = novelDao.getById(chapter.novelId) ?: error("Novel not found")
-                    val src = extensionManager.extensions.value
-                        .firstOrNull { it.source.id == novel.sourceId }?.source
-                        ?: error("Source not available")
-                    val pages = src.getPageList(chapter.toChapter())
-                    val content = pages.joinToString("") { it.text }
-                    chapterDao.setDownloadedContent(chapter.id, content, ChapterDownloadStatus.DOWNLOADED.ordinal)
-                    downloaded++
-                }.onFailure {
-                    chapterDao.setDownloadStatus(chapter.id, ChapterDownloadStatus.ERROR.ordinal)
+            coroutineScope {
+                repeat(n) {
+                    launch {
+                        while (!_isPaused.value) {
+                            val chapter = mutex.withLock {
+                                val ch = chapterDao.getNextQueued() ?: return@withLock null
+                                chapterDao.setDownloadStatus(ch.id, ChapterDownloadStatus.DOWNLOADING.ordinal)
+                                ch
+                            } ?: break
+                            runCatching {
+                                val novel = novelDao.getById(chapter.novelId) ?: error("Novel not found")
+                                val src = extensionManager.extensions.value
+                                    .firstOrNull { it.source.id == novel.sourceId }?.source
+                                    ?: error("Source not available")
+                                val pages = src.getPageList(chapter.toChapter())
+                                val content = pages.joinToString("") { it.text }
+                                chapterDao.setDownloadedContent(chapter.id, content, ChapterDownloadStatus.DOWNLOADED.ordinal)
+                                downloaded.incrementAndGet()
+                            }.onFailure {
+                                chapterDao.setDownloadStatus(chapter.id, ChapterDownloadStatus.ERROR.ordinal)
+                            }
+                            onProgress(chapter.name, chapterDao.getQueuedCount())
+                        }
+                    }
                 }
             }
         } finally {
             isProcessing.set(false)
         }
-        return downloaded
+        return downloaded.get()
     }
 }
 
@@ -115,4 +154,3 @@ private fun ChapterEntity.toChapter() = Chapter(
     chapterNumber = chapterNumber,
     translator = translator,
 )
-

@@ -9,6 +9,7 @@ import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
 import io.grimoire.api.source.PaginatedSource
 import io.grimoire.api.source.Source
+import io.grimoire.api.source.SourceInfo
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -47,8 +48,17 @@ class NovelDetailViewModel @Inject constructor(
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
     private val novelUrl: String = checkNotNull(savedStateHandle["url"])
 
-    private val source get() = extensionManager.extensions.value
-        .firstOrNull { it.info.packageName == pkg }?.source
+    private val loaded get() = extensionManager.extensions.value.firstOrNull { it.info.packageName == pkg }
+    private val source get() = loaded?.source
+
+    val sourceName: String get() = loaded?.info?.label ?: ""
+
+    val novelWebUrl: String get() {
+        val url = _novel.value.url
+        if (url.startsWith("http")) return url
+        val baseUrl = loaded?.source?.javaClass?.getAnnotation(SourceInfo::class.java)?.baseUrl ?: return url
+        return "$baseUrl$url"
+    }
 
     private val _novel = MutableStateFlow(Novel(url = novelUrl, title = ""))
     val novel: StateFlow<Novel> = _novel.asStateFlow()

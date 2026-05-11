@@ -7,8 +7,9 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
@@ -92,11 +94,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun NovelDetailScreen(
     onNavigateBack: () -> Unit,
     onChapterClick: (pkg: String, novelUrl: String, chapterUrl: String) -> Unit = { _, _, _ -> },
+    onOpenWebView: (url: String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: NovelDetailViewModel = hiltViewModel(),
 ) {
@@ -237,6 +240,9 @@ fun NovelDetailScreen(
                     Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 actions = {
+                    IconButton(onClick = { onOpenWebView(viewModel.novelWebUrl) }) {
+                        Icon(Icons.Default.Language, contentDescription = "Open in WebView")
+                    }
                     IconButton(onClick = viewModel::toggleFavorite) {
                         Icon(
                             if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
@@ -277,7 +283,7 @@ fun NovelDetailScreen(
                                 Text(novelError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                                 TextButton(onClick = viewModel::retryNovel) { Text("Retry") }
                             }
-                            else -> NovelHeader(novel = novel)
+                            else -> NovelHeader(novel = novel, sourceName = viewModel.sourceName)
                         }
                     }
 
@@ -311,12 +317,18 @@ fun NovelDetailScreen(
                     // Genres
                     if (!isLoadingNovel && novelError == null && novel.genres.isNotEmpty()) {
                         item {
-                            FlowRow(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            Row(
+                                modifier = Modifier
+                                    .horizontalScroll(rememberScrollState())
+                                    .padding(horizontal = 16.dp, vertical = 4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 novel.genres.forEach { genre ->
-                                    AssistChip(onClick = {}, label = { Text(genre) })
+                                    AssistChip(
+                                        onClick = {},
+                                        label = { Text(genre, style = MaterialTheme.typography.labelSmall) },
+                                        modifier = Modifier.height(28.dp),
+                                    )
                                 }
                             }
                         }
@@ -588,7 +600,7 @@ private fun ChapterSkeletonItem(alpha: Float, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun NovelHeader(novel: Novel, modifier: Modifier = Modifier) {
+private fun NovelHeader(novel: Novel, sourceName: String = "", modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth().padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -605,6 +617,9 @@ private fun NovelHeader(novel: Novel, modifier: Modifier = Modifier) {
                 Text(novel.author!!, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text(novel.status.displayName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (sourceName.isNotBlank()) {
+                Text(sourceName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
@@ -637,10 +652,17 @@ private fun ChapterItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             },
             supportingContent = if (subText != null) {
-                { Text(subText, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha)) }
+                {
+                    Text(
+                        subText,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             } else null,
             trailingContent = when (dlStatus) {
                 ChapterDownloadStatus.NONE -> ({

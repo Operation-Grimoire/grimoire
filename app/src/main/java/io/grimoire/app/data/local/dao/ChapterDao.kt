@@ -89,6 +89,9 @@ interface ChapterDao {
     @Query("UPDATE chapters SET downloadStatus = 0, downloadedContent = NULL WHERE novelId = :novelId AND downloadStatus = 3")
     suspend fun deleteAllDownloads(novelId: Long)
 
+    @Query("UPDATE chapters SET downloadStatus = 1 WHERE novelId = :novelId AND downloadStatus = 4")
+    suspend fun retryAllFailed(novelId: Long)
+
     @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
     fun getAllDownloads(): Flow<List<ChapterEntity>>
 

@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.BottomAppBar
@@ -92,6 +93,7 @@ private val ReaderFont.fontFamily: FontFamily
 @Composable
 fun ReaderScreen(
     onNavigateBack: () -> Unit,
+    onOpenWebView: (url: String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ReaderViewModel = hiltViewModel(),
 ) {
@@ -240,6 +242,13 @@ fun ReaderScreen(
                     )
                 },
                 actions = {
+                    IconButton(onClick = { onOpenWebView(viewModel.chapterWebUrl) }) {
+                        Icon(
+                            Icons.Default.Language,
+                            contentDescription = "Open in WebView",
+                            tint = colors.foreground,
+                        )
+                    }
                     IconButton(onClick = viewModel::toggleRead) {
                         Icon(
                             if (currentChapter?.read == true) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
