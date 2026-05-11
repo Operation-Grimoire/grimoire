@@ -164,7 +164,7 @@ fun ReaderScreen(
                 }
                 else -> LazyColumn(
                     state = listState,
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     item {
@@ -174,12 +174,12 @@ fun ReaderScreen(
                                 fontFamily = fontFamily,
                                 color = colors.foreground,
                             ),
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                         )
                     }
-                    items(pages, key = { it.index }) { page ->
+                    items(pages.filter { it.text.isNotBlank() }, key = { it.index }) { page ->
                         Text(
-                            text = page.text,
+                            text = page.text.trim(),
                             style = textStyle,
                             modifier = Modifier
                                 .fillMaxWidth()
