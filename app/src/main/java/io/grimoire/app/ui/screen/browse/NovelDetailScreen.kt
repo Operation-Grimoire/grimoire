@@ -200,7 +200,27 @@ fun NovelDetailScreen(
     }
 
     if (showJumpDialog) {
+        val nextUnread = continueChapter?.takeIf { !it.read }
         JumpDialog(
+            nextUnreadLabel = nextUnread?.let { ch ->
+                ch.name.ifBlank {
+                    val n = ch.chapterNumber
+                    if (n > 0f) {
+                        val pretty = if (n % 1f == 0f) n.toInt().toString() else n.toString()
+                        "Chapter $pretty"
+                    } else "Next chapter"
+                }
+            },
+            onJumpToNextUnread = {
+                val target = nextUnread
+                if (target != null) {
+                    val idx = displayedChapters.indexOfFirst { it.url == target.url }
+                    if (idx >= 0) coroutineScope.launch {
+                        listState.scrollToItem(chapterHeaderOffset + idx)
+                    }
+                }
+                showJumpDialog = false
+            },
             onDismiss = { showJumpDialog = false },
             onJump = { target ->
                 val idx = displayedChapters.indexOfFirst { ch ->
@@ -539,23 +559,45 @@ fun NovelDetailScreen(
 }
 
 @Composable
-private fun JumpDialog(onDismiss: () -> Unit, onJump: (Int) -> Unit) {
+private fun JumpDialog(
+    nextUnreadLabel: String?,
+    onJumpToNextUnread: () -> Unit,
+    onDismiss: () -> Unit,
+    onJump: (Int) -> Unit,
+) {
     var input by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Jump to chapter") },
         text = {
-            OutlinedTextField(
-                value = input,
-                onValueChange = { input = it.filter { c -> c.isDigit() } },
-                label = { Text("Chapter number") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Go,
-                ),
-                keyboardActions = KeyboardActions(onGo = { input.toIntOrNull()?.let(onJump) }),
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (nextUnreadLabel != null) {
+                    AssistChip(
+                        onClick = onJumpToNextUnread,
+                        label = {
+                            Text(
+                                "Next unread: $nextUnreadLabel",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                        },
+                    )
+                }
+                OutlinedTextField(
+                    value = input,
+                    onValueChange = { input = it.filter { c -> c.isDigit() } },
+                    label = { Text("Chapter number") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Go,
+                    ),
+                    keyboardActions = KeyboardActions(onGo = { input.toIntOrNull()?.let(onJump) }),
+                )
+            }
         },
         confirmButton = {
             TextButton(
