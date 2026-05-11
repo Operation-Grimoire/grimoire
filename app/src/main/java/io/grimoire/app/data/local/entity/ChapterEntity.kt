@@ -25,4 +25,6 @@ data class ChapterEntity(
     val translator: String? = null,
     val read: Boolean = false,
     val readProgress: Float = 0f,
+    val downloadStatus: Int = 0,
+    val downloadedContent: String? = null,
 )

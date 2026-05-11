@@ -1,27 +1,30 @@
 package io.grimoire.app.ui
 
+import android.net.Uri
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import android.net.Uri
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.LocalLibrary
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -31,14 +34,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.browse.BrowseScreen
 import io.grimoire.app.ui.screen.browse.NovelDetailScreen
 import io.grimoire.app.ui.screen.browse.SourceBrowseScreen
-import io.grimoire.app.ui.screen.reader.ReaderScreen
+import io.grimoire.app.ui.screen.downloads.DownloadsScreen
 import io.grimoire.app.ui.screen.extensions.ExtensionsScreen
 import io.grimoire.app.ui.screen.library.LibraryScreen
+import io.grimoire.app.ui.screen.more.MoreScreen
+import io.grimoire.app.ui.screen.more.MoreViewModel
+import io.grimoire.app.ui.screen.reader.ReaderScreen
 import io.grimoire.app.ui.screen.settings.SettingsScreen
+import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.about.AboutSettingsScreen
 import io.grimoire.app.ui.screen.settings.appearance.AppearanceSettingsScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseSettingsScreen
@@ -52,7 +58,7 @@ private enum class TopLevelDestination(
 ) {
     Library("library", Icons.Default.LocalLibrary, "Library"),
     Browse("browse", Icons.Default.Explore, "Browse"),
-    Settings("settings", Icons.Default.Settings, "Settings"),
+    More("more", Icons.Default.MoreHoriz, "More"),
 }
 
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
@@ -60,6 +66,8 @@ private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet(
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
 private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}"
 private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}"
+private const val ROUTE_DOWNLOADS = "downloads"
+private const val ROUTE_SETTINGS_ROOT = "settings"
 private const val ROUTE_SETTINGS_APPEARANCE = "settings/appearance"
 private const val ROUTE_SETTINGS_LIBRARY = "settings/library"
 private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
@@ -76,6 +84,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
     val currentRoute = backStack?.destination?.route
 
     val isTopLevel = currentRoute in topLevelRoutes
+
+    val moreVm: MoreViewModel = hiltViewModel()
+    val activeDownloadCount by moreVm.activeDownloadCount.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -95,7 +106,16 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                                     restoreState = true
                                 }
                             },
-                            icon = { Icon(dest.icon, contentDescription = dest.label) },
+                            icon = {
+                                val showBadge = dest == TopLevelDestination.More && activeDownloadCount > 0
+                                if (showBadge) {
+                                    BadgedBox(badge = { Badge() }) {
+                                        Icon(dest.icon, contentDescription = dest.label)
+                                    }
+                                } else {
+                                    Icon(dest.icon, contentDescription = dest.label)
+                                }
+                            },
                             label = { Text(dest.label) },
                         )
                     }
@@ -129,11 +149,22 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 )
             }
 
+            composable(route = TopLevelDestination.More.route) {
+                MoreScreen(
+                    onNavigateToDownloads = { navController.navigate(ROUTE_DOWNLOADS) },
+                    onNavigateToSettings = { navController.navigate(ROUTE_SETTINGS_ROOT) },
+                )
+            }
+
+            composable(route = ROUTE_DOWNLOADS) {
+                DownloadsScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
             navigation(
-                startDestination = TopLevelDestination.Settings.route,
+                startDestination = ROUTE_SETTINGS_ROOT,
                 route = "settings_graph",
             ) {
-                composable(route = TopLevelDestination.Settings.route) { entry ->
+                composable(route = ROUTE_SETTINGS_ROOT) { entry ->
                     val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
                     val vm: SettingsViewModel = hiltViewModel(graphEntry)
                     SettingsScreen(

@@ -15,6 +15,7 @@ import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +39,7 @@ class NovelDetailViewModel @Inject constructor(
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
     private val categoryDao: CategoryDao,
+    private val downloadManager: DownloadManager,
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
@@ -246,6 +248,12 @@ class NovelDetailViewModel @Inject constructor(
             novelDao.updateCategory(cachedNovelId, categoryId)
         }
     }
+
+    fun downloadChapter(chapter: ChapterEntity) = downloadManager.enqueue(listOf(chapter))
+    fun downloadAll() = downloadManager.enqueue(chapters.value)
+    fun downloadUnread() = downloadManager.enqueue(chapters.value.filter { !it.read })
+    fun cancelDownload(chapter: ChapterEntity) = downloadManager.cancel(chapter)
+    fun deleteDownload(chapter: ChapterEntity) = downloadManager.deleteDownload(chapter)
 
     fun setSort(sort: ChapterSort) {
         _chapterSort.value = sort

@@ -51,4 +51,25 @@ interface ChapterDao {
 
     @Query("UPDATE chapters SET read = :read WHERE novelId = :novelId AND chapterNumber >= :chapterNumber")
     suspend fun markAllAfter(novelId: Long, chapterNumber: Float, read: Boolean)
+
+    @Query("UPDATE chapters SET downloadStatus = :status WHERE id = :id")
+    suspend fun setDownloadStatus(id: Long, status: Int)
+
+    @Query("UPDATE chapters SET downloadStatus = :status, downloadedContent = :content WHERE id = :id")
+    suspend fun setDownloadedContent(id: Long, content: String, status: Int)
+
+    @Query("UPDATE chapters SET downloadStatus = 0, downloadedContent = NULL WHERE id = :id")
+    suspend fun deleteDownload(id: Long)
+
+    @Query("SELECT * FROM chapters WHERE downloadStatus = 1 ORDER BY id ASC LIMIT 1")
+    suspend fun getNextQueued(): ChapterEntity?
+
+    @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus = 1")
+    suspend fun getQueuedCount(): Int
+
+    @Query("UPDATE chapters SET downloadStatus = 1 WHERE downloadStatus = 2")
+    suspend fun resetStuckDownloads()
+
+    @Query("SELECT * FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
+    fun getAllDownloads(): Flow<List<ChapterEntity>>
 }

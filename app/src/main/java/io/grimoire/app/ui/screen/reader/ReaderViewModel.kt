@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.screen.reader
+﻿package io.grimoire.app.ui.screen.reader
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val PAGE_SEP = ""
 
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
@@ -61,10 +63,7 @@ class ReaderViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    // Reading behavior
     val markAsReadThreshold: StateFlow<Int> = readerPreferences.markAsReadThreshold.stateIn(viewModelScope)
-
-    // Appearance
     val fontSize: StateFlow<Int> = readerPreferences.fontSize.stateIn(viewModelScope)
     val lineHeightTimes10: StateFlow<Int> = readerPreferences.lineHeightTimes10.stateIn(viewModelScope)
     val paragraphSpacing: StateFlow<Int> = readerPreferences.paragraphSpacing.stateIn(viewModelScope)
@@ -86,12 +85,21 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun loadPages() {
+        val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
+        val cached = chapter.downloadedContent
+        if (cached != null) {
+            _pages.value = cached.split(PAGE_SEP)
+                .mapIndexed { i, text -> NovelPage(i, text) }
+                .filter { it.text.isNotBlank() }
+            _isLoading.value = false
+            _error.value = null
+            return
+        }
         val src = source ?: run {
             _error.value = "Source not available"
             _isLoading.value = false
             return
         }
-        val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null

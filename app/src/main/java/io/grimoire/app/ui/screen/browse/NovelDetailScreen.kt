@@ -35,8 +35,13 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.DownloadDone
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
@@ -75,6 +80,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
+import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ShimmerBox
@@ -406,6 +412,16 @@ fun NovelDetailScreen(
                                                 text = { Text("Mark all as unread") },
                                                 onClick = { viewModel.markAllRead(false); bulkMenuExpanded = false },
                                             )
+                                            DropdownMenuItem(
+                                                text = { Text("Download all") },
+                                                onClick = { viewModel.downloadAll(); bulkMenuExpanded = false },
+                                                leadingIcon = { Icon(Icons.Default.Download, null) },
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text("Download unread") },
+                                                onClick = { viewModel.downloadUnread(); bulkMenuExpanded = false },
+                                                leadingIcon = { Icon(Icons.Default.Download, null) },
+                                            )
                                         }
                                     }
                                 }
@@ -448,6 +464,9 @@ fun NovelDetailScreen(
                             onMarkRead = { read -> viewModel.markChapterRead(chapter, read) },
                             onMarkAllBefore = { viewModel.markAllBefore(chapter, true) },
                             onMarkAllAfter = { viewModel.markAllAfter(chapter, true) },
+                            onDownload = { viewModel.downloadChapter(chapter) },
+                            onCancelDownload = { viewModel.cancelDownload(chapter) },
+                            onDeleteDownload = { viewModel.deleteDownload(chapter) },
                         )
                     }
                 }
@@ -533,6 +552,9 @@ private fun ChapterItem(
     onMarkRead: (Boolean) -> Unit,
     onMarkAllBefore: () -> Unit,
     onMarkAllAfter: () -> Unit,
+    onDownload: () -> Unit,
+    onCancelDownload: () -> Unit,
+    onDeleteDownload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -540,6 +562,7 @@ private fun ChapterItem(
     val dateText = remember(chapter.uploadDate) { if (chapter.uploadDate > 0L) formatDate(chapter.uploadDate) else null }
     val progressText = if (!chapter.read && chapter.readProgress > 0f) "${(chapter.readProgress * 100).toInt()}%" else null
     val subText = listOfNotNull(dateText, progressText).joinToString(" · ").takeIf { it.isNotEmpty() }
+    val dlStatus = ChapterDownloadStatus.entries.getOrElse(chapter.downloadStatus) { ChapterDownloadStatus.NONE }
 
     Box {
         ListItem(
@@ -554,6 +577,33 @@ private fun ChapterItem(
             supportingContent = if (subText != null) {
                 { Text(subText, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha)) }
             } else null,
+            trailingContent = when (dlStatus) {
+                ChapterDownloadStatus.NONE -> ({
+                    IconButton(onClick = onDownload) {
+                        Icon(Icons.Default.Download, contentDescription = "Download",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                })
+                ChapterDownloadStatus.QUEUED -> ({
+                    IconButton(onClick = onCancelDownload) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel download",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                })
+                ChapterDownloadStatus.DOWNLOADING -> ({
+                    LinearProgressIndicator(modifier = Modifier.width(24.dp))
+                })
+                ChapterDownloadStatus.DOWNLOADED -> ({
+                    Icon(Icons.Default.DownloadDone, contentDescription = "Downloaded",
+                        tint = MaterialTheme.colorScheme.primary)
+                })
+                ChapterDownloadStatus.ERROR -> ({
+                    IconButton(onClick = onDownload) {
+                        Icon(Icons.Default.ErrorOutline, contentDescription = "Retry download",
+                            tint = MaterialTheme.colorScheme.error)
+                    }
+                })
+            },
             modifier = modifier.combinedClickable(
                 onClick = onClick,
                 onLongClick = { menuExpanded = true },
@@ -575,6 +625,22 @@ private fun ChapterItem(
                 text = { Text("Mark all after as read") },
                 onClick = { onMarkAllAfter(); menuExpanded = false },
             )
+            when (dlStatus) {
+                ChapterDownloadStatus.NONE, ChapterDownloadStatus.ERROR -> DropdownMenuItem(
+                    text = { Text("Download") },
+                    onClick = { onDownload(); menuExpanded = false },
+                    leadingIcon = { Icon(Icons.Default.Download, null) },
+                )
+                ChapterDownloadStatus.QUEUED -> DropdownMenuItem(
+                    text = { Text("Cancel download") },
+                    onClick = { onCancelDownload(); menuExpanded = false },
+                )
+                ChapterDownloadStatus.DOWNLOADED -> DropdownMenuItem(
+                    text = { Text("Delete download") },
+                    onClick = { onDeleteDownload(); menuExpanded = false },
+                )
+                ChapterDownloadStatus.DOWNLOADING -> {}
+            }
         }
     }
 }
