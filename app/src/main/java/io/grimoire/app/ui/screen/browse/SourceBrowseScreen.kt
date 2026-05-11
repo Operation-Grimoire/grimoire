@@ -26,7 +26,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -160,6 +162,17 @@ fun SourceBrowseScreen(
                     if (!searchActive) {
                         IconButton(onClick = { searchActive = true }) {
                             Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
+                        IconButton(onClick = {
+                            viewModel.setDisplayMode(
+                                if (displayMode == BrowseDisplayMode.GRID) BrowseDisplayMode.LIST
+                                else BrowseDisplayMode.GRID
+                            )
+                        }) {
+                            Icon(
+                                if (displayMode == BrowseDisplayMode.GRID) Icons.Default.ViewList else Icons.Default.GridView,
+                                contentDescription = "Toggle display mode",
+                            )
                         }
                     }
                     if (filters.isNotEmpty()) {

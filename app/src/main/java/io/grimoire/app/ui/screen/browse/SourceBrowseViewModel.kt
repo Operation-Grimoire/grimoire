@@ -28,7 +28,7 @@ enum class BrowseMode { POPULAR, LATEST, SEARCH }
 class SourceBrowseViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
-    browsePreferences: BrowsePreferences,
+    private val browsePreferences: BrowsePreferences,
 ) : ViewModel() {
 
     val displayMode: StateFlow<BrowseDisplayMode> = browsePreferences.displayMode.stateIn(viewModelScope)
@@ -103,6 +103,14 @@ class SourceBrowseViewModel @Inject constructor(
     fun applyFilters(applied: List<Filter<*>>) {
         _activeFilters.value = applied
         load(reset = true)
+    }
+
+    fun setDisplayMode(mode: BrowseDisplayMode) = viewModelScope.launch {
+        browsePreferences.displayMode.set(mode)
+    }
+
+    fun setGridColumns(count: Int) = viewModelScope.launch {
+        browsePreferences.gridColumns.set(count.coerceIn(2, 5))
     }
 
     fun retry() = load(reset = true)

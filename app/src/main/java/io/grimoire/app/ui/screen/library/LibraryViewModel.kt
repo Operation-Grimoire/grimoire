@@ -22,7 +22,7 @@ class LibraryViewModel @Inject constructor(
     private val novelDao: NovelDao,
     private val categoryDao: CategoryDao,
     private val extensionManager: ExtensionManager,
-    libraryPreferences: LibraryPreferences,
+    private val libraryPreferences: LibraryPreferences,
 ) : ViewModel() {
 
     val categories: StateFlow<List<CategoryEntity>> = categoryDao.getAll()
@@ -59,5 +59,13 @@ class LibraryViewModel @Inject constructor(
 
     fun removeFromLibrary(novel: NovelEntity) = viewModelScope.launch {
         novelDao.upsert(novel.copy(favorite = false))
+    }
+
+    fun setDisplayMode(mode: LibraryDisplayMode) = viewModelScope.launch {
+        libraryPreferences.displayMode.set(mode)
+    }
+
+    fun setGridColumns(count: Int) = viewModelScope.launch {
+        libraryPreferences.gridColumns.set(count.coerceIn(2, 5))
     }
 }

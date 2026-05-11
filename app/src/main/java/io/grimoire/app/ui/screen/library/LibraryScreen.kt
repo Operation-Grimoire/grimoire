@@ -24,6 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -114,6 +116,17 @@ fun LibraryScreen(
             TopAppBar(
                 title = { Text("Library") },
                 actions = {
+                    IconButton(onClick = {
+                        viewModel.setDisplayMode(
+                            if (displayMode == LibraryDisplayMode.GRID) LibraryDisplayMode.LIST
+                            else LibraryDisplayMode.GRID
+                        )
+                    }) {
+                        Icon(
+                            if (displayMode == LibraryDisplayMode.GRID) Icons.Default.ViewList else Icons.Default.GridView,
+                            contentDescription = "Toggle display mode",
+                        )
+                    }
                     IconButton(onClick = { showManage = true }) {
                         Icon(Icons.Default.Edit, contentDescription = "Manage categories")
                     }
