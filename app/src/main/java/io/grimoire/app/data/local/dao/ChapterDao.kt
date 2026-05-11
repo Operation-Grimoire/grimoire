@@ -68,6 +68,9 @@ interface ChapterDao {
     @Query("UPDATE chapters SET queueOrder = :order WHERE novelId = :novelId AND downloadStatus = 1")
     suspend fun setQueueOrder(novelId: Long, order: Long)
 
+    @Query("UPDATE chapters SET queueOrder = :order WHERE id = :id")
+    suspend fun setChapterQueueOrder(id: Long, order: Long)
+
     @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus = 1")
     suspend fun getQueuedCount(): Int
 
@@ -80,7 +83,7 @@ interface ChapterDao {
     @Query("UPDATE chapters SET downloadStatus = 0, downloadedContent = NULL WHERE novelId = :novelId AND downloadStatus = 3")
     suspend fun deleteAllDownloads(novelId: Long)
 
-    @Query("SELECT * FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
     fun getAllDownloads(): Flow<List<ChapterEntity>>
 
     @Query("""

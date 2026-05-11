@@ -40,11 +40,15 @@ class DownloadManager @Inject constructor(
         context.startForegroundService(Intent(context, DownloadService::class.java))
     }
 
-    fun enqueue(chapters: List<ChapterEntity>) {
+    fun enqueue(chapters: List<ChapterEntity>, priority: Boolean = false) {
         scope.launch {
+            val queueOrder = if (priority) System.currentTimeMillis() else 0L
             chapters
                 .filter { it.downloadStatus == ChapterDownloadStatus.NONE.ordinal }
-                .forEach { chapterDao.setDownloadStatus(it.id, ChapterDownloadStatus.QUEUED.ordinal) }
+                .forEach {
+                    chapterDao.setDownloadStatus(it.id, ChapterDownloadStatus.QUEUED.ordinal)
+                    if (priority) chapterDao.setChapterQueueOrder(it.id, queueOrder)
+                }
         }
         _isPaused.value = false
         context.startForegroundService(Intent(context, DownloadService::class.java))

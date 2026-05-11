@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -362,9 +363,6 @@ fun NovelDetailScreen(
                                         .weight(1f)
                                         .clickable(enabled = chapters.isNotEmpty()) { showJumpDialog = true },
                                 )
-                                if (isLoadingChapters) {
-                                    CircularProgressIndicator(Modifier.size(18.dp).padding(end = 8.dp), strokeWidth = 2.dp)
-                                }
                                 if (chapters.isNotEmpty()) {
                                     IconButton(onClick = {
                                         searchActive = !searchActive
@@ -433,6 +431,13 @@ fun NovelDetailScreen(
                                     }
                                 }
                             }
+                            if (isLoadingChapters) {
+                                LinearProgressIndicator(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp),
+                                )
+                            }
                             if (!isLoadingChapters && chaptersError == null && chapters.isNotEmpty()) {
                                 val readCount = chapters.count { it.read }
                                 val downloadedCount = chapters.count {
@@ -479,18 +484,24 @@ fun NovelDetailScreen(
                         }
                     }
 
-                    // Chapter list
-                    items(displayedChapters, key = { it.url }) { chapter ->
-                        ChapterItem(
-                            chapter = chapter,
-                            onClick = { onChapterClick(viewModel.pkg, novel.url, chapter.url) },
-                            onMarkRead = { read -> viewModel.markChapterRead(chapter, read) },
-                            onMarkAllBefore = { viewModel.markAllBefore(chapter, true) },
-                            onMarkAllAfter = { viewModel.markAllAfter(chapter, true) },
-                            onDownload = { viewModel.downloadChapter(chapter) },
-                            onCancelDownload = { viewModel.cancelDownload(chapter) },
-                            onDeleteDownload = { viewModel.deleteDownload(chapter) },
-                        )
+                    // Chapter list or skeleton
+                    if (isLoadingChapters && chapters.isEmpty()) {
+                        items(14, key = { "skeleton_$it" }) {
+                            ChapterSkeletonItem()
+                        }
+                    } else {
+                        items(displayedChapters, key = { it.url }) { chapter ->
+                            ChapterItem(
+                                chapter = chapter,
+                                onClick = { onChapterClick(viewModel.pkg, novel.url, chapter.url) },
+                                onMarkRead = { read -> viewModel.markChapterRead(chapter, read) },
+                                onMarkAllBefore = { viewModel.markAllBefore(chapter, true) },
+                                onMarkAllAfter = { viewModel.markAllAfter(chapter, true) },
+                                onDownload = { viewModel.downloadChapter(chapter) },
+                                onCancelDownload = { viewModel.cancelDownload(chapter) },
+                                onDeleteDownload = { viewModel.deleteDownload(chapter) },
+                            )
+                        }
                     }
                 }
             }
@@ -542,6 +553,22 @@ private fun NovelHeaderSkeleton(modifier: Modifier = Modifier) {
             ShimmerBox(modifier = Modifier.fillMaxWidth(0.6f).height(14.dp))
             ShimmerBox(modifier = Modifier.fillMaxWidth(0.35f).height(12.dp))
         }
+    }
+}
+
+@Composable
+private fun ChapterSkeletonItem(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.65f).height(15.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.35f).height(11.dp))
+        }
+        ShimmerBox(modifier = Modifier.size(20.dp), shape = CircleShape)
     }
 }
 
@@ -614,11 +641,15 @@ private fun ChapterItem(
                     }
                 })
                 ChapterDownloadStatus.DOWNLOADING -> ({
-                    LinearProgressIndicator(modifier = Modifier.width(24.dp))
+                    Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                        LinearProgressIndicator(modifier = Modifier.width(24.dp))
+                    }
                 })
                 ChapterDownloadStatus.DOWNLOADED -> ({
-                    Icon(Icons.Default.DownloadDone, contentDescription = "Downloaded",
-                        tint = MaterialTheme.colorScheme.primary)
+                    IconButton(onClick = onDeleteDownload) {
+                        Icon(Icons.Default.DownloadDone, contentDescription = "Delete download",
+                            tint = MaterialTheme.colorScheme.primary)
+                    }
                 })
                 ChapterDownloadStatus.ERROR -> ({
                     IconButton(onClick = onDownload) {

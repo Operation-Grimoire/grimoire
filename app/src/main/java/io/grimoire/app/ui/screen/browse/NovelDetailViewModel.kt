@@ -251,7 +251,8 @@ class NovelDetailViewModel @Inject constructor(
         }
     }
 
-    fun downloadChapter(chapter: ChapterEntity) = downloadManager.enqueue(listOf(chapter))
+    fun downloadChapter(chapter: ChapterEntity) =
+        downloadManager.enqueue(listOf(chapter), priority = downloadManager.isPaused.value)
     fun downloadAll() = downloadManager.enqueue(chapters.value)
     fun downloadUnread() = downloadManager.enqueue(chapters.value.filter { !it.read })
     fun cancelDownload(chapter: ChapterEntity) = downloadManager.cancel(chapter)
