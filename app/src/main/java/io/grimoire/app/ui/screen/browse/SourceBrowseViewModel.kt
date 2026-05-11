@@ -73,6 +73,11 @@ class SourceBrowseViewModel @Inject constructor(
     private var page = 1
 
     init {
+        val initialQuery: String? = savedStateHandle["q"]
+        if (!initialQuery.isNullOrBlank()) {
+            _query.value = initialQuery
+            _mode.value = BrowseMode.SEARCH
+        }
         // Wait for ExtensionManager scan to finish before loading.
         // StateFlow emits current value immediately, so if scan already completed this is instant.
         viewModelScope.launch {

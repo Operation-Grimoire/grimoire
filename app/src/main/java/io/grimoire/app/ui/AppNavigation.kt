@@ -64,7 +64,7 @@ private enum class TopLevelDestination(
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
 
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
-private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}"
+private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}?q={q}"
 private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_SETTINGS_ROOT = "settings"
@@ -146,6 +146,14 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 BrowseScreen(
                     onNavigateToManage = { navController.navigate(ROUTE_EXTENSION_MANAGE) },
                     onNavigateToSource = { pkg -> navController.navigate("browse/$pkg") },
+                    onNavigateToSourceSearch = { pkg, query ->
+                        navController.navigate("browse/$pkg?q=${Uri.encode(query)}")
+                    },
+                    onNovelClick = { novel, pkg ->
+                        navController.navigate(
+                            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novel.url)}"
+                        )
+                    },
                 )
             }
 
@@ -211,7 +219,10 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
             composable(
                 route = ROUTE_SOURCE_BROWSE,
-                arguments = listOf(navArgument("pkg") { type = NavType.StringType }),
+                arguments = listOf(
+                    navArgument("pkg") { type = NavType.StringType },
+                    navArgument("q") { type = NavType.StringType; nullable = true; defaultValue = null },
+                ),
             ) { entry ->
                 val pkg = entry.arguments?.getString("pkg") ?: ""
                 SourceBrowseScreen(
