@@ -53,7 +53,7 @@ class DownloadsViewModel @Inject constructor(
                 emit(result)
             }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val isPaused = downloadManager.isPaused
     val concurrency = downloadManager.concurrency

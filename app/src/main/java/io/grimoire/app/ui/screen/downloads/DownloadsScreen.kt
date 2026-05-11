@@ -73,6 +73,7 @@ fun DownloadsScreen(
     onNavigateBack: () -> Unit,
 ) {
     val downloads by viewModel.downloads.collectAsState()
+    val currentDownloads = downloads
     val isPaused by viewModel.isPaused.collectAsState()
     val concurrency by viewModel.concurrency.collectAsState()
     var expandedNovels by remember { mutableStateOf(setOf<Long>()) }
@@ -141,7 +142,7 @@ fun DownloadsScreen(
                     }
                 },
                 actions = {
-                    if (downloads.isNotEmpty()) {
+                    if (!currentDownloads.isNullOrEmpty()) {
                         IconButton(onClick = viewModel::togglePause) {
                             Icon(
                                 if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
@@ -156,15 +157,20 @@ fun DownloadsScreen(
             )
         },
     ) { padding ->
-        if (downloads.isEmpty()) {
-            Box(
+        when {
+            currentDownloads == null -> Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+            currentDownloads.isEmpty() -> Box(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text("No downloads", style = MaterialTheme.typography.bodyLarge)
             }
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            else -> LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
                 item {
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
@@ -187,7 +193,7 @@ fun DownloadsScreen(
                     }
                 }
 
-                downloads.forEach { novelDownloads ->
+                currentDownloads.forEach { novelDownloads ->
                     val filtered = if (statusFilter == null) novelDownloads.chapters
                         else novelDownloads.chapters.filter { it.downloadStatus == statusFilter }
                     if (filtered.isEmpty()) return@forEach

@@ -41,6 +41,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -139,20 +140,21 @@ fun LibraryScreen(
 
     val defaultCategory = categories.firstOrNull { it.isDefault }
 
-    val displayedNovels = remember(
+    val displayedNovels: List<NovelEntity>? = remember(
         novels, selectedTab, categories, showAllTab,
         sortOrder, filterStatus, filterUnreadOnly, filterDownloadedOnly, chapterStats,
     ) {
+        val loaded = novels ?: return@remember null
         val allTabOffset = if (showAllTab) 1 else 0
         val tabFiltered = when {
-            showAllTab && selectedTab == 0 -> novels
+            showAllTab && selectedTab == 0 -> loaded
             else -> {
                 val catIndex = selectedTab - allTabOffset
                 val cat = categories.getOrNull(catIndex)
                 when {
-                    cat == null -> novels
-                    cat.isDefault -> novels.filter { it.categoryId == null }
-                    else -> novels.filter { it.categoryId == cat.id }
+                    cat == null -> loaded
+                    cat.isDefault -> loaded.filter { it.categoryId == null }
+                    else -> loaded.filter { it.categoryId == cat.id }
                 }
             }
         }
@@ -223,52 +225,56 @@ fun LibraryScreen(
                 }
             }
 
-            if (displayedNovels.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            when {
+                displayedNovels == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+                displayedNovels.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         "No novels here",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            } else {
-                val onNovelClickWrapped: (NovelEntity) -> Unit = { novel ->
-                    val pkg = viewModel.pkgForNovel(novel)
-                    if (pkg.isNotEmpty()) onNovelClick(pkg, novel.url)
-                    else scope.launch { snackbarHostState.showSnackbar("Extension not installed") }
-                }
-                if (displayMode == LibraryDisplayMode.GRID) {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(gridColumns),
-                        contentPadding = PaddingValues(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
-                        items(displayedNovels, key = { it.id }) { novel ->
-                            NovelCard(
-                                novel = novel,
-                                stats = chapterStats[novel.id],
-                                categories = categories,
-                                defaultCategory = defaultCategory,
-                                onClick = { onNovelClickWrapped(novel) },
-                                onMove = { categoryId -> viewModel.moveNovel(novel, categoryId) },
-                                onRemove = { viewModel.removeFromLibrary(novel) },
-                            )
-                        }
+                else -> {
+                    val onNovelClickWrapped: (NovelEntity) -> Unit = { novel ->
+                        val pkg = viewModel.pkgForNovel(novel)
+                        if (pkg.isNotEmpty()) onNovelClick(pkg, novel.url)
+                        else scope.launch { snackbarHostState.showSnackbar("Extension not installed") }
                     }
-                } else {
-                    LazyColumn(Modifier.fillMaxSize()) {
-                        items(displayedNovels, key = { it.id }) { novel ->
-                            NovelRow(
-                                novel = novel,
-                                stats = chapterStats[novel.id],
-                                categories = categories,
-                                defaultCategory = defaultCategory,
-                                onClick = { onNovelClickWrapped(novel) },
-                                onMove = { categoryId -> viewModel.moveNovel(novel, categoryId) },
-                                onRemove = { viewModel.removeFromLibrary(novel) },
-                            )
+                    if (displayMode == LibraryDisplayMode.GRID) {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(gridColumns),
+                            contentPadding = PaddingValues(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            items(displayedNovels, key = { it.id }) { novel ->
+                                NovelCard(
+                                    novel = novel,
+                                    stats = chapterStats[novel.id],
+                                    categories = categories,
+                                    defaultCategory = defaultCategory,
+                                    onClick = { onNovelClickWrapped(novel) },
+                                    onMove = { categoryId -> viewModel.moveNovel(novel, categoryId) },
+                                    onRemove = { viewModel.removeFromLibrary(novel) },
+                                )
+                            }
+                        }
+                    } else {
+                        LazyColumn(Modifier.fillMaxSize()) {
+                            items(displayedNovels, key = { it.id }) { novel ->
+                                NovelRow(
+                                    novel = novel,
+                                    stats = chapterStats[novel.id],
+                                    categories = categories,
+                                    defaultCategory = defaultCategory,
+                                    onClick = { onNovelClickWrapped(novel) },
+                                    onMove = { categoryId -> viewModel.moveNovel(novel, categoryId) },
+                                    onRemove = { viewModel.removeFromLibrary(novel) },
+                                )
+                            }
                         }
                     }
                 }

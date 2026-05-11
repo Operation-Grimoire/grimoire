@@ -33,8 +33,8 @@ class LibraryViewModel @Inject constructor(
     val categories: StateFlow<List<CategoryEntity>> = categoryDao.getAll()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    val novels: StateFlow<List<NovelEntity>> = novelDao.getFavorites()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val novels: StateFlow<List<NovelEntity>?> = novelDao.getFavorites()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val chapterStats: StateFlow<Map<Long, NovelChapterStats>> = chapterDao.getStatsForAll()
         .map { list -> list.associateBy { it.novelId } }
