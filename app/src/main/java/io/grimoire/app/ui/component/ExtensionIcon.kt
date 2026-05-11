@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -11,18 +12,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
+import coil.compose.SubcomposeAsyncImage
 
 /**
- * Shows the installed APK's launcher icon, falling back to a lang-code badge when unavailable
- * (e.g. extension not yet installed).
+ * Shows the installed APK's launcher icon. When the extension isn't installed yet,
+ * falls back to the remote [iconUrl] published in index.json, and finally to a
+ * lang-code badge when neither is available.
  */
 @Composable
-fun ExtensionIcon(packageName: String, lang: String, modifier: Modifier = Modifier) {
+fun ExtensionIcon(
+    packageName: String,
+    lang: String,
+    iconUrl: String? = null,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     val bitmap: ImageBitmap? = remember(packageName) {
         runCatching {
@@ -30,14 +37,19 @@ fun ExtensionIcon(packageName: String, lang: String, modifier: Modifier = Modifi
         }.getOrNull()
     }
 
-    if (bitmap != null) {
-        Image(
+    when {
+        bitmap != null -> Image(
             bitmap = bitmap,
             contentDescription = null,
             modifier = modifier.size(40.dp),
         )
-    } else {
-        LangBadge(lang = lang, modifier = modifier)
+        iconUrl != null -> SubcomposeAsyncImage(
+            model = iconUrl,
+            contentDescription = null,
+            modifier = modifier.size(40.dp),
+            error = { LangBadge(lang = lang) },
+        )
+        else -> LangBadge(lang = lang, modifier = modifier)
     }
 }
 
