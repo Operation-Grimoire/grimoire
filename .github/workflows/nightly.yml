@@ -2,7 +2,7 @@ name: Nightly Beta Build
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
@@ -78,11 +78,11 @@ jobs:
           make_latest: 'false'
           target_commitish: ${{ github.sha }}
           body: |
-            Auto-built from `main` @ ${{ github.sha }}.
+            Auto-built from `master` @ ${{ github.sha }}.
 
             Version: `${{ steps.ver.outputs.version_name }}`
 
-            This is a rolling beta release. Each push to `main` replaces it with a fresh build.
+            This is a rolling beta release. Each push to `master` replaces it with a fresh build.
           files: app/build/outputs/apk/release/grimoire.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
