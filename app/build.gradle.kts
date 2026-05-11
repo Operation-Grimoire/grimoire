@@ -6,6 +6,25 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+fun gitTag(): String {
+    val env = System.getenv("APP_VERSION_TAG")
+    if (!env.isNullOrBlank() && env.startsWith("v")) return env
+    return runCatching {
+        Runtime.getRuntime().exec(arrayOf("git", "describe", "--tags", "--abbrev=0"))
+            .inputStream.bufferedReader().readText().trim()
+            .takeIf { it.startsWith("v") } ?: "v0.0.0"
+    }.getOrDefault("v0.0.0")
+}
+
+fun String.toVersionCode(): Int {
+    val parts = removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
+    return parts.getOrElse(0) { 0 } * 10000 +
+           parts.getOrElse(1) { 0 } * 100 +
+           parts.getOrElse(2) { 0 }
+}
+
+val appTag = gitTag()
+
 android {
     namespace = "io.grimoire.app"
     compileSdk {
@@ -18,8 +37,8 @@ android {
         applicationId = "io.grimoire.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = appTag.toVersionCode()
+        versionName = appTag.removePrefix("v")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
