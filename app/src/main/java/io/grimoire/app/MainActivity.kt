@@ -10,6 +10,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.grimoire.app.data.preferences.UiPreferences
 import io.grimoire.app.ui.AppNavigation
 import io.grimoire.app.ui.theme.GrimoireTheme
+import io.grimoire.app.ui.update.AppUpdateUi
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -27,6 +28,7 @@ class MainActivity : ComponentActivity() {
                 .collectAsState(initial = uiPreferences.useDynamicColor.defaultValue())
             GrimoireTheme(themeMode = themeMode, dynamicColor = dynamicColor) {
                 AppNavigation()
+                AppUpdateUi()
             }
         }
     }
