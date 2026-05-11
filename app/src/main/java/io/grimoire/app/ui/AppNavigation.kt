@@ -176,6 +176,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
                     val vm: SettingsViewModel = hiltViewModel(graphEntry)
                     SettingsScreen(
+                        onNavigateBack = { navController.popBackStack() },
                         onNavigateToAppearance = { navController.navigate(ROUTE_SETTINGS_APPEARANCE) },
                         onNavigateToLibrary = { navController.navigate(ROUTE_SETTINGS_LIBRARY) },
                         onNavigateToBrowse = { navController.navigate(ROUTE_SETTINGS_BROWSE) },
