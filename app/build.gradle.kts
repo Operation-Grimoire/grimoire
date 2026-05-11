@@ -17,13 +17,29 @@ fun gitTag(): String {
 }
 
 fun String.toVersionCode(): Int {
-    val parts = removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
-    return parts.getOrElse(0) { 0 } * 10000 +
-           parts.getOrElse(1) { 0 } * 100 +
-           parts.getOrElse(2) { 0 }
+    val core = removePrefix("v").substringBefore('-').substringBefore('+')
+    val parts = core.split(".").map { it.toIntOrNull() ?: 0 }
+    val base = parts.getOrElse(0) { 0 } * 10_000_000 +
+               parts.getOrElse(1) { 0 } * 100_000 +
+               parts.getOrElse(2) { 0 } * 1_000
+    val beta = System.getenv("APP_BETA_NUMBER")?.toIntOrNull() ?: 0
+    return base + beta.coerceIn(0, 999)
+}
+
+fun gitSha(): String {
+    val env = System.getenv("APP_GIT_SHA")
+    if (!env.isNullOrBlank()) return env
+    return runCatching {
+        Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "HEAD"))
+            .inputStream.bufferedReader().readText().trim()
+    }.getOrDefault("")
 }
 
 val appTag = gitTag()
+val appVersionName = System.getenv("APP_VERSION_NAME")
+    ?.takeIf { it.isNotBlank() }
+    ?: appTag.removePrefix("v")
+val appGitSha = gitSha()
 
 android {
     namespace = "io.grimoire.app"
@@ -38,7 +54,9 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = appTag.toVersionCode()
-        versionName = appTag.removePrefix("v")
+        versionName = appVersionName
+
+        buildConfigField("String", "GIT_SHA", "\"$appGitSha\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

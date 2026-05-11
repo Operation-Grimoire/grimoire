@@ -1,7 +1,5 @@
 package io.grimoire.app.ui.screen.settings.about
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -92,11 +90,7 @@ fun AboutSettingsScreen(
                         headlineContent = { Text("Update available") },
                         supportingContent = { Text(avail.version) },
                         trailingContent = {
-                            TextButton(onClick = {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, Uri.parse(avail.releaseUrl))
-                                )
-                            }) {
+                            TextButton(onClick = { viewModel.downloadAndInstall(avail.apkUrl) }) {
                                 Text("Download")
                             }
                         },

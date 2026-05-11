@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.BuildConfig
 import io.grimoire.app.data.preferences.AppPreferences
+import io.grimoire.app.data.preferences.UpdatePreferences
 import io.grimoire.app.data.update.AppUpdateChecker
 import io.grimoire.app.data.update.Changelog
 import io.grimoire.app.data.update.ReleaseInfo
@@ -19,6 +20,7 @@ import javax.inject.Inject
 class AppUpdateViewModel @Inject constructor(
     private val checker: AppUpdateChecker,
     private val appPreferences: AppPreferences,
+    private val updatePreferences: UpdatePreferences,
 ) : ViewModel() {
 
     private val _changelogText = MutableStateFlow<String?>(null)
@@ -39,7 +41,8 @@ class AppUpdateViewModel @Inject constructor(
             } else if (BuildConfig.VERSION_CODE > lastSeen) {
                 _changelogText.value = Changelog.since(lastSeen, BuildConfig.VERSION_CODE)
             }
-            _availableRelease.value = checker.checkForUpdate()
+            val channel = updatePreferences.channel.changes().first()
+            _availableRelease.value = checker.checkForUpdate(channel)
         }
     }
 

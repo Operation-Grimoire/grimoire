@@ -78,7 +78,7 @@ private fun UpdateDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    "${release.tagName} is available.",
+                    "${release.displayVersion} is available.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 if (release.releaseNotes.isNotBlank()) {

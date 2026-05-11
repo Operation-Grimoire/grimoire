@@ -1,43 +1,37 @@
-name: Build & Release App
+name: Nightly Beta Build
 
 on:
   push:
-    tags: ['v*.*.*']
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag (e.g. v1.0.0). Leave blank to publish as latest-dev.'
-        required: false
 
 concurrency:
-  group: release
+  group: nightly
   cancel-in-progress: true
 
 jobs:
-  release:
+  beta:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: read
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Determine release tag
-        id: tag
+      - name: Compute beta version
+        id: ver
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "name=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          elif [ -n "${{ github.event.inputs.tag }}" ]; then
-            echo "name=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "name=latest-dev" >> "$GITHUB_OUTPUT"
-            echo "prerelease=true" >> "$GITHUB_OUTPUT"
-          fi
+          LATEST=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -n1)
+          LATEST=${LATEST:-v0.0.0}
+          SHORT=$(git rev-parse --short HEAD)
+          RUN=${{ github.run_number }}
+          VERSION_NAME="${LATEST#v}-beta.${RUN}+${SHORT}"
+          echo "base_tag=${LATEST}" >> "$GITHUB_OUTPUT"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "beta_number=${RUN}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHORT}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v4
         with:
@@ -51,7 +45,9 @@ jobs:
       - name: Build release APK
         run: ./gradlew assembleRelease --build-cache
         env:
-          APP_VERSION_TAG: ${{ steps.tag.outputs.name }}
+          APP_VERSION_TAG: ${{ steps.ver.outputs.base_tag }}
+          APP_VERSION_NAME: ${{ steps.ver.outputs.version_name }}
+          APP_BETA_NUMBER: ${{ steps.ver.outputs.beta_number }}
           APP_GIT_SHA: ${{ github.sha }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -73,14 +69,20 @@ jobs:
             --out app/build/outputs/apk/release/grimoire.apk \
             app/build/outputs/apk/release/app-release-unsigned.apk
 
-      - name: Release
+      - name: Publish/refresh beta release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.name }}
-          name: Grimoire ${{ steps.tag.outputs.name }}
-          prerelease: ${{ steps.tag.outputs.prerelease }}
+          tag_name: beta
+          name: Grimoire ${{ steps.ver.outputs.version_name }}
+          prerelease: true
+          make_latest: 'false'
+          target_commitish: ${{ github.sha }}
           body: |
-            Auto-generated release from commit ${{ github.sha }}.
+            Auto-built from `main` @ ${{ github.sha }}.
+
+            Version: `${{ steps.ver.outputs.version_name }}`
+
+            This is a rolling beta release. Each push to `main` replaces it with a fresh build.
           files: app/build/outputs/apk/release/grimoire.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
