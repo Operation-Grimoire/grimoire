@@ -69,6 +69,8 @@ class SourceBrowseViewModel @Inject constructor(
     val sourceBaseUrl: String get() = loaded?.source?.javaClass
         ?.getAnnotation(SourceInfo::class.java)?.baseUrl ?: ""
 
+    val supportsSearchWithFilters: Boolean get() = source?.supportsSearchWithFilters ?: false
+
     private val _filters = MutableStateFlow<List<Filter<*>>>(emptyList())
     val filters: StateFlow<List<Filter<*>>> = _filters.asStateFlow()
 
@@ -170,13 +172,23 @@ class SourceBrowseViewModel @Inject constructor(
 
     fun submitSearch() {
         if (_query.value.isBlank()) return
+        // Plain top-bar search: filters are reset to source defaults so search
+        // and filter remain conceptually separate operations.
+        _activeFilters.value = emptyList()
         _mode.value = BrowseMode.SEARCH
         load(reset = true)
     }
 
-    fun applyFilters(applied: List<Filter<*>>) {
+    /**
+     * @param sheetQuery filter sheet's own query field, only honoured when the
+     *   source declares [CatalogueSource.supportsSearchWithFilters]. For other
+     *   sources the top-bar query is cleared so filter results aren't polluted
+     *   by a stale search keyword.
+     */
+    fun applyFilters(applied: List<Filter<*>>, sheetQuery: String = "") {
         if (!canApplyFilters()) return
         _activeFilters.value = applied
+        _query.value = if (supportsSearchWithFilters) sheetQuery else ""
         _mode.value = BrowseMode.SEARCH
         load(reset = true)
     }
