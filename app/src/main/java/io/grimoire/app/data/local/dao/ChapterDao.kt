@@ -6,12 +6,14 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.local.entity.LibraryStats
 import io.grimoire.app.data.local.entity.NovelChapterStats
+import io.grimoire.app.data.local.entity.ReadingStats
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ChapterDao {
-    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder, firstReadAt, wordCount FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
     fun getChapters(novelId: Long): Flow<List<ChapterEntity>>
 
     @Query("SELECT * FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
@@ -38,22 +40,50 @@ interface ChapterDao {
     @Upsert
     suspend fun upsertAll(chapters: List<ChapterEntity>)
 
-    @Query("UPDATE chapters SET read = :read WHERE id = :id")
+    @Query(
+        "UPDATE chapters SET read = :read, " +
+            "firstReadAt = CASE WHEN :read AND firstReadAt IS NULL " +
+            "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
+            "WHERE id = :id"
+    )
     suspend fun setRead(id: Long, read: Boolean)
 
     @Query("UPDATE chapters SET readProgress = :progress WHERE id = :id")
     suspend fun setReadProgress(id: Long, progress: Float)
 
-    @Query("UPDATE chapters SET read = :read WHERE novelId = :novelId")
+    @Query("UPDATE chapters SET wordCount = :count WHERE id = :id AND wordCount != :count")
+    suspend fun setWordCount(id: Long, count: Int)
+
+    @Query(
+        "UPDATE chapters SET read = :read, " +
+            "firstReadAt = CASE WHEN :read AND firstReadAt IS NULL " +
+            "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
+            "WHERE novelId = :novelId"
+    )
     suspend fun markAllRead(novelId: Long, read: Boolean)
 
-    @Query("UPDATE chapters SET read = :read WHERE novelId = :novelId AND chapterNumber <= :chapterNumber")
+    @Query(
+        "UPDATE chapters SET read = :read, " +
+            "firstReadAt = CASE WHEN :read AND firstReadAt IS NULL " +
+            "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
+            "WHERE novelId = :novelId AND chapterNumber <= :chapterNumber"
+    )
     suspend fun markAllBefore(novelId: Long, chapterNumber: Float, read: Boolean)
 
-    @Query("UPDATE chapters SET read = :read WHERE novelId = :novelId AND chapterNumber >= :chapterNumber")
+    @Query(
+        "UPDATE chapters SET read = :read, " +
+            "firstReadAt = CASE WHEN :read AND firstReadAt IS NULL " +
+            "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
+            "WHERE novelId = :novelId AND chapterNumber >= :chapterNumber"
+    )
     suspend fun markAllAfter(novelId: Long, chapterNumber: Float, read: Boolean)
 
-    @Query("UPDATE chapters SET read = :read WHERE id IN (:ids)")
+    @Query(
+        "UPDATE chapters SET read = :read, " +
+            "firstReadAt = CASE WHEN :read AND firstReadAt IS NULL " +
+            "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
+            "WHERE id IN (:ids)"
+    )
     suspend fun markChapters(ids: List<Long>, read: Boolean)
 
     @Query("UPDATE chapters SET downloadStatus = :status WHERE id = :id")
@@ -92,7 +122,7 @@ interface ChapterDao {
     @Query("UPDATE chapters SET downloadStatus = 1 WHERE novelId = :novelId AND downloadStatus = 4")
     suspend fun retryAllFailed(novelId: Long)
 
-    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder, firstReadAt, wordCount FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
     fun getAllDownloads(): Flow<List<ChapterEntity>>
 
     @Query("""
@@ -104,4 +134,29 @@ interface ChapterDao {
         GROUP BY novelId
     """)
     fun getStatsForAll(): Flow<List<NovelChapterStats>>
+
+    @Query("""
+        SELECT
+          (SELECT COUNT(*) FROM chapters WHERE firstReadAt IS NOT NULL) AS chaptersRead,
+          (SELECT COALESCE(SUM(wordCount), 0) FROM chapters WHERE firstReadAt IS NOT NULL) AS wordsRead,
+          (SELECT COUNT(DISTINCT novelId) FROM chapters WHERE firstReadAt IS NOT NULL) AS novelsStarted,
+          (SELECT COUNT(*) FROM novels n
+             WHERE EXISTS (SELECT 1 FROM chapters WHERE novelId = n.id)
+               AND NOT EXISTS (SELECT 1 FROM chapters WHERE novelId = n.id AND firstReadAt IS NULL)
+          ) AS novelsCompleted,
+          (SELECT MIN(firstReadAt) FROM chapters WHERE firstReadAt IS NOT NULL) AS firstReadAt,
+          (SELECT MAX(firstReadAt) FROM chapters WHERE firstReadAt IS NOT NULL) AS lastReadAt
+    """)
+    fun getReadingStats(): Flow<ReadingStats>
+
+    @Query("""
+        SELECT
+          (SELECT COUNT(*) FROM novels WHERE favorite = 1) AS favoriteNovels,
+          (SELECT COUNT(*) FROM chapters c
+             JOIN novels n ON c.novelId = n.id WHERE n.favorite = 1) AS libraryChapters,
+          (SELECT COUNT(*) FROM chapters c
+             JOIN novels n ON c.novelId = n.id WHERE n.favorite = 1 AND c.read = 0) AS libraryUnreadChapters,
+          (SELECT COUNT(*) FROM chapters WHERE downloadStatus = 3) AS downloadedChapters
+    """)
+    fun getLibraryStats(): Flow<LibraryStats>
 }

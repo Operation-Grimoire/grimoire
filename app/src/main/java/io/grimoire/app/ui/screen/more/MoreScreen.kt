@@ -3,6 +3,7 @@ package io.grimoire.app.ui.screen.more
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun MoreScreen(
     viewModel: MoreViewModel = hiltViewModel(),
     onNavigateToDownloads: () -> Unit,
+    onNavigateToStatistics: () -> Unit,
     onNavigateToSettings: () -> Unit,
 ) {
     val activeCount by viewModel.activeDownloadCount.collectAsState()
@@ -39,6 +41,14 @@ fun MoreScreen(
                     } else null,
                     leadingContent = { Icon(Icons.Default.Download, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToDownloads),
+                )
+                HorizontalDivider()
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text("Statistics") },
+                    leadingContent = { Icon(Icons.Default.BarChart, contentDescription = null) },
+                    modifier = Modifier.clickable(onClick = onNavigateToStatistics),
                 )
                 HorizontalDivider()
             }

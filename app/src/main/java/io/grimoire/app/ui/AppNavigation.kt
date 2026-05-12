@@ -45,6 +45,7 @@ import io.grimoire.app.ui.screen.extensions.ExtensionsScreen
 import io.grimoire.app.ui.screen.library.LibraryScreen
 import io.grimoire.app.ui.screen.more.MoreScreen
 import io.grimoire.app.ui.screen.more.MoreViewModel
+import io.grimoire.app.ui.screen.more.statistics.StatisticsScreen
 import io.grimoire.app.ui.screen.reader.ReaderScreen
 import io.grimoire.app.ui.screen.settings.SettingsScreen
 import io.grimoire.app.ui.screen.webview.WebViewScreen
@@ -76,6 +77,7 @@ private const val ROUTE_EXTENSION_MANAGE = "extensions"
 private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}?q={q}"
 private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}"
 private const val ROUTE_DOWNLOADS = "downloads"
+private const val ROUTE_STATISTICS = "statistics"
 private const val ROUTE_SETTINGS_ROOT = "settings"
 private const val ROUTE_SETTINGS_APPEARANCE = "settings/appearance"
 private const val ROUTE_SETTINGS_LIBRARY = "settings/library"
@@ -199,12 +201,17 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             composable(route = TopLevelDestination.More.route) {
                 MoreScreen(
                     onNavigateToDownloads = { navController.navigate(ROUTE_DOWNLOADS) },
+                    onNavigateToStatistics = { navController.navigate(ROUTE_STATISTICS) },
                     onNavigateToSettings = { navController.navigate(ROUTE_SETTINGS_ROOT) },
                 )
             }
 
             composable(route = ROUTE_DOWNLOADS) {
                 DownloadsScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(route = ROUTE_STATISTICS) {
+                StatisticsScreen(onNavigateBack = { navController.popBackStack() })
             }
 
             navigation(
