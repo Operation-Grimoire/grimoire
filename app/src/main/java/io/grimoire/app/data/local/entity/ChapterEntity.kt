@@ -28,4 +28,6 @@ data class ChapterEntity(
     val downloadStatus: Int = 0,
     val downloadedContent: String? = null,
     val queueOrder: Long = 0L,
+    val firstReadAt: Long? = null,
+    val wordCount: Int = 0,
 )

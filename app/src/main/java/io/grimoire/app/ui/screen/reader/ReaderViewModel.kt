@@ -101,11 +101,13 @@ class ReaderViewModel @Inject constructor(
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
         val cached = chapter.downloadedContent
         if (cached != null) {
-            _pages.value = cached.split(PAGE_SEP)
+            val pages = cached.split(PAGE_SEP)
                 .mapIndexed { i, text -> NovelPage(i, text) }
                 .filter { it.text.isNotBlank() }
+            _pages.value = pages
             _isLoading.value = false
             _error.value = null
+            recordWordCount(chapter, pages)
             return
         }
         val src = source ?: run {
@@ -118,9 +120,21 @@ class ReaderViewModel @Inject constructor(
             _error.value = null
             _pages.value = emptyList()
             runCatching { src.getPageList(chapter.toChapter()) }
-                .onSuccess { _pages.value = it }
+                .onSuccess {
+                    _pages.value = it
+                    recordWordCount(chapter, it)
+                }
                 .onFailure { _error.value = "${it::class.simpleName}: ${it.message ?: "(no message)"}" }
             _isLoading.value = false
+        }
+    }
+
+    private fun recordWordCount(chapter: ChapterEntity, pages: List<NovelPage>) {
+        val words = pages.sumOf { it.text.countWords() }
+        if (words <= 0 || words == chapter.wordCount) return
+        viewModelScope.launch { chapterDao.setWordCount(chapter.id, words) }
+        _chapters.update { list ->
+            list.map { if (it.id == chapter.id) it.copy(wordCount = words) else it }
         }
     }
 
@@ -203,3 +217,17 @@ private fun ChapterEntity.toChapter() = Chapter(
     chapterNumber = chapterNumber,
     translator = translator,
 )
+
+private fun String.countWords(): Int {
+    var count = 0
+    var inWord = false
+    for (ch in this) {
+        if (ch.isWhitespace()) {
+            inWord = false
+        } else if (!inWord) {
+            inWord = true
+            count++
+        }
+    }
+    return count
+}
