@@ -125,6 +125,7 @@ fun LibraryScreen(
     val hasPin by viewModel.hasPin.collectAsState()
     val hiddenCategoryIds by viewModel.hiddenCategoryIds.collectAsState()
     val biometricEnabled by viewModel.biometricEnabled.collectAsState()
+    val includeHiddenInAll by viewModel.includeHiddenInAll.collectAsState()
 
     var selectedTab by remember { mutableIntStateOf(0) }
     var showManage by remember { mutableStateOf(false) }
@@ -142,6 +143,8 @@ fun LibraryScreen(
         addAll(categories.map { it.name })
     }
 
+    val effectiveTab = selectedTab.coerceIn(0, (tabs.size - 1).coerceAtLeast(0))
+
     LaunchedEffect(tabs.size) {
         if (selectedTab >= tabs.size) selectedTab = 0
     }
@@ -149,23 +152,26 @@ fun LibraryScreen(
     val defaultCategory = categories.firstOrNull { it.isDefault }
 
     val displayedNovels: List<NovelEntity>? = remember(
-        novels, selectedTab, categories, showAllTab,
+        novels, effectiveTab, categories, showAllTab,
         sortOrder, filterStatus, filterUnreadOnly, filterDownloadedOnly, chapterStats,
-        isUnlocked, hiddenCategoryIds,
+        isUnlocked, hiddenCategoryIds, includeHiddenInAll,
     ) {
         val loaded = novels ?: return@remember null
-        val visibleLoaded = if (isUnlocked) loaded
-            else loaded.filter { it.categoryId !in hiddenCategoryIds }
         val allTabOffset = if (showAllTab) 1 else 0
+        val isAllTab = showAllTab && effectiveTab == 0
+        val excludeHidden = !isUnlocked || (isAllTab && !includeHiddenInAll)
+        val baseFiltered = if (excludeHidden) {
+            loaded.filter { it.categoryId !in hiddenCategoryIds }
+        } else loaded
         val tabFiltered = when {
-            showAllTab && selectedTab == 0 -> visibleLoaded
+            isAllTab -> baseFiltered
             else -> {
-                val catIndex = selectedTab - allTabOffset
+                val catIndex = effectiveTab - allTabOffset
                 val cat = categories.getOrNull(catIndex)
                 when {
-                    cat == null -> visibleLoaded
-                    cat.isDefault -> visibleLoaded.filter { it.categoryId == null }
-                    else -> visibleLoaded.filter { it.categoryId == cat.id }
+                    cat == null -> baseFiltered
+                    cat.isDefault -> baseFiltered.filter { it.categoryId == null }
+                    else -> baseFiltered.filter { it.categoryId == cat.id }
                 }
             }
         }
@@ -238,10 +244,10 @@ fun LibraryScreen(
     ) { padding ->
         Column(Modifier.padding(padding)) {
             if (tabs.size > 1) {
-                PrimaryScrollableTabRow(selectedTabIndex = selectedTab) {
+                PrimaryScrollableTabRow(selectedTabIndex = effectiveTab) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
-                            selected = selectedTab == index,
+                            selected = effectiveTab == index,
                             onClick = { selectedTab = index },
                             text = { Text(title) },
                         )

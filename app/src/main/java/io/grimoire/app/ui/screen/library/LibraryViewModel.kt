@@ -67,6 +67,7 @@ class LibraryViewModel @Inject constructor(
     val filterStatus: StateFlow<Int> = libraryPreferences.filterStatus.stateIn(viewModelScope)
     val filterUnreadOnly: StateFlow<Boolean> = libraryPreferences.filterUnreadOnly.stateIn(viewModelScope)
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
+    val includeHiddenInAll: StateFlow<Boolean> = libraryPreferences.includeHiddenInAll.stateIn(viewModelScope)
 
     fun pkgForNovel(novel: NovelEntity): String =
         extensionManager.extensions.value
