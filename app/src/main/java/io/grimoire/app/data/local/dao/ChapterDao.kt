@@ -46,7 +46,12 @@ interface ChapterDao {
             "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
             "WHERE id = :id"
     )
-    suspend fun setRead(id: Long, read: Boolean)
+    suspend fun setReadRaw(id: Long, read: Boolean)
+
+    suspend fun setRead(id: Long, read: Boolean) {
+        setReadRaw(id, read)
+        if (read) backfillWordCountsFromDownloads()
+    }
 
     @Query("UPDATE chapters SET readProgress = :progress WHERE id = :id")
     suspend fun setReadProgress(id: Long, progress: Float)
@@ -60,7 +65,12 @@ interface ChapterDao {
             "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
             "WHERE novelId = :novelId"
     )
-    suspend fun markAllRead(novelId: Long, read: Boolean)
+    suspend fun markAllReadRaw(novelId: Long, read: Boolean)
+
+    suspend fun markAllRead(novelId: Long, read: Boolean) {
+        markAllReadRaw(novelId, read)
+        if (read) backfillWordCountsFromDownloads()
+    }
 
     @Query(
         "UPDATE chapters SET read = :read, " +
@@ -68,7 +78,12 @@ interface ChapterDao {
             "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
             "WHERE novelId = :novelId AND chapterNumber <= :chapterNumber"
     )
-    suspend fun markAllBefore(novelId: Long, chapterNumber: Float, read: Boolean)
+    suspend fun markAllBeforeRaw(novelId: Long, chapterNumber: Float, read: Boolean)
+
+    suspend fun markAllBefore(novelId: Long, chapterNumber: Float, read: Boolean) {
+        markAllBeforeRaw(novelId, chapterNumber, read)
+        if (read) backfillWordCountsFromDownloads()
+    }
 
     @Query(
         "UPDATE chapters SET read = :read, " +
@@ -76,7 +91,12 @@ interface ChapterDao {
             "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
             "WHERE novelId = :novelId AND chapterNumber >= :chapterNumber"
     )
-    suspend fun markAllAfter(novelId: Long, chapterNumber: Float, read: Boolean)
+    suspend fun markAllAfterRaw(novelId: Long, chapterNumber: Float, read: Boolean)
+
+    suspend fun markAllAfter(novelId: Long, chapterNumber: Float, read: Boolean) {
+        markAllAfterRaw(novelId, chapterNumber, read)
+        if (read) backfillWordCountsFromDownloads()
+    }
 
     @Query(
         "UPDATE chapters SET read = :read, " +
@@ -84,7 +104,12 @@ interface ChapterDao {
             "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
             "WHERE id IN (:ids)"
     )
-    suspend fun markChapters(ids: List<Long>, read: Boolean)
+    suspend fun markChaptersRaw(ids: List<Long>, read: Boolean)
+
+    suspend fun markChapters(ids: List<Long>, read: Boolean) {
+        markChaptersRaw(ids, read)
+        if (read) backfillWordCountsFromDownloads()
+    }
 
     @Query("UPDATE chapters SET downloadStatus = :status WHERE id = :id")
     suspend fun setDownloadStatus(id: Long, status: Int)
@@ -92,8 +117,16 @@ interface ChapterDao {
     @Query("UPDATE chapters SET downloadStatus = :status WHERE id IN (:ids)")
     suspend fun setDownloadStatusBatch(ids: List<Long>, status: Int)
 
-    @Query("UPDATE chapters SET downloadStatus = :status, downloadedContent = :content WHERE id = :id")
-    suspend fun setDownloadedContent(id: Long, content: String, status: Int)
+    @Query(
+        "UPDATE chapters SET downloadStatus = :status, downloadedContent = :content, " +
+            "wordCount = CASE WHEN :wordCount > 0 THEN :wordCount ELSE wordCount END " +
+            "WHERE id = :id"
+    )
+    suspend fun setDownloadedContentRaw(id: Long, content: String, status: Int, wordCount: Int)
+
+    suspend fun setDownloadedContent(id: Long, content: String, status: Int) {
+        setDownloadedContentRaw(id, content, status, countWordsIn(content))
+    }
 
     @Query("UPDATE chapters SET downloadStatus = 0, downloadedContent = NULL WHERE id = :id")
     suspend fun deleteDownload(id: Long)
@@ -136,6 +169,19 @@ interface ChapterDao {
     fun getStatsForAll(): Flow<List<NovelChapterStats>>
 
     @Query("""
+        SELECT id, downloadedContent FROM chapters
+        WHERE read = 1 AND wordCount = 0 AND downloadedContent IS NOT NULL
+    """)
+    suspend fun getReadDownloadedMissingWordCount(): List<ChapterContent>
+
+    suspend fun backfillWordCountsFromDownloads() {
+        for (c in getReadDownloadedMissingWordCount()) {
+            val n = countWordsIn(c.downloadedContent)
+            if (n > 0) setWordCount(c.id, n)
+        }
+    }
+
+    @Query("""
         SELECT
           (SELECT COUNT(*) FROM chapters WHERE firstReadAt IS NOT NULL) AS chaptersRead,
           (SELECT COALESCE(SUM(wordCount), 0) FROM chapters WHERE firstReadAt IS NOT NULL) AS wordsRead,
@@ -159,4 +205,20 @@ interface ChapterDao {
           (SELECT COUNT(*) FROM chapters WHERE downloadStatus = 3) AS downloadedChapters
     """)
     fun getLibraryStats(): Flow<LibraryStats>
+}
+
+data class ChapterContent(val id: Long, val downloadedContent: String)
+
+private fun countWordsIn(s: String): Int {
+    var count = 0
+    var inWord = false
+    for (ch in s) {
+        if (ch.isWhitespace()) {
+            inWord = false
+        } else if (!inWord) {
+            inWord = true
+            count++
+        }
+    }
+    return count
 }
