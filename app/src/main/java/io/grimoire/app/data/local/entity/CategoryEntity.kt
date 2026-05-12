@@ -9,4 +9,5 @@ data class CategoryEntity(
     val name: String,
     val order: Int = 0,
     val isDefault: Boolean = false,
+    val isHidden: Boolean = false,
 )

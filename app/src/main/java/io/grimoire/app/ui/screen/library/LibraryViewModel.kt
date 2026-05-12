@@ -13,9 +13,11 @@ import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
 import io.grimoire.app.data.preferences.LibrarySort
 import io.grimoire.app.data.preferences.stateIn
+import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -28,10 +30,28 @@ class LibraryViewModel @Inject constructor(
     private val chapterDao: ChapterDao,
     private val extensionManager: ExtensionManager,
     private val libraryPreferences: LibraryPreferences,
+    private val authManager: HiddenCategoriesAuthManager,
 ) : ViewModel() {
 
-    val categories: StateFlow<List<CategoryEntity>> = categoryDao.getAll()
+    val isUnlocked: StateFlow<Boolean> = authManager.isUnlocked
+
+    val hasPin: StateFlow<Boolean> = authManager.hasPin
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val biometricEnabled: StateFlow<Boolean> = authManager.biometricEnabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    private val allCategories: StateFlow<List<CategoryEntity>> = categoryDao.getAll()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val categories: StateFlow<List<CategoryEntity>> =
+        combine(allCategories, authManager.isUnlocked) { all, unlocked ->
+            if (unlocked) all else all.filter { !it.isHidden }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val hiddenCategoryIds: StateFlow<Set<Long>> = allCategories
+        .map { list -> list.filter { it.isHidden }.map { it.id }.toSet() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
     val novels: StateFlow<List<NovelEntity>?> = novelDao.getFavorites()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -96,5 +116,23 @@ class LibraryViewModel @Inject constructor(
 
     fun setFilterDownloadedOnly(value: Boolean) = viewModelScope.launch {
         libraryPreferences.filterDownloadedOnly.set(value)
+    }
+
+    fun setCategoryHidden(category: CategoryEntity, hidden: Boolean) = viewModelScope.launch {
+        categoryDao.upsert(category.copy(isHidden = hidden))
+    }
+
+    fun lock() {
+        authManager.lock()
+    }
+
+    suspend fun verifyAndUnlock(pin: String): Boolean {
+        val ok = authManager.verifyPin(pin)
+        if (ok) authManager.unlock()
+        return ok
+    }
+
+    fun unlockFromBiometric() {
+        authManager.unlock()
     }
 }

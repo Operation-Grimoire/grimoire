@@ -3,14 +3,21 @@ package io.grimoire.app
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import dagger.hilt.android.HiltAndroidApp
+import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
+import javax.inject.Inject
 
 @HiltAndroidApp
 class GrimoireApp : Application(), ImageLoaderFactory {
+
+    @Inject lateinit var hiddenAuthManager: HiddenCategoriesAuthManager
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
         .memoryCache {
@@ -35,6 +42,12 @@ class GrimoireApp : Application(), ImageLoaderFactory {
             NotificationManager.IMPORTANCE_LOW,
         ).apply { description = "Background chapter downloads" }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+
+        ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStop(owner: LifecycleOwner) {
+                hiddenAuthManager.lock()
+            }
+        })
     }
 
     companion object {
