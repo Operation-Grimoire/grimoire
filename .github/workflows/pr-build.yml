@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
 
     steps:
       - uses: actions/checkout@v4
@@ -28,3 +29,10 @@ jobs:
 
       - name: Assemble debug APK
         run: ./gradlew assembleDebug --build-cache --stacktrace
+        env:
+          # Avoids `versionCode = 0` since PR builds don't fetch tags.
+          APP_VERSION_TAG: v0.0.0
+          APP_BETA_NUMBER: ${{ github.run_number }}
+          APP_GIT_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
