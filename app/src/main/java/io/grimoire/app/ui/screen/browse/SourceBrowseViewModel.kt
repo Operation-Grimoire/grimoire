@@ -29,6 +29,18 @@ private const val TAG = "SourceBrowseVM"
 
 enum class BrowseMode { POPULAR, LATEST, SEARCH }
 
+sealed interface FilterLoadState {
+    /** Source has no filters at all. */
+    data object None : FilterLoadState
+    /** Source has only static filters — ready to use immediately. */
+    data object Ready : FilterLoadState
+    /** Source has dynamic filters that haven't been fetched yet. */
+    data object NeedsLoad : FilterLoadState
+    data object Loading : FilterLoadState
+    data object Loaded : FilterLoadState
+    data class Error(val message: String) : FilterLoadState
+}
+
 @HiltViewModel
 class SourceBrowseViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
@@ -57,7 +69,11 @@ class SourceBrowseViewModel @Inject constructor(
     val sourceBaseUrl: String get() = loaded?.source?.javaClass
         ?.getAnnotation(SourceInfo::class.java)?.baseUrl ?: ""
 
-    val filters: List<Filter<*>> get() = source?.getFilterList() ?: emptyList()
+    private val _filters = MutableStateFlow<List<Filter<*>>>(emptyList())
+    val filters: StateFlow<List<Filter<*>>> = _filters.asStateFlow()
+
+    private val _filterLoadState = MutableStateFlow<FilterLoadState>(FilterLoadState.None)
+    val filterLoadState: StateFlow<FilterLoadState> = _filterLoadState.asStateFlow()
 
     private val _novels = MutableStateFlow<List<Novel>>(emptyList())
     val novels: StateFlow<List<Novel>> = _novels.asStateFlow()
@@ -97,8 +113,48 @@ class SourceBrowseViewModel @Inject constructor(
             extensionManager.extensions
                 .filter { list -> list.any { it.info.packageName == packageName } }
                 .take(1)
-                .collect { load(reset = true) }
+                .collect {
+                    initFilters()
+                    load(reset = true)
+                }
         }
+    }
+
+    private fun initFilters() {
+        val src = source ?: return
+        val list = src.getFilterList()
+        _filters.value = list
+        _filterLoadState.value = when {
+            list.isEmpty() -> FilterLoadState.None
+            src.hasDynamicFilters -> FilterLoadState.NeedsLoad
+            else -> FilterLoadState.Ready
+        }
+    }
+
+    fun loadFilterOptions() {
+        val src = source ?: return
+        if (!src.hasDynamicFilters) return
+        if (_filterLoadState.value is FilterLoadState.Loading) return
+        viewModelScope.launch {
+            _filterLoadState.value = FilterLoadState.Loading
+            runCatching { src.fetchFilterOptions() }
+                .onSuccess {
+                    _filters.value = it
+                    _filterLoadState.value = FilterLoadState.Loaded
+                }
+                .onFailure { e ->
+                    Log.e(TAG, "Failed to load filter options [pkg=$packageName]", e)
+                    _filterLoadState.value = FilterLoadState.Error(
+                        e.message ?: e::class.simpleName ?: "Unknown error"
+                    )
+                }
+        }
+    }
+
+    fun canApplyFilters(): Boolean = when (_filterLoadState.value) {
+        FilterLoadState.None, FilterLoadState.Loading, FilterLoadState.NeedsLoad -> false
+        FilterLoadState.Ready, FilterLoadState.Loaded -> true
+        is FilterLoadState.Error -> false
     }
 
     fun setMode(newMode: BrowseMode) {
@@ -119,7 +175,9 @@ class SourceBrowseViewModel @Inject constructor(
     }
 
     fun applyFilters(applied: List<Filter<*>>) {
+        if (!canApplyFilters()) return
         _activeFilters.value = applied
+        _mode.value = BrowseMode.SEARCH
         load(reset = true)
     }
 
