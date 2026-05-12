@@ -52,6 +52,7 @@ import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.about.AboutSettingsScreen
 import io.grimoire.app.ui.screen.settings.appearance.AppearanceSettingsScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseSettingsScreen
+import io.grimoire.app.ui.screen.settings.hidden.HiddenCategoriesSettingsScreen
 import io.grimoire.app.ui.screen.settings.library.LibrarySettingsScreen
 import io.grimoire.app.ui.screen.settings.reader.ReaderSettingsScreen
 import io.grimoire.app.ui.screen.settings.updates.UpdatesSettingsScreen
@@ -82,6 +83,7 @@ private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
 private const val ROUTE_SETTINGS_READER = "settings/reader"
 private const val ROUTE_SETTINGS_UPDATES = "settings/updates"
 private const val ROUTE_SETTINGS_ABOUT = "settings/about"
+private const val ROUTE_SETTINGS_HIDDEN = "settings/hidden_categories"
 private const val ROUTE_READER = "reader?pkg={pkg}&novelUrl={novelUrl}&chapterUrl={chapterUrl}"
 private const val ROUTE_WEBVIEW = "webview?url={url}"
 
@@ -232,7 +234,15 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 composable(route = ROUTE_SETTINGS_LIBRARY) { entry ->
                     val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
                     val vm: SettingsViewModel = hiltViewModel(graphEntry)
-                    LibrarySettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
+                    LibrarySettingsScreen(
+                        viewModel = vm,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToHiddenCategories = { navController.navigate(ROUTE_SETTINGS_HIDDEN) },
+                    )
+                }
+
+                composable(route = ROUTE_SETTINGS_HIDDEN) {
+                    HiddenCategoriesSettingsScreen(onNavigateBack = { navController.popBackStack() })
                 }
 
                 composable(route = ROUTE_SETTINGS_BROWSE) { entry ->

@@ -13,7 +13,7 @@ import io.grimoire.app.data.local.entity.RepoEntity
 
 @Database(
     entities = [NovelEntity::class, ChapterEntity::class, RepoEntity::class, CategoryEntity::class],
-    version = 9,
+    version = 10,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {

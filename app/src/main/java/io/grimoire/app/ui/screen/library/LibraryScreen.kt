@@ -29,6 +29,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
@@ -101,7 +104,7 @@ private val SORT_OPTIONS = listOf(
     LibrarySort.TOTAL_DESC to "Total chapters",
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LibraryScreen(
     onNovelClick: (pkg: String, url: String) -> Unit,
@@ -118,10 +121,15 @@ fun LibraryScreen(
     val filterStatus by viewModel.filterStatus.collectAsState()
     val filterUnreadOnly by viewModel.filterUnreadOnly.collectAsState()
     val filterDownloadedOnly by viewModel.filterDownloadedOnly.collectAsState()
+    val isUnlocked by viewModel.isUnlocked.collectAsState()
+    val hasPin by viewModel.hasPin.collectAsState()
+    val hiddenCategoryIds by viewModel.hiddenCategoryIds.collectAsState()
+    val biometricEnabled by viewModel.biometricEnabled.collectAsState()
 
     var selectedTab by remember { mutableIntStateOf(0) }
     var showManage by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
+    var showUnlock by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState()
@@ -143,18 +151,21 @@ fun LibraryScreen(
     val displayedNovels: List<NovelEntity>? = remember(
         novels, selectedTab, categories, showAllTab,
         sortOrder, filterStatus, filterUnreadOnly, filterDownloadedOnly, chapterStats,
+        isUnlocked, hiddenCategoryIds,
     ) {
         val loaded = novels ?: return@remember null
+        val visibleLoaded = if (isUnlocked) loaded
+            else loaded.filter { it.categoryId !in hiddenCategoryIds }
         val allTabOffset = if (showAllTab) 1 else 0
         val tabFiltered = when {
-            showAllTab && selectedTab == 0 -> loaded
+            showAllTab && selectedTab == 0 -> visibleLoaded
             else -> {
                 val catIndex = selectedTab - allTabOffset
                 val cat = categories.getOrNull(catIndex)
                 when {
-                    cat == null -> loaded
-                    cat.isDefault -> loaded.filter { it.categoryId == null }
-                    else -> loaded.filter { it.categoryId == cat.id }
+                    cat == null -> visibleLoaded
+                    cat.isDefault -> visibleLoaded.filter { it.categoryId == null }
+                    else -> visibleLoaded.filter { it.categoryId == cat.id }
                 }
             }
         }
@@ -187,8 +198,21 @@ fun LibraryScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Library") },
+                title = {
+                    Text(
+                        "Library",
+                        modifier = Modifier.combinedClickable(
+                            onClick = {},
+                            onLongClick = { if (hasPin && !isUnlocked) showUnlock = true },
+                        ),
+                    )
+                },
                 actions = {
+                    if (isUnlocked) {
+                        IconButton(onClick = { viewModel.lock() }) {
+                            Icon(Icons.Default.Lock, contentDescription = "Lock hidden categories")
+                        }
+                    }
                     IconButton(onClick = {
                         viewModel.setDisplayMode(
                             if (displayMode == LibraryDisplayMode.GRID) LibraryDisplayMode.LIST
@@ -307,11 +331,24 @@ fun LibraryScreen(
         ) {
             ManageCategoriesSheet(
                 categories = categories,
+                isUnlocked = isUnlocked,
+                hasPin = hasPin,
                 onAdd = viewModel::addCategory,
                 onRename = { cat, name -> viewModel.renameCategory(cat, name) },
                 onDelete = viewModel::deleteCategory,
+                onToggleHidden = { cat, hidden -> viewModel.setCategoryHidden(cat, hidden) },
+                onUnlockRequest = { showUnlock = true },
             )
         }
+    }
+
+    if (showUnlock) {
+        HiddenCategoriesUnlockDialog(
+            biometricEnabled = biometricEnabled,
+            onVerifyPin = { pin -> viewModel.verifyAndUnlock(pin) },
+            onUnlockedByBiometric = { viewModel.unlockFromBiometric() },
+            onDismiss = { showUnlock = false },
+        )
     }
 }
 
@@ -605,9 +642,13 @@ private fun MoveToCategoryDialog(
 @Composable
 private fun ManageCategoriesSheet(
     categories: List<CategoryEntity>,
+    isUnlocked: Boolean,
+    hasPin: Boolean,
     onAdd: (String) -> Unit,
     onRename: (CategoryEntity, String) -> Unit,
     onDelete: (CategoryEntity) -> Unit,
+    onToggleHidden: (CategoryEntity, Boolean) -> Unit,
+    onUnlockRequest: () -> Unit,
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var renamingCategory by remember { mutableStateOf<CategoryEntity?>(null) }
@@ -619,11 +660,29 @@ private fun ManageCategoriesSheet(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
         )
         HorizontalDivider()
+        if (hasPin && !isUnlocked) {
+            TextButton(
+                onClick = onUnlockRequest,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            ) {
+                Icon(Icons.Default.Lock, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Unlock to manage hidden categories")
+            }
+        }
         categories.forEach { cat ->
             ListItem(
                 headlineContent = { Text(cat.name) },
                 trailingContent = {
                     Row {
+                        if (isUnlocked && !cat.isDefault) {
+                            IconButton(onClick = { onToggleHidden(cat, !cat.isHidden) }) {
+                                Icon(
+                                    if (cat.isHidden) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (cat.isHidden) "Unhide" else "Hide",
+                                )
+                            }
+                        }
                         IconButton(onClick = { renamingCategory = cat }) {
                             Icon(Icons.Default.Edit, contentDescription = "Rename")
                         }
