@@ -30,18 +30,23 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -281,9 +286,10 @@ fun SourceBrowseScreen(
             FilterSheet(
                 filters = filters,
                 loadState = filterLoadState,
+                showSearchField = viewModel.supportsSearchWithFilters,
                 onLoad = { viewModel.loadFilterOptions() },
-                onApply = { applied ->
-                    viewModel.applyFilters(applied)
+                onApply = { applied, sheetQuery ->
+                    viewModel.applyFilters(applied, sheetQuery)
                     showFilters = false
                 },
                 onDismiss = { showFilters = false },
@@ -398,12 +404,14 @@ private fun NovelListItem(novel: Novel, inLibrary: Boolean, onClick: () -> Unit,
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterSheet(
     filters: List<Filter<*>>,
     loadState: FilterLoadState,
+    showSearchField: Boolean,
     onLoad: () -> Unit,
-    onApply: (List<Filter<*>>) -> Unit,
+    onApply: (List<Filter<*>>, String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     // Edited states live alongside the filter list so Cancel doesn't mutate the source.
@@ -412,17 +420,24 @@ private fun FilterSheet(
             filters.forEachIndexed { i, f -> put(i, f.state) }
         }
     }
+    var sheetQuery by remember(filters) { mutableStateOf("") }
 
     val canApply = loadState is FilterLoadState.Ready || loadState is FilterLoadState.Loaded
+    val canReload = loadState is FilterLoadState.Loaded || loadState is FilterLoadState.Error
 
     Column(Modifier.padding(bottom = 16.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("Filters", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            if (canReload) {
+                IconButton(onClick = onLoad) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Reload filters")
+                }
+            }
             TextButton(
                 enabled = canApply,
                 onClick = {
@@ -430,7 +445,7 @@ private fun FilterSheet(
                     filters.forEachIndexed { i, f ->
                         (f as Filter<Any?>).state = edited[i]
                     }
-                    onApply(filters)
+                    onApply(filters, sheetQuery)
                 },
             ) { Text("Apply") }
             TextButton(onClick = onDismiss) { Text("Cancel") }
@@ -440,6 +455,17 @@ private fun FilterSheet(
         FilterLoadHeader(loadState, onLoad)
 
         if (loadState !is FilterLoadState.NeedsLoad && loadState !is FilterLoadState.Loading) {
+            if (showSearchField) {
+                OutlinedTextField(
+                    value = sheetQuery,
+                    onValueChange = { sheetQuery = it },
+                    label = { Text("Search") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
             filters.forEachIndexed { i, filter ->
                 FilterItem(
                     filter = filter,
@@ -496,6 +522,7 @@ private fun FilterLoadHeader(state: FilterLoadState, onLoad: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterItem(
     filter: Filter<*>,
@@ -568,20 +595,37 @@ private fun FilterItem(
             }
         }
         is Filter.Select<*> -> {
-            val selected = state as? Int ?: 0
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                Text(filter.name, style = MaterialTheme.typography.bodyMedium)
-                filter.values.forEachIndexed { i, value ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onStateChange(i) }
-                            .padding(vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = selected == i, onClick = { onStateChange(i) })
-                        Spacer(Modifier.width(4.dp))
-                        Text(value.toString())
+            val selected = (state as? Int ?: 0).coerceIn(0, (filter.values.size - 1).coerceAtLeast(0))
+            var expanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+            ) {
+                OutlinedTextField(
+                    value = filter.values.getOrNull(selected)?.toString().orEmpty(),
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(filter.name) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                ) {
+                    filter.values.forEachIndexed { i, value ->
+                        DropdownMenuItem(
+                            text = { Text(value.toString()) },
+                            onClick = {
+                                onStateChange(i)
+                                expanded = false
+                            },
+                        )
                     }
                 }
             }
