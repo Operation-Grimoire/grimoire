@@ -5,6 +5,7 @@ import javax.inject.Singleton
 
 enum class ReaderFont { DEFAULT, SERIF, MONOSPACE }
 enum class ReaderColorTheme { LIGHT, SEPIA, DARK, BLACK }
+enum class ReaderOrientation { FREE, PORTRAIT, LANDSCAPE }
 
 @Singleton
 class ReaderPreferences @Inject constructor(store: PreferenceStore) {
@@ -14,4 +15,6 @@ class ReaderPreferences @Inject constructor(store: PreferenceStore) {
     val paragraphSpacing = store.getInt("reader_paragraph_spacing", 16)
     val readerFont = store.getEnum("reader_font", ReaderFont.DEFAULT)
     val colorTheme = store.getEnum("reader_color_theme", ReaderColorTheme.LIGHT)
+    val orientation = store.getEnum("reader_orientation", ReaderOrientation.FREE)
+    val hideNotificationBar = store.getBoolean("reader_hide_notification_bar", false)
 }

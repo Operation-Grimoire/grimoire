@@ -1,4 +1,4 @@
-﻿package io.grimoire.app.ui.screen.reader
+package io.grimoire.app.ui.screen.reader
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -12,6 +12,7 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
+import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.preferences.ReaderPreferences
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager
@@ -25,7 +26,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val PAGE_SEP = ""
+private const val PAGE_SEP = ""
 
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
@@ -81,6 +82,8 @@ class ReaderViewModel @Inject constructor(
     val paragraphSpacing: StateFlow<Int> = readerPreferences.paragraphSpacing.stateIn(viewModelScope)
     val readerFont: StateFlow<ReaderFont> = readerPreferences.readerFont.stateIn(viewModelScope)
     val colorTheme: StateFlow<ReaderColorTheme> = readerPreferences.colorTheme.stateIn(viewModelScope)
+    val orientation: StateFlow<ReaderOrientation> = readerPreferences.orientation.stateIn(viewModelScope)
+    val hideNotificationBar: StateFlow<Boolean> = readerPreferences.hideNotificationBar.stateIn(viewModelScope)
 
     init {
         viewModelScope.launch {
