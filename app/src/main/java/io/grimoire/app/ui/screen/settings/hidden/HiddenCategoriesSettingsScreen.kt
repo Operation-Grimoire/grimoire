@@ -56,6 +56,7 @@ fun HiddenCategoriesSettingsScreen(
     val isUnlocked by viewModel.isUnlocked.collectAsState()
     val biometricEnabled by viewModel.biometricEnabled.collectAsState()
     val categories by viewModel.categories.collectAsState()
+    val includeHiddenInAll by viewModel.includeHiddenInAll.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -128,6 +129,20 @@ fun HiddenCategoriesSettingsScreen(
                                     checked = biometricEnabled && biometricAvailable,
                                     enabled = biometricAvailable,
                                     onCheckedChange = { viewModel.setBiometricEnabled(it) },
+                                )
+                            },
+                        )
+                    }
+                    item {
+                        ListItem(
+                            headlineContent = { Text("Show hidden in \"All\" tab") },
+                            supportingContent = {
+                                Text("When unlocked, also list hidden novels under the All tab")
+                            },
+                            trailingContent = {
+                                Switch(
+                                    checked = includeHiddenInAll,
+                                    onCheckedChange = { viewModel.setIncludeHiddenInAll(it) },
                                 )
                             },
                         )

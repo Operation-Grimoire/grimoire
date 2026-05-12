@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.entity.CategoryEntity
+import io.grimoire.app.data.preferences.LibraryPreferences
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +17,7 @@ import javax.inject.Inject
 class HiddenCategoriesSettingsViewModel @Inject constructor(
     private val authManager: HiddenCategoriesAuthManager,
     private val categoryDao: CategoryDao,
+    private val libraryPreferences: LibraryPreferences,
 ) : ViewModel() {
 
     val isUnlocked: StateFlow<Boolean> = authManager.isUnlocked
@@ -28,6 +30,13 @@ class HiddenCategoriesSettingsViewModel @Inject constructor(
 
     val categories: StateFlow<List<CategoryEntity>> = categoryDao.getAll()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val includeHiddenInAll: StateFlow<Boolean> = libraryPreferences.includeHiddenInAll.changes()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun setIncludeHiddenInAll(value: Boolean) = viewModelScope.launch {
+        libraryPreferences.includeHiddenInAll.set(value)
+    }
 
     fun setPin(pin: String) = viewModelScope.launch {
         authManager.setPin(pin)
