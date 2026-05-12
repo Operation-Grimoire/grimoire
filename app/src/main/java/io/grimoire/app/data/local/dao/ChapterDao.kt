@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ChapterDao {
-    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder, firstReadAt, wordCount FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
     fun getChapters(novelId: Long): Flow<List<ChapterEntity>>
 
     @Query("SELECT * FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
@@ -122,7 +122,7 @@ interface ChapterDao {
     @Query("UPDATE chapters SET downloadStatus = 1 WHERE novelId = :novelId AND downloadStatus = 4")
     suspend fun retryAllFailed(novelId: Long)
 
-    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder, firstReadAt, wordCount FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
     fun getAllDownloads(): Flow<List<ChapterEntity>>
 
     @Query("""
