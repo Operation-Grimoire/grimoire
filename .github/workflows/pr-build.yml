@@ -1,0 +1,30 @@
+name: PR Build (dry-run)
+
+on:
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: pr-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v3
+
+      - run: chmod +x gradlew
+
+      - name: Assemble debug APK
+        run: ./gradlew assembleDebug --build-cache --stacktrace
