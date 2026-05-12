@@ -14,6 +14,7 @@ import io.grimoire.app.data.preferences.BrowsePreferences
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager
 import android.util.Log
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 private const val TAG = "SourceBrowseVM"
@@ -139,7 +141,10 @@ class SourceBrowseViewModel @Inject constructor(
         if (_filterLoadState.value is FilterLoadState.Loading) return
         viewModelScope.launch {
             _filterLoadState.value = FilterLoadState.Loading
-            runCatching { src.fetchFilterOptions() }
+            // Move off Main: fetchFilterOptions doesn't get the per-call
+            // dispatcher wrap that HttpSource gives popular/latest/search,
+            // and extension authors easily forget to switch contexts.
+            runCatching { withContext(Dispatchers.IO) { src.fetchFilterOptions() } }
                 .onSuccess {
                     _filters.value = it
                     _filterLoadState.value = FilterLoadState.Loaded
