@@ -11,6 +11,7 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import dagger.hilt.android.HiltAndroidApp
+import io.grimoire.app.data.cache.CoverPreloader
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import javax.inject.Inject
 
@@ -18,6 +19,7 @@ import javax.inject.Inject
 class GrimoireApp : Application(), ImageLoaderFactory {
 
     @Inject lateinit var hiddenAuthManager: HiddenCategoriesAuthManager
+    @Inject lateinit var coverPreloader: CoverPreloader
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
         .memoryCache {
@@ -27,15 +29,17 @@ class GrimoireApp : Application(), ImageLoaderFactory {
         }
         .diskCache {
             DiskCache.Builder()
-                .directory(cacheDir.resolve("image_cache"))
-                .maxSizeBytes(64L * 1024 * 1024) // 64 MB
+                .directory(filesDir.resolve("image_cache"))
+                .maxSizeBytes(256L * 1024 * 1024) // 256 MB
                 .build()
         }
+        .respectCacheHeaders(false)
         .crossfade(true)
         .build()
 
     override fun onCreate() {
         super.onCreate()
+        coverPreloader.start()
         val channel = NotificationChannel(
             DOWNLOAD_CHANNEL_ID,
             "Chapter Downloads",
