@@ -19,6 +19,7 @@ import javax.inject.Singleton
 private const val REPO = "Operation-Grimoire/grimoire"
 private const val LATEST_RELEASE_URL = "https://api.github.com/repos/$REPO/releases/latest"
 private const val BETA_RELEASE_URL = "https://api.github.com/repos/$REPO/releases/tags/beta"
+private const val APK_MIME = "application/vnd.android.package-archive"
 
 class AppUpdateHashMismatchException(
     val expected: String,
@@ -146,10 +147,9 @@ class AppUpdateChecker @Inject constructor(
 
     fun launchInstall(file: File) {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-        val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
-            data = uri
-            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
-            putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, APK_MIME)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
         }
         context.startActivity(intent)
     }
