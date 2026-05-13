@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val PAGE_SEP = ""
+private const val PAGE_SEP = ""
 
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
