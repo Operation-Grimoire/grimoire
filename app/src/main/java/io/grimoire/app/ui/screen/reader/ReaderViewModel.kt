@@ -211,6 +211,10 @@ class ReaderViewModel @Inject constructor(
     fun setColorTheme(theme: ReaderColorTheme) = viewModelScope.launch {
         readerPreferences.colorTheme.set(theme)
     }
+
+    fun setOrientation(value: ReaderOrientation) = viewModelScope.launch {
+        readerPreferences.orientation.set(value)
+    }
 }
 
 private fun ChapterEntity.toChapter() = Chapter(

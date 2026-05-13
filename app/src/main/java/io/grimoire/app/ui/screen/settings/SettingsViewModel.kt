@@ -7,6 +7,8 @@ import io.grimoire.app.data.preferences.BrowseDisplayMode
 import io.grimoire.app.data.preferences.BrowsePreferences
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
+import io.grimoire.app.data.preferences.ReaderColorTheme
+import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.preferences.ReaderPreferences
 import io.grimoire.app.data.preferences.ThemeMode
@@ -47,4 +49,19 @@ class SettingsViewModel @Inject constructor(
 
     val readerHideNotificationBar = readerPreferences.hideNotificationBar.stateIn(viewModelScope)
     fun setReaderHideNotificationBar(value: Boolean) = viewModelScope.launch { readerPreferences.hideNotificationBar.set(value) }
+
+    val readerColorTheme = readerPreferences.colorTheme.stateIn(viewModelScope)
+    fun setReaderColorTheme(value: ReaderColorTheme) = viewModelScope.launch { readerPreferences.colorTheme.set(value) }
+
+    val readerFont = readerPreferences.readerFont.stateIn(viewModelScope)
+    fun setReaderFont(value: ReaderFont) = viewModelScope.launch { readerPreferences.readerFont.set(value) }
+
+    val readerFontSize = readerPreferences.fontSize.stateIn(viewModelScope)
+    fun setReaderFontSize(value: Int) = viewModelScope.launch { readerPreferences.fontSize.set(value.coerceIn(12, 32)) }
+
+    val readerLineHeightTimes10 = readerPreferences.lineHeightTimes10.stateIn(viewModelScope)
+    fun setReaderLineHeight(times10: Int) = viewModelScope.launch { readerPreferences.lineHeightTimes10.set(times10.coerceIn(10, 30)) }
+
+    val readerParagraphSpacing = readerPreferences.paragraphSpacing.stateIn(viewModelScope)
+    fun setReaderParagraphSpacing(dp: Int) = viewModelScope.launch { readerPreferences.paragraphSpacing.set(dp.coerceIn(0, 32)) }
 }
