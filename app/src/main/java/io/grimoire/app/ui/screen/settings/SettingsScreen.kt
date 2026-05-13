@@ -11,7 +11,6 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,7 +30,6 @@ fun SettingsScreen(
     onNavigateToLibrary: () -> Unit,
     onNavigateToBrowse: () -> Unit,
     onNavigateToReader: () -> Unit,
-    onNavigateToUpdates: () -> Unit,
     onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -83,17 +81,9 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.SystemUpdate,
-                    title = "Updates",
-                    subtitle = "Update channel",
-                    onClick = onNavigateToUpdates,
-                )
-            }
-            item {
-                SettingsNavItem(
                     icon = Icons.Default.Info,
                     title = "About",
-                    subtitle = "Version, licenses",
+                    subtitle = "Version, update channel, licenses",
                     onClick = onNavigateToAbout,
                 )
             }
