@@ -36,6 +36,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -153,30 +154,47 @@ fun ExtensionsScreen(
                     }
                     items(installed, key = { it.packageName }) { item ->
                         val state = installStates[item.packageName]
+                        val hasUpdate = item is ExtensionItem.Installed && item.hasUpdate
                         ListItem(
                             headlineContent = { Text(item.name) },
                             supportingContent = {
                                 Column {
                                     Text("${item.lang.uppercase()} · v${item.versionName}")
-                                    if (item is ExtensionItem.Installed && item.hasUpdate) {
+                                    if (hasUpdate && state == null) {
                                         Text(
-                                            "Update available: v${item.remoteVersionName}",
+                                            "Update available: v${(item as ExtensionItem.Installed).remoteVersionName}",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.primary,
                                         )
                                     }
+                                    InstallProgressRow(state)
                                 }
                             },
                             leadingContent = {
                                 ExtensionIcon(item.packageName, item.lang, item.iconUrl)
                             },
                             trailingContent = {
-                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    if (item is ExtensionItem.Installed && item.hasUpdate) {
-                                        if (state == InstallState.DOWNLOADING) {
-                                            CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                                        } else {
-                                            OutlinedButton(onClick = { viewModel.update(item) }) { Text("Update") }
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    when {
+                                        state is InstallState.Downloading -> {
+                                            Text(
+                                                text = "${downloadPercent(state)}%",
+                                                style = MaterialTheme.typography.labelMedium,
+                                            )
+                                        }
+                                        state is InstallState.Error -> {
+                                            OutlinedButton(onClick = {
+                                                if (item is ExtensionItem.Installed) viewModel.update(item)
+                                                else viewModel.dismissInstallError(item.packageName)
+                                            }) { Text("Retry") }
+                                        }
+                                        hasUpdate -> {
+                                            OutlinedButton(onClick = {
+                                                viewModel.update(item as ExtensionItem.Installed)
+                                            }) { Text("Update") }
                                         }
                                     }
                                     TextButton(onClick = {
@@ -203,15 +221,31 @@ fun ExtensionsScreen(
                         val state = installStates[item.packageName]
                         ListItem(
                             headlineContent = { Text(item.name) },
-                            supportingContent = { Text("${item.lang.uppercase()} · v${item.versionName}") },
+                            supportingContent = {
+                                Column {
+                                    Text("${item.lang.uppercase()} · v${item.versionName}")
+                                    InstallProgressRow(state)
+                                }
+                            },
                             leadingContent = {
                                 ExtensionIcon(item.packageName, item.lang, item.iconUrl)
                             },
                             trailingContent = {
-                                if (state == InstallState.DOWNLOADING) {
-                                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                                } else {
-                                    Button(onClick = { viewModel.install(item) }) { Text("Install") }
+                                when (state) {
+                                    is InstallState.Downloading -> {
+                                        Text(
+                                            text = "${downloadPercent(state)}%",
+                                            style = MaterialTheme.typography.labelMedium,
+                                        )
+                                    }
+                                    is InstallState.Error -> {
+                                        OutlinedButton(onClick = { viewModel.install(item) }) {
+                                            Text("Retry")
+                                        }
+                                    }
+                                    null -> {
+                                        Button(onClick = { viewModel.install(item) }) { Text("Install") }
+                                    }
                                 }
                             },
                         )
@@ -320,6 +354,56 @@ fun ExtensionsScreen(
             onConfirm = { name, url -> viewModel.updateRepo(repo, name, url); editRepo = null },
             onDismiss = { editRepo = null },
         )
+    }
+}
+
+@Composable
+private fun InstallProgressRow(state: InstallState?) {
+    when (state) {
+        is InstallState.Downloading -> {
+            val total = state.totalBytes
+            Column {
+                if (total > 0) {
+                    LinearProgressIndicator(
+                        progress = { (state.bytesRead.toFloat() / total).coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                    )
+                } else {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                    )
+                }
+                Text(
+                    text = downloadLabel(state),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        is InstallState.Error -> {
+            Text(
+                state.message,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        null -> {}
+    }
+}
+
+private fun downloadPercent(state: InstallState.Downloading): Int =
+    if (state.totalBytes > 0) (state.bytesRead * 100 / state.totalBytes).toInt().coerceIn(0, 100) else 0
+
+private fun downloadLabel(state: InstallState.Downloading): String {
+    val mb: (Long) -> String = { "%.1f".format(it / 1024.0 / 1024.0) }
+    return if (state.totalBytes > 0) {
+        "${mb(state.bytesRead)} / ${mb(state.totalBytes)} MB · ${downloadPercent(state)}%"
+    } else {
+        "${mb(state.bytesRead)} MB"
     }
 }
 
