@@ -101,23 +101,6 @@ import io.grimoire.app.data.preferences.ReaderOrientation
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 
-private data class ReaderColors(val background: Color, val foreground: Color)
-
-private val ReaderColorTheme.readerColors: ReaderColors
-    get() = when (this) {
-        ReaderColorTheme.LIGHT -> ReaderColors(Color.White, Color(0xFF1A1A1A))
-        ReaderColorTheme.SEPIA -> ReaderColors(Color(0xFFFBF0D9), Color(0xFF4A3728))
-        ReaderColorTheme.DARK -> ReaderColors(Color(0xFF1E1E2E), Color(0xFFCDD6F4))
-        ReaderColorTheme.BLACK -> ReaderColors(Color.Black, Color(0xFFCCCCCC))
-    }
-
-private val ReaderFont.fontFamily: FontFamily
-    get() = when (this) {
-        ReaderFont.DEFAULT -> FontFamily.Default
-        ReaderFont.SERIF -> FontFamily.Serif
-        ReaderFont.MONOSPACE -> FontFamily.Monospace
-    }
-
 private fun Context.findActivity(): Activity? {
     var c: Context? = this
     while (c is ContextWrapper) {
@@ -396,12 +379,14 @@ fun ReaderScreen(
             paragraphSpacing = paragraphSpacing,
             readerFont = readerFont,
             colorTheme = colorTheme,
+            orientation = orientation,
             onDismiss = { showSettings = false },
             onFontSize = viewModel::setFontSize,
             onLineHeight = viewModel::setLineHeight,
             onParagraphSpacing = viewModel::setParagraphSpacing,
             onFont = viewModel::setReaderFont,
             onColorTheme = viewModel::setColorTheme,
+            onOrientation = viewModel::setOrientation,
         )
     }
 }
@@ -417,12 +402,14 @@ private fun ReaderSettingsSheet(
     paragraphSpacing: Int,
     readerFont: ReaderFont,
     colorTheme: ReaderColorTheme,
+    orientation: ReaderOrientation,
     onDismiss: () -> Unit,
     onFontSize: (Int) -> Unit,
     onLineHeight: (Int) -> Unit,
     onParagraphSpacing: (Int) -> Unit,
     onFont: (ReaderFont) -> Unit,
     onColorTheme: (ReaderColorTheme) -> Unit,
+    onOrientation: (ReaderOrientation) -> Unit,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -451,77 +438,12 @@ private fun ReaderSettingsSheet(
                 .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Color theme
             SettingsSectionLabel("Color theme")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ReaderColorTheme.entries.forEach { theme ->
-                    val tc = theme.readerColors
-                    val selected = theme == colorTheme
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(tc.background)
-                            .then(
-                                if (selected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
-                                else Modifier.border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                            )
-                            .clickable { onColorTheme(theme) },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = theme.name.lowercase().replaceFirstChar { it.uppercase() },
-                            color = tc.foreground,
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    }
-                }
-            }
+            ColorThemePicker(selected = colorTheme, onSelect = onColorTheme)
 
-            // Font family
             SettingsSectionLabel("Font")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ReaderFont.entries.forEach { font ->
-                    val selected = font == readerFont
-                    val label = when (font) {
-                        ReaderFont.DEFAULT -> "Sans"
-                        ReaderFont.SERIF -> "Serif"
-                        ReaderFont.MONOSPACE -> "Mono"
-                    }
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .then(
-                                if (selected) Modifier.background(MaterialTheme.colorScheme.primaryContainer)
-                                else Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
-                            )
-                            .clickable { onFont(font) },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "Aa",
-                                fontFamily = font.fontFamily,
-                                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                            Text(
-                                text = label,
-                                fontFamily = font.fontFamily,
-                                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        }
-                    }
-                }
-            }
+            FontPicker(selected = readerFont, onSelect = onFont)
 
-            // Font size
             StepperRow(
                 label = "Font size",
                 value = "${fontSize}sp",
@@ -531,7 +453,6 @@ private fun ReaderSettingsSheet(
                 incrementEnabled = fontSize < 32,
             )
 
-            // Line height
             StepperRow(
                 label = "Line height",
                 value = "%.1f×".format(lineHeightTimes10 / 10f),
@@ -541,7 +462,6 @@ private fun ReaderSettingsSheet(
                 incrementEnabled = lineHeightTimes10 < 30,
             )
 
-            // Paragraph spacing
             StepperRow(
                 label = "Paragraph spacing",
                 value = "${paragraphSpacing}dp",
@@ -550,71 +470,9 @@ private fun ReaderSettingsSheet(
                 decrementEnabled = paragraphSpacing > 0,
                 incrementEnabled = paragraphSpacing < 32,
             )
-        }
-    }
-}
 
-@Composable
-private fun SettingsSectionLabel(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-}
-
-@Composable
-private fun StepperRow(
-    label: String,
-    value: String,
-    onDecrement: () -> Unit,
-    onIncrement: () -> Unit,
-    decrementEnabled: Boolean,
-    incrementEnabled: Boolean,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
-        )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            IconButton(
-                onClick = onDecrement,
-                enabled = decrementEnabled,
-                modifier = Modifier.size(36.dp),
-            ) {
-                Text(
-                    "−",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = if (decrementEnabled) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                )
-            }
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.width(64.dp),
-                textAlign = TextAlign.Center,
-            )
-            IconButton(
-                onClick = onIncrement,
-                enabled = incrementEnabled,
-                modifier = Modifier.size(36.dp),
-            ) {
-                Text(
-                    "+",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = if (incrementEnabled) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                )
-            }
+            SettingsSectionLabel("Screen rotation")
+            OrientationPicker(selected = orientation, onSelect = onOrientation)
         }
     }
 }

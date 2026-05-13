@@ -2,13 +2,12 @@ package io.grimoire.app.ui.screen.settings.reader
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -22,7 +21,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.grimoire.app.data.preferences.ReaderOrientation
+import io.grimoire.app.ui.screen.reader.ColorThemePicker
+import io.grimoire.app.ui.screen.reader.FontPicker
+import io.grimoire.app.ui.screen.reader.OrientationPicker
+import io.grimoire.app.ui.screen.reader.StepperRow
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import kotlin.math.roundToInt
 
@@ -36,6 +38,11 @@ fun ReaderSettingsScreen(
     val threshold by viewModel.readerMarkAsReadThreshold.collectAsState()
     val orientation by viewModel.readerOrientation.collectAsState()
     val hideNotificationBar by viewModel.readerHideNotificationBar.collectAsState()
+    val colorTheme by viewModel.readerColorTheme.collectAsState()
+    val font by viewModel.readerFont.collectAsState()
+    val fontSize by viewModel.readerFontSize.collectAsState()
+    val lineHeightTimes10 by viewModel.readerLineHeightTimes10.collectAsState()
+    val paragraphSpacing by viewModel.readerParagraphSpacing.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -53,6 +60,64 @@ fun ReaderSettingsScreen(
         LazyColumn(Modifier.padding(padding)) {
             item {
                 ListItem(
+                    headlineContent = { Text("Color theme") },
+                    supportingContent = {
+                        Column(modifier = Modifier.padding(top = 4.dp)) {
+                            ColorThemePicker(
+                                selected = colorTheme,
+                                onSelect = viewModel::setReaderColorTheme,
+                            )
+                        }
+                    },
+                )
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text("Font") },
+                    supportingContent = {
+                        Column(modifier = Modifier.padding(top = 4.dp)) {
+                            FontPicker(
+                                selected = font,
+                                onSelect = viewModel::setReaderFont,
+                            )
+                        }
+                    },
+                )
+            }
+            item {
+                ListItem(
+                    headlineContent = {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            StepperRow(
+                                label = "Font size",
+                                value = "${fontSize}sp",
+                                onDecrement = { viewModel.setReaderFontSize(fontSize - 1) },
+                                onIncrement = { viewModel.setReaderFontSize(fontSize + 1) },
+                                decrementEnabled = fontSize > 12,
+                                incrementEnabled = fontSize < 32,
+                            )
+                            StepperRow(
+                                label = "Line height",
+                                value = "%.1f×".format(lineHeightTimes10 / 10f),
+                                onDecrement = { viewModel.setReaderLineHeight(lineHeightTimes10 - 1) },
+                                onIncrement = { viewModel.setReaderLineHeight(lineHeightTimes10 + 1) },
+                                decrementEnabled = lineHeightTimes10 > 10,
+                                incrementEnabled = lineHeightTimes10 < 30,
+                            )
+                            StepperRow(
+                                label = "Paragraph spacing",
+                                value = "${paragraphSpacing}dp",
+                                onDecrement = { viewModel.setReaderParagraphSpacing(paragraphSpacing - 4) },
+                                onIncrement = { viewModel.setReaderParagraphSpacing(paragraphSpacing + 4) },
+                                decrementEnabled = paragraphSpacing > 0,
+                                incrementEnabled = paragraphSpacing < 32,
+                            )
+                        }
+                    },
+                )
+            }
+            item {
+                ListItem(
                     headlineContent = { Text("Mark as read at $threshold%") },
                     supportingContent = {
                         Slider(
@@ -68,22 +133,11 @@ fun ReaderSettingsScreen(
                 ListItem(
                     headlineContent = { Text("Screen rotation") },
                     supportingContent = {
-                        Row(
-                            modifier = Modifier.padding(top = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            ReaderOrientation.entries.forEach { value ->
-                                val label = when (value) {
-                                    ReaderOrientation.FREE -> "Free"
-                                    ReaderOrientation.PORTRAIT -> "Vertical"
-                                    ReaderOrientation.LANDSCAPE -> "Horizontal"
-                                }
-                                FilterChip(
-                                    selected = orientation == value,
-                                    onClick = { viewModel.setReaderOrientation(value) },
-                                    label = { Text(label) },
-                                )
-                            }
+                        Column(modifier = Modifier.padding(top = 4.dp)) {
+                            OrientationPicker(
+                                selected = orientation,
+                                onSelect = viewModel::setReaderOrientation,
+                            )
                         }
                     },
                 )
