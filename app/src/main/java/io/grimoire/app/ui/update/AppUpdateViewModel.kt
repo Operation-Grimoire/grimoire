@@ -23,6 +23,13 @@ sealed class DownloadState {
     data class Error(val message: String) : DownloadState()
 }
 
+sealed class CheckState {
+    data object Idle : CheckState()
+    data object Checking : CheckState()
+    data object UpToDate : CheckState()
+    data class Error(val message: String) : CheckState()
+}
+
 @HiltViewModel
 class AppUpdateViewModel @Inject constructor(
     private val checker: AppUpdateChecker,
@@ -39,6 +46,9 @@ class AppUpdateViewModel @Inject constructor(
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
     val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
 
+    private val _checkState = MutableStateFlow<CheckState>(CheckState.Idle)
+    val checkState: StateFlow<CheckState> = _checkState.asStateFlow()
+
     init {
         viewModelScope.launch {
             val lastSeen = appPreferences.lastSeenVersionCode.changes().first()
@@ -51,6 +61,29 @@ class AppUpdateViewModel @Inject constructor(
             val channel = updatePreferences.channel.changes().first()
             _availableRelease.value = checker.checkForUpdate(channel)
         }
+    }
+
+    fun checkForUpdates() {
+        if (_checkState.value is CheckState.Checking) return
+        viewModelScope.launch {
+            _checkState.value = CheckState.Checking
+            runCatching {
+                val channel = updatePreferences.channel.changes().first()
+                val release = checker.checkForUpdate(channel)
+                if (release != null) {
+                    _availableRelease.value = release
+                    _checkState.value = CheckState.Idle
+                } else {
+                    _checkState.value = CheckState.UpToDate
+                }
+            }.onFailure { e ->
+                _checkState.value = CheckState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun resetCheckState() {
+        _checkState.value = CheckState.Idle
     }
 
     fun dismissChangelog() {

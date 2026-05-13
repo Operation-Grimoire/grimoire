@@ -56,8 +56,6 @@ import io.grimoire.app.ui.screen.settings.browse.BrowseSettingsScreen
 import io.grimoire.app.ui.screen.settings.hidden.HiddenCategoriesSettingsScreen
 import io.grimoire.app.ui.screen.settings.library.LibrarySettingsScreen
 import io.grimoire.app.ui.screen.settings.reader.ReaderSettingsScreen
-import io.grimoire.app.ui.screen.settings.updates.UpdatesSettingsScreen
-import io.grimoire.app.ui.screen.settings.updates.UpdatesSettingsViewModel
 
 private enum class TopLevelDestination(
     val route: String,
@@ -83,7 +81,6 @@ private const val ROUTE_SETTINGS_APPEARANCE = "settings/appearance"
 private const val ROUTE_SETTINGS_LIBRARY = "settings/library"
 private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
 private const val ROUTE_SETTINGS_READER = "settings/reader"
-private const val ROUTE_SETTINGS_UPDATES = "settings/updates"
 private const val ROUTE_SETTINGS_ABOUT = "settings/about"
 private const val ROUTE_SETTINGS_HIDDEN = "settings/hidden_categories"
 private const val ROUTE_READER = "reader?pkg={pkg}&novelUrl={novelUrl}&chapterUrl={chapterUrl}"
@@ -227,7 +224,6 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         onNavigateToLibrary = { navController.navigate(ROUTE_SETTINGS_LIBRARY) },
                         onNavigateToBrowse = { navController.navigate(ROUTE_SETTINGS_BROWSE) },
                         onNavigateToReader = { navController.navigate(ROUTE_SETTINGS_READER) },
-                        onNavigateToUpdates = { navController.navigate(ROUTE_SETTINGS_UPDATES) },
                         onNavigateToAbout = { navController.navigate(ROUTE_SETTINGS_ABOUT) },
                     )
                 }
@@ -262,14 +258,6 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
                     val vm: SettingsViewModel = hiltViewModel(graphEntry)
                     ReaderSettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
-                }
-
-                composable(route = ROUTE_SETTINGS_UPDATES) {
-                    val vm: UpdatesSettingsViewModel = hiltViewModel()
-                    UpdatesSettingsScreen(
-                        viewModel = vm,
-                        onNavigateBack = { navController.popBackStack() },
-                    )
                 }
 
                 composable(route = ROUTE_SETTINGS_ABOUT) {

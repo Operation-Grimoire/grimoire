@@ -1,8 +1,14 @@
 package io.grimoire.app.ui.screen.settings.about
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -12,8 +18,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +32,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.app.data.preferences.UpdateChannel
+import io.grimoire.app.ui.update.AppUpdateViewModel
+import io.grimoire.app.ui.update.CheckState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,12 +44,19 @@ fun AboutSettingsScreen(
     viewModel: AboutSettingsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val activity = remember(context) {
+        context.findActivity() as? ComponentActivity
+            ?: error("AboutSettingsScreen must be hosted in a ComponentActivity")
+    }
+    val updateViewModel: AppUpdateViewModel = hiltViewModel(viewModelStoreOwner = activity)
+
     val version = remember {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
         }.getOrDefault("–")
     }
-    val updateState by viewModel.updateState.collectAsState()
+    val checkState by updateViewModel.checkState.collectAsState()
+    val channel by viewModel.channel.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -61,57 +77,63 @@ fun AboutSettingsScreen(
                     headlineContent = { Text("Version") },
                     supportingContent = { Text(version ?: "–") },
                     trailingContent = {
-                        when (val state = updateState) {
-                            is UpdateState.Idle -> TextButton(onClick = viewModel::checkForUpdates) {
+                        when (checkState) {
+                            is CheckState.Idle -> TextButton(onClick = updateViewModel::checkForUpdates) {
                                 Text("Check for updates")
                             }
-                            is UpdateState.Checking -> CircularProgressIndicator(
+                            is CheckState.Checking -> CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp,
                             )
-                            is UpdateState.UpToDate -> Icon(
+                            is CheckState.UpToDate -> Icon(
                                 Icons.Default.CheckCircle,
                                 contentDescription = "Up to date",
                                 tint = MaterialTheme.colorScheme.primary,
                             )
-                            is UpdateState.Error -> TextButton(onClick = viewModel::checkForUpdates) {
+                            is CheckState.Error -> TextButton(onClick = updateViewModel::checkForUpdates) {
                                 Text("Retry")
                             }
-                            is UpdateState.Available -> {} // shown as a separate row below
                         }
                     },
                 )
             }
 
-            if (updateState is UpdateState.Available) {
-                val avail = updateState as UpdateState.Available
-                item {
-                    ListItem(
-                        headlineContent = { Text("Update available") },
-                        supportingContent = { Text(avail.version) },
-                        trailingContent = {
-                            TextButton(onClick = { viewModel.downloadAndInstall(avail.apkUrl, avail.sha256) }) {
-                                Text("Download")
-                            }
-                        },
-                        colors = ListItemDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            headlineColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            supportingColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
-                    )
-                }
-            }
-
-            if (updateState is UpdateState.Error) {
+            if (checkState is CheckState.Error) {
                 item {
                     Text(
-                        text = (updateState as UpdateState.Error).message,
+                        text = (checkState as CheckState.Error).message,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
                     )
                 }
+            }
+
+            item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
+            item {
+                Text(
+                    text = "Update channel",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+            items(UpdateChannel.entries.toList()) { entry ->
+                val selected = channel == entry
+                ListItem(
+                    leadingContent = {
+                        RadioButton(selected = selected, onClick = {
+                            viewModel.setChannel(entry)
+                            updateViewModel.resetCheckState()
+                        })
+                    },
+                    headlineContent = { Text(entry.displayName) },
+                    supportingContent = { Text(entry.description) },
+                    modifier = Modifier.clickable {
+                        viewModel.setChannel(entry)
+                        updateViewModel.resetCheckState()
+                    },
+                )
             }
 
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
@@ -132,3 +154,24 @@ fun AboutSettingsScreen(
         }
     }
 }
+
+private fun Context.findActivity(): Activity? {
+    var c: Context? = this
+    while (c is ContextWrapper) {
+        if (c is Activity) return c
+        c = c.baseContext
+    }
+    return null
+}
+
+private val UpdateChannel.displayName: String
+    get() = when (this) {
+        UpdateChannel.STABLE -> "Stable"
+        UpdateChannel.BETA -> "Beta"
+    }
+
+private val UpdateChannel.description: String
+    get() = when (this) {
+        UpdateChannel.STABLE -> "Tagged releases only. Recommended."
+        UpdateChannel.BETA -> "Fresh builds from main on every commit. May be unstable."
+    }
