@@ -33,6 +33,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
@@ -479,16 +480,47 @@ fun NovelDetailScreen(
                                 val downloadedCount = chapters.count {
                                     it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
                                 }
-                                val parts = buildList {
-                                    add("$readCount/${chapters.size} read")
-                                    if (downloadedCount > 0) add("$downloadedCount downloaded")
+                                val percent = (readCount * 100 / chapters.size).coerceIn(0, 100)
+                                Row(
+                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                        Text(
+                                            text = "$readCount / ${chapters.size} ($percent%)",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                    }
+                                    if (downloadedCount > 0) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        ) {
+                                            Icon(
+                                                Icons.Default.DownloadDone,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp),
+                                                tint = MaterialTheme.colorScheme.primary,
+                                            )
+                                            Text(
+                                                text = "$downloadedCount",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                            )
+                                        }
+                                    }
                                 }
-                                Text(
-                                    text = parts.joinToString(" · "),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(start = 16.dp, bottom = 6.dp),
-                                )
                             }
                             AnimatedVisibility(visible = searchActive) {
                                 OutlinedTextField(

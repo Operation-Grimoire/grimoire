@@ -7,6 +7,7 @@ import io.grimoire.app.data.preferences.BrowseDisplayMode
 import io.grimoire.app.data.preferences.BrowsePreferences
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
+import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.preferences.ReaderPreferences
 import io.grimoire.app.data.preferences.ThemeMode
 import io.grimoire.app.data.preferences.UiPreferences
@@ -40,4 +41,10 @@ class SettingsViewModel @Inject constructor(
 
     val readerMarkAsReadThreshold = readerPreferences.markAsReadThreshold.stateIn(viewModelScope)
     fun setReaderMarkAsReadThreshold(value: Int) = viewModelScope.launch { readerPreferences.markAsReadThreshold.set(value.coerceIn(50, 100)) }
+
+    val readerOrientation = readerPreferences.orientation.stateIn(viewModelScope)
+    fun setReaderOrientation(value: ReaderOrientation) = viewModelScope.launch { readerPreferences.orientation.set(value) }
+
+    val readerHideNotificationBar = readerPreferences.hideNotificationBar.stateIn(viewModelScope)
+    fun setReaderHideNotificationBar(value: Boolean) = viewModelScope.launch { readerPreferences.hideNotificationBar.set(value) }
 }

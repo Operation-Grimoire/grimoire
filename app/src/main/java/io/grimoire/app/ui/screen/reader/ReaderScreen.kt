@@ -1,5 +1,9 @@
 package io.grimoire.app.ui.screen.reader
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -57,6 +61,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -73,17 +78,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
+import io.grimoire.app.data.preferences.ReaderOrientation
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 
@@ -103,6 +114,15 @@ private val ReaderFont.fontFamily: FontFamily
         ReaderFont.SERIF -> FontFamily.Serif
         ReaderFont.MONOSPACE -> FontFamily.Monospace
     }
+
+private fun Context.findActivity(): Activity? {
+    var c: Context? = this
+    while (c is ContextWrapper) {
+        if (c is Activity) return c
+        c = c.baseContext
+    }
+    return null
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,6 +144,8 @@ fun ReaderScreen(
     val paragraphSpacing by viewModel.paragraphSpacing.collectAsState()
     val readerFont by viewModel.readerFont.collectAsState()
     val colorTheme by viewModel.colorTheme.collectAsState()
+    val orientation by viewModel.orientation.collectAsState()
+    val hideNotificationBar by viewModel.hideNotificationBar.collectAsState()
 
     val colors = colorTheme.readerColors
     val fontFamily = readerFont.fontFamily
@@ -133,6 +155,36 @@ fun ReaderScreen(
         fontFamily = fontFamily,
         color = colors.foreground,
     )
+
+    val context = LocalContext.current
+    val view = LocalView.current
+
+    DisposableEffect(orientation) {
+        val activity = context.findActivity()
+        val original = activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        activity?.requestedOrientation = when (orientation) {
+            ReaderOrientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ReaderOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            ReaderOrientation.FREE -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+        onDispose {
+            activity?.requestedOrientation = original
+        }
+    }
+
+    DisposableEffect(hideNotificationBar) {
+        val window = context.findActivity()?.window
+        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+        if (hideNotificationBar) {
+            controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller?.hide(WindowInsetsCompat.Type.statusBars())
+        } else {
+            controller?.show(WindowInsetsCompat.Type.statusBars())
+        }
+        onDispose {
+            controller?.show(WindowInsetsCompat.Type.statusBars())
+        }
+    }
 
     val listState = rememberLazyListState()
     var barsVisible by remember { mutableStateOf(false) }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -25,7 +26,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
@@ -103,6 +106,9 @@ private val SORT_OPTIONS = listOf(
     LibrarySort.UNREAD_DESC to "Unread chapters",
     LibrarySort.TOTAL_DESC to "Total chapters",
 )
+
+private fun NovelChapterStats.readPercent(): Int =
+    if (total > 0) (readCount * 100 / total).coerceIn(0, 100) else 0
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -484,28 +490,50 @@ private fun NovelCard(
                         .clip(RoundedCornerShape(8.dp)),
                 )
                 if (stats != null && stats.total > 0) {
-                    Text(
-                        text = "${stats.readCount}/${stats.total}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
+                    val percent = stats.readPercent()
+                    Row(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .padding(4.dp)
-                            .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 4.dp, vertical = 2.dp),
-                    )
+                            .padding(6.dp)
+                            .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 6.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = "${stats.readCount}/${stats.total}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White,
+                        )
+                        Text(
+                            text = "$percent%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White.copy(alpha = 0.75f),
+                        )
+                    }
                 }
                 if (stats != null && stats.downloadedCount > 0) {
-                    Text(
-                        text = "↓${stats.downloadedCount}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
+                    Row(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(4.dp)
-                            .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 4.dp, vertical = 2.dp),
-                    )
+                            .padding(6.dp)
+                            .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 6.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.Download,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(12.dp),
+                        )
+                        Text(
+                            text = "${stats.downloadedCount}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White,
+                        )
+                    }
                 }
             }
             Text(
@@ -563,11 +591,44 @@ private fun NovelRow(
             headlineContent = { Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             supportingContent = if (stats != null && stats.total > 0) {
                 {
-                    val parts = buildList {
-                        add("${stats.readCount}/${stats.total} read")
-                        if (stats.downloadedCount > 0) add("${stats.downloadedCount} downloaded")
+                    val percent = stats.readPercent()
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                            Text(
+                                "${stats.readCount}/${stats.total} ($percent%)",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                        if (stats.downloadedCount > 0) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Icon(
+                                    Icons.Default.Download,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                                Text(
+                                    "${stats.downloadedCount}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
                     }
-                    Text(parts.joinToString(" · "), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             } else if (!novel.author.isNullOrBlank()) {
                 { Text(novel.author!!, maxLines = 1) }
