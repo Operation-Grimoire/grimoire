@@ -7,6 +7,7 @@ import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionInstaller
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.extension.repo.ExtensionRepository
+import io.grimoire.app.extension.repo.HashMismatchException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,10 @@ import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
 
-enum class InstallState { IDLE, DOWNLOADING, ERROR }
+sealed class InstallState {
+    data class Downloading(val bytesRead: Long, val totalBytes: Long) : InstallState()
+    data class Error(val message: String) : InstallState()
+}
 
 @HiltViewModel
 class ExtensionsViewModel @Inject constructor(
@@ -47,19 +51,29 @@ class ExtensionsViewModel @Inject constructor(
         viewModelScope.launch { repository.refresh() }
     }
 
-    fun install(item: ExtensionItem.Available) = doInstall(item.packageName, item.remote.url)
-    fun update(item: ExtensionItem.Installed) = doInstall(item.packageName, item.apkUrl)
+    fun install(item: ExtensionItem.Available) =
+        doInstall(item.packageName, item.remote.url, item.remote.sha256)
 
-    private fun doInstall(pkg: String, apkUrl: String) {
+    fun update(item: ExtensionItem.Installed) =
+        doInstall(item.packageName, item.apkUrl, item.remote.sha256)
+
+    private fun doInstall(pkg: String, apkUrl: String, expectedSha256: String?) {
         viewModelScope.launch {
-            _installStates.update { it + (pkg to InstallState.DOWNLOADING) }
-            installer.download(apkUrl, pkg)
+            _installStates.update { it + (pkg to InstallState.Downloading(0L, 0L)) }
+            installer.download(apkUrl, pkg, expectedSha256) { read, total ->
+                _installStates.update { it + (pkg to InstallState.Downloading(read, total)) }
+            }
                 .onSuccess { file ->
                     _installStates.update { it - pkg }
                     _pendingInstall.value = file
                 }
-                .onFailure {
-                    _installStates.update { it + (pkg to InstallState.ERROR) }
+                .onFailure { e ->
+                    val msg = when (e) {
+                        is HashMismatchException ->
+                            "Download verification failed — try again or switch networks"
+                        else -> e.message ?: "Download failed"
+                    }
+                    _installStates.update { it + (pkg to InstallState.Error(msg)) }
                 }
         }
     }
@@ -72,6 +86,10 @@ class ExtensionsViewModel @Inject constructor(
     /** Called by the Screen's ActivityResult callback after the system install dialog finishes. */
     fun onInstallResult() {
         viewModelScope.launch { repository.refresh() }
+    }
+
+    fun dismissInstallError(pkg: String) {
+        _installStates.update { it - pkg }
     }
 
     fun addRepo(name: String, url: String) {

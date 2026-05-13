@@ -24,4 +24,5 @@ data class ReleaseInfo(
     val releaseNotes: String,
     val apkUrl: String,
     val isPrerelease: Boolean,
+    val sha256: String? = null,
 )

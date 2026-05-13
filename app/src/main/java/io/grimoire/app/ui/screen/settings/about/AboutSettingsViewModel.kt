@@ -16,7 +16,7 @@ sealed class UpdateState {
     object Idle : UpdateState()
     object Checking : UpdateState()
     object UpToDate : UpdateState()
-    data class Available(val version: String, val apkUrl: String) : UpdateState()
+    data class Available(val version: String, val apkUrl: String, val sha256: String?) : UpdateState()
     data class Error(val message: String) : UpdateState()
 }
 
@@ -37,7 +37,7 @@ class AboutSettingsViewModel @Inject constructor(
                 val channel = updatePreferences.channel.changes().first()
                 val release = checker.checkForUpdate(channel)
                 if (release != null) {
-                    _updateState.value = UpdateState.Available(release.displayVersion, release.apkUrl)
+                    _updateState.value = UpdateState.Available(release.displayVersion, release.apkUrl, release.sha256)
                 } else {
                     _updateState.value = UpdateState.UpToDate
                 }
@@ -47,7 +47,9 @@ class AboutSettingsViewModel @Inject constructor(
         }
     }
 
-    fun downloadAndInstall(apkUrl: String) {
-        viewModelScope.launch { checker.downloadAndInstall(apkUrl) }
+    fun downloadAndInstall(apkUrl: String, sha256: String?) {
+        viewModelScope.launch {
+            checker.download(apkUrl, sha256).onSuccess { file -> checker.launchInstall(file) }
+        }
     }
 }

@@ -92,6 +92,12 @@ jobs:
             --out app/build/outputs/apk/release/grimoire.apk \
             app/build/outputs/apk/release/app-release-unsigned.apk
 
+      - name: Compute APK sha256
+        run: |
+          cd app/build/outputs/apk/release
+          sha256sum grimoire.apk | awk '{print $1}' > grimoire.apk.sha256
+          echo "Published digest: $(cat grimoire.apk.sha256)"
+
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
@@ -100,6 +106,8 @@ jobs:
           prerelease: false
           body: |
             Auto-generated release from commit ${{ github.sha }}.
-          files: app/build/outputs/apk/release/grimoire.apk
+          files: |
+            app/build/outputs/apk/release/grimoire.apk
+            app/build/outputs/apk/release/grimoire.apk.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

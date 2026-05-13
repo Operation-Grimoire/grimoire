@@ -90,7 +90,7 @@ fun AboutSettingsScreen(
                         headlineContent = { Text("Update available") },
                         supportingContent = { Text(avail.version) },
                         trailingContent = {
-                            TextButton(onClick = { viewModel.downloadAndInstall(avail.apkUrl) }) {
+                            TextButton(onClick = { viewModel.downloadAndInstall(avail.apkUrl, avail.sha256) }) {
                                 Text("Download")
                             }
                         },

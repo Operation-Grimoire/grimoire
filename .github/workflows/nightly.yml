@@ -69,6 +69,12 @@ jobs:
             --out app/build/outputs/apk/release/grimoire.apk \
             app/build/outputs/apk/release/app-release-unsigned.apk
 
+      - name: Compute APK sha256
+        run: |
+          cd app/build/outputs/apk/release
+          sha256sum grimoire.apk | awk '{print $1}' > grimoire.apk.sha256
+          echo "Published digest: $(cat grimoire.apk.sha256)"
+
       - name: Publish/refresh beta release
         uses: softprops/action-gh-release@v2
         with:
@@ -83,6 +89,8 @@ jobs:
             Version: `${{ steps.ver.outputs.version_name }}`
 
             This is a rolling beta release. Each push to `master` replaces it with a fresh build.
-          files: app/build/outputs/apk/release/grimoire.apk
+          files: |
+            app/build/outputs/apk/release/grimoire.apk
+            app/build/outputs/apk/release/grimoire.apk.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
