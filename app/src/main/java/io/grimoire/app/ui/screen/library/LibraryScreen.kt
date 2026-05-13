@@ -520,7 +520,7 @@ private fun NovelCard(
                 if (stats != null && stats.downloadedCount > 0) {
                     Row(
                         modifier = Modifier
-                            .align(Alignment.BottomEnd)
+                            .align(Alignment.TopEnd)
                             .padding(4.dp)
                             .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
                             .padding(horizontal = 4.dp, vertical = 1.dp),
