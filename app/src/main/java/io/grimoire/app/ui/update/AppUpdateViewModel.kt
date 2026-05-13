@@ -7,6 +7,7 @@ import io.grimoire.app.BuildConfig
 import io.grimoire.app.data.preferences.AppPreferences
 import io.grimoire.app.data.preferences.UpdatePreferences
 import io.grimoire.app.data.update.AppUpdateChecker
+import io.grimoire.app.data.update.AppUpdateHashMismatchException
 import io.grimoire.app.data.update.Changelog
 import io.grimoire.app.data.update.ReleaseInfo
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +16,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+sealed class DownloadState {
+    data object Idle : DownloadState()
+    data class Downloading(val bytesRead: Long, val totalBytes: Long) : DownloadState()
+    data class Error(val message: String) : DownloadState()
+}
 
 @HiltViewModel
 class AppUpdateViewModel @Inject constructor(
@@ -29,8 +36,8 @@ class AppUpdateViewModel @Inject constructor(
     private val _availableRelease = MutableStateFlow<ReleaseInfo?>(null)
     val availableRelease: StateFlow<ReleaseInfo?> = _availableRelease.asStateFlow()
 
-    private val _isDownloading = MutableStateFlow(false)
-    val isDownloading: StateFlow<Boolean> = _isDownloading.asStateFlow()
+    private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
+    val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -53,16 +60,31 @@ class AppUpdateViewModel @Inject constructor(
 
     fun downloadAndInstall() {
         val release = _availableRelease.value ?: return
-        if (_isDownloading.value) return
+        if (_downloadState.value is DownloadState.Downloading) return
         viewModelScope.launch {
-            _isDownloading.value = true
-            checker.downloadAndInstall(release.apkUrl)
-            _isDownloading.value = false
-            _availableRelease.value = null
+            _downloadState.value = DownloadState.Downloading(0L, 0L)
+            checker.download(release.apkUrl, release.sha256) { read, total ->
+                _downloadState.value = DownloadState.Downloading(read, total)
+            }
+                .onSuccess { file ->
+                    _downloadState.value = DownloadState.Idle
+                    _availableRelease.value = null
+                    checker.launchInstall(file)
+                }
+                .onFailure { e ->
+                    val msg = when (e) {
+                        is AppUpdateHashMismatchException ->
+                            "Download verification failed — try again or switch networks"
+                        else -> e.message ?: "Download failed"
+                    }
+                    _downloadState.value = DownloadState.Error(msg)
+                }
         }
     }
 
     fun dismissUpdate() {
+        if (_downloadState.value is DownloadState.Downloading) return
+        _downloadState.value = DownloadState.Idle
         _availableRelease.value = null
     }
 }

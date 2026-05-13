@@ -12,12 +12,18 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val REPO = "Operation-Grimoire/grimoire"
 private const val LATEST_RELEASE_URL = "https://api.github.com/repos/$REPO/releases/latest"
 private const val BETA_RELEASE_URL = "https://api.github.com/repos/$REPO/releases/tags/beta"
+
+class AppUpdateHashMismatchException(
+    val expected: String,
+    val actual: String,
+) : Exception("Downloaded APK hash did not match: expected $expected, got $actual")
 
 @Singleton
 class AppUpdateChecker @Inject constructor(
@@ -35,12 +41,20 @@ class AppUpdateChecker @Inject constructor(
             if (!isUpdate(release, channel)) return@runCatching null
             val apk = release.assets.firstOrNull { it.name.endsWith(".apk") }
                 ?: return@runCatching null
+            val sha256Asset = release.assets.firstOrNull { it.name.endsWith(".apk.sha256") }
+            val sha256 = sha256Asset?.let { asset ->
+                fetchText(asset.browser_download_url)
+                    ?.trim()
+                    ?.substringBefore(' ')
+                    ?.takeIf { it.length == 64 && it.all { c -> c.isDigit() || c.lowercaseChar() in 'a'..'f' } }
+            }
             ReleaseInfo(
                 tagName = release.tag_name,
                 displayVersion = release.name.ifBlank { release.tag_name.removePrefix("v") },
                 releaseNotes = release.body,
                 apkUrl = apk.browser_download_url,
                 isPrerelease = release.prerelease,
+                sha256 = sha256,
             )
         }.getOrNull()
     }
@@ -61,6 +75,19 @@ class AppUpdateChecker @Inject constructor(
         }
     }
 
+    private fun fetchText(url: String): String? {
+        val conn = URL(url).openConnection() as HttpURLConnection
+        conn.connectTimeout = 10_000
+        conn.readTimeout = 10_000
+        return try {
+            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+                conn.inputStream.bufferedReader().readText()
+            } else null
+        } finally {
+            conn.disconnect()
+        }
+    }
+
     private fun isUpdate(release: GitHubRelease, channel: UpdateChannel): Boolean {
         return when (channel) {
             UpdateChannel.STABLE -> release.tag_name.removePrefix("v") != BuildConfig.VERSION_NAME
@@ -73,19 +100,57 @@ class AppUpdateChecker @Inject constructor(
         }
     }
 
-    suspend fun downloadAndInstall(apkUrl: String) = withContext(Dispatchers.IO) {
+    suspend fun download(
+        apkUrl: String,
+        expectedSha256: String? = null,
+        onProgress: (bytesRead: Long, totalBytes: Long) -> Unit = { _, _ -> },
+    ): Result<File> = withContext(Dispatchers.IO) {
         runCatching {
             val file = File(context.cacheDir, "grimoire-update.apk")
             val conn = URL(apkUrl).openConnection() as HttpURLConnection
-            conn.inputStream.use { input -> file.outputStream().use { input.copyTo(it) } }
-            conn.disconnect()
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-            val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
-                data = uri
-                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
-                putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+            conn.connectTimeout = 10_000
+            conn.readTimeout = 30_000
+            try {
+                val code = conn.responseCode
+                check(code == HttpURLConnection.HTTP_OK) { "Download failed: HTTP $code" }
+                val total = conn.contentLengthLong.coerceAtLeast(0L)
+                val digest = MessageDigest.getInstance("SHA-256")
+                var read = 0L
+                onProgress(read, total)
+                conn.inputStream.use { input ->
+                    file.outputStream().buffered().use { out ->
+                        val buf = ByteArray(64 * 1024)
+                        while (true) {
+                            val n = input.read(buf)
+                            if (n < 0) break
+                            out.write(buf, 0, n)
+                            digest.update(buf, 0, n)
+                            read += n
+                            onProgress(read, total)
+                        }
+                    }
+                }
+                if (expectedSha256 != null) {
+                    val actual = digest.digest().joinToString("") { "%02x".format(it) }
+                    if (!actual.equals(expectedSha256, ignoreCase = true)) {
+                        file.delete()
+                        throw AppUpdateHashMismatchException(expectedSha256, actual)
+                    }
+                }
+                file
+            } finally {
+                conn.disconnect()
             }
-            context.startActivity(intent)
         }
+    }
+
+    fun launchInstall(file: File) {
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+        val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+            data = uri
+            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
+            putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+        }
+        context.startActivity(intent)
     }
 }
