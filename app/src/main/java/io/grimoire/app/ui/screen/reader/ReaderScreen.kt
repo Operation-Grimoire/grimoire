@@ -22,9 +22,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -229,11 +231,12 @@ fun ReaderScreen(
             .fillMaxSize()
             .background(colors.background),
     ) {
-        // Content — inset-aware, tap toggles bars
+        // Content — keep a gap at the top/bottom for the system bars even while
+        // they're hidden, so text isn't drawn under the notch / status bar area.
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .systemBarsPadding()
+                .windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
                 .pointerInput(Unit) {
                     detectTapGestures { barsVisible = !barsVisible }
                 },
