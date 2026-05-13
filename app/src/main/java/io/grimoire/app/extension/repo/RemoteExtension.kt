@@ -13,4 +13,5 @@ data class RemoteExtension(
     val apk: String,
     val url: String,
     val iconUrl: String? = null,
+    val sha256: String? = null,
 )
