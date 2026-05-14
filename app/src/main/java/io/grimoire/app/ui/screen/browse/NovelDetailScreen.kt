@@ -44,6 +44,9 @@ import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarHalf
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
@@ -696,7 +699,42 @@ private fun NovelHeader(novel: Novel, sourceName: String = "", modifier: Modifie
             if (sourceName.isNotBlank()) {
                 Text(sourceName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            novel.rating?.let { RatingRow(rating = it, count = novel.ratingCount) }
         }
+    }
+}
+
+@Composable
+private fun RatingRow(rating: Float, count: Int?, modifier: Modifier = Modifier) {
+    val clamped = rating.coerceIn(0f, 5f)
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        repeat(5) { i ->
+            val fill = (clamped - i).coerceIn(0f, 1f)
+            val icon = when {
+                fill >= 0.75f -> Icons.Default.Star
+                fill >= 0.25f -> Icons.Default.StarHalf
+                else -> Icons.Outlined.StarOutline
+            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = buildString {
+                append(String.format(Locale.getDefault(), "%.1f", clamped))
+                if (count != null && count > 0) append(" (").append(count).append(')')
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

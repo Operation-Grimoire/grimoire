@@ -299,6 +299,8 @@ private fun NovelEntity.toNovel() = Novel(
     description = description,
     genres = if (genres.isBlank()) emptyList() else genres.split(","),
     status = NovelStatus.entries.getOrElse(status) { NovelStatus.UNKNOWN },
+    rating = rating,
+    ratingCount = ratingCount,
     initialized = true,
 )
 
@@ -317,6 +319,8 @@ private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, 
     chapterSortOrder = chapterSortOrder,
     categoryId = categoryId,
     lastReadAt = lastReadAt,
+    rating = rating,
+    ratingCount = ratingCount,
 )
 
 private fun ChapterEntity.toChapter() = Chapter(
