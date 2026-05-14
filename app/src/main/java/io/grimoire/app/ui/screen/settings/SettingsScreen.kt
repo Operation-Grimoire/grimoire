@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Info
@@ -30,6 +31,7 @@ fun SettingsScreen(
     onNavigateToLibrary: () -> Unit,
     onNavigateToBrowse: () -> Unit,
     onNavigateToReader: () -> Unit,
+    onNavigateToBackup: () -> Unit,
     onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -77,6 +79,14 @@ fun SettingsScreen(
                     title = "Reader",
                     subtitle = "Font size, reading direction",
                     onClick = onNavigateToReader,
+                )
+            }
+            item {
+                SettingsNavItem(
+                    icon = Icons.Default.Backup,
+                    title = "Backup & restore",
+                    subtitle = "Export, import, scheduled backups",
+                    onClick = onNavigateToBackup,
                 )
             }
             item {

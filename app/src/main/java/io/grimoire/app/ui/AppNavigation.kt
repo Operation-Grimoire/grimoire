@@ -52,6 +52,7 @@ import io.grimoire.app.ui.screen.webview.WebViewScreen
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.about.AboutSettingsScreen
 import io.grimoire.app.ui.screen.settings.appearance.AppearanceSettingsScreen
+import io.grimoire.app.ui.screen.settings.backup.BackupSettingsScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseSettingsScreen
 import io.grimoire.app.ui.screen.settings.hidden.HiddenCategoriesSettingsScreen
 import io.grimoire.app.ui.screen.settings.library.LibrarySettingsScreen
@@ -82,6 +83,7 @@ private const val ROUTE_SETTINGS_LIBRARY = "settings/library"
 private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
 private const val ROUTE_SETTINGS_READER = "settings/reader"
 private const val ROUTE_SETTINGS_ABOUT = "settings/about"
+private const val ROUTE_SETTINGS_BACKUP = "settings/backup"
 private const val ROUTE_SETTINGS_HIDDEN = "settings/hidden_categories"
 private const val ROUTE_READER = "reader?pkg={pkg}&novelUrl={novelUrl}&chapterUrl={chapterUrl}"
 private const val ROUTE_WEBVIEW = "webview?url={url}"
@@ -224,6 +226,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         onNavigateToLibrary = { navController.navigate(ROUTE_SETTINGS_LIBRARY) },
                         onNavigateToBrowse = { navController.navigate(ROUTE_SETTINGS_BROWSE) },
                         onNavigateToReader = { navController.navigate(ROUTE_SETTINGS_READER) },
+                        onNavigateToBackup = { navController.navigate(ROUTE_SETTINGS_BACKUP) },
                         onNavigateToAbout = { navController.navigate(ROUTE_SETTINGS_ABOUT) },
                     )
                 }
@@ -262,6 +265,10 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
                 composable(route = ROUTE_SETTINGS_ABOUT) {
                     AboutSettingsScreen(onNavigateBack = { navController.popBackStack() })
+                }
+
+                composable(route = ROUTE_SETTINGS_BACKUP) {
+                    BackupSettingsScreen(onNavigateBack = { navController.popBackStack() })
                 }
             }
 

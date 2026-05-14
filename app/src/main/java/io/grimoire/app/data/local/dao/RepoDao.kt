@@ -17,6 +17,9 @@ interface RepoDao {
     @Query("SELECT * FROM repos WHERE enabled = 1 ORDER BY addedAt ASC")
     suspend fun getEnabled(): List<RepoEntity>
 
+    @Query("SELECT * FROM repos ORDER BY addedAt ASC")
+    suspend fun getAllOnce(): List<RepoEntity>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(repo: RepoEntity): Long
 
