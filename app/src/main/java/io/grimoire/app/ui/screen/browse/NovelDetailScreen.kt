@@ -30,6 +30,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
@@ -37,17 +38,17 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
-import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarHalf
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -680,6 +681,24 @@ private fun ChapterSkeletonItem(alpha: Float, modifier: Modifier = Modifier) {
 
 @Composable
 private fun NovelHeader(novel: Novel, sourceName: String = "", modifier: Modifier = Modifier) {
+    var showRatingInfo by remember { mutableStateOf(false) }
+
+    if (showRatingInfo) {
+        AlertDialog(
+            onDismissRequest = { showRatingInfo = false },
+            title = { Text("About this rating") },
+            text = {
+                Text(
+                    "This rating is reported by ${sourceName.ifBlank { "the source" }} " +
+                        "and reflects readers there — not your activity in Grimoire.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showRatingInfo = false }) { Text("Got it") }
+            },
+        )
+    }
+
     Row(
         modifier = modifier.fillMaxWidth().padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -695,38 +714,69 @@ private fun NovelHeader(novel: Novel, sourceName: String = "", modifier: Modifie
             if (!novel.author.isNullOrBlank()) {
                 Text(novel.author!!, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Text(novel.status.displayName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                StatusLabel(status = novel.status)
+                novel.rating?.let {
+                    RatingLabel(
+                        rating = it,
+                        count = novel.ratingCount,
+                        onClick = { showRatingInfo = true },
+                    )
+                }
+            }
             if (sourceName.isNotBlank()) {
                 Text(sourceName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            novel.rating?.let { RatingRow(rating = it, count = novel.ratingCount) }
         }
     }
 }
 
 @Composable
-private fun RatingRow(rating: Float, count: Int?, modifier: Modifier = Modifier) {
-    val clamped = rating.coerceIn(0f, 5f)
+private fun StatusLabel(status: NovelStatus, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        repeat(5) { i ->
-            val fill = (clamped - i).coerceIn(0f, 1f)
-            val icon = when {
-                fill >= 0.75f -> Icons.Default.Star
-                fill >= 0.25f -> Icons.Default.StarHalf
-                else -> Icons.Outlined.StarOutline
-            }
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp),
-            )
-        }
-        Spacer(Modifier.width(4.dp))
+        Icon(
+            imageVector = status.icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            status.displayName,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun RatingLabel(
+    rating: Float,
+    count: Int?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val clamped = rating.coerceIn(0f, 5f)
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 2.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Default.Star,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp),
+        )
         Text(
             text = buildString {
                 append(String.format(Locale.getDefault(), "%.1f", clamped))
@@ -865,6 +915,15 @@ private val NovelStatus.displayName: String
         NovelStatus.COMPLETED -> "Completed"
         NovelStatus.HIATUS -> "Hiatus"
         NovelStatus.CANCELLED -> "Cancelled"
+    }
+
+private val NovelStatus.icon: ImageVector
+    get() = when (this) {
+        NovelStatus.UNKNOWN -> Icons.Default.HelpOutline
+        NovelStatus.ONGOING -> Icons.Default.Schedule
+        NovelStatus.COMPLETED -> Icons.Default.CheckCircle
+        NovelStatus.HIATUS -> Icons.Default.PauseCircle
+        NovelStatus.CANCELLED -> Icons.Default.Block
     }
 
 private fun formatDate(millis: Long): String =
