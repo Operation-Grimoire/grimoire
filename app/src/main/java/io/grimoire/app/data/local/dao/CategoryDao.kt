@@ -12,6 +12,9 @@ interface CategoryDao {
     @Query("SELECT * FROM categories ORDER BY `order` ASC")
     fun getAll(): Flow<List<CategoryEntity>>
 
+    @Query("SELECT * FROM categories ORDER BY `order` ASC")
+    suspend fun getAllOnce(): List<CategoryEntity>
+
     @Upsert
     suspend fun upsert(category: CategoryEntity): Long
 
