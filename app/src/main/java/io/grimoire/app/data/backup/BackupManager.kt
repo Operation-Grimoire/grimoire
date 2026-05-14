@@ -14,7 +14,15 @@ import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.RepoEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.encodeToStream
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -33,6 +41,7 @@ sealed class RestoreResult {
     data class Failure(val message: String) : RestoreResult()
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Singleton
 class BackupManager @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -54,34 +63,60 @@ class BackupManager @Inject constructor(
         if (!folder.exists() || !folder.canWrite()) {
             return@withContext BackupResult.Failure("Backup folder is not writable")
         }
+        val fileName = generateFileName()
+        val target = folder.createFile(BACKUP_MIME_TYPE, fileName)
+            ?: return@withContext BackupResult.Failure("Could not create backup file")
+
         runCatching {
-            val payload = buildBackup()
-            val fileName = generateFileName()
-            val target = folder.createFile(BACKUP_MIME_TYPE, fileName)
-                ?: return@withContext BackupResult.Failure("Could not create backup file")
+            val novels = novelDao.getAll()
+            val categories = categoryDao.getAllOnce()
+            val categoryById = categories.associateBy { it.id }
+            val repos = repoDao.getAllOnce()
+            val info = runCatching {
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            }.getOrNull()
+            val appVersionCode = info?.let {
+                @Suppress("DEPRECATION")
+                it.versionCode
+            } ?: 0
+            val appVersionName = info?.versionName.orEmpty()
+
             context.contentResolver.openOutputStream(target.uri)?.use { raw ->
-                GZIPOutputStream(raw).use { gz ->
-                    gz.write(json.encodeToString(BackupFile.serializer(), payload).toByteArray())
+                GZIPOutputStream(BufferedOutputStream(raw)).use { gz ->
+                    writeBackupStream(
+                        out = gz,
+                        novels = novels,
+                        categories = categories,
+                        categoryById = categoryById,
+                        repos = repos,
+                        appVersionCode = appVersionCode,
+                        appVersionName = appVersionName,
+                    )
                 }
-            } ?: return@withContext BackupResult.Failure("Could not open output stream")
-            BackupResult.Success(fileName, target.uri.toString(), payload.novels.size)
+            } ?: return@runCatching BackupResult.Failure("Could not open output stream")
+            BackupResult.Success(fileName, target.uri.toString(), novels.size)
         }.getOrElse { e ->
+            runCatching { target.delete() }
             BackupResult.Failure(e.message ?: "Backup failed")
         }
     }
 
     suspend fun restoreFrom(fileUri: Uri): RestoreResult = withContext(Dispatchers.IO) {
         runCatching {
-            val text = context.contentResolver.openInputStream(fileUri)?.use { raw ->
-                val maybeGzip = runCatching { GZIPInputStream(raw).bufferedReader().readText() }
-                if (maybeGzip.isSuccess) {
-                    maybeGzip.getOrThrow()
+            val backup = context.contentResolver.openInputStream(fileUri)?.use { raw ->
+                val buffered = BufferedInputStream(raw)
+                buffered.mark(2)
+                val b1 = buffered.read()
+                val b2 = buffered.read()
+                buffered.reset()
+                val isGzip = b1 == 0x1f && b2 == 0x8b
+                if (isGzip) {
+                    GZIPInputStream(buffered).use { json.decodeFromStream(BackupFile.serializer(), it) }
                 } else {
-                    context.contentResolver.openInputStream(fileUri)!!.bufferedReader().readText()
+                    json.decodeFromStream(BackupFile.serializer(), buffered)
                 }
             } ?: return@withContext RestoreResult.Failure("Could not read backup file")
 
-            val backup = json.decodeFromString(BackupFile.serializer(), text)
             if (backup.version > BackupFile.CURRENT_VERSION) {
                 return@withContext RestoreResult.Failure(
                     "Backup file is from a newer app version (v${backup.version})"
@@ -94,73 +129,74 @@ class BackupManager @Inject constructor(
         }
     }
 
-    private suspend fun buildBackup(): BackupFile {
-        val novels = novelDao.getAll()
-        val chapters = chapterDao.getAll().groupBy { it.novelId }
-        val categories = categoryDao.getAllOnce()
-        val categoryById = categories.associateBy { it.id }
-        val repos = repoDao.getAllOnce()
-        val info = runCatching {
-            context.packageManager.getPackageInfo(context.packageName, 0)
-        }.getOrNull()
-
-        return BackupFile(
-            createdAt = System.currentTimeMillis(),
-            appVersionCode = info?.let {
-                @Suppress("DEPRECATION")
-                it.versionCode
-            } ?: 0,
-            appVersionName = info?.versionName.orEmpty(),
-            novels = novels.map { n ->
-                BackupNovel(
-                    sourceId = n.sourceId,
-                    url = n.url,
-                    title = n.title,
-                    thumbnailUrl = n.thumbnailUrl,
-                    author = n.author,
-                    description = n.description,
-                    genres = n.genres,
-                    status = n.status,
-                    favorite = n.favorite,
-                    lastUpdated = n.lastUpdated,
-                    chapterSortOrder = n.chapterSortOrder,
-                    categoryName = n.categoryId?.let { categoryById[it]?.name },
-                    lastReadAt = n.lastReadAt,
-                    rating = n.rating,
-                    ratingCount = n.ratingCount,
-                    chapters = (chapters[n.id] ?: emptyList()).map { c ->
-                        BackupChapter(
-                            url = c.url,
-                            name = c.name,
-                            uploadDate = c.uploadDate,
-                            chapterNumber = c.chapterNumber,
-                            translator = c.translator,
-                            read = c.read,
-                            readProgress = c.readProgress,
-                            firstReadAt = c.firstReadAt,
-                            wordCount = c.wordCount,
-                            downloadedContent = c.downloadedContent,
-                        )
-                    },
-                )
-            },
-            categories = categories.map { c ->
-                BackupCategory(
-                    name = c.name,
-                    order = c.order,
-                    isDefault = c.isDefault,
-                    isHidden = c.isHidden,
-                )
-            },
-            repos = repos.map { r ->
-                BackupRepo(
-                    name = r.name,
-                    indexUrl = r.indexUrl,
-                    enabled = r.enabled,
-                    addedAt = r.addedAt,
-                )
-            },
+    private suspend fun writeBackupStream(
+        out: OutputStream,
+        novels: List<NovelEntity>,
+        categories: List<CategoryEntity>,
+        categoryById: Map<Long, CategoryEntity>,
+        repos: List<RepoEntity>,
+        appVersionCode: Int,
+        appVersionName: String,
+    ) {
+        // Stream the JSON manually so we never hold all chapters in memory at once.
+        out.writeUtf8("{")
+        out.writeUtf8("\"version\":${BackupFile.CURRENT_VERSION},")
+        out.writeUtf8("\"createdAt\":${System.currentTimeMillis()},")
+        out.writeUtf8("\"appVersionCode\":$appVersionCode,")
+        out.writeUtf8("\"appVersionName\":")
+        json.encodeToStream(String.serializer(), appVersionName, out)
+        out.writeUtf8(",\"categories\":")
+        json.encodeToStream(
+            ListSerializer(BackupCategory.serializer()),
+            categories.map { BackupCategory(it.name, it.order, it.isDefault, it.isHidden) },
+            out,
         )
+        out.writeUtf8(",\"repos\":")
+        json.encodeToStream(
+            ListSerializer(BackupRepo.serializer()),
+            repos.map { BackupRepo(it.name, it.indexUrl, it.enabled, it.addedAt) },
+            out,
+        )
+        out.writeUtf8(",\"novels\":[")
+        var first = true
+        for (n in novels) {
+            if (!first) out.writeUtf8(",")
+            first = false
+            val chapters = chapterDao.getChaptersOnce(n.id)
+            // Build one novel at a time and stream it, then let the GC reclaim chapters.
+            val backupNovel = BackupNovel(
+                sourceId = n.sourceId,
+                url = n.url,
+                title = n.title,
+                thumbnailUrl = n.thumbnailUrl,
+                author = n.author,
+                description = n.description,
+                genres = n.genres,
+                status = n.status,
+                favorite = n.favorite,
+                lastUpdated = n.lastUpdated,
+                chapterSortOrder = n.chapterSortOrder,
+                categoryName = n.categoryId?.let { categoryById[it]?.name },
+                lastReadAt = n.lastReadAt,
+                rating = n.rating,
+                ratingCount = n.ratingCount,
+                chapters = chapters.map { c ->
+                    BackupChapter(
+                        url = c.url,
+                        name = c.name,
+                        uploadDate = c.uploadDate,
+                        chapterNumber = c.chapterNumber,
+                        translator = c.translator,
+                        read = c.read,
+                        readProgress = c.readProgress,
+                        firstReadAt = c.firstReadAt,
+                        wordCount = c.wordCount,
+                    )
+                },
+            )
+            json.encodeToStream(BackupNovel.serializer(), backupNovel, out)
+        }
+        out.writeUtf8("]}")
     }
 
     private suspend fun applyBackup(backup: BackupFile) {
@@ -234,8 +270,8 @@ class BackupManager @Inject constructor(
                         translator = c.translator ?: existingCh?.translator,
                         read = c.read || (existingCh?.read ?: false),
                         readProgress = maxOf(c.readProgress, existingCh?.readProgress ?: 0f),
-                        downloadStatus = if (c.downloadedContent != null) 3 else (existingCh?.downloadStatus ?: 0),
-                        downloadedContent = c.downloadedContent ?: existingCh?.downloadedContent,
+                        downloadStatus = existingCh?.downloadStatus ?: 0,
+                        downloadedContent = existingCh?.downloadedContent,
                         queueOrder = existingCh?.queueOrder ?: 0L,
                         firstReadAt = c.firstReadAt ?: existingCh?.firstReadAt,
                         wordCount = if (c.wordCount > 0) c.wordCount else (existingCh?.wordCount ?: 0),
@@ -246,6 +282,8 @@ class BackupManager @Inject constructor(
         }
     }
 
+    private fun OutputStream.writeUtf8(s: String) = write(s.toByteArray(Charsets.UTF_8))
+
     private fun generateFileName(): String {
         val ts = SimpleDateFormat("yyyy-MM-dd_HHmmss", Locale.US).format(Date())
         return "grimoire_backup_$ts.json.gz"
@@ -253,6 +291,5 @@ class BackupManager @Inject constructor(
 
     companion object {
         const val BACKUP_MIME_TYPE = "application/gzip"
-        const val BACKUP_PICK_MIME_TYPE = "*/*"
     }
 }
