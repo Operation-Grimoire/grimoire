@@ -64,5 +64,4 @@ data class BackupChapter(
     val readProgress: Float = 0f,
     val firstReadAt: Long? = null,
     val wordCount: Int = 0,
-    val downloadedContent: String? = null,
 )
