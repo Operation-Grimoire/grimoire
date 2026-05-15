@@ -40,7 +40,13 @@ class MainActivity : FragmentActivity() {
                 .collectAsState(initial = uiPreferences.themeMode.defaultValue())
             val dynamicColor by uiPreferences.useDynamicColor.changes()
                 .collectAsState(initial = uiPreferences.useDynamicColor.defaultValue())
-            GrimoireTheme(themeMode = themeMode, dynamicColor = dynamicColor) {
+            val colorTheme by uiPreferences.colorTheme.changes()
+                .collectAsState(initial = uiPreferences.colorTheme.defaultValue())
+            GrimoireTheme(
+                themeMode = themeMode,
+                dynamicColor = dynamicColor,
+                colorTheme = colorTheme,
+            ) {
                 AppNavigation()
                 AppUpdateUi()
             }
