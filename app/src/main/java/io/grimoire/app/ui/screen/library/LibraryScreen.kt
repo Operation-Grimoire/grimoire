@@ -24,15 +24,19 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.ViewList
@@ -51,6 +55,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -75,8 +80,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -137,10 +146,18 @@ fun LibraryScreen(
     var showManage by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var showUnlock by remember { mutableStateOf(false) }
+    var searchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val searchFocusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState()
     val filterSheetState = rememberModalBottomSheetState()
+
+    LaunchedEffect(searchActive) {
+        if (searchActive) searchFocusRequester.requestFocus()
+    }
 
     val isFilterActive = filterStatus != -1 || filterUnreadOnly || filterDownloadedOnly
 
@@ -160,7 +177,7 @@ fun LibraryScreen(
     val displayedNovels: List<NovelEntity>? = remember(
         novels, effectiveTab, categories, showAllTab,
         sortOrder, filterStatus, filterUnreadOnly, filterDownloadedOnly, chapterStats,
-        isUnlocked, hiddenCategoryIds, includeHiddenInAll,
+        isUnlocked, hiddenCategoryIds, includeHiddenInAll, searchQuery,
     ) {
         val loaded = novels ?: return@remember null
         val allTabOffset = if (showAllTab) 1 else 0
@@ -196,11 +213,15 @@ fun LibraryScreen(
             LibrarySort.TOTAL_DESC -> compareByDescending<NovelEntity> { chapterStats[it.id]?.total ?: 0 }
             LibrarySort.LAST_READ_DESC -> compareByDescending<NovelEntity> { it.lastReadAt }
         }
+        val trimmedQuery = searchQuery.trim()
         tabFiltered
             .filter { novel ->
                 (filterStatus == -1 || novel.status == filterStatus) &&
                 (!filterUnreadOnly || (chapterStats[novel.id]?.let { it.total - it.readCount > 0 } == true)) &&
-                (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0)
+                (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
+                (trimmedQuery.isEmpty() ||
+                    novel.title.contains(trimmedQuery, ignoreCase = true) ||
+                    (novel.author?.contains(trimmedQuery, ignoreCase = true) == true))
             }
             .sortedWith(comparator)
     }
@@ -211,38 +232,72 @@ fun LibraryScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "Library",
-                        modifier = Modifier.combinedClickable(
-                            onClick = {},
-                            onLongClick = { if (hasPin && !isUnlocked) showUnlock = true },
-                        ),
-                    )
+                    if (searchActive) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search library…") },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(searchFocusRequester),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedBorderColor = Color.Transparent,
+                            ),
+                        )
+                    } else {
+                        Text(
+                            "Library",
+                            modifier = Modifier.combinedClickable(
+                                onClick = {},
+                                onLongClick = { if (hasPin && !isUnlocked) showUnlock = true },
+                            ),
+                        )
+                    }
                 },
                 actions = {
-                    if (isUnlocked) {
-                        IconButton(onClick = { viewModel.lock() }) {
-                            Icon(Icons.Default.Lock, contentDescription = "Lock hidden categories")
-                        }
-                    }
                     IconButton(onClick = {
-                        viewModel.setDisplayMode(
-                            if (displayMode == LibraryDisplayMode.GRID) LibraryDisplayMode.LIST
-                            else LibraryDisplayMode.GRID
-                        )
+                        if (searchActive) {
+                            searchActive = false
+                            searchQuery = ""
+                            keyboard?.hide()
+                        } else {
+                            searchActive = true
+                        }
                     }) {
                         Icon(
-                            if (displayMode == LibraryDisplayMode.GRID) Icons.Default.ViewList else Icons.Default.GridView,
-                            contentDescription = "Toggle display mode",
+                            if (searchActive) Icons.Default.Close else Icons.Default.Search,
+                            contentDescription = if (searchActive) "Close search" else "Search library",
                         )
                     }
-                    IconButton(onClick = { showFilterSheet = true }) {
-                        BadgedBox(badge = { if (isFilterActive) Badge() }) {
-                            Icon(Icons.Default.FilterList, contentDescription = "Filter & sort")
+                    if (!searchActive) {
+                        if (isUnlocked) {
+                            IconButton(onClick = { viewModel.lock() }) {
+                                Icon(Icons.Default.Lock, contentDescription = "Lock hidden categories")
+                            }
                         }
-                    }
-                    IconButton(onClick = { showManage = true }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Manage categories")
+                        IconButton(onClick = {
+                            viewModel.setDisplayMode(
+                                if (displayMode == LibraryDisplayMode.GRID) LibraryDisplayMode.LIST
+                                else LibraryDisplayMode.GRID
+                            )
+                        }) {
+                            Icon(
+                                if (displayMode == LibraryDisplayMode.GRID) Icons.Default.ViewList else Icons.Default.GridView,
+                                contentDescription = "Toggle display mode",
+                            )
+                        }
+                        IconButton(onClick = { showFilterSheet = true }) {
+                            BadgedBox(badge = { if (isFilterActive) Badge() }) {
+                                Icon(Icons.Default.FilterList, contentDescription = "Filter & sort")
+                            }
+                        }
+                        IconButton(onClick = { showManage = true }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Manage categories")
+                        }
                     }
                 },
             )
@@ -267,7 +322,7 @@ fun LibraryScreen(
                 }
                 displayedNovels.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        "No novels here",
+                        if (searchQuery.isNotBlank()) "No matches found" else "No novels here",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
