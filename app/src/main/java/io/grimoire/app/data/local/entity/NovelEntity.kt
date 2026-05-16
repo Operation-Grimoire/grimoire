@@ -25,4 +25,5 @@ data class NovelEntity(
     val lastReadAt: Long = 0L,
     val rating: Float? = null,
     val ratingCount: Int? = null,
+    val language: String? = null,
 )
