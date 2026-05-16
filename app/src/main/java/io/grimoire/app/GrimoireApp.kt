@@ -17,6 +17,7 @@ import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.cache.CoverPreloader
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.api.network.NetworkContext
+import io.grimoire.api.network.defaultOkHttpClient
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -33,6 +34,11 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
             .build()
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
+        // Reuse the extension network stack so covers carry the WebView
+        // cf_clearance cookie + matching User-Agent. Without this, images on
+        // Cloudflare-protected sites (e.g. Foxaholic) get a challenge page
+        // instead of the image. Lambda form keeps client init off the main thread.
+        .okHttpClient { defaultOkHttpClient() }
         .memoryCache {
             MemoryCache.Builder(this)
                 .maxSizePercent(0.15)
