@@ -99,7 +99,7 @@ class EpubImporter @Inject constructor(
             }
 
             val existing = novelDao.getBySourceUrl(sourceId, url)
-            val novelId = novelDao.upsert(
+            novelDao.upsert(
                 NovelEntity(
                     id = existing?.id ?: 0L,
                     sourceId = sourceId,
@@ -117,6 +117,12 @@ class EpubImporter @Inject constructor(
                     lastReadAt = existing?.lastReadAt ?: 0L,
                 ),
             )
+            // @Upsert returns -1 on the update path, so resolve the real row
+            // id explicitly — otherwise chapters get novelId = -1 and the
+            // insert fails with SQLITE_CONSTRAINT_FOREIGNKEY.
+            val novelId = existing?.id
+                ?: novelDao.getBySourceUrl(sourceId, url)?.id
+                ?: error("Imported novel row not found after upsert")
 
             chapterDao.replaceChapters(
                 novelId,
