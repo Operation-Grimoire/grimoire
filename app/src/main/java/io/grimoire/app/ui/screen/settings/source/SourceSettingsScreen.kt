@@ -12,11 +12,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -41,6 +43,7 @@ fun SourceSettingsScreen(
 ) {
     val values by viewModel.values.collectAsState()
     val saved by viewModel.saved.collectAsState()
+    val validation by viewModel.validation.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -111,6 +114,38 @@ fun SourceSettingsScreen(
                             },
                         )
                     }
+                }
+            }
+
+            if (viewModel.canValidate) {
+                Spacer(Modifier.height(8.dp))
+                val running = validation is SourceSettingsViewModel.ValidationState.Running
+                OutlinedButton(
+                    onClick = viewModel::validate,
+                    enabled = !running,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (running) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.height(18.dp),
+                            strokeWidth = 2.dp,
+                        )
+                        Spacer(Modifier.height(0.dp))
+                        Text("  Checking…")
+                    } else {
+                        Text("Test login")
+                    }
+                }
+                (validation as? SourceSettingsViewModel.ValidationState.Done)?.let { result ->
+                    Text(
+                        text = result.message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (result.success) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.error
+                        },
+                    )
                 }
             }
 
