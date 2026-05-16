@@ -5,11 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.source.ConfigurableSource
+import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.api.source.SourcePreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.app.util.ContentLanguages
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,6 +47,19 @@ class SourceSettingsViewModel @Inject constructor(
     /** Whether the source supports validating its configuration (e.g. login). */
     val canValidate: Boolean = loaded?.source is ConfigurableSource
 
+    private val multiLanguage = loaded?.source as? MultiLanguageSource
+
+    /** Multi-language sources get the built-in content-language filter. */
+    val isMultiLanguage: Boolean = multiLanguage != null || loaded?.source?.lang == "all"
+
+    /** Languages the source advertises, falling back to a built-in list. */
+    val allLanguages: List<String> =
+        multiLanguage?.availableLanguages()?.takeIf { it.isNotEmpty() }
+            ?: ContentLanguages.ALL
+
+    private val _enabledLanguages = MutableStateFlow<Set<String>>(emptySet())
+    val enabledLanguages: StateFlow<Set<String>> = _enabledLanguages.asStateFlow()
+
     sealed interface ValidationState {
         data object Idle : ValidationState
         data object Running : ValidationState
@@ -62,7 +77,16 @@ class SourceSettingsViewModel @Inject constructor(
                 val current = stored[pref.key].orEmpty()
                 pref.key to current.ifEmpty { defaultValue(pref) }
             }
+            if (isMultiLanguage) {
+                _enabledLanguages.value = sourceSettings.enabledLanguages(pkg)
+            }
         }
+    }
+
+    fun toggleLanguage(name: String) {
+        val key = ContentLanguages.normalize(name)
+        _enabledLanguages.update { if (key in it) it - key else it + key }
+        _saved.value = false
     }
 
     private fun defaultValue(pref: SourcePreference): String = when (pref) {
@@ -109,8 +133,12 @@ class SourceSettingsViewModel @Inject constructor(
 
     fun save() {
         val snapshot = _values.value
+        val languages = _enabledLanguages.value
         viewModelScope.launch {
             snapshot.forEach { (key, value) -> sourceSettings.pref(pkg, key).set(value) }
+            if (isMultiLanguage) {
+                sourceSettings.contentLanguages(pkg).set(languages)
+            }
             extensionManager.reapplyPreferences(pkg)
             _saved.value = true
         }

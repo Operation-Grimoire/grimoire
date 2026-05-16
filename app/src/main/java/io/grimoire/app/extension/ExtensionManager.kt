@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.source.ConfigurableSource
+import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,9 +45,14 @@ class ExtensionManager @Inject constructor(
     }
 
     private suspend fun applyPreferences(loaded: LoadedExtension) {
-        val configurable = loaded.source as? ConfigurableSource ?: return
-        val keys = configurable.getPreferences().map { it.key }
-        configurable.setPreferences(sourceSettings.snapshot(loaded.info.packageName, keys))
+        val pkg = loaded.info.packageName
+        (loaded.source as? ConfigurableSource)?.let { configurable ->
+            val keys = configurable.getPreferences().map { it.key }
+            configurable.setPreferences(sourceSettings.snapshot(pkg, keys))
+        }
+        (loaded.source as? MultiLanguageSource)?.setEnabledLanguages(
+            sourceSettings.enabledLanguages(pkg),
+        )
     }
 
     private suspend fun scanPackages() {

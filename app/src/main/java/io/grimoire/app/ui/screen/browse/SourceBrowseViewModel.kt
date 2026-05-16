@@ -8,6 +8,7 @@ import io.grimoire.api.model.Filter
 import io.grimoire.api.model.Novel
 import io.grimoire.api.source.CatalogueSource
 import io.grimoire.api.source.ConfigurableSource
+import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.preferences.BrowseDisplayMode
@@ -64,7 +65,9 @@ class SourceBrowseViewModel @Inject constructor(
 
     private val source: CatalogueSource? get() = loaded?.source as? CatalogueSource
 
-    val isConfigurable: Boolean get() = loaded?.source is ConfigurableSource
+    val isConfigurable: Boolean
+        get() = loaded?.source is ConfigurableSource ||
+            loaded?.source is MultiLanguageSource
 
     val sourceName: String get() = loaded?.info?.label?.substringAfter(": ", loaded?.info?.label.orEmpty()).orEmpty()
         .ifEmpty { packageName }
