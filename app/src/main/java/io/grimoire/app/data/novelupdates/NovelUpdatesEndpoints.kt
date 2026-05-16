@@ -11,7 +11,7 @@ object NovelUpdatesEndpoints {
 
     fun searchUrl(query: String): String {
         val q = URLEncoder.encode(query, "UTF-8")
-        return "$BASE_URL/?s=$q&post_type=seriesplans"
+        return "$BASE_URL/series-finder/?sf=1&sh=$q"
     }
 
     fun seriesUrl(slugOrUrl: String): String {

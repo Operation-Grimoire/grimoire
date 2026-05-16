@@ -35,6 +35,8 @@ data class NuSeries(
 sealed interface NuInfoState {
     data object Idle : NuInfoState
     data object Disabled : NuInfoState
+    /** Enabled but not fetched yet — the section shows a "Load" button. */
+    data object NotLoaded : NuInfoState
     data object Loading : NuInfoState
     data class Matched(val series: NuSeries) : NuInfoState
     data class Ambiguous(val candidates: List<NuSearchResult>) : NuInfoState
