@@ -56,6 +56,34 @@ class NovelUpdatesParserTest {
     }
 
     @Test
+    fun parseSeries_extractsRecommendationsAndStopsAtNextSection() {
+        val html = """
+            <html><body>
+              <div class="seriestitlenu">Circle of Inevitability</div>
+              <h5 class="seriesother">Related Series</h5>
+              <a href="https://www.novelupdates.com/series/lord-of-the-mysteries/">Lord of the Mysteries</a> (Prequel)<br/>
+              <h5 class="seriesother">Recommendations</h5>
+              <a class="genre" href="https://www.novelupdates.com/series/deep-sea-embers/" title="Recommended by 1 users">Deep Sea Embers</a> (1)<br/>
+              <a class="genre" href="https://www.novelupdates.com/series/my-house-of-horrors/" title="Recommended by 1 users">My House of Horrors</a> (1)<br/>
+              <h5 class="seriesother">Recommendation Lists</h5>
+              <a href="https://www.novelupdates.com/series/should-not-appear/">Should Not Appear</a>
+            </body></html>
+        """.trimIndent()
+
+        val series = NovelUpdatesParser.parseSeries(
+            Jsoup.parse(html, NovelUpdatesEndpoints.BASE_URL),
+            "https://www.novelupdates.com/series/circle-of-inevitability/",
+        )
+
+        assertEquals("Circle of Inevitability", series.title)
+        assertEquals(2, series.recommendations.size)
+        assertEquals("Deep Sea Embers", series.recommendations[0].title)
+        assertEquals("My House of Horrors", series.recommendations[1].title)
+        assertTrue(series.recommendations.none { it.title == "Should Not Appear" })
+        assertTrue(series.recommendations.none { it.title == "Lord of the Mysteries" })
+    }
+
+    @Test
     fun parseSearch_emptyOnUnrelatedHtml() {
         val results = NovelUpdatesParser.parseSearch(
             Jsoup.parse("<html><body><p>nothing here</p></body></html>"),

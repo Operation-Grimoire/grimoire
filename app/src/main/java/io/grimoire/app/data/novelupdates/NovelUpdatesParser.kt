@@ -102,44 +102,34 @@ object NovelUpdatesParser {
     }
 
     private fun parseRecommendations(doc: Document): List<NuRecommendation> = safe(emptyList()) {
-        val header = doc.select("h5, h4, h2").firstOrNull {
+        // NU markup: <h5 class="seriesother">Recommendations</h5> followed by
+        // sibling <a href="/series/..">Name</a> links separated by <br>, until
+        // the next h5/heading.
+        val header = doc.select("h5, h4, h3").firstOrNull {
             it.text().trim().equals("Recommendations", ignoreCase = true)
         }
-        var result = emptyList<NuRecommendation>()
+        val recs = ArrayList<NuRecommendation>()
         if (header != null) {
-            // Walk forward from the header to the first block with series links.
             var node: Element? = header.nextElementSibling()
-            var hops = 0
-            while (node != null && hops < 6) {
-                val anchors = node.select("a[href*=/series/]")
-                if (anchors.isNotEmpty()) {
-                    result = anchors.mapNotNull { a ->
-                        val href = a.absUrl("href").ifBlank { a.attr("href") }
-                        if (href.isBlank()) {
-                            null
-                        } else {
-                            val img = a.selectFirst("img")
-                            val name = a.attr("title")
-                                .ifBlank { img?.attr("alt") ?: a.text() }
-                                .trim()
-                            if (name.isBlank()) {
-                                null
-                            } else {
-                                NuRecommendation(
-                                    title = name,
-                                    url = href,
-                                    coverUrl = img?.imgSrc(),
-                                )
-                            }
-                        }
-                    }.distinctBy { it.url }
-                    break
+            while (node != null) {
+                val tag = node.tagName().lowercase()
+                if (tag == "h5" || tag == "h4" || tag == "h3" || tag == "h2") break
+                if (tag == "a" && node.attr("href").contains("/series/")) {
+                    val href = node.absUrl("href").ifBlank { node.attr("href") }
+                    val img = node.selectFirst("img")
+                    val name = node.text().trim()
+                    if (href.isNotBlank() && name.isNotBlank()) {
+                        recs += NuRecommendation(
+                            title = name,
+                            url = href,
+                            coverUrl = img?.imgSrc(),
+                        )
+                    }
                 }
                 node = node.nextElementSibling()
-                hops++
             }
         }
-        result
+        recs.distinctBy { it.url }
     }
 
     private fun Element.imgSrc(): String? {

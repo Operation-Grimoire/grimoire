@@ -141,8 +141,13 @@ class NovelDetailViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            val title = novel.filter { it.title.isNotBlank() }.take(1).first().title
-            loadNovelUpdates(title)
+            // Don't fetch automatically — just decide whether to offer the
+            // "Load from NovelUpdates" button (cheap preference read, no network).
+            _nuState.value = if (novelUpdatesRepository.isEnabled()) {
+                NuInfoState.NotLoaded
+            } else {
+                NuInfoState.Disabled
+            }
         }
     }
 
@@ -153,6 +158,9 @@ class NovelDetailViewModel @Inject constructor(
             _nuState.value = novelUpdatesRepository.infoFor(pkg, novelUrl, title)
         }
     }
+
+    /** Triggered by the user tapping the "Load from NovelUpdates" button. */
+    fun loadNovelUpdates() = retryNovelUpdates()
 
     fun retryNovelUpdates() {
         val title = _novel.value.title

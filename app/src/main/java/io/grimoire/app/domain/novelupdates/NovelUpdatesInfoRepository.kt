@@ -19,6 +19,8 @@ class NovelUpdatesInfoRepository @Inject constructor(
     private val preferences: NovelUpdatesPreferences,
 ) {
 
+    suspend fun isEnabled(): Boolean = preferences.enabled.changes().first()
+
     suspend fun infoFor(pkg: String, novelUrl: String, title: String): NuInfoState {
         if (!preferences.enabled.changes().first()) return NuInfoState.Disabled
 
