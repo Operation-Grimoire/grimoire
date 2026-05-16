@@ -28,7 +28,14 @@ object NovelUpdatesParser {
     private const val SERIES_STATUS = "#editstatus"
     private const val SERIES_RATING = "span.uvotes"
 
-    fun parseSearch(doc: Document): List<NuSearchResult> = runCatching {
+    private inline fun <T> safe(default: T, block: () -> T): T =
+        try {
+            block()
+        } catch (e: Exception) {
+            default
+        }
+
+    fun parseSearch(doc: Document): List<NuSearchResult> = safe(emptyList()) {
         doc.select(SEARCH_RESULT).mapNotNull { box ->
             val link = box.selectFirst(SEARCH_TITLE_LINK) ?: return@mapNotNull null
             val href = link.absUrl("href").ifBlank { link.attr("href") }
@@ -42,7 +49,7 @@ object NovelUpdatesParser {
                 coverUrl = box.selectFirst(SEARCH_IMG)?.imgSrc(),
             )
         }
-    }.getOrDefault(emptyList())
+    }
 
     fun parseSeries(doc: Document, requestUrl: String): NuSeries {
         val slug = NovelUpdatesEndpoints.slugFromUrl(requestUrl)
@@ -63,58 +70,77 @@ object NovelUpdatesParser {
         )
     }
 
-    private fun parseAssociated(doc: Document): List<String> = runCatching {
-        val el = doc.selectFirst(SERIES_ASSOCIATED) ?: return emptyList()
+    private fun parseAssociated(doc: Document): List<String> = safe(emptyList()) {
+        val el = doc.selectFirst(SERIES_ASSOCIATED) ?: return@safe emptyList()
         el.html()
             .split("<br>", "<br/>", "<br />", ignoreCase = true)
             .map { org.jsoup.Jsoup.parse(it).text().trim() }
             .filter { it.isNotBlank() }
             .distinct()
-    }.getOrDefault(emptyList())
+    }
 
     // NU renders the rating as e.g. "3.9 / 5.0" inside span.uvotes; votes appear
     // nearby as "(123 votes)". Both are best-effort.
-    private fun parseRating(doc: Document): Float? = runCatching {
-        val text = doc.selectFirst(SERIES_RATING)?.text() ?: return null
-        Regex("""([0-9]+(?:\.[0-9]+)?)\s*/\s*5""").find(text)?.groupValues?.get(1)?.toFloatOrNull()
-    }.getOrNull()
+    private fun parseRating(doc: Document): Float? = safe(null) {
+        val text = doc.selectFirst(SERIES_RATING)?.text()
+        if (text == null) {
+            null
+        } else {
+            Regex("""([0-9]+(?:\.[0-9]+)?)\s*/\s*5""")
+                .find(text)?.groupValues?.get(1)?.toFloatOrNull()
+        }
+    }
 
-    private fun parseRatingVotes(doc: Document): Int? = runCatching {
-        val scope = doc.selectFirst(SERIES_RATING)?.parent()?.text() ?: return null
-        Regex("""([0-9][0-9,]*)\s*votes""", RegexOption.IGNORE_CASE)
-            .find(scope)?.groupValues?.get(1)?.replace(",", "")?.toIntOrNull()
-    }.getOrNull()
+    private fun parseRatingVotes(doc: Document): Int? = safe(null) {
+        val scope = doc.selectFirst(SERIES_RATING)?.parent()?.text()
+        if (scope == null) {
+            null
+        } else {
+            Regex("""([0-9][0-9,]*)\s*votes""", RegexOption.IGNORE_CASE)
+                .find(scope)?.groupValues?.get(1)?.replace(",", "")?.toIntOrNull()
+        }
+    }
 
-    private fun parseRecommendations(doc: Document): List<NuRecommendation> = runCatching {
+    private fun parseRecommendations(doc: Document): List<NuRecommendation> = safe(emptyList()) {
         val header = doc.select("h5, h4, h2").firstOrNull {
             it.text().trim().equals("Recommendations", ignoreCase = true)
-        } ?: return emptyList()
-
-        // Walk forward from the header collecting the first block that contains
-        // links to other series.
-        var node: Element? = header.nextElementSibling()
-        var hops = 0
-        while (node != null && hops < 6) {
-            val anchors = node.select("a[href*=/series/]")
-            if (anchors.isNotEmpty()) {
-                return anchors.mapNotNull { a ->
-                    val href = a.absUrl("href").ifBlank { a.attr("href") }
-                    if (href.isBlank()) return@mapNotNull null
-                    val img = a.selectFirst("img")
-                    val name = a.attr("title").ifBlank { img?.attr("alt") ?: a.text() }.trim()
-                    if (name.isBlank()) return@mapNotNull null
-                    NuRecommendation(
-                        title = name,
-                        url = href,
-                        coverUrl = img?.imgSrc(),
-                    )
-                }.distinctBy { it.url }
-            }
-            node = node.nextElementSibling()
-            hops++
         }
-        emptyList()
-    }.getOrDefault(emptyList())
+        var result = emptyList<NuRecommendation>()
+        if (header != null) {
+            // Walk forward from the header to the first block with series links.
+            var node: Element? = header.nextElementSibling()
+            var hops = 0
+            while (node != null && hops < 6) {
+                val anchors = node.select("a[href*=/series/]")
+                if (anchors.isNotEmpty()) {
+                    result = anchors.mapNotNull { a ->
+                        val href = a.absUrl("href").ifBlank { a.attr("href") }
+                        if (href.isBlank()) {
+                            null
+                        } else {
+                            val img = a.selectFirst("img")
+                            val name = a.attr("title")
+                                .ifBlank { img?.attr("alt") ?: a.text() }
+                                .trim()
+                            if (name.isBlank()) {
+                                null
+                            } else {
+                                NuRecommendation(
+                                    title = name,
+                                    url = href,
+                                    coverUrl = img?.imgSrc(),
+                                )
+                            }
+                        }
+                    }.distinctBy { it.url }
+                    break
+                }
+                node = node.nextElementSibling()
+                hops++
+            }
+        }
+        result
+    }
 
     private fun Element.imgSrc(): String? {
         val candidates = listOf("abs:src", "src", "abs:data-src", "data-src", "abs:data-cfsrc", "data-cfsrc")
