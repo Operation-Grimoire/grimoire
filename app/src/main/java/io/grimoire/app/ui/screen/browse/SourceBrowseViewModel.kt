@@ -234,9 +234,15 @@ class SourceBrowseViewModel @Inject constructor(
                     BrowseMode.LATEST -> src.getLatestUpdates(page)
                     BrowseMode.SEARCH -> src.searchNovels(_query.value, page, _activeFilters.value)
                 }
-                if (reset) _novels.value = result
-                else _novels.value = (_novels.value + result).distinctBy { it.url }
-                _hasMore.value = result.isNotEmpty()
+                // Always de-duplicate by URL: a source can legitimately return
+                // the same item twice (on one page or across pages), and the
+                // keyed list would crash on duplicate keys. Stop paginating
+                // when a page adds nothing new (empty, or all duplicates).
+                val merged = (if (reset) result else _novels.value + result)
+                    .distinctBy { it.url }
+                val grew = merged.size > _novels.value.size
+                _novels.value = merged
+                _hasMore.value = if (reset) result.isNotEmpty() else grew
             }.onFailure { e ->
                 Log.e(TAG, "Load failed [mode=${_mode.value} page=$page pkg=$packageName]", e)
                 _error.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
