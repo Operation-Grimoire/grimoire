@@ -373,9 +373,8 @@ private fun NovelEntity.toNovel() = Novel(
     status = NovelStatus.entries.getOrElse(status) { NovelStatus.UNKNOWN },
     rating = rating,
     ratingCount = ratingCount,
-    language = language,
     initialized = true,
-)
+).also { it.language = language }
 
 private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, chapterSortOrder: Int = 0, categoryId: Long? = null, url: String = this.url, lastReadAt: Long = 0L) = NovelEntity(
     id = existingId,
