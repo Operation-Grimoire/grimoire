@@ -21,6 +21,9 @@ import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.epub.EpubImporter
 import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.novelupdates.NuInfoState
+import io.grimoire.app.data.novelupdates.NuSearchResult
+import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -49,6 +52,7 @@ class NovelDetailViewModel @Inject constructor(
     private val categoryDao: CategoryDao,
     private val downloadManager: DownloadManager,
     private val epubImporter: EpubImporter,
+    private val novelUpdatesRepository: NovelUpdatesInfoRepository,
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
@@ -112,8 +116,18 @@ class NovelDetailViewModel @Inject constructor(
     val categories: StateFlow<List<CategoryEntity>> = categoryDao.getAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private val _nuState = MutableStateFlow<NuInfoState>(NuInfoState.Idle)
+    val nuState: StateFlow<NuInfoState> = _nuState.asStateFlow()
+
+    private val _nuSearchResults = MutableStateFlow<List<NuSearchResult>>(emptyList())
+    val nuSearchResults: StateFlow<List<NuSearchResult>> = _nuSearchResults.asStateFlow()
+
+    private val _nuSearching = MutableStateFlow(false)
+    val nuSearching: StateFlow<Boolean> = _nuSearching.asStateFlow()
+
     private var cachedNovelId: Long = -1L
     private var loadJob: Job? = null
+    private var nuJob: Job? = null
 
     init {
         loadJob = viewModelScope.launch {
@@ -125,6 +139,40 @@ class NovelDetailViewModel @Inject constructor(
                     .take(1)
                     .collect { loadNovel(forceRefresh = false) }
             }
+        }
+        viewModelScope.launch {
+            val title = novel.filter { it.title.isNotBlank() }.take(1).first().title
+            loadNovelUpdates(title)
+        }
+    }
+
+    private fun loadNovelUpdates(title: String) {
+        nuJob?.cancel()
+        nuJob = viewModelScope.launch {
+            _nuState.value = NuInfoState.Loading
+            _nuState.value = novelUpdatesRepository.infoFor(pkg, novelUrl, title)
+        }
+    }
+
+    fun retryNovelUpdates() {
+        val title = _novel.value.title
+        if (title.isNotBlank()) loadNovelUpdates(title)
+    }
+
+    fun linkNovelUpdates(slug: String) {
+        nuJob?.cancel()
+        nuJob = viewModelScope.launch {
+            _nuState.value = NuInfoState.Loading
+            _nuState.value = novelUpdatesRepository.link(pkg, novelUrl, slug)
+        }
+    }
+
+    fun searchNovelUpdates(query: String) {
+        if (query.isBlank()) return
+        viewModelScope.launch {
+            _nuSearching.value = true
+            _nuSearchResults.value = novelUpdatesRepository.search(query)
+            _nuSearching.value = false
         }
     }
 
