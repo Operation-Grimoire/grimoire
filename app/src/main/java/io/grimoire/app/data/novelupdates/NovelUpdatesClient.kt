@@ -28,10 +28,22 @@ class NovelUpdatesClient @Inject constructor() {
     private val gate = Mutex()
     @Volatile private var lastRequestAt = 0L
 
+    /**
+     * NovelUpdates' Series Finder matches `sh` as a case-insensitive
+     * *contiguous substring* of the title, so a source title that differs from
+     * NU's canonical title even slightly (extra "(LN)", different punctuation,
+     * appended words) returns nothing. We therefore try progressively simpler
+     * query variants and return the first that yields results.
+     */
     suspend fun search(query: String): List<NuSearchResult> {
-        if (query.isBlank()) return emptyList()
-        val body = get(NovelUpdatesEndpoints.searchUrl(query))
-        return NovelUpdatesParser.parseSearch(Jsoup.parse(body, NovelUpdatesEndpoints.BASE_URL))
+        for (variant in searchVariants(query)) {
+            val body = get(NovelUpdatesEndpoints.searchUrl(variant))
+            val results = NovelUpdatesParser.parseSearch(
+                Jsoup.parse(body, NovelUpdatesEndpoints.BASE_URL),
+            )
+            if (results.isNotEmpty()) return results
+        }
+        return emptyList()
     }
 
     suspend fun getSeries(slugOrUrl: String): NuSeries {
@@ -58,4 +70,43 @@ class NovelUpdatesClient @Inject constructor() {
     private companion object {
         const val MIN_INTERVAL_MS = 1_200L
     }
+}
+
+private const val MAX_VARIANTS = 7
+private val PAREN = Regex("""\(.*?\)""")
+private val WS = Regex("""\s+""")
+private val LEADING_ARTICLE = Regex("""^(the|a|an)\s+""", RegexOption.IGNORE_CASE)
+
+/**
+ * Ordered, de-duplicated NovelUpdates search queries derived from a title,
+ * from most to least specific. The Series Finder matches `sh` as a contiguous
+ * case-insensitive substring of the title, so trying simpler variants greatly
+ * improves the hit rate when the source title isn't an exact NU title.
+ */
+internal fun searchVariants(raw: String): List<String> {
+    val t = raw.trim()
+    if (t.isEmpty()) return emptyList()
+
+    val noParen = t.replace(PAREN, " ").replace(WS, " ").trim()
+    val beforeColon = noParen.substringBefore(':').trim()
+
+    val out = LinkedHashSet<String>()
+    fun add(s: String) {
+        val v = s.trim()
+        if (v.length >= 3) out.add(v)
+    }
+
+    add(t)
+    add(noParen)
+    add(beforeColon)
+    add(beforeColon.replace(LEADING_ARTICLE, ""))
+
+    // Leading word n-grams of the cleaned title are very likely to be a
+    // contiguous substring of NU's canonical title.
+    val words = noParen.replace(LEADING_ARTICLE, "").split(WS).filter { it.isNotBlank() }
+    for (k in minOf(8, words.size) downTo 3) {
+        add(words.take(k).joinToString(" "))
+    }
+
+    return out.toList().take(MAX_VARIANTS)
 }
