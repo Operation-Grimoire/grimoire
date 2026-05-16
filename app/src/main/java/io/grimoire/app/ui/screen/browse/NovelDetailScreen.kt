@@ -809,7 +809,12 @@ private fun NovelHeader(novel: Novel, sourceName: String = "", isLocal: Boolean 
                     },
                 )
             } else if (sourceName.isNotBlank()) {
-                Text(sourceName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                val lang = novel.language?.trim().orEmpty()
+                Text(
+                    if (lang.isNotEmpty()) "$sourceName · $lang" else sourceName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
