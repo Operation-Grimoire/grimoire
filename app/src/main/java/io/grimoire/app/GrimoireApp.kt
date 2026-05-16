@@ -16,6 +16,7 @@ import dagger.hilt.android.HiltAndroidApp
 import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.cache.CoverPreloader
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
+import io.grimoire.api.network.NetworkContext
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -49,6 +50,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        NetworkContext.init(this)
         coverPreloader.start()
         val channel = NotificationChannel(
             DOWNLOAD_CHANNEL_ID,
