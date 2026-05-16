@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.grimoire.api.source.ConfigurableSource
+import io.grimoire.app.data.preferences.SourceSettingsPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +22,7 @@ import kotlinx.coroutines.launch
 class ExtensionManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val loader: ExtensionLoader,
+    private val sourceSettings: SourceSettingsPreferences,
 ) {
     private val _extensions = MutableStateFlow<List<LoadedExtension>>(emptyList())
     val extensions: StateFlow<List<LoadedExtension>> = _extensions.asStateFlow()
@@ -32,7 +35,21 @@ class ExtensionManager @Inject constructor(
 
     suspend fun refresh() = withContext(Dispatchers.IO) { scanPackages() }
 
-    private fun scanPackages() {
+    /** Re-reads persisted settings for [pkg] and pushes them into its source. */
+    fun reapplyPreferences(pkg: String) {
+        @Suppress("OPT_IN_USAGE")
+        GlobalScope.launch(Dispatchers.IO) {
+            _extensions.value.firstOrNull { it.info.packageName == pkg }?.let { applyPreferences(it) }
+        }
+    }
+
+    private suspend fun applyPreferences(loaded: LoadedExtension) {
+        val configurable = loaded.source as? ConfigurableSource ?: return
+        val keys = configurable.getPreferences().map { it.key }
+        configurable.setPreferences(sourceSettings.snapshot(loaded.info.packageName, keys))
+    }
+
+    private suspend fun scanPackages() {
         val pm = context.packageManager
         _extensions.value = pm.getInstalledPackagesCompat().mapNotNull { pkg ->
             val meta = pkg.applicationInfo?.metaData ?: return@mapNotNull null
@@ -50,6 +67,7 @@ class ExtensionManager @Inject constructor(
             val source = loader.load(info) ?: return@mapNotNull null
             LoadedExtension(info, source)
         }
+        _extensions.value.forEach { applyPreferences(it) }
     }
 }
 

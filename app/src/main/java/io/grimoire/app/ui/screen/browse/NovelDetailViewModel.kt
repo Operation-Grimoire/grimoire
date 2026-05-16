@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
+import io.grimoire.api.source.EpubSource
 import io.grimoire.api.source.PaginatedSource
 import io.grimoire.api.source.Source
 import io.grimoire.api.source.SourceInfo
@@ -17,6 +18,7 @@ import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.download.DownloadManager
+import io.grimoire.app.data.epub.EpubImporter
 import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.extension.ExtensionManager
@@ -46,6 +48,7 @@ class NovelDetailViewModel @Inject constructor(
     private val chapterDao: ChapterDao,
     private val categoryDao: CategoryDao,
     private val downloadManager: DownloadManager,
+    private val epubImporter: EpubImporter,
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
@@ -58,6 +61,12 @@ class NovelDetailViewModel @Inject constructor(
     private val source get() = loaded?.source
 
     val sourceName: String get() = loaded?.info?.label ?: ""
+
+    /** This source delivers a whole-book EPUB rather than scraped chapters. */
+    val isEpubSource: Boolean get() = source is EpubSource
+
+    private val _bookDownload = MutableStateFlow<BookDownloadState>(BookDownloadState.Idle)
+    val bookDownload: StateFlow<BookDownloadState> = _bookDownload.asStateFlow()
 
     val novelWebUrl: String get() {
         val url = _novel.value.url
@@ -197,6 +206,8 @@ class NovelDetailViewModel @Inject constructor(
             // so there's no flash of empty chapter list.
             chapters.first { it.isNotEmpty() }
             _isLoadingChapters.value = false
+        } else if (src is EpubSource) {
+            _isLoadingChapters.value = false
         } else {
             fetchChapters(src, novel)
         }
@@ -222,7 +233,9 @@ class NovelDetailViewModel @Inject constructor(
         }.getOrNull()
 
         _isLoadingNovel.value = false
-        if (full != null) fetchChapters(src, full)
+        // EPUB sources have no scraped chapter list; chapters appear after the
+        // user downloads the book (see downloadBook()).
+        if (full != null && src !is EpubSource) fetchChapters(src, full)
     }
 
     private suspend fun fetchChapters(src: Source, novel: Novel) {
@@ -301,6 +314,30 @@ class NovelDetailViewModel @Inject constructor(
     fun cancelAllDownloads() { if (cachedNovelId > 0L) downloadManager.cancelAll(cachedNovelId) }
     fun deleteDownload(chapter: ChapterEntity) = downloadManager.deleteDownload(chapter)
 
+    /** Downloads and imports the whole-book EPUB for an [EpubSource]. */
+    fun downloadBook() {
+        val src = source as? EpubSource ?: run {
+            _bookDownload.value = BookDownloadState.Error("Source unavailable")
+            return
+        }
+        if (_bookDownload.value is BookDownloadState.Downloading) return
+        _bookDownload.value = BookDownloadState.Downloading
+        viewModelScope.launch {
+            runCatching { src.getEpub(_novel.value) }
+                .mapCatching { bytes -> epubImporter.importBytes(bytes, src.id, novelUrl).getOrThrow() }
+                .onSuccess { result ->
+                    cachedNovelId = result.novelId
+                    _liveNovelId.value = result.novelId
+                    _bookDownload.value = BookDownloadState.Done
+                }
+                .onFailure { e ->
+                    _bookDownload.value = BookDownloadState.Error(
+                        e.message ?: e::class.simpleName ?: "Download failed",
+                    )
+                }
+        }
+    }
+
     fun setSort(sort: ChapterSort) {
         _chapterSort.value = sort
         if (cachedNovelId > 0L) viewModelScope.launch {
@@ -317,6 +354,13 @@ class NovelDetailViewModel @Inject constructor(
             novelDao.upsert(entity.copy(favorite = next))
         }
     }
+}
+
+sealed interface BookDownloadState {
+    data object Idle : BookDownloadState
+    data object Downloading : BookDownloadState
+    data object Done : BookDownloadState
+    data class Error(val message: String) : BookDownloadState
 }
 
 private fun NovelEntity.toNovel() = Novel(

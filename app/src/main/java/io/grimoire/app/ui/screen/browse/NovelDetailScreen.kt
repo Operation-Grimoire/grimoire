@@ -54,6 +54,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -121,6 +122,7 @@ fun NovelDetailScreen(
     val chapterSort by viewModel.chapterSort.collectAsState()
     val categoryId by viewModel.categoryId.collectAsState()
     val categories by viewModel.categories.collectAsState()
+    val bookDownload by viewModel.bookDownload.collectAsState()
 
     var descriptionExpanded by remember { mutableStateOf(false) }
     var showCategoryDialog by remember { mutableStateOf(false) }
@@ -376,6 +378,48 @@ fun NovelDetailScreen(
                                     contentPadding = PaddingValues(horizontal = 0.dp),
                                 ) {
                                     Text(if (descriptionExpanded) "Show less" else "Show more")
+                                }
+                            }
+                        }
+                    }
+
+                    // Whole-book EPUB download (EpubSource only)
+                    if (!isLoadingNovel && novelError == null && viewModel.isEpubSource) {
+                        item(key = "epub_download") {
+                            Column(
+                                Modifier
+                                    .animateItem()
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                val downloading = bookDownload is BookDownloadState.Downloading
+                                Button(
+                                    onClick = { viewModel.downloadBook() },
+                                    enabled = !downloading,
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    if (downloading) {
+                                        CircularProgressIndicator(
+                                            Modifier.size(18.dp),
+                                            strokeWidth = 2.dp,
+                                            color = MaterialTheme.colorScheme.onPrimary,
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Downloading…")
+                                    } else {
+                                        Icon(Icons.Default.Download, contentDescription = null)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(if (chapters.isEmpty()) "Download EPUB" else "Re-download EPUB")
+                                    }
+                                }
+                                (bookDownload as? BookDownloadState.Error)?.let { err ->
+                                    Text(
+                                        err.message,
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(top = 8.dp),
+                                    )
                                 }
                             }
                         }

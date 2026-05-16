@@ -57,6 +57,7 @@ import io.grimoire.app.ui.screen.settings.browse.BrowseSettingsScreen
 import io.grimoire.app.ui.screen.settings.hidden.HiddenCategoriesSettingsScreen
 import io.grimoire.app.ui.screen.settings.library.LibrarySettingsScreen
 import io.grimoire.app.ui.screen.settings.reader.ReaderSettingsScreen
+import io.grimoire.app.ui.screen.settings.source.SourceSettingsScreen
 
 private enum class TopLevelDestination(
     val route: String,
@@ -74,6 +75,7 @@ private const val ROUTE_BROWSE_HOME = "browse_home"
 private const val ROUTE_GLOBAL_SEARCH = "global_search"
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
 private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}?q={q}"
+private const val ROUTE_SOURCE_SETTINGS = "settings/source/{pkg}"
 private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_STATISTICS = "statistics"
@@ -294,7 +296,17 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     onOpenWebView = { url ->
                         navController.navigate("webview?url=${Uri.encode(url)}")
                     },
+                    onOpenSourceSettings = {
+                        navController.navigate("settings/source/${Uri.encode(pkg)}")
+                    },
                 )
+            }
+
+            composable(
+                route = ROUTE_SOURCE_SETTINGS,
+                arguments = listOf(navArgument("pkg") { type = NavType.StringType }),
+            ) {
+                SourceSettingsScreen(onNavigateBack = { navController.popBackStack() })
             }
 
             composable(
