@@ -124,14 +124,24 @@ class EpubImporter @Inject constructor(
                 ?: novelDao.getBySourceUrl(sourceId, url)?.id
                 ?: error("Imported novel row not found after upsert")
 
+            // Preserve per-chapter reading state across a re-import: chapter
+            // URLs are deterministic ("$url/$index"), so carry read progress
+            // from any existing chapter with the same URL into its replacement.
+            val previous = chapterDao.getChaptersOnce(novelId).associateBy { it.url }
+
             chapterDao.replaceChapters(
                 novelId,
                 parsed.chapters.mapIndexed { index, ch ->
+                    val chapterUrl = "$url/$index"
+                    val prior = previous[chapterUrl]
                     ChapterEntity(
                         novelId = novelId,
-                        url = "$url/$index",
+                        url = chapterUrl,
                         name = ch.title,
                         chapterNumber = (index + 1).toFloat(),
+                        read = prior?.read ?: false,
+                        readProgress = prior?.readProgress ?: 0f,
+                        firstReadAt = prior?.firstReadAt,
                         downloadStatus = ChapterDownloadStatus.DOWNLOADED.ordinal,
                         downloadedContent = ch.content,
                         wordCount = ch.content.countWords(),
