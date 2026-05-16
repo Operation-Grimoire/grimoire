@@ -93,6 +93,7 @@ import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ZoomableImageDialog
@@ -123,6 +124,7 @@ fun NovelDetailScreen(
     val categoryId by viewModel.categoryId.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val bookDownload by viewModel.bookDownload.collectAsState()
+    val nuState by viewModel.nuState.collectAsState()
 
     var descriptionExpanded by remember { mutableStateOf(false) }
     var showCategoryDialog by remember { mutableStateOf(false) }
@@ -163,7 +165,7 @@ fun NovelDetailScreen(
     val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex < 2 } }
 
     // Number of LazyColumn items before chapter items — used for fast scroller label
-    val chapterHeaderOffset by remember(isLoadingNovel, novelError, novel, chaptersError, isFavorite, categories) {
+    val chapterHeaderOffset by remember(isLoadingNovel, novelError, novel, chaptersError, isFavorite, categories, nuState) {
         derivedStateOf {
             var count = 1 // novel header / skeleton / error
             if (!isLoadingNovel && novelError == null) {
@@ -171,6 +173,7 @@ fun NovelDetailScreen(
                 if (novel.genres.isNotEmpty()) count++
                 if (!novel.description.isNullOrBlank()) count++
             }
+            if (nuState !is NuInfoState.Idle && nuState !is NuInfoState.Disabled) count++ // NovelUpdates section
             count++ // chapter controls row
             if (chaptersError != null) count++
             count
@@ -380,6 +383,18 @@ fun NovelDetailScreen(
                                     Text(if (descriptionExpanded) "Show less" else "Show more")
                                 }
                             }
+                        }
+                    }
+
+                    // NovelUpdates metadata + recommendations
+                    if (nuState !is NuInfoState.Idle && nuState !is NuInfoState.Disabled) {
+                        item(key = "novelupdates") {
+                            NovelUpdatesSection(
+                                state = nuState,
+                                viewModel = viewModel,
+                                onOpenWebView = onOpenWebView,
+                                modifier = Modifier.animateItem(),
+                            )
                         }
                     }
 
