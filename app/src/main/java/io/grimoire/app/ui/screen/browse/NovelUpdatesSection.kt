@@ -64,6 +64,12 @@ fun NovelUpdatesSection(
         }
 
         when (state) {
+            is NuInfoState.NotLoaded ->
+                TextButton(
+                    onClick = { viewModel.loadNovelUpdates() },
+                    contentPadding = PaddingValues(0.dp),
+                ) { Text("Load from NovelUpdates") }
+
             is NuInfoState.Loading ->
                 Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) {
                     CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
