@@ -6,6 +6,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.Chapter
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
+import io.grimoire.app.data.local.entity.CHAPTER_PAGE_SEPARATOR
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.preferences.DownloadPreferences
 import io.grimoire.app.extension.ExtensionManager
@@ -129,7 +130,7 @@ class DownloadManager @Inject constructor(
                                     .firstOrNull { it.source.id == novel.sourceId }?.source
                                     ?: error("Source not available")
                                 val pages = src.getPageList(chapter.toChapter())
-                                val content = pages.joinToString("") { it.text }
+                                val content = pages.joinToString(CHAPTER_PAGE_SEPARATOR) { it.text }
                                 chapterDao.setDownloadedContent(chapter.id, content, ChapterDownloadStatus.DOWNLOADED.ordinal)
                                 downloaded.incrementAndGet()
                             }.onFailure {
