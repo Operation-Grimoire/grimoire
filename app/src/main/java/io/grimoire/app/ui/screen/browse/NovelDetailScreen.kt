@@ -31,6 +31,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
@@ -266,8 +267,10 @@ fun NovelDetailScreen(
                     Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 actions = {
-                    IconButton(onClick = { onOpenWebView(viewModel.novelWebUrl) }) {
-                        Icon(Icons.Default.Language, contentDescription = "Open in WebView")
+                    if (!viewModel.isLocal) {
+                        IconButton(onClick = { onOpenWebView(viewModel.novelWebUrl) }) {
+                            Icon(Icons.Default.Language, contentDescription = "Open in WebView")
+                        }
                     }
                     IconButton(onClick = viewModel::toggleFavorite) {
                         Icon(
@@ -279,11 +282,7 @@ fun NovelDetailScreen(
             )
         },
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = isLoadingNovel && novel.initialized,
-            onRefresh = viewModel::refresh,
-            modifier = Modifier.padding(padding),
-        ) {
+        val detailBody = @Composable {
             FastScroller(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
@@ -309,7 +308,7 @@ fun NovelDetailScreen(
                                 Text(novelError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                                 TextButton(onClick = viewModel::retryNovel) { Text("Retry") }
                             }
-                            else -> NovelHeader(novel = novel, sourceName = viewModel.sourceName)
+                            else -> NovelHeader(novel = novel, sourceName = viewModel.sourceName, isLocal = viewModel.isLocal)
                         }
                     }
 
@@ -452,16 +451,18 @@ fun NovelDetailScreen(
                                                 text = { Text("Mark all as unread") },
                                                 onClick = { viewModel.markAllRead(false); bulkMenuExpanded = false },
                                             )
-                                            DropdownMenuItem(
-                                                text = { Text("Download all") },
-                                                onClick = { viewModel.downloadAll(); bulkMenuExpanded = false },
-                                                leadingIcon = { Icon(Icons.Default.Download, null) },
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text("Download unread") },
-                                                onClick = { viewModel.downloadUnread(); bulkMenuExpanded = false },
-                                                leadingIcon = { Icon(Icons.Default.Download, null) },
-                                            )
+                                            if (!viewModel.isLocal) {
+                                                DropdownMenuItem(
+                                                    text = { Text("Download all") },
+                                                    onClick = { viewModel.downloadAll(); bulkMenuExpanded = false },
+                                                    leadingIcon = { Icon(Icons.Default.Download, null) },
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("Download unread") },
+                                                    onClick = { viewModel.downloadUnread(); bulkMenuExpanded = false },
+                                                    leadingIcon = { Icon(Icons.Default.Download, null) },
+                                                )
+                                            }
                                             if (chapters.any { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }) {
                                                 DropdownMenuItem(
                                                     text = { Text("Cancel all downloads") },
@@ -592,6 +593,15 @@ fun NovelDetailScreen(
                 }
             }
         }
+        if (viewModel.isLocal) {
+            Box(Modifier.padding(padding)) { detailBody() }
+        } else {
+            PullToRefreshBox(
+                isRefreshing = isLoadingNovel && novel.initialized,
+                onRefresh = viewModel::refresh,
+                modifier = Modifier.padding(padding),
+            ) { detailBody() }
+        }
     }
 }
 
@@ -681,7 +691,7 @@ private fun ChapterSkeletonItem(alpha: Float, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun NovelHeader(novel: Novel, sourceName: String = "", modifier: Modifier = Modifier) {
+private fun NovelHeader(novel: Novel, sourceName: String = "", isLocal: Boolean = false, modifier: Modifier = Modifier) {
     var showRatingInfo by remember { mutableStateOf(false) }
     var showCoverZoom by remember { mutableStateOf(false) }
 
@@ -741,7 +751,20 @@ private fun NovelHeader(novel: Novel, sourceName: String = "", modifier: Modifie
                     )
                 }
             }
-            if (sourceName.isNotBlank()) {
+            if (isLocal) {
+                AssistChip(
+                    onClick = {},
+                    enabled = false,
+                    label = { Text("EPUB") },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Book,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    },
+                )
+            } else if (sourceName.isNotBlank()) {
                 Text(sourceName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

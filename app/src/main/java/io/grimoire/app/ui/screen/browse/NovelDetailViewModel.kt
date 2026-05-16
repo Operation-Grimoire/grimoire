@@ -17,6 +17,8 @@ import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.download.DownloadManager
+import io.grimoire.app.data.epub.LOCAL_PKG
+import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -48,6 +50,9 @@ class NovelDetailViewModel @Inject constructor(
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
     private val novelUrl: String = checkNotNull(savedStateHandle["url"])
+
+    /** A locally-imported EPUB novel: fully stored in the DB, no backing extension. */
+    val isLocal: Boolean = pkg == LOCAL_PKG
 
     private val loaded get() = extensionManager.extensions.value.firstOrNull { it.info.packageName == pkg }
     private val source get() = loaded?.source
@@ -103,19 +108,41 @@ class NovelDetailViewModel @Inject constructor(
 
     init {
         loadJob = viewModelScope.launch {
-            extensionManager.extensions
-                .filter { list -> list.any { it.info.packageName == pkg } }
-                .take(1)
-                .collect { loadNovel(forceRefresh = false) }
+            if (isLocal) {
+                loadLocalNovel()
+            } else {
+                extensionManager.extensions
+                    .filter { list -> list.any { it.info.packageName == pkg } }
+                    .take(1)
+                    .collect { loadNovel(forceRefresh = false) }
+            }
         }
     }
 
+    private suspend fun loadLocalNovel() {
+        val existing = novelDao.getBySourceUrl(LOCAL_SOURCE_ID, novelUrl) ?: run {
+            _novelError.value = "Imported book not found"
+            _isLoadingNovel.value = false
+            return
+        }
+        cachedNovelId = existing.id
+        _liveNovelId.value = existing.id
+        _novel.value = existing.toNovel()
+        _isFavorite.value = existing.favorite
+        _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
+        _categoryId.value = existing.categoryId
+        _isLoadingNovel.value = false
+        _isLoadingChapters.value = false
+    }
+
     fun refresh() {
+        if (isLocal) return
         loadJob?.cancel()
         loadJob = viewModelScope.launch { loadNovel(forceRefresh = true) }
     }
 
     fun retryNovel() {
+        if (isLocal) return
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             val src = source ?: run { _novelError.value = "Source not available"; return@launch }
@@ -124,6 +151,7 @@ class NovelDetailViewModel @Inject constructor(
     }
 
     fun retryChapters() {
+        if (isLocal) return
         val src = source ?: return
         val novel = _novel.value.takeIf { it.initialized } ?: return
         loadJob?.cancel()
@@ -281,11 +309,11 @@ class NovelDetailViewModel @Inject constructor(
     }
 
     fun toggleFavorite() {
-        val src = source ?: return
+        val sourceId = if (isLocal) LOCAL_SOURCE_ID else (source ?: return).id
         val next = !_isFavorite.value
         _isFavorite.value = next
         viewModelScope.launch {
-            val entity = novelDao.getBySourceUrl(src.id, novelUrl) ?: return@launch
+            val entity = novelDao.getBySourceUrl(sourceId, novelUrl) ?: return@launch
             novelDao.upsert(entity.copy(favorite = next))
         }
     }

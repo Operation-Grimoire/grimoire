@@ -1,5 +1,8 @@
 package io.grimoire.app.ui.screen.library
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,6 +38,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
@@ -97,6 +101,12 @@ import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibrarySort
 import kotlinx.coroutines.launch
 
+private val EPUB_MIME_TYPES = arrayOf(
+    "application/epub+zip",
+    "application/zip",
+    "application/octet-stream",
+)
+
 private val STATUS_OPTIONS = listOf(
     -1 to "All",
     1 to "Ongoing",
@@ -141,6 +151,8 @@ fun LibraryScreen(
     val hiddenCategoryIds by viewModel.hiddenCategoryIds.collectAsState()
     val biometricEnabled by viewModel.biometricEnabled.collectAsState()
     val includeHiddenInAll by viewModel.includeHiddenInAll.collectAsState()
+    val importing by viewModel.importing.collectAsState()
+    val importMessage by viewModel.importMessage.collectAsState()
 
     var selectedTab by remember { mutableIntStateOf(0) }
     var showManage by remember { mutableStateOf(false) }
@@ -155,8 +167,21 @@ fun LibraryScreen(
     val sheetState = rememberModalBottomSheetState()
     val filterSheetState = rememberModalBottomSheetState()
 
+    val epubPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri: Uri? ->
+        if (uri != null) viewModel.importEpub(uri)
+    }
+
     LaunchedEffect(searchActive) {
         if (searchActive) searchFocusRequester.requestFocus()
+    }
+
+    LaunchedEffect(importMessage) {
+        importMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.consumeImportMessage()
+        }
     }
 
     val isFilterActive = filterStatus != -1 || filterUnreadOnly || filterDownloadedOnly
@@ -293,6 +318,19 @@ fun LibraryScreen(
                         IconButton(onClick = { showFilterSheet = true }) {
                             BadgedBox(badge = { if (isFilterActive) Badge() }) {
                                 Icon(Icons.Default.FilterList, contentDescription = "Filter & sort")
+                            }
+                        }
+                        IconButton(
+                            onClick = { epubPicker.launch(EPUB_MIME_TYPES) },
+                            enabled = !importing,
+                        ) {
+                            if (importing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                            } else {
+                                Icon(Icons.Default.LibraryAdd, contentDescription = "Import EPUB")
                             }
                         }
                         IconButton(onClick = { showManage = true }) {
