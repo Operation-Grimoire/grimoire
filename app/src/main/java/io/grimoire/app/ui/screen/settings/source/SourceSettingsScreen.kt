@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.settings.source
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -58,7 +60,7 @@ fun SourceSettingsScreen(
             )
         },
     ) { padding ->
-        if (viewModel.preferences.isEmpty()) {
+        if (viewModel.preferences.isEmpty() && !viewModel.isMultiLanguage) {
             Column(
                 Modifier.fillMaxSize().padding(padding),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -114,6 +116,33 @@ fun SourceSettingsScreen(
                             },
                         )
                     }
+                }
+            }
+
+            if (viewModel.isMultiLanguage) {
+                val enabled by viewModel.enabledLanguages.collectAsState()
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Content languages",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    "Only show results in the selected languages. Leave all " +
+                        "unchecked to show every language.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                viewModel.allLanguages.forEach { lang ->
+                    ListItem(
+                        headlineContent = { Text(lang) },
+                        trailingContent = {
+                            Checkbox(
+                                checked = lang.trim().lowercase() in enabled,
+                                onCheckedChange = { viewModel.toggleLanguage(lang) },
+                            )
+                        },
+                        modifier = Modifier.clickable { viewModel.toggleLanguage(lang) },
+                    )
                 }
             }
 

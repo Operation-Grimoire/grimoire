@@ -20,4 +20,23 @@ class SourceSettingsPreferences @Inject constructor(
     /** Reads the current value of every [keys] entry for [pkg] as a snapshot map. */
     suspend fun snapshot(pkg: String, keys: List<String>): Map<String, String> =
         keys.associateWith { pref(pkg, it).changes().first() }
+
+    /**
+     * The set of content languages the user enabled for a multi-language
+     * source (`lang == "all"`), stored as lowercase English names. Empty set
+     * means "no filter — show every language".
+     */
+    fun contentLanguages(pkg: String): Preference<Set<String>> =
+        store.getObject(
+            key = "source.$pkg.content_languages",
+            defaultValue = emptySet(),
+            serialize = { it.joinToString(",") },
+            deserialize = { raw ->
+                if (raw.isBlank()) emptySet()
+                else raw.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+            },
+        )
+
+    suspend fun enabledLanguages(pkg: String): Set<String> =
+        contentLanguages(pkg).changes().first()
 }
