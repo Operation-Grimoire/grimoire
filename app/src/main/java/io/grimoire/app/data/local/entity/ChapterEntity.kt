@@ -5,6 +5,13 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+/**
+ * Boundary written between pages when [ChapterEntity.downloadedContent] is persisted, so the
+ * original paragraph structure can be reconstructed on read. Uses the ASCII Unit Separator,
+ * which never occurs in prose and is treated as whitespace by trim/blank/word-count logic.
+ */
+val CHAPTER_PAGE_SEPARATOR: String = 31.toChar().toString()
+
 @Entity(
     tableName = "chapters",
     foreignKeys = [ForeignKey(

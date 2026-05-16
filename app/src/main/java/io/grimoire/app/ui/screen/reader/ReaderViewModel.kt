@@ -8,6 +8,7 @@ import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.NovelPage
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
+import io.grimoire.app.data.local.entity.CHAPTER_PAGE_SEPARATOR
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.app.data.preferences.ReaderColorTheme
@@ -25,8 +26,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-private const val PAGE_SEP = ""
 
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
@@ -104,7 +103,7 @@ class ReaderViewModel @Inject constructor(
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
         val cached = chapter.downloadedContent
         if (cached != null) {
-            val pages = cached.split(PAGE_SEP)
+            val pages = cached.split(CHAPTER_PAGE_SEPARATOR)
                 .mapIndexed { i, text -> NovelPage(i, text) }
                 .filter { it.text.isNotBlank() }
             _pages.value = pages
