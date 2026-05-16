@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -89,6 +90,7 @@ fun SourceBrowseScreen(
     onNavigateBack: () -> Unit,
     onNovelClick: (Novel) -> Unit = {},
     onOpenWebView: (url: String) -> Unit = {},
+    onOpenSourceSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SourceBrowseViewModel = hiltViewModel(),
 ) {
@@ -177,6 +179,11 @@ fun SourceBrowseScreen(
                         }
                         IconButton(onClick = { searchActive = true }) {
                             Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
+                        if (viewModel.isConfigurable) {
+                            IconButton(onClick = onOpenSourceSettings) {
+                                Icon(Icons.Default.Settings, contentDescription = "Source settings")
+                            }
                         }
                         IconButton(onClick = {
                             viewModel.setDisplayMode(
