@@ -3,6 +3,10 @@ package io.grimoire.app.ui.screen.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import android.net.Uri
+import io.grimoire.app.data.epub.EpubImporter
+import io.grimoire.app.data.epub.LOCAL_PKG
+import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -15,8 +19,10 @@ import io.grimoire.app.data.preferences.LibrarySort
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -31,7 +37,31 @@ class LibraryViewModel @Inject constructor(
     private val extensionManager: ExtensionManager,
     private val libraryPreferences: LibraryPreferences,
     private val authManager: HiddenCategoriesAuthManager,
+    private val epubImporter: EpubImporter,
 ) : ViewModel() {
+
+    private val _importing = MutableStateFlow(false)
+    val importing: StateFlow<Boolean> = _importing.asStateFlow()
+
+    private val _importMessage = MutableStateFlow<String?>(null)
+    val importMessage: StateFlow<String?> = _importMessage.asStateFlow()
+
+    fun importEpub(uri: Uri) {
+        if (_importing.value) return
+        _importing.value = true
+        viewModelScope.launch {
+            val result = epubImporter.import(uri)
+            _importMessage.value = result.fold(
+                onSuccess = { title -> "Imported \"$title\"" },
+                onFailure = { e -> "Import failed: ${e.message ?: "unknown error"}" },
+            )
+            _importing.value = false
+        }
+    }
+
+    fun consumeImportMessage() {
+        _importMessage.value = null
+    }
 
     val isUnlocked: StateFlow<Boolean> = authManager.isUnlocked
 
@@ -70,7 +100,8 @@ class LibraryViewModel @Inject constructor(
     val includeHiddenInAll: StateFlow<Boolean> = libraryPreferences.includeHiddenInAll.stateIn(viewModelScope)
 
     fun pkgForNovel(novel: NovelEntity): String =
-        extensionManager.extensions.value
+        if (novel.sourceId == LOCAL_SOURCE_ID) LOCAL_PKG
+        else extensionManager.extensions.value
             .firstOrNull { it.source.id == novel.sourceId }
             ?.info?.packageName ?: ""
 
