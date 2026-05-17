@@ -2,6 +2,7 @@ package io.grimoire.app.data.epub
 
 import io.grimoire.app.data.local.entity.CHAPTER_PAGE_SEPARATOR
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
 import org.jsoup.parser.Parser
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -56,18 +57,23 @@ object EpubParser {
             .filter { it.isNotEmpty() }
             .distinct()
 
-        // Manifest: item id -> (href, mediaType, properties)
+        // Manifest: item id -> (href, mediaType, properties). Selected by local
+        // name so a namespace-prefixed package (<opf:manifest><opf:item/>) is
+        // handled too — CSS tag selectors would miss the prefixed tags.
         data class Item(val href: String, val mediaType: String, val properties: String)
-        val manifest = opf.select("manifest > item").associate { el ->
-            el.attr("id") to Item(
-                href = el.attr("href"),
-                mediaType = el.attr("media-type"),
-                properties = el.attr("properties"),
-            )
-        }
+        val manifest = opf.firstByLocal("manifest")
+            ?.childrenByLocal("item")
+            ?.associate { el ->
+                el.attr("id") to Item(
+                    href = el.attr("href"),
+                    mediaType = el.attr("media-type"),
+                    properties = el.attr("properties"),
+                )
+            }
+            .orEmpty()
 
-        val spineEl = opf.selectFirst("spine")
-        val spineRefs = spineEl?.select("itemref")
+        val spineEl = opf.firstByLocal("spine")
+        val spineRefs = spineEl?.childrenByLocal("itemref")
             ?.map { it.attr("idref") }
             ?.filter { it.isNotBlank() }
             .orEmpty()
@@ -131,8 +137,9 @@ object EpubParser {
         // Cover: EPUB3 properties="cover-image", else EPUB2 <meta name="cover">,
         // else any image whose id mentions "cover".
         val coverHref = manifest.values.firstOrNull { it.properties.contains("cover-image") }?.href
-            ?: opf.select("meta[name=cover]").firstOrNull()?.attr("content")
-                ?.let { manifest[it]?.href }
+            ?: opf.getAllElements().firstOrNull {
+                it.local().equals("meta", ignoreCase = true) && it.attr("name") == "cover"
+            }?.attr("content")?.let { manifest[it]?.href }
             ?: manifest.entries.firstOrNull {
                 it.key.contains("cover", ignoreCase = true) && it.value.mediaType.startsWith("image/")
             }?.value?.href
@@ -167,6 +174,17 @@ object EpubParser {
         }
         return null
     }
+
+    /** Element tag name without its XML namespace prefix (`opf:item` -> `item`). */
+    private fun Element.local(): String = tagName().substringAfterLast(':')
+
+    /** First element in the tree whose local name is [name] (prefix-insensitive). */
+    private fun Element.firstByLocal(name: String): Element? =
+        getAllElements().firstOrNull { it.local().equals(name, ignoreCase = true) }
+
+    /** Direct children whose local name is [name] (prefix-insensitive). */
+    private fun Element.childrenByLocal(name: String): List<Element> =
+        children().filter { it.local().equals(name, ignoreCase = true) }
 
     /**
      * Percent-decode [s] as UTF-8. OPF/NCX/nav hrefs are URIs, so producers
