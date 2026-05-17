@@ -3,6 +3,7 @@ package io.grimoire.app.data.epub
 import io.grimoire.app.data.local.entity.CHAPTER_PAGE_SEPARATOR
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.zip.ZipFile
 
@@ -37,6 +38,7 @@ object EpubParser {
             .selectFirst("rootfile")
             ?.attr("full-path")
             ?.takeIf { it.isNotBlank() }
+            ?.let(::percentDecode)
             ?: error("Not a valid EPUB: no rootfile in container.xml")
 
         val opfDir = opfPath.substringBeforeLast('/', "")
@@ -166,9 +168,35 @@ object EpubParser {
         return null
     }
 
+    /**
+     * Percent-decode [s] as UTF-8. OPF/NCX/nav hrefs are URIs, so producers
+     * (Calibre, Sigil, …) escape spaces and non-ASCII (`Chapter%201.html`),
+     * while the matching ZIP entry is the literal path (`Chapter 1.html`).
+     * Unlike [java.net.URLDecoder], `+` is left intact (it is literal in a
+     * URI path segment, not a space).
+     */
+    private fun percentDecode(s: String): String {
+        if ('%' !in s) return s
+        val out = ByteArrayOutputStream(s.length)
+        var i = 0
+        while (i < s.length) {
+            val c = s[i]
+            val hi = if (c == '%' && i + 2 < s.length) Character.digit(s[i + 1], 16) else -1
+            val lo = if (hi >= 0) Character.digit(s[i + 2], 16) else -1
+            if (hi >= 0 && lo >= 0) {
+                out.write((hi shl 4) or lo)
+                i += 3
+            } else {
+                out.write(c.toString().toByteArray(Charsets.UTF_8))
+                i++
+            }
+        }
+        return out.toString(Charsets.UTF_8.name())
+    }
+
     /** Resolve [href] (which may contain ../ segments) against [baseDir] into a normalized zip path. */
     private fun resolvePath(baseDir: String, href: String): String {
-        val raw = href.substringBefore('#').trim()
+        val raw = percentDecode(href.substringBefore('#').trim())
         if (raw.isEmpty()) return raw
         val combined = if (baseDir.isEmpty()) raw else "$baseDir/$raw"
         val stack = ArrayDeque<String>()
