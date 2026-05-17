@@ -166,6 +166,15 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                             "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(url)}"
                         )
                     },
+                    onBrowse = {
+                        navController.navigate(TopLevelDestination.Browse.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                 )
             }
 

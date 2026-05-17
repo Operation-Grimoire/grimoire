@@ -19,4 +19,5 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
     val filterUnreadOnly = store.getBoolean("library_filter_unread_only", false)
     val filterDownloadedOnly = store.getBoolean("library_filter_downloaded_only", false)
     val includeHiddenInAll = store.getBoolean("library_include_hidden_in_all", false)
+    val selectedTab = store.getInt("library_selected_tab", 0)
 }

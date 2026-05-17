@@ -133,6 +133,11 @@ class LibraryViewModel @Inject constructor(
     val filterUnreadOnly: StateFlow<Boolean> = libraryPreferences.filterUnreadOnly.stateIn(viewModelScope)
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
     val includeHiddenInAll: StateFlow<Boolean> = libraryPreferences.includeHiddenInAll.stateIn(viewModelScope)
+    val selectedTab: StateFlow<Int> = libraryPreferences.selectedTab.stateIn(viewModelScope)
+
+    fun setSelectedTab(index: Int) = viewModelScope.launch {
+        libraryPreferences.selectedTab.set(index)
+    }
 
     fun pkgForNovel(novel: NovelEntity): String =
         if (novel.sourceId == LOCAL_SOURCE_ID) LOCAL_PKG
@@ -151,6 +156,18 @@ class LibraryViewModel @Inject constructor(
     fun deleteCategory(category: CategoryEntity) = viewModelScope.launch {
         novelDao.clearCategory(category.id)
         categoryDao.delete(category)
+    }
+
+    fun moveCategory(ordered: List<CategoryEntity>, fromIndex: Int, toIndex: Int) = viewModelScope.launch {
+        if (fromIndex == toIndex ||
+            fromIndex !in ordered.indices ||
+            toIndex !in ordered.indices
+        ) return@launch
+        val list = ordered.toMutableList()
+        list.add(toIndex, list.removeAt(fromIndex))
+        list.forEachIndexed { index, cat ->
+            if (cat.order != index) categoryDao.upsert(cat.copy(order = index))
+        }
     }
 
     fun moveNovel(novel: NovelEntity, categoryId: Long?) = viewModelScope.launch {

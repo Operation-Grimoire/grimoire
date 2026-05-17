@@ -45,6 +45,8 @@ import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
@@ -146,6 +148,7 @@ private fun NovelChapterStats.readPercent(): Int =
 @Composable
 fun LibraryScreen(
     onNovelClick: (pkg: String, url: String) -> Unit,
+    onBrowse: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
@@ -168,8 +171,8 @@ fun LibraryScreen(
     val importing by viewModel.importing.collectAsState()
     val pendingImport by viewModel.pendingImport.collectAsState()
     val importMessage by viewModel.importMessage.collectAsState()
+    val selectedTab by viewModel.selectedTab.collectAsState()
 
-    var selectedTab by remember { mutableIntStateOf(0) }
     var showManage by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var showUnlock by remember { mutableStateOf(false) }
@@ -221,7 +224,7 @@ fun LibraryScreen(
     val effectiveTab = selectedTab.coerceIn(0, (tabs.size - 1).coerceAtLeast(0))
 
     LaunchedEffect(tabs.size) {
-        if (selectedTab >= tabs.size) selectedTab = 0
+        if (tabs.isNotEmpty() && selectedTab >= tabs.size) viewModel.setSelectedTab(0)
     }
 
     LaunchedEffect(effectiveTab) { clearSelection() }
@@ -409,7 +412,7 @@ fun LibraryScreen(
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = effectiveTab == index,
-                            onClick = { selectedTab = index },
+                            onClick = { viewModel.setSelectedTab(index) },
                             text = { Text(title) },
                         )
                     }
@@ -420,12 +423,63 @@ fun LibraryScreen(
                 displayedNovels == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
-                displayedNovels.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        if (searchQuery.isNotBlank()) "No matches found" else "No novels here",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                displayedNovels.isEmpty() -> Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (searchQuery.isNotBlank()) {
+                        Text(
+                            "No matches found",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(32.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.LibraryAdd,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                "Your library is empty",
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                "Add novels from a source, or import an EPUB from your device.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = onBrowse) {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Browse sources")
+                                }
+                                TextButton(
+                                    onClick = { epubPicker.launch(EPUB_MIME_TYPES) },
+                                    enabled = !importing && !staging,
+                                ) {
+                                    Icon(
+                                        Icons.Default.LibraryAdd,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Import EPUB")
+                                }
+                            }
+                        }
+                    }
                 }
                 else -> {
                     val onNovelClickWrapped: (NovelEntity) -> Unit = { novel ->
@@ -506,6 +560,7 @@ fun LibraryScreen(
                 onRename = { cat, name -> viewModel.renameCategory(cat, name) },
                 onDelete = viewModel::deleteCategory,
                 onToggleHidden = { cat, hidden -> viewModel.setCategoryHidden(cat, hidden) },
+                onMove = { from, to -> viewModel.moveCategory(categories, from, to) },
                 onUnlockRequest = { showUnlock = true },
             )
         }
@@ -1085,6 +1140,7 @@ private fun ManageCategoriesSheet(
     onRename: (CategoryEntity, String) -> Unit,
     onDelete: (CategoryEntity) -> Unit,
     onToggleHidden: (CategoryEntity, Boolean) -> Unit,
+    onMove: (fromIndex: Int, toIndex: Int) -> Unit,
     onUnlockRequest: () -> Unit,
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
@@ -1107,9 +1163,33 @@ private fun ManageCategoriesSheet(
                 Text("Unlock to manage hidden categories")
             }
         }
-        categories.forEach { cat ->
+        categories.forEachIndexed { index, cat ->
             ListItem(
                 headlineContent = { Text(cat.name) },
+                leadingContent = {
+                    Column {
+                        IconButton(
+                            onClick = { onMove(index, index - 1) },
+                            enabled = index > 0,
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.KeyboardArrowUp,
+                                contentDescription = "Move up",
+                            )
+                        }
+                        IconButton(
+                            onClick = { onMove(index, index + 1) },
+                            enabled = index < categories.lastIndex,
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = "Move down",
+                            )
+                        }
+                    }
+                },
                 trailingContent = {
                     Row {
                         if (isUnlocked && !cat.isDefault) {
