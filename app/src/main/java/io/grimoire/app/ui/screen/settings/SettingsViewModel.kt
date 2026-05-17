@@ -8,6 +8,7 @@ import io.grimoire.app.data.preferences.BrowsePreferences
 import io.grimoire.app.data.preferences.ColorTheme
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
+import io.grimoire.app.data.preferences.NovelUpdatesPreferences
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
@@ -24,7 +25,12 @@ class SettingsViewModel @Inject constructor(
     private val browsePreferences: BrowsePreferences,
     private val libraryPreferences: LibraryPreferences,
     private val readerPreferences: ReaderPreferences,
+    private val novelUpdatesPreferences: NovelUpdatesPreferences,
 ) : ViewModel() {
+
+    val novelUpdatesEnabled = novelUpdatesPreferences.enabled.stateIn(viewModelScope)
+    fun setNovelUpdatesEnabled(enabled: Boolean) =
+        viewModelScope.launch { novelUpdatesPreferences.enabled.set(enabled) }
 
     val themeMode = uiPreferences.themeMode.stateIn(viewModelScope)
     val useDynamicColor = uiPreferences.useDynamicColor.stateIn(viewModelScope)
