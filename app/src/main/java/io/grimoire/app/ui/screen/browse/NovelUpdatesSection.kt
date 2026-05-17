@@ -20,14 +20,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,16 +67,37 @@ fun NovelUpdatesSection(
     val novel by viewModel.novel.collectAsState()
     var showLinkDialog by remember { mutableStateOf(false) }
 
-    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-        HorizontalDivider(Modifier.padding(bottom = 8.dp))
+    // Ambiguous matches already carry the candidates — open the picker straight
+    // away instead of making the user tap a button and search again.
+    LaunchedEffect(state) {
+        if (state is NuInfoState.Ambiguous) showLinkDialog = true
+    }
+
+    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        HorizontalDivider(Modifier.padding(bottom = 12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.AutoStories,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(8.dp))
             Text(
                 "NovelUpdates",
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
             )
             if (state is NuInfoState.Matched) {
-                TextButton(onClick = { onOpenWebView(state.series.url) }) { Text("Open") }
+                TextButton(onClick = { onOpenWebView(state.series.url) }) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("Open")
+                }
             }
         }
 
@@ -154,57 +184,80 @@ private fun MatchedContent(
     onRecommendationClick: (String) -> Unit,
     onRelink: () -> Unit,
 ) {
-    Column {
-        if (series.associatedNames.isNotEmpty()) {
-            Text(
-                "Also known as: " + series.associatedNames.take(4).joinToString(" • "),
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        val facts = buildList {
-            series.status?.let { add(it) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             series.rating?.let { r ->
-                add("★ %.1f".format(r) + (series.ratingVotes?.let { " ($it)" } ?: ""))
+                Icon(
+                    Icons.Default.Star,
+                    contentDescription = "Rating",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    "%.1f".format(r) + (series.ratingVotes?.let { " ($it)" } ?: ""),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            series.status?.let { st ->
+                if (series.rating != null) Spacer(Modifier.width(12.dp))
+                AssistChip(
+                    onClick = {},
+                    enabled = false,
+                    label = { Text(st) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                )
             }
         }
-        if (facts.isNotEmpty()) {
-            Text(
-                facts.joinToString("   "),
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 2.dp),
-            )
+
+        if (series.associatedNames.isNotEmpty()) {
+            Column {
+                Text(
+                    "Also known as",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    series.associatedNames.take(4).joinToString(" • "),
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
 
         if (series.recommendations.isNotEmpty()) {
-            Text(
-                "Recommended",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(series.recommendations, key = { it.url }) { rec ->
-                    Column(
-                        Modifier
-                            .width(96.dp)
-                            .clickable { onRecommendationClick(rec.url) },
-                    ) {
-                        AsyncImage(
-                            model = rec.coverUrl,
-                            contentDescription = rec.title,
-                            modifier = Modifier
-                                .width(96.dp)
-                                .height(132.dp)
-                                .clip(RoundedCornerShape(6.dp)),
-                        )
-                        Text(
-                            rec.title,
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
+            Column {
+                Text(
+                    "Recommended",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(series.recommendations, key = { it.url }) { rec ->
+                        Column(
+                            Modifier
+                                .width(104.dp)
+                                .clickable { onRecommendationClick(rec.url) },
+                        ) {
+                            AsyncImage(
+                                model = rec.coverUrl,
+                                contentDescription = rec.title,
+                                modifier = Modifier
+                                    .width(104.dp)
+                                    .height(146.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                            )
+                            Text(
+                                rec.title,
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(top = 6.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -213,7 +266,6 @@ private fun MatchedContent(
         TextButton(
             onClick = onRelink,
             contentPadding = PaddingValues(0.dp),
-            modifier = Modifier.padding(top = 4.dp),
         ) { Text("Not the right series?") }
     }
 }
@@ -305,35 +357,55 @@ private fun SearchResultRow(result: NuSearchResult, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(vertical = 12.dp),
     ) {
         AsyncImage(
             model = result.coverUrl,
             contentDescription = result.title,
             modifier = Modifier
-                .size(56.dp, 80.dp)
-                .clip(RoundedCornerShape(6.dp)),
+                .size(68.dp, 96.dp)
+                .clip(RoundedCornerShape(8.dp)),
         )
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
+        Spacer(Modifier.width(14.dp))
+        Column(
+            Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             Text(
                 result.title,
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 2,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
-            val meta = buildList {
-                result.rating?.let { add("★ %.1f".format(it)) }
-                result.language?.let { add(it) }
-            }
-            if (meta.isNotEmpty()) {
-                Text(
-                    meta.joinToString("   "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                result.rating?.let { r ->
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = "Rating",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "%.1f".format(r),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                result.language?.let { lang ->
+                    if (result.rating != null) Spacer(Modifier.width(14.dp))
+                    Icon(
+                        Icons.Default.Translate,
+                        contentDescription = "Language",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        lang,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             result.stats?.let { s ->
                 Text(
@@ -342,7 +414,6 @@ private fun SearchResultRow(result: NuSearchResult, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 2.dp),
                 )
             }
         }

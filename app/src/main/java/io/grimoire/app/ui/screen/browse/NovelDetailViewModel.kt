@@ -159,8 +159,19 @@ class NovelDetailViewModel @Inject constructor(
         nuJob?.cancel()
         nuJob = viewModelScope.launch {
             _nuState.value = NuInfoState.Loading
-            _nuState.value = novelUpdatesRepository.infoFor(pkg, novelUrl, title)
+            applyNuState(novelUpdatesRepository.infoFor(pkg, novelUrl, title))
         }
+    }
+
+    /**
+     * When the match is ambiguous, pre-seed the picker with the candidates so
+     * the dialog can open straight away without an extra search.
+     */
+    private fun applyNuState(state: NuInfoState) {
+        if (state is NuInfoState.Ambiguous) {
+            _nuSearchResults.value = state.candidates
+        }
+        _nuState.value = state
     }
 
     /** Triggered by the user tapping the "Load from NovelUpdates" button. */
@@ -175,7 +186,7 @@ class NovelDetailViewModel @Inject constructor(
         nuJob?.cancel()
         nuJob = viewModelScope.launch {
             _nuState.value = NuInfoState.Loading
-            _nuState.value = novelUpdatesRepository.link(pkg, novelUrl, slug)
+            applyNuState(novelUpdatesRepository.link(pkg, novelUrl, slug))
         }
     }
 
