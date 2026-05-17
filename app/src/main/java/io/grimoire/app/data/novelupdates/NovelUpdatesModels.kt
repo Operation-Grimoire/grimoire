@@ -6,6 +6,9 @@ data class NuSearchResult(
     val slug: String,
     val url: String,
     val coverUrl: String? = null,
+    val rating: Float? = null,
+    val language: String? = null,
+    val stats: String? = null,
 )
 
 /** A NovelUpdates "recommendation" card shown on a series page. */

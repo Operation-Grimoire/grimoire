@@ -21,6 +21,13 @@ class NovelUpdatesInfoRepository @Inject constructor(
 
     suspend fun isEnabled(): Boolean = preferences.enabled.changes().first()
 
+    /**
+     * True once a novel has been resolved/linked before, so the detail screen
+     * can auto-restore it instead of showing the "Load" button again.
+     */
+    suspend fun hasStoredLink(pkg: String, novelUrl: String): Boolean =
+        manualLink(pkg, novelUrl) != null
+
     suspend fun infoFor(pkg: String, novelUrl: String, title: String): NuInfoState {
         if (!preferences.enabled.changes().first()) return NuInfoState.Disabled
 
@@ -32,7 +39,12 @@ class NovelUpdatesInfoRepository @Inject constructor(
 
         return runCatching {
             when (val r = matcher.match(title)) {
-                is NovelUpdatesMatcher.Result.Auto -> NuInfoState.Matched(r.series)
+                is NovelUpdatesMatcher.Result.Auto -> {
+                    // Remember the resolved series so reopening the novel
+                    // restores it without prompting to load again.
+                    setManualLink(pkg, novelUrl, r.series.slug)
+                    NuInfoState.Matched(r.series)
+                }
                 is NovelUpdatesMatcher.Result.Ambiguous -> NuInfoState.Ambiguous(r.candidates)
                 NovelUpdatesMatcher.Result.None -> NuInfoState.NotFound
             }

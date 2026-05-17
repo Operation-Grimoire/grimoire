@@ -21,6 +21,12 @@ object NovelUpdatesParser {
     private const val SEARCH_RESULT = "div.search_main_box_nu"
     private const val SEARCH_TITLE_LINK = "div.search_title a[href*=/series/]"
     private const val SEARCH_IMG = "div.search_img_nu img"
+    private const val SEARCH_RATING = "span.search_ratings"
+    private const val SEARCH_LANG = "span[class^=org]"
+    private const val SEARCH_STATS = "div.search_stats"
+
+    private const val CDN_COVER = "https://cdn.novelupdates.com/imgmid/series_%s.jpg"
+    private val SID = Regex("""sid(\d+)""")
 
     // --- Series page ---
     private const val SERIES_TITLE = "div.seriestitlenu"
@@ -51,6 +57,11 @@ object NovelUpdatesParser {
                 slug = NovelUpdatesEndpoints.slugFromUrl(href),
                 url = href,
                 coverUrl = box.selectFirst(SEARCH_IMG)?.imgSrc(),
+                rating = box.selectFirst(SEARCH_RATING)?.text()
+                    ?.let { Regex("""[0-9]+(?:\.[0-9]+)?""").find(it)?.value?.toFloatOrNull() },
+                language = box.selectFirst(SEARCH_LANG)?.text()?.trim()?.ifBlank { null },
+                stats = box.selectFirst(SEARCH_STATS)?.text()
+                    ?.replace(Regex("""\s+"""), " ")?.trim()?.ifBlank { null },
             )
         }
     }
@@ -120,13 +131,17 @@ object NovelUpdatesParser {
                 if (tag == "h5" || tag == "h4" || tag == "h3" || tag == "h2") break
                 if (tag == "a" && node.attr("href").contains("/series/")) {
                     val href = node.absUrl("href").ifBlank { node.attr("href") }
-                    val img = node.selectFirst("img")
                     val name = node.text().trim()
                     if (href.isNotBlank() && name.isNotBlank()) {
+                        // Recommendation links are text-only; NU's per-series
+                        // cover follows a fixed CDN pattern keyed by the series
+                        // id carried in the anchor's id="sidNNNNN".
+                        val sid = SID.find(node.id())?.groupValues?.get(1)
                         recs += NuRecommendation(
                             title = name,
                             url = href,
-                            coverUrl = img?.imgSrc(),
+                            coverUrl = node.selectFirst("img")?.imgSrc()
+                                ?: sid?.let { CDN_COVER.format(it) },
                         )
                     }
                 }
