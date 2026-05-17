@@ -56,6 +56,33 @@ class NovelUpdatesParserTest {
     }
 
     @Test
+    fun parseSearch_handlesMobileLayout() {
+        // NU serves a different DOM to mobile UAs (the app sends an Android
+        // UA): .search_title is a direct child of .search_main_box_nu with an
+        // extra " mb" class, not nested under .search_body_nu.
+        val html = """
+            <html><body>
+              <div class="search_main_box_nu mb">
+                <div class="search_title mb">
+                  <span id="sid61957" class="rl_icons_en mb"></span>
+                  <a href="https://www.novelupdates.com/series/circle-of-inevitability/">Circle of Inevitability</a>
+                </div>
+                <div class="search_img_nu mb"><img src="https://cdn.test/c.jpg"></div>
+              </div>
+            </body></html>
+        """.trimIndent()
+
+        val results = NovelUpdatesParser.parseSearch(
+            Jsoup.parse(html, NovelUpdatesEndpoints.BASE_URL),
+        )
+
+        assertEquals(1, results.size)
+        assertEquals("Circle of Inevitability", results[0].title)
+        assertEquals("circle-of-inevitability", results[0].slug)
+        assertEquals("https://cdn.test/c.jpg", results[0].coverUrl)
+    }
+
+    @Test
     fun parseSeries_extractsRecommendationsAndStopsAtNextSection() {
         val html = """
             <html><body>

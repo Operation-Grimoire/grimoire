@@ -14,8 +14,12 @@ import org.jsoup.nodes.Element
 object NovelUpdatesParser {
 
     // --- Search results ---
+    // NU serves a different DOM to mobile UAs (the app sends an Android UA):
+    // desktop nests .search_title under .search_body_nu, mobile puts it
+    // directly under .search_main_box_nu. Match it regardless of parent, and
+    // restrict to the actual series link.
     private const val SEARCH_RESULT = "div.search_main_box_nu"
-    private const val SEARCH_TITLE_LINK = "div.search_body_nu div.search_title a"
+    private const val SEARCH_TITLE_LINK = "div.search_title a[href*=/series/]"
     private const val SEARCH_IMG = "div.search_img_nu img"
 
     // --- Series page ---
