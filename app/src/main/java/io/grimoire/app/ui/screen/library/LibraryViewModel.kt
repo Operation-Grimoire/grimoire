@@ -7,6 +7,7 @@ import android.net.Uri
 import io.grimoire.app.data.epub.EpubImporter
 import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.epub.StagedEpub
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -40,21 +41,53 @@ class LibraryViewModel @Inject constructor(
     private val epubImporter: EpubImporter,
 ) : ViewModel() {
 
+    // True while the picked file is being read/parsed for the preview.
+    private val _staging = MutableStateFlow(false)
+    val staging: StateFlow<Boolean> = _staging.asStateFlow()
+
+    // True while a confirmed import is being written to the library.
     private val _importing = MutableStateFlow(false)
     val importing: StateFlow<Boolean> = _importing.asStateFlow()
+
+    // The parsed EPUB awaiting the user's "Add to library" confirmation.
+    private val _pendingImport = MutableStateFlow<StagedEpub?>(null)
+    val pendingImport: StateFlow<StagedEpub?> = _pendingImport.asStateFlow()
 
     private val _importMessage = MutableStateFlow<String?>(null)
     val importMessage: StateFlow<String?> = _importMessage.asStateFlow()
 
-    fun importEpub(uri: Uri) {
+    /** Parse the picked EPUB and surface its metadata for confirmation. */
+    fun stageEpub(uri: Uri) {
+        if (_staging.value || _pendingImport.value != null) return
+        _staging.value = true
+        viewModelScope.launch {
+            epubImporter.stage(uri).fold(
+                onSuccess = { _pendingImport.value = it },
+                onFailure = { e ->
+                    _importMessage.value = "Import failed: ${e.message ?: "unknown error"}"
+                },
+            )
+            _staging.value = false
+        }
+    }
+
+    /** Discard the staged EPUB without adding it to the library. */
+    fun cancelImport() {
+        _pendingImport.value = null
+    }
+
+    /** Persist the staged EPUB as a favorited, just-read local book. */
+    fun confirmImport() {
+        val staged = _pendingImport.value ?: return
         if (_importing.value) return
         _importing.value = true
         viewModelScope.launch {
-            val result = epubImporter.import(uri)
+            val result = epubImporter.commit(staged)
             _importMessage.value = result.fold(
-                onSuccess = { title -> "Imported \"$title\"" },
+                onSuccess = { "Added \"${it.title}\" to library" },
                 onFailure = { e -> "Import failed: ${e.message ?: "unknown error"}" },
             )
+            _pendingImport.value = null
             _importing.value = false
         }
     }

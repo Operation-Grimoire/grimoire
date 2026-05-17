@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,6 +50,7 @@ import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -94,12 +98,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import io.grimoire.app.data.epub.StagedEpub
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibrarySort
 import kotlinx.coroutines.launch
+import java.nio.ByteBuffer
 
 private val EPUB_MIME_TYPES = arrayOf(
     "application/epub+zip",
@@ -151,7 +157,9 @@ fun LibraryScreen(
     val hiddenCategoryIds by viewModel.hiddenCategoryIds.collectAsState()
     val biometricEnabled by viewModel.biometricEnabled.collectAsState()
     val includeHiddenInAll by viewModel.includeHiddenInAll.collectAsState()
+    val staging by viewModel.staging.collectAsState()
     val importing by viewModel.importing.collectAsState()
+    val pendingImport by viewModel.pendingImport.collectAsState()
     val importMessage by viewModel.importMessage.collectAsState()
 
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -170,7 +178,7 @@ fun LibraryScreen(
     val epubPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri: Uri? ->
-        if (uri != null) viewModel.importEpub(uri)
+        if (uri != null) viewModel.stageEpub(uri)
     }
 
     LaunchedEffect(searchActive) {
@@ -322,9 +330,9 @@ fun LibraryScreen(
                         }
                         IconButton(
                             onClick = { epubPicker.launch(EPUB_MIME_TYPES) },
-                            enabled = !importing,
+                            enabled = !importing && !staging,
                         ) {
-                            if (importing) {
+                            if (importing || staging) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(24.dp),
                                     strokeWidth = 2.dp,
@@ -455,6 +463,101 @@ fun LibraryScreen(
             onDismiss = { showUnlock = false },
         )
     }
+
+    pendingImport?.let { staged ->
+        EpubImportPreviewDialog(
+            staged = staged,
+            importing = importing,
+            onConfirm = viewModel::confirmImport,
+            onDismiss = viewModel::cancelImport,
+        )
+    }
+}
+
+@Composable
+private fun EpubImportPreviewDialog(
+    staged: StagedEpub,
+    importing: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val author = staged.author?.takeIf { it.isNotBlank() }
+    val description = staged.description?.takeIf { it.isNotBlank() }
+    val coverBytes = staged.coverBytes
+    AlertDialog(
+        onDismissRequest = { if (!importing) onDismiss() },
+        title = { Text("Import EPUB") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    if (coverBytes != null) {
+                        AsyncImage(
+                            model = ByteBuffer.wrap(coverBytes),
+                            contentDescription = staged.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .width(96.dp)
+                                .aspectRatio(2f / 3f)
+                                .clip(RoundedCornerShape(8.dp)),
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(staged.title, style = MaterialTheme.typography.titleMedium)
+                        if (author != null) {
+                            Text(
+                                author,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Text(
+                            "${staged.chapterCount} chapters",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (staged.genres.isNotEmpty()) {
+                            Text(
+                                staged.genres.joinToString(", "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+                if (description != null) {
+                    Text(
+                        description,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .heightIn(max = 160.dp)
+                            .verticalScroll(rememberScrollState()),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm, enabled = !importing) {
+                if (importing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text("Add to library")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !importing) {
+                Text("Cancel")
+            }
+        },
+    )
 }
 
 @Composable
