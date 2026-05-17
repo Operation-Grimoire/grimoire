@@ -116,6 +116,80 @@ class NovelUpdatesParserTest {
     }
 
     @Test
+    fun parseListing_reusesSearchCardExtraction() {
+        val html = """
+            <html><body>
+              <div class="search_main_box_nu">
+                <div class="search_img_nu"><img src="https://cdn.test/a.jpg"></div>
+                <div class="search_body_nu">
+                  <div class="search_title">
+                    <a href="https://www.novelupdates.com/series/overgeared/">Overgeared</a>
+                  </div>
+                </div>
+              </div>
+            </body></html>
+        """.trimIndent()
+
+        val results = NovelUpdatesParser.parseListing(
+            Jsoup.parse(html, NovelUpdatesEndpoints.BASE_URL),
+        )
+
+        assertEquals(1, results.size)
+        assertEquals("Overgeared", results[0].title)
+        assertEquals("overgeared", results[0].slug)
+    }
+
+    @Test
+    fun hasNextPage_detectsPaginationNextLink() {
+        val withNext = Jsoup.parse(
+            """<html><body><div class="digg_pagination">
+                 <a class="next_page" href="?pg=2">Next »</a>
+               </div></body></html>""",
+            NovelUpdatesEndpoints.BASE_URL,
+        )
+        val withoutNext = Jsoup.parse(
+            """<html><body><div class="digg_pagination">
+                 <span class="current">1</span>
+               </div></body></html>""",
+            NovelUpdatesEndpoints.BASE_URL,
+        )
+
+        assertTrue(NovelUpdatesParser.hasNextPage(withNext))
+        assertTrue(!NovelUpdatesParser.hasNextPage(withoutNext))
+    }
+
+    @Test
+    fun parseRanking_extractsSeriesRowsAndDerivesCover() {
+        val html = """
+            <html><body>
+              <table id="myTable">
+                <tr>
+                  <td>1</td>
+                  <td><a id="sid12345" href="https://www.novelupdates.com/series/shadow-slave/">Shadow Slave</a></td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td><a href="https://www.novelupdates.com/series/the-beginning-after-the-end/">The Beginning After The End</a></td>
+                </tr>
+              </table>
+            </body></html>
+        """.trimIndent()
+
+        val results = NovelUpdatesParser.parseRanking(
+            Jsoup.parse(html, NovelUpdatesEndpoints.BASE_URL),
+        )
+
+        assertEquals(2, results.size)
+        assertEquals("Shadow Slave", results[0].title)
+        assertEquals("shadow-slave", results[0].slug)
+        assertEquals(
+            "https://cdn.novelupdates.com/imgmid/series_12345.jpg",
+            results[0].coverUrl,
+        )
+        assertEquals("the-beginning-after-the-end", results[1].slug)
+    }
+
+    @Test
     fun parseSearch_emptyOnUnrelatedHtml() {
         val results = NovelUpdatesParser.parseSearch(
             Jsoup.parse("<html><body><p>nothing here</p></body></html>"),

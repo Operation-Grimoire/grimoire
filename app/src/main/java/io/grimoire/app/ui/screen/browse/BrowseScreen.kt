@@ -4,9 +4,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +33,7 @@ fun BrowseScreen(
     onNavigateToManage: () -> Unit,
     onNavigateToSource: (packageName: String) -> Unit = {},
     onNavigateToGlobalSearch: () -> Unit = {},
+    onNavigateToNovelUpdates: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: BrowseViewModel = hiltViewModel(),
 ) {
@@ -49,16 +52,41 @@ fun BrowseScreen(
             },
         )
 
-        if (installed.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    "No extensions installed\nTap the extension icon to add one",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+        LazyColumn(Modifier.fillMaxSize()) {
+            item(key = "__novelupdates__") {
+                ListItem(
+                    headlineContent = { Text("Browse NovelUpdates") },
+                    supportingContent = {
+                        Text("Discover novels, then find them in your sources")
+                    },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.AutoStories,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToNovelUpdates() },
                 )
+                HorizontalDivider()
             }
-        } else {
-            LazyColumn(Modifier.fillMaxSize()) {
+
+            if (installed.isEmpty()) {
+                item(key = "__empty__") {
+                    Box(
+                        Modifier.fillMaxWidth().padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "No extensions installed\nTap the extension icon to add one",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
                 items(installed, key = { it.packageName }) { item ->
                     ListItem(
                         headlineContent = { Text(item.name) },

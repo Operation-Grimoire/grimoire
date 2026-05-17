@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -25,8 +24,6 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Translate
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -53,7 +50,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.data.novelupdates.NuSearchResult
-import io.grimoire.app.data.novelupdates.NuSeries
+import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesSeriesContent
 
 @Composable
 fun NovelUpdatesSection(
@@ -113,7 +110,7 @@ fun NovelUpdatesSection(
                     CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                 }
 
-            is NuInfoState.Matched -> MatchedContent(
+            is NuInfoState.Matched -> NovelUpdatesSeriesContent(
                 series = state.series,
                 onRecommendationClick = { onOpenWebView(it) },
                 onRelink = { showLinkDialog = true },
@@ -175,98 +172,6 @@ fun NovelUpdatesSection(
                 showLinkDialog = false
             },
         )
-    }
-}
-
-@Composable
-private fun MatchedContent(
-    series: NuSeries,
-    onRecommendationClick: (String) -> Unit,
-    onRelink: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            series.rating?.let { r ->
-                Icon(
-                    Icons.Default.Star,
-                    contentDescription = "Rating",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    "%.1f".format(r) + (series.ratingVotes?.let { " ($it)" } ?: ""),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-            series.status?.let { st ->
-                if (series.rating != null) Spacer(Modifier.width(12.dp))
-                AssistChip(
-                    onClick = {},
-                    enabled = false,
-                    label = { Text(st) },
-                    colors = AssistChipDefaults.assistChipColors(
-                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                )
-            }
-        }
-
-        if (series.associatedNames.isNotEmpty()) {
-            Column {
-                Text(
-                    "Also known as",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    series.associatedNames.take(4).joinToString(" • "),
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-
-        if (series.recommendations.isNotEmpty()) {
-            Column {
-                Text(
-                    "Recommended",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(bottom = 6.dp),
-                )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(series.recommendations, key = { it.url }) { rec ->
-                        Column(
-                            Modifier
-                                .width(104.dp)
-                                .clickable { onRecommendationClick(rec.url) },
-                        ) {
-                            AsyncImage(
-                                model = rec.coverUrl,
-                                contentDescription = rec.title,
-                                modifier = Modifier
-                                    .width(104.dp)
-                                    .height(146.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                            )
-                            Text(
-                                rec.title,
-                                style = MaterialTheme.typography.labelMedium,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(top = 6.dp),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        TextButton(
-            onClick = onRelink,
-            contentPadding = PaddingValues(0.dp),
-        ) { Text("Not the right series?") }
     }
 }
 

@@ -20,6 +20,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -45,6 +46,8 @@ import io.grimoire.app.ui.screen.extensions.ExtensionsScreen
 import io.grimoire.app.ui.screen.library.LibraryScreen
 import io.grimoire.app.ui.screen.more.MoreScreen
 import io.grimoire.app.ui.screen.more.MoreViewModel
+import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesBrowserScreen
+import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesSeriesScreen
 import io.grimoire.app.ui.screen.more.statistics.StatisticsScreen
 import io.grimoire.app.ui.screen.reader.ReaderScreen
 import io.grimoire.app.ui.screen.settings.SettingsScreen
@@ -74,6 +77,9 @@ private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet(
 
 private const val ROUTE_BROWSE_HOME = "browse_home"
 private const val ROUTE_GLOBAL_SEARCH = "global_search"
+private const val ROUTE_GLOBAL_SEARCH_ARG = "global_search?q={q}"
+private const val ROUTE_NU_BROWSER = "nu_browser"
+private const val ROUTE_NU_SERIES = "nu_series?slug={slug}"
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
 private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}?q={q}"
 private const val ROUTE_SOURCE_SETTINGS = "settings/source/{pkg}"
@@ -189,12 +195,27 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         onNavigateToManage = { navController.navigate(ROUTE_EXTENSION_MANAGE) },
                         onNavigateToSource = { pkg -> navController.navigate("browse/$pkg") },
                         onNavigateToGlobalSearch = { navController.navigate(ROUTE_GLOBAL_SEARCH) },
+                        onNavigateToNovelUpdates = { navController.navigate(ROUTE_NU_BROWSER) },
                         viewModel = vm,
                     )
                 }
-                composable(route = ROUTE_GLOBAL_SEARCH) { entry ->
+                composable(
+                    route = ROUTE_GLOBAL_SEARCH_ARG,
+                    arguments = listOf(
+                        navArgument("q") {
+                            type = NavType.StringType; nullable = true; defaultValue = null
+                        },
+                    ),
+                ) { entry ->
                     val graphEntry = remember(entry) { navController.getBackStackEntry(TopLevelDestination.Browse.route) }
                     val vm: BrowseViewModel = hiltViewModel(graphEntry)
+                    val q = entry.arguments?.getString("q")
+                    LaunchedEffect(q) {
+                        if (!q.isNullOrBlank()) {
+                            vm.setQuery(q)
+                            vm.submitSearch()
+                        }
+                    }
                     GlobalSearchScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onNovelClick = { novel, pkg ->
@@ -206,6 +227,31 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                             navController.navigate("browse/$pkg?q=${Uri.encode(query)}")
                         },
                         viewModel = vm,
+                    )
+                }
+                composable(route = ROUTE_NU_BROWSER) {
+                    NovelUpdatesBrowserScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onSeriesClick = { slug ->
+                            navController.navigate("nu_series?slug=${Uri.encode(slug)}")
+                        },
+                    )
+                }
+                composable(
+                    route = ROUTE_NU_SERIES,
+                    arguments = listOf(navArgument("slug") { type = NavType.StringType }),
+                ) {
+                    NovelUpdatesSeriesScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onFindInSources = { title ->
+                            navController.navigate("global_search?q=${Uri.encode(title)}")
+                        },
+                        onOpenSeries = { slug ->
+                            navController.navigate("nu_series?slug=${Uri.encode(slug)}")
+                        },
+                        onOpenWebView = { url ->
+                            navController.navigate("webview?url=${Uri.encode(url)}")
+                        },
                     )
                 }
             }
