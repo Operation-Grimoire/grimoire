@@ -46,6 +46,32 @@ class NovelUpdatesClient @Inject constructor() {
         return emptyList()
     }
 
+    /** Series Finder browse/filter listing (one page). */
+    suspend fun browse(filter: NuBrowseFilter, page: Int): NuListingPage {
+        val url = NovelUpdatesEndpoints.seriesFinderUrl(
+            query = filter.query,
+            page = page,
+            sort = filter.sort,
+            genreSlug = filter.genreId,
+            language = filter.language,
+        )
+        val doc = Jsoup.parse(get(url), NovelUpdatesEndpoints.BASE_URL)
+        return NuListingPage(
+            results = NovelUpdatesParser.parseListing(doc),
+            hasNext = NovelUpdatesParser.hasNextPage(doc),
+        )
+    }
+
+    /** Series-ranking leaderboard (one page). */
+    suspend fun ranking(window: NuRankWindow, page: Int): NuListingPage {
+        val url = NovelUpdatesEndpoints.seriesRankingUrl(window, page)
+        val doc = Jsoup.parse(get(url), NovelUpdatesEndpoints.BASE_URL)
+        return NuListingPage(
+            results = NovelUpdatesParser.parseRanking(doc),
+            hasNext = NovelUpdatesParser.hasNextPage(doc),
+        )
+    }
+
     suspend fun getSeries(slugOrUrl: String): NuSeries {
         val url = NovelUpdatesEndpoints.seriesUrl(slugOrUrl)
         val body = get(url)

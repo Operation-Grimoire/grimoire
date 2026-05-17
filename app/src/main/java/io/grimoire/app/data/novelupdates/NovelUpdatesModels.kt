@@ -34,6 +34,54 @@ data class NuSeries(
     val recommendations: List<NuRecommendation> = emptyList(),
 )
 
+/** Sort order for the NovelUpdates Series Finder listing. */
+enum class NuBrowseSort { LATEST, POPULAR, RATING, TITLE }
+
+/** Time window for the NovelUpdates series-ranking leaderboard. */
+enum class NuRankWindow { WEEK, MONTH, ALL }
+
+/**
+ * A NovelUpdates browse request. An empty/blank [query] drives a pure
+ * filter/sort listing; a non-blank [query] is a Series Finder text search.
+ */
+data class NuBrowseFilter(
+    val query: String? = null,
+    val sort: NuBrowseSort = NuBrowseSort.POPULAR,
+    val genreId: String? = null,
+    val language: String? = null,
+)
+
+/** One page of a NovelUpdates listing plus whether another page follows. */
+data class NuListingPage(
+    val results: List<NuSearchResult>,
+    val hasNext: Boolean,
+)
+
+/**
+ * NovelUpdates' genre taxonomy. Stable enough to hardcode; the Series Finder
+ * filters by the lowercase, hyphenated genre slug.
+ */
+object NuGenres {
+    /** Display name -> Series Finder genre slug. */
+    val all: Map<String, String> = listOf(
+        "Action", "Adult", "Adventure", "Comedy", "Drama", "Ecchi", "Fantasy",
+        "Gender Bender", "Harem", "Historical", "Horror", "Josei",
+        "Martial Arts", "Mature", "Mecha", "Mystery", "Psychological",
+        "Romance", "School Life", "Sci-fi", "Seinen", "Shoujo", "Shoujo Ai",
+        "Shounen", "Shounen Ai", "Slice of Life", "Smut", "Sports",
+        "Supernatural", "Tragedy", "Wuxia", "Xianxia", "Xuanhuan", "Yaoi",
+        "Yuri",
+    ).associateWith { it.lowercase().replace(' ', '-') }
+}
+
+/** NovelUpdates' origin-language filter values. */
+object NuLanguages {
+    val all: List<String> = listOf(
+        "Chinese", "Filipino", "Indonesian", "Japanese", "Khmer", "Korean",
+        "Malaysian", "Thai", "Vietnamese",
+    )
+}
+
 /** UI state for the NovelUpdates section on the novel detail screen. */
 sealed interface NuInfoState {
     data object Idle : NuInfoState
