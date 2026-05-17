@@ -1,10 +1,12 @@
 package io.grimoire.app.ui.screen.library
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,13 +39,20 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.ViewList
@@ -139,6 +148,7 @@ private fun NovelChapterStats.readPercent(): Int =
 @Composable
 fun LibraryScreen(
     onNovelClick: (pkg: String, url: String) -> Unit,
+    onBrowse: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
@@ -161,8 +171,8 @@ fun LibraryScreen(
     val importing by viewModel.importing.collectAsState()
     val pendingImport by viewModel.pendingImport.collectAsState()
     val importMessage by viewModel.importMessage.collectAsState()
+    val selectedTab by viewModel.selectedTab.collectAsState()
 
-    var selectedTab by remember { mutableIntStateOf(0) }
     var showManage by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var showUnlock by remember { mutableStateOf(false) }
@@ -174,6 +184,18 @@ fun LibraryScreen(
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState()
     val filterSheetState = rememberModalBottomSheetState()
+
+    var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
+    val selectionMode = selectedIds.isNotEmpty()
+    var showBulkMove by remember { mutableStateOf(false) }
+    var showBulkRemoveConfirm by remember { mutableStateOf(false) }
+    var showBulkMenu by remember { mutableStateOf(false) }
+    val toggleSelect: (Long) -> Unit = { id ->
+        selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
+    }
+    val clearSelection = { selectedIds = emptySet() }
+
+    BackHandler(enabled = selectionMode) { clearSelection() }
 
     val epubPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -202,8 +224,10 @@ fun LibraryScreen(
     val effectiveTab = selectedTab.coerceIn(0, (tabs.size - 1).coerceAtLeast(0))
 
     LaunchedEffect(tabs.size) {
-        if (selectedTab >= tabs.size) selectedTab = 0
+        if (tabs.isNotEmpty() && selectedTab >= tabs.size) viewModel.setSelectedTab(0)
     }
+
+    LaunchedEffect(effectiveTab) { clearSelection() }
 
     val defaultCategory = categories.firstOrNull { it.isDefault }
 
@@ -263,6 +287,38 @@ fun LibraryScreen(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
+            if (selectionMode) {
+                SelectionTopBar(
+                    count = selectedIds.size,
+                    onClear = clearSelection,
+                    onSelectAll = {
+                        val ids = displayedNovels?.map { it.id }?.toSet() ?: emptySet()
+                        selectedIds = if (selectedIds.containsAll(ids)) emptySet() else ids
+                    },
+                    menuExpanded = showBulkMenu,
+                    onMenuExpandedChange = { showBulkMenu = it },
+                    onMove = { showBulkMenu = false; showBulkMove = true },
+                    onMarkRead = {
+                        showBulkMenu = false
+                        viewModel.setNovelsRead(selectedIds, true)
+                        clearSelection()
+                    },
+                    onMarkUnread = {
+                        showBulkMenu = false
+                        viewModel.setNovelsRead(selectedIds, false)
+                        clearSelection()
+                    },
+                    onDownload = {
+                        showBulkMenu = false
+                        viewModel.downloadNovels(selectedIds)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Queued downloads for ${selectedIds.size} novels")
+                        }
+                        clearSelection()
+                    },
+                    onRemove = { showBulkMenu = false; showBulkRemoveConfirm = true },
+                )
+            } else {
             TopAppBar(
                 title = {
                     if (searchActive) {
@@ -347,6 +403,7 @@ fun LibraryScreen(
                     }
                 },
             )
+            }
         },
     ) { padding ->
         Column(Modifier.padding(padding)) {
@@ -355,7 +412,7 @@ fun LibraryScreen(
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = effectiveTab == index,
-                            onClick = { selectedTab = index },
+                            onClick = { viewModel.setSelectedTab(index) },
                             text = { Text(title) },
                         )
                     }
@@ -366,12 +423,63 @@ fun LibraryScreen(
                 displayedNovels == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
-                displayedNovels.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        if (searchQuery.isNotBlank()) "No matches found" else "No novels here",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                displayedNovels.isEmpty() -> Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (searchQuery.isNotBlank()) {
+                        Text(
+                            "No matches found",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(32.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.LibraryAdd,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                "Your library is empty",
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                "Add novels from a source, or import an EPUB from your device.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = onBrowse) {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Browse sources")
+                                }
+                                TextButton(
+                                    onClick = { epubPicker.launch(EPUB_MIME_TYPES) },
+                                    enabled = !importing && !staging,
+                                ) {
+                                    Icon(
+                                        Icons.Default.LibraryAdd,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Import EPUB")
+                                }
+                            }
+                        }
+                    }
                 }
                 else -> {
                     val onNovelClickWrapped: (NovelEntity) -> Unit = { novel ->
@@ -391,11 +499,12 @@ fun LibraryScreen(
                                 NovelCard(
                                     novel = novel,
                                     stats = chapterStats[novel.id],
-                                    categories = categories,
-                                    defaultCategory = defaultCategory,
-                                    onClick = { onNovelClickWrapped(novel) },
-                                    onMove = { categoryId -> viewModel.moveNovel(novel, categoryId) },
-                                    onRemove = { viewModel.removeFromLibrary(novel) },
+                                    selected = novel.id in selectedIds,
+                                    onClick = {
+                                        if (selectionMode) toggleSelect(novel.id)
+                                        else onNovelClickWrapped(novel)
+                                    },
+                                    onLongClick = { toggleSelect(novel.id) },
                                 )
                             }
                         }
@@ -405,11 +514,12 @@ fun LibraryScreen(
                                 NovelRow(
                                     novel = novel,
                                     stats = chapterStats[novel.id],
-                                    categories = categories,
-                                    defaultCategory = defaultCategory,
-                                    onClick = { onNovelClickWrapped(novel) },
-                                    onMove = { categoryId -> viewModel.moveNovel(novel, categoryId) },
-                                    onRemove = { viewModel.removeFromLibrary(novel) },
+                                    selected = novel.id in selectedIds,
+                                    onClick = {
+                                        if (selectionMode) toggleSelect(novel.id)
+                                        else onNovelClickWrapped(novel)
+                                    },
+                                    onLongClick = { toggleSelect(novel.id) },
                                 )
                             }
                         }
@@ -450,6 +560,7 @@ fun LibraryScreen(
                 onRename = { cat, name -> viewModel.renameCategory(cat, name) },
                 onDelete = viewModel::deleteCategory,
                 onToggleHidden = { cat, hidden -> viewModel.setCategoryHidden(cat, hidden) },
+                onMove = { from, to -> viewModel.moveCategory(categories, from, to) },
                 onUnlockRequest = { showUnlock = true },
             )
         }
@@ -472,6 +583,125 @@ fun LibraryScreen(
             onDismiss = viewModel::cancelImport,
         )
     }
+
+    if (showBulkMove) {
+        MoveToCategoryDialog(
+            categories = categories,
+            defaultCategory = defaultCategory,
+            currentCategoryId = null,
+            onSelect = { catId ->
+                viewModel.moveNovels(selectedIds, catId)
+                showBulkMove = false
+                clearSelection()
+            },
+            onDismiss = { showBulkMove = false },
+        )
+    }
+
+    if (showBulkRemoveConfirm) {
+        val count = selectedIds.size
+        AlertDialog(
+            onDismissRequest = { showBulkRemoveConfirm = false },
+            title = { Text("Remove from library") },
+            text = {
+                Text(
+                    "Remove $count ${if (count == 1) "novel" else "novels"} from your library? " +
+                        "Downloaded chapters and read progress are kept."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.removeNovelsFromLibrary(selectedIds)
+                    showBulkRemoveConfirm = false
+                    clearSelection()
+                }) {
+                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBulkRemoveConfirm = false }) { Text("Cancel") }
+            },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SelectionTopBar(
+    count: Int,
+    onClear: () -> Unit,
+    onSelectAll: () -> Unit,
+    menuExpanded: Boolean,
+    onMenuExpandedChange: (Boolean) -> Unit,
+    onMove: () -> Unit,
+    onMarkRead: () -> Unit,
+    onMarkUnread: () -> Unit,
+    onDownload: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    TopAppBar(
+        title = { Text("$count selected") },
+        navigationIcon = {
+            IconButton(onClick = onClear) {
+                Icon(Icons.Default.Close, contentDescription = "Clear selection")
+            }
+        },
+        actions = {
+            IconButton(onClick = onSelectAll) {
+                Icon(Icons.Default.SelectAll, contentDescription = "Select all")
+            }
+            IconButton(onClick = onDownload) {
+                Icon(Icons.Default.Download, contentDescription = "Download chapters")
+            }
+            Box {
+                IconButton(onClick = { onMenuExpandedChange(true) }) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { onMenuExpandedChange(false) },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Move to category") },
+                        onClick = onMove,
+                        leadingIcon = { Icon(Icons.Default.DriveFileMove, null) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Mark as read") },
+                        onClick = onMarkRead,
+                        leadingIcon = { Icon(Icons.Default.DoneAll, null) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Mark as unread") },
+                        onClick = onMarkUnread,
+                        leadingIcon = { Icon(Icons.Default.RemoveDone, null) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Download chapters") },
+                        onClick = onDownload,
+                        leadingIcon = { Icon(Icons.Default.Download, null) },
+                    )
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                "Remove from library",
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        },
+                        onClick = onRemove,
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Delete,
+                                null,
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        },
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -661,19 +891,14 @@ private fun SortTab(
 private fun NovelCard(
     novel: NovelEntity,
     stats: NovelChapterStats?,
-    categories: List<CategoryEntity>,
-    defaultCategory: CategoryEntity?,
+    selected: Boolean,
     onClick: () -> Unit,
-    onMove: (Long?) -> Unit,
-    onRemove: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showMenu by remember { mutableStateOf(false) }
-    var showMoveDialog by remember { mutableStateOf(false) }
-
     Box(modifier) {
         Column(
-            Modifier.combinedClickable(onClick = onClick, onLongClick = { showMenu = true })
+            Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
         ) {
             Box {
                 AsyncImage(
@@ -683,8 +908,33 @@ private fun NovelCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(2f / 3f)
-                        .clip(RoundedCornerShape(8.dp)),
+                        .clip(RoundedCornerShape(8.dp))
+                        .then(
+                            if (selected) Modifier.border(
+                                width = 3.dp,
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = RoundedCornerShape(8.dp),
+                            ) else Modifier
+                        ),
                 )
+                if (selected) {
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
+                    )
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = "Selected",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(4.dp)
+                            .background(Color.White, RoundedCornerShape(50))
+                            .size(22.dp),
+                    )
+                }
                 if (stats != null && stats.total > 0) {
                     val percent = stats.readPercent()
                     Row(
@@ -745,30 +995,6 @@ private fun NovelCard(
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
             )
         }
-
-        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-            DropdownMenuItem(
-                text = { Text("Move to category") },
-                onClick = { showMoveDialog = true; showMenu = false },
-            )
-            DropdownMenuItem(
-                text = { Text("Remove from library") },
-                onClick = { onRemove(); showMenu = false },
-                leadingIcon = {
-                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
-                },
-            )
-        }
-    }
-
-    if (showMoveDialog) {
-        MoveToCategoryDialog(
-            categories = categories,
-            defaultCategory = defaultCategory,
-            currentCategoryId = novel.categoryId,
-            onSelect = { catId -> onMove(catId); showMoveDialog = false },
-            onDismiss = { showMoveDialog = false },
-        )
     }
 }
 
@@ -777,18 +1003,21 @@ private fun NovelCard(
 private fun NovelRow(
     novel: NovelEntity,
     stats: NovelChapterStats?,
-    categories: List<CategoryEntity>,
-    defaultCategory: CategoryEntity?,
+    selected: Boolean,
     onClick: () -> Unit,
-    onMove: (Long?) -> Unit,
-    onRemove: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showMenu by remember { mutableStateOf(false) }
-    var showMoveDialog by remember { mutableStateOf(false) }
-
-    Box(modifier) {
+    Box(
+        modifier.background(
+            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+            else Color.Transparent
+        )
+    ) {
         ListItem(
+            colors = androidx.compose.material3.ListItemDefaults.colors(
+                containerColor = Color.Transparent,
+            ),
             headlineContent = { Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             supportingContent = if (stats != null && stats.total > 0) {
                 {
@@ -835,40 +1064,35 @@ private fun NovelRow(
                 { Text(novel.author!!, maxLines = 1) }
             } else null,
             leadingContent = {
-                AsyncImage(
-                    model = novel.thumbnailUrl,
-                    contentDescription = novel.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .width(48.dp)
-                        .aspectRatio(2f / 3f)
-                        .clip(RoundedCornerShape(4.dp)),
-                )
+                Box {
+                    AsyncImage(
+                        model = novel.thumbnailUrl,
+                        contentDescription = novel.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .width(48.dp)
+                            .aspectRatio(2f / 3f)
+                            .clip(RoundedCornerShape(4.dp)),
+                    )
+                    if (selected) {
+                        Box(
+                            Modifier
+                                .matchParentSize()
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = "Selected",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                }
             },
-            modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = { showMenu = true }),
-        )
-        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-            DropdownMenuItem(
-                text = { Text("Move to category") },
-                onClick = { showMoveDialog = true; showMenu = false },
-            )
-            DropdownMenuItem(
-                text = { Text("Remove from library") },
-                onClick = { onRemove(); showMenu = false },
-                leadingIcon = {
-                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
-                },
-            )
-        }
-    }
-
-    if (showMoveDialog) {
-        MoveToCategoryDialog(
-            categories = categories,
-            defaultCategory = defaultCategory,
-            currentCategoryId = novel.categoryId,
-            onSelect = { catId -> onMove(catId); showMoveDialog = false },
-            onDismiss = { showMoveDialog = false },
+            modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick),
         )
     }
 }
@@ -916,6 +1140,7 @@ private fun ManageCategoriesSheet(
     onRename: (CategoryEntity, String) -> Unit,
     onDelete: (CategoryEntity) -> Unit,
     onToggleHidden: (CategoryEntity, Boolean) -> Unit,
+    onMove: (fromIndex: Int, toIndex: Int) -> Unit,
     onUnlockRequest: () -> Unit,
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
@@ -938,9 +1163,33 @@ private fun ManageCategoriesSheet(
                 Text("Unlock to manage hidden categories")
             }
         }
-        categories.forEach { cat ->
+        categories.forEachIndexed { index, cat ->
             ListItem(
                 headlineContent = { Text(cat.name) },
+                leadingContent = {
+                    Column {
+                        IconButton(
+                            onClick = { onMove(index, index - 1) },
+                            enabled = index > 0,
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.KeyboardArrowUp,
+                                contentDescription = "Move up",
+                            )
+                        }
+                        IconButton(
+                            onClick = { onMove(index, index + 1) },
+                            enabled = index < categories.lastIndex,
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = "Move down",
+                            )
+                        }
+                    }
+                },
                 trailingContent = {
                     Row {
                         if (isUnlocked && !cat.isDefault) {

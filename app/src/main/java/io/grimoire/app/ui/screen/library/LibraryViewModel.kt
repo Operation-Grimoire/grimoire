@@ -8,6 +8,7 @@ import io.grimoire.app.data.epub.EpubImporter
 import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.epub.StagedEpub
+import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -39,6 +40,7 @@ class LibraryViewModel @Inject constructor(
     private val libraryPreferences: LibraryPreferences,
     private val authManager: HiddenCategoriesAuthManager,
     private val epubImporter: EpubImporter,
+    private val downloadManager: DownloadManager,
 ) : ViewModel() {
 
     // True while the picked file is being read/parsed for the preview.
@@ -131,6 +133,11 @@ class LibraryViewModel @Inject constructor(
     val filterUnreadOnly: StateFlow<Boolean> = libraryPreferences.filterUnreadOnly.stateIn(viewModelScope)
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
     val includeHiddenInAll: StateFlow<Boolean> = libraryPreferences.includeHiddenInAll.stateIn(viewModelScope)
+    val selectedTab: StateFlow<Int> = libraryPreferences.selectedTab.stateIn(viewModelScope)
+
+    fun setSelectedTab(index: Int) = viewModelScope.launch {
+        libraryPreferences.selectedTab.set(index)
+    }
 
     fun pkgForNovel(novel: NovelEntity): String =
         if (novel.sourceId == LOCAL_SOURCE_ID) LOCAL_PKG
@@ -151,12 +158,45 @@ class LibraryViewModel @Inject constructor(
         categoryDao.delete(category)
     }
 
+    fun moveCategory(ordered: List<CategoryEntity>, fromIndex: Int, toIndex: Int) = viewModelScope.launch {
+        if (fromIndex == toIndex ||
+            fromIndex !in ordered.indices ||
+            toIndex !in ordered.indices
+        ) return@launch
+        val list = ordered.toMutableList()
+        list.add(toIndex, list.removeAt(fromIndex))
+        list.forEachIndexed { index, cat ->
+            if (cat.order != index) categoryDao.upsert(cat.copy(order = index))
+        }
+    }
+
     fun moveNovel(novel: NovelEntity, categoryId: Long?) = viewModelScope.launch {
         novelDao.updateCategory(novel.id, categoryId)
     }
 
     fun removeFromLibrary(novel: NovelEntity) = viewModelScope.launch {
         novelDao.upsert(novel.copy(favorite = false))
+    }
+
+    fun moveNovels(ids: Set<Long>, categoryId: Long?) = viewModelScope.launch {
+        ids.forEach { novelDao.updateCategory(it, categoryId) }
+    }
+
+    fun removeNovelsFromLibrary(ids: Set<Long>) = viewModelScope.launch {
+        ids.forEach { id ->
+            novelDao.getById(id)?.let { novelDao.upsert(it.copy(favorite = false)) }
+        }
+    }
+
+    fun setNovelsRead(ids: Set<Long>, read: Boolean) = viewModelScope.launch {
+        ids.forEach { chapterDao.markAllRead(it, read) }
+    }
+
+    fun downloadNovels(ids: Set<Long>) = viewModelScope.launch {
+        ids.forEach { id ->
+            val chapters = chapterDao.getChaptersOnce(id)
+            if (chapters.isNotEmpty()) downloadManager.enqueue(chapters)
+        }
     }
 
     fun setDisplayMode(mode: LibraryDisplayMode) = viewModelScope.launch {
