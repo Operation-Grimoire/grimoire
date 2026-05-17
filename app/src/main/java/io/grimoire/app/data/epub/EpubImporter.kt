@@ -19,6 +19,22 @@ import javax.inject.Singleton
 /** Outcome of an EPUB import: the stored novel's id and title. */
 data class EpubImportResult(val novelId: Long, val title: String)
 
+/**
+ * A parsed-but-not-yet-persisted local EPUB awaiting user confirmation. The
+ * full [ParsedEpub] (including all chapter text) is held in memory so the
+ * preview can be shown and the book committed without re-reading the file.
+ */
+data class StagedEpub(
+    val url: String,
+    val title: String,
+    val author: String?,
+    val description: String?,
+    val genres: List<String>,
+    val coverBytes: ByteArray?,
+    val chapterCount: Int,
+    internal val parsed: ParsedEpub,
+)
+
 @Singleton
 class EpubImporter @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -26,13 +42,12 @@ class EpubImporter @Inject constructor(
     private val chapterDao: ChapterDao,
 ) {
     /**
-     * Imports the EPUB at [uri] as a local book (no backing extension),
-     * auto-added to the library. The user's original file is only read; the
-     * temporary copy we make for parsing is removed before returning.
-     *
-     * @return the imported novel's title on success.
+     * Reads and parses the EPUB at [uri] without touching the library, so the
+     * caller can show a metadata preview before the user decides to add it.
+     * The temporary copy made for parsing is removed before returning; the
+     * returned [StagedEpub] retains everything needed by [commit].
      */
-    suspend fun import(uri: Uri): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun stage(uri: Uri): Result<StagedEpub> = withContext(Dispatchers.IO) {
         runCatching {
             val temp = File.createTempFile("import", ".epub", context.cacheDir)
             try {
@@ -40,17 +55,39 @@ class EpubImporter @Inject constructor(
                     temp.outputStream().use { input.copyTo(it) }
                 } ?: error("Unable to open the selected file")
 
-                importFile(
-                    file = temp,
-                    sourceId = LOCAL_SOURCE_ID,
+                val parsed = EpubParser.parse(temp)
+                StagedEpub(
                     url = "epub:${UUID.randomUUID()}",
-                    favorite = true,
-                ).getOrThrow().title
+                    title = parsed.title,
+                    author = parsed.author,
+                    description = parsed.description,
+                    genres = parsed.genres,
+                    coverBytes = parsed.cover?.bytes,
+                    chapterCount = parsed.chapters.size,
+                    parsed = parsed,
+                )
             } finally {
                 temp.delete()
             }
         }
     }
+
+    /**
+     * Persists a [staged] EPUB as a favorited local book and marks it as just
+     * read, so it surfaces at the top of the library's "Last read" sort.
+     */
+    suspend fun commit(staged: StagedEpub): Result<EpubImportResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                persist(
+                    parsed = staged.parsed,
+                    sourceId = LOCAL_SOURCE_ID,
+                    url = staged.url,
+                    favorite = true,
+                    markRead = true,
+                )
+            }
+        }
 
     /**
      * Stores [bytes] (a complete EPUB delivered by an extension source) as a
@@ -66,7 +103,13 @@ class EpubImporter @Inject constructor(
             val temp = File.createTempFile("source", ".epub", context.cacheDir)
             try {
                 temp.writeBytes(bytes)
-                importFile(temp, sourceId, url).getOrThrow()
+                persist(
+                    parsed = EpubParser.parse(temp),
+                    sourceId = sourceId,
+                    url = url,
+                    favorite = false,
+                    markRead = false,
+                )
             } finally {
                 temp.delete()
             }
@@ -74,83 +117,77 @@ class EpubImporter @Inject constructor(
     }
 
     /**
-     * Parses [file] and stores it as a fully-downloaded novel attributed to
-     * [sourceId] / [url]. Used both for local imports and for EPUBs delivered by
-     * an extension source. Re-importing the same (sourceId, url) replaces its
-     * chapters and preserves the existing library state (favorite, category,
-     * sort, last-read).
-     *
-     * The caller owns [file]'s lifecycle.
+     * Stores [parsed] as a fully-downloaded novel attributed to [sourceId] /
+     * [url]. Re-importing the same (sourceId, url) replaces its chapters and
+     * preserves the existing library state (favorite, category, sort,
+     * last-read) unless [favorite] / [markRead] override it.
      */
-    suspend fun importFile(
-        file: File,
+    private suspend fun persist(
+        parsed: ParsedEpub,
         sourceId: Long,
         url: String,
-        favorite: Boolean = false,
-    ): Result<EpubImportResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val parsed = EpubParser.parse(file)
-
-            val thumbnailUrl = parsed.cover?.let { cover ->
-                val dir = File(context.filesDir, "epub_covers").apply { mkdirs() }
-                val out = File(dir, "${UUID.randomUUID()}.${cover.extension}")
-                out.writeBytes(cover.bytes)
-                Uri.fromFile(out).toString()
-            }
-
-            val existing = novelDao.getBySourceUrl(sourceId, url)
-            novelDao.upsert(
-                NovelEntity(
-                    id = existing?.id ?: 0L,
-                    sourceId = sourceId,
-                    url = url,
-                    title = parsed.title,
-                    thumbnailUrl = thumbnailUrl ?: existing?.thumbnailUrl,
-                    author = parsed.author,
-                    description = parsed.description,
-                    genres = parsed.genres.joinToString(","),
-                    status = NovelStatus.COMPLETED.ordinal,
-                    favorite = existing?.favorite ?: favorite,
-                    lastUpdated = System.currentTimeMillis(),
-                    chapterSortOrder = existing?.chapterSortOrder ?: 0,
-                    categoryId = existing?.categoryId,
-                    lastReadAt = existing?.lastReadAt ?: 0L,
-                ),
-            )
-            // @Upsert returns -1 on the update path, so resolve the real row
-            // id explicitly — otherwise chapters get novelId = -1 and the
-            // insert fails with SQLITE_CONSTRAINT_FOREIGNKEY.
-            val novelId = existing?.id
-                ?: novelDao.getBySourceUrl(sourceId, url)?.id
-                ?: error("Imported novel row not found after upsert")
-
-            // Preserve per-chapter reading state across a re-import: chapter
-            // URLs are deterministic ("$url/$index"), so carry read progress
-            // from any existing chapter with the same URL into its replacement.
-            val previous = chapterDao.getChaptersOnce(novelId).associateBy { it.url }
-
-            chapterDao.replaceChapters(
-                novelId,
-                parsed.chapters.mapIndexed { index, ch ->
-                    val chapterUrl = "$url/$index"
-                    val prior = previous[chapterUrl]
-                    ChapterEntity(
-                        novelId = novelId,
-                        url = chapterUrl,
-                        name = ch.title,
-                        chapterNumber = (index + 1).toFloat(),
-                        read = prior?.read ?: false,
-                        readProgress = prior?.readProgress ?: 0f,
-                        firstReadAt = prior?.firstReadAt,
-                        downloadStatus = ChapterDownloadStatus.DOWNLOADED.ordinal,
-                        downloadedContent = ch.content,
-                        wordCount = ch.content.countWords(),
-                    )
-                },
-            )
-
-            EpubImportResult(novelId, parsed.title)
+        favorite: Boolean,
+        markRead: Boolean,
+    ): EpubImportResult {
+        val thumbnailUrl = parsed.cover?.let { cover ->
+            val dir = File(context.filesDir, "epub_covers").apply { mkdirs() }
+            val out = File(dir, "${UUID.randomUUID()}.${cover.extension}")
+            out.writeBytes(cover.bytes)
+            Uri.fromFile(out).toString()
         }
+
+        val existing = novelDao.getBySourceUrl(sourceId, url)
+        novelDao.upsert(
+            NovelEntity(
+                id = existing?.id ?: 0L,
+                sourceId = sourceId,
+                url = url,
+                title = parsed.title,
+                thumbnailUrl = thumbnailUrl ?: existing?.thumbnailUrl,
+                author = parsed.author,
+                description = parsed.description,
+                genres = parsed.genres.joinToString(","),
+                status = NovelStatus.COMPLETED.ordinal,
+                favorite = existing?.favorite ?: favorite,
+                lastUpdated = System.currentTimeMillis(),
+                chapterSortOrder = existing?.chapterSortOrder ?: 0,
+                categoryId = existing?.categoryId,
+                lastReadAt = if (markRead) System.currentTimeMillis() else (existing?.lastReadAt ?: 0L),
+            ),
+        )
+        // @Upsert returns -1 on the update path, so resolve the real row
+        // id explicitly — otherwise chapters get novelId = -1 and the
+        // insert fails with SQLITE_CONSTRAINT_FOREIGNKEY.
+        val novelId = existing?.id
+            ?: novelDao.getBySourceUrl(sourceId, url)?.id
+            ?: error("Imported novel row not found after upsert")
+
+        // Preserve per-chapter reading state across a re-import: chapter
+        // URLs are deterministic ("$url/$index"), so carry read progress
+        // from any existing chapter with the same URL into its replacement.
+        val previous = chapterDao.getChaptersOnce(novelId).associateBy { it.url }
+
+        chapterDao.replaceChapters(
+            novelId,
+            parsed.chapters.mapIndexed { index, ch ->
+                val chapterUrl = "$url/$index"
+                val prior = previous[chapterUrl]
+                ChapterEntity(
+                    novelId = novelId,
+                    url = chapterUrl,
+                    name = ch.title,
+                    chapterNumber = (index + 1).toFloat(),
+                    read = prior?.read ?: false,
+                    readProgress = prior?.readProgress ?: 0f,
+                    firstReadAt = prior?.firstReadAt,
+                    downloadStatus = ChapterDownloadStatus.DOWNLOADED.ordinal,
+                    downloadedContent = ch.content,
+                    wordCount = ch.content.countWords(),
+                )
+            },
+        )
+
+        return EpubImportResult(novelId, parsed.title)
     }
 }
 
