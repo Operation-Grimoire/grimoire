@@ -90,8 +90,8 @@ class NovelUpdatesParserTest {
               <h5 class="seriesother">Related Series</h5>
               <a href="https://www.novelupdates.com/series/lord-of-the-mysteries/">Lord of the Mysteries</a> (Prequel)<br/>
               <h5 class="seriesother">Recommendations</h5>
-              <a class="genre" href="https://www.novelupdates.com/series/deep-sea-embers/" title="Recommended by 1 users">Deep Sea Embers</a> (1)<br/>
-              <a class="genre" href="https://www.novelupdates.com/series/my-house-of-horrors/" title="Recommended by 1 users">My House of Horrors</a> (1)<br/>
+              <a class="genre" id="sid56760" href="https://www.novelupdates.com/series/deep-sea-embers/" title="Recommended by 1 users">Deep Sea Embers</a> (1)<br/>
+              <a class="genre" id="sid19326" href="https://www.novelupdates.com/series/my-house-of-horrors/" title="Recommended by 1 users">My House of Horrors</a> (1)<br/>
               <h5 class="seriesother">Recommendation Lists</h5>
               <a href="https://www.novelupdates.com/series/should-not-appear/">Should Not Appear</a>
             </body></html>
@@ -108,6 +108,11 @@ class NovelUpdatesParserTest {
         assertEquals("My House of Horrors", series.recommendations[1].title)
         assertTrue(series.recommendations.none { it.title == "Should Not Appear" })
         assertTrue(series.recommendations.none { it.title == "Lord of the Mysteries" })
+        // Cover derived from the anchor's id="sidNNNNN" via the CDN pattern.
+        assertEquals(
+            "https://cdn.novelupdates.com/imgmid/series_56760.jpg",
+            series.recommendations[0].coverUrl,
+        )
     }
 
     @Test

@@ -141,12 +141,16 @@ class NovelDetailViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            // Don't fetch automatically — just decide whether to offer the
-            // "Load from NovelUpdates" button (cheap preference read, no network).
-            _nuState.value = if (novelUpdatesRepository.isEnabled()) {
-                NuInfoState.NotLoaded
-            } else {
-                NuInfoState.Disabled
+            when {
+                !novelUpdatesRepository.isEnabled() ->
+                    _nuState.value = NuInfoState.Disabled
+                // Previously resolved/linked: restore it without re-prompting.
+                novelUpdatesRepository.hasStoredLink(pkg, novelUrl) -> {
+                    val title = novel.filter { it.title.isNotBlank() }.take(1).first().title
+                    loadNovelUpdates(title)
+                }
+                // Otherwise just offer the button (no network until tapped).
+                else -> _nuState.value = NuInfoState.NotLoaded
             }
         }
     }
