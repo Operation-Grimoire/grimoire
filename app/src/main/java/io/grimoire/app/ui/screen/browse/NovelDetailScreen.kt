@@ -7,9 +7,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -96,6 +94,8 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ShimmerBox
+import io.grimoire.app.ui.component.ExpandableText
+import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.ZoomableImageDialog
 import io.grimoire.app.ui.component.rememberShimmerAlpha
 import kotlinx.coroutines.launch
@@ -127,7 +127,6 @@ fun NovelDetailScreen(
     val bookDownload by viewModel.bookDownload.collectAsState()
     val nuState by viewModel.nuState.collectAsState()
 
-    var descriptionExpanded by remember { mutableStateOf(false) }
     var showCategoryDialog by remember { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var bulkMenuExpanded by remember { mutableStateOf(false) }
@@ -349,41 +348,24 @@ fun NovelDetailScreen(
                     // Genres
                     if (!isLoadingNovel && novelError == null && novel.genres.isNotEmpty()) {
                         item(key = "genres") {
-                            Row(
+                            GenreChips(
+                                genres = novel.genres,
                                 modifier = Modifier
                                     .animateItem()
-                                    .horizontalScroll(rememberScrollState())
                                     .padding(horizontal = 16.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                novel.genres.forEach { genre ->
-                                    AssistChip(
-                                        onClick = {},
-                                        label = { Text(genre, style = MaterialTheme.typography.labelSmall) },
-                                        modifier = Modifier.height(28.dp),
-                                    )
-                                }
-                            }
+                            )
                         }
                     }
 
                     // Description
                     if (!isLoadingNovel && novelError == null && !novel.description.isNullOrBlank()) {
                         item(key = "description") {
-                            Column(Modifier.animateItem().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                                Text(
-                                    novel.description!!,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = if (descriptionExpanded) Int.MAX_VALUE else 3,
-                                    overflow = if (descriptionExpanded) TextOverflow.Clip else TextOverflow.Ellipsis,
-                                )
-                                TextButton(
-                                    onClick = { descriptionExpanded = !descriptionExpanded },
-                                    contentPadding = PaddingValues(horizontal = 0.dp),
-                                ) {
-                                    Text(if (descriptionExpanded) "Show less" else "Show more")
-                                }
-                            }
+                            ExpandableText(
+                                text = novel.description!!,
+                                modifier = Modifier
+                                    .animateItem()
+                                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                            )
                         }
                     }
 
