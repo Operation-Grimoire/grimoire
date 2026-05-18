@@ -69,9 +69,10 @@ object NovelUpdatesEndpoints {
             .append(URLEncoder.encode(values.joinToString(","), "UTF-8"))
     }
 
-    // ---- NU param/value codes — centralized & best-effort ----
-    // NU has no API and Cloudflare-blocks external verification; these are the
-    // single place to correct once a real filtered URL is captured on-device.
+    // ---- NU param/value codes ----
+    // Confirmed against real filtered URLs (series-finder + latest-series):
+    // gi/ge/mgi/org and numeric genre/language ids. Centralized so any future
+    // NU change stays a one-file fix.
     private const val P_GENRE_INCLUDE = "gi"
     private const val P_GENRE_EXCLUDE = "ge"
     private const val P_GENRE_GATE = "mgi"
@@ -86,12 +87,13 @@ object NovelUpdatesEndpoints {
         NuBrowseSort.RANK -> "srank"
     }
 
+    // Series Ranking `rank=` codes — confirmed against real NU URLs.
     private fun rankCode(type: NuRankingType): String = when (type) {
         NuRankingType.POPULAR_MONTH -> "popmonth"
         NuRankingType.POPULAR_ALL -> "popular"
         NuRankingType.ACTIVITY_WEEK -> "week"
         NuRankingType.ACTIVITY_MONTH -> "month"
-        NuRankingType.ACTIVITY_ALL -> "all"
+        NuRankingType.ACTIVITY_ALL -> "sixmonths"
     }
 
     fun seriesUrl(slugOrUrl: String): String {
