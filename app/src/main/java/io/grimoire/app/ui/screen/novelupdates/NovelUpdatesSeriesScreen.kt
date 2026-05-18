@@ -18,9 +18,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
+import io.grimoire.app.data.novelupdates.NuReview
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.ZoomableCoverImage
@@ -121,6 +124,14 @@ fun NovelUpdatesSeriesScreen(
                                     series.title,
                                     style = MaterialTheme.typography.titleLarge,
                                 )
+                                if (series.authors.isNotEmpty()) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        series.authors.joinToString(" · "),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
 
@@ -152,8 +163,68 @@ fun NovelUpdatesSeriesScreen(
                                 onOpenSeries(NovelUpdatesEndpoints.slugFromUrl(url))
                             },
                         )
+
+                        if (series.reviews.isNotEmpty()) {
+                            NuReviews(
+                                reviews = series.reviews,
+                                pageCount = series.reviewPageCount,
+                                onMore = { onOpenWebView(series.url) },
+                            )
+                        }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NuReviews(
+    reviews: List<NuReview>,
+    pageCount: Int,
+    onMore: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Reviews", style = MaterialTheme.typography.titleSmall)
+        reviews.forEach { review ->
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        review.author,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    review.rating?.let { stars ->
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(2.dp))
+                        Text("$stars/5", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                val meta = listOfNotNull(
+                    review.date,
+                    review.progress?.let { "Progress $it" },
+                    review.likes?.let { "$it likes" },
+                ).joinToString(" · ")
+                if (meta.isNotEmpty()) {
+                    Text(
+                        meta,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                ExpandableText(text = review.body, collapsedMaxLines = 4)
+            }
+            HorizontalDivider()
+        }
+        if (pageCount > 1) {
+            TextButton(onClick = onMore) {
+                Text("More reviews on NovelUpdates")
             }
         }
     }

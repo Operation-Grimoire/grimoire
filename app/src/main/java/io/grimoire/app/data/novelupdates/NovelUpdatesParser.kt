@@ -46,12 +46,18 @@ object NovelUpdatesParser {
     // --- Series page ---
     private const val SERIES_TITLE = "div.seriestitlenu"
     private const val SERIES_COVER = "div.seriesimg img"
+    private const val SERIES_AUTHORS = "#showauthors a"
     private const val SERIES_ASSOCIATED = "#editassociated"
     private const val SERIES_DESCRIPTION = "#editdescription"
     private const val SERIES_GENRES = "#seriesgenre a"
     private const val SERIES_TAGS = "#showtags a"
     private const val SERIES_STATUS = "#editstatus"
     private const val SERIES_RATING = "span.uvotes"
+
+    // --- Series reviews (the #comments / .w-comments list) ---
+    private const val REVIEW_ITEM = "div.w-comments-item"
+    private const val REVIEW_PAGE_LINK = ".w-comments-pagination .page-numbers"
+    private val PERM_SID = Regex("""sid=(\d+)""")
 
     private inline fun <T> safe(default: T, block: () -> T): T =
         try {
@@ -154,6 +160,10 @@ object NovelUpdatesParser {
             slug = slug,
             url = requestUrl,
             title = title,
+            authors = doc.select(SERIES_AUTHORS)
+                .map { it.text().trim() }
+                .filter { it.isNotBlank() }
+                .distinct(),
             associatedNames = parseAssociated(doc),
             description = doc.selectFirst(SERIES_DESCRIPTION)?.text()?.trim()?.ifBlank { null },
             genres = doc.select(SERIES_GENRES).map { it.text().trim() }.filter { it.isNotBlank() }.distinct(),
@@ -163,7 +173,100 @@ object NovelUpdatesParser {
             ratingVotes = parseRatingVotes(doc),
             coverUrl = doc.selectFirst(SERIES_COVER)?.imgSrc(),
             recommendations = parseRecommendations(doc),
+            sid = parseSid(doc),
+            reviews = parseReviews(doc),
+            reviewPageCount = parseReviewPageCount(doc),
         )
+    }
+
+    private fun parseSid(doc: Document): String? = safe(null) {
+        doc.select("a.permrev[href*=sid=]").firstNotNullOfOrNull { a ->
+            PERM_SID.find(a.attr("href"))?.groupValues?.get(1)
+        }
+    }
+
+    /** Highest numbered review page (1 when there's only a single page). */
+    private fun parseReviewPageCount(doc: Document): Int = safe(1) {
+        doc.select(REVIEW_PAGE_LINK)
+            .mapNotNull { it.text().trim().replace(",", "").toIntOrNull() }
+            .maxOrNull() ?: 1
+    }
+
+    private fun parseReviews(doc: Document): List<NuReview> = safe(emptyList()) {
+        doc.select(REVIEW_ITEM).mapNotNull { item ->
+            val id = item.id().removePrefix("comment-").trim()
+                .ifBlank { return@mapNotNull null }
+
+            val userLink = item.selectFirst("a[href*=/user/]")
+            val avatar = item.selectFirst("div.rev_left img")
+            val author = (avatar?.attr("alt")?.trim().orEmpty())
+                .ifBlank { userLink?.text()?.trim().orEmpty() }
+                .ifBlank { return@mapNotNull null }
+
+            val filled = item.select("div.w-comments-item-meta-new i.fa-star").size
+            val empties = item.select("div.w-comments-item-meta-new i.fa-star-o").size
+            val rating = if (filled + empties > 0) filled.coerceIn(0, 5) else null
+
+            val meta = item.selectFirst("div.w-comments-item-meta-new")
+            val date = meta?.selectFirst("td[style*=right] div")
+                ?.text()?.trim()?.ifBlank { null }
+            val progress = item.selectFirst("span[id^=stat]")
+                ?.text()?.trim()
+                ?.takeUnless { it.isBlank() || it == "--" || it == "-" }
+
+            val body = item.selectFirst("div.w-comments-item-text")
+                ?.let(::cleanReviewText).orEmpty()
+            if (body.isBlank()) return@mapNotNull null
+
+            // Likes + permalink live in the sibling .rev_b1 bar; fall back to
+            // a document-wide lookup keyed by the comment id if the DOM differs.
+            val bar = item.nextElementSibling()?.takeIf { it.hasClass("rev_b1") }
+            val likes = (bar?.selectFirst("span[class^=liked_]")
+                ?: doc.selectFirst("span.liked_$id"))
+                ?.text()?.trim()?.replace(",", "")?.toIntOrNull()
+            val permalink = (bar?.selectFirst("a.permrev")
+                ?: doc.selectFirst("a.permrev[href*=comid=$id]"))
+                ?.attr("href")?.let(::absolutize)
+
+            NuReview(
+                id = id,
+                author = author,
+                authorUrl = userLink?.attr("href")?.let(::absolutize),
+                avatarUrl = avatar?.imgSrc(),
+                rating = rating,
+                date = date,
+                progress = progress,
+                body = body,
+                likes = likes,
+                permalink = permalink,
+            )
+        }
+    }
+
+    /**
+     * Flattens a review body to readable plain text: drops the "more>>" /
+     * spoiler toggle scaffolding (keeping the hidden continuation and spoiler
+     * prose) and turns block tags into line breaks.
+     */
+    private fun cleanReviewText(el: Element): String {
+        val clone = el.clone()
+        clone.select(".morelink, .dots, .spdiv, .sp-head").remove()
+        val withBreaks = clone.html()
+            .replace(Regex("(?is)<\\s*(br|/p|/div|/li)[^>]*>"), "\n")
+        return org.jsoup.Jsoup.parse(withBreaks).wholeText()
+            .lines()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .joinToString("\n")
+    }
+
+    private fun absolutize(href: String): String? = href.trim().ifBlank { null }?.let {
+        when {
+            it.startsWith("http", ignoreCase = true) -> it
+            it.startsWith("//") -> "https:$it"
+            it.startsWith("/") -> "https://www.novelupdates.com$it"
+            else -> it
+        }
     }
 
     private fun parseAssociated(doc: Document): List<String> = safe(emptyList()) {

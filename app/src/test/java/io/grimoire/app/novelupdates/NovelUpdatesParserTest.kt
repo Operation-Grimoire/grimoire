@@ -192,6 +192,105 @@ class NovelUpdatesParserTest {
     }
 
     @Test
+    fun parseSeries_extractsAuthorsReviewsAndSid() {
+        val html = """
+            <html><body>
+              <div class="seriestitlenu">The Death Mage</div>
+              <h5 class="seriesother">Author(s)</h5>
+              <div id="showauthors">
+                <a class="genre" id="authtag" href="https://www.novelupdates.com/nauthor/densuke/">Densuke</a><br>
+                <a class="genre" id="authtag" href="https://www.novelupdates.com/nauthor/x/">デンスケ</a><br>
+              </div>
+
+              <div class="w-comments-item" id="comment-115813">
+                <div class="rev_left">
+                  <img alt='Donce' src='https://av.test/donce.jpg' class='avatar'>
+                </div>
+                <div class="w-comments-item-meta-new">
+                  <table><tbody><tr>
+                    <td valign="top">
+                      <a class="revname115813" href="https://www.novelupdates.com/user/207649/Donce/">Donce</a>
+                      <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                    </td>
+                    <td style="text-align: right;" valign="top">
+                      <div style="text-align: right;">Sep 01, 2019</div>
+                      <div>Status: <span id="stat115813">c200</span></div>
+                    </td>
+                  </tr></tbody></table>
+                </div>
+                <div class="w-comments-item-text 207649">
+                  First paragraph.<p></p>
+                  Second paragraph.
+                  <span class="dots">... </span><span class="morelink" onclick="showtext(this); return false;">more&gt;&gt;</span>
+                  <span style="display:none"> Hidden continuation.<span class="morelink"> &lt;&lt;less</span></span>
+                </div>
+              </div>
+              <div class="rev_b1">
+                <span class="rev_bar"><span class="liked_115813">50</span> Likes</span>
+                <span><a class="permrev" href="//www.novelupdates.com/fdrev/?comid=115813&sid=8456">Permalink</a></span>
+              </div>
+
+              <div class="w-comments-item" id="comment-42685">
+                <div class="rev_left"><img alt='Dark_Messiah' src='https://av.test/dm.png' class='avatar'></div>
+                <div class="w-comments-item-meta-new">
+                  <table><tbody><tr>
+                    <td valign="top">
+                      <a class="revname42685" href="https://www.novelupdates.com/user/31488/Dark_Messiah/">Dark_Messiah</a>
+                      <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star-o"></i><i class="fa fa-star-o"></i>
+                    </td>
+                    <td style="text-align: right;" valign="top">
+                      <div style="text-align: right;">Jun 15, 2017</div>
+                      <div>Status: <span id="stat42685">--</span></div>
+                    </td>
+                  </tr></tbody></table>
+                </div>
+                <div class="w-comments-item-text 31488">Short take.</div>
+              </div>
+              <div class="rev_b1">
+                <span class="rev_bar"><span class="liked_42685">12</span> Likes</span>
+                <span><a class="permrev" href="//www.novelupdates.com/fdrev/?comid=42685&sid=8456">Permalink</a></span>
+              </div>
+
+              <div class="w-comments-pagination">
+                <span class='page-numbers current'>1</span>
+                <a class='page-numbers' href='#'>2</a>
+                <a class='page-numbers' href='#'>18</a>
+                <a class="next page-numbers" href='#'>Next &raquo;</a>
+              </div>
+            </body></html>
+        """.trimIndent()
+
+        val series = NovelUpdatesParser.parseSeries(
+            Jsoup.parse(html, NovelUpdatesEndpoints.BASE_URL),
+            "https://www.novelupdates.com/series/the-death-mage/",
+        )
+
+        assertEquals(listOf("Densuke", "デンスケ"), series.authors)
+        assertEquals("8456", series.sid)
+        assertEquals(18, series.reviewPageCount)
+        assertEquals(2, series.reviews.size)
+
+        val first = series.reviews[0]
+        assertEquals("115813", first.id)
+        assertEquals("Donce", first.author)
+        assertEquals(5, first.rating)
+        assertEquals("Sep 01, 2019", first.date)
+        assertEquals("c200", first.progress)
+        assertEquals(50, first.likes)
+        assertTrue(first.body.contains("First paragraph."))
+        assertTrue(first.body.contains("Hidden continuation."))
+        assertTrue(!first.body.contains("more>>"))
+        assertEquals(
+            "https://www.novelupdates.com/fdrev/?comid=115813&sid=8456",
+            first.permalink,
+        )
+
+        val second = series.reviews[1]
+        assertEquals(3, second.rating)
+        assertEquals(null, second.progress)
+    }
+
+    @Test
     fun parseSearch_emptyOnUnrelatedHtml() {
         val results = NovelUpdatesParser.parseSearch(
             Jsoup.parse("<html><body><p>nothing here</p></body></html>"),

@@ -18,11 +18,28 @@ data class NuRecommendation(
     val coverUrl: String? = null,
 )
 
+/** A single user review on a NovelUpdates series page. */
+data class NuReview(
+    val id: String,
+    val author: String,
+    val authorUrl: String? = null,
+    val avatarUrl: String? = null,
+    /** Filled stars, 0..5, or null when the reviewer left no score. */
+    val rating: Int? = null,
+    val date: String? = null,
+    /** Reviewer's reading progress, e.g. "c200" (null when unspecified). */
+    val progress: String? = null,
+    val body: String,
+    val likes: Int? = null,
+    val permalink: String? = null,
+)
+
 /** Parsed metadata for one NovelUpdates series page. */
 data class NuSeries(
     val slug: String,
     val url: String,
     val title: String,
+    val authors: List<String> = emptyList(),
     val associatedNames: List<String> = emptyList(),
     val description: String? = null,
     val genres: List<String> = emptyList(),
@@ -32,6 +49,11 @@ data class NuSeries(
     val ratingVotes: Int? = null,
     val coverUrl: String? = null,
     val recommendations: List<NuRecommendation> = emptyList(),
+    /** NovelUpdates internal series id (from review permalinks). */
+    val sid: String? = null,
+    val reviews: List<NuReview> = emptyList(),
+    /** Number of review pages NU reports (1 = single page). */
+    val reviewPageCount: Int = 1,
 )
 
 /**
