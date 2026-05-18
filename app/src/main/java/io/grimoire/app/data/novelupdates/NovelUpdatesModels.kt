@@ -51,8 +51,20 @@ enum class NuRankingType {
         }
 }
 
-/** Series Finder ordering (`&sort=` on `/series-finder/`). */
-enum class NuBrowseSort { POPULAR, LATEST, RATING, TITLE, LAST_UPDATED, RANK }
+/**
+ * Series Finder "Sort Results By" options (`&sort=` on `/series-finder/`).
+ * Codes confirmed against the LNReader NovelUpdates plugin + a real URL.
+ */
+enum class NuBrowseSort(val code: String, val label: String) {
+    READERS("sread", "Readers"),
+    LAST_UPDATED("sdate", "Last updated"),
+    RATING("srate", "Rating"),
+    RANK("srank", "Rank"),
+    REVIEWS("sreview", "Reviews"),
+    CHAPTERS("srel", "Chapters"),
+    FREQUENCY("sfrel", "Frequency"),
+    TITLE("abc", "Title (A–Z)"),
+}
 
 /**
  * Filters shared by the Rankings and Latest listing pages: multi-select
@@ -71,7 +83,7 @@ data class NuListingFilter(
  */
 data class NuBrowseFilter(
     val query: String? = null,
-    val sort: NuBrowseSort = NuBrowseSort.POPULAR,
+    val sort: NuBrowseSort = NuBrowseSort.READERS,
     val languages: List<String> = emptyList(),
     val genresInclude: List<String> = emptyList(),
     val genresExclude: List<String> = emptyList(),

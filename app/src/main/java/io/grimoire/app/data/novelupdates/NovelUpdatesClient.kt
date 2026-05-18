@@ -94,7 +94,7 @@ class NovelUpdatesClient @Inject constructor() {
         }
         return finder(
             NuBrowseFilter(
-                sort = NuBrowseSort.LATEST,
+                sort = NuBrowseSort.LAST_UPDATED,
                 languages = filter.languages,
                 genresInclude = filter.genres,
                 genresMatchAll = filter.genresMatchAll,

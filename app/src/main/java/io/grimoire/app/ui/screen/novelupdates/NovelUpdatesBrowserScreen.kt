@@ -290,14 +290,7 @@ private fun NuCoverCard(item: NuSearchResult, onClick: () -> Unit) {
     }
 }
 
-private val SORT_LABELS = listOf(
-    NuBrowseSort.POPULAR to "Popular",
-    NuBrowseSort.LATEST to "Recently added",
-    NuBrowseSort.LAST_UPDATED to "Last updated",
-    NuBrowseSort.RATING to "Rating",
-    NuBrowseSort.RANK to "Rank",
-    NuBrowseSort.TITLE to "Title (A–Z)",
-)
+private val SORT_LABELS = NuBrowseSort.entries.map { it to it.label }
 
 private val GENRE_ID_TO_NAME = NuGenres.all.entries.associate { (k, v) -> v to k }
 private val LANG_ID_TO_NAME = NuLanguages.all.entries.associate { (k, v) -> v to k }

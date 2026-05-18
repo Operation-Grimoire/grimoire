@@ -78,14 +78,7 @@ object NovelUpdatesEndpoints {
     private const val P_GENRE_GATE = "mgi"
     private const val P_LANGUAGE = "org"
 
-    private fun sortCode(sort: NuBrowseSort): String = when (sort) {
-        NuBrowseSort.POPULAR -> "sread"
-        NuBrowseSort.LATEST -> "sdate"
-        NuBrowseSort.RATING -> "srate"
-        NuBrowseSort.TITLE -> "abc"
-        NuBrowseSort.LAST_UPDATED -> "srel"
-        NuBrowseSort.RANK -> "srank"
-    }
+    private fun sortCode(sort: NuBrowseSort): String = sort.code
 
     // Series Ranking `rank=` codes — confirmed against real NU URLs.
     private fun rankCode(type: NuRankingType): String = when (type) {
