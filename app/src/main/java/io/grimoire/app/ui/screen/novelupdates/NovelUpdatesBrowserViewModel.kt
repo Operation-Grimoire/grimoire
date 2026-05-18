@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.novelupdates
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +24,7 @@ enum class NuBrowseMode { RANKINGS, LATEST }
 @HiltViewModel
 class NovelUpdatesBrowserViewModel @Inject constructor(
     private val repository: NovelUpdatesInfoRepository,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val _results = MutableStateFlow<List<NuSearchResult>>(emptyList())
@@ -40,7 +42,11 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val _mode = MutableStateFlow(NuBrowseMode.RANKINGS)
+    private val _mode = MutableStateFlow(
+        savedStateHandle.get<String>("mode")
+            ?.let { runCatching { NuBrowseMode.valueOf(it) }.getOrNull() }
+            ?: NuBrowseMode.RANKINGS,
+    )
     val mode: StateFlow<NuBrowseMode> = _mode.asStateFlow()
 
     private val _rankingType = MutableStateFlow(NuRankingType.POPULAR_ALL)

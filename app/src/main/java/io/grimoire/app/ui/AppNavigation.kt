@@ -77,12 +77,13 @@ private enum class TopLevelDestination(
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
 
 // Subpages nested under a top-level graph that should still hide the bottom navbar.
-private val routesWithoutBottomBar = setOf("nu_browser", "nu_search", "nu_series?slug={slug}")
+private val routesWithoutBottomBar =
+    setOf("nu_browser?mode={mode}", "nu_search", "nu_series?slug={slug}")
 
 private const val ROUTE_BROWSE_HOME = "browse_home"
 private const val ROUTE_GLOBAL_SEARCH = "global_search"
 private const val ROUTE_GLOBAL_SEARCH_ARG = "global_search?q={q}"
-private const val ROUTE_NU_BROWSER = "nu_browser"
+private const val ROUTE_NU_BROWSER = "nu_browser?mode={mode}"
 private const val ROUTE_NU_SEARCH = "nu_search"
 private const val ROUTE_NU_SERIES = "nu_series?slug={slug}"
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
@@ -200,7 +201,13 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         onNavigateToManage = { navController.navigate(ROUTE_EXTENSION_MANAGE) },
                         onNavigateToSource = { pkg -> navController.navigate("browse/$pkg") },
                         onNavigateToGlobalSearch = { navController.navigate(ROUTE_GLOBAL_SEARCH) },
-                        onNavigateToNovelUpdates = { navController.navigate(ROUTE_NU_BROWSER) },
+                        onNavigateToNovelUpdatesSearch = { navController.navigate(ROUTE_NU_SEARCH) },
+                        onNavigateToNovelUpdatesRankings = {
+                            navController.navigate("nu_browser?mode=RANKINGS")
+                        },
+                        onNavigateToNovelUpdatesLatest = {
+                            navController.navigate("nu_browser?mode=LATEST")
+                        },
                         viewModel = vm,
                     )
                 }
@@ -234,7 +241,14 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         viewModel = vm,
                     )
                 }
-                composable(route = ROUTE_NU_BROWSER) {
+                composable(
+                    route = ROUTE_NU_BROWSER,
+                    arguments = listOf(
+                        navArgument("mode") {
+                            type = NavType.StringType; nullable = true; defaultValue = null
+                        },
+                    ),
+                ) {
                     NovelUpdatesBrowserScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onSeriesClick = { slug ->
