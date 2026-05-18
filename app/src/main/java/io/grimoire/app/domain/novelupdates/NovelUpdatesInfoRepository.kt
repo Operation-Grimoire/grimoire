@@ -6,8 +6,11 @@ import io.grimoire.app.data.novelupdates.NuBrowseFilter
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.data.novelupdates.NuListingFilter
 import io.grimoire.app.data.novelupdates.NuRankingType
+import io.grimoire.app.data.novelupdates.NuTag
 import io.grimoire.app.data.preferences.NovelUpdatesPreferences
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -77,6 +80,20 @@ class NovelUpdatesInfoRepository @Inject constructor(
 
     /** Fetches one NU series page (used by the standalone NU series screen). */
     suspend fun series(slug: String) = client.getSeries(slug)
+
+    // NU tags are loaded live (thousands, and they change) and cached for the
+    // session so the Advanced Search tag picker stays fresh without refetching.
+    @Volatile private var tagCache: List<NuTag> = emptyList()
+    private val tagMutex = Mutex()
+
+    suspend fun tags(): List<NuTag> {
+        tagCache.takeIf { it.isNotEmpty() }?.let { return it }
+        return tagMutex.withLock {
+            tagCache.takeIf { it.isNotEmpty() }
+                ?: runCatching { client.listTags() }.getOrDefault(emptyList())
+                    .also { if (it.isNotEmpty()) tagCache = it }
+        }
+    }
 
     private suspend fun manualLink(pkg: String, novelUrl: String): String? =
         preferences.manualLinks.changes().first()[key(pkg, novelUrl)]

@@ -31,6 +31,10 @@ object NovelUpdatesParser {
     // --- Listing pagination (digg/wp-pagenavi style used by NU) ---
     private const val PAGINATION_NEXT = ".digg_pagination a.next_page, .pagination a.next_page"
 
+    // --- Series Finder tag list --- per seriesfinder.js the tag filter is
+    //   $("#tags_include").chosen() over a <select> of <option value=id>name.
+    private const val TAG_OPTION = "select#tags_include option, select#tags_exclude option"
+
     // --- Series ranking ("leaderboard") page ---
     // NU renders the ranking as a list/table distinct from the finder cards.
     // We scope to the narrowest plausible ranking container (so the sidebar's
@@ -95,6 +99,22 @@ object NovelUpdatesParser {
         }
     }
 
+
+    /**
+     * Parses /list-tags/ into [NuTag]s (name + numeric id). Tolerant: tries
+     * the anchor id, common data-attrs, then a trailing href number for the
+     * series-finder tag id. Hardened once a real page sample is available.
+     */
+    fun parseTags(doc: Document): List<NuTag> = safe(emptyList()) {
+        doc.select(TAG_OPTION).mapNotNull { opt ->
+            val id = opt.attr("value").trim()
+            val name = opt.text().trim()
+            if (id.isEmpty() || !id.all(Char::isDigit) || name.isEmpty()) {
+                return@mapNotNull null
+            }
+            NuTag(name = name, id = id)
+        }.distinctBy { it.id }
+    }
 
     /**
      * Series-ranking leaderboard rows. NU's ranking page has no finder cards,

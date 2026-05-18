@@ -109,6 +109,7 @@ fun NovelDetailScreen(
     onNavigateBack: () -> Unit,
     onChapterClick: (pkg: String, novelUrl: String, chapterUrl: String) -> Unit = { _, _, _ -> },
     onOpenWebView: (url: String) -> Unit = {},
+    onOpenNuSeries: (slug: String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: NovelDetailViewModel = hiltViewModel(),
 ) {
@@ -393,6 +394,7 @@ fun NovelDetailScreen(
                                 state = nuState,
                                 viewModel = viewModel,
                                 onOpenWebView = onOpenWebView,
+                                onOpenNuSeries = onOpenNuSeries,
                                 modifier = Modifier.animateItem(),
                             )
                         }

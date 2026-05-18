@@ -16,7 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -67,8 +67,8 @@ fun NovelUpdatesSeriesScreen(
                     if (s is NuSeriesState.Loaded) {
                         IconButton(onClick = { onOpenWebView(s.series.url) }) {
                             Icon(
-                                Icons.AutoMirrored.Filled.OpenInNew,
-                                contentDescription = "Open on NovelUpdates",
+                                Icons.Default.Language,
+                                contentDescription = "Open in WebView",
                             )
                         }
                     }

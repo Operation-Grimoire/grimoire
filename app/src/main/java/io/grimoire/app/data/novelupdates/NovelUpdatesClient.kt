@@ -103,6 +103,18 @@ class NovelUpdatesClient @Inject constructor() {
         )
     }
 
+    /**
+     * All NovelUpdates tags (id + name), parsed in one request from the
+     * Series Finder page's embedded tag <select>.
+     */
+    suspend fun listTags(): List<NuTag> {
+        val doc = Jsoup.parse(
+            get(NovelUpdatesEndpoints.filterFormUrl()),
+            NovelUpdatesEndpoints.BASE_URL,
+        )
+        return NovelUpdatesParser.parseTags(doc)
+    }
+
     suspend fun getSeries(slugOrUrl: String): NuSeries {
         val url = NovelUpdatesEndpoints.seriesUrl(slugOrUrl)
         val body = get(url)
