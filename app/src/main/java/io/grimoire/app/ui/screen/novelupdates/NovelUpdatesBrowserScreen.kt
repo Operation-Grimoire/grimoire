@@ -50,6 +50,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,10 +60,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import io.grimoire.app.data.novelupdates.NuBrowseFilter
 import io.grimoire.app.data.novelupdates.NuBrowseSort
 import io.grimoire.app.data.novelupdates.NuGenres
 import io.grimoire.app.data.novelupdates.NuLanguages
-import io.grimoire.app.data.novelupdates.NuRankWindow
+import io.grimoire.app.data.novelupdates.NuListingFilter
+import io.grimoire.app.data.novelupdates.NuRankingType
 import io.grimoire.app.data.novelupdates.NuSearchResult
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,11 +82,10 @@ fun NovelUpdatesBrowserScreen(
     val hasMore by viewModel.hasMore.collectAsState()
     val error by viewModel.error.collectAsState()
     val mode by viewModel.mode.collectAsState()
+    val rankingType by viewModel.rankingType.collectAsState()
     val query by viewModel.query.collectAsState()
-    val sort by viewModel.sort.collectAsState()
-    val genre by viewModel.genre.collectAsState()
-    val language by viewModel.language.collectAsState()
-    val rankWindow by viewModel.rankWindow.collectAsState()
+    val listingFilter by viewModel.listingFilter.collectAsState()
+    val searchFilter by viewModel.searchFilter.collectAsState()
 
     val keyboard = LocalSoftwareKeyboardController.current
     val gridState = rememberLazyGridState()
@@ -111,10 +113,8 @@ fun NovelUpdatesBrowserScreen(
                 },
                 title = { Text("NovelUpdates") },
                 actions = {
-                    if (mode == NuBrowseMode.FILTER) {
-                        IconButton(onClick = { showFilters = true }) {
-                            Icon(Icons.Default.FilterList, contentDescription = "Filters")
-                        }
+                    IconButton(onClick = { showFilters = true }) {
+                        Icon(Icons.Default.FilterList, contentDescription = "Filters")
                     }
                 },
             )
@@ -124,44 +124,37 @@ fun NovelUpdatesBrowserScreen(
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
                     .padding(horizontal = 12.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                ModeChip("Popular", mode == NuBrowseMode.POPULAR) {
-                    viewModel.setMode(NuBrowseMode.POPULAR)
+                ModeChip("Rankings", mode == NuBrowseMode.RANKINGS) {
+                    viewModel.setMode(NuBrowseMode.RANKINGS)
                 }
                 ModeChip("Latest", mode == NuBrowseMode.LATEST) {
                     viewModel.setMode(NuBrowseMode.LATEST)
                 }
-                ModeChip("Leaderboard", mode == NuBrowseMode.LEADERBOARD) {
-                    viewModel.setMode(NuBrowseMode.LEADERBOARD)
-                }
-                ModeChip("Filter", mode == NuBrowseMode.FILTER) {
-                    viewModel.setMode(NuBrowseMode.FILTER)
+                ModeChip("Search", mode == NuBrowseMode.SEARCH) {
+                    viewModel.setMode(NuBrowseMode.SEARCH)
                 }
             }
 
-            if (mode == NuBrowseMode.LEADERBOARD) {
+            if (mode == NuBrowseMode.RANKINGS) {
                 Row(
                     Modifier
                         .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
                         .padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    ModeChip("This week", rankWindow == NuRankWindow.WEEK) {
-                        viewModel.setRankWindow(NuRankWindow.WEEK)
-                    }
-                    ModeChip("This month", rankWindow == NuRankWindow.MONTH) {
-                        viewModel.setRankWindow(NuRankWindow.MONTH)
-                    }
-                    ModeChip("All time", rankWindow == NuRankWindow.ALL) {
-                        viewModel.setRankWindow(NuRankWindow.ALL)
+                    NuRankingType.entries.forEach { type ->
+                        ModeChip(type.label, rankingType == type) {
+                            viewModel.setRankingType(type)
+                        }
                     }
                 }
             }
 
-            if (mode == NuBrowseMode.FILTER) {
+            if (mode == NuBrowseMode.SEARCH) {
                 OutlinedTextField(
                     value = query,
                     onValueChange = viewModel::setQuery,
@@ -238,12 +231,16 @@ fun NovelUpdatesBrowserScreen(
             sheetState = filterSheetState,
         ) {
             NuFilterSheet(
-                initialSort = sort,
-                initialGenre = genre,
-                initialLanguage = language,
-                onApply = { s, g, l ->
+                showSearchFilters = mode == NuBrowseMode.SEARCH,
+                listingFilter = listingFilter,
+                searchFilter = searchFilter,
+                onApply = { listing, search ->
                     showFilters = false
-                    viewModel.applyFilters(s, g, l)
+                    if (mode == NuBrowseMode.SEARCH) {
+                        viewModel.applySearchFilter(search)
+                    } else {
+                        viewModel.applyListingFilter(listing)
+                    }
                 },
             )
         }
@@ -302,20 +299,42 @@ private val SORT_LABELS = listOf(
     NuBrowseSort.TITLE to "Title (A–Z)",
 )
 
+private val GENRE_ID_TO_NAME = NuGenres.all.entries.associate { (k, v) -> v to k }
+private val LANG_ID_TO_NAME = NuLanguages.all.entries.associate { (k, v) -> v to k }
+
 @OptIn(
     ExperimentalMaterial3Api::class,
     androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
 )
 @Composable
 private fun NuFilterSheet(
-    initialSort: NuBrowseSort,
-    initialGenre: String?,
-    initialLanguage: String?,
-    onApply: (NuBrowseSort, String?, String?) -> Unit,
+    showSearchFilters: Boolean,
+    listingFilter: NuListingFilter,
+    searchFilter: NuBrowseFilter,
+    onApply: (NuListingFilter, NuBrowseFilter) -> Unit,
 ) {
-    var sort by remember { mutableStateOf(initialSort) }
-    var genre by remember { mutableStateOf(initialGenre) }
-    var language by remember { mutableStateOf(initialLanguage) }
+    // Selections held by display name; mapped back to NU ids on Apply.
+    val genreInclude = remember {
+        (if (showSearchFilters) searchFilter.genresInclude else listingFilter.genres)
+            .mapNotNull { GENRE_ID_TO_NAME[it] }.toMutableStateList()
+    }
+    val genreExclude = remember {
+        searchFilter.genresExclude.mapNotNull { GENRE_ID_TO_NAME[it] }.toMutableStateList()
+    }
+    val languages = remember {
+        (if (showSearchFilters) searchFilter.languages else listingFilter.languages)
+            .mapNotNull { LANG_ID_TO_NAME[it] }.toMutableStateList()
+    }
+    var matchAll by remember {
+        mutableStateOf(
+            if (showSearchFilters) searchFilter.genresMatchAll else listingFilter.genresMatchAll,
+        )
+    }
+    var sort by remember { mutableStateOf(searchFilter.sort) }
+
+    fun toggle(list: MutableList<String>, value: String) {
+        if (!list.remove(value)) list.add(value)
+    }
 
     Column(
         Modifier
@@ -325,61 +344,98 @@ private fun NuFilterSheet(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Order by", style = MaterialTheme.typography.titleSmall)
-        androidx.compose.foundation.layout.FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            SORT_LABELS.forEach { (value, label) ->
+        if (showSearchFilters) {
+            Text("Order by", style = MaterialTheme.typography.titleSmall)
+            ChipFlow {
+                SORT_LABELS.forEach { (value, label) ->
+                    FilterChip(
+                        selected = sort == value,
+                        onClick = { sort = value },
+                        label = { Text(label) },
+                    )
+                }
+            }
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Genres",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                if (matchAll) "Match: ALL" else "Match: ANY",
+                style = MaterialTheme.typography.labelMedium,
+            )
+            TextButton(onClick = { matchAll = !matchAll }) {
+                Text(if (matchAll) "AND" else "OR")
+            }
+        }
+        ChipFlow {
+            NuGenres.all.keys.forEach { name ->
                 FilterChip(
-                    selected = sort == value,
-                    onClick = { sort = value },
-                    label = { Text(label) },
+                    selected = name in genreInclude,
+                    onClick = { toggle(genreInclude, name) },
+                    label = { Text(name) },
                 )
             }
         }
 
-        Text("Genre", style = MaterialTheme.typography.titleSmall)
-        ChipFlow(
-            options = listOf("Any" to null) + NuGenres.all.map { it.key to it.value },
-            selected = genre,
-            onSelect = { genre = it },
-        )
+        if (showSearchFilters) {
+            Text("Exclude genres", style = MaterialTheme.typography.titleSmall)
+            ChipFlow {
+                NuGenres.all.keys.forEach { name ->
+                    FilterChip(
+                        selected = name in genreExclude,
+                        onClick = { toggle(genreExclude, name) },
+                        label = { Text(name) },
+                    )
+                }
+            }
+        }
 
         Text("Language", style = MaterialTheme.typography.titleSmall)
-        ChipFlow(
-            options = listOf("Any" to null) + NuLanguages.all.map { it to it },
-            selected = language,
-            onSelect = { language = it },
-        )
+        ChipFlow {
+            NuLanguages.all.keys.forEach { name ->
+                FilterChip(
+                    selected = name in languages,
+                    onClick = { toggle(languages, name) },
+                    label = { Text(name) },
+                )
+            }
+        }
 
         Button(
-            onClick = { onApply(sort, genre, language) },
+            onClick = {
+                val incIds = genreInclude.mapNotNull { NuGenres.all[it] }
+                val excIds = genreExclude.mapNotNull { NuGenres.all[it] }
+                val langIds = languages.mapNotNull { NuLanguages.all[it] }
+                onApply(
+                    NuListingFilter(
+                        languages = langIds,
+                        genres = incIds,
+                        genresMatchAll = matchAll,
+                    ),
+                    NuBrowseFilter(
+                        sort = sort,
+                        languages = langIds,
+                        genresInclude = incIds,
+                        genresExclude = excIds,
+                        genresMatchAll = matchAll,
+                    ),
+                )
+            },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("Apply") }
     }
 }
 
-@OptIn(
-    ExperimentalMaterial3Api::class,
-    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
-)
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-private fun ChipFlow(
-    options: List<Pair<String, String?>>,
-    selected: String?,
-    onSelect: (String?) -> Unit,
-) {
+private fun ChipFlow(content: @Composable androidx.compose.foundation.layout.FlowRowScope.() -> Unit) {
     androidx.compose.foundation.layout.FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        options.forEach { (label, value) ->
-            FilterChip(
-                selected = selected == value,
-                onClick = { onSelect(value) },
-                label = { Text(label) },
-            )
-        }
-    }
+        content = content,
+    )
 }

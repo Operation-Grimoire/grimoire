@@ -46,16 +46,12 @@ class NovelUpdatesClient @Inject constructor() {
         return emptyList()
     }
 
-    /** Series Finder browse/filter listing (one page). */
-    suspend fun browse(filter: NuBrowseFilter, page: Int): NuListingPage {
-        val url = NovelUpdatesEndpoints.seriesFinderUrl(
-            query = filter.query,
-            page = page,
-            sort = filter.sort,
-            genreSlug = filter.genreId,
-            language = filter.language,
+    /** Series Finder search/filter listing (one page). */
+    suspend fun finder(filter: NuBrowseFilter, page: Int): NuListingPage {
+        val doc = Jsoup.parse(
+            get(NovelUpdatesEndpoints.seriesFinderUrl(filter, page)),
+            NovelUpdatesEndpoints.BASE_URL,
         )
-        val doc = Jsoup.parse(get(url), NovelUpdatesEndpoints.BASE_URL)
         return NuListingPage(
             results = NovelUpdatesParser.parseListing(doc),
             hasNext = NovelUpdatesParser.hasNextPage(doc),
@@ -63,20 +59,48 @@ class NovelUpdatesClient @Inject constructor() {
     }
 
     /**
-     * Series-ranking leaderboard. Falls back to the Series Finder sorted by
-     * rank if the ranking page can't be parsed, so the page is never empty.
+     * Series Ranking page. Falls back to Series Finder sorted by rank if the
+     * ranking page can't be parsed, so the page is never empty.
      */
-    suspend fun ranking(window: NuRankWindow, page: Int): NuListingPage {
-        val url = NovelUpdatesEndpoints.seriesRankingUrl(window, page)
-        val doc = Jsoup.parse(get(url), NovelUpdatesEndpoints.BASE_URL)
-        val ranked = NovelUpdatesParser.parseRanking(doc)
-        if (ranked.isNotEmpty()) {
-            return NuListingPage(
-                results = ranked,
-                hasNext = NovelUpdatesParser.hasNextPage(doc),
-            )
+    suspend fun ranking(type: NuRankingType, filter: NuListingFilter, page: Int): NuListingPage {
+        val doc = Jsoup.parse(
+            get(NovelUpdatesEndpoints.seriesRankingUrl(type, filter, page)),
+            NovelUpdatesEndpoints.BASE_URL,
+        )
+        val results = NovelUpdatesParser.parseListingOrLinks(doc)
+        if (results.isNotEmpty()) {
+            return NuListingPage(results, NovelUpdatesParser.hasNextPage(doc))
         }
-        return browse(NuBrowseFilter(sort = NuBrowseSort.RANK), page)
+        return finder(
+            NuBrowseFilter(
+                sort = NuBrowseSort.RANK,
+                languages = filter.languages,
+                genresInclude = filter.genres,
+                genresMatchAll = filter.genresMatchAll,
+            ),
+            page,
+        )
+    }
+
+    /** Latest Series page. */
+    suspend fun latest(filter: NuListingFilter, page: Int): NuListingPage {
+        val doc = Jsoup.parse(
+            get(NovelUpdatesEndpoints.latestSeriesUrl(filter, page)),
+            NovelUpdatesEndpoints.BASE_URL,
+        )
+        val results = NovelUpdatesParser.parseListingOrLinks(doc)
+        if (results.isNotEmpty()) {
+            return NuListingPage(results, NovelUpdatesParser.hasNextPage(doc))
+        }
+        return finder(
+            NuBrowseFilter(
+                sort = NuBrowseSort.LATEST,
+                languages = filter.languages,
+                genresInclude = filter.genres,
+                genresMatchAll = filter.genresMatchAll,
+            ),
+            page,
+        )
     }
 
     suspend fun getSeries(slugOrUrl: String): NuSeries {

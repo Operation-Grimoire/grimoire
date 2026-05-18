@@ -4,7 +4,8 @@ import io.grimoire.app.data.novelupdates.NovelUpdatesClient
 import io.grimoire.app.data.novelupdates.NovelUpdatesMatcher
 import io.grimoire.app.data.novelupdates.NuBrowseFilter
 import io.grimoire.app.data.novelupdates.NuInfoState
-import io.grimoire.app.data.novelupdates.NuRankWindow
+import io.grimoire.app.data.novelupdates.NuListingFilter
+import io.grimoire.app.data.novelupdates.NuRankingType
 import io.grimoire.app.data.preferences.NovelUpdatesPreferences
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -64,11 +65,15 @@ class NovelUpdatesInfoRepository @Inject constructor(
 
     suspend fun search(query: String) = runCatching { client.search(query) }.getOrDefault(emptyList())
 
-    /** Series Finder browse/filter listing for the in-app NU browser. */
-    suspend fun browse(filter: NuBrowseFilter, page: Int) = client.browse(filter, page)
+    /** Series Finder search/filter listing for the in-app NU browser. */
+    suspend fun finder(filter: NuBrowseFilter, page: Int) = client.finder(filter, page)
 
-    /** Series-ranking leaderboard for the in-app NU browser. */
-    suspend fun ranking(window: NuRankWindow, page: Int) = client.ranking(window, page)
+    /** Series Ranking page for the in-app NU browser. */
+    suspend fun ranking(type: NuRankingType, filter: NuListingFilter, page: Int) =
+        client.ranking(type, filter, page)
+
+    /** Latest Series page for the in-app NU browser. */
+    suspend fun latest(filter: NuListingFilter, page: Int) = client.latest(filter, page)
 
     /** Fetches one NU series page (used by the standalone NU series screen). */
     suspend fun series(slug: String) = client.getSeries(slug)

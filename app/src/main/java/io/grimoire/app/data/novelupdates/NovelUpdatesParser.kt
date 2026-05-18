@@ -64,6 +64,16 @@ object NovelUpdatesParser {
      */
     fun parseListing(doc: Document): List<NuSearchResult> = parseCards(doc)
 
+    /**
+     * Ranking / Latest pages: their DOM is less certain than the finder, so
+     * try the finder cards first and fall back to scoped series links so the
+     * page degrades gracefully if NU's markup differs.
+     */
+    fun parseListingOrLinks(doc: Document): List<NuSearchResult> {
+        val cards = parseCards(doc)
+        return cards.ifEmpty { parseRanking(doc) }
+    }
+
     private fun parseCards(doc: Document): List<NuSearchResult> = safe(emptyList()) {
         doc.select(SEARCH_RESULT).mapNotNull { box ->
             val link = box.selectFirst(SEARCH_TITLE_LINK) ?: return@mapNotNull null

@@ -15,56 +15,68 @@ object NovelUpdatesEndpoints {
     }
 
     /**
-     * Series Finder used as a browse/filter listing. A blank [query] yields a
-     * pure sort+filter listing; a non-blank one is a text search. Returns the
-     * same `search_main_box_nu` cards [NovelUpdatesParser.parseListing] reads.
-     *
-     * Param codes are best-effort and centralized here on purpose: NU has no
-     * API and changes occasionally, so a breakage is a one-file fix. Verify
-     * against the live site (only the app's Cloudflare-passing client can
-     * reach it) and adjust the constants below if NU changes them.
+     * Series Finder — the fullest search surface: free-text, sort, multi
+     * language, included/excluded genres, AND/OR include gate. Returns the
+     * `search_main_box_nu` cards [NovelUpdatesParser.parseListing] reads.
      */
-    fun seriesFinderUrl(
-        query: String?,
-        page: Int,
-        sort: NuBrowseSort,
-        genreSlug: String?,
-        language: String?,
-    ): String {
+    fun seriesFinderUrl(filter: NuBrowseFilter, page: Int): String {
         val sb = StringBuilder("$BASE_URL/series-finder/?sf=1")
-        query?.trim()?.takeIf { it.isNotEmpty() }?.let {
+        filter.query?.trim()?.takeIf { it.isNotEmpty() }?.let {
             sb.append("&sh=").append(URLEncoder.encode(it, "UTF-8"))
         }
-        genreSlug?.takeIf { it.isNotBlank() }?.let {
-            sb.append("&gr=").append(URLEncoder.encode(it, "UTF-8"))
+        appendCsv(sb, P_GENRE_INCLUDE, filter.genresInclude)
+        appendCsv(sb, P_GENRE_EXCLUDE, filter.genresExclude)
+        appendCsv(sb, P_LANGUAGE, filter.languages)
+        if (filter.genresInclude.isNotEmpty()) {
+            sb.append("&$P_GENRE_GATE=").append(if (filter.genresMatchAll) "and" else "or")
         }
-        language?.takeIf { it.isNotBlank() }?.let {
-            sb.append("&org=").append(URLEncoder.encode(it.lowercase(), "UTF-8"))
-        }
-        sb.append("&sort=").append(sortCode(sort))
-        sb.append("&order=").append(if (sort == NuBrowseSort.TITLE) "asc" else "desc")
+        sb.append("&sort=").append(sortCode(filter.sort))
+        sb.append("&order=").append(if (filter.sort == NuBrowseSort.TITLE) "asc" else "desc")
         if (page > 1) sb.append("&pg=").append(page)
         return sb.toString()
     }
 
     /**
-     * NovelUpdates' real "Series Ranking" leaderboard page (distinct from
-     * Series Finder). Time window is `rank=week|month|all`; paginated with
-     * `&pg=`. Parsed by [NovelUpdatesParser.parseRanking].
+     * NovelUpdates' "Series Ranking" page. [type] is the Ranking Type select;
+     * language/genre/AND-OR come from [filter]. Paginated with `&pg=`.
      */
-    fun seriesRankingUrl(window: NuRankWindow, page: Int): String {
-        val rank = when (window) {
-            NuRankWindow.WEEK -> "week"
-            NuRankWindow.MONTH -> "month"
-            NuRankWindow.ALL -> "all"
-        }
-        val base = "$BASE_URL/series-ranking/?rank=$rank"
-        return if (page > 1) "$base&pg=$page" else base
+    fun seriesRankingUrl(type: NuRankingType, filter: NuListingFilter, page: Int): String {
+        val sb = StringBuilder("$BASE_URL/series-ranking/?rank=").append(rankCode(type))
+        appendListingFilters(sb, filter)
+        if (page > 1) sb.append("&pg=").append(page)
+        return sb.toString()
     }
 
-    // NU Series Finder `&sort=` codes. POPULAR/LATEST are confirmed working
-    // (the existing browse pages use them); the rest follow NU's documented
-    // finder ordering and reuse the same proven card parser.
+    /** NovelUpdates' "Latest Series" page, same listing filters as Ranking. */
+    fun latestSeriesUrl(filter: NuListingFilter, page: Int): String {
+        val sb = StringBuilder("$BASE_URL/latest-series/?st=1")
+        appendListingFilters(sb, filter)
+        if (page > 1) sb.append("&pg=").append(page)
+        return sb.toString()
+    }
+
+    private fun appendListingFilters(sb: StringBuilder, filter: NuListingFilter) {
+        appendCsv(sb, P_GENRE_INCLUDE, filter.genres)
+        appendCsv(sb, P_LANGUAGE, filter.languages)
+        if (filter.genres.isNotEmpty()) {
+            sb.append("&$P_GENRE_GATE=").append(if (filter.genresMatchAll) "and" else "or")
+        }
+    }
+
+    private fun appendCsv(sb: StringBuilder, param: String, values: List<String>) {
+        if (values.isEmpty()) return
+        sb.append("&").append(param).append("=")
+            .append(URLEncoder.encode(values.joinToString(","), "UTF-8"))
+    }
+
+    // ---- NU param/value codes — centralized & best-effort ----
+    // NU has no API and Cloudflare-blocks external verification; these are the
+    // single place to correct once a real filtered URL is captured on-device.
+    private const val P_GENRE_INCLUDE = "gi"
+    private const val P_GENRE_EXCLUDE = "ge"
+    private const val P_GENRE_GATE = "mgi"
+    private const val P_LANGUAGE = "org"
+
     private fun sortCode(sort: NuBrowseSort): String = when (sort) {
         NuBrowseSort.POPULAR -> "sread"
         NuBrowseSort.LATEST -> "sdate"
@@ -72,6 +84,14 @@ object NovelUpdatesEndpoints {
         NuBrowseSort.TITLE -> "abc"
         NuBrowseSort.LAST_UPDATED -> "srel"
         NuBrowseSort.RANK -> "srank"
+    }
+
+    private fun rankCode(type: NuRankingType): String = when (type) {
+        NuRankingType.POPULAR_MONTH -> "popmonth"
+        NuRankingType.POPULAR_ALL -> "popular"
+        NuRankingType.ACTIVITY_WEEK -> "week"
+        NuRankingType.ACTIVITY_MONTH -> "month"
+        NuRankingType.ACTIVITY_ALL -> "all"
     }
 
     fun seriesUrl(slugOrUrl: String): String {
