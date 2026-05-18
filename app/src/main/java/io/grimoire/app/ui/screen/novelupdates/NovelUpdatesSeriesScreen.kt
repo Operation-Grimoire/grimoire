@@ -33,6 +33,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -132,9 +135,19 @@ fun NovelUpdatesSeriesScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
-                                val typeLine = listOfNotNull(series.type, series.language)
-                                    .distinct()
-                                    .joinToString(" · ")
+                                if (series.artists.isNotEmpty()) {
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        "Art: " + series.artists.joinToString(" · "),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                val typeLine = listOfNotNull(
+                                    series.type,
+                                    series.language,
+                                    series.year,
+                                ).distinct().joinToString(" · ")
                                 if (typeLine.isNotEmpty()) {
                                     Spacer(Modifier.height(4.dp))
                                     Text(
@@ -175,9 +188,19 @@ fun NovelUpdatesSeriesScreen(
                             },
                         )
 
+                        NuDetails(series)
+
+                        if (series.releases.isNotEmpty()) {
+                            NuReleases(
+                                releases = series.releases,
+                                onMore = { onOpenWebView(series.url) },
+                            )
+                        }
+
                         if (series.reviews.isNotEmpty()) {
                             NuReviews(
                                 reviews = series.reviews,
+                                reviewCount = series.reviewCount,
                                 pageCount = series.reviewPageCount,
                                 onMore = { onOpenWebView(series.url) },
                             )
@@ -190,13 +213,93 @@ fun NovelUpdatesSeriesScreen(
 }
 
 @Composable
+private fun NuDetails(series: io.grimoire.app.data.novelupdates.NuSeries) {
+    val rows = buildList {
+        series.year?.let { add("Year" to it) }
+        series.releaseFrequency?.let { add("Release frequency" to it) }
+        series.licensed?.let { add("Licensed" to if (it) "Yes" else "No") }
+        series.completelyTranslated?.let {
+            add("Completely translated" to if (it) "Yes" else "No")
+        }
+        if (series.originalPublishers.isNotEmpty()) {
+            add("Original publisher" to series.originalPublishers.joinToString(" · "))
+        }
+        if (series.englishPublishers.isNotEmpty()) {
+            add("English publisher" to series.englishPublishers.joinToString(" · "))
+        }
+        series.readingListCount?.let {
+            add("Reading lists" to "%,d".format(it))
+        }
+    }
+    if (rows.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("Details", style = MaterialTheme.typography.titleSmall)
+        rows.forEach { (label, value) ->
+            Row {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.width(140.dp),
+                )
+                Text(value, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NuReleases(
+    releases: List<io.grimoire.app.data.novelupdates.NuRelease>,
+    onMore: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val shown = if (expanded) releases else releases.take(5)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("Latest releases", style = MaterialTheme.typography.titleSmall)
+        shown.forEach { rel ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    rel.date,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.width(84.dp),
+                )
+                Text(
+                    rel.chapter,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    rel.group,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (releases.size > 5) {
+            TextButton(onClick = { expanded = !expanded }) {
+                Text(if (expanded) "Show less" else "Show all ${releases.size}")
+            }
+        }
+        TextButton(onClick = onMore) {
+            Text("View all on NovelUpdates")
+        }
+    }
+}
+
+@Composable
 private fun NuReviews(
     reviews: List<NuReview>,
+    reviewCount: Int?,
     pageCount: Int,
     onMore: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Reviews", style = MaterialTheme.typography.titleSmall)
+        Text(
+            reviewCount?.let { "Reviews ($it)" } ?: "Reviews",
+            style = MaterialTheme.typography.titleSmall,
+        )
         reviews.forEach { review ->
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

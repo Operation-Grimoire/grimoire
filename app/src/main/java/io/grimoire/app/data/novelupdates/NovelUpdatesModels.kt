@@ -34,6 +34,14 @@ data class NuReview(
     val permalink: String? = null,
 )
 
+/** One row of a NovelUpdates series' Latest Release table. */
+data class NuRelease(
+    val date: String,
+    val group: String,
+    val groupUrl: String? = null,
+    val chapter: String,
+)
+
 /** Parsed metadata for one NovelUpdates series page. */
 data class NuSeries(
     val slug: String,
@@ -42,18 +50,29 @@ data class NuSeries(
     val type: String? = null,
     val language: String? = null,
     val authors: List<String> = emptyList(),
+    val artists: List<String> = emptyList(),
     val associatedNames: List<String> = emptyList(),
     val description: String? = null,
     val genres: List<String> = emptyList(),
     val tags: List<String> = emptyList(),
+    /** Status in country of origin, one entry per line. */
     val status: String? = null,
+    val year: String? = null,
+    val originalPublishers: List<String> = emptyList(),
+    val englishPublishers: List<String> = emptyList(),
+    val releaseFrequency: String? = null,
+    val licensed: Boolean? = null,
+    val completelyTranslated: Boolean? = null,
+    val readingListCount: Int? = null,
     val rating: Float? = null,
     val ratingVotes: Int? = null,
     val coverUrl: String? = null,
     val recommendations: List<NuRecommendation> = emptyList(),
+    val releases: List<NuRelease> = emptyList(),
     /** NovelUpdates internal series id (from review permalinks). */
     val sid: String? = null,
     val reviews: List<NuReview> = emptyList(),
+    val reviewCount: Int? = null,
     /** Number of review pages NU reports (1 = single page). */
     val reviewPageCount: Int = 1,
 )

@@ -323,6 +323,60 @@ class NovelUpdatesParserTest {
     }
 
     @Test
+    fun parseSeries_extractsExtendedMetadataAndReleases() {
+        val html = """
+            <html><body>
+              <div class="w-blog post-8456 language-japanese">
+              <div class="seriestitlenu">The Death Mage</div>
+              <div id="showartists"><a class="genre" id="artiststag" href="x">Ban</a><br><a class="genre" id="artiststag" href="y">ばん！</a><br></div>
+              <h5 class="seriesother">Year</h5><div id="edityear">2015</div>
+              <div id="editstatus">412 WN Chapters (Main; Complete)<br />14 LN Volumes (Ongoing)</div>
+              <div id="showlicensed">Yes</div>
+              <div id="showtranslated">No</div>
+              <div id="showopublisher"><a class="genre" id="myopub" href="a">Hifumi Shobo</a><br><a class="genre" id="myopub" href="b">Syosetu</a><br></div>
+              <div id="showepublisher"><span class="seriesna">N/A</span><br></div>
+              <h5 class="seriesother">Release Frequency</h5>Every 18.2 Day(s)
+              <h5 class="seriesother">Activity Stats</h5>Weekly Rank: <span class="userrate rank">#1767</span>
+              <h5 class="seriesother">Reading List</h5>On <b class="rlist">30657</b> Reading Lists
+              <div class="review-count">351 Reviews</div>
+              <table id="myTable"><tbody>
+                <tr><td style="padding-left:5px;">04/29/26</td><td><a title="Fenrir Realm" href="https://www.novelupdates.com/group/fenrir-realm/">Fenrir Realm</a></td><td><span title="c394">c394</span></td></tr>
+                <tr><td>08/18/25</td><td><a href="https://www.novelupdates.com/group/fenrir-realm/">Fenrir Realm</a></td><td><span title="ss 69">ss 69</span></td></tr>
+              </tbody></table>
+              </div>
+            </body></html>
+        """.trimIndent()
+
+        val series = NovelUpdatesParser.parseSeries(
+            Jsoup.parse(html, NovelUpdatesEndpoints.BASE_URL),
+            "https://www.novelupdates.com/series/x/",
+        )
+
+        assertEquals(listOf("Ban", "ばん！"), series.artists)
+        assertEquals("2015", series.year)
+        assertEquals(
+            "412 WN Chapters (Main; Complete)\n14 LN Volumes (Ongoing)",
+            series.status,
+        )
+        assertEquals(true, series.licensed)
+        assertEquals(false, series.completelyTranslated)
+        assertEquals(listOf("Hifumi Shobo", "Syosetu"), series.originalPublishers)
+        assertTrue(series.englishPublishers.isEmpty())
+        assertEquals("Every 18.2 Day(s)", series.releaseFrequency)
+        assertEquals(30657, series.readingListCount)
+        assertEquals(351, series.reviewCount)
+        assertEquals(2, series.releases.size)
+        assertEquals("04/29/26", series.releases[0].date)
+        assertEquals("Fenrir Realm", series.releases[0].group)
+        assertEquals("c394", series.releases[0].chapter)
+        assertEquals(
+            "https://www.novelupdates.com/group/fenrir-realm/",
+            series.releases[0].groupUrl,
+        )
+        assertEquals("ss 69", series.releases[1].chapter)
+    }
+
+    @Test
     fun parseSearch_emptyOnUnrelatedHtml() {
         val results = NovelUpdatesParser.parseSearch(
             Jsoup.parse("<html><body><p>nothing here</p></body></html>"),

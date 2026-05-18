@@ -52,11 +52,20 @@ object NovelUpdatesParser {
     private const val SERIES_POST_ROOT = "div.w-blog[class*=post-]"
     private val LANGUAGE_CLASS = Regex("""(?:^|\s)language-([a-z0-9-]+)""")
     private const val SERIES_AUTHORS = "#showauthors a"
+    private const val SERIES_ARTISTS = "#showartists a"
     private const val SERIES_ASSOCIATED = "#editassociated"
     private const val SERIES_DESCRIPTION = "#editdescription"
     private const val SERIES_GENRES = "#seriesgenre a"
     private const val SERIES_TAGS = "#showtags a"
     private const val SERIES_STATUS = "#editstatus"
+    private const val SERIES_YEAR = "#edityear"
+    private const val SERIES_LICENSED = "#showlicensed"
+    private const val SERIES_TRANSLATED = "#showtranslated"
+    private const val SERIES_OPUBLISHER = "#showopublisher a"
+    private const val SERIES_EPUBLISHER = "#showepublisher a"
+    private const val SERIES_RLIST = "b.rlist"
+    private const val SERIES_RELEASE_ROW = "table#myTable tbody tr"
+    private const val SERIES_REVIEW_COUNT = "div.review-count"
     private const val SERIES_RATING = "span.uvotes"
 
     // --- Series reviews (the #comments / .w-comments list) ---
@@ -169,27 +178,101 @@ object NovelUpdatesParser {
             title = title,
             type = doc.selectFirst(SERIES_TYPE)?.text()?.trim()?.ifBlank { null },
             language = parseLanguage(doc),
-            authors = doc.select(SERIES_AUTHORS)
-                .map { it.text().trim() }
-                .filter { it.isNotBlank() }
-                .distinct(),
+            authors = textList(doc, SERIES_AUTHORS),
+            artists = textList(doc, SERIES_ARTISTS),
             associatedNames = parseAssociated(doc),
             description = (doc.selectFirst(SERIES_DESCRIPTION)?.text()?.trim()?.ifBlank { null })
                 ?: doc.selectFirst("meta[property=og:description]")?.attr("content")
                     ?.trim()?.ifBlank { null },
             genres = doc.select(SERIES_GENRES).map { it.text().trim() }.filter { it.isNotBlank() }.distinct(),
             tags = doc.select(SERIES_TAGS).map { it.text().trim() }.filter { it.isNotBlank() }.distinct(),
-            status = doc.selectFirst(SERIES_STATUS)?.text()?.trim()?.ifBlank { null },
+            status = parseLines(doc.selectFirst(SERIES_STATUS))?.joinToString("\n"),
+            year = doc.selectFirst(SERIES_YEAR)?.text()?.trim()?.ifBlank { null },
+            originalPublishers = textList(doc, SERIES_OPUBLISHER),
+            englishPublishers = textList(doc, SERIES_EPUBLISHER)
+                .filterNot { it.equals("N/A", ignoreCase = true) },
+            releaseFrequency = textAfterHeading(doc, "Release Frequency"),
+            licensed = parseYesNo(doc.selectFirst(SERIES_LICENSED)?.text()),
+            completelyTranslated = parseYesNo(doc.selectFirst(SERIES_TRANSLATED)?.text()),
+            readingListCount = doc.selectFirst(SERIES_RLIST)?.text()
+                ?.replace(",", "")?.trim()?.toIntOrNull(),
             rating = parseRating(doc),
             ratingVotes = parseRatingVotes(doc),
             coverUrl = doc.selectFirst(SERIES_COVER)?.imgSrc()
                 ?: doc.selectFirst("meta[property=og:image]")?.attr("content")
                     ?.trim()?.ifBlank { null },
             recommendations = parseRecommendations(doc),
+            releases = parseReleases(doc),
             sid = parseSid(doc),
             reviews = parseReviews(doc),
+            reviewCount = doc.selectFirst(SERIES_REVIEW_COUNT)?.text()
+                ?.let { Regex("""[0-9][0-9,]*""").find(it)?.value?.replace(",", "")?.toIntOrNull() },
             reviewPageCount = parseReviewPageCount(doc),
         )
+    }
+
+    private fun textList(doc: Document, selector: String): List<String> = safe(emptyList()) {
+        doc.select(selector)
+            .map { it.text().trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+    }
+
+    private fun parseYesNo(text: String?): Boolean? = when (text?.trim()?.lowercase()) {
+        "yes" -> true
+        "no" -> false
+        else -> null
+    }
+
+    /** Splits a `<br>`-separated block (e.g. #editstatus) into trimmed lines. */
+    private fun parseLines(el: Element?): List<String>? = safe(null) {
+        if (el == null) return@safe null
+        el.html()
+            .split("<br>", "<br/>", "<br />", ignoreCase = true)
+            .map { org.jsoup.Jsoup.parse(it).text().trim() }
+            .filter { it.isNotBlank() }
+            .ifEmpty { null }
+    }
+
+    /**
+     * NU renders a few values as bare text right after their `<h5>` heading
+     * (e.g. "Release Frequency"). Collect the text nodes between that heading
+     * and the next element.
+     */
+    private fun textAfterHeading(doc: Document, label: String): String? = safe(null) {
+        val heading = doc.select("h5.seriesother").firstOrNull {
+            it.text().trim().equals(label, ignoreCase = true)
+        } ?: return@safe null
+        val sb = StringBuilder()
+        var node = heading.nextSibling()
+        while (node != null) {
+            if (node is org.jsoup.nodes.Element) break
+            if (node is org.jsoup.nodes.TextNode) sb.append(node.text())
+            node = node.nextSibling()
+        }
+        sb.toString().trim().ifBlank { null }
+    }
+
+    private fun parseReleases(doc: Document): List<NuRelease> = safe(emptyList()) {
+        doc.select(SERIES_RELEASE_ROW).mapNotNull { row ->
+            val cells = row.select("td")
+            if (cells.size < 3) return@mapNotNull null
+            val date = cells[0].text().trim()
+            val groupEl = cells[1].selectFirst("a")
+            val group = (groupEl?.text() ?: cells[1].text()).trim()
+            val chapterEl = cells[2].selectFirst("span")
+            val chapter = (chapterEl?.attr("title")?.ifBlank { null }
+                ?: chapterEl?.text()
+                ?: cells[2].text()).trim()
+            if (date.isBlank() && chapter.isBlank()) return@mapNotNull null
+            NuRelease(
+                date = date,
+                group = group,
+                groupUrl = groupEl?.absUrl("href")?.ifBlank { groupEl.attr("href") }
+                    ?.let(::absolutize),
+                chapter = chapter,
+            )
+        }
     }
 
     /** Original language, read from the durable `language-…` post class. */
