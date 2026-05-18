@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +32,7 @@ fun ExpandableText(
     Column(modifier) {
         Text(
             text,
+            modifier = Modifier.clickable { expanded = !expanded },
             style = style,
             maxLines = if (expanded) Int.MAX_VALUE else collapsedMaxLines,
             overflow = if (expanded) TextOverflow.Clip else TextOverflow.Ellipsis,
