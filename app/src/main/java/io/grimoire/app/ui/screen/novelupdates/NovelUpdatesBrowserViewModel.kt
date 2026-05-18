@@ -6,7 +6,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.data.novelupdates.NuBrowseFilter
 import io.grimoire.app.data.novelupdates.NuBrowseSort
-import io.grimoire.app.data.novelupdates.NuRankWindow
+import io.grimoire.app.data.novelupdates.NuListingFilter
+import io.grimoire.app.data.novelupdates.NuRankingType
 import io.grimoire.app.data.novelupdates.NuSearchResult
 import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,12 +18,8 @@ import javax.inject.Inject
 
 private const val TAG = "NuBrowserVM"
 
-/**
- * The four NovelUpdates browse pages. POPULAR/LATEST/LEADERBOARD are plain
- * listings (a fixed sort, no controls); FILTER is the extension-style page
- * with search + ordering + genre/language applied via a sheet.
- */
-enum class NuBrowseMode { POPULAR, LATEST, LEADERBOARD, FILTER }
+/** The three NovelUpdates listing surfaces. */
+enum class NuBrowseMode { RANKINGS, LATEST, SEARCH }
 
 @HiltViewModel
 class NovelUpdatesBrowserViewModel @Inject constructor(
@@ -44,25 +41,22 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val _mode = MutableStateFlow(NuBrowseMode.POPULAR)
+    private val _mode = MutableStateFlow(NuBrowseMode.RANKINGS)
     val mode: StateFlow<NuBrowseMode> = _mode.asStateFlow()
 
-    // FILTER-page state. `query` is the live text field; sort/genre/language
-    // are the *applied* values that actually drive the request.
+    private val _rankingType = MutableStateFlow(NuRankingType.POPULAR_ALL)
+    val rankingType: StateFlow<NuRankingType> = _rankingType.asStateFlow()
+
+    // Applied filters shared by Rankings + Latest.
+    private val _listingFilter = MutableStateFlow(NuListingFilter())
+    val listingFilter: StateFlow<NuListingFilter> = _listingFilter.asStateFlow()
+
+    // Applied Series Finder request (Search page). `query` is the live field.
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
-    private val _sort = MutableStateFlow(NuBrowseSort.POPULAR)
-    val sort: StateFlow<NuBrowseSort> = _sort.asStateFlow()
-
-    private val _genre = MutableStateFlow<String?>(null)
-    val genre: StateFlow<String?> = _genre.asStateFlow()
-
-    private val _language = MutableStateFlow<String?>(null)
-    val language: StateFlow<String?> = _language.asStateFlow()
-
-    private val _rankWindow = MutableStateFlow(NuRankWindow.WEEK)
-    val rankWindow: StateFlow<NuRankWindow> = _rankWindow.asStateFlow()
+    private val _searchFilter = MutableStateFlow(NuBrowseFilter())
+    val searchFilter: StateFlow<NuBrowseFilter> = _searchFilter.asStateFlow()
 
     private var page = 1
 
@@ -70,35 +64,39 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
         load(reset = true)
     }
 
-    /** Switch top-level page. The plain pages load immediately. */
     fun setMode(newMode: NuBrowseMode) {
         if (_mode.value == newMode) return
         _mode.value = newMode
         load(reset = true)
     }
 
+    fun setRankingType(type: NuRankingType) {
+        if (_rankingType.value == type) return
+        _rankingType.value = type
+        if (_mode.value == NuBrowseMode.RANKINGS) load(reset = true)
+    }
+
+    /** Apply the shared Rankings/Latest filter sheet. */
+    fun applyListingFilter(filter: NuListingFilter) {
+        _listingFilter.value = filter
+        load(reset = true)
+    }
+
     fun setQuery(q: String) { _query.value = q }
 
-    /** Submit the search box on the FILTER page. */
     fun submitSearch() {
-        _mode.value = NuBrowseMode.FILTER
+        _mode.value = NuBrowseMode.SEARCH
+        _searchFilter.value = _searchFilter.value.copy(
+            query = _query.value.takeIf { it.isNotBlank() },
+        )
         load(reset = true)
     }
 
-    /** Apply the filter sheet's ordering/genre/language and reload. */
-    fun applyFilters(sort: NuBrowseSort, genre: String?, language: String?) {
-        _sort.value = sort
-        _genre.value = genre
-        _language.value = language
-        _mode.value = NuBrowseMode.FILTER
+    /** Apply the Series Finder filter sheet (sort + genres + languages). */
+    fun applySearchFilter(filter: NuBrowseFilter) {
+        _mode.value = NuBrowseMode.SEARCH
+        _searchFilter.value = filter.copy(query = _query.value.takeIf { it.isNotBlank() })
         load(reset = true)
-    }
-
-    /** Change the leaderboard time window and reload. */
-    fun setRankWindow(window: NuRankWindow) {
-        if (_rankWindow.value == window) return
-        _rankWindow.value = window
-        if (_mode.value == NuBrowseMode.LEADERBOARD) load(reset = true)
     }
 
     fun retry() = load(reset = true)
@@ -108,24 +106,19 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
         load(reset = false)
     }
 
-    private fun filterFor(mode: NuBrowseMode): NuBrowseFilter = when (mode) {
-        NuBrowseMode.POPULAR -> NuBrowseFilter(sort = NuBrowseSort.POPULAR)
-        NuBrowseMode.LATEST -> NuBrowseFilter(sort = NuBrowseSort.LATEST)
-        NuBrowseMode.LEADERBOARD -> NuBrowseFilter(sort = NuBrowseSort.RANK)
-        NuBrowseMode.FILTER -> NuBrowseFilter(
-            query = _query.value.takeIf { it.isNotBlank() },
-            sort = _sort.value,
-            genreId = _genre.value,
-            language = _language.value,
-        )
+    private suspend fun fetch(page: Int) = when (_mode.value) {
+        NuBrowseMode.RANKINGS ->
+            repository.ranking(_rankingType.value, _listingFilter.value, page)
+        NuBrowseMode.LATEST ->
+            repository.latest(_listingFilter.value, page)
+        NuBrowseMode.SEARCH ->
+            repository.finder(
+                _searchFilter.value.copy(
+                    query = _query.value.takeIf { it.isNotBlank() },
+                ),
+                page,
+            )
     }
-
-    private suspend fun fetch(page: Int) =
-        if (_mode.value == NuBrowseMode.LEADERBOARD) {
-            repository.ranking(_rankWindow.value, page)
-        } else {
-            repository.browse(filterFor(_mode.value), page)
-        }
 
     private fun load(reset: Boolean) {
         viewModelScope.launch {
@@ -142,8 +135,6 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
 
             runCatching { fetch(page) }
                 .onSuccess { listing ->
-                    // De-duplicate by URL across pages so the keyed list never
-                    // collides; stop paginating when a page adds nothing new.
                     val merged = (if (reset) listing.results else _results.value + listing.results)
                         .distinctBy { it.url }
                     val grew = merged.size > _results.value.size
