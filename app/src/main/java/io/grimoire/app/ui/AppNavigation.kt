@@ -254,7 +254,6 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         onSeriesClick = { slug ->
                             navController.navigate("nu_series?slug=${Uri.encode(slug)}")
                         },
-                        onOpenSearch = { navController.navigate(ROUTE_NU_SEARCH) },
                         onOpenWebView = { url ->
                             navController.navigate("webview?url=${Uri.encode(url)}")
                         },

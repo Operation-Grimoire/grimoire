@@ -1,6 +1,5 @@
 package io.grimoire.app.ui.screen.novelupdates
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -23,10 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -51,7 +45,6 @@ import io.grimoire.app.data.novelupdates.NuRankingType
 fun NovelUpdatesBrowserScreen(
     onNavigateBack: () -> Unit,
     onSeriesClick: (slug: String) -> Unit,
-    onOpenSearch: () -> Unit,
     onOpenWebView: (url: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NovelUpdatesBrowserViewModel = hiltViewModel(),
@@ -75,7 +68,9 @@ fun NovelUpdatesBrowserScreen(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             },
-            title = { Text("NovelUpdates") },
+            title = {
+                Text(if (mode == NuBrowseMode.RANKINGS) "Rankings" else "Latest")
+            },
             actions = {
                 IconButton(onClick = { onOpenWebView(viewModel.currentPageUrl()) }) {
                     Icon(Icons.Default.Language, contentDescription = "Open in WebView")
@@ -85,44 +80,6 @@ fun NovelUpdatesBrowserScreen(
                 }
             },
         )
-
-        // Search entry — opens the dedicated Advanced Search screen.
-        Surface(
-            onClick = onOpenSearch,
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            Row(
-                Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Default.Search, contentDescription = null)
-                Text(
-                    "Search NovelUpdates…",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 12.dp),
-                )
-            }
-        }
-
-        SingleChoiceSegmentedButtonRow(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-        ) {
-            NuBrowseMode.entries.forEachIndexed { index, m ->
-                SegmentedButton(
-                    selected = mode == m,
-                    onClick = { viewModel.setMode(m) },
-                    shape = SegmentedButtonDefaults.itemShape(index, NuBrowseMode.entries.size),
-                    label = { Text(if (m == NuBrowseMode.RANKINGS) "Rankings" else "Latest") },
-                )
-            }
-        }
 
         if (mode == NuBrowseMode.RANKINGS) {
             Row(
