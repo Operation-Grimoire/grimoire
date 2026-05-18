@@ -76,6 +76,9 @@ private enum class TopLevelDestination(
 
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
 
+// Subpages nested under a top-level graph that should still hide the bottom navbar.
+private val routesWithoutBottomBar = setOf("nu_browser")
+
 private const val ROUTE_BROWSE_HOME = "browse_home"
 private const val ROUTE_GLOBAL_SEARCH = "global_search"
 private const val ROUTE_GLOBAL_SEARCH_ARG = "global_search?q={q}"
@@ -110,7 +113,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
     val isTopLevel = TopLevelDestination.entries.any { dest ->
         backStack?.destination?.hierarchy?.any { it.route == dest.route } == true
-    }
+    } && currentRoute !in routesWithoutBottomBar
 
     val moreVm: MoreViewModel = hiltViewModel()
     val activeDownloadCount by moreVm.activeDownloadCount.collectAsState()
