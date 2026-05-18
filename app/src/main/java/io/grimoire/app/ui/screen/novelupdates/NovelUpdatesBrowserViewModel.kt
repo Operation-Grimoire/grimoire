@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.data.novelupdates.NuBrowseFilter
 import io.grimoire.app.data.novelupdates.NuBrowseSort
-import io.grimoire.app.data.novelupdates.NuRankWindow
 import io.grimoire.app.data.novelupdates.NuSearchResult
 import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +16,12 @@ import javax.inject.Inject
 
 private const val TAG = "NuBrowserVM"
 
-enum class NuBrowseMode { LATEST, POPULAR, LEADERBOARD, SEARCH }
+/**
+ * The four NovelUpdates browse pages. POPULAR/LATEST/LEADERBOARD are plain
+ * listings (a fixed sort, no controls); FILTER is the extension-style page
+ * with search + ordering + genre/language applied via a sheet.
+ */
+enum class NuBrowseMode { POPULAR, LATEST, LEADERBOARD, FILTER }
 
 @HiltViewModel
 class NovelUpdatesBrowserViewModel @Inject constructor(
@@ -42,8 +46,13 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
     private val _mode = MutableStateFlow(NuBrowseMode.POPULAR)
     val mode: StateFlow<NuBrowseMode> = _mode.asStateFlow()
 
+    // FILTER-page state. `query` is the live text field; sort/genre/language
+    // are the *applied* values that actually drive the request.
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
+
+    private val _sort = MutableStateFlow(NuBrowseSort.POPULAR)
+    val sort: StateFlow<NuBrowseSort> = _sort.asStateFlow()
 
     private val _genre = MutableStateFlow<String?>(null)
     val genre: StateFlow<String?> = _genre.asStateFlow()
@@ -51,46 +60,34 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
     private val _language = MutableStateFlow<String?>(null)
     val language: StateFlow<String?> = _language.asStateFlow()
 
-    private val _rankWindow = MutableStateFlow(NuRankWindow.WEEK)
-    val rankWindow: StateFlow<NuRankWindow> = _rankWindow.asStateFlow()
-
     private var page = 1
 
     init {
         load(reset = true)
     }
 
+    /** Switch top-level page. The plain pages load immediately. */
     fun setMode(newMode: NuBrowseMode) {
         if (_mode.value == newMode) return
         _mode.value = newMode
-        if (newMode != NuBrowseMode.SEARCH) _query.value = ""
         load(reset = true)
     }
 
     fun setQuery(q: String) { _query.value = q }
 
+    /** Submit the search box on the FILTER page. */
     fun submitSearch() {
-        if (_query.value.isBlank()) return
-        _mode.value = NuBrowseMode.SEARCH
+        _mode.value = NuBrowseMode.FILTER
         load(reset = true)
     }
 
-    fun setGenre(slug: String?) {
-        if (_genre.value == slug) return
-        _genre.value = slug
+    /** Apply the filter sheet's ordering/genre/language and reload. */
+    fun applyFilters(sort: NuBrowseSort, genre: String?, language: String?) {
+        _sort.value = sort
+        _genre.value = genre
+        _language.value = language
+        _mode.value = NuBrowseMode.FILTER
         load(reset = true)
-    }
-
-    fun setLanguage(lang: String?) {
-        if (_language.value == lang) return
-        _language.value = lang
-        load(reset = true)
-    }
-
-    fun setRankWindow(window: NuRankWindow) {
-        if (_rankWindow.value == window) return
-        _rankWindow.value = window
-        if (_mode.value == NuBrowseMode.LEADERBOARD) load(reset = true)
     }
 
     fun retry() = load(reset = true)
@@ -100,11 +97,16 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
         load(reset = false)
     }
 
-    private fun sortFor(mode: NuBrowseMode): NuBrowseSort = when (mode) {
-        NuBrowseMode.LATEST -> NuBrowseSort.LATEST
-        NuBrowseMode.POPULAR -> NuBrowseSort.POPULAR
-        NuBrowseMode.SEARCH -> NuBrowseSort.POPULAR
-        NuBrowseMode.LEADERBOARD -> NuBrowseSort.POPULAR
+    private fun filterFor(mode: NuBrowseMode): NuBrowseFilter = when (mode) {
+        NuBrowseMode.POPULAR -> NuBrowseFilter(sort = NuBrowseSort.POPULAR)
+        NuBrowseMode.LATEST -> NuBrowseFilter(sort = NuBrowseSort.LATEST)
+        NuBrowseMode.LEADERBOARD -> NuBrowseFilter(sort = NuBrowseSort.RANK)
+        NuBrowseMode.FILTER -> NuBrowseFilter(
+            query = _query.value.takeIf { it.isNotBlank() },
+            sort = _sort.value,
+            genreId = _genre.value,
+            language = _language.value,
+        )
     }
 
     private fun load(reset: Boolean) {
@@ -120,34 +122,21 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
             }
             _error.value = null
 
-            runCatching {
-                val mode = _mode.value
-                if (mode == NuBrowseMode.LEADERBOARD) {
-                    repository.ranking(_rankWindow.value, page)
-                } else {
-                    repository.browse(
-                        NuBrowseFilter(
-                            query = _query.value.takeIf { mode == NuBrowseMode.SEARCH },
-                            sort = sortFor(mode),
-                            genreId = _genre.value,
-                            language = _language.value,
-                        ),
-                        page,
-                    )
+            runCatching { repository.browse(filterFor(_mode.value), page) }
+                .onSuccess { listing ->
+                    // De-duplicate by URL across pages so the keyed list never
+                    // collides; stop paginating when a page adds nothing new.
+                    val merged = (if (reset) listing.results else _results.value + listing.results)
+                        .distinctBy { it.url }
+                    val grew = merged.size > _results.value.size
+                    _results.value = merged
+                    _hasMore.value = listing.hasNext && (reset || grew)
                 }
-            }.onSuccess { listing ->
-                // De-duplicate by URL across pages so the keyed list never
-                // collides; stop paginating when a page adds nothing new.
-                val merged = (if (reset) listing.results else _results.value + listing.results)
-                    .distinctBy { it.url }
-                val grew = merged.size > _results.value.size
-                _results.value = merged
-                _hasMore.value = listing.hasNext && (reset || grew)
-            }.onFailure { e ->
-                Log.e(TAG, "NU browse failed [mode=${_mode.value} page=$page]", e)
-                _error.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
-                if (!reset) page--
-            }
+                .onFailure { e ->
+                    Log.e(TAG, "NU browse failed [mode=${_mode.value} page=$page]", e)
+                    _error.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
+                    if (!reset) page--
+                }
 
             _isLoading.value = false
             _isLoadingMore.value = false

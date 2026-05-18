@@ -31,11 +31,6 @@ object NovelUpdatesParser {
     // --- Listing pagination (digg/wp-pagenavi style used by NU) ---
     private const val PAGINATION_NEXT = ".digg_pagination a.next_page, .pagination a.next_page"
 
-    // --- Series ranking ("leaderboard") page: distinct DOM from the cards ---
-    private const val RANKING_ROW = "table#myTable tr:has(a[href*=/series/]), div.rank_box:has(a[href*=/series/])"
-    private const val RANKING_LINK = "a[href*=/series/]"
-    private const val RANKING_IMG = "img"
-
     // --- Series page ---
     private const val SERIES_TITLE = "div.seriestitlenu"
     private const val SERIES_COVER = "div.seriesimg img"
@@ -82,28 +77,6 @@ object NovelUpdatesParser {
         }
     }
 
-    /**
-     * Series-ranking leaderboard rows. NU renders this as a table/list rather
-     * than the finder cards; covers follow the fixed CDN pattern keyed by the
-     * series id when no <img> is present.
-     */
-    fun parseRanking(doc: Document): List<NuSearchResult> = safe(emptyList()) {
-        doc.select(RANKING_ROW).mapNotNull { row ->
-            val link = row.selectFirst(RANKING_LINK) ?: return@mapNotNull null
-            val href = link.absUrl("href").ifBlank { link.attr("href") }
-            if (href.isBlank()) return@mapNotNull null
-            val title = link.text().trim()
-            if (title.isBlank()) return@mapNotNull null
-            val sid = SID.find(link.id())?.groupValues?.get(1)
-            NuSearchResult(
-                title = title,
-                slug = NovelUpdatesEndpoints.slugFromUrl(href),
-                url = href,
-                coverUrl = row.selectFirst(RANKING_IMG)?.imgSrc()
-                    ?: sid?.let { CDN_COVER.format(it) },
-            )
-        }.distinctBy { it.url }
-    }
 
     /** True if NU's pagination shows a "next page" link. */
     fun hasNextPage(doc: Document): Boolean = safe(false) {

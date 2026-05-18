@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.novelupdates
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,13 +18,16 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -42,9 +46,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,9 +59,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import io.grimoire.app.data.novelupdates.NuBrowseSort
 import io.grimoire.app.data.novelupdates.NuGenres
 import io.grimoire.app.data.novelupdates.NuLanguages
-import io.grimoire.app.data.novelupdates.NuRankWindow
 import io.grimoire.app.data.novelupdates.NuSearchResult
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,9 +79,9 @@ fun NovelUpdatesBrowserScreen(
     val error by viewModel.error.collectAsState()
     val mode by viewModel.mode.collectAsState()
     val query by viewModel.query.collectAsState()
+    val sort by viewModel.sort.collectAsState()
     val genre by viewModel.genre.collectAsState()
     val language by viewModel.language.collectAsState()
-    val rankWindow by viewModel.rankWindow.collectAsState()
 
     val keyboard = LocalSoftwareKeyboardController.current
     val gridState = rememberLazyGridState()
@@ -105,32 +109,20 @@ fun NovelUpdatesBrowserScreen(
                 },
                 title = { Text("NovelUpdates") },
                 actions = {
-                    IconButton(onClick = { showFilters = true }) {
-                        Icon(Icons.Default.FilterList, contentDescription = "Filters")
+                    if (mode == NuBrowseMode.FILTER) {
+                        IconButton(onClick = { showFilters = true }) {
+                            Icon(Icons.Default.FilterList, contentDescription = "Filters")
+                        }
                     }
                 },
             )
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = viewModel::setQuery,
-                placeholder = { Text("Search NovelUpdates…") },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = {
-                    keyboard?.hide()
-                    viewModel.submitSearch()
-                }),
-            )
-
             Row(
                 Modifier
                     .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
                     .padding(horizontal = 12.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -143,6 +135,26 @@ fun NovelUpdatesBrowserScreen(
                 ModeChip("Leaderboard", mode == NuBrowseMode.LEADERBOARD) {
                     viewModel.setMode(NuBrowseMode.LEADERBOARD)
                 }
+                ModeChip("Filter", mode == NuBrowseMode.FILTER) {
+                    viewModel.setMode(NuBrowseMode.FILTER)
+                }
+            }
+
+            if (mode == NuBrowseMode.FILTER) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = viewModel::setQuery,
+                    placeholder = { Text("Search NovelUpdates…") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = {
+                        keyboard?.hide()
+                        viewModel.submitSearch()
+                    }),
+                )
             }
 
             Box(Modifier.fillMaxSize()) {
@@ -205,19 +217,18 @@ fun NovelUpdatesBrowserScreen(
             sheetState = filterSheetState,
         ) {
             NuFilterSheet(
-                genre = genre,
-                language = language,
-                rankWindow = rankWindow,
-                showRankWindow = mode == NuBrowseMode.LEADERBOARD,
-                onGenre = viewModel::setGenre,
-                onLanguage = viewModel::setLanguage,
-                onRankWindow = viewModel::setRankWindow,
+                initialSort = sort,
+                initialGenre = genre,
+                initialLanguage = language,
+                onApply = { s, g, l ->
+                    showFilters = false
+                    viewModel.applyFilters(s, g, l)
+                },
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ModeChip(label: String, selected: Boolean, onClick: () -> Unit) {
     FilterChip(selected = selected, onClick = onClick, label = { Text(label) })
@@ -261,34 +272,49 @@ private fun NuCoverCard(item: NuSearchResult, onClick: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val SORT_LABELS = listOf(
+    NuBrowseSort.POPULAR to "Popular",
+    NuBrowseSort.LATEST to "Recently added",
+    NuBrowseSort.LAST_UPDATED to "Last updated",
+    NuBrowseSort.RATING to "Rating",
+    NuBrowseSort.RANK to "Rank",
+    NuBrowseSort.TITLE to "Title (A–Z)",
+)
+
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
+)
 @Composable
 private fun NuFilterSheet(
-    genre: String?,
-    language: String?,
-    rankWindow: NuRankWindow,
-    showRankWindow: Boolean,
-    onGenre: (String?) -> Unit,
-    onLanguage: (String?) -> Unit,
-    onRankWindow: (NuRankWindow) -> Unit,
+    initialSort: NuBrowseSort,
+    initialGenre: String?,
+    initialLanguage: String?,
+    onApply: (NuBrowseSort, String?, String?) -> Unit,
 ) {
+    var sort by remember { mutableStateOf(initialSort) }
+    var genre by remember { mutableStateOf(initialGenre) }
+    var language by remember { mutableStateOf(initialLanguage) }
+
     Column(
         Modifier
             .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
-            .heightIn(max = 560.dp),
+            .heightIn(max = 620.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (showRankWindow) {
-            Text("Ranking window", style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NuRankWindow.entries.forEach { w ->
-                    FilterChip(
-                        selected = rankWindow == w,
-                        onClick = { onRankWindow(w) },
-                        label = { Text(w.name.lowercase().replaceFirstChar { it.uppercase() }) },
-                    )
-                }
+        Text("Order by", style = MaterialTheme.typography.titleSmall)
+        androidx.compose.foundation.layout.FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            SORT_LABELS.forEach { (value, label) ->
+                FilterChip(
+                    selected = sort == value,
+                    onClick = { sort = value },
+                    label = { Text(label) },
+                )
             }
         }
 
@@ -296,15 +322,20 @@ private fun NuFilterSheet(
         ChipFlow(
             options = listOf("Any" to null) + NuGenres.all.map { it.key to it.value },
             selected = genre,
-            onSelect = onGenre,
+            onSelect = { genre = it },
         )
 
         Text("Language", style = MaterialTheme.typography.titleSmall)
         ChipFlow(
             options = listOf("Any" to null) + NuLanguages.all.map { it to it },
             selected = language,
-            onSelect = onLanguage,
+            onSelect = { language = it },
         )
+
+        Button(
+            onClick = { onApply(sort, genre, language) },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Apply") }
     }
 }
 

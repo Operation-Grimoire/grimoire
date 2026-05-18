@@ -62,16 +62,6 @@ class NovelUpdatesClient @Inject constructor() {
         )
     }
 
-    /** Series-ranking leaderboard (one page). */
-    suspend fun ranking(window: NuRankWindow, page: Int): NuListingPage {
-        val url = NovelUpdatesEndpoints.seriesRankingUrl(window, page)
-        val doc = Jsoup.parse(get(url), NovelUpdatesEndpoints.BASE_URL)
-        return NuListingPage(
-            results = NovelUpdatesParser.parseRanking(doc),
-            hasNext = NovelUpdatesParser.hasNextPage(doc),
-        )
-    }
-
     suspend fun getSeries(slugOrUrl: String): NuSeries {
         val url = NovelUpdatesEndpoints.seriesUrl(slugOrUrl)
         val body = get(url)

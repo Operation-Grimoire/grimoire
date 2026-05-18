@@ -34,11 +34,12 @@ data class NuSeries(
     val recommendations: List<NuRecommendation> = emptyList(),
 )
 
-/** Sort order for the NovelUpdates Series Finder listing. */
-enum class NuBrowseSort { LATEST, POPULAR, RATING, TITLE }
-
-/** Time window for the NovelUpdates series-ranking leaderboard. */
-enum class NuRankWindow { WEEK, MONTH, ALL }
+/**
+ * Series Finder ordering. NovelUpdates exposes these via `&sort=` on
+ * `/series-finder/`; the same endpoint backs every browse page so it reuses
+ * the proven search-card parser.
+ */
+enum class NuBrowseSort { POPULAR, LATEST, RATING, TITLE, LAST_UPDATED, RANK }
 
 /**
  * A NovelUpdates browse request. An empty/blank [query] drives a pure
