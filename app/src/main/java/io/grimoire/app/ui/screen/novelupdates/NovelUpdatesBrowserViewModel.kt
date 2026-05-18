@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.data.novelupdates.NuBrowseFilter
 import io.grimoire.app.data.novelupdates.NuBrowseSort
+import io.grimoire.app.data.novelupdates.NuRankWindow
 import io.grimoire.app.data.novelupdates.NuSearchResult
 import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,6 +61,9 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
     private val _language = MutableStateFlow<String?>(null)
     val language: StateFlow<String?> = _language.asStateFlow()
 
+    private val _rankWindow = MutableStateFlow(NuRankWindow.WEEK)
+    val rankWindow: StateFlow<NuRankWindow> = _rankWindow.asStateFlow()
+
     private var page = 1
 
     init {
@@ -90,6 +94,13 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
         load(reset = true)
     }
 
+    /** Change the leaderboard time window and reload. */
+    fun setRankWindow(window: NuRankWindow) {
+        if (_rankWindow.value == window) return
+        _rankWindow.value = window
+        if (_mode.value == NuBrowseMode.LEADERBOARD) load(reset = true)
+    }
+
     fun retry() = load(reset = true)
 
     fun loadMore() {
@@ -109,6 +120,13 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
         )
     }
 
+    private suspend fun fetch(page: Int) =
+        if (_mode.value == NuBrowseMode.LEADERBOARD) {
+            repository.ranking(_rankWindow.value, page)
+        } else {
+            repository.browse(filterFor(_mode.value), page)
+        }
+
     private fun load(reset: Boolean) {
         viewModelScope.launch {
             if (reset) {
@@ -122,7 +140,7 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
             }
             _error.value = null
 
-            runCatching { repository.browse(filterFor(_mode.value), page) }
+            runCatching { fetch(page) }
                 .onSuccess { listing ->
                     // De-duplicate by URL across pages so the keyed list never
                     // collides; stop paginating when a page adds nothing new.

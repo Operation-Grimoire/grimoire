@@ -31,6 +31,14 @@ object NovelUpdatesParser {
     // --- Listing pagination (digg/wp-pagenavi style used by NU) ---
     private const val PAGINATION_NEXT = ".digg_pagination a.next_page, .pagination a.next_page"
 
+    // --- Series ranking ("leaderboard") page ---
+    // NU renders the ranking as a list/table distinct from the finder cards.
+    // We scope to the narrowest plausible ranking container (so the sidebar's
+    // "Latest Series" links don't leak in) and tolerate DOM drift.
+    private const val RANKING_SCOPE =
+        "table#myTable, table.tablesorter, div.ranking, div#rankingmain, div.l-content"
+    private const val RANKING_LINK = "a[href*=/series/]"
+
     // --- Series page ---
     private const val SERIES_TITLE = "div.seriestitlenu"
     private const val SERIES_COVER = "div.seriesimg img"
@@ -77,6 +85,32 @@ object NovelUpdatesParser {
         }
     }
 
+
+    /**
+     * Series-ranking leaderboard rows. NU's ranking page has no finder cards,
+     * so we take series links within the ranking container in document order
+     * (= rank order), de-duplicated. Covers come from the row's <img> or the
+     * fixed CDN pattern keyed by the anchor's `sidNNNNN` id.
+     */
+    fun parseRanking(doc: Document): List<NuSearchResult> = safe(emptyList()) {
+        val scope = doc.selectFirst(RANKING_SCOPE) ?: doc.body() ?: doc
+        scope.select(RANKING_LINK).mapNotNull { link ->
+            val href = link.absUrl("href").ifBlank { link.attr("href") }
+            if (href.isBlank() || !href.contains("/series/")) return@mapNotNull null
+            val title = link.text().trim()
+            // Skip empty/decorative anchors (cover-only links, "more", etc.).
+            if (title.length < 2) return@mapNotNull null
+            val sid = SID.find(link.id())?.groupValues?.get(1)
+            val row = link.closest("tr, li, div.search_main_box_nu, div") ?: link
+            NuSearchResult(
+                title = title,
+                slug = NovelUpdatesEndpoints.slugFromUrl(href),
+                url = href,
+                coverUrl = row.selectFirst("img")?.imgSrc()
+                    ?: sid?.let { CDN_COVER.format(it) },
+            )
+        }.distinctBy { it.url }
+    }
 
     /** True if NU's pagination shows a "next page" link. */
     fun hasNextPage(doc: Document): Boolean = safe(false) {

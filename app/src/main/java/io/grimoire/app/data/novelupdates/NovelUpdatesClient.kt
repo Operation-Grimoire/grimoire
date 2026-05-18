@@ -62,6 +62,23 @@ class NovelUpdatesClient @Inject constructor() {
         )
     }
 
+    /**
+     * Series-ranking leaderboard. Falls back to the Series Finder sorted by
+     * rank if the ranking page can't be parsed, so the page is never empty.
+     */
+    suspend fun ranking(window: NuRankWindow, page: Int): NuListingPage {
+        val url = NovelUpdatesEndpoints.seriesRankingUrl(window, page)
+        val doc = Jsoup.parse(get(url), NovelUpdatesEndpoints.BASE_URL)
+        val ranked = NovelUpdatesParser.parseRanking(doc)
+        if (ranked.isNotEmpty()) {
+            return NuListingPage(
+                results = ranked,
+                hasNext = NovelUpdatesParser.hasNextPage(doc),
+            )
+        }
+        return browse(NuBrowseFilter(sort = NuBrowseSort.RANK), page)
+    }
+
     suspend fun getSeries(slugOrUrl: String): NuSeries {
         val url = NovelUpdatesEndpoints.seriesUrl(slugOrUrl)
         val body = get(url)

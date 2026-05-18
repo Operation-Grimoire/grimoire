@@ -47,6 +47,21 @@ object NovelUpdatesEndpoints {
         return sb.toString()
     }
 
+    /**
+     * NovelUpdates' real "Series Ranking" leaderboard page (distinct from
+     * Series Finder). Time window is `rank=week|month|all`; paginated with
+     * `&pg=`. Parsed by [NovelUpdatesParser.parseRanking].
+     */
+    fun seriesRankingUrl(window: NuRankWindow, page: Int): String {
+        val rank = when (window) {
+            NuRankWindow.WEEK -> "week"
+            NuRankWindow.MONTH -> "month"
+            NuRankWindow.ALL -> "all"
+        }
+        val base = "$BASE_URL/series-ranking/?rank=$rank"
+        return if (page > 1) "$base&pg=$page" else base
+    }
+
     // NU Series Finder `&sort=` codes. POPULAR/LATEST are confirmed working
     // (the existing browse pages use them); the rest follow NU's documented
     // finder ordering and reuse the same proven card parser.
