@@ -26,15 +26,27 @@ object NovelUpdatesEndpoints {
         }
         appendCsv(sb, P_GENRE_INCLUDE, filter.genresInclude)
         appendCsv(sb, P_GENRE_EXCLUDE, filter.genresExclude)
-        appendCsv(sb, P_LANGUAGE, filter.languages)
         if (filter.genresInclude.isNotEmpty()) {
             sb.append("&$P_GENRE_GATE=").append(if (filter.genresMatchAll) "and" else "or")
         }
+        appendCsv(sb, P_TAG_INCLUDE, filter.tagsInclude)
+        appendCsv(sb, P_TAG_EXCLUDE, filter.tagsExclude)
+        if (filter.tagsInclude.isNotEmpty()) {
+            sb.append("&$P_TAG_GATE=").append(if (filter.tagsMatchAll) "and" else "or")
+        }
+        appendCsv(sb, P_LANGUAGE, filter.languages)
+        appendCsv(sb, P_NOVEL_TYPE, filter.novelTypes)
+        if (filter.storyStatus.value.isNotEmpty()) {
+            sb.append("&$P_STORY_STATUS=").append(filter.storyStatus.value)
+        }
         sb.append("&sort=").append(sortCode(filter.sort))
-        sb.append("&order=").append(if (filter.sort == NuBrowseSort.TITLE) "asc" else "desc")
+        sb.append("&order=").append(if (filter.orderAscending) "asc" else "desc")
         if (page > 1) sb.append("&pg=").append(page)
         return sb.toString()
     }
+
+    /** All NovelUpdates tags (id + name), parsed from the public list page. */
+    fun listTagsUrl(): String = "$BASE_URL/list-tags/"
 
     /**
      * NovelUpdates' "Series Ranking" page. [type] is the Ranking Type select;
@@ -77,6 +89,11 @@ object NovelUpdatesEndpoints {
     private const val P_GENRE_EXCLUDE = "ge"
     private const val P_GENRE_GATE = "mgi"
     private const val P_LANGUAGE = "org"
+    private const val P_NOVEL_TYPE = "nt"
+    private const val P_STORY_STATUS = "ss"
+    private const val P_TAG_INCLUDE = "tgi"
+    private const val P_TAG_EXCLUDE = "tge"
+    private const val P_TAG_GATE = "mtgi"
 
     private fun sortCode(sort: NuBrowseSort): String = sort.code
 

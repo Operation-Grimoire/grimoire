@@ -103,6 +103,15 @@ class NovelUpdatesClient @Inject constructor() {
         )
     }
 
+    /** All NovelUpdates tags (loaded live from /list-tags/). */
+    suspend fun listTags(): List<NuTag> {
+        val doc = Jsoup.parse(
+            get(NovelUpdatesEndpoints.listTagsUrl()),
+            NovelUpdatesEndpoints.BASE_URL,
+        )
+        return NovelUpdatesParser.parseTags(doc)
+    }
+
     suspend fun getSeries(slugOrUrl: String): NuSeries {
         val url = NovelUpdatesEndpoints.seriesUrl(slugOrUrl)
         val body = get(url)

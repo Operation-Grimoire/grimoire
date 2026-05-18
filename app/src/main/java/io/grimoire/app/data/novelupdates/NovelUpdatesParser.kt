@@ -31,6 +31,14 @@ object NovelUpdatesParser {
     // --- Listing pagination (digg/wp-pagenavi style used by NU) ---
     private const val PAGINATION_NEXT = ".digg_pagination a.next_page, .pagination a.next_page"
 
+    // --- /list-tags/ ---
+    // Tolerant: any anchor into a tag page; the numeric series-finder tag id
+    // is read from the anchor id / a data-attr / a trailing href number.
+    // (Selectors pending a real /list-tags/ HTML sample to harden.)
+    private const val TAG_LINK = "a[href*=/series-tags/], a[href*=/tags/], a[href*=/stags/]"
+    private val TAG_ID = Regex("""(?:tag|tid|term)(\d+)""")
+    private val TRAILING_NUM = Regex("""(\d+)/?$""")
+
     // --- Series ranking ("leaderboard") page ---
     // NU renders the ranking as a list/table distinct from the finder cards.
     // We scope to the narrowest plausible ranking container (so the sidebar's
@@ -95,6 +103,26 @@ object NovelUpdatesParser {
         }
     }
 
+
+    /**
+     * Parses /list-tags/ into [NuTag]s (name + numeric id). Tolerant: tries
+     * the anchor id, common data-attrs, then a trailing href number for the
+     * series-finder tag id. Hardened once a real page sample is available.
+     */
+    fun parseTags(doc: Document): List<NuTag> = safe(emptyList()) {
+        doc.select(TAG_LINK).mapNotNull { a ->
+            val name = a.text().trim()
+            if (name.isEmpty()) return@mapNotNull null
+            val href = a.attr("href")
+            val id = TAG_ID.find(a.id())?.groupValues?.get(1)
+                ?: a.attr("data-id").ifBlank { null }
+                ?: a.attr("data-tag-id").ifBlank { null }
+                ?: a.attr("rel").ifBlank { null }?.takeIf { it.all(Char::isDigit) }
+                ?: TRAILING_NUM.find(href)?.groupValues?.get(1)
+            if (id.isNullOrBlank()) return@mapNotNull null
+            NuTag(name = name, id = id)
+        }.distinctBy { it.id }
+    }
 
     /**
      * Series-ranking leaderboard rows. NU's ranking page has no finder cards,

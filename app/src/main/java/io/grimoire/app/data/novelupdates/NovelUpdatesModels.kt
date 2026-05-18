@@ -77,17 +77,42 @@ data class NuListingFilter(
     val genresMatchAll: Boolean = false,
 )
 
+/** Series Finder novel-type filter (`nt=`). Ids from the LNReader plugin. */
+enum class NuNovelType(val id: String, val label: String) {
+    LIGHT_NOVEL("2443", "Light Novel"),
+    PUBLISHED_NOVEL("26874", "Published Novel"),
+    WEB_NOVEL("2444", "Web Novel"),
+}
+
+/** Series Finder story-status filter (`ss=`). Values from the LNReader plugin. */
+enum class NuStoryStatus(val value: String, val label: String) {
+    ANY("", "Any"),
+    COMPLETED("2", "Completed"),
+    ONGOING("3", "Ongoing"),
+    HIATUS("4", "Hiatus"),
+}
+
+/** A NovelUpdates tag (loaded live from /list-tags/, never hardcoded). */
+data class NuTag(val name: String, val id: String)
+
 /**
- * The fuller Series Finder request: free-text [query], a [sort], multi-select
- * languages, included/excluded genres, and the include AND/OR gate.
+ * The full Series Finder request: free-text [query], [sort]/[orderAscending],
+ * multi-select languages, included/excluded genres + AND/OR gate, novel
+ * types, story status, and included/excluded tags + their AND/OR gate.
  */
 data class NuBrowseFilter(
     val query: String? = null,
     val sort: NuBrowseSort = NuBrowseSort.READERS,
+    val orderAscending: Boolean = false,
     val languages: List<String> = emptyList(),
     val genresInclude: List<String> = emptyList(),
     val genresExclude: List<String> = emptyList(),
     val genresMatchAll: Boolean = false,
+    val novelTypes: List<String> = emptyList(),
+    val storyStatus: NuStoryStatus = NuStoryStatus.ANY,
+    val tagsInclude: List<String> = emptyList(),
+    val tagsExclude: List<String> = emptyList(),
+    val tagsMatchAll: Boolean = false,
 )
 
 /** One page of a NovelUpdates listing plus whether another page follows. */
@@ -97,25 +122,24 @@ data class NuListingPage(
 )
 
 /**
- * NovelUpdates genre taxonomy. The Series Finder / listing filters key on
- * NU's numeric term IDs (e.g. `gi=13,5,10`), NOT slugs. These IDs are stable
- * WordPress term IDs; verified against a real filtered URL (Comedy=17,
- * Fantasy=5, Mystery=13, Harem=10, Ecchi=292).
+ * NovelUpdates genre taxonomy. Filters key on NU's numeric term IDs
+ * (e.g. `gi=15,3`), NOT slugs. IDs taken verbatim from the authoritative
+ * LNReader NovelUpdates plugin.
  */
 object NuGenres {
     /** Display name -> NU numeric genre id. */
     val all: Map<String, String> = mapOf(
-        "Action" to "8", "Adult" to "280", "Adventure" to "9",
-        "Comedy" to "17", "Drama" to "178", "Ecchi" to "292",
-        "Fantasy" to "5", "Gender Bender" to "905", "Harem" to "10",
+        "Action" to "8", "Adult" to "280", "Adventure" to "13",
+        "Comedy" to "17", "Drama" to "9", "Ecchi" to "292",
+        "Fantasy" to "5", "Gender Bender" to "168", "Harem" to "3",
         "Historical" to "330", "Horror" to "343", "Josei" to "324",
-        "Martial Arts" to "14", "Mature" to "297", "Mecha" to "921",
-        "Mystery" to "13", "Psychological" to "15", "Romance" to "4",
-        "School Life" to "331", "Sci-fi" to "11", "Seinen" to "325",
-        "Shoujo" to "326", "Shoujo Ai" to "327", "Shounen" to "328",
-        "Shounen Ai" to "329", "Slice of Life" to "20", "Smut" to "305",
-        "Sports" to "308", "Supernatural" to "6", "Tragedy" to "24",
-        "Wuxia" to "479", "Xianxia" to "480", "Xuanhuan" to "3239",
+        "Martial Arts" to "14", "Mature" to "4", "Mecha" to "10",
+        "Mystery" to "245", "Psychological" to "486", "Romance" to "15",
+        "School Life" to "6", "Sci-fi" to "11", "Seinen" to "18",
+        "Shoujo" to "157", "Shoujo Ai" to "851", "Shounen" to "12",
+        "Shounen Ai" to "1692", "Slice of Life" to "7", "Smut" to "281",
+        "Sports" to "1357", "Supernatural" to "16", "Tragedy" to "132",
+        "Wuxia" to "479", "Xianxia" to "480", "Xuanhuan" to "3954",
         "Yaoi" to "560", "Yuri" to "922",
     )
 }
