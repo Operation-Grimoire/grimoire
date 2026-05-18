@@ -47,6 +47,7 @@ import io.grimoire.app.ui.screen.library.LibraryScreen
 import io.grimoire.app.ui.screen.more.MoreScreen
 import io.grimoire.app.ui.screen.more.MoreViewModel
 import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesBrowserScreen
+import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesSearchScreen
 import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesSeriesScreen
 import io.grimoire.app.ui.screen.more.statistics.StatisticsScreen
 import io.grimoire.app.ui.screen.reader.ReaderScreen
@@ -79,6 +80,7 @@ private const val ROUTE_BROWSE_HOME = "browse_home"
 private const val ROUTE_GLOBAL_SEARCH = "global_search"
 private const val ROUTE_GLOBAL_SEARCH_ARG = "global_search?q={q}"
 private const val ROUTE_NU_BROWSER = "nu_browser"
+private const val ROUTE_NU_SEARCH = "nu_search"
 private const val ROUTE_NU_SERIES = "nu_series?slug={slug}"
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
 private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}?q={q}"
@@ -231,6 +233,15 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 }
                 composable(route = ROUTE_NU_BROWSER) {
                     NovelUpdatesBrowserScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onSeriesClick = { slug ->
+                            navController.navigate("nu_series?slug=${Uri.encode(slug)}")
+                        },
+                        onOpenSearch = { navController.navigate(ROUTE_NU_SEARCH) },
+                    )
+                }
+                composable(route = ROUTE_NU_SEARCH) {
+                    NovelUpdatesSearchScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onSeriesClick = { slug ->
                             navController.navigate("nu_series?slug=${Uri.encode(slug)}")

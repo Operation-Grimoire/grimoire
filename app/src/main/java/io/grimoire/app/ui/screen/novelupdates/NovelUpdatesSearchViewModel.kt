@@ -4,9 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.grimoire.app.data.novelupdates.NuListingFilter
-import io.grimoire.app.data.novelupdates.NuRankingType
+import io.grimoire.app.data.novelupdates.NuBrowseFilter
 import io.grimoire.app.data.novelupdates.NuSearchResult
+import io.grimoire.app.data.novelupdates.NuTag
 import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,13 +14,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val TAG = "NuBrowserVM"
-
-/** The two NovelUpdates browse surfaces (Search has its own screen). */
-enum class NuBrowseMode { RANKINGS, LATEST }
+private const val TAG = "NuSearchVM"
 
 @HiltViewModel
-class NovelUpdatesBrowserViewModel @Inject constructor(
+class NovelUpdatesSearchViewModel @Inject constructor(
     private val repository: NovelUpdatesInfoRepository,
 ) : ViewModel() {
 
@@ -39,36 +36,45 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val _mode = MutableStateFlow(NuBrowseMode.RANKINGS)
-    val mode: StateFlow<NuBrowseMode> = _mode.asStateFlow()
+    private val _query = MutableStateFlow("")
+    val query: StateFlow<String> = _query.asStateFlow()
 
-    private val _rankingType = MutableStateFlow(NuRankingType.POPULAR_ALL)
-    val rankingType: StateFlow<NuRankingType> = _rankingType.asStateFlow()
+    private val _filter = MutableStateFlow(NuBrowseFilter())
+    val filter: StateFlow<NuBrowseFilter> = _filter.asStateFlow()
 
-    private val _filter = MutableStateFlow(NuListingFilter())
-    val filter: StateFlow<NuListingFilter> = _filter.asStateFlow()
+    // The full NU tag vocabulary (loaded once from the Series Finder page).
+    private val _tags = MutableStateFlow<List<NuTag>>(emptyList())
+    val tags: StateFlow<List<NuTag>> = _tags.asStateFlow()
+
+    private val _tagsLoading = MutableStateFlow(false)
+    val tagsLoading: StateFlow<Boolean> = _tagsLoading.asStateFlow()
 
     private var page = 1
 
     init {
         load(reset = true)
+        loadTags()
     }
 
-    fun setMode(newMode: NuBrowseMode) {
-        if (_mode.value == newMode) return
-        _mode.value = newMode
+    private fun loadTags() {
+        if (_tags.value.isNotEmpty() || _tagsLoading.value) return
+        viewModelScope.launch {
+            _tagsLoading.value = true
+            _tags.value = runCatching { repository.tags() }.getOrDefault(emptyList())
+            _tagsLoading.value = false
+        }
+    }
+
+    fun setQuery(q: String) { _query.value = q }
+
+    fun submitSearch() {
+        _filter.value = _filter.value.copy(query = _query.value.takeIf { it.isNotBlank() })
         load(reset = true)
     }
 
-    fun setRankingType(type: NuRankingType) {
-        if (_rankingType.value == type) return
-        _rankingType.value = type
-        if (_mode.value == NuBrowseMode.RANKINGS) load(reset = true)
-    }
-
-    /** Apply the shared Rankings/Latest filter sheet. */
-    fun applyFilter(filter: NuListingFilter) {
-        _filter.value = filter
+    /** Apply the advanced filter sheet (keeps the live query in sync). */
+    fun applyFilter(filter: NuBrowseFilter) {
+        _filter.value = filter.copy(query = _query.value.takeIf { it.isNotBlank() })
         load(reset = true)
     }
 
@@ -77,11 +83,6 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
     fun loadMore() {
         if (_isLoadingMore.value || !_hasMore.value || _isLoading.value) return
         load(reset = false)
-    }
-
-    private suspend fun fetch(page: Int) = when (_mode.value) {
-        NuBrowseMode.RANKINGS -> repository.ranking(_rankingType.value, _filter.value, page)
-        NuBrowseMode.LATEST -> repository.latest(_filter.value, page)
     }
 
     private fun load(reset: Boolean) {
@@ -97,7 +98,8 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
             }
             _error.value = null
 
-            runCatching { fetch(page) }
+            val request = _filter.value.copy(query = _query.value.takeIf { it.isNotBlank() })
+            runCatching { repository.finder(request, page) }
                 .onSuccess { listing ->
                     val merged = (if (reset) listing.results else _results.value + listing.results)
                         .distinctBy { it.url }
@@ -106,7 +108,7 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
                     _hasMore.value = listing.hasNext && (reset || grew)
                 }
                 .onFailure { e ->
-                    Log.e(TAG, "NU browse failed [mode=${_mode.value} page=$page]", e)
+                    Log.e(TAG, "NU search failed [page=$page]", e)
                     _error.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
                     if (!reset) page--
                 }
