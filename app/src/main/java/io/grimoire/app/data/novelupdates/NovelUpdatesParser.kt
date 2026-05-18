@@ -46,6 +46,11 @@ object NovelUpdatesParser {
     // --- Series page ---
     private const val SERIES_TITLE = "div.seriestitlenu"
     private const val SERIES_COVER = "div.seriesimg img"
+    private const val SERIES_TYPE = "#showtype"
+    // NU encodes durable metadata as tokens on the post container's class
+    // attribute (e.g. "language-japanese ntype-web-novel post-8456").
+    private const val SERIES_POST_ROOT = "div.w-blog[class*=post-]"
+    private val LANGUAGE_CLASS = Regex("""(?:^|\s)language-([a-z0-9-]+)""")
     private const val SERIES_AUTHORS = "#showauthors a"
     private const val SERIES_ASSOCIATED = "#editassociated"
     private const val SERIES_DESCRIPTION = "#editdescription"
@@ -155,28 +160,45 @@ object NovelUpdatesParser {
 
     fun parseSeries(doc: Document, requestUrl: String): NuSeries {
         val slug = NovelUpdatesEndpoints.slugFromUrl(requestUrl)
-        val title = doc.selectFirst(SERIES_TITLE)?.text()?.trim().orEmpty()
+        val title = doc.selectFirst(SERIES_TITLE)?.text()?.trim()
+            ?.ifBlank { null }
+            ?: doc.selectFirst("meta[property=og:title]")?.attr("content")?.trim().orEmpty()
         return NuSeries(
             slug = slug,
             url = requestUrl,
             title = title,
+            type = doc.selectFirst(SERIES_TYPE)?.text()?.trim()?.ifBlank { null },
+            language = parseLanguage(doc),
             authors = doc.select(SERIES_AUTHORS)
                 .map { it.text().trim() }
                 .filter { it.isNotBlank() }
                 .distinct(),
             associatedNames = parseAssociated(doc),
-            description = doc.selectFirst(SERIES_DESCRIPTION)?.text()?.trim()?.ifBlank { null },
+            description = (doc.selectFirst(SERIES_DESCRIPTION)?.text()?.trim()?.ifBlank { null })
+                ?: doc.selectFirst("meta[property=og:description]")?.attr("content")
+                    ?.trim()?.ifBlank { null },
             genres = doc.select(SERIES_GENRES).map { it.text().trim() }.filter { it.isNotBlank() }.distinct(),
             tags = doc.select(SERIES_TAGS).map { it.text().trim() }.filter { it.isNotBlank() }.distinct(),
             status = doc.selectFirst(SERIES_STATUS)?.text()?.trim()?.ifBlank { null },
             rating = parseRating(doc),
             ratingVotes = parseRatingVotes(doc),
-            coverUrl = doc.selectFirst(SERIES_COVER)?.imgSrc(),
+            coverUrl = doc.selectFirst(SERIES_COVER)?.imgSrc()
+                ?: doc.selectFirst("meta[property=og:image]")?.attr("content")
+                    ?.trim()?.ifBlank { null },
             recommendations = parseRecommendations(doc),
             sid = parseSid(doc),
             reviews = parseReviews(doc),
             reviewPageCount = parseReviewPageCount(doc),
         )
+    }
+
+    /** Original language, read from the durable `language-…` post class. */
+    private fun parseLanguage(doc: Document): String? = safe(null) {
+        val classes = doc.selectFirst(SERIES_POST_ROOT)?.className() ?: return@safe null
+        LANGUAGE_CLASS.find(classes)?.groupValues?.get(1)
+            ?.split("-")
+            ?.joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
+            ?.ifBlank { null }
     }
 
     private fun parseSid(doc: Document): String? = safe(null) {

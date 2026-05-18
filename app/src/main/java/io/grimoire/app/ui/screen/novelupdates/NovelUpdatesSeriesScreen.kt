@@ -132,6 +132,17 @@ fun NovelUpdatesSeriesScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
+                                val typeLine = listOfNotNull(series.type, series.language)
+                                    .distinct()
+                                    .joinToString(" · ")
+                                if (typeLine.isNotEmpty()) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        typeLine,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
 

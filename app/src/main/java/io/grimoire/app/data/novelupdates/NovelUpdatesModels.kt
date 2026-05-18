@@ -39,6 +39,8 @@ data class NuSeries(
     val slug: String,
     val url: String,
     val title: String,
+    val type: String? = null,
+    val language: String? = null,
     val authors: List<String> = emptyList(),
     val associatedNames: List<String> = emptyList(),
     val description: String? = null,

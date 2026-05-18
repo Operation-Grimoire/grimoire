@@ -291,6 +291,38 @@ class NovelUpdatesParserTest {
     }
 
     @Test
+    fun parseSeries_extractsTypeLanguageAndOgFallbacks() {
+        val html = """
+            <html><head>
+              <meta property="og:image" content="https://cdn.test/og-cover.jpg" />
+              <meta property="og:description" content="Fallback description." />
+              <meta property="og:title" content="OG Title" />
+            </head><body>
+              <div class="w-blog post-8456 language-japanese ntype-web-novel genre-action">
+                <div class="seriestitlenu"></div>
+                <div id="showtype">
+                  <a class="genre type" href="https://www.novelupdates.com/ntype/web-novel/">Web Novel</a>
+                  <span>(JP)</span>
+                </div>
+              </div>
+            </body></html>
+        """.trimIndent()
+
+        val series = NovelUpdatesParser.parseSeries(
+            Jsoup.parse(html, NovelUpdatesEndpoints.BASE_URL),
+            "https://www.novelupdates.com/series/x/",
+        )
+
+        assertEquals("Web Novel (JP)", series.type)
+        assertEquals("Japanese", series.language)
+        // Title/description/cover fall back to the og: meta tags when the
+        // in-page elements are empty/missing.
+        assertEquals("OG Title", series.title)
+        assertEquals("Fallback description.", series.description)
+        assertEquals("https://cdn.test/og-cover.jpg", series.coverUrl)
+    }
+
+    @Test
     fun parseSearch_emptyOnUnrelatedHtml() {
         val results = NovelUpdatesParser.parseSearch(
             Jsoup.parse("<html><body><p>nothing here</p></body></html>"),
