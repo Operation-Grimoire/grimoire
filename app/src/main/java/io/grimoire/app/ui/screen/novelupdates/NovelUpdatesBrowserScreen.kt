@@ -62,6 +62,7 @@ import coil.compose.AsyncImage
 import io.grimoire.app.data.novelupdates.NuBrowseSort
 import io.grimoire.app.data.novelupdates.NuGenres
 import io.grimoire.app.data.novelupdates.NuLanguages
+import io.grimoire.app.data.novelupdates.NuRankWindow
 import io.grimoire.app.data.novelupdates.NuSearchResult
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,6 +83,7 @@ fun NovelUpdatesBrowserScreen(
     val sort by viewModel.sort.collectAsState()
     val genre by viewModel.genre.collectAsState()
     val language by viewModel.language.collectAsState()
+    val rankWindow by viewModel.rankWindow.collectAsState()
 
     val keyboard = LocalSoftwareKeyboardController.current
     val gridState = rememberLazyGridState()
@@ -137,6 +139,25 @@ fun NovelUpdatesBrowserScreen(
                 }
                 ModeChip("Filter", mode == NuBrowseMode.FILTER) {
                     viewModel.setMode(NuBrowseMode.FILTER)
+                }
+            }
+
+            if (mode == NuBrowseMode.LEADERBOARD) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ModeChip("This week", rankWindow == NuRankWindow.WEEK) {
+                        viewModel.setRankWindow(NuRankWindow.WEEK)
+                    }
+                    ModeChip("This month", rankWindow == NuRankWindow.MONTH) {
+                        viewModel.setRankWindow(NuRankWindow.MONTH)
+                    }
+                    ModeChip("All time", rankWindow == NuRankWindow.ALL) {
+                        viewModel.setRankWindow(NuRankWindow.ALL)
+                    }
                 }
             }
 
@@ -299,9 +320,9 @@ private fun NuFilterSheet(
     Column(
         Modifier
             .fillMaxWidth()
+            .heightIn(max = 560.dp)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-            .heightIn(max = 620.dp),
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("Order by", style = MaterialTheme.typography.titleSmall)

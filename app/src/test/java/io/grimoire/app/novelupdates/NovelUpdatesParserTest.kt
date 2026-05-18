@@ -159,6 +159,39 @@ class NovelUpdatesParserTest {
     }
 
     @Test
+    fun parseRanking_takesScopedSeriesLinksInOrderAndIgnoresSidebar() {
+        val html = """
+            <html><body>
+              <table id="myTable">
+                <tr><td>1</td><td>
+                  <a id="sid12345" href="https://www.novelupdates.com/series/shadow-slave/">Shadow Slave</a>
+                </td></tr>
+                <tr><td>2</td><td>
+                  <a href="https://www.novelupdates.com/series/the-beginning-after-the-end/">The Beginning After The End</a>
+                </td></tr>
+              </table>
+              <div class="sidebar">
+                <a href="https://www.novelupdates.com/series/should-not-appear/">Should Not Appear</a>
+              </div>
+            </body></html>
+        """.trimIndent()
+
+        val results = NovelUpdatesParser.parseRanking(
+            Jsoup.parse(html, NovelUpdatesEndpoints.BASE_URL),
+        )
+
+        assertEquals(2, results.size)
+        assertEquals("Shadow Slave", results[0].title)
+        assertEquals("shadow-slave", results[0].slug)
+        assertEquals(
+            "https://cdn.novelupdates.com/imgmid/series_12345.jpg",
+            results[0].coverUrl,
+        )
+        assertEquals("the-beginning-after-the-end", results[1].slug)
+        assertTrue(results.none { it.title == "Should Not Appear" })
+    }
+
+    @Test
     fun parseSearch_emptyOnUnrelatedHtml() {
         val results = NovelUpdatesParser.parseSearch(
             Jsoup.parse("<html><body><p>nothing here</p></body></html>"),

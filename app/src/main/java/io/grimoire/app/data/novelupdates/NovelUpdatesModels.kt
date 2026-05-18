@@ -41,6 +41,9 @@ data class NuSeries(
  */
 enum class NuBrowseSort { POPULAR, LATEST, RATING, TITLE, LAST_UPDATED, RANK }
 
+/** Time window for the NovelUpdates series-ranking leaderboard. */
+enum class NuRankWindow { WEEK, MONTH, ALL }
+
 /**
  * A NovelUpdates browse request. An empty/blank [query] drives a pure
  * filter/sort listing; a non-blank [query] is a Series Finder text search.
