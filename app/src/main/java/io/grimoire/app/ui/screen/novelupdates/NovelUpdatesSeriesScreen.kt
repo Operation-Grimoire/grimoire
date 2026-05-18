@@ -1,6 +1,5 @@
 package io.grimoire.app.ui.screen.novelupdates
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,19 +31,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
-import io.grimoire.app.ui.component.ZoomableImageDialog
+import io.grimoire.app.ui.component.ZoomableCoverImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,7 +99,6 @@ fun NovelUpdatesSeriesScreen(
 
                 is NuSeriesState.Loaded -> {
                     val series = s.series
-                    var showCoverZoom by remember { mutableStateOf(false) }
 
                     Column(
                         Modifier
@@ -114,16 +108,13 @@ fun NovelUpdatesSeriesScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            AsyncImage(
+                            ZoomableCoverImage(
                                 model = series.coverUrl,
                                 contentDescription = series.title,
                                 modifier = Modifier
                                     .width(110.dp)
                                     .height(156.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable(enabled = !series.coverUrl.isNullOrBlank()) {
-                                        showCoverZoom = true
-                                    },
+                                    .clip(RoundedCornerShape(8.dp)),
                             )
                             Column(Modifier.weight(1f)) {
                                 Text(
@@ -161,14 +152,6 @@ fun NovelUpdatesSeriesScreen(
                             Text("Description", style = MaterialTheme.typography.titleSmall)
                             ExpandableText(text = desc)
                         }
-                    }
-
-                    if (showCoverZoom && !series.coverUrl.isNullOrBlank()) {
-                        ZoomableImageDialog(
-                            model = series.coverUrl,
-                            contentDescription = series.title,
-                            onDismiss = { showCoverZoom = false },
-                        )
                     }
                 }
             }
