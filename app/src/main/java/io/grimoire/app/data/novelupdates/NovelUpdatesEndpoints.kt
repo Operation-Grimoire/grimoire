@@ -47,23 +47,16 @@ object NovelUpdatesEndpoints {
         return sb.toString()
     }
 
-    /** Series-ranking "leaderboard". Distinct DOM — see parseRanking. */
-    fun seriesRankingUrl(window: NuRankWindow, page: Int): String {
-        val rank = when (window) {
-            NuRankWindow.WEEK -> "week"
-            NuRankWindow.MONTH -> "month"
-            NuRankWindow.ALL -> "alltime"
-        }
-        val base = "$BASE_URL/series-ranking/?rank=$rank"
-        return if (page > 1) "$base&pg=$page" else base
-    }
-
+    // NU Series Finder `&sort=` codes. POPULAR/LATEST are confirmed working
+    // (the existing browse pages use them); the rest follow NU's documented
+    // finder ordering and reuse the same proven card parser.
     private fun sortCode(sort: NuBrowseSort): String = when (sort) {
-        // Confirmed: sdate = date added. Others follow NU's documented codes.
-        NuBrowseSort.LATEST -> "sdate"
         NuBrowseSort.POPULAR -> "sread"
-        NuBrowseSort.RATING -> "sfrating"
+        NuBrowseSort.LATEST -> "sdate"
+        NuBrowseSort.RATING -> "srate"
         NuBrowseSort.TITLE -> "abc"
+        NuBrowseSort.LAST_UPDATED -> "srel"
+        NuBrowseSort.RANK -> "srank"
     }
 
     fun seriesUrl(slugOrUrl: String): String {
