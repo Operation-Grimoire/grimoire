@@ -59,7 +59,11 @@ class AppUpdateViewModel @Inject constructor(
                 _changelogText.value = Changelog.since(lastSeen, BuildConfig.VERSION_CODE)
             }
             val channel = updatePreferences.channel.changes().first()
-            _availableRelease.value = checker.checkForUpdate(channel)
+            val release = checker.checkForUpdate(channel) ?: return@launch
+            val autoPopupEnabled = updatePreferences.autoPopupEnabled.changes().first()
+            val skippedVersion = updatePreferences.skippedVersion.changes().first()
+            if (!autoPopupEnabled || release.tagName == skippedVersion) return@launch
+            _availableRelease.value = release
         }
     }
 
@@ -117,6 +121,14 @@ class AppUpdateViewModel @Inject constructor(
 
     fun dismissUpdate() {
         if (_downloadState.value is DownloadState.Downloading) return
+        _downloadState.value = DownloadState.Idle
+        _availableRelease.value = null
+    }
+
+    fun skipVersion() {
+        if (_downloadState.value is DownloadState.Downloading) return
+        val release = _availableRelease.value ?: return
+        viewModelScope.launch { updatePreferences.skippedVersion.set(release.tagName) }
         _downloadState.value = DownloadState.Idle
         _availableRelease.value = null
     }

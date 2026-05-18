@@ -2,6 +2,7 @@ package io.grimoire.app.ui.update
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,6 +39,7 @@ fun AppUpdateUi(viewModel: AppUpdateViewModel = hiltViewModel()) {
             downloadState = downloadState,
             onUpdate = viewModel::downloadAndInstall,
             onDismiss = viewModel::dismissUpdate,
+            onSkip = viewModel::skipVersion,
         )
     }
 }
@@ -66,6 +68,7 @@ private fun UpdateDialog(
     downloadState: DownloadState,
     onUpdate: () -> Unit,
     onDismiss: () -> Unit,
+    onSkip: () -> Unit,
 ) {
     val isDownloading = downloadState is DownloadState.Downloading
     AlertDialog(
@@ -134,7 +137,12 @@ private fun UpdateDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !isDownloading) { Text("Later") }
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = onSkip, enabled = !isDownloading) {
+                    Text("Skip this version")
+                }
+                TextButton(onClick = onDismiss, enabled = !isDownloading) { Text("Later") }
+            }
         },
     )
 }
