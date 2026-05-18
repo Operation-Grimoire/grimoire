@@ -45,8 +45,9 @@ object NovelUpdatesEndpoints {
         return sb.toString()
     }
 
-    /** All NovelUpdates tags (id + name), parsed from the public list page. */
-    fun listTagsUrl(): String = "$BASE_URL/list-tags/"
+    /** /list-tags/ — paginated (`?st=1&pg=N`); ~16 pages of tag links. */
+    fun listTagsUrl(page: Int): String =
+        if (page > 1) "$BASE_URL/list-tags/?st=1&pg=$page" else "$BASE_URL/list-tags/"
 
     /**
      * NovelUpdates' "Series Ranking" page. [type] is the Ranking Type select;

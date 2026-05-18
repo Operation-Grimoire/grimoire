@@ -31,13 +31,10 @@ object NovelUpdatesParser {
     // --- Listing pagination (digg/wp-pagenavi style used by NU) ---
     private const val PAGINATION_NEXT = ".digg_pagination a.next_page, .pagination a.next_page"
 
-    // --- /list-tags/ ---
-    // Tolerant: any anchor into a tag page; the numeric series-finder tag id
-    // is read from the anchor id / a data-attr / a trailing href number.
-    // (Selectors pending a real /list-tags/ HTML sample to harden.)
-    private const val TAG_LINK = "a[href*=/series-tags/], a[href*=/tags/], a[href*=/stags/]"
-    private val TAG_ID = Regex("""(?:tag|tid|term)(\d+)""")
-    private val TRAILING_NUM = Regex("""(\d+)/?$""")
+    // --- /list-tags/ --- confirmed against real page HTML:
+    //   <div class="staglistall"> … <li><i…/> <a href=".../stag/{slug}/">Name</a> (1178)</li>
+    private const val TAG_LINK = "div.staglistall a[href*=/stag/]"
+    private val TAG_COUNT = Regex("""\((\d[\d,]*)\)""")
 
     // --- Series ranking ("leaderboard") page ---
     // NU renders the ranking as a list/table distinct from the finder cards.
@@ -113,15 +110,13 @@ object NovelUpdatesParser {
         doc.select(TAG_LINK).mapNotNull { a ->
             val name = a.text().trim()
             if (name.isEmpty()) return@mapNotNull null
-            val href = a.attr("href")
-            val id = TAG_ID.find(a.id())?.groupValues?.get(1)
-                ?: a.attr("data-id").ifBlank { null }
-                ?: a.attr("data-tag-id").ifBlank { null }
-                ?: a.attr("rel").ifBlank { null }?.takeIf { it.all(Char::isDigit) }
-                ?: TRAILING_NUM.find(href)?.groupValues?.get(1)
-            if (id.isNullOrBlank()) return@mapNotNull null
-            NuTag(name = name, id = id)
-        }.distinctBy { it.id }
+            val slug = a.attr("href").substringAfter("/stag/", "")
+                .trim('/').substringBefore('/')
+            if (slug.isEmpty()) return@mapNotNull null
+            val count = TAG_COUNT.find(a.parent()?.text().orEmpty())
+                ?.groupValues?.get(1)?.replace(",", "")?.toIntOrNull() ?: 0
+            NuTag(name = name, slug = slug, count = count)
+        }.distinctBy { it.slug }
     }
 
     /**
