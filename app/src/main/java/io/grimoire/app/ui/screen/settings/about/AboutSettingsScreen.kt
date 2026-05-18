@@ -21,6 +21,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -57,6 +58,7 @@ fun AboutSettingsScreen(
     }
     val checkState by updateViewModel.checkState.collectAsState()
     val channel by viewModel.channel.collectAsState()
+    val autoPopupEnabled by viewModel.autoPopupEnabled.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -132,6 +134,21 @@ fun AboutSettingsScreen(
                     modifier = Modifier.clickable {
                         viewModel.setChannel(entry)
                         updateViewModel.resetCheckState()
+                    },
+                )
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("Automatic update popups") },
+                    supportingContent = {
+                        Text("Show a dialog on launch when an update is available")
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = autoPopupEnabled,
+                            onCheckedChange = { viewModel.setAutoPopupEnabled(it) },
+                        )
                     },
                 )
             }
