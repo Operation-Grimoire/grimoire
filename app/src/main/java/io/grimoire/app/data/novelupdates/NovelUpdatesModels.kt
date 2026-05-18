@@ -93,11 +93,11 @@ enum class NuStoryStatus(val value: String, val label: String) {
 }
 
 /**
- * A NovelUpdates tag from /list-tags/ — name, slug and series [count].
- * NOTE: /list-tags/ does not expose the numeric term id Series Finder's
- * `tgi`/`tge` need; resolving that requires NU's tag autocomplete.
+ * A NovelUpdates tag. [id] is the numeric term id Series Finder needs for
+ * `tgi`/`tge`, taken from the `<select id="tags_include">` options embedded
+ * in the live /series-finder/ page (loaded dynamically, never hardcoded).
  */
-data class NuTag(val name: String, val slug: String, val count: Int = 0)
+data class NuTag(val name: String, val id: String)
 
 /**
  * The full Series Finder request: free-text [query], [sort]/[orderAscending],

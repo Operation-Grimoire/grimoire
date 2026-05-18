@@ -45,9 +45,8 @@ object NovelUpdatesEndpoints {
         return sb.toString()
     }
 
-    /** /list-tags/ — paginated (`?st=1&pg=N`); ~16 pages of tag links. */
-    fun listTagsUrl(page: Int): String =
-        if (page > 1) "$BASE_URL/list-tags/?st=1&pg=$page" else "$BASE_URL/list-tags/"
+    /** The Series Finder page; embeds the full tag <select> (id + name). */
+    fun filterFormUrl(): String = "$BASE_URL/series-finder/"
 
     /**
      * NovelUpdates' "Series Ranking" page. [type] is the Ranking Type select;

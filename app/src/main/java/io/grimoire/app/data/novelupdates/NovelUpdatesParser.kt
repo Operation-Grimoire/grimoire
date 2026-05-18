@@ -31,10 +31,9 @@ object NovelUpdatesParser {
     // --- Listing pagination (digg/wp-pagenavi style used by NU) ---
     private const val PAGINATION_NEXT = ".digg_pagination a.next_page, .pagination a.next_page"
 
-    // --- /list-tags/ --- confirmed against real page HTML:
-    //   <div class="staglistall"> … <li><i…/> <a href=".../stag/{slug}/">Name</a> (1178)</li>
-    private const val TAG_LINK = "div.staglistall a[href*=/stag/]"
-    private val TAG_COUNT = Regex("""\((\d[\d,]*)\)""")
+    // --- Series Finder tag list --- per seriesfinder.js the tag filter is
+    //   $("#tags_include").chosen() over a <select> of <option value=id>name.
+    private const val TAG_OPTION = "select#tags_include option, select#tags_exclude option"
 
     // --- Series ranking ("leaderboard") page ---
     // NU renders the ranking as a list/table distinct from the finder cards.
@@ -107,16 +106,14 @@ object NovelUpdatesParser {
      * series-finder tag id. Hardened once a real page sample is available.
      */
     fun parseTags(doc: Document): List<NuTag> = safe(emptyList()) {
-        doc.select(TAG_LINK).mapNotNull { a ->
-            val name = a.text().trim()
-            if (name.isEmpty()) return@mapNotNull null
-            val slug = a.attr("href").substringAfter("/stag/", "")
-                .trim('/').substringBefore('/')
-            if (slug.isEmpty()) return@mapNotNull null
-            val count = TAG_COUNT.find(a.parent()?.text().orEmpty())
-                ?.groupValues?.get(1)?.replace(",", "")?.toIntOrNull() ?: 0
-            NuTag(name = name, slug = slug, count = count)
-        }.distinctBy { it.slug }
+        doc.select(TAG_OPTION).mapNotNull { opt ->
+            val id = opt.attr("value").trim()
+            val name = opt.text().trim()
+            if (id.isEmpty() || !id.all(Char::isDigit) || name.isEmpty()) {
+                return@mapNotNull null
+            }
+            NuTag(name = name, id = id)
+        }.distinctBy { it.id }
     }
 
     /**

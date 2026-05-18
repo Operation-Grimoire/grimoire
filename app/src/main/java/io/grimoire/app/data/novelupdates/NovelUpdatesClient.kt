@@ -104,22 +104,15 @@ class NovelUpdatesClient @Inject constructor() {
     }
 
     /**
-     * All NovelUpdates tags (loaded live from the paginated /list-tags/).
-     * Walks pages while a next link exists; capped for safety.
+     * All NovelUpdates tags (id + name), parsed in one request from the
+     * Series Finder page's embedded tag <select>.
      */
     suspend fun listTags(): List<NuTag> {
-        val out = ArrayList<NuTag>()
-        var page = 1
-        while (page <= MAX_TAG_PAGES) {
-            val doc = Jsoup.parse(
-                get(NovelUpdatesEndpoints.listTagsUrl(page)),
-                NovelUpdatesEndpoints.BASE_URL,
-            )
-            out += NovelUpdatesParser.parseTags(doc)
-            if (!NovelUpdatesParser.hasNextPage(doc)) break
-            page++
-        }
-        return out.distinctBy { it.slug }
+        val doc = Jsoup.parse(
+            get(NovelUpdatesEndpoints.filterFormUrl()),
+            NovelUpdatesEndpoints.BASE_URL,
+        )
+        return NovelUpdatesParser.parseTags(doc)
     }
 
     suspend fun getSeries(slugOrUrl: String): NuSeries {
@@ -145,7 +138,6 @@ class NovelUpdatesClient @Inject constructor() {
 
     private companion object {
         const val MIN_INTERVAL_MS = 1_200L
-        const val MAX_TAG_PAGES = 30
     }
 }
 
