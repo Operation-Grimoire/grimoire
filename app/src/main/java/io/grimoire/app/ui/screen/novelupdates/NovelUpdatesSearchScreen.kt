@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -45,8 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.input.ImeAction
+import io.grimoire.app.ui.component.AppSearchField
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -78,7 +75,6 @@ fun NovelUpdatesSearchScreen(
     val tags by viewModel.tags.collectAsState()
     val tagsLoading by viewModel.tagsLoading.collectAsState()
 
-    val keyboard = LocalSoftwareKeyboardController.current
     var showFilters by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -92,17 +88,12 @@ fun NovelUpdatesSearchScreen(
                     }
                 },
                 title = {
-                    OutlinedTextField(
+                    AppSearchField(
                         value = query,
                         onValueChange = viewModel::setQuery,
-                        placeholder = { Text("Search NovelUpdates…") },
-                        singleLine = true,
+                        placeholder = "Search NovelUpdates…",
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = {
-                            keyboard?.hide()
-                            viewModel.submitSearch()
-                        }),
+                        onSearch = { viewModel.submitSearch() },
                     )
                 },
                 actions = {
