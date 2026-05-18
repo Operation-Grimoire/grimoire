@@ -128,6 +128,11 @@ fun NovelUpdatesSeriesScreen(
                             GenreChips(genres = series.genres)
                         }
 
+                        series.description?.let { desc ->
+                            Text("Description", style = MaterialTheme.typography.titleSmall)
+                            ExpandableText(text = desc)
+                        }
+
                         Button(
                             onClick = { onFindInSources(series.title) },
                             modifier = Modifier.fillMaxWidth(),
@@ -147,11 +152,6 @@ fun NovelUpdatesSeriesScreen(
                                 onOpenSeries(NovelUpdatesEndpoints.slugFromUrl(url))
                             },
                         )
-
-                        series.description?.let { desc ->
-                            Text("Description", style = MaterialTheme.typography.titleSmall)
-                            ExpandableText(text = desc)
-                        }
                     }
                 }
             }
