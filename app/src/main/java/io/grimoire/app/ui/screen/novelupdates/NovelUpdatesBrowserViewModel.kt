@@ -61,12 +61,6 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
         load(reset = true)
     }
 
-    fun setMode(newMode: NuBrowseMode) {
-        if (_mode.value == newMode) return
-        _mode.value = newMode
-        load(reset = true)
-    }
-
     fun setRankingType(type: NuRankingType) {
         if (_rankingType.value == type) return
         _rankingType.value = type

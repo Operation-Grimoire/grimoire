@@ -192,6 +192,191 @@ class NovelUpdatesParserTest {
     }
 
     @Test
+    fun parseSeries_extractsAuthorsReviewsAndSid() {
+        val html = """
+            <html><body>
+              <div class="seriestitlenu">The Death Mage</div>
+              <h5 class="seriesother">Author(s)</h5>
+              <div id="showauthors">
+                <a class="genre" id="authtag" href="https://www.novelupdates.com/nauthor/densuke/">Densuke</a><br>
+                <a class="genre" id="authtag" href="https://www.novelupdates.com/nauthor/x/">デンスケ</a><br>
+              </div>
+
+              <div class="w-comments-item" id="comment-115813">
+                <div class="rev_left">
+                  <img alt='Donce' src='https://av.test/donce.jpg' class='avatar'>
+                </div>
+                <div class="w-comments-item-meta-new">
+                  <table><tbody><tr>
+                    <td valign="top">
+                      <a class="revname115813" href="https://www.novelupdates.com/user/207649/Donce/">Donce</a>
+                      <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                    </td>
+                    <td style="text-align: right;" valign="top">
+                      <div style="text-align: right;">Sep 01, 2019</div>
+                      <div>Status: <span id="stat115813">c200</span></div>
+                    </td>
+                  </tr></tbody></table>
+                </div>
+                <div class="w-comments-item-text 207649">
+                  First paragraph.<p></p>
+                  Second paragraph.
+                  <span class="dots">... </span><span class="morelink" onclick="showtext(this); return false;">more&gt;&gt;</span>
+                  <span style="display:none"> Hidden continuation.<span class="morelink"> &lt;&lt;less</span></span>
+                </div>
+              </div>
+              <div class="rev_b1">
+                <span class="rev_bar"><span class="liked_115813">50</span> Likes</span>
+                <span><a class="permrev" href="//www.novelupdates.com/fdrev/?comid=115813&sid=8456">Permalink</a></span>
+              </div>
+
+              <div class="w-comments-item" id="comment-42685">
+                <div class="rev_left"><img alt='Dark_Messiah' src='https://av.test/dm.png' class='avatar'></div>
+                <div class="w-comments-item-meta-new">
+                  <table><tbody><tr>
+                    <td valign="top">
+                      <a class="revname42685" href="https://www.novelupdates.com/user/31488/Dark_Messiah/">Dark_Messiah</a>
+                      <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star-o"></i><i class="fa fa-star-o"></i>
+                    </td>
+                    <td style="text-align: right;" valign="top">
+                      <div style="text-align: right;">Jun 15, 2017</div>
+                      <div>Status: <span id="stat42685">--</span></div>
+                    </td>
+                  </tr></tbody></table>
+                </div>
+                <div class="w-comments-item-text 31488">Short take.</div>
+              </div>
+              <div class="rev_b1">
+                <span class="rev_bar"><span class="liked_42685">12</span> Likes</span>
+                <span><a class="permrev" href="//www.novelupdates.com/fdrev/?comid=42685&sid=8456">Permalink</a></span>
+              </div>
+
+              <div class="w-comments-pagination">
+                <span class='page-numbers current'>1</span>
+                <a class='page-numbers' href='#'>2</a>
+                <a class='page-numbers' href='#'>18</a>
+                <a class="next page-numbers" href='#'>Next &raquo;</a>
+              </div>
+            </body></html>
+        """.trimIndent()
+
+        val series = NovelUpdatesParser.parseSeries(
+            Jsoup.parse(html, NovelUpdatesEndpoints.BASE_URL),
+            "https://www.novelupdates.com/series/the-death-mage/",
+        )
+
+        assertEquals(listOf("Densuke", "デンスケ"), series.authors)
+        assertEquals("8456", series.sid)
+        assertEquals(18, series.reviewPageCount)
+        assertEquals(2, series.reviews.size)
+
+        val first = series.reviews[0]
+        assertEquals("115813", first.id)
+        assertEquals("Donce", first.author)
+        assertEquals(5, first.rating)
+        assertEquals("Sep 01, 2019", first.date)
+        assertEquals("c200", first.progress)
+        assertEquals(50, first.likes)
+        assertTrue(first.body.contains("First paragraph."))
+        assertTrue(first.body.contains("Hidden continuation."))
+        assertTrue(!first.body.contains("more>>"))
+        assertEquals(
+            "https://www.novelupdates.com/fdrev/?comid=115813&sid=8456",
+            first.permalink,
+        )
+
+        val second = series.reviews[1]
+        assertEquals(3, second.rating)
+        assertEquals(null, second.progress)
+    }
+
+    @Test
+    fun parseSeries_extractsTypeLanguageAndOgFallbacks() {
+        val html = """
+            <html><head>
+              <meta property="og:image" content="https://cdn.test/og-cover.jpg" />
+              <meta property="og:description" content="Fallback description." />
+              <meta property="og:title" content="OG Title" />
+            </head><body>
+              <div class="w-blog post-8456 language-japanese ntype-web-novel genre-action">
+                <div class="seriestitlenu"></div>
+                <div id="showtype">
+                  <a class="genre type" href="https://www.novelupdates.com/ntype/web-novel/">Web Novel</a>
+                  <span>(JP)</span>
+                </div>
+              </div>
+            </body></html>
+        """.trimIndent()
+
+        val series = NovelUpdatesParser.parseSeries(
+            Jsoup.parse(html, NovelUpdatesEndpoints.BASE_URL),
+            "https://www.novelupdates.com/series/x/",
+        )
+
+        assertEquals("Web Novel (JP)", series.type)
+        assertEquals("Japanese", series.language)
+        // Title/description/cover fall back to the og: meta tags when the
+        // in-page elements are empty/missing.
+        assertEquals("OG Title", series.title)
+        assertEquals("Fallback description.", series.description)
+        assertEquals("https://cdn.test/og-cover.jpg", series.coverUrl)
+    }
+
+    @Test
+    fun parseSeries_extractsExtendedMetadataAndReleases() {
+        val html = """
+            <html><body>
+              <div class="w-blog post-8456 language-japanese">
+              <div class="seriestitlenu">The Death Mage</div>
+              <div id="showartists"><a class="genre" id="artiststag" href="x">Ban</a><br><a class="genre" id="artiststag" href="y">ばん！</a><br></div>
+              <h5 class="seriesother">Year</h5><div id="edityear">2015</div>
+              <div id="editstatus">412 WN Chapters (Main; Complete)<br />14 LN Volumes (Ongoing)</div>
+              <div id="showlicensed">Yes</div>
+              <div id="showtranslated">No</div>
+              <div id="showopublisher"><a class="genre" id="myopub" href="a">Hifumi Shobo</a><br><a class="genre" id="myopub" href="b">Syosetu</a><br></div>
+              <div id="showepublisher"><span class="seriesna">N/A</span><br></div>
+              <h5 class="seriesother">Release Frequency</h5>Every 18.2 Day(s)
+              <h5 class="seriesother">Activity Stats</h5>Weekly Rank: <span class="userrate rank">#1767</span>
+              <h5 class="seriesother">Reading List</h5>On <b class="rlist">30657</b> Reading Lists
+              <div class="review-count">351 Reviews</div>
+              <table id="myTable"><tbody>
+                <tr><td style="padding-left:5px;">04/29/26</td><td><a title="Fenrir Realm" href="https://www.novelupdates.com/group/fenrir-realm/">Fenrir Realm</a></td><td><span title="c394">c394</span></td></tr>
+                <tr><td>08/18/25</td><td><a href="https://www.novelupdates.com/group/fenrir-realm/">Fenrir Realm</a></td><td><span title="ss 69">ss 69</span></td></tr>
+              </tbody></table>
+              </div>
+            </body></html>
+        """.trimIndent()
+
+        val series = NovelUpdatesParser.parseSeries(
+            Jsoup.parse(html, NovelUpdatesEndpoints.BASE_URL),
+            "https://www.novelupdates.com/series/x/",
+        )
+
+        assertEquals(listOf("Ban", "ばん！"), series.artists)
+        assertEquals("2015", series.year)
+        assertEquals(
+            "412 WN Chapters (Main; Complete)\n14 LN Volumes (Ongoing)",
+            series.status,
+        )
+        assertEquals(true, series.licensed)
+        assertEquals(false, series.completelyTranslated)
+        assertEquals(listOf("Hifumi Shobo", "Syosetu"), series.originalPublishers)
+        assertTrue(series.englishPublishers.isEmpty())
+        assertEquals("Every 18.2 Day(s)", series.releaseFrequency)
+        assertEquals(30657, series.readingListCount)
+        assertEquals(351, series.reviewCount)
+        assertEquals(2, series.releases.size)
+        assertEquals("04/29/26", series.releases[0].date)
+        assertEquals("Fenrir Realm", series.releases[0].group)
+        assertEquals("c394", series.releases[0].chapter)
+        assertEquals(
+            "https://www.novelupdates.com/group/fenrir-realm/",
+            series.releases[0].groupUrl,
+        )
+        assertEquals("ss 69", series.releases[1].chapter)
+    }
+
+    @Test
     fun parseSearch_emptyOnUnrelatedHtml() {
         val results = NovelUpdatesParser.parseSearch(
             Jsoup.parse("<html><body><p>nothing here</p></body></html>"),

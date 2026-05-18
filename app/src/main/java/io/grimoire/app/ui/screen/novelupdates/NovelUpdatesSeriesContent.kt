@@ -61,7 +61,7 @@ fun NovelUpdatesSeriesContent(
         }
 
         series.status?.let { st ->
-            val segments = st.split(" -")
+            val segments = st.split("\n", " -")
                 .map { it.trim() }
                 .filter { it.isNotEmpty() }
             if (segments.isNotEmpty()) {

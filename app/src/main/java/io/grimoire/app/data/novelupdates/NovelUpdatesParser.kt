@@ -46,12 +46,32 @@ object NovelUpdatesParser {
     // --- Series page ---
     private const val SERIES_TITLE = "div.seriestitlenu"
     private const val SERIES_COVER = "div.seriesimg img"
+    private const val SERIES_TYPE = "#showtype"
+    // NU encodes durable metadata as tokens on the post container's class
+    // attribute (e.g. "language-japanese ntype-web-novel post-8456").
+    private const val SERIES_POST_ROOT = "div.w-blog[class*=post-]"
+    private val LANGUAGE_CLASS = Regex("""(?:^|\s)language-([a-z0-9-]+)""")
+    private const val SERIES_AUTHORS = "#showauthors a"
+    private const val SERIES_ARTISTS = "#showartists a"
     private const val SERIES_ASSOCIATED = "#editassociated"
     private const val SERIES_DESCRIPTION = "#editdescription"
     private const val SERIES_GENRES = "#seriesgenre a"
     private const val SERIES_TAGS = "#showtags a"
     private const val SERIES_STATUS = "#editstatus"
+    private const val SERIES_YEAR = "#edityear"
+    private const val SERIES_LICENSED = "#showlicensed"
+    private const val SERIES_TRANSLATED = "#showtranslated"
+    private const val SERIES_OPUBLISHER = "#showopublisher a"
+    private const val SERIES_EPUBLISHER = "#showepublisher a"
+    private const val SERIES_RLIST = "b.rlist"
+    private const val SERIES_RELEASE_ROW = "table#myTable tbody tr"
+    private const val SERIES_REVIEW_COUNT = "div.review-count"
     private const val SERIES_RATING = "span.uvotes"
+
+    // --- Series reviews (the #comments / .w-comments list) ---
+    private const val REVIEW_ITEM = "div.w-comments-item"
+    private const val REVIEW_PAGE_LINK = ".w-comments-pagination .page-numbers"
+    private val PERM_SID = Regex("""sid=(\d+)""")
 
     private inline fun <T> safe(default: T, block: () -> T): T =
         try {
@@ -149,21 +169,209 @@ object NovelUpdatesParser {
 
     fun parseSeries(doc: Document, requestUrl: String): NuSeries {
         val slug = NovelUpdatesEndpoints.slugFromUrl(requestUrl)
-        val title = doc.selectFirst(SERIES_TITLE)?.text()?.trim().orEmpty()
+        val title = doc.selectFirst(SERIES_TITLE)?.text()?.trim()
+            ?.ifBlank { null }
+            ?: doc.selectFirst("meta[property=og:title]")?.attr("content")?.trim().orEmpty()
         return NuSeries(
             slug = slug,
             url = requestUrl,
             title = title,
+            type = doc.selectFirst(SERIES_TYPE)?.text()?.trim()?.ifBlank { null },
+            language = parseLanguage(doc),
+            authors = textList(doc, SERIES_AUTHORS),
+            artists = textList(doc, SERIES_ARTISTS),
             associatedNames = parseAssociated(doc),
-            description = doc.selectFirst(SERIES_DESCRIPTION)?.text()?.trim()?.ifBlank { null },
+            description = (doc.selectFirst(SERIES_DESCRIPTION)?.text()?.trim()?.ifBlank { null })
+                ?: doc.selectFirst("meta[property=og:description]")?.attr("content")
+                    ?.trim()?.ifBlank { null },
             genres = doc.select(SERIES_GENRES).map { it.text().trim() }.filter { it.isNotBlank() }.distinct(),
             tags = doc.select(SERIES_TAGS).map { it.text().trim() }.filter { it.isNotBlank() }.distinct(),
-            status = doc.selectFirst(SERIES_STATUS)?.text()?.trim()?.ifBlank { null },
+            status = parseLines(doc.selectFirst(SERIES_STATUS))?.joinToString("\n"),
+            year = doc.selectFirst(SERIES_YEAR)?.text()?.trim()?.ifBlank { null },
+            originalPublishers = textList(doc, SERIES_OPUBLISHER),
+            englishPublishers = textList(doc, SERIES_EPUBLISHER)
+                .filterNot { it.equals("N/A", ignoreCase = true) },
+            releaseFrequency = textAfterHeading(doc, "Release Frequency"),
+            licensed = parseYesNo(doc.selectFirst(SERIES_LICENSED)?.text()),
+            completelyTranslated = parseYesNo(doc.selectFirst(SERIES_TRANSLATED)?.text()),
+            readingListCount = doc.selectFirst(SERIES_RLIST)?.text()
+                ?.replace(",", "")?.trim()?.toIntOrNull(),
             rating = parseRating(doc),
             ratingVotes = parseRatingVotes(doc),
-            coverUrl = doc.selectFirst(SERIES_COVER)?.imgSrc(),
+            coverUrl = doc.selectFirst(SERIES_COVER)?.imgSrc()
+                ?: doc.selectFirst("meta[property=og:image]")?.attr("content")
+                    ?.trim()?.ifBlank { null },
             recommendations = parseRecommendations(doc),
+            releases = parseReleases(doc),
+            sid = parseSid(doc),
+            reviews = parseReviews(doc),
+            reviewCount = doc.selectFirst(SERIES_REVIEW_COUNT)?.text()
+                ?.let { Regex("""[0-9][0-9,]*""").find(it)?.value?.replace(",", "")?.toIntOrNull() },
+            reviewPageCount = parseReviewPageCount(doc),
         )
+    }
+
+    private fun textList(doc: Document, selector: String): List<String> = safe(emptyList()) {
+        doc.select(selector)
+            .map { it.text().trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+    }
+
+    private fun parseYesNo(text: String?): Boolean? = when (text?.trim()?.lowercase()) {
+        "yes" -> true
+        "no" -> false
+        else -> null
+    }
+
+    /** Splits a `<br>`-separated block (e.g. #editstatus) into trimmed lines. */
+    private fun parseLines(el: Element?): List<String>? = safe(null) {
+        if (el == null) return@safe null
+        el.html()
+            .split("<br>", "<br/>", "<br />", ignoreCase = true)
+            .map { org.jsoup.Jsoup.parse(it).text().trim() }
+            .filter { it.isNotBlank() }
+            .ifEmpty { null }
+    }
+
+    /**
+     * NU renders a few values as bare text right after their `<h5>` heading
+     * (e.g. "Release Frequency"). Collect the text nodes between that heading
+     * and the next element.
+     */
+    private fun textAfterHeading(doc: Document, label: String): String? = safe(null) {
+        val heading = doc.select("h5.seriesother").firstOrNull {
+            it.text().trim().equals(label, ignoreCase = true)
+        } ?: return@safe null
+        val sb = StringBuilder()
+        var node = heading.nextSibling()
+        while (node != null) {
+            if (node is org.jsoup.nodes.Element) break
+            if (node is org.jsoup.nodes.TextNode) sb.append(node.text())
+            node = node.nextSibling()
+        }
+        sb.toString().trim().ifBlank { null }
+    }
+
+    private fun parseReleases(doc: Document): List<NuRelease> = safe(emptyList()) {
+        doc.select(SERIES_RELEASE_ROW).mapNotNull { row ->
+            val cells = row.select("td")
+            if (cells.size < 3) return@mapNotNull null
+            val date = cells[0].text().trim()
+            val groupEl = cells[1].selectFirst("a")
+            val group = (groupEl?.text() ?: cells[1].text()).trim()
+            val chapterEl = cells[2].selectFirst("span")
+            val chapter = (chapterEl?.attr("title")?.ifBlank { null }
+                ?: chapterEl?.text()
+                ?: cells[2].text()).trim()
+            if (date.isBlank() && chapter.isBlank()) return@mapNotNull null
+            NuRelease(
+                date = date,
+                group = group,
+                groupUrl = groupEl?.absUrl("href")?.ifBlank { groupEl.attr("href") }
+                    ?.let(::absolutize),
+                chapter = chapter,
+            )
+        }
+    }
+
+    /** Original language, read from the durable `language-…` post class. */
+    private fun parseLanguage(doc: Document): String? = safe(null) {
+        val classes = doc.selectFirst(SERIES_POST_ROOT)?.className() ?: return@safe null
+        LANGUAGE_CLASS.find(classes)?.groupValues?.get(1)
+            ?.split("-")
+            ?.joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
+            ?.ifBlank { null }
+    }
+
+    private fun parseSid(doc: Document): String? = safe(null) {
+        doc.select("a.permrev[href*=sid=]").firstNotNullOfOrNull { a ->
+            PERM_SID.find(a.attr("href"))?.groupValues?.get(1)
+        }
+    }
+
+    /** Highest numbered review page (1 when there's only a single page). */
+    private fun parseReviewPageCount(doc: Document): Int = safe(1) {
+        doc.select(REVIEW_PAGE_LINK)
+            .mapNotNull { it.text().trim().replace(",", "").toIntOrNull() }
+            .maxOrNull() ?: 1
+    }
+
+    private fun parseReviews(doc: Document): List<NuReview> = safe(emptyList()) {
+        doc.select(REVIEW_ITEM).mapNotNull { item ->
+            val id = item.id().removePrefix("comment-").trim()
+                .ifBlank { return@mapNotNull null }
+
+            val userLink = item.selectFirst("a[href*=/user/]")
+            val avatar = item.selectFirst("div.rev_left img")
+            val author = (avatar?.attr("alt")?.trim().orEmpty())
+                .ifBlank { userLink?.text()?.trim().orEmpty() }
+                .ifBlank { return@mapNotNull null }
+
+            val filled = item.select("div.w-comments-item-meta-new i.fa-star").size
+            val empties = item.select("div.w-comments-item-meta-new i.fa-star-o").size
+            val rating = if (filled + empties > 0) filled.coerceIn(0, 5) else null
+
+            val meta = item.selectFirst("div.w-comments-item-meta-new")
+            val date = meta?.selectFirst("td[style*=right] div")
+                ?.text()?.trim()?.ifBlank { null }
+            val progress = item.selectFirst("span[id^=stat]")
+                ?.text()?.trim()
+                ?.takeUnless { it.isBlank() || it == "--" || it == "-" }
+
+            val body = item.selectFirst("div.w-comments-item-text")
+                ?.let(::cleanReviewText).orEmpty()
+            if (body.isBlank()) return@mapNotNull null
+
+            // Likes + permalink live in the sibling .rev_b1 bar; fall back to
+            // a document-wide lookup keyed by the comment id if the DOM differs.
+            val bar = item.nextElementSibling()?.takeIf { it.hasClass("rev_b1") }
+            val likes = (bar?.selectFirst("span[class^=liked_]")
+                ?: doc.selectFirst("span.liked_$id"))
+                ?.text()?.trim()?.replace(",", "")?.toIntOrNull()
+            val permalink = (bar?.selectFirst("a.permrev")
+                ?: doc.selectFirst("a.permrev[href*=comid=$id]"))
+                ?.attr("href")?.let(::absolutize)
+
+            NuReview(
+                id = id,
+                author = author,
+                authorUrl = userLink?.attr("href")?.let(::absolutize),
+                avatarUrl = avatar?.imgSrc(),
+                rating = rating,
+                date = date,
+                progress = progress,
+                body = body,
+                likes = likes,
+                permalink = permalink,
+            )
+        }
+    }
+
+    /**
+     * Flattens a review body to readable plain text: drops the "more>>" /
+     * spoiler toggle scaffolding (keeping the hidden continuation and spoiler
+     * prose) and turns block tags into line breaks.
+     */
+    private fun cleanReviewText(el: Element): String {
+        val clone = el.clone()
+        clone.select(".morelink, .dots, .spdiv, .sp-head").remove()
+        val withBreaks = clone.html()
+            .replace(Regex("(?is)<\\s*(br|/p|/div|/li)[^>]*>"), "\n")
+        return org.jsoup.Jsoup.parse(withBreaks).wholeText()
+            .lines()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .joinToString("\n")
+    }
+
+    private fun absolutize(href: String): String? = href.trim().ifBlank { null }?.let {
+        when {
+            it.startsWith("http", ignoreCase = true) -> it
+            it.startsWith("//") -> "https:$it"
+            it.startsWith("/") -> "https://www.novelupdates.com$it"
+            else -> it
+        }
     }
 
     private fun parseAssociated(doc: Document): List<String> = safe(emptyList()) {
