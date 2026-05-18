@@ -7,9 +7,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -81,14 +79,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
 import io.grimoire.app.data.download.ChapterDownloadStatus
@@ -96,7 +92,9 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ShimmerBox
-import io.grimoire.app.ui.component.ZoomableImageDialog
+import io.grimoire.app.ui.component.ExpandableText
+import io.grimoire.app.ui.component.GenreChips
+import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.component.rememberShimmerAlpha
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -127,7 +125,6 @@ fun NovelDetailScreen(
     val bookDownload by viewModel.bookDownload.collectAsState()
     val nuState by viewModel.nuState.collectAsState()
 
-    var descriptionExpanded by remember { mutableStateOf(false) }
     var showCategoryDialog by remember { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var bulkMenuExpanded by remember { mutableStateOf(false) }
@@ -349,41 +346,24 @@ fun NovelDetailScreen(
                     // Genres
                     if (!isLoadingNovel && novelError == null && novel.genres.isNotEmpty()) {
                         item(key = "genres") {
-                            Row(
+                            GenreChips(
+                                genres = novel.genres,
                                 modifier = Modifier
                                     .animateItem()
-                                    .horizontalScroll(rememberScrollState())
                                     .padding(horizontal = 16.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                novel.genres.forEach { genre ->
-                                    AssistChip(
-                                        onClick = {},
-                                        label = { Text(genre, style = MaterialTheme.typography.labelSmall) },
-                                        modifier = Modifier.height(28.dp),
-                                    )
-                                }
-                            }
+                            )
                         }
                     }
 
                     // Description
                     if (!isLoadingNovel && novelError == null && !novel.description.isNullOrBlank()) {
                         item(key = "description") {
-                            Column(Modifier.animateItem().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                                Text(
-                                    novel.description!!,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = if (descriptionExpanded) Int.MAX_VALUE else 3,
-                                    overflow = if (descriptionExpanded) TextOverflow.Clip else TextOverflow.Ellipsis,
-                                )
-                                TextButton(
-                                    onClick = { descriptionExpanded = !descriptionExpanded },
-                                    contentPadding = PaddingValues(horizontal = 0.dp),
-                                ) {
-                                    Text(if (descriptionExpanded) "Show less" else "Show more")
-                                }
-                            }
+                            ExpandableText(
+                                text = novel.description!!,
+                                modifier = Modifier
+                                    .animateItem()
+                                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                            )
                         }
                     }
 
@@ -754,7 +734,6 @@ private fun ChapterSkeletonItem(alpha: Float, modifier: Modifier = Modifier) {
 @Composable
 private fun NovelHeader(novel: Novel, sourceName: String = "", isLocal: Boolean = false, modifier: Modifier = Modifier) {
     var showRatingInfo by remember { mutableStateOf(false) }
-    var showCoverZoom by remember { mutableStateOf(false) }
 
     if (showRatingInfo) {
         AlertDialog(
@@ -772,27 +751,17 @@ private fun NovelHeader(novel: Novel, sourceName: String = "", isLocal: Boolean 
         )
     }
 
-    if (showCoverZoom && !novel.thumbnailUrl.isNullOrBlank()) {
-        ZoomableImageDialog(
-            model = novel.thumbnailUrl,
-            contentDescription = novel.title,
-            onDismiss = { showCoverZoom = false },
-        )
-    }
-
     Row(
         modifier = modifier.fillMaxWidth().padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        AsyncImage(
+        ZoomableCoverImage(
             model = novel.thumbnailUrl,
             contentDescription = novel.title,
-            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .width(120.dp)
                 .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(8.dp))
-                .clickable(enabled = !novel.thumbnailUrl.isNullOrBlank()) { showCoverZoom = true },
+                .clip(RoundedCornerShape(8.dp)),
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(novel.title, style = MaterialTheme.typography.titleLarge)

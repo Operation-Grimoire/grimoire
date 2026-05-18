@@ -15,8 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,8 +44,8 @@ fun NovelUpdatesSeriesContent(
     onRelink: (() -> Unit)? = null,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            series.rating?.let { r ->
+        series.rating?.let { r ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Default.Star,
                     contentDescription = "Rating",
@@ -60,16 +58,26 @@ fun NovelUpdatesSeriesContent(
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            series.status?.let { st ->
-                if (series.rating != null) Spacer(Modifier.width(12.dp))
-                AssistChip(
-                    onClick = {},
-                    enabled = false,
-                    label = { Text(st) },
-                    colors = AssistChipDefaults.assistChipColors(
-                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                )
+        }
+
+        series.status?.let { st ->
+            val segments = st.split(" -")
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+            if (segments.isNotEmpty()) {
+                Column {
+                    Text(
+                        "Status",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    segments.forEach { line ->
+                        Text(
+                            line,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
             }
         }
 

@@ -34,11 +34,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
+import io.grimoire.app.ui.component.ExpandableText
+import io.grimoire.app.ui.component.GenreChips
+import io.grimoire.app.ui.component.ZoomableCoverImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,6 +99,7 @@ fun NovelUpdatesSeriesScreen(
 
                 is NuSeriesState.Loaded -> {
                     val series = s.series
+
                     Column(
                         Modifier
                             .fillMaxSize()
@@ -106,7 +108,7 @@ fun NovelUpdatesSeriesScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            AsyncImage(
+                            ZoomableCoverImage(
                                 model = series.coverUrl,
                                 contentDescription = series.title,
                                 modifier = Modifier
@@ -119,17 +121,11 @@ fun NovelUpdatesSeriesScreen(
                                     series.title,
                                     style = MaterialTheme.typography.titleLarge,
                                 )
-                                if (series.genres.isNotEmpty()) {
-                                    Spacer(Modifier.height(6.dp))
-                                    Text(
-                                        series.genres.take(6).joinToString(" • "),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 3,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
                             }
+                        }
+
+                        if (series.genres.isNotEmpty()) {
+                            GenreChips(genres = series.genres)
                         }
 
                         Button(
@@ -154,7 +150,7 @@ fun NovelUpdatesSeriesScreen(
 
                         series.description?.let { desc ->
                             Text("Description", style = MaterialTheme.typography.titleSmall)
-                            Text(desc, style = MaterialTheme.typography.bodyMedium)
+                            ExpandableText(text = desc)
                         }
                     }
                 }
