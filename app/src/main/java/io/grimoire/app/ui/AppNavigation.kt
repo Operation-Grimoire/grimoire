@@ -238,6 +238,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                             navController.navigate("nu_series?slug=${Uri.encode(slug)}")
                         },
                         onOpenSearch = { navController.navigate(ROUTE_NU_SEARCH) },
+                        onOpenWebView = { url ->
+                            navController.navigate("webview?url=${Uri.encode(url)}")
+                        },
                     )
                 }
                 composable(route = ROUTE_NU_SEARCH) {
@@ -245,6 +248,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         onNavigateBack = { navController.popBackStack() },
                         onSeriesClick = { slug ->
                             navController.navigate("nu_series?slug=${Uri.encode(slug)}")
+                        },
+                        onOpenWebView = { url ->
+                            navController.navigate("webview?url=${Uri.encode(url)}")
                         },
                     )
                 }
@@ -400,6 +406,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     },
                     onOpenWebView = { url ->
                         navController.navigate("webview?url=${Uri.encode(url)}")
+                    },
+                    onOpenNuSeries = { slug ->
+                        navController.navigate("nu_series?slug=${Uri.encode(slug)}")
                     },
                 )
             }

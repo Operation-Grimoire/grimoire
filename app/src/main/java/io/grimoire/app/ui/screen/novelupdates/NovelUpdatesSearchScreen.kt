@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -63,6 +64,7 @@ import io.grimoire.app.data.novelupdates.NuTag
 fun NovelUpdatesSearchScreen(
     onNavigateBack: () -> Unit,
     onSeriesClick: (slug: String) -> Unit,
+    onOpenWebView: (url: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NovelUpdatesSearchViewModel = hiltViewModel(),
 ) {
@@ -104,6 +106,9 @@ fun NovelUpdatesSearchScreen(
                     )
                 },
                 actions = {
+                    IconButton(onClick = { onOpenWebView(viewModel.currentPageUrl()) }) {
+                        Icon(Icons.Default.Language, contentDescription = "Open in WebView")
+                    }
                     IconButton(onClick = { showFilters = true }) {
                         Icon(Icons.Default.FilterList, contentDescription = "Filters")
                     }

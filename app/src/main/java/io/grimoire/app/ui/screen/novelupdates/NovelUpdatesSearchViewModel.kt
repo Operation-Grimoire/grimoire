@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
 import io.grimoire.app.data.novelupdates.NuBrowseFilter
 import io.grimoire.app.data.novelupdates.NuSearchResult
 import io.grimoire.app.data.novelupdates.NuTag
@@ -77,6 +78,12 @@ class NovelUpdatesSearchViewModel @Inject constructor(
         _filter.value = filter.copy(query = _query.value.takeIf { it.isNotBlank() })
         load(reset = true)
     }
+
+    /** The live Series Finder URL for the current query/filter. */
+    fun currentPageUrl(): String = NovelUpdatesEndpoints.seriesFinderUrl(
+        _filter.value.copy(query = _query.value.takeIf { it.isNotBlank() }),
+        1,
+    )
 
     fun retry() = load(reset = true)
 

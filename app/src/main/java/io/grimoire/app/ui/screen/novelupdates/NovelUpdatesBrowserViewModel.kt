@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
 import io.grimoire.app.data.novelupdates.NuListingFilter
 import io.grimoire.app.data.novelupdates.NuRankingType
 import io.grimoire.app.data.novelupdates.NuSearchResult
@@ -70,6 +71,14 @@ class NovelUpdatesBrowserViewModel @Inject constructor(
     fun applyFilter(filter: NuListingFilter) {
         _filter.value = filter
         load(reset = true)
+    }
+
+    /** The live NU page URL for the current mode/filter (for "open in WebView"). */
+    fun currentPageUrl(): String = when (_mode.value) {
+        NuBrowseMode.RANKINGS ->
+            NovelUpdatesEndpoints.seriesRankingUrl(_rankingType.value, _filter.value, 1)
+        NuBrowseMode.LATEST ->
+            NovelUpdatesEndpoints.latestSeriesUrl(_filter.value, 1)
     }
 
     fun retry() = load(reset = true)

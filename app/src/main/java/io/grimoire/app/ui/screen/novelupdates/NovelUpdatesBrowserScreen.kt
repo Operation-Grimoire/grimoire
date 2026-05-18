@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,6 +52,7 @@ fun NovelUpdatesBrowserScreen(
     onNavigateBack: () -> Unit,
     onSeriesClick: (slug: String) -> Unit,
     onOpenSearch: () -> Unit,
+    onOpenWebView: (url: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NovelUpdatesBrowserViewModel = hiltViewModel(),
 ) {
@@ -75,6 +77,9 @@ fun NovelUpdatesBrowserScreen(
             },
             title = { Text("NovelUpdates") },
             actions = {
+                IconButton(onClick = { onOpenWebView(viewModel.currentPageUrl()) }) {
+                    Icon(Icons.Default.Language, contentDescription = "Open in WebView")
+                }
                 IconButton(onClick = { showFilters = true }) {
                     Icon(Icons.Default.FilterList, contentDescription = "Filters")
                 }

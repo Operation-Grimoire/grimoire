@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.data.novelupdates.NuSearchResult
 import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesSeriesContent
@@ -57,6 +58,7 @@ fun NovelUpdatesSection(
     state: NuInfoState,
     viewModel: NovelDetailViewModel,
     onOpenWebView: (String) -> Unit,
+    onOpenNuSeries: (slug: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state is NuInfoState.Idle || state is NuInfoState.Disabled) return
@@ -112,7 +114,9 @@ fun NovelUpdatesSection(
 
             is NuInfoState.Matched -> NovelUpdatesSeriesContent(
                 series = state.series,
-                onRecommendationClick = { onOpenWebView(it) },
+                onRecommendationClick = { url ->
+                    onOpenNuSeries(NovelUpdatesEndpoints.slugFromUrl(url))
+                },
                 onRelink = { showLinkDialog = true },
             )
 
