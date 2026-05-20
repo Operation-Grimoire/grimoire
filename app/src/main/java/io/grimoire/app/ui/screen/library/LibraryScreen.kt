@@ -31,6 +31,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -91,6 +93,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -140,6 +143,68 @@ private val SORT_OPTIONS = listOf(
 
 private fun NovelChapterStats.readPercent(): Int =
     if (total > 0) (readCount * 100 / total).coerceIn(0, 100) else 0
+
+private fun computeTabNovels(
+    tabIndex: Int,
+    novels: List<NovelEntity>?,
+    categories: List<CategoryEntity>,
+    showAllTab: Boolean,
+    chapterStats: Map<Long, NovelChapterStats>,
+    sortOrder: LibrarySort,
+    filterStatus: Int,
+    filterUnreadOnly: Boolean,
+    filterDownloadedOnly: Boolean,
+    isUnlocked: Boolean,
+    hiddenCategoryIds: Set<Long>,
+    includeHiddenInAll: Boolean,
+    searchQuery: String,
+): List<NovelEntity>? {
+    val loaded = novels ?: return null
+    val allTabOffset = if (showAllTab) 1 else 0
+    val isAllTab = showAllTab && tabIndex == 0
+    val excludeHidden = !isUnlocked || (isAllTab && !includeHiddenInAll)
+    val baseFiltered = if (excludeHidden) {
+        loaded.filter { it.categoryId !in hiddenCategoryIds }
+    } else loaded
+    val tabFiltered = when {
+        isAllTab -> baseFiltered
+        else -> {
+            val catIndex = tabIndex - allTabOffset
+            val cat = categories.getOrNull(catIndex)
+            when {
+                cat == null -> baseFiltered
+                cat.isDefault -> baseFiltered.filter { it.categoryId == null }
+                else -> baseFiltered.filter { it.categoryId == cat.id }
+            }
+        }
+    }
+    val comparator: Comparator<NovelEntity> = when (sortOrder) {
+        LibrarySort.TITLE_ASC -> Comparator { a: NovelEntity, b: NovelEntity ->
+            String.CASE_INSENSITIVE_ORDER.compare(a.title, b.title)
+        }
+        LibrarySort.TITLE_DESC -> Comparator { a: NovelEntity, b: NovelEntity ->
+            String.CASE_INSENSITIVE_ORDER.compare(b.title, a.title)
+        }
+        LibrarySort.LAST_UPDATED_DESC -> compareByDescending<NovelEntity> { it.lastUpdated }
+        LibrarySort.LAST_UPDATED_ASC -> compareBy<NovelEntity> { it.lastUpdated }
+        LibrarySort.UNREAD_DESC -> compareByDescending<NovelEntity> {
+            chapterStats[it.id]?.let { s -> s.total - s.readCount } ?: 0
+        }
+        LibrarySort.TOTAL_DESC -> compareByDescending<NovelEntity> { chapterStats[it.id]?.total ?: 0 }
+        LibrarySort.LAST_READ_DESC -> compareByDescending<NovelEntity> { it.lastReadAt }
+    }
+    val trimmedQuery = searchQuery.trim()
+    return tabFiltered
+        .filter { novel ->
+            (filterStatus == -1 || novel.status == filterStatus) &&
+            (!filterUnreadOnly || (chapterStats[novel.id]?.let { it.total - it.readCount > 0 } == true)) &&
+            (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
+            (trimmedQuery.isEmpty() ||
+                novel.title.contains(trimmedQuery, ignoreCase = true) ||
+                (novel.author?.contains(trimmedQuery, ignoreCase = true) == true))
+        }
+        .sortedWith(comparator)
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -228,56 +293,46 @@ fun LibraryScreen(
 
     val defaultCategory = categories.firstOrNull { it.isDefault }
 
+    val novelsForTab: (Int) -> List<NovelEntity>? = { tabIndex ->
+        computeTabNovels(
+            tabIndex = tabIndex,
+            novels = novels,
+            categories = categories,
+            showAllTab = showAllTab,
+            chapterStats = chapterStats,
+            sortOrder = sortOrder,
+            filterStatus = filterStatus,
+            filterUnreadOnly = filterUnreadOnly,
+            filterDownloadedOnly = filterDownloadedOnly,
+            isUnlocked = isUnlocked,
+            hiddenCategoryIds = hiddenCategoryIds,
+            includeHiddenInAll = includeHiddenInAll,
+            searchQuery = searchQuery,
+        )
+    }
+
     val displayedNovels: List<NovelEntity>? = remember(
         novels, effectiveTab, categories, showAllTab,
         sortOrder, filterStatus, filterUnreadOnly, filterDownloadedOnly, chapterStats,
         isUnlocked, hiddenCategoryIds, includeHiddenInAll, searchQuery,
-    ) {
-        val loaded = novels ?: return@remember null
-        val allTabOffset = if (showAllTab) 1 else 0
-        val isAllTab = showAllTab && effectiveTab == 0
-        val excludeHidden = !isUnlocked || (isAllTab && !includeHiddenInAll)
-        val baseFiltered = if (excludeHidden) {
-            loaded.filter { it.categoryId !in hiddenCategoryIds }
-        } else loaded
-        val tabFiltered = when {
-            isAllTab -> baseFiltered
-            else -> {
-                val catIndex = effectiveTab - allTabOffset
-                val cat = categories.getOrNull(catIndex)
-                when {
-                    cat == null -> baseFiltered
-                    cat.isDefault -> baseFiltered.filter { it.categoryId == null }
-                    else -> baseFiltered.filter { it.categoryId == cat.id }
-                }
-            }
+    ) { novelsForTab(effectiveTab) }
+
+    val pageCount = tabs.size.coerceAtLeast(1)
+    val pagerState = rememberPagerState(
+        initialPage = effectiveTab.coerceIn(0, pageCount - 1),
+        pageCount = { pageCount },
+    )
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collect { page ->
+            if (page != effectiveTab) viewModel.setSelectedTab(page)
         }
-        val comparator: Comparator<NovelEntity> = when (sortOrder) {
-            LibrarySort.TITLE_ASC -> Comparator { a: NovelEntity, b: NovelEntity ->
-                String.CASE_INSENSITIVE_ORDER.compare(a.title, b.title)
-            }
-            LibrarySort.TITLE_DESC -> Comparator { a: NovelEntity, b: NovelEntity ->
-                String.CASE_INSENSITIVE_ORDER.compare(b.title, a.title)
-            }
-            LibrarySort.LAST_UPDATED_DESC -> compareByDescending<NovelEntity> { it.lastUpdated }
-            LibrarySort.LAST_UPDATED_ASC -> compareBy<NovelEntity> { it.lastUpdated }
-            LibrarySort.UNREAD_DESC -> compareByDescending<NovelEntity> {
-                chapterStats[it.id]?.let { s -> s.total - s.readCount } ?: 0
-            }
-            LibrarySort.TOTAL_DESC -> compareByDescending<NovelEntity> { chapterStats[it.id]?.total ?: 0 }
-            LibrarySort.LAST_READ_DESC -> compareByDescending<NovelEntity> { it.lastReadAt }
+    }
+
+    LaunchedEffect(effectiveTab, pageCount) {
+        if (effectiveTab in 0 until pageCount && effectiveTab != pagerState.currentPage) {
+            pagerState.animateScrollToPage(effectiveTab)
         }
-        val trimmedQuery = searchQuery.trim()
-        tabFiltered
-            .filter { novel ->
-                (filterStatus == -1 || novel.status == filterStatus) &&
-                (!filterUnreadOnly || (chapterStats[novel.id]?.let { it.total - it.readCount > 0 } == true)) &&
-                (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
-                (trimmedQuery.isEmpty() ||
-                    novel.title.contains(trimmedQuery, ignoreCase = true) ||
-                    (novel.author?.contains(trimmedQuery, ignoreCase = true) == true))
-            }
-            .sortedWith(comparator)
     }
 
     Scaffold(
@@ -409,108 +464,121 @@ fun LibraryScreen(
                 }
             }
 
-            when {
-                displayedNovels == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-                displayedNovels.isEmpty() -> Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (searchQuery.isNotBlank()) {
-                        Text(
-                            "No matches found",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.padding(32.dp),
-                        ) {
-                            Icon(
-                                Icons.Default.LibraryAdd,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+            val onNovelClickWrapped: (NovelEntity) -> Unit = { novel ->
+                val pkg = viewModel.pkgForNovel(novel)
+                if (pkg.isNotEmpty()) onNovelClick(pkg, novel.url)
+                else scope.launch { snackbarHostState.showSnackbar("Extension not installed") }
+            }
+
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                userScrollEnabled = !selectionMode,
+            ) { page ->
+                val pageNovels = remember(
+                    novels, page, categories, showAllTab,
+                    sortOrder, filterStatus, filterUnreadOnly, filterDownloadedOnly, chapterStats,
+                    isUnlocked, hiddenCategoryIds, includeHiddenInAll, searchQuery,
+                ) { novelsForTab(page) }
+
+                when {
+                    pageNovels == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                    pageNovels.isEmpty() -> Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (searchQuery.isNotBlank()) {
                             Text(
-                                "Your library is empty",
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                            Text(
-                                "Add novels from a source, or import an EPUB from your device.",
-                                style = MaterialTheme.typography.bodyMedium,
+                                "No matches found",
+                                style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             )
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = onBrowse) {
-                                    Icon(
-                                        Icons.Default.Search,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Browse sources")
-                                }
-                                TextButton(
-                                    onClick = { epubPicker.launch(EPUB_MIME_TYPES) },
-                                    enabled = !importing && !staging,
-                                ) {
-                                    Icon(
-                                        Icons.Default.LibraryAdd,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Import EPUB")
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.padding(32.dp),
+                            ) {
+                                Icon(
+                                    Icons.Default.LibraryAdd,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    "Your library is empty",
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                                Text(
+                                    "Add novels from a source, or import an EPUB from your device.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Button(onClick = onBrowse) {
+                                        Icon(
+                                            Icons.Default.Search,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Browse sources")
+                                    }
+                                    TextButton(
+                                        onClick = { epubPicker.launch(EPUB_MIME_TYPES) },
+                                        enabled = !importing && !staging,
+                                    ) {
+                                        Icon(
+                                            Icons.Default.LibraryAdd,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Import EPUB")
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                else -> {
-                    val onNovelClickWrapped: (NovelEntity) -> Unit = { novel ->
-                        val pkg = viewModel.pkgForNovel(novel)
-                        if (pkg.isNotEmpty()) onNovelClick(pkg, novel.url)
-                        else scope.launch { snackbarHostState.showSnackbar("Extension not installed") }
-                    }
-                    if (displayMode == LibraryDisplayMode.GRID) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(gridColumns),
-                            contentPadding = PaddingValues(8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            items(displayedNovels, key = { it.id }) { novel ->
-                                NovelCard(
-                                    novel = novel,
-                                    stats = chapterStats[novel.id],
-                                    selected = novel.id in selectedIds,
-                                    onClick = {
-                                        if (selectionMode) toggleSelect(novel.id)
-                                        else onNovelClickWrapped(novel)
-                                    },
-                                    onLongClick = { toggleSelect(novel.id) },
-                                )
+                    else -> {
+                        if (displayMode == LibraryDisplayMode.GRID) {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(gridColumns),
+                                contentPadding = PaddingValues(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                items(pageNovels, key = { it.id }) { novel ->
+                                    NovelCard(
+                                        novel = novel,
+                                        stats = chapterStats[novel.id],
+                                        selected = novel.id in selectedIds,
+                                        onClick = {
+                                            if (selectionMode) toggleSelect(novel.id)
+                                            else onNovelClickWrapped(novel)
+                                        },
+                                        onLongClick = { toggleSelect(novel.id) },
+                                    )
+                                }
                             }
-                        }
-                    } else {
-                        LazyColumn(Modifier.fillMaxSize()) {
-                            items(displayedNovels, key = { it.id }) { novel ->
-                                NovelRow(
-                                    novel = novel,
-                                    stats = chapterStats[novel.id],
-                                    selected = novel.id in selectedIds,
-                                    onClick = {
-                                        if (selectionMode) toggleSelect(novel.id)
-                                        else onNovelClickWrapped(novel)
-                                    },
-                                    onLongClick = { toggleSelect(novel.id) },
-                                )
+                        } else {
+                            LazyColumn(Modifier.fillMaxSize()) {
+                                items(pageNovels, key = { it.id }) { novel ->
+                                    NovelRow(
+                                        novel = novel,
+                                        stats = chapterStats[novel.id],
+                                        selected = novel.id in selectedIds,
+                                        onClick = {
+                                            if (selectionMode) toggleSelect(novel.id)
+                                            else onNovelClickWrapped(novel)
+                                        },
+                                        onLongClick = { toggleSelect(novel.id) },
+                                    )
+                                }
                             }
                         }
                     }
