@@ -113,10 +113,28 @@ fun AboutSettingsScreen(
                 }
             }
 
+            item {
+                ListItem(
+                    headlineContent = { Text("Show changelog") },
+                    supportingContent = { Text("Open the release notes for ${version ?: "–"}") },
+                    trailingContent = {
+                        if (isLoadingChangelog) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        }
+                    },
+                    modifier = Modifier.clickable(enabled = !isLoadingChangelog) {
+                        updateViewModel.showCurrentChangelog()
+                    },
+                )
+            }
+
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
             item {
                 Text(
-                    text = "Update channel",
+                    text = "Updates",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -172,24 +190,6 @@ fun AboutSettingsScreen(
                     },
                     modifier = Modifier.clickable {
                         viewModel.setAutoChangelogEnabled(!autoChangelogEnabled)
-                    },
-                )
-            }
-
-            item {
-                ListItem(
-                    headlineContent = { Text("Show changelog") },
-                    supportingContent = { Text("Open the release notes for ${version ?: "–"}") },
-                    trailingContent = {
-                        if (isLoadingChangelog) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                            )
-                        }
-                    },
-                    modifier = Modifier.clickable(enabled = !isLoadingChangelog) {
-                        updateViewModel.showCurrentChangelog()
                     },
                 )
             }

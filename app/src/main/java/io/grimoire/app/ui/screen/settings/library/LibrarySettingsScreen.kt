@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
+import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +55,7 @@ fun LibrarySettingsScreen(
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
 
+            item { SettingsSectionHeader("Display") }
             item {
                 ListItem(
                     headlineContent = { Text("Display") },
@@ -100,6 +102,7 @@ fun LibrarySettingsScreen(
                 }
             }
 
+            item { SettingsSectionHeader("Organization") }
             item {
                 ListItem(
                     headlineContent = { Text("Show \"All\" tab") },
