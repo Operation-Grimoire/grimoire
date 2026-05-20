@@ -63,6 +63,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.component.ExtensionIcon
+import io.grimoire.app.util.languageLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -164,7 +165,7 @@ fun ExtensionsScreen(
                             headlineContent = { Text(item.name) },
                             supportingContent = {
                                 Column {
-                                    Text("${item.lang.uppercase()} · v${item.versionName}")
+                                    Text("${languageLabel(item.lang)} · v${item.versionName}")
                                     if (hasUpdate && state == null) {
                                         Text(
                                             "Update available: v${(item as ExtensionItem.Installed).remoteVersionName}",
@@ -228,7 +229,7 @@ fun ExtensionsScreen(
                             headlineContent = { Text(item.name) },
                             supportingContent = {
                                 Column {
-                                    Text("${item.lang.uppercase()} · v${item.versionName}")
+                                    Text("${languageLabel(item.lang)} · v${item.versionName}")
                                     InstallProgressRow(state)
                                 }
                             },
