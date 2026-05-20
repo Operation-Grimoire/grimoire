@@ -161,6 +161,6 @@ private fun NavRow(
 
 private fun languageLabel(code: String): String = when (code) {
     "EN" -> "English"
-    "ALL" -> "All languages"
+    "ALL" -> "Multi-language"
     else -> code
 }
