@@ -60,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.component.ExtensionIcon
@@ -159,11 +160,19 @@ fun ExtensionsScreen(
                     items(installed, key = { it.packageName }) { item ->
                         val state = installStates[item.packageName]
                         val hasUpdate = item is ExtensionItem.Installed && item.hasUpdate
+                        val languages = item.multiLanguageOptions()
                         ListItem(
                             headlineContent = { Text(item.name) },
                             supportingContent = {
                                 Column {
                                     Text("${languageLabel(item.lang)} · v${item.versionName}")
+                                    if (!languages.isNullOrEmpty()) {
+                                        Text(
+                                            multiLanguageSummary(languages),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
                                     if (hasUpdate && state == null) {
                                         Text(
                                             "Update available: v${(item as ExtensionItem.Installed).remoteVersionName}",
@@ -500,4 +509,18 @@ private fun EmptyState(text: String, modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+private fun ExtensionItem.multiLanguageOptions(): List<String>? = when (this) {
+    is ExtensionItem.Installed -> (loaded.source as? MultiLanguageSource)?.availableLanguages()
+    is ExtensionItem.InstalledOnly -> (loaded.source as? MultiLanguageSource)?.availableLanguages()
+    is ExtensionItem.Available -> null
+}
+
+private const val MULTI_LANGUAGE_PREVIEW_COUNT = 3
+
+private fun multiLanguageSummary(languages: List<String>): String {
+    val shown = languages.take(MULTI_LANGUAGE_PREVIEW_COUNT)
+    val extra = languages.size - shown.size
+    return shown.joinToString(", ") + if (extra > 0) " + $extra more" else ""
 }
