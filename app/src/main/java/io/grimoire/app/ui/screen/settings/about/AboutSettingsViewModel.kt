@@ -16,6 +16,7 @@ class AboutSettingsViewModel @Inject constructor(
 
     val channel = updatePreferences.channel.stateIn(viewModelScope)
     val autoPopupEnabled = updatePreferences.autoPopupEnabled.stateIn(viewModelScope)
+    val autoChangelogEnabled = updatePreferences.autoChangelogEnabled.stateIn(viewModelScope)
 
     fun setChannel(channel: UpdateChannel) = viewModelScope.launch {
         updatePreferences.channel.set(channel)
@@ -26,5 +27,9 @@ class AboutSettingsViewModel @Inject constructor(
         // Re-enabling clears any previously skipped version so the user is
         // prompted again on the next launch.
         if (enabled) updatePreferences.skippedVersion.set("")
+    }
+
+    fun setAutoChangelogEnabled(enabled: Boolean) = viewModelScope.launch {
+        updatePreferences.autoChangelogEnabled.set(enabled)
     }
 }

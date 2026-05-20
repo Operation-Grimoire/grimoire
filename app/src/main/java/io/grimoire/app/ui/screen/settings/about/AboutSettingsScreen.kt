@@ -59,6 +59,8 @@ fun AboutSettingsScreen(
     val checkState by updateViewModel.checkState.collectAsState()
     val channel by viewModel.channel.collectAsState()
     val autoPopupEnabled by viewModel.autoPopupEnabled.collectAsState()
+    val autoChangelogEnabled by viewModel.autoChangelogEnabled.collectAsState()
+    val isLoadingChangelog by updateViewModel.isLoadingChangelog.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -149,6 +151,39 @@ fun AboutSettingsScreen(
                             checked = autoPopupEnabled,
                             onCheckedChange = { viewModel.setAutoPopupEnabled(it) },
                         )
+                    },
+                )
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("Changelog after updates") },
+                    supportingContent = {
+                        Text("Show release notes the first time you launch a new version")
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = autoChangelogEnabled,
+                            onCheckedChange = { viewModel.setAutoChangelogEnabled(it) },
+                        )
+                    },
+                )
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("Show changelog") },
+                    supportingContent = { Text("Open the release notes for ${version ?: "–"}") },
+                    trailingContent = {
+                        if (isLoadingChangelog) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        }
+                    },
+                    modifier = Modifier.clickable(enabled = !isLoadingChangelog) {
+                        updateViewModel.showCurrentChangelog()
                     },
                 )
             }

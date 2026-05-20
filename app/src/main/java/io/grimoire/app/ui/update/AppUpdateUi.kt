@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -18,12 +16,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -76,7 +76,6 @@ fun AppUpdateUi(viewModel: AppUpdateViewModel = hiltViewModel()) {
 
 @Composable
 private fun ChangelogDialog(text: String, onDismiss: () -> Unit) {
-    val sections = remember(text) { ChangelogParser.parse(text) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("What's new in ${BuildConfig.VERSION_NAME}") },
@@ -85,21 +84,26 @@ private fun ChangelogDialog(text: String, onDismiss: () -> Unit) {
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (sections.isEmpty()) {
-                    // Parsing produced no structured items — fall back to the
-                    // raw body so we never show an empty dialog.
-                    Text(text, style = MaterialTheme.typography.bodyMedium)
-                } else {
-                    sections.forEach { section ->
-                        ChangelogSectionCard(section)
-                    }
-                }
+                ParsedReleaseNotes(text)
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Got it") }
         },
     )
+}
+
+@Composable
+private fun ParsedReleaseNotes(text: String) {
+    if (text.isBlank()) return
+    val sections = remember(text) { ChangelogParser.parse(text) }
+    if (sections.isEmpty()) {
+        // Parser found no list items — show the raw body so an unfamiliar
+        // shape never produces an empty surface.
+        Text(text, style = MaterialTheme.typography.bodyMedium)
+    } else {
+        sections.forEach { section -> ChangelogSectionCard(section) }
+    }
 }
 
 @Composable
@@ -215,51 +219,46 @@ private fun UpdateDialog(
     val isDownloading = downloadState is DownloadState.Downloading
     AlertDialog(
         onDismissRequest = { if (!isDownloading) onDismiss() },
+        icon = {
+            Icon(
+                imageVector = Icons.Filled.SystemUpdateAlt,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        },
         title = { Text("Update available") },
         text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-            ) {
-                Text(
-                    "${release.displayVersion} is available.",
-                    style = MaterialTheme.typography.bodyMedium,
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                VersionTransitionRow(
+                    current = BuildConfig.VERSION_NAME,
+                    target = release.displayVersion,
                 )
-                if (release.releaseNotes.isNotBlank()) {
-                    Text(
-                        release.releaseNotes,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ParsedReleaseNotes(release.releaseNotes)
                 }
                 when (downloadState) {
-                    is DownloadState.Downloading -> {
-                        Spacer(Modifier.height(4.dp))
-                        if (downloadState.totalBytes > 0) {
-                            LinearProgressIndicator(
-                                progress = {
-                                    (downloadState.bytesRead.toFloat() / downloadState.totalBytes)
-                                        .coerceIn(0f, 1f)
-                                },
-                                modifier = Modifier.fillMaxWidth(),
+                    is DownloadState.Downloading -> DownloadProgressRow(downloadState)
+                    is DownloadState.Error -> Text(
+                        text = downloadState.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    DownloadState.Idle -> {
+                        TextButton(
+                            onClick = onSkip,
+                            modifier = Modifier.align(Alignment.End),
+                        ) {
+                            Text(
+                                text = "Skip this version",
+                                style = MaterialTheme.typography.labelSmall,
                             )
-                        } else {
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                         }
-                        Text(
-                            text = downloadLabel(downloadState),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                     }
-                    is DownloadState.Error -> {
-                        Text(
-                            text = downloadState.message,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                    DownloadState.Idle -> {}
                 }
             }
         },
@@ -279,14 +278,65 @@ private fun UpdateDialog(
             }
         },
         dismissButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = onSkip, enabled = !isDownloading) {
-                    Text("Skip this version")
-                }
-                TextButton(onClick = onDismiss, enabled = !isDownloading) { Text("Later") }
+            TextButton(onClick = onDismiss, enabled = !isDownloading) {
+                Text("Later")
             }
         },
     )
+}
+
+@Composable
+private fun VersionTransitionRow(current: String, target: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = current,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+            contentDescription = null,
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = target,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+@Composable
+private fun DownloadProgressRow(state: DownloadState.Downloading) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (state.totalBytes > 0) {
+            LinearProgressIndicator(
+                progress = {
+                    (state.bytesRead.toFloat() / state.totalBytes).coerceIn(0f, 1f)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+        Text(
+            text = downloadLabel(state),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 private fun downloadPercent(state: DownloadState.Downloading): Int =
