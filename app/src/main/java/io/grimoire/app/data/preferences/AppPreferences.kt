@@ -6,4 +6,5 @@ import javax.inject.Singleton
 @Singleton
 class AppPreferences @Inject constructor(store: PreferenceStore) {
     val lastSeenVersionCode = store.getInt("last_seen_version_code", 0)
+    val lastSeenVersionName = store.getString("last_seen_version_name", "")
 }
