@@ -98,14 +98,34 @@ jobs:
           sha256sum grimoire.apk | awk '{print $1}' > grimoire.apk.sha256
           echo "Published digest: $(cat grimoire.apk.sha256)"
 
+      - name: Generate release notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.name }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # GitHub's /generate-notes endpoint picks the previous release
+          # automatically when previous_tag_name is omitted. Honours
+          # .github/release.yml for PR categorisation.
+          NOTES=$(gh api "repos/${{ github.repository }}/releases/generate-notes" \
+            -f "tag_name=$TAG" \
+            -f "target_commitish=$SHA" \
+            --jq .body)
+          {
+            echo 'body<<RELNOTES_EOF'
+            printf '%s\n' "$NOTES"
+            echo RELNOTES_EOF
+          } >> "$GITHUB_OUTPUT"
+
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.name }}
           name: Grimoire ${{ steps.tag.outputs.name }}
           prerelease: false
-          body: |
-            Auto-generated release from commit ${{ github.sha }}.
+          body: ${{ steps.notes.outputs.body }}
           files: |
             app/build/outputs/apk/release/grimoire.apk
             app/build/outputs/apk/release/grimoire.apk.sha256
