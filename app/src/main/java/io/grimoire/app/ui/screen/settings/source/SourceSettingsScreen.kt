@@ -124,16 +124,20 @@ fun SourceSettingsScreen(
                     }
 
                     is SourcePreference.Switch -> {
+                        val checked = values[pref.key].toBoolean()
                         ListItem(
                             headlineContent = { Text(pref.title) },
                             supportingContent = pref.summary?.let { summary -> { Text(summary) } },
                             trailingContent = {
                                 Switch(
-                                    checked = values[pref.key].toBoolean(),
+                                    checked = checked,
                                     onCheckedChange = {
                                         viewModel.update(pref.key, it.toString())
                                     },
                                 )
+                            },
+                            modifier = Modifier.clickable {
+                                viewModel.update(pref.key, (!checked).toString())
                             },
                         )
                     }

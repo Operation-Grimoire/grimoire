@@ -26,6 +26,7 @@ import io.grimoire.app.ui.screen.reader.FontPicker
 import io.grimoire.app.ui.screen.reader.OrientationPicker
 import io.grimoire.app.ui.screen.reader.StepperRow
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
+import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,6 +59,7 @@ fun ReaderSettingsScreen(
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
+            item { SettingsSectionHeader("Appearance") }
             item {
                 ListItem(
                     headlineContent = { Text("Color theme") },
@@ -116,6 +118,7 @@ fun ReaderSettingsScreen(
                     },
                 )
             }
+            item { SettingsSectionHeader("Reading") }
             item {
                 ListItem(
                     headlineContent = { Text("Mark as read at $threshold%") },
@@ -129,6 +132,7 @@ fun ReaderSettingsScreen(
                     },
                 )
             }
+            item { SettingsSectionHeader("Display") }
             item {
                 ListItem(
                     headlineContent = { Text("Screen rotation") },

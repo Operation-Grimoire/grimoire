@@ -1,34 +1,29 @@
-package io.grimoire.app.ui.screen.settings.novelupdates
+package io.grimoire.app.ui.screen.settings.languages
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import io.grimoire.app.ui.screen.settings.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NovelUpdatesSettingsScreen(
+fun LanguagesSettingsScreen(
     onNavigateBack: () -> Unit,
-    viewModel: SettingsViewModel,
+    onNavigateToSourceLanguages: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val enabled by viewModel.novelUpdatesEnabled.collectAsState()
-
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -38,28 +33,37 @@ fun NovelUpdatesSettingsScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                title = { Text("NovelUpdates") },
+                title = { Text("Languages") },
             )
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
             item {
+                val disabled = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 ListItem(
-                    leadingContent = { Icon(Icons.Default.AutoStories, contentDescription = null) },
-                    headlineContent = { Text("Show NovelUpdates section") },
+                    headlineContent = { Text("App language", color = disabled) },
                     supportingContent = {
                         Text(
-                            "Adds a NovelUpdates panel to a novel's details with " +
-                                "alternative titles, rating, and recommendations.",
+                            "English only — more languages coming in a future release",
+                            color = disabled,
                         )
+                    },
+                    trailingContent = { Text("English", color = disabled) },
+                )
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text("Source language") },
+                    supportingContent = {
+                        Text("Pick which languages multi-language sources show by default")
                     },
                     trailingContent = {
-                        Switch(
-                            checked = enabled,
-                            onCheckedChange = { viewModel.setNovelUpdatesEnabled(it) },
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForwardIos,
+                            contentDescription = null,
                         )
                     },
-                    modifier = Modifier.clickable { viewModel.setNovelUpdatesEnabled(!enabled) },
+                    modifier = Modifier.clickable(onClick = onNavigateToSourceLanguages),
                 )
             }
         }

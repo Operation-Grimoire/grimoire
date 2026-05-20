@@ -13,9 +13,11 @@ interface Preference<T> {
     suspend fun set(value: T)
 }
 
+// Eagerly: preferences pre-warm as soon as the ViewModel is created, so subpages
+// don't render the default value for a frame before the persisted value arrives.
 fun <T> Preference<T>.stateIn(
     scope: CoroutineScope,
-    started: SharingStarted = SharingStarted.WhileSubscribed(5_000),
+    started: SharingStarted = SharingStarted.Eagerly,
 ): StateFlow<T> = changes().stateIn(scope, started, defaultValue())
 
 interface PreferenceStore {
