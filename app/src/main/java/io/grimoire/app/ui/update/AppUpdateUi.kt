@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.BuildConfig
@@ -300,6 +301,8 @@ private fun VersionTransitionRow(current: String, target: String) {
             text = current,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f),
         )
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
@@ -314,6 +317,7 @@ private fun VersionTransitionRow(current: String, target: String) {
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
         )
     }
 }
