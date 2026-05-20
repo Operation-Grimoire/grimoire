@@ -9,7 +9,6 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,12 +23,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -118,6 +118,7 @@ fun ExtensionsScreen(
     var showRepos by remember { mutableStateOf(false) }
     var showAddRepo by remember { mutableStateOf(false) }
     var editRepo by remember { mutableStateOf<RepoEntity?>(null) }
+    var pendingRemove by remember { mutableStateOf<ExtensionItem?>(null) }
     val repoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
@@ -159,9 +160,6 @@ fun ExtensionsScreen(
                         val state = installStates[item.packageName]
                         val hasUpdate = item is ExtensionItem.Installed && item.hasUpdate
                         ListItem(
-                            modifier = Modifier.clickable {
-                                onOpenSourceSettings(item.packageName)
-                            },
                             headlineContent = { Text(item.name) },
                             supportingContent = {
                                 Column {
@@ -203,15 +201,12 @@ fun ExtensionsScreen(
                                             }) { Text("Update") }
                                         }
                                     }
-                                    TextButton(onClick = {
-                                        @Suppress("DEPRECATION")
-                                        context.startActivity(
-                                            Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
-                                                data = android.net.Uri.parse("package:${item.packageName}")
-                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            }
-                                        )
-                                    }) { Text("Remove") }
+                                    IconButton(onClick = { onOpenSourceSettings(item.packageName) }) {
+                                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                                    }
+                                    IconButton(onClick = { pendingRemove = item }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Remove")
+                                    }
                                 }
                             },
                         )
@@ -250,7 +245,9 @@ fun ExtensionsScreen(
                                         }
                                     }
                                     null -> {
-                                        Button(onClick = { viewModel.install(item) }) { Text("Install") }
+                                        IconButton(onClick = { viewModel.install(item) }) {
+                                            Icon(Icons.Default.Download, contentDescription = "Install")
+                                        }
                                     }
                                 }
                             },
@@ -359,6 +356,29 @@ fun ExtensionsScreen(
             initial = repo,
             onConfirm = { name, url -> viewModel.updateRepo(repo, name, url); editRepo = null },
             onDismiss = { editRepo = null },
+        )
+    }
+
+    pendingRemove?.let { item ->
+        AlertDialog(
+            onDismissRequest = { pendingRemove = null },
+            title = { Text("Remove extension?") },
+            text = { Text("Remove ${item.name}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    @Suppress("DEPRECATION")
+                    context.startActivity(
+                        Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
+                            data = android.net.Uri.parse("package:${item.packageName}")
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                    )
+                    pendingRemove = null
+                }) { Text("Remove") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRemove = null }) { Text("Cancel") }
+            },
         )
     }
 }
