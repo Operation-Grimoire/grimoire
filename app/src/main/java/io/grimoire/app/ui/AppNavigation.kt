@@ -60,6 +60,7 @@ import io.grimoire.app.ui.screen.settings.backup.BackupSettingsScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseLanguagesScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseSettingsScreen
 import io.grimoire.app.ui.screen.settings.hidden.HiddenCategoriesSettingsScreen
+import io.grimoire.app.ui.screen.settings.languages.LanguagesSettingsScreen
 import io.grimoire.app.ui.screen.settings.library.LibrarySettingsScreen
 import io.grimoire.app.ui.screen.settings.novelupdates.NovelUpdatesSettingsScreen
 import io.grimoire.app.ui.screen.settings.reader.ReaderSettingsScreen
@@ -99,7 +100,8 @@ private const val ROUTE_SETTINGS_ROOT = "settings"
 private const val ROUTE_SETTINGS_APPEARANCE = "settings/appearance"
 private const val ROUTE_SETTINGS_LIBRARY = "settings/library"
 private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
-private const val ROUTE_SETTINGS_CONTENT_LANGUAGES = "settings/browse/content_languages"
+private const val ROUTE_SETTINGS_LANGUAGES = "settings/languages"
+private const val ROUTE_SETTINGS_CONTENT_LANGUAGES = "settings/languages/content"
 private const val ROUTE_SETTINGS_READER = "settings/reader"
 private const val ROUTE_SETTINGS_ABOUT = "settings/about"
 private const val ROUTE_SETTINGS_BACKUP = "settings/backup"
@@ -321,6 +323,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         onNavigateToAppearance = { navController.navigate(ROUTE_SETTINGS_APPEARANCE) },
                         onNavigateToLibrary = { navController.navigate(ROUTE_SETTINGS_LIBRARY) },
                         onNavigateToBrowse = { navController.navigate(ROUTE_SETTINGS_BROWSE) },
+                        onNavigateToLanguages = { navController.navigate(ROUTE_SETTINGS_LANGUAGES) },
                         onNavigateToReader = { navController.navigate(ROUTE_SETTINGS_READER) },
                         onNavigateToBackup = { navController.navigate(ROUTE_SETTINGS_BACKUP) },
                         onNavigateToNovelUpdates = { navController.navigate(ROUTE_SETTINGS_NOVELUPDATES) },
@@ -354,7 +357,13 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     BrowseSettingsScreen(
                         viewModel = vm,
                         onNavigateBack = { navController.popBackStack() },
-                        onNavigateToContentLanguages = {
+                    )
+                }
+
+                composable(route = ROUTE_SETTINGS_LANGUAGES) {
+                    LanguagesSettingsScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToSourceLanguages = {
                             navController.navigate(ROUTE_SETTINGS_CONTENT_LANGUAGES)
                         },
                     )

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +32,7 @@ fun SettingsScreen(
     onNavigateToAppearance: () -> Unit,
     onNavigateToLibrary: () -> Unit,
     onNavigateToBrowse: () -> Unit,
+    onNavigateToLanguages: () -> Unit,
     onNavigateToReader: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToNovelUpdates: () -> Unit,
@@ -73,6 +75,14 @@ fun SettingsScreen(
                     title = "Browse",
                     subtitle = "Display mode, grid columns",
                     onClick = onNavigateToBrowse,
+                )
+            }
+            item {
+                SettingsNavItem(
+                    icon = Icons.Default.Language,
+                    title = "Languages",
+                    subtitle = "App language, source language",
+                    onClick = onNavigateToLanguages,
                 )
             }
             item {
