@@ -53,7 +53,8 @@ class AppUpdateChecker @Inject constructor(
             }
             ReleaseInfo(
                 tagName = release.tag_name,
-                displayVersion = release.name.ifBlank { release.tag_name.removePrefix("v") },
+                displayVersion = release.name.ifBlank { release.tag_name }
+                    .removePrefix("Grimoire").trim().removePrefix("v"),
                 releaseNotes = release.body,
                 apkUrl = apk.browser_download_url,
                 isPrerelease = release.prerelease,
