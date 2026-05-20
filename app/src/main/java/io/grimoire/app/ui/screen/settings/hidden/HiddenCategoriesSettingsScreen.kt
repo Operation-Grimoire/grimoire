@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.settings.hidden
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -131,6 +132,13 @@ fun HiddenCategoriesSettingsScreen(
                                     onCheckedChange = { viewModel.setBiometricEnabled(it) },
                                 )
                             },
+                            modifier = if (biometricAvailable) {
+                                Modifier.clickable {
+                                    viewModel.setBiometricEnabled(!biometricEnabled)
+                                }
+                            } else {
+                                Modifier
+                            },
                         )
                     }
                     item {
@@ -144,6 +152,9 @@ fun HiddenCategoriesSettingsScreen(
                                     checked = includeHiddenInAll,
                                     onCheckedChange = { viewModel.setIncludeHiddenInAll(it) },
                                 )
+                            },
+                            modifier = Modifier.clickable {
+                                viewModel.setIncludeHiddenInAll(!includeHiddenInAll)
                             },
                         )
                     }
@@ -167,6 +178,13 @@ fun HiddenCategoriesSettingsScreen(
                                     enabled = !cat.isDefault,
                                     onCheckedChange = { viewModel.setCategoryHidden(cat, it) },
                                 )
+                            },
+                            modifier = if (cat.isDefault) {
+                                Modifier
+                            } else {
+                                Modifier.clickable {
+                                    viewModel.setCategoryHidden(cat, !cat.isHidden)
+                                }
                             },
                         )
                     }

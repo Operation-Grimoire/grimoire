@@ -152,6 +152,9 @@ fun AboutSettingsScreen(
                             onCheckedChange = { viewModel.setAutoPopupEnabled(it) },
                         )
                     },
+                    modifier = Modifier.clickable {
+                        viewModel.setAutoPopupEnabled(!autoPopupEnabled)
+                    },
                 )
             }
 
@@ -166,6 +169,9 @@ fun AboutSettingsScreen(
                             checked = autoChangelogEnabled,
                             onCheckedChange = { viewModel.setAutoChangelogEnabled(it) },
                         )
+                    },
+                    modifier = Modifier.clickable {
+                        viewModel.setAutoChangelogEnabled(!autoChangelogEnabled)
                     },
                 )
             }

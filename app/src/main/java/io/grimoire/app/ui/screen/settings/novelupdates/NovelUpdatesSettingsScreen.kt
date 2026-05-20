@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.settings.novelupdates
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -58,6 +59,7 @@ fun NovelUpdatesSettingsScreen(
                             onCheckedChange = { viewModel.setNovelUpdatesEnabled(it) },
                         )
                     },
+                    modifier = Modifier.clickable { viewModel.setNovelUpdatesEnabled(!enabled) },
                 )
             }
         }

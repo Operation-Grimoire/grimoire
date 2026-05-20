@@ -110,6 +110,7 @@ fun LibrarySettingsScreen(
                             onCheckedChange = { viewModel.setLibraryShowAllTab(it) },
                         )
                     },
+                    modifier = Modifier.clickable { viewModel.setLibraryShowAllTab(!showAllTab) },
                 )
             }
 
