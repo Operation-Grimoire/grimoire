@@ -20,7 +20,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
@@ -51,14 +54,19 @@ class SourceBrowseViewModel @Inject constructor(
     private val novelDao: NovelDao,
 ) : ViewModel() {
 
-    val libraryUrls: StateFlow<Set<String>> = novelDao.getFavoriteUrls()
-        .map { it.toSet() }
+    val packageName: String = checkNotNull(savedStateHandle["pkg"])
+
+    val libraryUrls: StateFlow<Set<String>> = extensionManager.extensions
+        .map { list -> list.firstOrNull { it.info.packageName == packageName }?.source?.id }
+        .distinctUntilChanged()
+        .flatMapLatest { sourceId ->
+            if (sourceId == null) flowOf(emptySet())
+            else novelDao.getFavoriteUrlsBySource(sourceId).map { it.toSet() }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     val displayMode: StateFlow<BrowseDisplayMode> = browsePreferences.displayMode.stateIn(viewModelScope)
     val gridColumns: StateFlow<Int> = browsePreferences.gridColumns.stateIn(viewModelScope)
-
-    val packageName: String = checkNotNull(savedStateHandle["pkg"])
 
     private val loaded get() = extensionManager.extensions.value
         .firstOrNull { it.info.packageName == packageName }

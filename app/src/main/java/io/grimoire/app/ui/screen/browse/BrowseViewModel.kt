@@ -25,6 +25,7 @@ import javax.inject.Inject
 data class GlobalSearchResult(
     val sourceName: String,
     val packageName: String,
+    val sourceId: Long,
     val novels: List<Novel> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
@@ -37,8 +38,8 @@ class BrowseViewModel @Inject constructor(
     private val novelDao: NovelDao,
 ) : ViewModel() {
 
-    val libraryUrls: StateFlow<Set<String>> = novelDao.getFavoriteUrls()
-        .map { it.toSet() }
+    val libraryKeys: StateFlow<Set<Pair<Long, String>>> = novelDao.getFavoriteKeys()
+        .map { keys -> keys.mapTo(HashSet(keys.size)) { it.sourceId to it.url } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     val installed: StateFlow<List<ExtensionItem>> = repository.items
@@ -87,8 +88,13 @@ class BrowseViewModel @Inject constructor(
             }
 
             _isSearching.value = true
-            _searchResults.value = sources.map { (name, pkg, _) ->
-                GlobalSearchResult(sourceName = name, packageName = pkg, isLoading = true)
+            _searchResults.value = sources.map { (name, pkg, src) ->
+                GlobalSearchResult(
+                    sourceName = name,
+                    packageName = pkg,
+                    sourceId = src.id,
+                    isLoading = true,
+                )
             }
 
             sources.map { (_, pkg, src) ->
