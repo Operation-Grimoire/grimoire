@@ -13,6 +13,7 @@ import javax.inject.Singleton
 @Singleton
 class SourceSettingsPreferences @Inject constructor(
     private val store: PreferenceStore,
+    private val appLanguages: AppLanguagePreferences,
 ) {
     fun pref(pkg: String, key: String, default: String = ""): Preference<String> =
         store.getString("source.$pkg.$key", default)
@@ -22,9 +23,18 @@ class SourceSettingsPreferences @Inject constructor(
         keys.associateWith { pref(pkg, it).changes().first() }
 
     /**
-     * The set of content languages the user enabled for a multi-language
-     * source (`lang == "all"`), stored as lowercase English names. Empty set
-     * means "no filter — show every language".
+     * Per-source override of the global content-language picker. When `false`
+     * (default), [effectiveLanguages] returns the app-wide set; when `true`, it
+     * returns the per-source set in [contentLanguages] — letting the user pick
+     * a different language mix for just this source.
+     */
+    fun contentLanguagesOverride(pkg: String): Preference<Boolean> =
+        store.getBoolean("source.$pkg.content_languages_override", false)
+
+    /**
+     * Per-source content-language selection (only consulted when the override
+     * flag is on). Stored as lowercase English names; empty set means
+     * "no filter — show every language".
      */
     fun contentLanguages(pkg: String): Preference<Set<String>> =
         store.getObject(
@@ -39,4 +49,13 @@ class SourceSettingsPreferences @Inject constructor(
 
     suspend fun enabledLanguages(pkg: String): Set<String> =
         contentLanguages(pkg).changes().first()
+
+    /**
+     * The language set that should actually be pushed to a multi-language
+     * source: the per-source set when the override flag is on, otherwise the
+     * global app-wide set. The only place global-vs-override is resolved.
+     */
+    suspend fun effectiveLanguages(pkg: String): Set<String> =
+        if (contentLanguagesOverride(pkg).changes().first()) enabledLanguages(pkg)
+        else appLanguages.enabledNow()
 }
