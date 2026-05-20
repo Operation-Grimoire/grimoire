@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.BuildConfig
 import io.grimoire.app.data.preferences.AppPreferences
+import io.grimoire.app.data.preferences.UpdateChannel
 import io.grimoire.app.data.preferences.UpdatePreferences
 import io.grimoire.app.data.update.AppUpdateChecker
 import io.grimoire.app.data.update.AppUpdateHashMismatchException
@@ -52,13 +53,25 @@ class AppUpdateViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val lastSeen = appPreferences.lastSeenVersionCode.changes().first()
-            if (lastSeen == 0) {
-                // First install — mark without showing changelog
-                appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
-            } else if (BuildConfig.VERSION_CODE > lastSeen) {
-                _changelogText.value = Changelog.since(lastSeen, BuildConfig.VERSION_CODE)
-            }
             val channel = updatePreferences.channel.changes().first()
+            if (lastSeen == 0) {
+                // First install — mark without showing changelog.
+                appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
+                appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
+            } else if (BuildConfig.VERSION_CODE > lastSeen) {
+                val remote: String? = when (channel) {
+                    UpdateChannel.STABLE -> {
+                        val prevName = appPreferences.lastSeenVersionName.changes().first()
+                        if (prevName.isNotBlank() && prevName != BuildConfig.VERSION_NAME) {
+                            checker.fetchStableNotesSince(prevName, BuildConfig.VERSION_NAME)
+                        } else {
+                            checker.fetchStableNotesForVersion(BuildConfig.VERSION_NAME)
+                        }
+                    }
+                    UpdateChannel.BETA -> checker.fetchBetaNotesForSha(BuildConfig.GIT_SHA)
+                }
+                _changelogText.value = remote ?: Changelog.since(lastSeen, BuildConfig.VERSION_CODE)
+            }
             val release = checker.checkForUpdate(channel) ?: return@launch
             val autoPopupEnabled = updatePreferences.autoPopupEnabled.changes().first()
             val skippedVersion = updatePreferences.skippedVersion.changes().first()
@@ -92,7 +105,10 @@ class AppUpdateViewModel @Inject constructor(
 
     fun dismissChangelog() {
         _changelogText.value = null
-        viewModelScope.launch { appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE) }
+        viewModelScope.launch {
+            appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
+            appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
+        }
     }
 
     fun downloadAndInstall() {

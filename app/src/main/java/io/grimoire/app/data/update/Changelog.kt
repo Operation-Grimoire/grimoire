@@ -1,7 +1,12 @@
 package io.grimoire.app.data.update
 
+// Offline fallback for the "what's new" dialog. The primary source is the
+// GitHub release body fetched at launch (see AppUpdateChecker); this map only
+// kicks in when the network fetch fails. Entries are optional — populate them
+// for stable versionCodes where an offline-friendly note is desirable. Per-beta
+// entries are unnecessary; betas always rely on the GitHub `beta` tag body.
 object Changelog {
-    // keyed by versionCode; add new entry each release
+    // keyed by versionCode
     private val entries: Map<Int, String> = mapOf(
         1 to "• Initial release",
     )

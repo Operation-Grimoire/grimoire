@@ -19,7 +19,9 @@ import javax.inject.Singleton
 private const val REPO = "Operation-Grimoire/grimoire"
 private const val LATEST_RELEASE_URL = "https://api.github.com/repos/$REPO/releases/latest"
 private const val BETA_RELEASE_URL = "https://api.github.com/repos/$REPO/releases/tags/beta"
+private const val RELEASES_LIST_URL = "https://api.github.com/repos/$REPO/releases?per_page=30"
 private const val APK_MIME = "application/vnd.android.package-archive"
+private const val MAX_AGGREGATED_RELEASES = 10
 
 class AppUpdateHashMismatchException(
     val expected: String,
@@ -75,6 +77,84 @@ class AppUpdateChecker @Inject constructor(
             conn.disconnect()
         }
     }
+
+    private fun fetchReleases(url: String): List<GitHubRelease>? {
+        val conn = URL(url).openConnection() as HttpURLConnection
+        conn.setRequestProperty("Accept", "application/vnd.github+json")
+        conn.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
+        conn.connectTimeout = 10_000
+        conn.readTimeout = 10_000
+        return try {
+            if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+                val body = conn.inputStream.bufferedReader().readText()
+                json.decodeFromString<List<GitHubRelease>>(body)
+            } else null
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    suspend fun fetchStableNotesSince(fromTag: String, toTag: String): String? =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val from = fromTag.removePrefix("v")
+                val to = toTag.removePrefix("v")
+                val releases = fetchReleases(RELEASES_LIST_URL) ?: return@runCatching null
+                val included = releases.asSequence()
+                    .filter { !it.prerelease && it.tag_name.isNotBlank() }
+                    .map { it to it.tag_name.removePrefix("v") }
+                    .filter { (_, name) ->
+                        compareSemver(name, from) > 0 && compareSemver(name, to) <= 0
+                    }
+                    .sortedWith(compareByDescending { (_, name) -> SemverKey(name) })
+                    .take(MAX_AGGREGATED_RELEASES)
+                    .toList()
+                if (included.isEmpty()) return@runCatching null
+                included.joinToString("\n\n") { (release, _) ->
+                    val header = "## ${release.tag_name}"
+                    if (release.body.isBlank()) header else "$header\n\n${release.body.trim()}"
+                }
+            }.getOrNull()
+        }
+
+    suspend fun fetchStableNotesForVersion(toName: String): String? =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val tag = if (toName.startsWith("v")) toName else "v$toName"
+                fetchRelease("https://api.github.com/repos/$REPO/releases/tags/$tag")
+                    ?.body
+                    ?.takeIf { it.isNotBlank() }
+            }.getOrNull()
+        }
+
+    suspend fun fetchBetaNotesForSha(expectedSha: String): String? =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                if (expectedSha.isBlank()) return@runCatching null
+                val release = fetchRelease(BETA_RELEASE_URL) ?: return@runCatching null
+                if (release.target_commitish.isBlank()) return@runCatching null
+                if (release.target_commitish != expectedSha) return@runCatching null
+                release.body.takeIf { it.isNotBlank() }
+            }.getOrNull()
+        }
+
+    private data class SemverKey(val name: String) : Comparable<SemverKey> {
+        private val parts: List<Int> = name.substringBefore('-').substringBefore('+')
+            .split('.')
+            .map { it.toIntOrNull() ?: 0 }
+
+        override fun compareTo(other: SemverKey): Int {
+            val len = maxOf(parts.size, other.parts.size)
+            for (i in 0 until len) {
+                val a = parts.getOrElse(i) { 0 }
+                val b = other.parts.getOrElse(i) { 0 }
+                if (a != b) return a.compareTo(b)
+            }
+            return 0
+        }
+    }
+
+    private fun compareSemver(a: String, b: String): Int = SemverKey(a).compareTo(SemverKey(b))
 
     private fun fetchText(url: String): String? {
         val conn = URL(url).openConnection() as HttpURLConnection
