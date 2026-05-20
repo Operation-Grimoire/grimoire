@@ -50,6 +50,9 @@ class AppUpdateViewModel @Inject constructor(
     private val _checkState = MutableStateFlow<CheckState>(CheckState.Idle)
     val checkState: StateFlow<CheckState> = _checkState.asStateFlow()
 
+    private val _isLoadingChangelog = MutableStateFlow(false)
+    val isLoadingChangelog: StateFlow<Boolean> = _isLoadingChangelog.asStateFlow()
+
     init {
         viewModelScope.launch {
             val lastSeen = appPreferences.lastSeenVersionCode.changes().first()
@@ -59,18 +62,28 @@ class AppUpdateViewModel @Inject constructor(
                 appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
                 appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
             } else if (BuildConfig.VERSION_CODE > lastSeen) {
-                val remote: String? = when (channel) {
-                    UpdateChannel.STABLE -> {
-                        val prevName = appPreferences.lastSeenVersionName.changes().first()
-                        if (prevName.isNotBlank() && prevName != BuildConfig.VERSION_NAME) {
-                            checker.fetchStableNotesSince(prevName, BuildConfig.VERSION_NAME)
-                        } else {
-                            checker.fetchStableNotesForVersion(BuildConfig.VERSION_NAME)
+                val autoChangelogEnabled = updatePreferences.autoChangelogEnabled.changes().first()
+                if (autoChangelogEnabled) {
+                    val remote: String? = when (channel) {
+                        UpdateChannel.STABLE -> {
+                            val prevName = appPreferences.lastSeenVersionName.changes().first()
+                            if (prevName.isNotBlank() && prevName != BuildConfig.VERSION_NAME) {
+                                checker.fetchStableNotesSince(prevName, BuildConfig.VERSION_NAME)
+                            } else {
+                                checker.fetchStableNotesForVersion(BuildConfig.VERSION_NAME)
+                            }
                         }
+                        UpdateChannel.BETA -> checker.fetchBetaNotesForSha(BuildConfig.GIT_SHA)
                     }
-                    UpdateChannel.BETA -> checker.fetchBetaNotesForSha(BuildConfig.GIT_SHA)
+                    _changelogText.value = remote ?: Changelog.since(lastSeen, BuildConfig.VERSION_CODE)
+                } else {
+                    // Popup disabled — mark this version as seen so we don't
+                    // accumulate fetches if the user re-enables it later.
+                    // The user can still open the dialog manually via
+                    // showCurrentChangelog().
+                    appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
+                    appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
                 }
-                _changelogText.value = remote ?: Changelog.since(lastSeen, BuildConfig.VERSION_CODE)
             }
             val release = checker.checkForUpdate(channel) ?: return@launch
             val autoPopupEnabled = updatePreferences.autoPopupEnabled.changes().first()
@@ -101,6 +114,24 @@ class AppUpdateViewModel @Inject constructor(
 
     fun resetCheckState() {
         _checkState.value = CheckState.Idle
+    }
+
+    fun showCurrentChangelog() {
+        if (_changelogText.value != null || _isLoadingChangelog.value) return
+        viewModelScope.launch {
+            _isLoadingChangelog.value = true
+            try {
+                val channel = updatePreferences.channel.changes().first()
+                val remote = when (channel) {
+                    UpdateChannel.STABLE -> checker.fetchStableNotesForVersion(BuildConfig.VERSION_NAME)
+                    UpdateChannel.BETA -> checker.fetchBetaNotesForSha(BuildConfig.GIT_SHA)
+                }
+                _changelogText.value = remote
+                    ?: "No changelog available for ${BuildConfig.VERSION_NAME}."
+            } finally {
+                _isLoadingChangelog.value = false
+            }
+        }
     }
 
     fun dismissChangelog() {
