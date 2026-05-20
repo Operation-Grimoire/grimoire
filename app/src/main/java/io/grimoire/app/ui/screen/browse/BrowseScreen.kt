@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.component.ExtensionIcon
+import io.grimoire.app.util.languageLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,7 +111,7 @@ fun BrowseScreen(
                     items(sources, key = { it.packageName }) { item ->
                         ListItem(
                             headlineContent = { Text(item.name) },
-                            supportingContent = { Text(item.lang.uppercase()) },
+                            supportingContent = { Text(languageLabel(item.lang)) },
                             leadingContent = { ExtensionIcon(item.packageName, item.lang) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -159,8 +160,3 @@ private fun NavRow(
     )
 }
 
-private fun languageLabel(code: String): String = when (code) {
-    "EN" -> "English"
-    "ALL" -> "All languages"
-    else -> code
-}

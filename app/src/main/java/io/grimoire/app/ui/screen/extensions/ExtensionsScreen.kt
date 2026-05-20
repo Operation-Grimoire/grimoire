@@ -9,7 +9,6 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,12 +23,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -60,9 +60,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.component.ExtensionIcon
+import io.grimoire.app.util.languageLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,6 +119,7 @@ fun ExtensionsScreen(
     var showRepos by remember { mutableStateOf(false) }
     var showAddRepo by remember { mutableStateOf(false) }
     var editRepo by remember { mutableStateOf<RepoEntity?>(null) }
+    var pendingRemove by remember { mutableStateOf<ExtensionItem?>(null) }
     val repoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
@@ -157,14 +160,19 @@ fun ExtensionsScreen(
                     items(installed, key = { it.packageName }) { item ->
                         val state = installStates[item.packageName]
                         val hasUpdate = item is ExtensionItem.Installed && item.hasUpdate
+                        val languages = item.multiLanguageOptions()
                         ListItem(
-                            modifier = Modifier.clickable {
-                                onOpenSourceSettings(item.packageName)
-                            },
                             headlineContent = { Text(item.name) },
                             supportingContent = {
                                 Column {
-                                    Text("${item.lang.uppercase()} · v${item.versionName}")
+                                    Text("${languageLabel(item.lang)} · v${item.versionName}")
+                                    if (!languages.isNullOrEmpty()) {
+                                        Text(
+                                            multiLanguageSummary(languages),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
                                     if (hasUpdate && state == null) {
                                         Text(
                                             "Update available: v${(item as ExtensionItem.Installed).remoteVersionName}",
@@ -202,15 +210,12 @@ fun ExtensionsScreen(
                                             }) { Text("Update") }
                                         }
                                     }
-                                    TextButton(onClick = {
-                                        @Suppress("DEPRECATION")
-                                        context.startActivity(
-                                            Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
-                                                data = android.net.Uri.parse("package:${item.packageName}")
-                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            }
-                                        )
-                                    }) { Text("Remove") }
+                                    IconButton(onClick = { onOpenSourceSettings(item.packageName) }) {
+                                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                                    }
+                                    IconButton(onClick = { pendingRemove = item }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Remove")
+                                    }
                                 }
                             },
                         )
@@ -228,7 +233,7 @@ fun ExtensionsScreen(
                             headlineContent = { Text(item.name) },
                             supportingContent = {
                                 Column {
-                                    Text("${item.lang.uppercase()} · v${item.versionName}")
+                                    Text("${languageLabel(item.lang)} · v${item.versionName}")
                                     InstallProgressRow(state)
                                 }
                             },
@@ -249,7 +254,9 @@ fun ExtensionsScreen(
                                         }
                                     }
                                     null -> {
-                                        Button(onClick = { viewModel.install(item) }) { Text("Install") }
+                                        IconButton(onClick = { viewModel.install(item) }) {
+                                            Icon(Icons.Default.Download, contentDescription = "Install")
+                                        }
                                     }
                                 }
                             },
@@ -358,6 +365,29 @@ fun ExtensionsScreen(
             initial = repo,
             onConfirm = { name, url -> viewModel.updateRepo(repo, name, url); editRepo = null },
             onDismiss = { editRepo = null },
+        )
+    }
+
+    pendingRemove?.let { item ->
+        AlertDialog(
+            onDismissRequest = { pendingRemove = null },
+            title = { Text("Remove extension?") },
+            text = { Text("Remove ${item.name}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    @Suppress("DEPRECATION")
+                    context.startActivity(
+                        Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
+                            data = android.net.Uri.parse("package:${item.packageName}")
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                    )
+                    pendingRemove = null
+                }) { Text("Remove") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRemove = null }) { Text("Cancel") }
+            },
         )
     }
 }
@@ -479,4 +509,18 @@ private fun EmptyState(text: String, modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+private fun ExtensionItem.multiLanguageOptions(): List<String>? = when (this) {
+    is ExtensionItem.Installed -> (loaded.source as? MultiLanguageSource)?.availableLanguages()
+    is ExtensionItem.InstalledOnly -> (loaded.source as? MultiLanguageSource)?.availableLanguages()
+    is ExtensionItem.Available -> null
+}
+
+private const val MULTI_LANGUAGE_PREVIEW_COUNT = 3
+
+private fun multiLanguageSummary(languages: List<String>): String {
+    val shown = languages.take(MULTI_LANGUAGE_PREVIEW_COUNT)
+    val extra = languages.size - shown.size
+    return shown.joinToString(", ") + if (extra > 0) " + $extra more" else ""
 }
