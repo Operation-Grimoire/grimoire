@@ -283,13 +283,35 @@ fun LibraryScreen(
         addAll(categories.map { it.name })
     }
 
-    val effectiveTab = selectedTab.coerceIn(0, (tabs.size - 1).coerceAtLeast(0))
+    val pageCount = tabs.size.coerceAtLeast(1)
+    val pagerState = rememberPagerState(
+        initialPage = selectedTab.coerceIn(0, pageCount - 1),
+        pageCount = { pageCount },
+    )
+    val currentTab = pagerState.currentPage.coerceIn(0, pageCount - 1)
 
-    LaunchedEffect(tabs.size) {
-        if (tabs.isNotEmpty() && selectedTab >= tabs.size) viewModel.setSelectedTab(0)
+    var didInitialSync by remember { mutableStateOf(false) }
+    LaunchedEffect(selectedTab, pageCount) {
+        if (!didInitialSync) {
+            val target = selectedTab.coerceIn(0, pageCount - 1)
+            if (target != pagerState.currentPage) pagerState.scrollToPage(target)
+            didInitialSync = true
+        }
     }
 
-    LaunchedEffect(effectiveTab) { clearSelection() }
+    LaunchedEffect(pageCount) {
+        if (pagerState.currentPage >= pageCount) {
+            pagerState.scrollToPage(pageCount - 1)
+        }
+    }
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collect { page ->
+            if (page != selectedTab) viewModel.setSelectedTab(page)
+        }
+    }
+
+    LaunchedEffect(pagerState.settledPage) { clearSelection() }
 
     val defaultCategory = categories.firstOrNull { it.isDefault }
 
@@ -312,28 +334,10 @@ fun LibraryScreen(
     }
 
     val displayedNovels: List<NovelEntity>? = remember(
-        novels, effectiveTab, categories, showAllTab,
+        novels, currentTab, categories, showAllTab,
         sortOrder, filterStatus, filterUnreadOnly, filterDownloadedOnly, chapterStats,
         isUnlocked, hiddenCategoryIds, includeHiddenInAll, searchQuery,
-    ) { novelsForTab(effectiveTab) }
-
-    val pageCount = tabs.size.coerceAtLeast(1)
-    val pagerState = rememberPagerState(
-        initialPage = effectiveTab.coerceIn(0, pageCount - 1),
-        pageCount = { pageCount },
-    )
-
-    LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }.collect { page ->
-            if (page != effectiveTab) viewModel.setSelectedTab(page)
-        }
-    }
-
-    LaunchedEffect(effectiveTab, pageCount) {
-        if (effectiveTab in 0 until pageCount && effectiveTab != pagerState.currentPage) {
-            pagerState.animateScrollToPage(effectiveTab)
-        }
-    }
+    ) { novelsForTab(currentTab) }
 
     Scaffold(
         modifier = modifier,
@@ -453,11 +457,11 @@ fun LibraryScreen(
     ) { padding ->
         Column(Modifier.padding(padding)) {
             if (tabs.size > 1) {
-                PrimaryScrollableTabRow(selectedTabIndex = effectiveTab) {
+                PrimaryScrollableTabRow(selectedTabIndex = currentTab) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
-                            selected = effectiveTab == index,
-                            onClick = { viewModel.setSelectedTab(index) },
+                            selected = currentTab == index,
+                            onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                             text = { Text(title) },
                         )
                     }
