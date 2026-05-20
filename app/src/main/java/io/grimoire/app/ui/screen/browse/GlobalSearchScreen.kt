@@ -62,7 +62,7 @@ fun GlobalSearchScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
-    val libraryUrls by viewModel.libraryUrls.collectAsState()
+    val libraryKeys by viewModel.libraryKeys.collectAsState()
 
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -99,7 +99,7 @@ fun GlobalSearchScreen(
         when {
             searchResults.isNotEmpty() -> GlobalSearchResults(
                 results = searchResults,
-                libraryUrls = libraryUrls,
+                libraryKeys = libraryKeys,
                 onNovelClick = onNovelClick,
                 onSeeAll = { pkg -> onNavigateToSourceSearch(pkg, searchQuery) },
                 modifier = Modifier.padding(padding),
@@ -137,7 +137,7 @@ fun GlobalSearchScreen(
 @Composable
 internal fun GlobalSearchResults(
     results: List<GlobalSearchResult>,
-    libraryUrls: Set<String>,
+    libraryKeys: Set<Pair<Long, String>>,
     onNovelClick: (Novel, String) -> Unit,
     onSeeAll: (packageName: String) -> Unit,
     modifier: Modifier = Modifier,
@@ -199,7 +199,7 @@ internal fun GlobalSearchResults(
                         items(group.novels.take(10), key = { it.url }) { novel ->
                             NovelCoverCard(
                                 novel = novel,
-                                inLibrary = novel.url in libraryUrls,
+                                inLibrary = (group.sourceId to novel.url) in libraryKeys,
                                 onClick = { onNovelClick(novel, group.packageName) },
                             )
                         }

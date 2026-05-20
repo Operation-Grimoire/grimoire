@@ -7,6 +7,8 @@ import androidx.room.Upsert
 import io.grimoire.app.data.local.entity.NovelEntity
 import kotlinx.coroutines.flow.Flow
 
+data class FavoriteKey(val sourceId: Long, val url: String)
+
 @Dao
 interface NovelDao {
     @Query("SELECT * FROM novels WHERE favorite = 1 ORDER BY title ASC")
@@ -15,8 +17,11 @@ interface NovelDao {
     @Query("SELECT * FROM novels")
     suspend fun getAll(): List<NovelEntity>
 
-    @Query("SELECT url FROM novels WHERE favorite = 1")
-    fun getFavoriteUrls(): Flow<List<String>>
+    @Query("SELECT sourceId, url FROM novels WHERE favorite = 1")
+    fun getFavoriteKeys(): Flow<List<FavoriteKey>>
+
+    @Query("SELECT url FROM novels WHERE favorite = 1 AND sourceId = :sourceId")
+    fun getFavoriteUrlsBySource(sourceId: Long): Flow<List<String>>
 
     @Query("SELECT * FROM novels WHERE id = :id")
     suspend fun getById(id: Long): NovelEntity?
