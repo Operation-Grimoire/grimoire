@@ -9,12 +9,15 @@ import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.api.source.SourcePreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import io.grimoire.app.data.preferences.AppLanguagePreferences
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
 import io.grimoire.app.extension.ExtensionManager
-import io.grimoire.app.util.ContentLanguages
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,6 +27,7 @@ class SourceSettingsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val sourceSettings: SourceSettingsPreferences,
+    private val appLanguages: AppLanguagePreferences,
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
@@ -47,18 +51,29 @@ class SourceSettingsViewModel @Inject constructor(
     /** Whether the source supports validating its configuration (e.g. login). */
     val canValidate: Boolean = loaded?.source is ConfigurableSource
 
-    private val multiLanguage = loaded?.source as? MultiLanguageSource
+    /** Multi-language sources get the dedicated content-language picker row. */
+    val isMultiLanguage: Boolean =
+        loaded?.source is MultiLanguageSource || loaded?.source?.lang == "all"
 
-    /** Multi-language sources get the built-in content-language filter. */
-    val isMultiLanguage: Boolean = multiLanguage != null || loaded?.source?.lang == "all"
-
-    /** Languages the source advertises, falling back to a built-in list. */
-    val allLanguages: List<String> =
-        multiLanguage?.availableLanguages()?.takeIf { it.isNotEmpty() }
-            ?: ContentLanguages.ALL
-
-    private val _enabledLanguages = MutableStateFlow<Set<String>>(emptySet())
-    val enabledLanguages: StateFlow<Set<String>> = _enabledLanguages.asStateFlow()
+    /**
+     * Summary shown on the "Content languages" nav row. Reflects the effective
+     * set the source is using right now — "Using global · 3 languages",
+     * "Using global · no filter", "Override · 2 languages", etc.
+     */
+    val languageSummary: StateFlow<String> = combine(
+        sourceSettings.contentLanguagesOverride(pkg).changes(),
+        sourceSettings.contentLanguages(pkg).changes(),
+        appLanguages.enabled.changes(),
+    ) { override, perSource, global ->
+        val effective = if (override) perSource else global
+        val prefix = if (override) "Override" else "Using global"
+        val tail = when {
+            effective.isEmpty() -> "no filter"
+            effective.size == 1 -> "1 language"
+            else -> "${effective.size} languages"
+        }
+        "$prefix · $tail"
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "Using global · no filter")
 
     sealed interface ValidationState {
         data object Idle : ValidationState
@@ -77,16 +92,7 @@ class SourceSettingsViewModel @Inject constructor(
                 val current = stored[pref.key].orEmpty()
                 pref.key to current.ifEmpty { defaultValue(pref) }
             }
-            if (isMultiLanguage) {
-                _enabledLanguages.value = sourceSettings.enabledLanguages(pkg)
-            }
         }
-    }
-
-    fun toggleLanguage(name: String) {
-        val key = ContentLanguages.normalize(name)
-        _enabledLanguages.update { if (key in it) it - key else it + key }
-        _saved.value = false
     }
 
     private fun defaultValue(pref: SourcePreference): String = when (pref) {
@@ -133,12 +139,8 @@ class SourceSettingsViewModel @Inject constructor(
 
     fun save() {
         val snapshot = _values.value
-        val languages = _enabledLanguages.value
         viewModelScope.launch {
             snapshot.forEach { (key, value) -> sourceSettings.pref(pkg, key).set(value) }
-            if (isMultiLanguage) {
-                sourceSettings.contentLanguages(pkg).set(languages)
-            }
             extensionManager.reapplyPreferences(pkg)
             _saved.value = true
         }

@@ -12,8 +12,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,12 +41,14 @@ import io.grimoire.api.source.SourcePreference
 @Composable
 fun SourceSettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToContentLanguages: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SourceSettingsViewModel = hiltViewModel(),
 ) {
     val values by viewModel.values.collectAsState()
     val saved by viewModel.saved.collectAsState()
     val validation by viewModel.validation.collectAsState()
+    val languageSummary by viewModel.languageSummary.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -84,6 +87,24 @@ fun SourceSettingsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Spacer(Modifier.height(4.dp))
+
+            if (viewModel.isMultiLanguage) {
+                ListItem(
+                    headlineContent = { Text("Content languages") },
+                    supportingContent = { Text(languageSummary) },
+                    leadingContent = {
+                        Icon(Icons.Default.Translate, contentDescription = null)
+                    },
+                    trailingContent = {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForwardIos,
+                            contentDescription = null,
+                        )
+                    },
+                    modifier = Modifier.clickable(onClick = onNavigateToContentLanguages),
+                )
+            }
+
             viewModel.preferences.forEach { pref ->
                 when (pref) {
                     is SourcePreference.EditText -> {
@@ -119,33 +140,6 @@ fun SourceSettingsScreen(
                 }
             }
 
-            if (viewModel.isMultiLanguage) {
-                val enabled by viewModel.enabledLanguages.collectAsState()
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "Content languages",
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Text(
-                    "Only show results in the selected languages. Leave all " +
-                        "unchecked to show every language.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                viewModel.allLanguages.forEach { lang ->
-                    ListItem(
-                        headlineContent = { Text(lang) },
-                        trailingContent = {
-                            Checkbox(
-                                checked = lang.trim().lowercase() in enabled,
-                                onCheckedChange = { viewModel.toggleLanguage(lang) },
-                            )
-                        },
-                        modifier = Modifier.clickable { viewModel.toggleLanguage(lang) },
-                    )
-                }
-            }
-
             if (viewModel.canValidate) {
                 Spacer(Modifier.height(8.dp))
                 val running = validation is SourceSettingsViewModel.ValidationState.Running
@@ -178,12 +172,14 @@ fun SourceSettingsScreen(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
-            Button(
-                onClick = viewModel::save,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(if (saved) "Saved" else "Save")
+            if (viewModel.preferences.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = viewModel::save,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (saved) "Saved" else "Save")
+                }
             }
             Spacer(Modifier.height(16.dp))
         }

@@ -20,4 +20,9 @@ object ContentLanguages {
     )
 
     fun normalize(name: String): String = name.trim().lowercase()
+
+    fun normalize(names: Set<String>): Set<String> =
+        names.mapNotNullTo(mutableSetOf()) { n ->
+            normalize(n).takeIf { it.isNotEmpty() }
+        }
 }

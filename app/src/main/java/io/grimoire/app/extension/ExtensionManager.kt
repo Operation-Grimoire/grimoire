@@ -44,6 +44,18 @@ class ExtensionManager @Inject constructor(
         }
     }
 
+    /**
+     * Re-pushes settings into every loaded source. Used by the global content-
+     * language picker so a global change applies to non-overriding sources
+     * without restarting the app.
+     */
+    fun reapplyAllPreferences() {
+        @Suppress("OPT_IN_USAGE")
+        GlobalScope.launch(Dispatchers.IO) {
+            _extensions.value.forEach { applyPreferences(it) }
+        }
+    }
+
     private suspend fun applyPreferences(loaded: LoadedExtension) {
         val pkg = loaded.info.packageName
         (loaded.source as? ConfigurableSource)?.let { configurable ->
@@ -51,7 +63,7 @@ class ExtensionManager @Inject constructor(
             configurable.setPreferences(sourceSettings.snapshot(pkg, keys))
         }
         (loaded.source as? MultiLanguageSource)?.setEnabledLanguages(
-            sourceSettings.enabledLanguages(pkg),
+            sourceSettings.effectiveLanguages(pkg),
         )
     }
 

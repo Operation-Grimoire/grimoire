@@ -57,11 +57,13 @@ import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.about.AboutSettingsScreen
 import io.grimoire.app.ui.screen.settings.appearance.AppearanceSettingsScreen
 import io.grimoire.app.ui.screen.settings.backup.BackupSettingsScreen
+import io.grimoire.app.ui.screen.settings.browse.BrowseLanguagesScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseSettingsScreen
 import io.grimoire.app.ui.screen.settings.hidden.HiddenCategoriesSettingsScreen
 import io.grimoire.app.ui.screen.settings.library.LibrarySettingsScreen
 import io.grimoire.app.ui.screen.settings.novelupdates.NovelUpdatesSettingsScreen
 import io.grimoire.app.ui.screen.settings.reader.ReaderSettingsScreen
+import io.grimoire.app.ui.screen.settings.source.SourceLanguagesScreen
 import io.grimoire.app.ui.screen.settings.source.SourceSettingsScreen
 
 private enum class TopLevelDestination(
@@ -89,6 +91,7 @@ private const val ROUTE_NU_SERIES = "nu_series?slug={slug}"
 private const val ROUTE_EXTENSION_MANAGE = "extensions"
 private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}?q={q}"
 private const val ROUTE_SOURCE_SETTINGS = "settings/source/{pkg}"
+private const val ROUTE_SOURCE_LANGUAGES = "settings/source/{pkg}/languages"
 private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_STATISTICS = "statistics"
@@ -96,6 +99,7 @@ private const val ROUTE_SETTINGS_ROOT = "settings"
 private const val ROUTE_SETTINGS_APPEARANCE = "settings/appearance"
 private const val ROUTE_SETTINGS_LIBRARY = "settings/library"
 private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
+private const val ROUTE_SETTINGS_CONTENT_LANGUAGES = "settings/browse/content_languages"
 private const val ROUTE_SETTINGS_READER = "settings/reader"
 private const val ROUTE_SETTINGS_ABOUT = "settings/about"
 private const val ROUTE_SETTINGS_BACKUP = "settings/backup"
@@ -347,7 +351,17 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 composable(route = ROUTE_SETTINGS_BROWSE) { entry ->
                     val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
                     val vm: SettingsViewModel = hiltViewModel(graphEntry)
-                    BrowseSettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
+                    BrowseSettingsScreen(
+                        viewModel = vm,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToContentLanguages = {
+                            navController.navigate(ROUTE_SETTINGS_CONTENT_LANGUAGES)
+                        },
+                    )
+                }
+
+                composable(route = ROUTE_SETTINGS_CONTENT_LANGUAGES) {
+                    BrowseLanguagesScreen(onNavigateBack = { navController.popBackStack() })
                 }
 
                 composable(route = ROUTE_SETTINGS_READER) { entry ->
@@ -372,7 +386,12 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             }
 
             composable(route = ROUTE_EXTENSION_MANAGE) {
-                ExtensionsScreen(onNavigateBack = { navController.popBackStack() })
+                ExtensionsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenSourceSettings = { pkg ->
+                        navController.navigate("settings/source/${Uri.encode(pkg)}")
+                    },
+                )
             }
 
             composable(
@@ -402,8 +421,21 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             composable(
                 route = ROUTE_SOURCE_SETTINGS,
                 arguments = listOf(navArgument("pkg") { type = NavType.StringType }),
+            ) { entry ->
+                val pkg = entry.arguments?.getString("pkg") ?: ""
+                SourceSettingsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToContentLanguages = {
+                        navController.navigate("settings/source/${Uri.encode(pkg)}/languages")
+                    },
+                )
+            }
+
+            composable(
+                route = ROUTE_SOURCE_LANGUAGES,
+                arguments = listOf(navArgument("pkg") { type = NavType.StringType }),
             ) {
-                SourceSettingsScreen(onNavigateBack = { navController.popBackStack() })
+                SourceLanguagesScreen(onNavigateBack = { navController.popBackStack() })
             }
 
             composable(

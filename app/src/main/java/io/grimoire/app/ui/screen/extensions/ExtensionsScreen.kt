@@ -9,6 +9,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,6 +68,7 @@ import io.grimoire.app.ui.component.ExtensionIcon
 @Composable
 fun ExtensionsScreen(
     onNavigateBack: () -> Unit = {},
+    onOpenSourceSettings: (pkg: String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ExtensionsViewModel = hiltViewModel(),
 ) {
@@ -156,6 +158,9 @@ fun ExtensionsScreen(
                         val state = installStates[item.packageName]
                         val hasUpdate = item is ExtensionItem.Installed && item.hasUpdate
                         ListItem(
+                            modifier = Modifier.clickable {
+                                onOpenSourceSettings(item.packageName)
+                            },
                             headlineContent = { Text(item.name) },
                             supportingContent = {
                                 Column {
