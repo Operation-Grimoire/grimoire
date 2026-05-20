@@ -83,25 +83,23 @@ jobs:
           VERSION_NAME: ${{ steps.ver.outputs.version_name }}
         run: |
           set -euo pipefail
-          # The beta tag is rolling. Before the release step overwrites it, the
-          # tag still points at the previous beta commit — so passing
-          # previous_tag_name=beta to /generate-notes makes GitHub diff against
-          # that previous state instead of the last stable release.
+          # The beta tag is rolling. GitHub's /generate-notes can't diff a tag
+          # against itself (it resolves both ends to the same existing commit),
+          # so we capture the previous beta commit before the release step
+          # overwrites it and use `git log` directly. fetch-depth: 0 above
+          # ensures the full history is available.
           PREV_SHA=$(gh api "repos/${{ github.repository }}/releases/tags/beta" \
             --jq .target_commitish 2>/dev/null || true)
           CHANGES=""
-          if [ -n "$PREV_SHA" ]; then
-            CHANGES=$(gh api "repos/${{ github.repository }}/releases/generate-notes" \
-              -f tag_name=beta \
-              -f "target_commitish=$SHA" \
-              -f previous_tag_name=beta \
-              --jq .body || true)
+          if [ -n "$PREV_SHA" ] && git cat-file -e "$PREV_SHA" 2>/dev/null; then
+            CHANGES=$(git log --no-merges --pretty=format:'- %s' "$PREV_SHA..$SHA" || true)
           fi
           {
             echo 'body<<RELNOTES_EOF'
             printf 'Auto-built from `master` @ %s.\n\n' "$SHA"
             printf 'Version: `%s`\n\n' "$VERSION_NAME"
             if [ -n "$CHANGES" ]; then
+              printf '## Changes since previous beta\n\n'
               printf '%s\n\n' "$CHANGES"
             fi
             printf 'This is a rolling beta release. Each push to `master` replaces it with a fresh build.\n'
