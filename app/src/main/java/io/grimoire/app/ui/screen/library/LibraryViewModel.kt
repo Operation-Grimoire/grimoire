@@ -106,16 +106,23 @@ class LibraryViewModel @Inject constructor(
     val biometricEnabled: StateFlow<Boolean> = authManager.biometricEnabled
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    private val allCategories: StateFlow<List<CategoryEntity>> = categoryDao.getAll()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    // null until the first database emission, so callers can tell "no categories yet"
+    // apart from "still loading" — the tab restore must wait for the real list.
+    private val allCategories: StateFlow<List<CategoryEntity>?> = categoryDao.getAll()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val categoriesLoaded: StateFlow<Boolean> = allCategories
+        .map { it != null }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     val categories: StateFlow<List<CategoryEntity>> =
         combine(allCategories, authManager.isUnlocked) { all, unlocked ->
-            if (unlocked) all else all.filter { !it.isHidden }
+            val list = all.orEmpty()
+            if (unlocked) list else list.filter { !it.isHidden }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val hiddenCategoryIds: StateFlow<Set<Long>> = allCategories
-        .map { list -> list.filter { it.isHidden }.map { it.id }.toSet() }
+        .map { list -> list.orEmpty().filter { it.isHidden }.map { it.id }.toSet() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
     val novels: StateFlow<List<NovelEntity>?> = novelDao.getFavorites()
@@ -133,10 +140,14 @@ class LibraryViewModel @Inject constructor(
     val filterUnreadOnly: StateFlow<Boolean> = libraryPreferences.filterUnreadOnly.stateIn(viewModelScope)
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
     val includeHiddenInAll: StateFlow<Boolean> = libraryPreferences.includeHiddenInAll.stateIn(viewModelScope)
-    val selectedTab: StateFlow<Int> = libraryPreferences.selectedTab.stateIn(viewModelScope)
 
-    fun setSelectedTab(index: Int) = viewModelScope.launch {
-        libraryPreferences.selectedTab.set(index)
+    // null until the persisted value is read from disk, so the restore can wait for
+    // the real id instead of acting on the default and locking in the wrong tab.
+    val persistedCategoryId: StateFlow<Long?> = libraryPreferences.selectedCategoryId.changes()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    fun setSelectedCategoryId(id: Long) = viewModelScope.launch {
+        libraryPreferences.selectedCategoryId.set(id)
     }
 
     fun pkgForNovel(novel: NovelEntity): String =

@@ -23,6 +23,7 @@ fun <T> Preference<T>.stateIn(
 interface PreferenceStore {
     fun getBoolean(key: String, defaultValue: Boolean): Preference<Boolean>
     fun getInt(key: String, defaultValue: Int): Preference<Int>
+    fun getLong(key: String, defaultValue: Long): Preference<Long>
     fun getString(key: String, defaultValue: String): Preference<String>
     fun <T> getObject(
         key: String,
