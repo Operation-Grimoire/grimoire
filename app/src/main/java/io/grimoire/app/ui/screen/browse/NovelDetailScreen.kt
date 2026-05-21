@@ -112,6 +112,7 @@ fun NovelDetailScreen(
     onOpenWebView: (url: String) -> Unit = {},
     onOpenNuSeries: (slug: String) -> Unit = {},
     onNavigateToLogin: (pkg: String) -> Unit = {},
+    onMigrate: (novelId: Long) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: NovelDetailViewModel = hiltViewModel(),
 ) {
@@ -122,6 +123,7 @@ fun NovelDetailScreen(
     val novelError by viewModel.novelError.collectAsState()
     val chaptersError by viewModel.chaptersError.collectAsState()
     val isFavorite by viewModel.isFavorite.collectAsState()
+    val novelId by viewModel.novelId.collectAsState()
     val chapterPage by viewModel.chapterPage.collectAsState()
     val chapterSort by viewModel.chapterSort.collectAsState()
     val categoryId by viewModel.categoryId.collectAsState()
@@ -132,6 +134,7 @@ fun NovelDetailScreen(
     val hasLockedChapters by viewModel.hasLockedChapters.collectAsState()
 
     var showCategoryDialog by remember { mutableStateOf(false) }
+    var overflowMenuExpanded by remember { mutableStateOf(false) }
     var lockedDialogChapter by remember { mutableStateOf<ChapterEntity?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var bulkMenuExpanded by remember { mutableStateOf(false) }
@@ -325,6 +328,26 @@ fun NovelDetailScreen(
                             if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                             contentDescription = if (isFavorite) "Remove from library" else "Add to library",
                         )
+                    }
+                    if (isFavorite && novelId > 0L) {
+                        Box {
+                            IconButton(onClick = { overflowMenuExpanded = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                            }
+                            DropdownMenu(
+                                expanded = overflowMenuExpanded,
+                                onDismissRequest = { overflowMenuExpanded = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Migrate") },
+                                    onClick = {
+                                        overflowMenuExpanded = false
+                                        onMigrate(novelId)
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.SwapVert, contentDescription = null) },
+                                )
+                            }
+                        }
                     }
                 },
             )

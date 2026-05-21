@@ -141,6 +141,7 @@ internal fun GlobalSearchResults(
     onNovelClick: (Novel, String) -> Unit,
     onSeeAll: (packageName: String) -> Unit,
     modifier: Modifier = Modifier,
+    showSeeAll: Boolean = true,
 ) {
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
         results.forEach { group ->
@@ -158,7 +159,7 @@ internal fun GlobalSearchResults(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f),
                     )
-                    if (!group.isLoading && group.novels.isNotEmpty()) {
+                    if (showSeeAll && !group.isLoading && group.novels.isNotEmpty()) {
                         TextButton(onClick = { onSeeAll(group.packageName) }) {
                             Text("See all")
                         }

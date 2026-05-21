@@ -86,6 +86,10 @@ class NovelDetailViewModel @Inject constructor(
     val novel: StateFlow<Novel> = _novel.asStateFlow()
 
     private val _liveNovelId = MutableStateFlow(-1L)
+
+    /** Database id of the saved novel, or <= 0 before it has been persisted. */
+    val novelId: StateFlow<Long> = _liveNovelId.asStateFlow()
+
     @OptIn(FlowPreview::class)
     val chapters: StateFlow<List<ChapterEntity>> = _liveNovelId
         .flatMapLatest { id -> if (id > 0L) chapterDao.getChapters(id) else flowOf(emptyList()) }
