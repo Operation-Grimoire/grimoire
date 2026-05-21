@@ -3,6 +3,7 @@ package io.grimoire.app.ui.screen.settings.source
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,6 +44,7 @@ import io.grimoire.api.source.SourcePreference
 fun SourceSettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToContentLanguages: () -> Unit,
+    onNavigateToLogin: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SourceSettingsViewModel = hiltViewModel(),
 ) {
@@ -63,7 +66,9 @@ fun SourceSettingsScreen(
             )
         },
     ) { padding ->
-        if (viewModel.preferences.isEmpty() && !viewModel.isMultiLanguage) {
+        if (viewModel.preferences.isEmpty() && !viewModel.isMultiLanguage &&
+            !viewModel.supportsWebViewLogin
+        ) {
             Column(
                 Modifier.fillMaxSize().padding(padding),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -103,6 +108,39 @@ fun SourceSettingsScreen(
                     },
                     modifier = Modifier.clickable(onClick = onNavigateToContentLanguages),
                 )
+            }
+
+            if (viewModel.supportsWebViewLogin) {
+                val loginState by viewModel.loginState.collectAsState()
+                val signedIn = loginState == SourceSettingsViewModel.LoginUiState.SIGNED_IN
+                ListItem(
+                    headlineContent = { Text("Account") },
+                    supportingContent = {
+                        Text(
+                            when (loginState) {
+                                SourceSettingsViewModel.LoginUiState.SIGNED_IN -> "Signed in"
+                                SourceSettingsViewModel.LoginUiState.SIGNED_OUT -> "Not signed in"
+                                SourceSettingsViewModel.LoginUiState.UNKNOWN -> "Checking…"
+                            },
+                        )
+                    },
+                    leadingContent = {
+                        Icon(Icons.Default.AccountCircle, contentDescription = null)
+                    },
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onNavigateToLogin, modifier = Modifier.weight(1f)) {
+                        Text(if (signedIn) "Log in again" else "Log in")
+                    }
+                    if (signedIn) {
+                        OutlinedButton(
+                            onClick = viewModel::logout,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("Log out")
+                        }
+                    }
+                }
             }
 
             viewModel.preferences.forEach { pref ->

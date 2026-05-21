@@ -7,6 +7,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.source.ConfigurableSource
 import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.api.source.SourcePreference
+import io.grimoire.api.source.WebViewLoginSource
+import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import io.grimoire.app.data.preferences.AppLanguagePreferences
@@ -24,7 +26,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SourceSettingsViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val sourceSettings: SourceSettingsPreferences,
     private val appLanguages: AppLanguagePreferences,
@@ -50,6 +52,14 @@ class SourceSettingsViewModel @Inject constructor(
 
     /** Whether the source supports validating its configuration (e.g. login). */
     val canValidate: Boolean = loaded?.source is ConfigurableSource
+
+    /** Whether the source signs in through a WebView (locked-chapter access). */
+    val supportsWebViewLogin: Boolean = loaded?.source is WebViewLoginSource
+
+    enum class LoginUiState { UNKNOWN, SIGNED_IN, SIGNED_OUT }
+
+    private val _loginState = MutableStateFlow(LoginUiState.UNKNOWN)
+    val loginState: StateFlow<LoginUiState> = _loginState.asStateFlow()
 
     /** Multi-language sources get the dedicated content-language picker row. */
     val isMultiLanguage: Boolean =
@@ -92,6 +102,38 @@ class SourceSettingsViewModel @Inject constructor(
                 val current = stored[pref.key].orEmpty()
                 pref.key to current.ifEmpty { defaultValue(pref) }
             }
+        }
+        if (supportsWebViewLogin) {
+            checkLoginState()
+            // Re-check after returning from the login WebView (it sets this key).
+            viewModelScope.launch {
+                savedStateHandle.getStateFlow(SOURCE_LOGIN_RESULT_KEY, false).collect { done ->
+                    if (done) {
+                        savedStateHandle[SOURCE_LOGIN_RESULT_KEY] = false
+                        checkLoginState()
+                    }
+                }
+            }
+        }
+    }
+
+    /** Refreshes the source's sign-in state. */
+    fun checkLoginState() {
+        val src = loaded?.source as? WebViewLoginSource ?: return
+        viewModelScope.launch {
+            val signedIn = withContext(Dispatchers.IO) {
+                runCatching { src.isLoggedIn() }.getOrDefault(false)
+            }
+            _loginState.value =
+                if (signedIn) LoginUiState.SIGNED_IN else LoginUiState.SIGNED_OUT
+        }
+    }
+
+    fun logout() {
+        val src = loaded?.source as? WebViewLoginSource ?: return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { runCatching { src.logout() } }
+            checkLoginState()
         }
     }
 

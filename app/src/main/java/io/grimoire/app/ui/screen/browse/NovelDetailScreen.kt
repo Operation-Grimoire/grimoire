@@ -2,6 +2,7 @@ package io.grimoire.app.ui.screen.browse
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PauseCircle
@@ -108,6 +110,7 @@ fun NovelDetailScreen(
     onChapterClick: (pkg: String, novelUrl: String, chapterUrl: String) -> Unit = { _, _, _ -> },
     onOpenWebView: (url: String) -> Unit = {},
     onOpenNuSeries: (slug: String) -> Unit = {},
+    onNavigateToLogin: (pkg: String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: NovelDetailViewModel = hiltViewModel(),
 ) {
@@ -124,8 +127,11 @@ fun NovelDetailScreen(
     val categories by viewModel.categories.collectAsState()
     val bookDownload by viewModel.bookDownload.collectAsState()
     val nuState by viewModel.nuState.collectAsState()
+    val loginState by viewModel.loginState.collectAsState()
+    val hasLockedChapters by viewModel.hasLockedChapters.collectAsState()
 
     var showCategoryDialog by remember { mutableStateOf(false) }
+    var lockedDialogChapter by remember { mutableStateOf<ChapterEntity?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var bulkMenuExpanded by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
@@ -139,9 +145,16 @@ fun NovelDetailScreen(
     val continueChapter by remember(chapters) {
         derivedStateOf {
             val sorted = chapters.sortedBy { it.chapterNumber }
-            sorted.firstOrNull { !it.read } ?: sorted.lastOrNull()
+            // Don't send the reader into a locked chapter from the Continue FAB.
+            sorted.firstOrNull { !it.read && !it.locked }
+                ?: sorted.lastOrNull { !it.locked }
+                ?: sorted.lastOrNull()
         }
     }
+
+    // Nudge the user to sign in only when it would actually help: there are
+    // locked chapters and the source supports login but isn't signed in.
+    val showLoginBanner = loginState == LoginState.SIGNED_OUT && hasLockedChapters
 
     val displayedChapters by remember(chapters, chapterSort, searchQuery) {
         derivedStateOf {
@@ -163,7 +176,7 @@ fun NovelDetailScreen(
     val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex < 2 } }
 
     // Number of LazyColumn items before chapter items — used for fast scroller label
-    val chapterHeaderOffset by remember(isLoadingNovel, novelError, novel, chaptersError, isFavorite, categories, nuState) {
+    val chapterHeaderOffset by remember(isLoadingNovel, novelError, novel, chaptersError, isFavorite, categories, nuState, showLoginBanner) {
         derivedStateOf {
             var count = 1 // novel header / skeleton / error
             if (!isLoadingNovel && novelError == null) {
@@ -174,6 +187,7 @@ fun NovelDetailScreen(
             if (nuState !is NuInfoState.Idle && nuState !is NuInfoState.Disabled) count++ // NovelUpdates section
             count++ // chapter controls row
             if (chaptersError != null) count++
+            if (showLoginBanner) count++ // locked-chapters login banner
             count
         }
     }
@@ -241,6 +255,30 @@ fun NovelDetailScreen(
                     listState.scrollToItem(chapterHeaderOffset + idx)
                 }
                 showJumpDialog = false
+            },
+        )
+    }
+
+    lockedDialogChapter?.let { locked ->
+        AlertDialog(
+            onDismissRequest = { lockedDialogChapter = null },
+            icon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            title = { Text("Chapter locked") },
+            text = {
+                Text(
+                    "\"${locked.name}\" is locked. Reading it requires a " +
+                        "${viewModel.sourceName} account that has purchased these " +
+                        "chapters. Log in to read the chapters your account has unlocked.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    lockedDialogChapter = null
+                    onNavigateToLogin(viewModel.pkg)
+                }) { Text("Log in") }
+            },
+            dismissButton = {
+                TextButton(onClick = { lockedDialogChapter = null }) { Text("Close") }
             },
         )
     }
@@ -599,6 +637,40 @@ fun NovelDetailScreen(
                         }
                     }
 
+                    // Locked-chapters login nudge
+                    if (showLoginBanner) {
+                        item(key = "locked_login_banner") {
+                            Row(
+                                modifier = Modifier
+                                    .animateItem()
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                                    .clickable { onNavigateToLogin(viewModel.pkg) }
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Icon(
+                                    Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                )
+                                Text(
+                                    "Some chapters are locked. Log in to ${viewModel.sourceName} " +
+                                        "to read the chapters your account has unlocked.",
+                                    modifier = Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                )
+                                TextButton(onClick = { onNavigateToLogin(viewModel.pkg) }) {
+                                    Text("Log in")
+                                }
+                            }
+                        }
+                    }
+
                     // Chapter list or skeleton
                     if (isLoadingChapters && chapters.isEmpty()) {
                         item(key = "skeletons") {
@@ -612,6 +684,7 @@ fun NovelDetailScreen(
                             ChapterItem(
                                 chapter = chapter,
                                 onClick = { onChapterClick(viewModel.pkg, novel.url, chapter.url) },
+                                onLockedClick = { lockedDialogChapter = chapter },
                                 onMarkRead = { read -> viewModel.markChapterRead(chapter, read) },
                                 onMarkAllBefore = {
                                     val idx = displayedChapters.indexOf(chapter)
@@ -865,6 +938,7 @@ private fun RatingLabel(
 private fun ChapterItem(
     chapter: ChapterEntity,
     onClick: () -> Unit,
+    onLockedClick: () -> Unit,
     onMarkRead: (Boolean) -> Unit,
     onMarkAllBefore: () -> Unit,
     onMarkAllAfter: () -> Unit,
@@ -874,7 +948,7 @@ private fun ChapterItem(
     modifier: Modifier = Modifier,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val contentAlpha = if (chapter.read) 0.38f else 1f
+    val contentAlpha = if (chapter.read || chapter.locked) 0.38f else 1f
     val dateText = remember(chapter.uploadDate) { if (chapter.uploadDate > 0L) formatDate(chapter.uploadDate) else null }
     val progressText = if (!chapter.read && chapter.readProgress > 0f) "${(chapter.readProgress * 100).toInt()}%" else null
     val subText = listOfNotNull(dateText, progressText).joinToString(" · ").takeIf { it.isNotEmpty() }
@@ -900,7 +974,17 @@ private fun ChapterItem(
                     )
                 }
             } else null,
-            trailingContent = when (dlStatus) {
+            trailingContent = if (chapter.locked) {
+                {
+                    IconButton(onClick = onLockedClick) {
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = "Locked",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else when (dlStatus) {
                 ChapterDownloadStatus.NONE -> ({
                     IconButton(onClick = onDownload) {
                         Icon(Icons.Default.Download, contentDescription = "Download",
@@ -940,7 +1024,7 @@ private fun ChapterItem(
                 })
             },
             modifier = modifier.combinedClickable(
-                onClick = onClick,
+                onClick = if (chapter.locked) onLockedClick else onClick,
                 onLongClick = { menuExpanded = true },
             ),
         )
@@ -960,7 +1044,7 @@ private fun ChapterItem(
                 text = { Text("Mark all after as read") },
                 onClick = { onMarkAllAfter(); menuExpanded = false },
             )
-            when (dlStatus) {
+            if (!chapter.locked) when (dlStatus) {
                 ChapterDownloadStatus.NONE, ChapterDownloadStatus.ERROR -> DropdownMenuItem(
                     text = { Text("Download") },
                     onClick = { onDownload(); menuExpanded = false },
