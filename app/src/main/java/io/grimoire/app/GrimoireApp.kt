@@ -78,11 +78,19 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         ).apply { description = "Scheduled local backups" }
         getSystemService(NotificationManager::class.java).createNotificationChannel(backupChannel)
 
+        val appUpdateChannel = NotificationChannel(
+            APP_UPDATE_CHANNEL_ID,
+            "App Updates",
+            NotificationManager.IMPORTANCE_DEFAULT,
+        ).apply { description = "Background app update downloads" }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(appUpdateChannel)
+
         backupScheduler.applyPreferredSchedule()
     }
 
     companion object {
         const val DOWNLOAD_CHANNEL_ID = "downloads"
         const val BACKUP_CHANNEL_ID = "backups"
+        const val APP_UPDATE_CHANNEL_ID = "app_updates"
     }
 }

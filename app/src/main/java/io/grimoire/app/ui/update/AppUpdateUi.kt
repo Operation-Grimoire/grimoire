@@ -52,6 +52,7 @@ import io.grimoire.app.data.update.ChangelogCategory
 import io.grimoire.app.data.update.ChangelogItem
 import io.grimoire.app.data.update.ChangelogParser
 import io.grimoire.app.data.update.ChangelogSection
+import io.grimoire.app.data.update.DownloadState
 import io.grimoire.app.data.update.ReleaseInfo
 
 @Composable
@@ -68,7 +69,8 @@ fun AppUpdateUi(viewModel: AppUpdateViewModel = hiltViewModel()) {
         UpdateDialog(
             release = availableRelease!!,
             downloadState = downloadState,
-            onUpdate = viewModel::downloadAndInstall,
+            onUpdate = viewModel::startDownload,
+            onInstall = viewModel::installUpdate,
             onDismiss = viewModel::dismissUpdate,
             onSkip = viewModel::skipVersion,
         )
@@ -214,12 +216,12 @@ private fun UpdateDialog(
     release: ReleaseInfo,
     downloadState: DownloadState,
     onUpdate: () -> Unit,
+    onInstall: () -> Unit,
     onDismiss: () -> Unit,
     onSkip: () -> Unit,
 ) {
-    val isDownloading = downloadState is DownloadState.Downloading
     AlertDialog(
-        onDismissRequest = { if (!isDownloading) onDismiss() },
+        onDismissRequest = onDismiss,
         icon = {
             Icon(
                 imageVector = Icons.Filled.SystemUpdateAlt,
@@ -227,7 +229,9 @@ private fun UpdateDialog(
                 tint = MaterialTheme.colorScheme.primary,
             )
         },
-        title = { Text("Update available") },
+        title = {
+            Text(if (downloadState is DownloadState.Completed) "Update ready" else "Update available")
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 VersionTransitionRow(
@@ -248,6 +252,11 @@ private fun UpdateDialog(
                         text = downloadState.message,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
+                    )
+                    is DownloadState.Completed -> Text(
+                        text = "Download complete — tap Install to finish updating.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     DownloadState.Idle -> {
                         TextButton(
@@ -273,13 +282,16 @@ private fun UpdateDialog(
                 is DownloadState.Error -> {
                     Button(onClick = onUpdate) { Text("Retry") }
                 }
+                is DownloadState.Completed -> {
+                    Button(onClick = onInstall) { Text("Install") }
+                }
                 DownloadState.Idle -> {
                     Button(onClick = onUpdate) { Text("Update") }
                 }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !isDownloading) {
+            TextButton(onClick = onDismiss) {
                 Text("Later")
             }
         },
@@ -337,6 +349,11 @@ private fun DownloadProgressRow(state: DownloadState.Downloading) {
         }
         Text(
             text = downloadLabel(state),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = "Downloading in the background — you can close the app.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

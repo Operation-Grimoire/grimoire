@@ -1,15 +1,19 @@
 package io.grimoire.app.ui.update
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.app.BuildConfig
 import io.grimoire.app.data.preferences.AppPreferences
 import io.grimoire.app.data.preferences.UpdateChannel
 import io.grimoire.app.data.preferences.UpdatePreferences
 import io.grimoire.app.data.update.AppUpdateChecker
-import io.grimoire.app.data.update.AppUpdateHashMismatchException
+import io.grimoire.app.data.update.AppUpdateDownloadStore
+import io.grimoire.app.data.update.AppUpdateService
 import io.grimoire.app.data.update.Changelog
+import io.grimoire.app.data.update.DownloadState
 import io.grimoire.app.data.update.ReleaseInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,12 +21,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-sealed class DownloadState {
-    data object Idle : DownloadState()
-    data class Downloading(val bytesRead: Long, val totalBytes: Long) : DownloadState()
-    data class Error(val message: String) : DownloadState()
-}
 
 sealed class CheckState {
     data object Idle : CheckState()
@@ -33,9 +31,11 @@ sealed class CheckState {
 
 @HiltViewModel
 class AppUpdateViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val checker: AppUpdateChecker,
     private val appPreferences: AppPreferences,
     private val updatePreferences: UpdatePreferences,
+    private val downloadStore: AppUpdateDownloadStore,
 ) : ViewModel() {
 
     private val _changelogText = MutableStateFlow<String?>(null)
@@ -44,8 +44,9 @@ class AppUpdateViewModel @Inject constructor(
     private val _availableRelease = MutableStateFlow<ReleaseInfo?>(null)
     val availableRelease: StateFlow<ReleaseInfo?> = _availableRelease.asStateFlow()
 
-    private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
-    val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
+    // Download progress lives in a process-wide store so it survives this
+    // ViewModel being cleared while the foreground service keeps downloading.
+    val downloadState: StateFlow<DownloadState> = downloadStore.state
 
     private val _checkState = MutableStateFlow<CheckState>(CheckState.Idle)
     val checkState: StateFlow<CheckState> = _checkState.asStateFlow()
@@ -142,41 +143,39 @@ class AppUpdateViewModel @Inject constructor(
         }
     }
 
-    fun downloadAndInstall() {
+    /**
+     * Hands the download to a foreground service so it keeps running even if
+     * the app is closed before it finishes. Progress and completion surface
+     * through [downloadState] and an ongoing notification.
+     */
+    fun startDownload() {
         val release = _availableRelease.value ?: return
-        if (_downloadState.value is DownloadState.Downloading) return
-        viewModelScope.launch {
-            _downloadState.value = DownloadState.Downloading(0L, 0L)
-            checker.download(release.apkUrl, release.sha256) { read, total ->
-                _downloadState.value = DownloadState.Downloading(read, total)
-            }
-                .onSuccess { file ->
-                    _downloadState.value = DownloadState.Idle
-                    _availableRelease.value = null
-                    checker.launchInstall(file)
-                }
-                .onFailure { e ->
-                    val msg = when (e) {
-                        is AppUpdateHashMismatchException ->
-                            "Download verification failed — try again or switch networks"
-                        else -> e.message ?: "Download failed"
-                    }
-                    _downloadState.value = DownloadState.Error(msg)
-                }
+        if (downloadState.value is DownloadState.Downloading) return
+        downloadStore.set(DownloadState.Downloading(0L, 0L))
+        AppUpdateService.start(context, release)
+    }
+
+    fun installUpdate() {
+        val state = downloadState.value
+        if (state is DownloadState.Completed) {
+            checker.launchInstall(state.file)
         }
     }
 
     fun dismissUpdate() {
-        if (_downloadState.value is DownloadState.Downloading) return
-        _downloadState.value = DownloadState.Idle
+        // The download keeps running in the background service when dismissed
+        // mid-download; only clear finished or failed states.
+        if (downloadState.value !is DownloadState.Downloading) {
+            downloadStore.set(DownloadState.Idle)
+        }
         _availableRelease.value = null
     }
 
     fun skipVersion() {
-        if (_downloadState.value is DownloadState.Downloading) return
+        if (downloadState.value is DownloadState.Downloading) return
         val release = _availableRelease.value ?: return
         viewModelScope.launch { updatePreferences.skippedVersion.set(release.tagName) }
-        _downloadState.value = DownloadState.Idle
+        downloadStore.set(DownloadState.Idle)
         _availableRelease.value = null
     }
 }
