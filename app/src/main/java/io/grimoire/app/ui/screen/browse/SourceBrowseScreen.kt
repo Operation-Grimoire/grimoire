@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,6 +21,8 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items as lazyItems
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -50,6 +53,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -71,6 +75,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import io.grimoire.app.ui.component.AppSearchField
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -659,26 +665,149 @@ private fun FilterItem(
             }
         }
         is Filter.Group<*> -> {
-            @Suppress("UNCHECKED_CAST")
-            val items = filter.state as? List<Any?> ?: emptyList<Any?>()
-            val current = (state as? List<Any?>) ?: items
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                Text(filter.name, style = MaterialTheme.typography.bodyMedium)
-                current.forEachIndexed { i, item ->
-                    val sub = item as? Filter<*> ?: return@forEachIndexed
-                    FilterItem(
-                        filter = sub,
-                        state = sub.state,
-                        onStateChange = { newSubState ->
-                            val mutable = current.toMutableList()
-                            @Suppress("UNCHECKED_CAST")
-                            (sub as Filter<Any?>).state = newSubState
-                            mutable[i] = sub
-                            onStateChange(mutable.toList())
-                        },
+            // Children stay identity-stable for the screen's lifetime; only
+            // their `state` mutates, so derive the list once.
+            val children = remember(filter) {
+                (filter.state as? List<*>).orEmpty().filterIsInstance<Filter<*>>()
+            }
+            val selectedCount = (state as? List<*>).orEmpty()
+                .filterIsInstance<Filter.TriState>()
+                .count { it.state != Filter.TriState.STATE_IGNORE }
+            var showPicker by remember { mutableStateOf(false) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showPicker = true }
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(filter.name, modifier = Modifier.weight(1f))
+                Text(
+                    if (selectedCount > 0) "$selectedCount selected" else "Any",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (selectedCount > 0) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (showPicker) {
+                FilterGroupPickerDialog(
+                    title = filter.name,
+                    children = children,
+                    onChanged = { onStateChange(children.toList()) },
+                    onDismiss = { showPicker = false },
+                )
+            }
+        }
+    }
+}
+
+/** A searchable include/exclude picker for the children of a [Filter.Group]. */
+@Composable
+private fun FilterGroupPickerDialog(
+    title: String,
+    children: List<Filter<*>>,
+    onChanged: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var search by remember { mutableStateOf("") }
+    // Compose-observable mirror of each child's tri-state, keyed by index.
+    val states = remember(children) {
+        mutableStateMapOf<Int, Int>().apply {
+            children.forEachIndexed { i, c ->
+                put(i, c.state as? Int ?: Filter.TriState.STATE_IGNORE)
+            }
+        }
+    }
+    val filtered = remember(search, children) {
+        val q = search.trim()
+        children.indices.filter {
+            q.isEmpty() || children[it].name.contains(q, ignoreCase = true)
+        }
+    }
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .heightIn(max = 600.dp),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = search,
+                    onValueChange = { search = it },
+                    placeholder = { Text("Filter ${children.size} options…") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                )
+                if (filtered.isEmpty()) {
+                    Text(
+                        "No matches",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 16.dp),
                     )
+                }
+                LazyColumn(Modifier.weight(1f, fill = false)) {
+                    lazyItems(filtered, key = { it }) { idx ->
+                        val current = states[idx] ?: Filter.TriState.STATE_IGNORE
+                        TriStatePickerRow(
+                            name = children[idx].name,
+                            state = current,
+                        ) {
+                            val next = when (current) {
+                                Filter.TriState.STATE_IGNORE -> Filter.TriState.STATE_INCLUDE
+                                Filter.TriState.STATE_INCLUDE -> Filter.TriState.STATE_EXCLUDE
+                                else -> Filter.TriState.STATE_IGNORE
+                            }
+                            states[idx] = next
+                            @Suppress("UNCHECKED_CAST")
+                            (children[idx] as Filter<Any?>).state = next
+                            onChanged()
+                        }
+                    }
+                }
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                    TextButton(onClick = onDismiss) { Text("Done") }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TriStatePickerRow(name: String, state: Int, onCycle: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCycle() }
+            .padding(horizontal = 4.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(name, modifier = Modifier.weight(1f))
+        Text(
+            when (state) {
+                Filter.TriState.STATE_INCLUDE -> "include"
+                Filter.TriState.STATE_EXCLUDE -> "exclude"
+                else -> "any"
+            },
+            style = MaterialTheme.typography.labelMedium,
+            color = when (state) {
+                Filter.TriState.STATE_INCLUDE -> MaterialTheme.colorScheme.primary
+                Filter.TriState.STATE_EXCLUDE -> MaterialTheme.colorScheme.error
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
     }
 }
