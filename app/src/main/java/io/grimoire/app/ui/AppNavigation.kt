@@ -44,6 +44,7 @@ import io.grimoire.app.ui.screen.browse.SourceBrowseScreen
 import io.grimoire.app.ui.screen.downloads.DownloadsScreen
 import io.grimoire.app.ui.screen.extensions.ExtensionsScreen
 import io.grimoire.app.ui.screen.library.LibraryScreen
+import io.grimoire.app.ui.screen.migrate.MigrateScreen
 import io.grimoire.app.ui.screen.more.MoreScreen
 import io.grimoire.app.ui.screen.more.MoreViewModel
 import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesBrowserScreen
@@ -97,6 +98,7 @@ private const val ROUTE_SOURCE_SETTINGS = "settings/source/{pkg}"
 private const val ROUTE_SOURCE_LANGUAGES = "settings/source/{pkg}/languages"
 private const val ROUTE_SOURCE_LOGIN = "login/{pkg}"
 private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}"
+private const val ROUTE_MIGRATE = "migrate?novelId={novelId}"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_STATISTICS = "statistics"
 private const val ROUTE_SETTINGS_ROOT = "settings"
@@ -475,6 +477,25 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     },
                     onNavigateToLogin = { pkg ->
                         navController.navigate("login/${Uri.encode(pkg)}")
+                    },
+                    onMigrate = { novelId ->
+                        navController.navigate("migrate?novelId=$novelId")
+                    },
+                )
+            }
+
+            composable(
+                route = ROUTE_MIGRATE,
+                arguments = listOf(navArgument("novelId") { type = NavType.LongType }),
+            ) {
+                MigrateScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onMigrated = { pkg, url ->
+                        navController.navigate(
+                            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(url)}"
+                        ) {
+                            popUpTo(ROUTE_MIGRATE) { inclusive = true }
+                        }
                     },
                 )
             }
