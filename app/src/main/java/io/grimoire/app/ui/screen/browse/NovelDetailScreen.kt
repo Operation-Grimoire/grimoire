@@ -66,11 +66,13 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -92,6 +94,7 @@ import io.grimoire.api.model.NovelStatus
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.novelupdates.NuInfoState
+import io.grimoire.app.domain.migration.MigrationState
 import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ExpandableText
@@ -113,6 +116,7 @@ fun NovelDetailScreen(
     onOpenNuSeries: (slug: String) -> Unit = {},
     onNavigateToLogin: (pkg: String) -> Unit = {},
     onMigrate: (novelId: Long) -> Unit = {},
+    onMigrationComplete: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: NovelDetailViewModel = hiltViewModel(),
 ) {
@@ -132,8 +136,12 @@ fun NovelDetailScreen(
     val nuState by viewModel.nuState.collectAsState()
     val loginState by viewModel.loginState.collectAsState()
     val hasLockedChapters by viewModel.hasLockedChapters.collectAsState()
+    val migrationState by viewModel.migrationState.collectAsState()
+    val migrateFromTitle by viewModel.migrateFromTitle.collectAsState()
 
     var showCategoryDialog by remember { mutableStateOf(false) }
+    var showMigrateConfirm by remember { mutableStateOf(false) }
+    var migrateMatchCount by remember { mutableStateOf(0) }
     var overflowMenuExpanded by remember { mutableStateOf(false) }
     var lockedDialogChapter by remember { mutableStateOf<ChapterEntity?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
@@ -293,10 +301,51 @@ fun NovelDetailScreen(
         )
     }
 
+    LaunchedEffect(migrationState) {
+        if (migrationState == MigrationState.Success) onMigrationComplete()
+    }
+
+    if (showMigrateConfirm) {
+        AlertDialog(
+            onDismissRequest = { showMigrateConfirm = false },
+            title = { Text("Migrate to this novel?") },
+            text = {
+                Text(
+                    (if (migrateMatchCount > 0) {
+                        "$migrateMatchCount chapter${if (migrateMatchCount == 1) "" else "s"} " +
+                            "will be marked as read here."
+                    } else {
+                        "No chapters could be matched, so no read progress will carry over."
+                    }) + " \"$migrateFromTitle\" will be removed from your library.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showMigrateConfirm = false
+                    viewModel.confirmMigration()
+                }) { Text("Migrate") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMigrateConfirm = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    (migrationState as? MigrationState.Error)?.let { error ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissMigrationError,
+            title = { Text("Migration failed") },
+            text = { Text(error.message) },
+            confirmButton = {
+                TextButton(onClick = viewModel::dismissMigrationError) { Text("OK") }
+            },
+        )
+    }
+
     Scaffold(
         modifier = modifier,
         floatingActionButton = {
-            if (continueChapter != null) {
+            if (continueChapter != null && !viewModel.isMigrationTarget) {
                 ExtendedFloatingActionButton(
                     onClick = {
                         onChapterClick(viewModel.pkg, novel.url, continueChapter!!.url)
@@ -351,6 +400,29 @@ fun NovelDetailScreen(
                     }
                 },
             )
+        },
+        bottomBar = {
+            if (viewModel.isMigrationTarget && novelId > 0L && novelId != viewModel.migrateFromId) {
+                Surface(shadowElevation = 8.dp) {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                migrateMatchCount = viewModel.migrationMatchCount()
+                                showMigrateConfirm = true
+                            }
+                        },
+                        enabled = migrationState != MigrationState.Running && chapters.isNotEmpty(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    ) {
+                        Text(
+                            if (migrationState == MigrationState.Running) "Migrating…"
+                            else "Migrate here",
+                        )
+                    }
+                }
+            }
         },
     ) { padding ->
         val detailBody = @Composable {

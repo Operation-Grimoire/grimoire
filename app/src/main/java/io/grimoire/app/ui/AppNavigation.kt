@@ -97,7 +97,7 @@ private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}?q={q}"
 private const val ROUTE_SOURCE_SETTINGS = "settings/source/{pkg}"
 private const val ROUTE_SOURCE_LANGUAGES = "settings/source/{pkg}/languages"
 private const val ROUTE_SOURCE_LOGIN = "login/{pkg}"
-private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}"
+private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}&migrateFrom={migrateFrom}"
 private const val ROUTE_MIGRATE = "migrate?novelId={novelId}"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_STATISTICS = "statistics"
@@ -460,6 +460,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 arguments = listOf(
                     navArgument("pkg") { type = NavType.StringType },
                     navArgument("url") { type = NavType.StringType },
+                    navArgument("migrateFrom") { type = NavType.LongType; defaultValue = -1L },
                 ),
             ) {
                 NovelDetailScreen(
@@ -481,21 +482,23 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     onMigrate = { novelId ->
                         navController.navigate("migrate?novelId=$novelId")
                     },
+                    onMigrationComplete = {
+                        navController.popBackStack(ROUTE_MIGRATE, inclusive = true)
+                    },
                 )
             }
 
             composable(
                 route = ROUTE_MIGRATE,
                 arguments = listOf(navArgument("novelId") { type = NavType.LongType }),
-            ) {
+            ) { entry ->
+                val sourceId = entry.arguments?.getLong("novelId") ?: -1L
                 MigrateScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onMigrated = { pkg, url ->
+                    onPreviewNovel = { pkg, url ->
                         navController.navigate(
-                            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(url)}"
-                        ) {
-                            popUpTo(ROUTE_MIGRATE) { inclusive = true }
-                        }
+                            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(url)}&migrateFrom=$sourceId"
+                        )
                     },
                 )
             }
