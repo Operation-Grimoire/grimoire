@@ -24,6 +24,8 @@ import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.data.novelupdates.NuSearchResult
+import io.grimoire.app.domain.migration.MigrationState
+import io.grimoire.app.domain.migration.NovelMigrator
 import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
@@ -56,10 +58,18 @@ class NovelDetailViewModel @Inject constructor(
     private val downloadManager: DownloadManager,
     private val epubImporter: EpubImporter,
     private val novelUpdatesRepository: NovelUpdatesInfoRepository,
+    private val migrator: NovelMigrator,
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
     private val novelUrl: String = checkNotNull(savedStateHandle["url"])
+
+    /**
+     * When this screen was opened as a migration target, the database id of the
+     * novel whose read progress will be moved here; -1 otherwise.
+     */
+    val migrateFromId: Long = savedStateHandle.get<Long>("migrateFrom") ?: -1L
+    val isMigrationTarget: Boolean get() = migrateFromId > 0L
 
     /** A locally-imported EPUB novel: fully stored in the DB, no backing extension. */
     val isLocal: Boolean = pkg == LOCAL_PKG
@@ -120,6 +130,13 @@ class NovelDetailViewModel @Inject constructor(
     private val _isFavorite = MutableStateFlow(false)
     val isFavorite: StateFlow<Boolean> = _isFavorite.asStateFlow()
 
+    /** Title of the novel being migrated from, shown in the migration prompt. */
+    private val _migrateFromTitle = MutableStateFlow("")
+    val migrateFromTitle: StateFlow<String> = _migrateFromTitle.asStateFlow()
+
+    private val _migrationState = MutableStateFlow<MigrationState>(MigrationState.Idle)
+    val migrationState: StateFlow<MigrationState> = _migrationState.asStateFlow()
+
     private val _chapterPage = MutableStateFlow(0)
     val chapterPage: StateFlow<Int> = _chapterPage.asStateFlow()
 
@@ -146,6 +163,9 @@ class NovelDetailViewModel @Inject constructor(
     private var nuJob: Job? = null
 
     init {
+        if (isMigrationTarget) viewModelScope.launch {
+            _migrateFromTitle.value = novelDao.getById(migrateFromId)?.title.orEmpty()
+        }
         loadJob = viewModelScope.launch {
             if (isLocal) {
                 loadLocalNovel()
@@ -467,6 +487,36 @@ class NovelDetailViewModel @Inject constructor(
         viewModelScope.launch {
             val entity = novelDao.getBySourceUrl(sourceId, novelUrl) ?: return@launch
             novelDao.upsert(entity.copy(favorite = next))
+        }
+    }
+
+    /** How many of this novel's chapters the pending migration would mark read. */
+    suspend fun migrationMatchCount(): Int {
+        if (!isMigrationTarget || cachedNovelId <= 0L) return 0
+        return runCatching { migrator.matchReadProgress(migrateFromId, cachedNovelId).size }
+            .getOrDefault(0)
+    }
+
+    /** Moves the source novel's read progress onto this novel. */
+    fun confirmMigration() {
+        if (!isMigrationTarget || cachedNovelId <= 0L) return
+        if (_migrationState.value == MigrationState.Running) return
+        _migrationState.value = MigrationState.Running
+        viewModelScope.launch {
+            runCatching { migrator.migrate(migrateFromId, cachedNovelId) }.fold(
+                onSuccess = { _migrationState.value = MigrationState.Success },
+                onFailure = { e ->
+                    _migrationState.value = MigrationState.Error(
+                        e.message ?: e::class.simpleName ?: "Migration failed",
+                    )
+                },
+            )
+        }
+    }
+
+    fun dismissMigrationError() {
+        if (_migrationState.value is MigrationState.Error) {
+            _migrationState.value = MigrationState.Idle
         }
     }
 }
