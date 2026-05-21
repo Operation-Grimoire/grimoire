@@ -98,6 +98,7 @@ import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.component.rememberShimmerAlpha
+import io.grimoire.app.ui.theme.premiumGold
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -262,7 +263,13 @@ fun NovelDetailScreen(
     lockedDialogChapter?.let { locked ->
         AlertDialog(
             onDismissRequest = { lockedDialogChapter = null },
-            icon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            icon = {
+                Icon(
+                    Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.premiumGold,
+                )
+            },
             title = { Text("Chapter locked") },
             text = {
                 Text(
@@ -615,7 +622,7 @@ fun NovelDetailScreen(
                                                 Icons.Default.Lock,
                                                 contentDescription = "Locked chapters",
                                                 modifier = Modifier.size(18.dp),
-                                                tint = MaterialTheme.colorScheme.primary,
+                                                tint = MaterialTheme.colorScheme.premiumGold,
                                             )
                                             Text(
                                                 text = "$lockedCount",
@@ -967,7 +974,14 @@ private fun ChapterItem(
     modifier: Modifier = Modifier,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val contentAlpha = if (chapter.read || chapter.locked) 0.38f else 1f
+    // Read chapters dim to signal "done"; locked chapters instead use a gold
+    // accent to signal "premium", so the two states stay visually distinct.
+    val contentAlpha = if (chapter.read && !chapter.locked) 0.38f else 1f
+    val headlineColor = if (chapter.locked) {
+        MaterialTheme.colorScheme.premiumGold
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha)
+    }
     val dateText = remember(chapter.uploadDate) { if (chapter.uploadDate > 0L) formatDate(chapter.uploadDate) else null }
     val progressText = if (!chapter.read && chapter.readProgress > 0f) "${(chapter.readProgress * 100).toInt()}%" else null
     val subText = listOfNotNull(dateText, progressText).joinToString(" · ").takeIf { it.isNotEmpty() }
@@ -980,7 +994,7 @@ private fun ChapterItem(
                     chapter.name,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
+                    color = headlineColor,
                     style = MaterialTheme.typography.bodyMedium,
                 )
             },
@@ -999,7 +1013,7 @@ private fun ChapterItem(
                         Icon(
                             Icons.Default.Lock,
                             contentDescription = "Locked",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = MaterialTheme.colorScheme.premiumGold,
                         )
                     }
                 }

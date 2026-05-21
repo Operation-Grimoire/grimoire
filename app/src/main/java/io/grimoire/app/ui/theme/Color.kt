@@ -4,6 +4,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
@@ -196,3 +197,13 @@ val MidnightDark: ColorScheme = darkColorScheme(
     tertiary = Color(0xFFEBB8CD),
     onTertiary = Color(0xFF482536),
 )
+
+// Premium accent for locked / paid chapters. A warm metallic gold that reads as
+// "premium" regardless of the active color theme. Two tones keep it legible on
+// both dark and light surfaces (including dynamic color schemes).
+private val PremiumGoldOnDark = Color(0xFFF1C75B)
+private val PremiumGoldOnLight = Color(0xFF8A6A11)
+
+/** Gold accent for premium / locked content, adapted to the active theme's surface. */
+val ColorScheme.premiumGold: Color
+    get() = if (surface.luminance() < 0.5f) PremiumGoldOnDark else PremiumGoldOnLight
