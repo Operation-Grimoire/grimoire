@@ -120,6 +120,13 @@ fun SourceLoginScreen(
                             cookieManager.setAcceptThirdPartyCookies(this, true)
                             settings.javaScriptEnabled = true
                             settings.domStorageEnabled = true
+                            // Google (and some other providers) block OAuth in
+                            // Android WebViews, which they detect from the
+                            // "; wv" token in the default user-agent. Present a
+                            // plain Chrome user-agent so social sign-in works.
+                            settings.userAgentString = settings.userAgentString
+                                .replace("; wv)", ")")
+                                .replace(Regex("""Version/\d+\.\d+\s*"""), "")
                             webViewClient = object : WebViewClient() {
                                 override fun onPageStarted(
                                     view: WebView,
