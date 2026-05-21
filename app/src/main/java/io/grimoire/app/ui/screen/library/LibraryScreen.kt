@@ -92,6 +92,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -111,8 +112,10 @@ import io.grimoire.app.data.epub.StagedEpub
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibrarySort
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 
@@ -233,7 +236,8 @@ fun LibraryScreen(
     val importing by viewModel.importing.collectAsState()
     val pendingImport by viewModel.pendingImport.collectAsState()
     val importMessage by viewModel.importMessage.collectAsState()
-    val selectedTab by viewModel.selectedTab.collectAsState()
+    val persistedCategoryId by viewModel.persistedCategoryId.collectAsState()
+    val categoriesLoaded by viewModel.categoriesLoaded.collectAsState()
 
     var showManage by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -282,21 +286,30 @@ fun LibraryScreen(
         if (showAllTab) add("All")
         addAll(categories.map { it.name })
     }
+    // Parallel to `tabs`: the category id behind each tab, or ALL_TAB_CATEGORY_ID for "All".
+    val tabCategoryIds = buildList {
+        if (showAllTab) add(ALL_TAB_CATEGORY_ID)
+        addAll(categories.map { it.id })
+    }
 
     val pageCount = tabs.size.coerceAtLeast(1)
     val pagerState = rememberPagerState(
-        initialPage = selectedTab.coerceIn(0, pageCount - 1),
+        initialPage = tabCategoryIds.indexOf(persistedCategoryId ?: ALL_TAB_CATEGORY_ID)
+            .coerceIn(0, pageCount - 1),
         pageCount = { pageCount },
     )
     val currentTab = pagerState.currentPage.coerceIn(0, pageCount - 1)
 
-    var didInitialSync by remember { mutableStateOf(false) }
-    LaunchedEffect(selectedTab, pageCount) {
-        if (!didInitialSync) {
-            val target = selectedTab.coerceIn(0, pageCount - 1)
-            if (target != pagerState.currentPage) pagerState.scrollToPage(target)
-            didInitialSync = true
-        }
+    // Restore the last-viewed category once the persisted id and the category list are
+    // both loaded. A remembered category that is now hidden (the app starts locked) is
+    // absent from `tabCategoryIds`, so it falls back to the first tab and stays hidden.
+    var restored by remember { mutableStateOf(false) }
+    LaunchedEffect(restored, categoriesLoaded, persistedCategoryId, tabCategoryIds) {
+        if (restored || !categoriesLoaded) return@LaunchedEffect
+        val savedId = persistedCategoryId ?: return@LaunchedEffect
+        val target = tabCategoryIds.indexOf(savedId).takeIf { it >= 0 } ?: 0
+        if (target != pagerState.currentPage) pagerState.scrollToPage(target)
+        restored = true
     }
 
     LaunchedEffect(pageCount) {
@@ -305,10 +318,19 @@ fun LibraryScreen(
         }
     }
 
-    LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }.collect { page ->
-            if (page != selectedTab) viewModel.setSelectedTab(page)
-        }
+    // Persist the category the user settles on. `drop(1)` skips the settle emitted by
+    // the restore above, so a remembered-but-hidden category isn't overwritten with the
+    // fallback tab and is restored again on a later unlocked reopen.
+    val latestTabCategoryIds by rememberUpdatedState(tabCategoryIds)
+    LaunchedEffect(pagerState, restored) {
+        if (!restored) return@LaunchedEffect
+        snapshotFlow { pagerState.settledPage }
+            .drop(1)
+            .collect { page ->
+                viewModel.setSelectedCategoryId(
+                    latestTabCategoryIds.getOrNull(page) ?: ALL_TAB_CATEGORY_ID
+                )
+            }
     }
 
     LaunchedEffect(pagerState.settledPage) { clearSelection() }

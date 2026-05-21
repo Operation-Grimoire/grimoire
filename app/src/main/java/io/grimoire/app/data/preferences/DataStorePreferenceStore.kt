@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -23,6 +24,9 @@ class DataStorePreferenceStore @Inject constructor(
 
     override fun getInt(key: String, defaultValue: Int): Preference<Int> =
         PrimitivePreference(dataStore, intPreferencesKey(key), defaultValue)
+
+    override fun getLong(key: String, defaultValue: Long): Preference<Long> =
+        PrimitivePreference(dataStore, longPreferencesKey(key), defaultValue)
 
     override fun getString(key: String, defaultValue: String): Preference<String> =
         PrimitivePreference(dataStore, stringPreferencesKey(key), defaultValue)

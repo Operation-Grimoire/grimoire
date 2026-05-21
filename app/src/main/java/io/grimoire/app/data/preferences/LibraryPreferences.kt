@@ -5,6 +5,9 @@ import javax.inject.Singleton
 
 enum class LibraryDisplayMode { GRID, LIST }
 
+/** Sentinel [LibraryPreferences.selectedCategoryId] value for the "All" tab, which has no category. */
+const val ALL_TAB_CATEGORY_ID = -1L
+
 enum class LibrarySort {
     TITLE_ASC, TITLE_DESC, LAST_UPDATED_DESC, LAST_UPDATED_ASC, UNREAD_DESC, TOTAL_DESC, LAST_READ_DESC
 }
@@ -19,5 +22,9 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
     val filterUnreadOnly = store.getBoolean("library_filter_unread_only", false)
     val filterDownloadedOnly = store.getBoolean("library_filter_downloaded_only", false)
     val includeHiddenInAll = store.getBoolean("library_include_hidden_in_all", false)
-    val selectedTab = store.getInt("library_selected_tab", 0)
+
+    // Persists the library category the user last viewed. Stores a category id, or
+    // ALL_TAB_CATEGORY_ID for the "All" tab, so the restore survives reordering and
+    // resolves to a safe tab when the remembered category is hidden on reopen.
+    val selectedCategoryId = store.getLong("library_selected_category_id", ALL_TAB_CATEGORY_ID)
 }
