@@ -11,6 +11,7 @@ import io.grimoire.api.source.EpubSource
 import io.grimoire.api.source.PaginatedSource
 import io.grimoire.api.source.Source
 import io.grimoire.api.source.SourceInfo
+import io.grimoire.api.source.WebViewLoginSource
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -36,6 +37,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
@@ -89,6 +91,15 @@ class NovelDetailViewModel @Inject constructor(
         .debounce(50)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** True once the chapter list contains at least one account-locked chapter. */
+    val hasLockedChapters: StateFlow<Boolean> = chapters
+        .map { list -> list.any { it.locked } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /** Sign-in state for the backing source, used to decide whether to nudge the user. */
+    private val _loginState = MutableStateFlow(LoginState.UNKNOWN)
+    val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
+
     private val _isLoadingNovel = MutableStateFlow(true)
     val isLoadingNovel: StateFlow<Boolean> = _isLoadingNovel.asStateFlow()
 
@@ -137,7 +148,10 @@ class NovelDetailViewModel @Inject constructor(
                 extensionManager.extensions
                     .filter { list -> list.any { it.info.packageName == pkg } }
                     .take(1)
-                    .collect { loadNovel(forceRefresh = false) }
+                    .collect {
+                        loadNovel(forceRefresh = false)
+                        refreshLoginState()
+                    }
             }
         }
         viewModelScope.launch {
@@ -218,7 +232,28 @@ class NovelDetailViewModel @Inject constructor(
     fun refresh() {
         if (isLocal) return
         loadJob?.cancel()
-        loadJob = viewModelScope.launch { loadNovel(forceRefresh = true) }
+        loadJob = viewModelScope.launch {
+            loadNovel(forceRefresh = true)
+            refreshLoginState()
+        }
+    }
+
+    /** Re-checks source sign-in state, e.g. after returning from the login WebView. */
+    fun recheckLogin() {
+        if (isLocal) return
+        refreshLoginState()
+    }
+
+    private fun refreshLoginState() {
+        val src = source
+        if (src !is WebViewLoginSource) {
+            _loginState.value = LoginState.NOT_SUPPORTED
+            return
+        }
+        viewModelScope.launch {
+            val signedIn = runCatching { src.isLoggedIn() }.getOrDefault(false)
+            _loginState.value = if (signedIn) LoginState.SIGNED_IN else LoginState.SIGNED_OUT
+        }
     }
 
     fun retryNovel() {
@@ -379,8 +414,8 @@ class NovelDetailViewModel @Inject constructor(
     }
 
     fun downloadChapter(chapter: ChapterEntity) = downloadManager.enqueue(listOf(chapter))
-    fun downloadAll() = downloadManager.enqueue(chapters.value)
-    fun downloadUnread() = downloadManager.enqueue(chapters.value.filter { !it.read })
+    fun downloadAll() = downloadManager.enqueue(chapters.value.filter { !it.locked })
+    fun downloadUnread() = downloadManager.enqueue(chapters.value.filter { !it.read && !it.locked })
     fun cancelDownload(chapter: ChapterEntity) = downloadManager.cancel(chapter)
     fun cancelAllDownloads() { if (cachedNovelId > 0L) downloadManager.cancelAll(cachedNovelId) }
     fun deleteDownload(chapter: ChapterEntity) = downloadManager.deleteDownload(chapter)
@@ -434,6 +469,9 @@ sealed interface BookDownloadState {
     data class Error(val message: String) : BookDownloadState
 }
 
+/** Sign-in state of the backing source. */
+enum class LoginState { UNKNOWN, NOT_SUPPORTED, SIGNED_OUT, SIGNED_IN }
+
 private fun NovelEntity.toNovel() = Novel(
     url = url,
     title = title,
@@ -474,6 +512,7 @@ private fun ChapterEntity.toChapter() = Chapter(
     uploadDate = uploadDate,
     chapterNumber = chapterNumber,
     translator = translator,
+    locked = locked,
 )
 
 private fun Chapter.toEntity(novelId: Long) = ChapterEntity(
@@ -483,4 +522,5 @@ private fun Chapter.toEntity(novelId: Long) = ChapterEntity(
     uploadDate = uploadDate,
     chapterNumber = chapterNumber,
     translator = translator,
+    locked = locked,
 )

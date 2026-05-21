@@ -52,6 +52,8 @@ import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesSeriesScreen
 import io.grimoire.app.ui.screen.more.statistics.StatisticsScreen
 import io.grimoire.app.ui.screen.reader.ReaderScreen
 import io.grimoire.app.ui.screen.settings.SettingsScreen
+import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
+import io.grimoire.app.ui.screen.webview.SourceLoginScreen
 import io.grimoire.app.ui.screen.webview.WebViewScreen
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.about.AboutSettingsScreen
@@ -93,6 +95,7 @@ private const val ROUTE_EXTENSION_MANAGE = "extensions"
 private const val ROUTE_SOURCE_BROWSE = "browse/{pkg}?q={q}"
 private const val ROUTE_SOURCE_SETTINGS = "settings/source/{pkg}"
 private const val ROUTE_SOURCE_LANGUAGES = "settings/source/{pkg}/languages"
+private const val ROUTE_SOURCE_LOGIN = "login/{pkg}"
 private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_STATISTICS = "statistics"
@@ -437,6 +440,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     onNavigateToContentLanguages = {
                         navController.navigate("settings/source/${Uri.encode(pkg)}/languages")
                     },
+                    onNavigateToLogin = {
+                        navController.navigate("login/${Uri.encode(pkg)}")
+                    },
                 )
             }
 
@@ -467,6 +473,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     onOpenNuSeries = { slug ->
                         navController.navigate("nu_series?slug=${Uri.encode(slug)}")
                     },
+                    onNavigateToLogin = { pkg ->
+                        navController.navigate("login/${Uri.encode(pkg)}")
+                    },
                 )
             }
 
@@ -492,6 +501,20 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             ) { entry ->
                 val url = entry.arguments?.getString("url") ?: ""
                 WebViewScreen(url = url, onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(
+                route = ROUTE_SOURCE_LOGIN,
+                arguments = listOf(navArgument("pkg") { type = NavType.StringType }),
+            ) {
+                SourceLoginScreen(
+                    onNavigateBack = {
+                        // Tell the screen that opened login to re-check sign-in state.
+                        navController.previousBackStackEntry?.savedStateHandle
+                            ?.set(SOURCE_LOGIN_RESULT_KEY, true)
+                        navController.popBackStack()
+                    },
+                )
             }
         }
     }

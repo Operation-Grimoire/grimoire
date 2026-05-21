@@ -37,4 +37,6 @@ data class ChapterEntity(
     val queueOrder: Long = 0L,
     val firstReadAt: Long? = null,
     val wordCount: Int = 0,
+    /** Chapter is gated behind a paid account on the source: shown disabled, not readable. */
+    val locked: Boolean = false,
 )
