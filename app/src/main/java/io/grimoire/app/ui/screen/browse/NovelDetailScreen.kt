@@ -116,7 +116,7 @@ fun NovelDetailScreen(
     onOpenNuSeries: (slug: String) -> Unit = {},
     onNavigateToLogin: (pkg: String) -> Unit = {},
     onMigrate: (novelId: Long) -> Unit = {},
-    onMigrationComplete: () -> Unit = {},
+    onMigrationComplete: (pkg: String, url: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: NovelDetailViewModel = hiltViewModel(),
 ) {
@@ -302,7 +302,7 @@ fun NovelDetailScreen(
     }
 
     LaunchedEffect(migrationState) {
-        if (migrationState == MigrationState.Success) onMigrationComplete()
+        if (migrationState == MigrationState.Success) onMigrationComplete(viewModel.pkg, novel.url)
     }
 
     if (showMigrateConfirm) {

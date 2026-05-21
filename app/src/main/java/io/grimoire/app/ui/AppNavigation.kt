@@ -482,8 +482,12 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     onMigrate = { novelId ->
                         navController.navigate("migrate?novelId=$novelId")
                     },
-                    onMigrationComplete = {
-                        navController.popBackStack(ROUTE_MIGRATE, inclusive = true)
+                    onMigrationComplete = { pkg, url ->
+                        navController.navigate(
+                            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(url)}"
+                        ) {
+                            popUpTo(TopLevelDestination.Library.route) { inclusive = false }
+                        }
                     },
                 )
             }
