@@ -26,6 +26,7 @@ import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.data.novelupdates.NuSearchResult
 import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,7 +48,7 @@ private const val BROWSE_TTL_MS = 30 * 60 * 1000L
 
 @HiltViewModel
 class NovelDetailViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
@@ -167,6 +168,16 @@ class NovelDetailViewModel @Inject constructor(
                 else -> _nuState.value = NuInfoState.NotLoaded
             }
         }
+        // A successful WebView login signals back via this saved-state key;
+        // re-fetch so newly-unlocked chapters and the banner update together.
+        viewModelScope.launch {
+            savedStateHandle.getStateFlow(SOURCE_LOGIN_RESULT_KEY, false).collect { done ->
+                if (done) {
+                    savedStateHandle[SOURCE_LOGIN_RESULT_KEY] = false
+                    refresh()
+                }
+            }
+        }
     }
 
     private fun loadNovelUpdates(title: String) {
@@ -236,12 +247,6 @@ class NovelDetailViewModel @Inject constructor(
             loadNovel(forceRefresh = true)
             refreshLoginState()
         }
-    }
-
-    /** Re-checks source sign-in state, e.g. after returning from the login WebView. */
-    fun recheckLogin() {
-        if (isLocal) return
-        refreshLoginState()
     }
 
     private fun refreshLoginState() {
