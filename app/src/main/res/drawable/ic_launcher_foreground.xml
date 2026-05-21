@@ -1,76 +1,113 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Book shadow -->
-    <path
-        android:fillColor="#33000000"
-        android:pathData="M22,82 L86,82 L82,87 L26,87 Z" />
+    <!-- Spectral glow halo behind the spirit -->
+    <path android:pathData="M8,48 A46,46 0 1,1 100,48 A46,46 0 1,1 8,48 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="54"
+                android:centerY="48"
+                android:gradientRadius="46">
+                <item android:offset="0" android:color="#667CFFB2" />
+                <item android:offset="0.55" android:color="#2C7CFFB2" />
+                <item android:offset="1" android:color="#007CFFB2" />
+            </gradient>
+        </aapt:attr>
+    </path>
 
-    <!-- Left page -->
-    <path
-        android:fillColor="#F5E6C8"
-        android:pathData="M22,38 L54,44 L54,82 L22,80 Z" />
+    <!-- Ghostly spirit body -->
+    <path android:pathData="M54,27 C45,27 38,30 34.5,39 C32,46 32.8,53 36,59 C38.5,63.5 42.5,66.5 46,70.5 C48,73 50,76.5 51.2,78.8 C52,80 53,80.4 54,80.4 C55,80.4 56,80 56.8,78.8 C58,76.5 60,73 62,70.5 C65.5,66.5 69.5,63.5 72,59 C75.2,53 76,46 73.5,39 C70,30 63,27 54,27 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="49"
+                android:centerY="41"
+                android:gradientRadius="40">
+                <item android:offset="0" android:color="#FFECFFF4" />
+                <item android:offset="0.45" android:color="#FF8DFFC1" />
+                <item android:offset="1" android:color="#FF4ACF8C" />
+            </gradient>
+        </aapt:attr>
+    </path>
 
-    <!-- Right page -->
+    <!-- Wisps curling from the spirit -->
     <path
-        android:fillColor="#F5E6C8"
-        android:pathData="M86,38 L54,44 L54,82 L86,80 Z" />
+        android:fillColor="#00000000"
+        android:strokeColor="#997CFFB2"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:pathData="M40,63 C36,65 35,68 37,70" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#997CFFB2"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:pathData="M68,63 C72,65 73,68 71,70" />
 
+    <!-- Open grimoire: left page -->
+    <path
+        android:fillColor="#47956F"
+        android:pathData="M33,69 Q44,67 54,75 L54,79 Q44,78 35,76 Z" />
+    <!-- Open grimoire: right page -->
+    <path
+        android:fillColor="#3E8A65"
+        android:pathData="M75,69 Q64,67 54,75 L54,79 Q64,78 73,76 Z" />
     <!-- Spine -->
     <path
-        android:fillColor="#C9A86A"
-        android:pathData="M52,44 L56,44 L56,82 L52,82 Z" />
+        android:fillColor="#1C3D2D"
+        android:pathData="M53,74.5 L55,74.5 L55,80 L53,80 Z" />
 
-    <!-- Left page lines -->
+    <!-- Page rim light -->
     <path
-        android:strokeColor="#8B5A2B"
-        android:strokeWidth="1.2"
         android:fillColor="#00000000"
-        android:pathData="M28,52 L48,54" />
+        android:strokeColor="#A8ECC8"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M33,69 Q44,67 54,75" />
     <path
-        android:strokeColor="#8B5A2B"
-        android:strokeWidth="1.2"
         android:fillColor="#00000000"
-        android:pathData="M28,60 L48,62" />
-    <path
-        android:strokeColor="#8B5A2B"
-        android:strokeWidth="1.2"
-        android:fillColor="#00000000"
-        android:pathData="M28,68 L48,70" />
-    <path
-        android:strokeColor="#8B5A2B"
-        android:strokeWidth="1.2"
-        android:fillColor="#00000000"
-        android:pathData="M28,76 L48,77" />
+        android:strokeColor="#A8ECC8"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M75,69 Q64,67 54,75" />
 
-    <!-- Right page lines -->
-    <path
-        android:strokeColor="#8B5A2B"
-        android:strokeWidth="1.2"
-        android:fillColor="#00000000"
-        android:pathData="M60,54 L80,52" />
-    <path
-        android:strokeColor="#8B5A2B"
-        android:strokeWidth="1.2"
-        android:fillColor="#00000000"
-        android:pathData="M60,62 L80,60" />
-    <path
-        android:strokeColor="#8B5A2B"
-        android:strokeWidth="1.2"
-        android:fillColor="#00000000"
-        android:pathData="M60,70 L80,68" />
-    <path
-        android:strokeColor="#8B5A2B"
-        android:strokeWidth="1.2"
-        android:fillColor="#00000000"
-        android:pathData="M60,77 L80,76" />
+    <!-- Magic light spilling from the gutter -->
+    <path android:pathData="M43,76 A11,11 0 1,1 65,76 A11,11 0 1,1 43,76 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="54"
+                android:centerY="75.5"
+                android:gradientRadius="11">
+                <item android:offset="0" android:color="#99D9FFEA" />
+                <item android:offset="1" android:color="#00D9FFEA" />
+            </gradient>
+        </aapt:attr>
+    </path>
 
-    <!-- Sparkle (4-pointed star) above the book -->
+    <!-- Eyes -->
     <path
-        android:fillColor="#FFE680"
-        android:pathData="M54,18 L56,28 L66,30 L56,32 L54,42 L52,32 L42,30 L52,28 Z" />
+        android:fillColor="#0A2D1F"
+        android:pathData="M47.5,38.4 C49.49,38.4 51.1,40.46 51.1,43 C51.1,45.54 49.49,47.6 47.5,47.6 C45.51,47.6 43.9,45.54 43.9,43 C43.9,40.46 45.51,38.4 47.5,38.4 Z" />
+    <path
+        android:fillColor="#0A2D1F"
+        android:pathData="M60.5,38.4 C62.49,38.4 64.1,40.46 64.1,43 C64.1,45.54 62.49,47.6 60.5,47.6 C58.51,47.6 56.9,45.54 56.9,43 C56.9,40.46 58.51,38.4 60.5,38.4 Z" />
+    <!-- Mouth -->
+    <path
+        android:fillColor="#0A2D1F"
+        android:pathData="M54,50.4 C55.1,50.4 56,51.56 56,53 C56,54.44 55.1,55.6 54,55.6 C52.9,55.6 52,54.44 52,53 C52,51.56 52.9,50.4 54,50.4 Z" />
+    <!-- Eye shine -->
+    <path android:fillColor="#ECFFF4" android:pathData="M44.9,41 a1.1,1.1 0 1,0 2.2,0 a1.1,1.1 0 1,0 -2.2,0 Z" />
+    <path android:fillColor="#ECFFF4" android:pathData="M57.9,41 a1.1,1.1 0 1,0 2.2,0 a1.1,1.1 0 1,0 -2.2,0 Z" />
+
+    <!-- Sparkles -->
+    <path android:fillColor="#ECFFF4" android:pathData="M70,27 L71.1,29.9 L74,31 L71.1,32.1 L70,35 L68.9,32.1 L66,31 L68.9,29.9 Z" />
+    <path android:fillColor="#D6F8E2" android:pathData="M39,32.5 L40,35 L42.5,36 L40,37 L39,39.5 L38,37 L35.5,36 L38,35 Z" />
+    <path android:fillColor="#CFF6DC" android:pathData="M64,71.2 L64.8,73.2 L66.8,74 L64.8,74.8 L64,76.8 L63.2,74.8 L61.2,74 L63.2,73.2 Z" />
 </vector>
