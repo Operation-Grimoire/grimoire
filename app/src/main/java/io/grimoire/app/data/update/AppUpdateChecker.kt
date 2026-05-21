@@ -226,12 +226,15 @@ class AppUpdateChecker @Inject constructor(
         }
     }
 
-    fun launchInstall(file: File) {
+    fun installIntent(file: File): Intent {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-        val intent = Intent(Intent.ACTION_VIEW).apply {
+        return Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, APK_MIME)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
         }
-        context.startActivity(intent)
+    }
+
+    fun launchInstall(file: File) {
+        context.startActivity(installIntent(file))
     }
 }
