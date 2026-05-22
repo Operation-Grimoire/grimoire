@@ -27,24 +27,30 @@ class ElevenLabsApi @Inject constructor() {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    /** Lists the voices available to the account behind [apiKey]. */
+    /**
+     * Lists the voices on the account behind [apiKey]. Uses the v2 endpoint, which
+     * reports a [ApiVoice.voiceType] per voice — unlike v1's `category`, this reliably
+     * tells "default"/"personal" voices (usable on any plan) apart from "community"
+     * Voice Library voices, which the API rejects for free accounts.
+     */
     suspend fun listVoices(apiKey: String): List<TtsVoice> = withContext(Dispatchers.IO) {
         require(apiKey.isNotBlank()) { "Add an ElevenLabs API key first." }
         val request = Request.Builder()
-            .url("$BASE_URL/voices")
+            .url("$BASE_URL/v2/voices?page_size=100")
             .header("xi-api-key", apiKey)
             .build()
         client.newCall(request).execute().use { response ->
             val body = response.body?.string().orEmpty()
             if (!response.isSuccessful) throw IOException(errorMessage(response.code, body))
             json.decodeFromString(VoicesResponse.serializer(), body).voices
-                // Premade voices work on every plan; list them first.
-                .sortedBy { if (it.category == "premade") 0 else 1 }
+                // Default/personal voices work on every plan — list them before the
+                // paid-only Voice Library ("community") voices.
+                .sortedBy { voiceTypeRank(it.voiceType) }
                 .map { v ->
                     TtsVoice(
                         id = v.voiceId,
                         displayName = v.name,
-                        detail = v.category?.replaceFirstChar { it.uppercase() },
+                        detail = voiceTypeLabel(v.voiceType),
                         engine = TtsEngineType.ELEVENLABS,
                         needsNetwork = true,
                     )
@@ -67,7 +73,7 @@ class ElevenLabsApi @Inject constructor() {
         val settings = VoiceSettings(speed = speed.coerceIn(0.7f, 1.2f))
         val payload = SynthesisRequest(text = text, modelId = modelId, voiceSettings = settings)
         val request = Request.Builder()
-            .url("$BASE_URL/text-to-speech/$voiceId")
+            .url("$BASE_URL/v1/text-to-speech/$voiceId")
             .header("xi-api-key", apiKey)
             .header("Accept", "audio/mpeg")
             .post(json.encodeToString(SynthesisRequest.serializer(), payload).toRequestBody(JSON_MEDIA))
@@ -84,7 +90,7 @@ class ElevenLabsApi @Inject constructor() {
     suspend fun getUsage(apiKey: String): ElevenLabsUsage = withContext(Dispatchers.IO) {
         require(apiKey.isNotBlank()) { "Add an ElevenLabs API key first." }
         val request = Request.Builder()
-            .url("$BASE_URL/user/subscription")
+            .url("$BASE_URL/v1/user/subscription")
             .header("xi-api-key", apiKey)
             .build()
         client.newCall(request).execute().use { response ->
@@ -106,17 +112,35 @@ class ElevenLabsApi @Inject constructor() {
         }.getOrNull()
         return when (code) {
             401 -> "ElevenLabs: invalid API key"
-            402 -> "ElevenLabs: this voice isn't available on your plan — pick a " +
-                "Premade voice in Text-to-speech settings, or upgrade your plan."
+            402 -> "ElevenLabs: this voice needs a paid plan — pick a Default voice " +
+                "in Text-to-speech settings, or upgrade your ElevenLabs plan."
             429 -> "ElevenLabs: rate limit or character quota exceeded"
             else -> "ElevenLabs error ($code): ${detail ?: "request failed"}"
         }
     }
 
     companion object {
-        private const val BASE_URL = "https://api.elevenlabs.io/v1"
+        private const val BASE_URL = "https://api.elevenlabs.io"
         private val JSON_MEDIA = "application/json".toMediaType()
     }
+}
+
+// "default" + "personal" voices are usable on every plan; "community" (Voice
+// Library) voices require a paid plan. Rank controls the order in the picker.
+private fun voiceTypeRank(voiceType: String?): Int = when (voiceType) {
+    "default" -> 0
+    "personal" -> 1
+    "workspace" -> 2
+    "community" -> 3
+    else -> 4
+}
+
+private fun voiceTypeLabel(voiceType: String?): String? = when (voiceType) {
+    "default" -> "Default voice"
+    "personal" -> "Your cloned voice"
+    "workspace" -> "Workspace voice"
+    "community" -> "Voice Library · paid plans only"
+    else -> null
 }
 
 @Serializable
@@ -127,6 +151,7 @@ private data class ApiVoice(
     @SerialName("voice_id") val voiceId: String,
     val name: String,
     val category: String? = null,
+    @SerialName("voice_type") val voiceType: String? = null,
 )
 
 @Serializable

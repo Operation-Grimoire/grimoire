@@ -81,8 +81,8 @@ fun TtsVoicePickerScreen(
                     if (engine == TtsEngineType.ELEVENLABS) {
                         item {
                             Text(
-                                text = "Free ElevenLabs plans can't use voices added from " +
-                                    "the Voice Library. If playback fails, pick a Premade voice.",
+                                text = "Free ElevenLabs plans can only use Default and " +
+                                    "personal voices — Voice Library voices need a paid plan.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
