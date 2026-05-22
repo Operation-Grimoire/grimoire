@@ -114,6 +114,7 @@ import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
+import io.grimoire.app.ui.component.MoveToCategorySheet
 import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.component.rememberShimmerAlpha
@@ -229,33 +230,15 @@ fun NovelDetailScreen(
     }
 
     if (showCategoryDialog && categories.isNotEmpty()) {
-        val defaultCat = categories.firstOrNull { it.isDefault }
-        AlertDialog(
-            onDismissRequest = { showCategoryDialog = false },
-            title = { Text("Move to category") },
-            text = {
-                Column {
-                    categories.forEach { cat ->
-                        val targetId = if (cat.isDefault) null else cat.id
-                        val isSelected = if (cat.isDefault) categoryId == null else categoryId == cat.id
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { viewModel.setCategory(targetId); showCategoryDialog = false }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            androidx.compose.material3.RadioButton(
-                                selected = isSelected,
-                                onClick = { viewModel.setCategory(targetId); showCategoryDialog = false },
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(cat.name)
-                        }
-                    }
-                }
+        MoveToCategorySheet(
+            categories = categories,
+            currentCategoryId = categoryId,
+            count = 1,
+            onSelect = { targetId ->
+                viewModel.setCategory(targetId)
+                showCategoryDialog = false
             },
-            confirmButton = { TextButton(onClick = { showCategoryDialog = false }) { Text("Cancel") } },
+            onDismiss = { showCategoryDialog = false },
         )
     }
 
