@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WarningAmber
@@ -30,6 +31,7 @@ fun MoreScreen(
     onNavigateToDownloads: () -> Unit,
     onNavigateToStatistics: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToAbout: () -> Unit,
 ) {
     val activeCount by viewModel.activeDownloadCount.collectAsState()
     val updateCount by viewModel.updateCount.collectAsState()
@@ -93,6 +95,15 @@ fun MoreScreen(
                     headlineContent = { Text("Settings") },
                     leadingContent = { Icon(Icons.Default.Settings, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToSettings),
+                )
+                HorizontalDivider()
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text("About") },
+                    supportingContent = { Text("Version, update channel, licenses") },
+                    leadingContent = { Icon(Icons.Default.Info, contentDescription = null) },
+                    modifier = Modifier.clickable(onClick = onNavigateToAbout),
                 )
             }
         }

@@ -121,7 +121,7 @@ private const val ROUTE_SETTINGS_CONTENT_LANGUAGES = "settings/languages/content
 private const val ROUTE_SETTINGS_READER = "settings/reader"
 private const val ROUTE_SETTINGS_TTS = "settings/tts"
 private const val ROUTE_SETTINGS_TTS_VOICE = "settings/tts/voice?lang={lang}"
-private const val ROUTE_SETTINGS_ABOUT = "settings/about"
+private const val ROUTE_ABOUT = "about"
 private const val ROUTE_SETTINGS_BACKUP = "settings/backup"
 private const val ROUTE_SETTINGS_HIDDEN = "settings/hidden_categories"
 private const val ROUTE_SETTINGS_NOVELUPDATES = "settings/novelupdates"
@@ -334,6 +334,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     onNavigateToDownloads = { navController.navigate(ROUTE_DOWNLOADS) },
                     onNavigateToStatistics = { navController.navigate(ROUTE_STATISTICS) },
                     onNavigateToSettings = { navController.navigate(ROUTE_SETTINGS_ROOT) },
+                    onNavigateToAbout = { navController.navigate(ROUTE_ABOUT) },
                 )
             }
 
@@ -372,6 +373,10 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 )
             }
 
+            composable(route = ROUTE_ABOUT) {
+                AboutSettingsScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
             navigation(
                 startDestination = ROUTE_SETTINGS_ROOT,
                 route = "settings_graph",
@@ -390,7 +395,6 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         onNavigateToLibraryUpdates = { navController.navigate(ROUTE_SETTINGS_LIBRARY_UPDATE) },
                         onNavigateToBackup = { navController.navigate(ROUTE_SETTINGS_BACKUP) },
                         onNavigateToNovelUpdates = { navController.navigate(ROUTE_SETTINGS_NOVELUPDATES) },
-                        onNavigateToAbout = { navController.navigate(ROUTE_SETTINGS_ABOUT) },
                     )
                 }
 
@@ -462,10 +466,6 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
                     val vm: SettingsViewModel = hiltViewModel(graphEntry)
                     NovelUpdatesSettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
-                }
-
-                composable(route = ROUTE_SETTINGS_ABOUT) {
-                    AboutSettingsScreen(onNavigateBack = { navController.popBackStack() })
                 }
 
                 composable(route = ROUTE_SETTINGS_BACKUP) {

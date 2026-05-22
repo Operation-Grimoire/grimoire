@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MenuBook
@@ -40,7 +39,6 @@ fun SettingsScreen(
     onNavigateToLibraryUpdates: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToNovelUpdates: () -> Unit,
-    onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -127,14 +125,6 @@ fun SettingsScreen(
                     title = "NovelUpdates",
                     subtitle = "Show the NovelUpdates info panel",
                     onClick = onNavigateToNovelUpdates,
-                )
-            }
-            item {
-                SettingsNavItem(
-                    icon = Icons.Default.Info,
-                    title = "About",
-                    subtitle = "Version, update channel, licenses",
-                    onClick = onNavigateToAbout,
                 )
             }
         }
