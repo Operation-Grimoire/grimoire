@@ -88,6 +88,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -108,6 +109,7 @@ import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsPlaybackState
+import io.grimoire.app.ui.component.ZoomableCoverImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 
@@ -199,7 +201,9 @@ fun ReaderScreen(
     }
 
     val listState = rememberLazyListState()
-    val visiblePages = remember(pages) { pages.filter { it.text.isNotBlank() } }
+    val visiblePages = remember(pages) {
+        pages.filter { it.text.isNotBlank() || it.imageUrl != null }
+    }
     var barsVisible by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -296,21 +300,33 @@ fun ReaderScreen(
                         )
                     }
                     items(visiblePages, key = { it.index }) { page ->
-                        val highlighted = page.index == ttsSpokenPageIndex
-                        Text(
-                            text = page.text.trim(),
-                            style = textStyle,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .then(
-                                    if (highlighted) {
-                                        Modifier.background(colors.foreground.copy(alpha = 0.10f))
-                                    } else {
-                                        Modifier
-                                    },
-                                )
-                                .padding(bottom = paragraphSpacing.dp),
-                        )
+                        val imageUrl = page.imageUrl
+                        if (imageUrl != null) {
+                            ZoomableCoverImage(
+                                model = imageUrl,
+                                contentDescription = null,
+                                contentScale = ContentScale.FillWidth,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = paragraphSpacing.dp),
+                            )
+                        } else {
+                            val highlighted = page.index == ttsSpokenPageIndex
+                            Text(
+                                text = page.text.trim(),
+                                style = textStyle,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .then(
+                                        if (highlighted) {
+                                            Modifier.background(colors.foreground.copy(alpha = 0.10f))
+                                        } else {
+                                            Modifier
+                                        },
+                                    )
+                                    .padding(bottom = paragraphSpacing.dp),
+                            )
+                        }
                     }
                     item {
                         Box(

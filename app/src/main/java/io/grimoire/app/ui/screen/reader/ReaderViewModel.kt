@@ -6,10 +6,11 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.NovelPage
+import io.grimoire.app.data.download.ChapterImageStore
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
-import io.grimoire.app.data.local.entity.CHAPTER_PAGE_SEPARATOR
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.local.entity.decodeChapterContent
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
@@ -42,6 +43,7 @@ class ReaderViewModel @Inject constructor(
     private val readerPreferences: ReaderPreferences,
     private val ttsController: TtsController,
     private val ttsPreferences: TtsPreferences,
+    private val chapterImageStore: ChapterImageStore,
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
@@ -152,9 +154,13 @@ class ReaderViewModel @Inject constructor(
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
         val cached = chapter.downloadedContent
         if (cached != null) {
-            val pages = cached.split(CHAPTER_PAGE_SEPARATOR)
-                .mapIndexed { i, text -> NovelPage(i, text) }
-                .filter { it.text.isNotBlank() }
+            val pages = decodeChapterContent(cached)
+                .filter { it.text.isNotBlank() || it.imageUrl != null }
+                .map { page ->
+                    if (page.imageUrl == null) return@map page
+                    val local = chapterImageStore.localImageUri(chapter.novelId, chapter.url, page.index)
+                    if (local != null) page.copy(imageUrl = local) else page
+                }
             _pages.value = pages
             _isLoading.value = false
             _error.value = null

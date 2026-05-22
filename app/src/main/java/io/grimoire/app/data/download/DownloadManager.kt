@@ -6,8 +6,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.Chapter
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
-import io.grimoire.app.data.local.entity.CHAPTER_PAGE_SEPARATOR
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.local.entity.encodeChapterContent
 import io.grimoire.app.data.preferences.DownloadPreferences
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.CoroutineScope
@@ -34,6 +34,7 @@ class DownloadManager @Inject constructor(
     private val novelDao: NovelDao,
     private val extensionManager: ExtensionManager,
     private val downloadPreferences: DownloadPreferences,
+    private val chapterImageStore: ChapterImageStore,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val isProcessing = AtomicBoolean(false)
@@ -88,11 +89,17 @@ class DownloadManager @Inject constructor(
     }
 
     fun deleteAllDownloads(novelId: Long) {
-        scope.launch { chapterDao.deleteAllDownloads(novelId) }
+        scope.launch {
+            chapterDao.deleteAllDownloads(novelId)
+            chapterImageStore.deleteNovel(novelId)
+        }
     }
 
     fun deleteDownload(chapter: ChapterEntity) {
-        scope.launch { chapterDao.deleteDownload(chapter.id) }
+        scope.launch {
+            chapterDao.deleteDownload(chapter.id)
+            chapterImageStore.deleteChapter(chapter.novelId, chapter.url)
+        }
     }
 
     fun retryChapter(chapter: ChapterEntity) {
@@ -130,8 +137,13 @@ class DownloadManager @Inject constructor(
                                     .firstOrNull { it.source.id == novel.sourceId }?.source
                                     ?: error("Source not available")
                                 val pages = src.getPageList(chapter.toChapter())
-                                val content = pages.joinToString(CHAPTER_PAGE_SEPARATOR) { it.text }
+                                val content = encodeChapterContent(pages)
                                 chapterDao.setDownloadedContent(chapter.id, content, ChapterDownloadStatus.DOWNLOADED.ordinal)
+                                // Best-effort: text is already saved, so a failed image
+                                // fetch must not flip the chapter to ERROR.
+                                runCatching {
+                                    chapterImageStore.saveImages(chapter.novelId, chapter.url, pages)
+                                }
                                 downloaded.incrementAndGet()
                             }.onFailure {
                                 chapterDao.setDownloadStatus(chapter.id, ChapterDownloadStatus.ERROR.ordinal)
