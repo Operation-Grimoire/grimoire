@@ -36,6 +36,7 @@ class AppUpdateViewModel @Inject constructor(
     private val appPreferences: AppPreferences,
     private val updatePreferences: UpdatePreferences,
     private val downloadStore: AppUpdateDownloadStore,
+    private val checkStore: AppUpdateCheckStore,
 ) : ViewModel() {
 
     private val _changelogText = MutableStateFlow<String?>(null)
@@ -48,8 +49,9 @@ class AppUpdateViewModel @Inject constructor(
     // ViewModel being cleared while the foreground service keeps downloading.
     val downloadState: StateFlow<DownloadState> = downloadStore.state
 
-    private val _checkState = MutableStateFlow<CheckState>(CheckState.Idle)
-    val checkState: StateFlow<CheckState> = _checkState.asStateFlow()
+    // The check result lives in a process-scoped store so an UpToDate outcome
+    // survives this ViewModel being recreated.
+    val checkState: StateFlow<CheckState> = checkStore.state
 
     private val _isLoadingChangelog = MutableStateFlow(false)
     val isLoadingChangelog: StateFlow<Boolean> = _isLoadingChangelog.asStateFlow()
@@ -95,26 +97,27 @@ class AppUpdateViewModel @Inject constructor(
     }
 
     fun checkForUpdates() {
-        if (_checkState.value is CheckState.Checking) return
+        if (checkStore.state.value is CheckState.Checking) return
         viewModelScope.launch {
-            _checkState.value = CheckState.Checking
+            checkStore.set(CheckState.Checking)
             runCatching {
                 val channel = updatePreferences.channel.changes().first()
                 val release = checker.checkForUpdate(channel)
                 if (release != null) {
                     _availableRelease.value = release
-                    _checkState.value = CheckState.Idle
+                    checkStore.set(CheckState.Idle)
                 } else {
-                    _checkState.value = CheckState.UpToDate
+                    checkStore.set(CheckState.UpToDate)
                 }
             }.onFailure { e ->
-                _checkState.value = CheckState.Error(e.message ?: "Unknown error")
+                checkStore.set(CheckState.Error(e.message ?: "Unknown error"))
             }
         }
     }
 
+    /** Allows a fresh check — e.g. after the update channel changes. */
     fun resetCheckState() {
-        _checkState.value = CheckState.Idle
+        checkStore.set(CheckState.Idle)
     }
 
     fun showCurrentChangelog() {

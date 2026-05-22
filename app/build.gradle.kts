@@ -41,6 +41,10 @@ val appVersionName = System.getenv("APP_VERSION_NAME")
     ?: appTag.removePrefix("v")
 val appGitSha = gitSha()
 
+// Single source of truth for the extensions-api version — used for the Gradle
+// dependency and for the BuildConfig field shown on the About screen.
+val extensionsApiVersion = "0.2.0"
+
 android {
     namespace = "io.grimoire.app"
     compileSdk {
@@ -57,6 +61,7 @@ android {
         versionName = appVersionName
 
         buildConfigField("String", "GIT_SHA", "\"$appGitSha\"")
+        buildConfigField("String", "EXTENSIONS_API_VERSION", "\"$extensionsApiVersion\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -95,7 +100,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation("io.grimoire:extensions-api:0.2.0")
+    implementation("io.grimoire:extensions-api:$extensionsApiVersion")
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
