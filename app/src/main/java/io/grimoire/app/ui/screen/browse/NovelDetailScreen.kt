@@ -232,13 +232,14 @@ fun NovelDetailScreen(
     if (showCategoryDialog && categories.isNotEmpty()) {
         MoveToCategorySheet(
             categories = categories,
-            currentCategoryId = categoryId,
             count = 1,
             onSelect = { targetId ->
                 viewModel.setCategory(targetId)
                 showCategoryDialog = false
             },
             onDismiss = { showCategoryDialog = false },
+            currentCategoryId = categoryId,
+            showCurrent = true,
         )
     }
 
