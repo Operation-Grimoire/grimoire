@@ -78,6 +78,18 @@ fun TtsVoicePickerScreen(
                 }
 
                 is VoiceListState.Loaded -> LazyColumn(Modifier.fillMaxSize()) {
+                    if (engine == TtsEngineType.ELEVENLABS) {
+                        item {
+                            Text(
+                                text = "Free ElevenLabs plans can't use voices added from " +
+                                    "the Voice Library. If playback fails, pick a Premade voice.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            )
+                            HorizontalDivider()
+                        }
+                    }
                     item {
                         VoiceRow(
                             title = "System default",

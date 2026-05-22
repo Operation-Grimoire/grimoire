@@ -37,15 +37,18 @@ class ElevenLabsApi @Inject constructor() {
         client.newCall(request).execute().use { response ->
             val body = response.body?.string().orEmpty()
             if (!response.isSuccessful) throw IOException(errorMessage(response.code, body))
-            json.decodeFromString(VoicesResponse.serializer(), body).voices.map { v ->
-                TtsVoice(
-                    id = v.voiceId,
-                    displayName = v.name,
-                    detail = v.category?.replaceFirstChar { it.uppercase() },
-                    engine = TtsEngineType.ELEVENLABS,
-                    needsNetwork = true,
-                )
-            }
+            json.decodeFromString(VoicesResponse.serializer(), body).voices
+                // Premade voices work on every plan; list them first.
+                .sortedBy { if (it.category == "premade") 0 else 1 }
+                .map { v ->
+                    TtsVoice(
+                        id = v.voiceId,
+                        displayName = v.name,
+                        detail = v.category?.replaceFirstChar { it.uppercase() },
+                        engine = TtsEngineType.ELEVENLABS,
+                        needsNetwork = true,
+                    )
+                }
         }
     }
 
@@ -101,12 +104,13 @@ class ElevenLabsApi @Inject constructor() {
         val detail = runCatching {
             json.decodeFromString(ErrorResponse.serializer(), body).detail?.message
         }.getOrNull()
-        val reason = when (code) {
-            401 -> "invalid API key"
-            429 -> "rate limit or quota exceeded"
-            else -> detail ?: "request failed"
+        return when (code) {
+            401 -> "ElevenLabs: invalid API key"
+            402 -> "ElevenLabs: this voice isn't available on your plan — pick a " +
+                "Premade voice in Text-to-speech settings, or upgrade your plan."
+            429 -> "ElevenLabs: rate limit or character quota exceeded"
+            else -> "ElevenLabs error ($code): ${detail ?: "request failed"}"
         }
-        return "ElevenLabs error ($code): $reason"
     }
 
     companion object {
