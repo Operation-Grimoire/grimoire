@@ -133,6 +133,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
     val moreVm: MoreViewModel = hiltViewModel()
     val activeDownloadCount by moreVm.activeDownloadCount.collectAsState()
+    val extensionUpdateCount by moreVm.extensionUpdateCount.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -161,13 +162,20 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                                 }
                             },
                             icon = {
-                                val showBadge = dest == TopLevelDestination.More && activeDownloadCount > 0
-                                if (showBadge) {
-                                    BadgedBox(badge = { Badge() }) {
+                                val updateBadge = dest == TopLevelDestination.Browse &&
+                                    extensionUpdateCount > 0
+                                val downloadBadge = dest == TopLevelDestination.More &&
+                                    activeDownloadCount > 0
+                                when {
+                                    updateBadge -> BadgedBox(
+                                        badge = { Badge { Text("$extensionUpdateCount") } },
+                                    ) {
                                         Icon(dest.icon, contentDescription = dest.label)
                                     }
-                                } else {
-                                    Icon(dest.icon, contentDescription = dest.label)
+                                    downloadBadge -> BadgedBox(badge = { Badge() }) {
+                                        Icon(dest.icon, contentDescription = dest.label)
+                                    }
+                                    else -> Icon(dest.icon, contentDescription = dest.label)
                                 }
                             },
                             label = { Text(dest.label) },

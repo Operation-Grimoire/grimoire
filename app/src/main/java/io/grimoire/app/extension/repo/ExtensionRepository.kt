@@ -4,10 +4,17 @@ import io.grimoire.app.data.local.dao.RepoDao
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.extension.LoadedExtension
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,6 +24,9 @@ class ExtensionRepository @Inject constructor(
     private val fetcher: ExtensionIndexFetcher,
     private val extensionManager: ExtensionManager,
 ) {
+    // Process-lifetime scope: this @Singleton lives for the whole app session.
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     val reposFlow: Flow<List<RepoEntity>> = repoDao.getAllFlow()
 
     private val _items = MutableStateFlow<List<ExtensionItem>>(emptyList())
@@ -27,6 +37,11 @@ class ExtensionRepository @Inject constructor(
 
     private val _fetchError = MutableStateFlow<String?>(null)
     val fetchError: StateFlow<String?> = _fetchError.asStateFlow()
+
+    /** Count of installed extensions that have a newer version in an enabled repo. */
+    val updateCount: StateFlow<Int> = items
+        .map { list -> list.count { it is ExtensionItem.Installed && it.hasUpdate } }
+        .stateIn(scope, SharingStarted.Eagerly, 0)
 
     suspend fun refresh() {
         _isFetching.value = true
@@ -58,6 +73,14 @@ class ExtensionRepository @Inject constructor(
         } finally {
             _isFetching.value = false
         }
+    }
+
+    /**
+     * Refreshes the index off the main thread so installed-extension updates are
+     * detected on app launch, without the user opening the extension manager.
+     */
+    fun checkForUpdatesOnLaunch() {
+        scope.launch { runCatching { refresh() } }
     }
 
     private fun merge(

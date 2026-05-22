@@ -16,6 +16,7 @@ import dagger.hilt.android.HiltAndroidApp
 import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.cache.CoverPreloader
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
+import io.grimoire.app.extension.repo.ExtensionRepository
 import io.grimoire.api.network.NetworkContext
 import io.grimoire.api.network.defaultOkHttpClient
 import javax.inject.Inject
@@ -27,6 +28,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject lateinit var coverPreloader: CoverPreloader
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var backupScheduler: BackupScheduler
+    @Inject lateinit var extensionRepository: ExtensionRepository
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -58,6 +60,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         super.onCreate()
         NetworkContext.init(this)
         coverPreloader.start()
+        extensionRepository.checkForUpdatesOnLaunch()
         val channel = NotificationChannel(
             DOWNLOAD_CHANNEL_ID,
             "Chapter Downloads",
