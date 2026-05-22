@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -370,6 +371,11 @@ fun LibraryScreen(
 
     Scaffold(
         modifier = modifier,
+        // The parent AppNavigation Scaffold already handles system bar insets
+        // (its NavigationBar / our selection bar cover the bottom area), so
+        // don't double-apply them here - that's what caused the dark gap
+        // between the last row and the app nav.
+        contentWindowInsets = WindowInsets(0),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             if (selectionMode) {
