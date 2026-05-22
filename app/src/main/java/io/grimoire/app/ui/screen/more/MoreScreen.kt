@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NewReleases
@@ -13,6 +14,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -59,14 +61,30 @@ fun MoreScreen(
                 HorizontalDivider()
             }
             item {
+                val hasIssues = issueCount > 0
                 ListItem(
                     headlineContent = { Text("Update warnings") },
-                    supportingContent = if (issueCount > 0) {
-                        { Text("$issueCount novel${if (issueCount == 1) "" else "s"} need attention") }
-                    } else {
-                        { Text("Novels that failed to refresh") }
+                    supportingContent = {
+                        Text(
+                            if (hasIssues) {
+                                val noun = if (issueCount == 1) "novel needs" else "novels need"
+                                "$issueCount $noun attention"
+                            } else {
+                                "No refresh problems"
+                            }
+                        )
                     },
-                    leadingContent = { Icon(Icons.Default.WarningAmber, contentDescription = null) },
+                    leadingContent = {
+                        if (hasIssues) {
+                            Icon(
+                                Icons.Default.WarningAmber,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        } else {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null)
+                        }
+                    },
                     modifier = Modifier.clickable(onClick = onNavigateToWarnings),
                 )
                 HorizontalDivider()
@@ -74,9 +92,12 @@ fun MoreScreen(
             item {
                 ListItem(
                     headlineContent = { Text("Downloads") },
-                    supportingContent = if (activeCount > 0) {
-                        { Text("$activeCount in progress") }
-                    } else null,
+                    supportingContent = {
+                        Text(
+                            if (activeCount > 0) "$activeCount in progress"
+                            else "Downloaded chapters and queue"
+                        )
+                    },
                     leadingContent = { Icon(Icons.Default.Download, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToDownloads),
                 )
@@ -85,6 +106,7 @@ fun MoreScreen(
             item {
                 ListItem(
                     headlineContent = { Text("Statistics") },
+                    supportingContent = { Text("Your reading activity") },
                     leadingContent = { Icon(Icons.Default.BarChart, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToStatistics),
                 )
@@ -93,6 +115,7 @@ fun MoreScreen(
             item {
                 ListItem(
                     headlineContent = { Text("Settings") },
+                    supportingContent = { Text("Appearance, library, reader, backups") },
                     leadingContent = { Icon(Icons.Default.Settings, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToSettings),
                 )
