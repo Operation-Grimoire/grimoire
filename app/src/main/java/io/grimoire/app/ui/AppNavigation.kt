@@ -541,6 +541,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     onOpenWebView = { url ->
                         navController.navigate("webview?url=${Uri.encode(url)}")
                     },
+                    onOpenTtsSettings = { navController.navigate(ROUTE_SETTINGS_TTS) },
                 )
             }
 

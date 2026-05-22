@@ -142,6 +142,8 @@ class TtsPlaybackManager @Inject constructor(
                 novelDao.updateLastReadAt(novelId, System.currentTimeMillis())
                 updateNowPlaying()
 
+                // Configure before init() so the cloud engine sees the API key.
+                configureEngine(languageResolver.resolveLocale(novelLanguage))
                 if (!engine.init()) {
                     return@launch fail(
                         if (engine.type == TtsEngineType.ELEVENLABS) {
@@ -369,13 +371,18 @@ class TtsPlaybackManager @Inject constructor(
 
     // ---- Media session ------------------------------------------------------
 
+    @Suppress("DEPRECATION")
     private fun ensureSession() {
         if (mediaSession != null) return
         mediaSession = MediaSessionCompat(context, "GrimoireTts").apply {
+            setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                    MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS,
+            )
             setCallback(mediaSessionCallback)
-            isActive = true
         }
         updateMediaSession()
+        mediaSession?.isActive = true
     }
 
     private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
@@ -404,7 +411,11 @@ class TtsPlaybackManager @Inject constructor(
                         PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
                         PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS,
                 )
-                .setState(stateCompat, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1f)
+                .setState(
+                    stateCompat,
+                    PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN,
+                    if (_state.value == TtsPlaybackState.PLAYING) 1f else 0f,
+                )
                 .build(),
         )
         val np = _nowPlaying.value

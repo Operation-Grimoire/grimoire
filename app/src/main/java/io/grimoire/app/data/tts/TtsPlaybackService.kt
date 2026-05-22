@@ -4,7 +4,6 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
-import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,12 +52,11 @@ class TtsPlaybackService : Service() {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }
-            TtsPlaybackState.PAUSED -> {
-                stopForeground(STOP_FOREGROUND_DETACH)
-                NotificationManagerCompat.from(this)
-                    .notify(TtsNotificationBuilder.NOTIFICATION_ID, manager.buildNotification())
-            }
-            TtsPlaybackState.PLAYING, TtsPlaybackState.LOADING -> startForegroundCompat()
+            // Stay in the foreground while paused so the process and the media
+            // session keep their priority — hardware/Bluetooth media buttons
+            // are only routed reliably to a high-priority active session.
+            TtsPlaybackState.PLAYING, TtsPlaybackState.LOADING, TtsPlaybackState.PAUSED ->
+                startForegroundCompat()
         }
     }
 
