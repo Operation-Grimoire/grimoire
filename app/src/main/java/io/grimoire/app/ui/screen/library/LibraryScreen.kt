@@ -6,8 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -504,34 +502,29 @@ fun LibraryScreen(
             }
         },
         bottomBar = {
-            AnimatedVisibility(
+            LibrarySelectionBottomBar(
                 visible = selectionMode,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut(),
-            ) {
-                LibrarySelectionBottomBar(
-                    onMove = { showBulkMove = true },
-                    onMarkRead = {
-                        viewModel.setNovelsRead(selectedIds, true)
-                        clearSelection()
-                    },
-                    onMarkUnread = {
-                        viewModel.setNovelsRead(selectedIds, false)
-                        clearSelection()
-                    },
-                    onDownload = {
-                        val count = selectedIds.size
-                        viewModel.downloadNovels(selectedIds)
-                        scope.launch {
-                            snackbarHostState.showSnackbar(
-                                "Queued downloads for $count novels"
-                            )
-                        }
-                        clearSelection()
-                    },
-                    onRemove = { showBulkRemoveConfirm = true },
-                )
-            }
+                onMove = { showBulkMove = true },
+                onMarkRead = {
+                    viewModel.setNovelsRead(selectedIds, true)
+                    clearSelection()
+                },
+                onMarkUnread = {
+                    viewModel.setNovelsRead(selectedIds, false)
+                    clearSelection()
+                },
+                onDownload = {
+                    val count = selectedIds.size
+                    viewModel.downloadNovels(selectedIds)
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            "Queued downloads for $count novels"
+                        )
+                    }
+                    clearSelection()
+                },
+                onRemove = { showBulkRemoveConfirm = true },
+            )
         },
     ) { padding ->
         Column(Modifier.padding(padding)) {
@@ -791,43 +784,50 @@ private fun SelectionTopBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LibrarySelectionBottomBar(
+    visible: Boolean,
     onMove: () -> Unit,
     onMarkRead: () -> Unit,
     onMarkUnread: () -> Unit,
     onDownload: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    BottomAppBar {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TooltipIconButton(
-                icon = Icons.Default.DriveFileMove,
-                label = "Move",
-                onClick = onMove,
-            )
-            TooltipIconButton(
-                icon = Icons.Default.DoneAll,
-                label = "Mark read",
-                onClick = onMarkRead,
-            )
-            TooltipIconButton(
-                icon = Icons.Default.RemoveDone,
-                label = "Mark unread",
-                onClick = onMarkUnread,
-            )
-            TooltipIconButton(
-                icon = Icons.Default.Download,
-                label = "Download",
-                onClick = onDownload,
-            )
-            TooltipIconButton(
-                icon = Icons.Default.Delete,
-                label = "Remove",
-                onClick = onRemove,
-                tint = MaterialTheme.colorScheme.error,
-            )
+    AnimatedVisibility(
+        visible = visible,
+        enter = expandVertically(expandFrom = Alignment.Bottom),
+        exit = shrinkVertically(shrinkTowards = Alignment.Bottom),
+    ) {
+        BottomAppBar {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TooltipIconButton(
+                    icon = Icons.Default.DriveFileMove,
+                    label = "Move",
+                    onClick = onMove,
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.DoneAll,
+                    label = "Mark read",
+                    onClick = onMarkRead,
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.RemoveDone,
+                    label = "Mark unread",
+                    onClick = onMarkUnread,
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.Download,
+                    label = "Download",
+                    onClick = onDownload,
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.Delete,
+                    label = "Remove",
+                    onClick = onRemove,
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
         }
     }
 }
