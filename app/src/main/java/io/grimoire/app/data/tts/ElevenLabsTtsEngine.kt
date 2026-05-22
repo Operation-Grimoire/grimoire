@@ -11,6 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -38,6 +39,7 @@ class ElevenLabsTtsEngine @Inject constructor(
     private var player: MediaPlayer? = null
     private var speakJob: Job? = null
     private val prefetched = ConcurrentHashMap<String, ByteArray>()
+    private var resolvedDefaultVoiceId: String? = null
 
     private val cacheDir: File by lazy { File(context.cacheDir, "tts").apply { mkdirs() } }
 
@@ -45,6 +47,7 @@ class ElevenLabsTtsEngine @Inject constructor(
 
     override fun configure(config: TtsEngineConfig) {
         this.config = config
+        resolvedDefaultVoiceId = null
     }
 
     override fun speak(utteranceId: String, text: String) {
@@ -91,11 +94,23 @@ class ElevenLabsTtsEngine @Inject constructor(
         val cfg = config ?: error("ElevenLabs engine not configured")
         return api.synthesize(
             apiKey = cfg.elevenLabsApiKey,
-            voiceId = cfg.voiceId?.takeIf { it.isNotBlank() } ?: DEFAULT_VOICE_ID,
+            voiceId = resolveVoiceId(cfg),
             modelId = cfg.elevenLabsModel,
             text = text,
             speed = cfg.rate,
         )
+    }
+
+    /** The chosen voice, or — when none is set — a default voice usable on any plan. */
+    private suspend fun resolveVoiceId(cfg: TtsEngineConfig): String {
+        cfg.voiceId?.takeIf { it.isNotBlank() }?.let { return it }
+        resolvedDefaultVoiceId?.let { return it }
+        val id = api.defaultVoiceId(cfg.elevenLabsApiKey)
+            ?: throw IOException(
+                "No default ElevenLabs voice is available — pick one in Text-to-speech settings",
+            )
+        resolvedDefaultVoiceId = id
+        return id
     }
 
     private fun writeTemp(utteranceId: String, bytes: ByteArray): File {
@@ -145,10 +160,5 @@ class ElevenLabsTtsEngine @Inject constructor(
             }
         }
         player = null
-    }
-
-    companion object {
-        /** ElevenLabs "Rachel" — a stable public voice used when none is chosen. */
-        const val DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
     }
 }

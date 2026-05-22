@@ -106,6 +106,20 @@ class ElevenLabsApi @Inject constructor() {
         }
     }
 
+    /** Returns a default (every-plan) voice id for the account, or null if none exists. */
+    suspend fun defaultVoiceId(apiKey: String): String? = withContext(Dispatchers.IO) {
+        require(apiKey.isNotBlank()) { "Add an ElevenLabs API key first." }
+        val request = Request.Builder()
+            .url("$BASE_URL/v2/voices?voice_type=default&page_size=1")
+            .header("xi-api-key", apiKey)
+            .build()
+        client.newCall(request).execute().use { response ->
+            val body = response.body?.string().orEmpty()
+            if (!response.isSuccessful) throw IOException(errorMessage(response.code, body))
+            json.decodeFromString(VoicesResponse.serializer(), body).voices.firstOrNull()?.voiceId
+        }
+    }
+
     private fun errorMessage(code: Int, body: String): String {
         val detail = runCatching {
             json.decodeFromString(ErrorResponse.serializer(), body).detail?.message
