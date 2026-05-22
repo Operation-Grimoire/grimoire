@@ -2,10 +2,12 @@ package io.grimoire.app.ui.screen.browse
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -60,6 +62,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material.icons.filled.VerticalAlignTop
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
@@ -114,6 +117,7 @@ import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
+import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.component.rememberShimmerAlpha
 import io.grimoire.app.ui.theme.premiumGold
@@ -496,8 +500,8 @@ fun NovelDetailScreen(
                 }
                 AnimatedVisibility(
                     visible = selectionMode,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
                 ) {
                     ChapterSelectionBottomBar(
                         showMarkRead = selectedChapters.any { !it.read },
@@ -1292,47 +1296,110 @@ private fun ChapterSelectionBottomBar(
     onSelectAbove: () -> Unit,
     onSelectBelow: () -> Unit,
 ) {
+    // Tracks which action is being held so the rest can recede out of the way,
+    // giving the held button's revealed label room without overlapping siblings.
+    var heldKey by remember { mutableStateOf<String?>(null) }
+    val onHeldChange: (String?) -> Unit = { heldKey = it }
     BottomAppBar {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (showMarkRead) {
-                IconButton(onClick = onMarkRead) {
-                    Icon(Icons.Default.DoneAll, contentDescription = "Mark as read")
-                }
-            }
-            if (showMarkUnread) {
-                IconButton(onClick = onMarkUnread) {
-                    Icon(Icons.Default.RemoveDone, contentDescription = "Mark as unread")
-                }
-            }
-            if (showDownload) {
-                IconButton(onClick = onDownload) {
-                    Icon(Icons.Default.Download, contentDescription = "Download")
-                }
-            }
-            if (showDelete) {
-                IconButton(onClick = onDeleteDownloads) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete downloads")
-                }
-            }
-            if (showCancel) {
-                IconButton(onClick = onCancelDownloads) {
-                    Icon(Icons.Default.Close, contentDescription = "Cancel queued downloads")
-                }
-            }
-            if (singleSelection) {
-                IconButton(onClick = onSelectAbove) {
-                    Icon(Icons.Default.VerticalAlignTop, contentDescription = "Select all above")
-                }
-                IconButton(onClick = onSelectBelow) {
-                    Icon(Icons.Default.VerticalAlignBottom, contentDescription = "Select all below")
-                }
-            }
+            SelectionAction(
+                visible = showMarkRead,
+                icon = Icons.Default.DoneAll,
+                label = "Mark read",
+                heldKey = heldKey,
+                onHeldChange = onHeldChange,
+                onClick = onMarkRead,
+            )
+            SelectionAction(
+                visible = showMarkUnread,
+                icon = Icons.Default.RemoveDone,
+                label = "Mark unread",
+                heldKey = heldKey,
+                onHeldChange = onHeldChange,
+                onClick = onMarkUnread,
+            )
+            SelectionAction(
+                visible = showDownload,
+                icon = Icons.Default.Download,
+                label = "Download",
+                heldKey = heldKey,
+                onHeldChange = onHeldChange,
+                onClick = onDownload,
+            )
+            SelectionAction(
+                visible = showDelete,
+                icon = Icons.Default.Delete,
+                label = "Delete",
+                heldKey = heldKey,
+                onHeldChange = onHeldChange,
+                onClick = onDeleteDownloads,
+            )
+            SelectionAction(
+                visible = showCancel,
+                icon = Icons.Default.Close,
+                label = "Cancel",
+                heldKey = heldKey,
+                onHeldChange = onHeldChange,
+                onClick = onCancelDownloads,
+            )
+            SelectionAction(
+                visible = singleSelection,
+                icon = Icons.Default.VerticalAlignTop,
+                label = "Select above",
+                heldKey = heldKey,
+                onHeldChange = onHeldChange,
+                onClick = onSelectAbove,
+            )
+            SelectionAction(
+                visible = singleSelection,
+                icon = Icons.Default.VerticalAlignBottom,
+                label = "Select below",
+                heldKey = heldKey,
+                onHeldChange = onHeldChange,
+                onClick = onSelectBelow,
+            )
         }
     }
+}
+
+/**
+ * One action in [ChapterSelectionBottomBar]. While a different action is held
+ * ([heldKey] set to another label), this one slides down and fades out so the
+ * held action's tooltip label has clear space.
+ */
+@Composable
+private fun SelectionAction(
+    visible: Boolean,
+    icon: ImageVector,
+    label: String,
+    heldKey: String?,
+    onHeldChange: (String?) -> Unit,
+    onClick: () -> Unit,
+) {
+    if (!visible) return
+    val receded = heldKey != null && heldKey != label
+    val recedeAlpha by animateFloatAsState(
+        targetValue = if (receded) 0f else 1f,
+        label = "selectionActionAlpha",
+    )
+    val recedeShift by animateDpAsState(
+        targetValue = if (receded) 20.dp else 0.dp,
+        label = "selectionActionShift",
+    )
+    TooltipIconButton(
+        icon = icon,
+        label = label,
+        onClick = onClick,
+        onHoldChange = { held -> onHeldChange(if (held) label else null) },
+        modifier = Modifier.graphicsLayer {
+            alpha = recedeAlpha
+            translationY = recedeShift.toPx()
+        },
+    )
 }
 
 // A null onClick renders a plain, non-interactive icon with the same footprint.
