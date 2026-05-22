@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -79,10 +80,12 @@ private enum class TopLevelDestination(
     val route: String,
     val icon: ImageVector,
     val label: String,
+    /** Shown instead of [icon] when the tab has something to surface. */
+    val activeIcon: ImageVector = icon,
 ) {
     Library("library", Icons.Default.LocalLibrary, "Library"),
     Browse("browse", Icons.Default.Explore, "Browse"),
-    More("more", Icons.Default.MoreHoriz, "More"),
+    More("more", Icons.Default.MoreHoriz, "More", activeIcon = Icons.Default.NewReleases),
 }
 
 private val topLevelRoutes = TopLevelDestination.entries.map { it.route }.toSet()
@@ -139,6 +142,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
     val moreVm: MoreViewModel = hiltViewModel()
     val activeDownloadCount by moreVm.activeDownloadCount.collectAsState()
+    val updateCount by moreVm.updateCount.collectAsState()
     val extensionUpdateCount by moreVm.extensionUpdateCount.collectAsState()
 
     Scaffold(
@@ -172,16 +176,21 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                                     extensionUpdateCount > 0
                                 val downloadBadge = dest == TopLevelDestination.More &&
                                     activeDownloadCount > 0
+                                // The More tab swaps to the Updates icon while the
+                                // updates log has entries to surface.
+                                val hasUpdates = dest == TopLevelDestination.More &&
+                                    updateCount > 0
+                                val tabIcon = if (hasUpdates) dest.activeIcon else dest.icon
                                 when {
                                     updateBadge -> BadgedBox(
                                         badge = { Badge { Text("$extensionUpdateCount") } },
                                     ) {
-                                        Icon(dest.icon, contentDescription = dest.label)
+                                        Icon(tabIcon, contentDescription = dest.label)
                                     }
                                     downloadBadge -> BadgedBox(badge = { Badge() }) {
-                                        Icon(dest.icon, contentDescription = dest.label)
+                                        Icon(tabIcon, contentDescription = dest.label)
                                     }
-                                    else -> Icon(dest.icon, contentDescription = dest.label)
+                                    else -> Icon(tabIcon, contentDescription = dest.label)
                                 }
                             },
                             label = { Text(dest.label) },
