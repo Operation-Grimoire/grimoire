@@ -16,12 +16,16 @@ import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.preferences.ReaderPreferences
 import io.grimoire.app.data.preferences.stateIn
+import io.grimoire.app.data.tts.TtsController
+import io.grimoire.app.data.tts.TtsPlaybackState
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -34,6 +38,7 @@ class ReaderViewModel @Inject constructor(
     private val chapterDao: ChapterDao,
     private val novelDao: NovelDao,
     private val readerPreferences: ReaderPreferences,
+    private val ttsController: TtsController,
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
@@ -84,6 +89,30 @@ class ReaderViewModel @Inject constructor(
     val orientation: StateFlow<ReaderOrientation> = readerPreferences.orientation.stateIn(viewModelScope)
     val hideNotificationBar: StateFlow<Boolean> = readerPreferences.hideNotificationBar.stateIn(viewModelScope)
 
+    /** Raw read-aloud playback state, shared across the whole app. */
+    val ttsState: StateFlow<TtsPlaybackState> = ttsController.state
+
+    /** URL of the chapter TTS is currently reading, or null when nothing is playing. */
+    val ttsCurrentUrl: StateFlow<String?> = ttsController.nowPlaying
+        .map { it?.chapterUrl }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    /** [NovelPage.index] of the paragraph TTS is speaking in this chapter, else null. */
+    val ttsSpokenPageIndex: StateFlow<Int?> = combine(
+        ttsController.state, ttsController.nowPlaying, ttsController.progress, currentChapter,
+    ) { state, nowPlaying, progress, chapter ->
+        val active = state == TtsPlaybackState.PLAYING || state == TtsPlaybackState.PAUSED
+        if (active && nowPlaying != null && chapter != null &&
+            nowPlaying.chapterUrl == chapter.url && progress.currentPageIndex >= 0
+        ) {
+            progress.currentPageIndex
+        } else {
+            null
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val ttsError: StateFlow<String?> = ttsController.errorMessage
+
     init {
         viewModelScope.launch {
             val chapter = chapterDao.getByUrl(initialChapterUrl) ?: run {
@@ -96,6 +125,18 @@ class ReaderViewModel @Inject constructor(
             _chapters.value = allChapters
             _currentIndex.value = allChapters.indexOfFirst { it.url == initialChapterUrl }.coerceAtLeast(0)
             loadPages()
+        }
+        // Keep the reader in sync when TTS auto-advances or skips chapters.
+        viewModelScope.launch {
+            ttsController.nowPlaying.drop(1).collect { nowPlaying ->
+                val url = nowPlaying?.chapterUrl ?: return@collect
+                if (ttsController.state.value == TtsPlaybackState.IDLE) return@collect
+                val index = _chapters.value.indexOfFirst { it.url == url }
+                if (index >= 0 && index != _currentIndex.value) {
+                    _currentIndex.value = index
+                    loadPages()
+                }
+            }
         }
     }
 
@@ -213,6 +254,32 @@ class ReaderViewModel @Inject constructor(
 
     fun setOrientation(value: ReaderOrientation) = viewModelScope.launch {
         readerPreferences.orientation.set(value)
+    }
+
+    /** Starts reading the current chapter aloud, or toggles play/pause if already active. */
+    fun toggleTts() {
+        val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
+        val activeForThisChapter = ttsController.nowPlaying.value?.chapterUrl == chapter.url &&
+            ttsController.state.value != TtsPlaybackState.IDLE &&
+            ttsController.state.value != TtsPlaybackState.ERROR
+        if (activeForThisChapter) {
+            ttsController.togglePlayPause()
+        } else {
+            ttsController.play(
+                pkg = pkg,
+                novelId = chapter.novelId,
+                chapterUrl = chapter.url,
+                chapters = _chapters.value,
+                startIndex = _currentIndex.value,
+                pages = _pages.value,
+            )
+        }
+    }
+
+    fun stopTts() = ttsController.stop()
+
+    fun clearTtsError() {
+        ttsController.consumeError()
     }
 }
 

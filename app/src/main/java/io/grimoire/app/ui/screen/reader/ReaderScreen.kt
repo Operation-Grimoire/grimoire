@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -48,7 +49,10 @@ import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -98,6 +102,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
+import io.grimoire.app.data.tts.TtsPlaybackState
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 
@@ -132,6 +137,16 @@ fun ReaderScreen(
     val colorTheme by viewModel.colorTheme.collectAsState()
     val orientation by viewModel.orientation.collectAsState()
     val hideNotificationBar by viewModel.hideNotificationBar.collectAsState()
+
+    val ttsState by viewModel.ttsState.collectAsState()
+    val ttsCurrentUrl by viewModel.ttsCurrentUrl.collectAsState()
+    val ttsSpokenPageIndex by viewModel.ttsSpokenPageIndex.collectAsState()
+    val ttsError by viewModel.ttsError.collectAsState()
+
+    val ttsActiveForChapter = currentChapter?.url != null &&
+        currentChapter?.url == ttsCurrentUrl &&
+        ttsState != TtsPlaybackState.IDLE && ttsState != TtsPlaybackState.ERROR
+    val ttsPlayingThisChapter = ttsActiveForChapter && ttsState == TtsPlaybackState.PLAYING
 
     val colors = colorTheme.readerColors
     val fontFamily = readerFont.fontFamily
@@ -173,6 +188,7 @@ fun ReaderScreen(
     }
 
     val listState = rememberLazyListState()
+    val visiblePages = remember(pages) { pages.filter { it.text.isNotBlank() } }
     var barsVisible by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -208,6 +224,22 @@ fun ReaderScreen(
         }
             .distinctUntilChanged()
             .collect { fraction -> viewModel.updateProgress(fraction) }
+    }
+
+    // Follow TTS: scroll the paragraph being spoken into view, unless the user is scrolling.
+    LaunchedEffect(ttsSpokenPageIndex) {
+        val pageIndex = ttsSpokenPageIndex ?: return@LaunchedEffect
+        val target = visiblePages.indexOfFirst { it.index == pageIndex }
+        if (target >= 0 && !listState.isScrollInProgress) {
+            listState.animateScrollToItem(target + 1) // +1 for the chapter-title item
+        }
+    }
+
+    LaunchedEffect(ttsError) {
+        ttsError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearTtsError()
+        }
     }
 
     Box(
@@ -252,12 +284,20 @@ fun ReaderScreen(
                             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                         )
                     }
-                    items(pages.filter { it.text.isNotBlank() }, key = { it.index }) { page ->
+                    items(visiblePages, key = { it.index }) { page ->
+                        val highlighted = page.index == ttsSpokenPageIndex
                         Text(
                             text = page.text.trim(),
                             style = textStyle,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .then(
+                                    if (highlighted) {
+                                        Modifier.background(colors.foreground.copy(alpha = 0.10f))
+                                    } else {
+                                        Modifier
+                                    },
+                                )
                                 .padding(bottom = paragraphSpacing.dp),
                         )
                     }
@@ -353,6 +393,22 @@ fun ReaderScreen(
                             contentDescription = "Previous chapter",
                             tint = if (hasPrev) colors.foreground else colors.foreground.copy(alpha = 0.3f),
                         )
+                    }
+                    IconButton(onClick = viewModel::toggleTts) {
+                        Icon(
+                            if (ttsPlayingThisChapter) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = if (ttsPlayingThisChapter) "Pause read-aloud" else "Read aloud",
+                            tint = colors.foreground,
+                        )
+                    }
+                    if (ttsActiveForChapter) {
+                        IconButton(onClick = viewModel::stopTts) {
+                            Icon(
+                                Icons.Default.Stop,
+                                contentDescription = "Stop read-aloud",
+                                tint = colors.foreground,
+                            )
+                        }
                     }
                     IconButton(onClick = { showSettings = true }) {
                         Icon(Icons.Default.Settings, contentDescription = "Reader settings", tint = colors.foreground)
