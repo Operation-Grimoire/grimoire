@@ -4,7 +4,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -25,26 +26,30 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 /**
- * Icon button that reveals a short text [label] above the icon while pressed
- * and held: the icon slides down to make room, then everything slides back on
- * release. A quick tap just invokes [onClick]. [onHoldChange] reports when the
- * hold begins and ends so a container can coordinate (e.g. move siblings away).
+ * Row action button that reveals a short text [label] above the icon while
+ * pressed and held: the icon slides down to make room and the button's row
+ * weight grows, so it gains space while siblings give way. A quick tap just
+ * invokes [onClick]. Must be placed inside a [RowScope] (e.g. an action bar).
  */
 @Composable
-fun TooltipIconButton(
+fun RowScope.TooltipIconButton(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current,
-    onHoldChange: (Boolean) -> Unit = {},
 ) {
     var pressed by remember { mutableStateOf(false) }
     val currentOnClick by rememberUpdatedState(onClick)
-    val currentOnHoldChange by rememberUpdatedState(onHoldChange)
+    val weight by animateFloatAsState(
+        targetValue = if (pressed) 2f else 1f,
+        label = "tooltipWeight",
+    )
     val iconShift by animateDpAsState(
         targetValue = if (pressed) 8.dp else 0.dp,
         label = "tooltipIconShift",
@@ -56,7 +61,8 @@ fun TooltipIconButton(
 
     Box(
         modifier = modifier
-            .size(56.dp)
+            .weight(weight)
+            .height(56.dp)
             .semantics(mergeDescendants = true) {
                 role = Role.Button
                 onClick { currentOnClick(); true }
@@ -64,16 +70,10 @@ fun TooltipIconButton(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { currentOnClick() },
-                    onLongPress = {
-                        pressed = true
-                        currentOnHoldChange(true)
-                    },
+                    onLongPress = { pressed = true },
                     onPress = {
                         tryAwaitRelease()
-                        if (pressed) {
-                            pressed = false
-                            currentOnHoldChange(false)
-                        }
+                        pressed = false
                     },
                 )
             },
@@ -85,6 +85,10 @@ fun TooltipIconButton(
             color = tint,
             maxLines = 1,
             softWrap = false,
+            textAlign = TextAlign.Center,
+            // Visible overflow so the label is never clipped even if the
+            // grown button is still narrower than the text.
+            overflow = TextOverflow.Visible,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .graphicsLayer {
