@@ -153,7 +153,6 @@ fun NovelDetailScreen(
     var overflowMenuExpanded by remember { mutableStateOf(false) }
     var lockedDialogChapter by remember { mutableStateOf<ChapterEntity?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
-    var bulkMenuExpanded by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var showJumpDialog by remember { mutableStateOf(false) }
@@ -463,7 +462,9 @@ fun NovelDetailScreen(
                             contentDescription = if (isFavorite) "Remove from library" else "Add to library",
                         )
                     }
-                    if (isFavorite && novelId > 0L) {
+                    val hasBulkActions = chapters.isNotEmpty()
+                    val canMigrate = isFavorite && novelId > 0L
+                    if (hasBulkActions || canMigrate) {
                         Box {
                             IconButton(onClick = { overflowMenuExpanded = true }) {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More actions")
@@ -472,14 +473,46 @@ fun NovelDetailScreen(
                                 expanded = overflowMenuExpanded,
                                 onDismissRequest = { overflowMenuExpanded = false },
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text("Migrate") },
-                                    onClick = {
-                                        overflowMenuExpanded = false
-                                        onMigrate(novelId)
-                                    },
-                                    leadingIcon = { Icon(Icons.Default.SwapVert, contentDescription = null) },
-                                )
+                                if (hasBulkActions) {
+                                    DropdownMenuItem(
+                                        text = { Text("Mark all as read") },
+                                        onClick = { viewModel.markAllRead(true); overflowMenuExpanded = false },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Mark all as unread") },
+                                        onClick = { viewModel.markAllRead(false); overflowMenuExpanded = false },
+                                    )
+                                    if (!viewModel.isLocal) {
+                                        DropdownMenuItem(
+                                            text = { Text("Download all") },
+                                            onClick = { viewModel.downloadAll(); overflowMenuExpanded = false },
+                                            leadingIcon = { Icon(Icons.Default.Download, null) },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Download unread") },
+                                            onClick = { viewModel.downloadUnread(); overflowMenuExpanded = false },
+                                            leadingIcon = { Icon(Icons.Default.Download, null) },
+                                        )
+                                    }
+                                    if (chapters.any { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }) {
+                                        DropdownMenuItem(
+                                            text = { Text("Cancel all downloads") },
+                                            onClick = { viewModel.cancelAllDownloads(); overflowMenuExpanded = false },
+                                            leadingIcon = { Icon(Icons.Default.Close, null) },
+                                        )
+                                    }
+                                }
+                                if (canMigrate) {
+                                    if (hasBulkActions) HorizontalDivider()
+                                    DropdownMenuItem(
+                                        text = { Text("Migrate") },
+                                        onClick = {
+                                            overflowMenuExpanded = false
+                                            onMigrate(novelId)
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.SwapVert, contentDescription = null) },
+                                    )
+                                }
                             }
                         }
                     }
@@ -698,43 +731,6 @@ fun NovelDetailScreen(
                                                     trailingIcon = if (chapterSort == sort) {
                                                         { Icon(Icons.Default.Check, contentDescription = null) }
                                                     } else null,
-                                                )
-                                            }
-                                        }
-                                    }
-                                    Box {
-                                        IconButton(onClick = { bulkMenuExpanded = true }) {
-                                            Icon(Icons.Default.MoreVert, contentDescription = "More actions")
-                                        }
-                                        DropdownMenu(
-                                            expanded = bulkMenuExpanded,
-                                            onDismissRequest = { bulkMenuExpanded = false },
-                                        ) {
-                                            DropdownMenuItem(
-                                                text = { Text("Mark all as read") },
-                                                onClick = { viewModel.markAllRead(true); bulkMenuExpanded = false },
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text("Mark all as unread") },
-                                                onClick = { viewModel.markAllRead(false); bulkMenuExpanded = false },
-                                            )
-                                            if (!viewModel.isLocal) {
-                                                DropdownMenuItem(
-                                                    text = { Text("Download all") },
-                                                    onClick = { viewModel.downloadAll(); bulkMenuExpanded = false },
-                                                    leadingIcon = { Icon(Icons.Default.Download, null) },
-                                                )
-                                                DropdownMenuItem(
-                                                    text = { Text("Download unread") },
-                                                    onClick = { viewModel.downloadUnread(); bulkMenuExpanded = false },
-                                                    leadingIcon = { Icon(Icons.Default.Download, null) },
-                                                )
-                                            }
-                                            if (chapters.any { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }) {
-                                                DropdownMenuItem(
-                                                    text = { Text("Cancel all downloads") },
-                                                    onClick = { viewModel.cancelAllDownloads(); bulkMenuExpanded = false },
-                                                    leadingIcon = { Icon(Icons.Default.Close, null) },
                                                 )
                                             }
                                         }
