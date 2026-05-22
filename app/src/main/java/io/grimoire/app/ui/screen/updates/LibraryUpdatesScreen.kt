@@ -22,8 +22,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -118,7 +120,8 @@ fun LibraryUpdatesScreen(
             val days = remember(entries) {
                 entries
                     .groupBy { it.novelId to it.foundAt }
-                    .map { (key, list) -> UpdateGroup(key, list.sortedBy { it.chapterNumber }) }
+                    // Newest chapter first so the order within a group is obvious.
+                    .map { (key, list) -> UpdateGroup(key, list.sortedByDescending { it.chapterNumber }) }
                     .groupBy { dayKey(it.first.foundAt) }
             }
             LazyColumn(modifier = Modifier.padding(padding)) {
@@ -179,6 +182,9 @@ fun LibraryUpdatesScreen(
                                             )
                                         },
                                     )
+                                }
+                                item(key = "group-end-${group.first.id}") {
+                                    HorizontalDivider()
                                 }
                             }
                         }
@@ -288,19 +294,32 @@ private fun UpdateGroupHeader(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChapterUpdateRow(entry: LibraryUpdateEntity, onClick: () -> Unit) {
-    Text(
-        text = entry.chapterName,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(start = 68.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+    val numberLabel = chapterNumberLabel(entry.chapterNumber)
+    ListItem(
+        modifier = Modifier.clickable(onClick = onClick),
+        overlineContent = numberLabel?.let { label -> { Text(label) } },
+        headlineContent = {
+            Text(
+                text = entry.chapterName,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
     )
+}
+
+/** "Chapter 142" / "Chapter 142.5", or null when the source gave no number. */
+private fun chapterNumberLabel(chapterNumber: Float): String? {
+    if (chapterNumber < 0f) return null
+    val formatted = if (chapterNumber % 1f == 0f) {
+        chapterNumber.toInt().toString()
+    } else {
+        chapterNumber.toString()
+    }
+    return "Chapter $formatted"
 }
 
 @Composable
