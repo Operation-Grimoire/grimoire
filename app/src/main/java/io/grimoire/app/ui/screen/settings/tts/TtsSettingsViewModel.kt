@@ -9,6 +9,7 @@ import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.tts.DeviceTtsEngine
 import io.grimoire.app.data.tts.ElevenLabsApi
+import io.grimoire.app.data.tts.ElevenLabsUsage
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsLanguageResolver
 import io.grimoire.app.data.tts.TtsVoice
@@ -29,6 +30,14 @@ sealed interface VoiceListState {
     data object NeedsApiKey : VoiceListState
     data class Error(val message: String) : VoiceListState
     data class Loaded(val voices: List<TtsVoice>) : VoiceListState
+}
+
+/** ElevenLabs character-quota state shown on the main settings screen. */
+sealed interface UsageState {
+    data object Idle : UsageState
+    data object Loading : UsageState
+    data class Error(val message: String) : UsageState
+    data class Loaded(val usage: ElevenLabsUsage) : UsageState
 }
 
 /**
@@ -82,6 +91,9 @@ class TtsSettingsViewModel @Inject constructor(
     private val _voiceState = MutableStateFlow<VoiceListState>(VoiceListState.Loading)
     val voiceState: StateFlow<VoiceListState> = _voiceState.asStateFlow()
 
+    private val _usageState = MutableStateFlow<UsageState>(UsageState.Idle)
+    val usageState: StateFlow<UsageState> = _usageState.asStateFlow()
+
     init {
         viewModelScope.launch {
             val novelLanguages = runCatching { novelDao.getAll() }.getOrDefault(emptyList())
@@ -106,6 +118,21 @@ class TtsSettingsViewModel @Inject constructor(
 
     fun setApiKey(value: String) = viewModelScope.launch {
         prefs.elevenLabsApiKey.set(value.trim())
+    }
+
+    /** Loads ElevenLabs credit usage; no-op (Idle) when no API key is set. */
+    fun loadUsage() {
+        viewModelScope.launch {
+            val key = prefs.elevenLabsApiKey.changes().first()
+            if (key.isBlank()) {
+                _usageState.value = UsageState.Idle
+                return@launch
+            }
+            _usageState.value = UsageState.Loading
+            _usageState.value = runCatching {
+                UsageState.Loaded(elevenLabsApi.getUsage(key))
+            }.getOrElse { UsageState.Error(it.message ?: "Could not load usage") }
+        }
     }
 
     fun loadVoices() {
