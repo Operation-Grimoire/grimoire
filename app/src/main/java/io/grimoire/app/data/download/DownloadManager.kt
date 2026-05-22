@@ -34,6 +34,7 @@ class DownloadManager @Inject constructor(
     private val novelDao: NovelDao,
     private val extensionManager: ExtensionManager,
     private val downloadPreferences: DownloadPreferences,
+    private val chapterImageStore: ChapterImageStore,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val isProcessing = AtomicBoolean(false)
@@ -88,11 +89,17 @@ class DownloadManager @Inject constructor(
     }
 
     fun deleteAllDownloads(novelId: Long) {
-        scope.launch { chapterDao.deleteAllDownloads(novelId) }
+        scope.launch {
+            chapterDao.deleteAllDownloads(novelId)
+            chapterImageStore.deleteNovel(novelId)
+        }
     }
 
     fun deleteDownload(chapter: ChapterEntity) {
-        scope.launch { chapterDao.deleteDownload(chapter.id) }
+        scope.launch {
+            chapterDao.deleteDownload(chapter.id)
+            chapterImageStore.deleteChapter(chapter.novelId, chapter.url)
+        }
     }
 
     fun retryChapter(chapter: ChapterEntity) {
@@ -132,6 +139,11 @@ class DownloadManager @Inject constructor(
                                 val pages = src.getPageList(chapter.toChapter())
                                 val content = encodeChapterContent(pages)
                                 chapterDao.setDownloadedContent(chapter.id, content, ChapterDownloadStatus.DOWNLOADED.ordinal)
+                                // Best-effort: text is already saved, so a failed image
+                                // fetch must not flip the chapter to ERROR.
+                                runCatching {
+                                    chapterImageStore.saveImages(chapter.novelId, chapter.url, pages)
+                                }
                                 downloaded.incrementAndGet()
                             }.onFailure {
                                 chapterDao.setDownloadStatus(chapter.id, ChapterDownloadStatus.ERROR.ordinal)
