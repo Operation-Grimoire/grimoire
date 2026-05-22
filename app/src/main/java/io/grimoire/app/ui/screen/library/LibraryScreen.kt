@@ -763,7 +763,6 @@ fun LibraryScreen(
     if (showBulkMove) {
         MoveToCategorySheet(
             categories = categories,
-            currentCategoryId = null,
             count = selectedIds.size,
             onSelect = { catId ->
                 viewModel.moveNovels(selectedIds, catId)

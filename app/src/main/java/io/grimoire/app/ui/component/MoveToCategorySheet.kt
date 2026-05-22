@@ -21,17 +21,19 @@ import io.grimoire.app.data.local.entity.CategoryEntity
 
 /**
  * Bottom-sheet picker for moving one or more novels to a category. Tap a row
- * to apply; the [currentCategoryId] (if any) is shown tinted primary with a
- * trailing check. [count] drives the subtitle ("1 novel" / "N novels").
+ * to apply. [count] drives the subtitle ("1 novel" / "N novels"). When
+ * [showCurrent] is true, the row matching [currentCategoryId] (or the default
+ * category if it is null) is tinted primary with a trailing check.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoveToCategorySheet(
     categories: List<CategoryEntity>,
-    currentCategoryId: Long?,
     count: Int,
     onSelect: (Long?) -> Unit,
     onDismiss: () -> Unit,
+    currentCategoryId: Long? = null,
+    showCurrent: Boolean = false,
 ) {
     val sheetState = rememberModalBottomSheetState()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
@@ -46,9 +48,10 @@ fun MoveToCategorySheet(
             }
             categories.forEach { cat ->
                 val targetId = if (cat.isDefault) null else cat.id
-                val isCurrent =
+                val isCurrent = showCurrent && (
                     if (cat.isDefault) currentCategoryId == null
                     else currentCategoryId == cat.id
+                )
                 ListItem(
                     headlineContent = { Text(cat.name) },
                     leadingContent = {
