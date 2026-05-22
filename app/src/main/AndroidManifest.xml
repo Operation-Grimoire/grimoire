@@ -43,6 +43,11 @@
             android:exported="false" />
 
         <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+
+        <service
             android:name=".data.tts.TtsPlaybackService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="false">

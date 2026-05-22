@@ -1,12 +1,16 @@
 package io.grimoire.app.data.libraryupdate
 
+import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -18,6 +22,9 @@ import io.grimoire.app.data.preferences.LibraryUpdatePreferences
  * Runs a library refresh in the background. Used for both the periodic schedule
  * and one-off manual runs; the category to refresh is passed via [KEY_CATEGORY_ID]
  * ([ALL_LIBRARY] meaning the whole library).
+ *
+ * Runs as a foreground worker so the OS does not kill the process mid-run — which
+ * would otherwise make WorkManager restart the refresh from the first novel.
  */
 @HiltWorker
 class LibraryUpdateWorker @AssistedInject constructor(
@@ -27,16 +34,20 @@ class LibraryUpdateWorker @AssistedInject constructor(
     private val preferences: LibraryUpdatePreferences,
 ) : CoroutineWorker(applicationContext, params) {
 
+    override suspend fun getForegroundInfo(): ForegroundInfo =
+        foregroundInfo(buildProgressNotification("Starting…", total = 0, done = 0))
+
     override suspend fun doWork(): Result {
         val rawCategory = inputData.getLong(KEY_CATEGORY_ID, ALL_LIBRARY)
         val categoryId = rawCategory.takeIf { it != ALL_LIBRARY }
 
+        runCatching { setForeground(getForegroundInfo()) }
+
         val summary = runCatching {
             libraryUpdater.updateLibrary(categoryId) { done, total, title ->
-                showProgress(done, total, title)
+                updateProgress(done, total, title)
             }
         }.getOrElse { e ->
-            cancelProgress()
             preferences.lastRunAt.set(System.currentTimeMillis().toString())
             preferences.lastRunSuccess.set(false)
             preferences.lastRunMessage.set(
@@ -45,7 +56,6 @@ class LibraryUpdateWorker @AssistedInject constructor(
             return Result.retry()
         }
 
-        cancelProgress()
         preferences.lastRunAt.set(System.currentTimeMillis().toString())
         preferences.lastRunSuccess.set(true)
         preferences.lastRunMessage.set(summaryLine(summary))
@@ -75,23 +85,36 @@ class LibraryUpdateWorker @AssistedInject constructor(
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
-    private fun showProgress(done: Int, total: Int, title: String) {
+    private fun foregroundInfo(notification: Notification): ForegroundInfo =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(
+                PROGRESS_NOTIF_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+            )
+        } else {
+            ForegroundInfo(PROGRESS_NOTIF_ID, notification)
+        }
+
+    /** Updates the ongoing foreground notification by re-posting it under the same id. */
+    private fun updateProgress(done: Int, total: Int, title: String) {
         if (total <= 0 || done >= total) return
-        val notification = NotificationCompat.Builder(applicationContext, GrimoireApp.LIBRARY_UPDATE_CHANNEL_ID)
+        NotificationManagerCompat.from(applicationContext).notify(
+            PROGRESS_NOTIF_ID,
+            buildProgressNotification("${done + 1}/$total · $title", total, done),
+        )
+    }
+
+    private fun buildProgressNotification(text: String, total: Int, done: Int): Notification =
+        NotificationCompat.Builder(applicationContext, GrimoireApp.LIBRARY_UPDATE_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
             .setContentTitle("Updating library")
-            .setContentText("${done + 1}/$total · $title")
-            .setProgress(total, done, false)
+            .setContentText(text)
+            .setProgress(total.coerceAtLeast(1), done, total <= 0)
             .setContentIntent(tapIntent())
             .setOngoing(true)
             .setSilent(true)
             .build()
-        NotificationManagerCompat.from(applicationContext).notify(PROGRESS_NOTIF_ID, notification)
-    }
-
-    private fun cancelProgress() {
-        NotificationManagerCompat.from(applicationContext).cancel(PROGRESS_NOTIF_ID)
-    }
 
     private fun showCompletion(summary: UpdateSummary) {
         val notification = NotificationCompat.Builder(applicationContext, GrimoireApp.LIBRARY_UPDATE_CHANNEL_ID)
