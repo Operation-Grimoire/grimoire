@@ -4,6 +4,11 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -59,6 +64,7 @@ import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -104,6 +110,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import io.grimoire.app.ui.component.AppSearchField
+import io.grimoire.app.ui.component.TooltipIconButton
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -215,6 +222,7 @@ fun LibraryScreen(
     onNovelClick: (pkg: String, url: String) -> Unit,
     onBrowse: () -> Unit,
     modifier: Modifier = Modifier,
+    onSelectionActiveChange: (Boolean) -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val categories by viewModel.categories.collectAsState()
@@ -256,13 +264,15 @@ fun LibraryScreen(
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkMove by remember { mutableStateOf(false) }
     var showBulkRemoveConfirm by remember { mutableStateOf(false) }
-    var showBulkMenu by remember { mutableStateOf(false) }
     val toggleSelect: (Long) -> Unit = { id ->
         selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
     }
     val clearSelection = { selectedIds = emptySet() }
 
     BackHandler(enabled = selectionMode) { clearSelection() }
+
+    // Let the app nav hide while selecting so the selection bar can replace it.
+    LaunchedEffect(selectionMode) { onSelectionActiveChange(selectionMode) }
 
     val epubPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -334,8 +344,6 @@ fun LibraryScreen(
             }
     }
 
-    LaunchedEffect(pagerState.settledPage) { clearSelection() }
-
     val defaultCategory = categories.firstOrNull { it.isDefault }
 
     val novelsForTab: (Int) -> List<NovelEntity>? = { tabIndex ->
@@ -371,31 +379,15 @@ fun LibraryScreen(
                     count = selectedIds.size,
                     onClear = clearSelection,
                     onSelectAll = {
-                        val ids = displayedNovels?.map { it.id }?.toSet() ?: emptySet()
-                        selectedIds = if (selectedIds.containsAll(ids)) emptySet() else ids
-                    },
-                    menuExpanded = showBulkMenu,
-                    onMenuExpandedChange = { showBulkMenu = it },
-                    onMove = { showBulkMenu = false; showBulkMove = true },
-                    onMarkRead = {
-                        showBulkMenu = false
-                        viewModel.setNovelsRead(selectedIds, true)
-                        clearSelection()
-                    },
-                    onMarkUnread = {
-                        showBulkMenu = false
-                        viewModel.setNovelsRead(selectedIds, false)
-                        clearSelection()
-                    },
-                    onDownload = {
-                        showBulkMenu = false
-                        viewModel.downloadNovels(selectedIds)
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Queued downloads for ${selectedIds.size} novels")
+                        // Toggle just the current tab's novels within the
+                        // (possibly cross-category) selection.
+                        val ids = displayedNovels?.map { it.id }?.toSet().orEmpty()
+                        selectedIds = if (ids.isNotEmpty() && selectedIds.containsAll(ids)) {
+                            selectedIds - ids
+                        } else {
+                            selectedIds + ids
                         }
-                        clearSelection()
                     },
-                    onRemove = { showBulkMenu = false; showBulkRemoveConfirm = true },
                 )
             } else {
             TopAppBar(
@@ -511,6 +503,36 @@ fun LibraryScreen(
             )
             }
         },
+        bottomBar = {
+            AnimatedVisibility(
+                visible = selectionMode,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                LibrarySelectionBottomBar(
+                    onMove = { showBulkMove = true },
+                    onMarkRead = {
+                        viewModel.setNovelsRead(selectedIds, true)
+                        clearSelection()
+                    },
+                    onMarkUnread = {
+                        viewModel.setNovelsRead(selectedIds, false)
+                        clearSelection()
+                    },
+                    onDownload = {
+                        val count = selectedIds.size
+                        viewModel.downloadNovels(selectedIds)
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                "Queued downloads for $count novels"
+                            )
+                        }
+                        clearSelection()
+                    },
+                    onRemove = { showBulkRemoveConfirm = true },
+                )
+            }
+        },
     ) { padding ->
         Column(Modifier.padding(padding)) {
             if (tabs.size > 1) {
@@ -534,7 +556,6 @@ fun LibraryScreen(
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
-                userScrollEnabled = !selectionMode,
             ) { page ->
                 val pageNovels = remember(
                     novels, page, categories, showAllTab,
@@ -750,13 +771,6 @@ private fun SelectionTopBar(
     count: Int,
     onClear: () -> Unit,
     onSelectAll: () -> Unit,
-    menuExpanded: Boolean,
-    onMenuExpandedChange: (Boolean) -> Unit,
-    onMove: () -> Unit,
-    onMarkRead: () -> Unit,
-    onMarkUnread: () -> Unit,
-    onDownload: () -> Unit,
-    onRemove: () -> Unit,
 ) {
     TopAppBar(
         title = { Text("$count selected") },
@@ -769,58 +783,53 @@ private fun SelectionTopBar(
             IconButton(onClick = onSelectAll) {
                 Icon(Icons.Default.SelectAll, contentDescription = "Select all")
             }
-            IconButton(onClick = onDownload) {
-                Icon(Icons.Default.Download, contentDescription = "Download chapters")
-            }
-            Box {
-                IconButton(onClick = { onMenuExpandedChange(true) }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More actions")
-                }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { onMenuExpandedChange(false) },
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Move to category") },
-                        onClick = onMove,
-                        leadingIcon = { Icon(Icons.Default.DriveFileMove, null) },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Mark as read") },
-                        onClick = onMarkRead,
-                        leadingIcon = { Icon(Icons.Default.DoneAll, null) },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Mark as unread") },
-                        onClick = onMarkUnread,
-                        leadingIcon = { Icon(Icons.Default.RemoveDone, null) },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Download chapters") },
-                        onClick = onDownload,
-                        leadingIcon = { Icon(Icons.Default.Download, null) },
-                    )
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                "Remove from library",
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        },
-                        onClick = onRemove,
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Delete,
-                                null,
-                                tint = MaterialTheme.colorScheme.error,
-                            )
-                        },
-                    )
-                }
-            }
         },
     )
+}
+
+/** Contextual action bar shown at the bottom while novels are selected. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LibrarySelectionBottomBar(
+    onMove: () -> Unit,
+    onMarkRead: () -> Unit,
+    onMarkUnread: () -> Unit,
+    onDownload: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    BottomAppBar {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TooltipIconButton(
+                icon = Icons.Default.DriveFileMove,
+                label = "Move",
+                onClick = onMove,
+            )
+            TooltipIconButton(
+                icon = Icons.Default.DoneAll,
+                label = "Mark read",
+                onClick = onMarkRead,
+            )
+            TooltipIconButton(
+                icon = Icons.Default.RemoveDone,
+                label = "Mark unread",
+                onClick = onMarkUnread,
+            )
+            TooltipIconButton(
+                icon = Icons.Default.Download,
+                label = "Download",
+                onClick = onDownload,
+            )
+            TooltipIconButton(
+                icon = Icons.Default.Delete,
+                label = "Remove",
+                onClick = onRemove,
+                tint = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
 }
 
 @Composable
