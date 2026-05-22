@@ -1,11 +1,14 @@
 package io.grimoire.app.ui
 
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -24,7 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -142,6 +147,12 @@ fun AppNavigation(modifier: Modifier = Modifier) {
         backStack?.destination?.hierarchy?.any { it.route == dest.route } == true
     } && currentRoute !in routesWithoutBottomBar
 
+    // The Library hides the app nav while multi-selecting so its selection
+    // action bar can take that space.
+    var libraryInSelection by remember { mutableStateOf(false) }
+    val hideNavForSelection = libraryInSelection &&
+        currentRoute == TopLevelDestination.Library.route
+
     val moreVm: MoreViewModel = hiltViewModel()
     val activeDownloadCount by moreVm.activeDownloadCount.collectAsState()
     val updateCount by moreVm.updateCount.collectAsState()
@@ -152,6 +163,11 @@ fun AppNavigation(modifier: Modifier = Modifier) {
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
             if (isTopLevel) {
+                AnimatedVisibility(
+                    visible = !hideNavForSelection,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
+                ) {
                 NavigationBar {
                     TopLevelDestination.entries.forEach { dest ->
                         NavigationBarItem(
@@ -199,6 +215,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         )
                     }
                 }
+                }
             }
         },
     ) { padding ->
@@ -227,6 +244,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                             restoreState = true
                         }
                     },
+                    onSelectionActiveChange = { libraryInSelection = it },
                 )
             }
 
