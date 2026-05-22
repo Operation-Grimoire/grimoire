@@ -11,6 +11,9 @@ interface LibraryUpdateDao {
     @Query("SELECT * FROM library_updates ORDER BY foundAt DESC, id DESC")
     fun getAll(): Flow<List<LibraryUpdateEntity>>
 
+    @Query("SELECT COUNT(*) FROM library_updates")
+    fun count(): Flow<Int>
+
     @Insert
     suspend fun insertAll(entries: List<LibraryUpdateEntity>)
 

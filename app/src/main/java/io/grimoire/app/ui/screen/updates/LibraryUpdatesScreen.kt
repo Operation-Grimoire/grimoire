@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.updates
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,8 +15,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -45,7 +47,15 @@ import java.text.DateFormat
 import java.util.Calendar
 import java.util.Date
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+/** New chapters from one novel found in a single library refresh, identified by [key]. */
+private data class UpdateGroup(
+    val key: Pair<Long, Long>,
+    val entries: List<LibraryUpdateEntity>,
+) {
+    val first: LibraryUpdateEntity get() = entries.first()
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryUpdatesScreen(
     onNavigateBack: () -> Unit,
@@ -56,6 +66,7 @@ fun LibraryUpdatesScreen(
     val entries by viewModel.entries.collectAsState()
     var menuExpanded by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
+    var expandedGroups by remember { mutableStateOf(setOf<Pair<Long, Long>>()) }
 
     Scaffold(
         topBar = {
@@ -67,9 +78,6 @@ fun LibraryUpdatesScreen(
                 },
                 title = { Text("Updates") },
                 actions = {
-                    IconButton(onClick = viewModel::refreshNow) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Update library now")
-                    }
                     Box {
                         IconButton(onClick = { menuExpanded = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "More actions")
@@ -105,28 +113,75 @@ fun LibraryUpdatesScreen(
                 )
             }
         } else {
-            val grouped = remember(entries) { entries.groupBy { dayKey(it.foundAt) } }
+            // Each refresh inserts a novel's new chapters with the same timestamp,
+            // so (novelId, foundAt) groups one novel's findings from one sync.
+            val days = remember(entries) {
+                entries
+                    .groupBy { it.novelId to it.foundAt }
+                    .map { (key, list) -> UpdateGroup(key, list.sortedBy { it.chapterNumber }) }
+                    .groupBy { dayKey(it.first.foundAt) }
+            }
             LazyColumn(modifier = Modifier.padding(padding)) {
-                grouped.forEach { (_, dayEntries) ->
-                    item(key = "header-${dayEntries.first().id}") {
+                days.forEach { (_, dayGroups) ->
+                    item(key = "day-${dayKey(dayGroups.first().first.foundAt)}") {
                         Text(
-                            text = dayLabel(dayEntries.first().foundAt),
+                            text = dayLabel(dayGroups.first().first.foundAt),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         )
                     }
-                    items(dayEntries.size) { index ->
-                        val entry = dayEntries[index]
-                        UpdateRow(
-                            entry = entry,
-                            onClick = {
-                                onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
-                            },
-                            onLongClick = {
-                                onOpenNovel(entry.sourcePackage, entry.novelUrl)
-                            },
-                        )
+                    dayGroups.forEach { group ->
+                        if (group.entries.size == 1) {
+                            val entry = group.first
+                            item(key = "single-${entry.id}") {
+                                UpdateRow(
+                                    entry = entry,
+                                    onClick = {
+                                        onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
+                                    },
+                                    onLongClick = {
+                                        onOpenNovel(entry.sourcePackage, entry.novelUrl)
+                                    },
+                                )
+                            }
+                        } else {
+                            val collapsed = group.key !in expandedGroups
+                            item(key = "group-${group.first.id}") {
+                                UpdateGroupHeader(
+                                    group = group,
+                                    collapsed = collapsed,
+                                    onToggle = {
+                                        expandedGroups = if (collapsed) {
+                                            expandedGroups + group.key
+                                        } else {
+                                            expandedGroups - group.key
+                                        }
+                                    },
+                                    onLongClick = {
+                                        onOpenNovel(group.first.sourcePackage, group.first.novelUrl)
+                                    },
+                                )
+                            }
+                            if (!collapsed) {
+                                items(
+                                    count = group.entries.size,
+                                    key = { "chapter-${group.entries[it].id}" },
+                                ) { index ->
+                                    val entry = group.entries[index]
+                                    ChapterUpdateRow(
+                                        entry = entry,
+                                        onClick = {
+                                            onOpenReader(
+                                                entry.sourcePackage,
+                                                entry.novelUrl,
+                                                entry.chapterUrl,
+                                            )
+                                        },
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -166,13 +221,7 @@ private fun UpdateRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        AsyncImage(
-            model = entry.novelThumbnailUrl,
-            contentDescription = null,
-            modifier = Modifier
-                .size(width = 40.dp, height = 56.dp)
-                .clip(RoundedCornerShape(4.dp)),
-        )
+        NovelCover(entry.novelThumbnailUrl)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = entry.novelTitle,
@@ -194,6 +243,75 @@ private fun UpdateRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun UpdateGroupHeader(
+    group: UpdateGroup,
+    collapsed: Boolean,
+    onToggle: () -> Unit,
+    onLongClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onToggle, onLongClick = onLongClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        NovelCover(group.first.novelThumbnailUrl)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = group.first.novelTitle,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "${group.entries.size} new chapters",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = timeLabel(group.first.foundAt),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Icon(
+            imageVector = if (collapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+            contentDescription = if (collapsed) "Expand" else "Collapse",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun ChapterUpdateRow(entry: LibraryUpdateEntity, onClick: () -> Unit) {
+    Text(
+        text = entry.chapterName,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(start = 68.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+    )
+}
+
+@Composable
+private fun NovelCover(thumbnailUrl: String?) {
+    AsyncImage(
+        model = thumbnailUrl,
+        contentDescription = null,
+        modifier = Modifier
+            .size(width = 40.dp, height = 56.dp)
+            .clip(RoundedCornerShape(4.dp)),
+    )
 }
 
 private fun dayKey(timestamp: Long): Long {

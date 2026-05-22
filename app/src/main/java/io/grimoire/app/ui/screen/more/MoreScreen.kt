@@ -32,6 +32,7 @@ fun MoreScreen(
     onNavigateToSettings: () -> Unit,
 ) {
     val activeCount by viewModel.activeDownloadCount.collectAsState()
+    val updateCount by viewModel.updateCount.collectAsState()
     val issueCount by viewModel.updateIssueCount.collectAsState()
 
     Scaffold(
@@ -41,7 +42,15 @@ fun MoreScreen(
             item {
                 ListItem(
                     headlineContent = { Text("Updates") },
-                    supportingContent = { Text("New chapters found in your library") },
+                    supportingContent = {
+                        Text(
+                            if (updateCount > 0) {
+                                "$updateCount new chapter${if (updateCount == 1) "" else "s"}"
+                            } else {
+                                "New chapters found in your library"
+                            }
+                        )
+                    },
                     leadingContent = { Icon(Icons.Default.NewReleases, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToUpdates),
                 )
