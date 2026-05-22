@@ -15,6 +15,7 @@ import io.grimoire.api.source.WebViewLoginSource
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
+import io.grimoire.app.data.local.dao.UpdateIssueDao
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
@@ -55,6 +56,7 @@ class NovelDetailViewModel @Inject constructor(
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
     private val categoryDao: CategoryDao,
+    private val updateIssueDao: UpdateIssueDao,
     private val downloadManager: DownloadManager,
     private val epubImporter: EpubImporter,
     private val novelUpdatesRepository: NovelUpdatesInfoRepository,
@@ -392,6 +394,9 @@ class NovelDetailViewModel @Inject constructor(
                         downloadedContent = prev?.downloadedContent,
                     )
                 })
+                // A successful network fetch clears any stale library-update
+                // warning/failure recorded for this novel.
+                updateIssueDao.clearForNovel(cachedNovelId)
             }
         }.onFailure { e ->
             _chaptersError.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"

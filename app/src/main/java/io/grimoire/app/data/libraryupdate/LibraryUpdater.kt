@@ -18,6 +18,8 @@ import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.UpdateIssueEntity
 import io.grimoire.app.data.local.entity.UpdateIssueSeverity
 import io.grimoire.app.extension.ExtensionManager
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -98,7 +100,7 @@ class LibraryUpdater @Inject constructor(
         if (src is EpubSource) return NovelRefreshResult.Ok(0)
 
         val fetched = runCatching {
-            src.getNovelDetails(Novel(url = novel.url, title = ""))
+            withRetry { src.getNovelDetails(Novel(url = novel.url, title = "")) }
         }.getOrElse { e ->
             setIssue(novel, pkg, UpdateIssueSeverity.ERROR, describeError(e))
             return NovelRefreshResult.Failed
@@ -110,7 +112,7 @@ class LibraryUpdater @Inject constructor(
         novelDao.upsert(merged)
 
         val fetchedChapters = runCatching {
-            fetchAllChapters(src, fetched)
+            withRetry { fetchAllChapters(src, fetched) }
         }.getOrElse { e ->
             setIssue(novel, pkg, UpdateIssueSeverity.ERROR, describeError(e))
             return NovelRefreshResult.Failed
@@ -207,6 +209,26 @@ class LibraryUpdater @Inject constructor(
     private fun coverRegressed(old: NovelEntity, fetched: Novel): Boolean =
         !old.thumbnailUrl.isNullOrBlank() && fetched.thumbnailUrl.isNullOrBlank()
 
+    /**
+     * Runs [block], retrying on failure up to [MAX_ATTEMPTS] times total so a brief
+     * network drop does not fail an otherwise healthy novel. Cancellation is never
+     * retried.
+     */
+    private suspend fun <T> withRetry(block: suspend () -> T): T {
+        var lastError: Throwable? = null
+        repeat(MAX_ATTEMPTS) { attempt ->
+            try {
+                return block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                lastError = e
+                if (attempt < MAX_ATTEMPTS - 1) delay(RETRY_DELAY_MS * (attempt + 1))
+            }
+        }
+        throw lastError ?: IllegalStateException("Retry failed")
+    }
+
     private suspend fun fetchAllChapters(src: Source, novel: Novel): List<Chapter> {
         if (src !is PaginatedSource) return src.getChapterList(novel)
         val all = mutableListOf<Chapter>()
@@ -264,5 +286,11 @@ class LibraryUpdater @Inject constructor(
     private companion object {
         const val REGRESSION_MESSAGE =
             "Source returned incomplete data — kept the previous title/cover"
+
+        /** Total fetch attempts per network call (1 initial + 2 retries). */
+        const val MAX_ATTEMPTS = 3
+
+        /** Base back-off between retries; the wait grows with each attempt. */
+        const val RETRY_DELAY_MS = 2_000L
     }
 }
