@@ -39,6 +39,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -342,8 +343,6 @@ fun LibraryScreen(
                 )
             }
     }
-
-    val defaultCategory = categories.firstOrNull { it.isDefault }
 
     val novelsForTab: (Int) -> List<NovelEntity>? = { tabIndex ->
         computeTabNovels(
@@ -724,10 +723,10 @@ fun LibraryScreen(
     }
 
     if (showBulkMove) {
-        MoveToCategoryDialog(
+        MoveToCategorySheet(
             categories = categories,
-            defaultCategory = defaultCategory,
             currentCategoryId = null,
+            count = selectedIds.size,
             onSelect = { catId ->
                 viewModel.moveNovels(selectedIds, catId)
                 showBulkMove = false
@@ -1213,38 +1212,58 @@ private fun NovelRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MoveToCategoryDialog(
+private fun MoveToCategorySheet(
     categories: List<CategoryEntity>,
-    defaultCategory: CategoryEntity?,
     currentCategoryId: Long?,
+    count: Int,
     onSelect: (Long?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Move to category") },
-        text = {
-            Column {
-                categories.forEach { cat ->
-                    val targetId = if (cat.isDefault) null else cat.id
-                    val isSelected = if (cat.isDefault) currentCategoryId == null else currentCategoryId == cat.id
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSelect(targetId) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = isSelected, onClick = { onSelect(targetId) })
-                        Spacer(Modifier.width(8.dp))
-                        Text(cat.name)
-                    }
-                }
+    val sheetState = rememberModalBottomSheetState()
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                Text("Move to category", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    text = if (count == 1) "1 novel" else "$count novels",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+            categories.forEach { cat ->
+                val targetId = if (cat.isDefault) null else cat.id
+                val isCurrent =
+                    if (cat.isDefault) currentCategoryId == null
+                    else currentCategoryId == cat.id
+                ListItem(
+                    headlineContent = { Text(cat.name) },
+                    leadingContent = {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Label,
+                            contentDescription = null,
+                            tint = if (isCurrent) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    },
+                    trailingContent = if (isCurrent) {
+                        {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = "Current category",
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    } else null,
+                    modifier = Modifier.clickable { onSelect(targetId) },
+                )
+            }
+        }
+    }
 }
 
 @Composable
