@@ -54,7 +54,7 @@ class LibraryUpdater @Inject constructor(
      */
     suspend fun updateLibrary(
         categoryId: Long?,
-        onProgress: (done: Int, total: Int, title: String) -> Unit = { _, _, _ -> },
+        onProgress: suspend (done: Int, total: Int, title: String) -> Unit = { _, _, _ -> },
     ): UpdateSummary {
         val targets = resolveTargets(categoryId)
         var newChapters = 0

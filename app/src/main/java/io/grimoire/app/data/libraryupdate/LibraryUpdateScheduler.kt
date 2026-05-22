@@ -18,6 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -58,6 +59,23 @@ class LibraryUpdateScheduler @Inject constructor(
 
     fun cancel() {
         WorkManager.getInstance(context).cancelUniqueWork(LibraryUpdateWorker.UNIQUE_PERIODIC_NAME)
+    }
+
+    /** Cancels an in-progress refresh (manual or scheduled), keeping the periodic schedule. */
+    fun cancelRunning() {
+        scope.launch {
+            val wm = WorkManager.getInstance(context)
+            wm.cancelUniqueWork(LibraryUpdateWorker.ONE_OFF_NAME)
+            // Cancelling the periodic work also unschedules it, so re-apply the schedule.
+            wm.cancelUniqueWork(LibraryUpdateWorker.UNIQUE_PERIODIC_NAME)
+            applySchedule(
+                Schedule(
+                    preferences.frequency.changes().first(),
+                    preferences.onlyOnWifi.changes().first(),
+                    preferences.requiresCharging.changes().first(),
+                ),
+            )
+        }
     }
 
     private fun categoryData(categoryId: Long?): Data = Data.Builder()

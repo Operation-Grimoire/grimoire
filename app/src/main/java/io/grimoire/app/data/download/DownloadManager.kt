@@ -84,6 +84,11 @@ class DownloadManager @Inject constructor(
         scope.launch { chapterDao.cancelAllQueued(novelId) }
     }
 
+    /** Clears every queued chapter download; any in-flight downloads finish on their own. */
+    fun cancelAll() {
+        scope.launch { chapterDao.cancelAllQueuedDownloads() }
+    }
+
     fun moveToTopOfQueue(novelId: Long) {
         scope.launch { chapterDao.setQueueOrder(novelId, System.currentTimeMillis()) }
     }
