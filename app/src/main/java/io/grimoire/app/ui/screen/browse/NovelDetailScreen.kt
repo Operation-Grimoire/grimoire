@@ -2,6 +2,10 @@ package io.grimoire.app.ui.screen.browse
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -54,11 +58,14 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.VerticalAlignBottom
+import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -159,7 +166,6 @@ fun NovelDetailScreen(
 
     var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
     val selectionMode = selectedIds.isNotEmpty()
-    var selectionMenuExpanded by remember { mutableStateOf(false) }
     val clearSelection = { selectedIds = emptySet() }
     val toggleSelect: (Long) -> Unit = { id ->
         selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
@@ -382,63 +388,6 @@ fun NovelDetailScreen(
                         val ids = displayedChapters.map { it.id }.toSet()
                         selectedIds = if (selectedIds.containsAll(ids)) emptySet() else ids
                     },
-                    menuExpanded = selectionMenuExpanded,
-                    onMenuExpandedChange = { selectionMenuExpanded = it },
-                    onMarkRead = {
-                        selectionMenuExpanded = false
-                        viewModel.markChaptersRead(selectedIds.toList(), true)
-                        clearSelection()
-                    },
-                    onMarkUnread = {
-                        selectionMenuExpanded = false
-                        viewModel.markChaptersRead(selectedIds.toList(), false)
-                        clearSelection()
-                    },
-                    onDownload = {
-                        selectionMenuExpanded = false
-                        viewModel.downloadChapters(selectedChapters)
-                        clearSelection()
-                    },
-                    onDeleteDownloads = {
-                        selectionMenuExpanded = false
-                        viewModel.deleteDownloads(selectedChapters)
-                        clearSelection()
-                    },
-                    onCancelDownloads = {
-                        selectionMenuExpanded = false
-                        viewModel.cancelDownloads(selectedChapters)
-                        clearSelection()
-                    },
-                    showMarkRead = selectedChapters.any { !it.read },
-                    showMarkUnread = selectedChapters.any { it.read },
-                    showDownload = selectedChapters.any {
-                        !it.locked &&
-                            (it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
-                                it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
-                    },
-                    showDelete = selectedChapters.any {
-                        it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
-                    },
-                    showCancel = selectedChapters.any {
-                        it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
-                    },
-                    singleSelection = selectedIds.size == 1,
-                    onSelectAbove = {
-                        selectionMenuExpanded = false
-                        val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
-                        if (idx >= 0) {
-                            selectedIds = selectedIds +
-                                displayedChapters.subList(0, idx + 1).map { it.id }
-                        }
-                    },
-                    onSelectBelow = {
-                        selectionMenuExpanded = false
-                        val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
-                        if (idx >= 0) {
-                            selectedIds = selectedIds +
-                                displayedChapters.subList(idx, displayedChapters.size).map { it.id }
-                        }
-                    },
                 )
             } else {
             TopAppBar(
@@ -521,25 +470,85 @@ fun NovelDetailScreen(
             }
         },
         bottomBar = {
-            if (viewModel.isMigrationTarget && novelId > 0L && novelId != viewModel.migrateFromId) {
-                Surface(shadowElevation = 8.dp) {
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                migrateMatchCount = viewModel.migrationMatchCount()
-                                showMigrateConfirm = true
+            Column {
+                if (!selectionMode && viewModel.isMigrationTarget && novelId > 0L &&
+                    novelId != viewModel.migrateFromId
+                ) {
+                    Surface(shadowElevation = 8.dp) {
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    migrateMatchCount = viewModel.migrationMatchCount()
+                                    showMigrateConfirm = true
+                                }
+                            },
+                            enabled = migrationState != MigrationState.Running && chapters.isNotEmpty(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                        ) {
+                            Text(
+                                if (migrationState == MigrationState.Running) "Migrating…"
+                                else "Migrate here",
+                            )
+                        }
+                    }
+                }
+                AnimatedVisibility(
+                    visible = selectionMode,
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                ) {
+                    ChapterSelectionBottomBar(
+                        showMarkRead = selectedChapters.any { !it.read },
+                        showMarkUnread = selectedChapters.any { it.read },
+                        showDownload = selectedChapters.any {
+                            !it.locked &&
+                                (it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
+                                    it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
+                        },
+                        showDelete = selectedChapters.any {
+                            it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
+                        },
+                        showCancel = selectedChapters.any {
+                            it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
+                        },
+                        singleSelection = selectedIds.size == 1,
+                        onMarkRead = {
+                            viewModel.markChaptersRead(selectedIds.toList(), true)
+                            clearSelection()
+                        },
+                        onMarkUnread = {
+                            viewModel.markChaptersRead(selectedIds.toList(), false)
+                            clearSelection()
+                        },
+                        onDownload = {
+                            viewModel.downloadChapters(selectedChapters)
+                            clearSelection()
+                        },
+                        onDeleteDownloads = {
+                            viewModel.deleteDownloads(selectedChapters)
+                            clearSelection()
+                        },
+                        onCancelDownloads = {
+                            viewModel.cancelDownloads(selectedChapters)
+                            clearSelection()
+                        },
+                        onSelectAbove = {
+                            val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
+                            if (idx >= 0) {
+                                selectedIds = selectedIds +
+                                    displayedChapters.subList(0, idx + 1).map { it.id }
                             }
                         },
-                        enabled = migrationState != MigrationState.Running && chapters.isNotEmpty(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    ) {
-                        Text(
-                            if (migrationState == MigrationState.Running) "Migrating…"
-                            else "Migrate here",
-                        )
-                    }
+                        onSelectBelow = {
+                            val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
+                            if (idx >= 0) {
+                                selectedIds = selectedIds +
+                                    displayedChapters.subList(idx, displayedChapters.size).map { it.id }
+                            }
+                        },
+                    )
                 }
             }
         },
@@ -556,7 +565,9 @@ fun NovelDetailScreen(
             ) {
                 LazyColumn(
                     state = listState,
-                    contentPadding = PaddingValues(bottom = if (continueChapter != null) 88.dp else 0.dp),
+                    contentPadding = PaddingValues(
+                        bottom = if (continueChapter != null && !selectionMode) 88.dp else 0.dp,
+                    ),
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     // Novel header
@@ -1247,21 +1258,6 @@ private fun ChapterSelectionTopBar(
     count: Int,
     onClear: () -> Unit,
     onSelectAll: () -> Unit,
-    menuExpanded: Boolean,
-    onMenuExpandedChange: (Boolean) -> Unit,
-    onMarkRead: () -> Unit,
-    onMarkUnread: () -> Unit,
-    onDownload: () -> Unit,
-    onDeleteDownloads: () -> Unit,
-    onCancelDownloads: () -> Unit,
-    showMarkRead: Boolean,
-    showMarkUnread: Boolean,
-    showDownload: Boolean,
-    showDelete: Boolean,
-    showCancel: Boolean,
-    singleSelection: Boolean,
-    onSelectAbove: () -> Unit,
-    onSelectBelow: () -> Unit,
 ) {
     TopAppBar(
         title = { Text("$count selected") },
@@ -1274,69 +1270,69 @@ private fun ChapterSelectionTopBar(
             IconButton(onClick = onSelectAll) {
                 Icon(Icons.Default.SelectAll, contentDescription = "Select all")
             }
-            if (showDownload) {
-                IconButton(onClick = onDownload) {
-                    Icon(Icons.Default.Download, contentDescription = "Download chapters")
-                }
-            }
-            Box {
-                IconButton(onClick = { onMenuExpandedChange(true) }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More actions")
-                }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { onMenuExpandedChange(false) },
-                ) {
-                    if (showMarkRead) {
-                        DropdownMenuItem(
-                            text = { Text("Mark as read") },
-                            onClick = onMarkRead,
-                            leadingIcon = { Icon(Icons.Default.DoneAll, null) },
-                        )
-                    }
-                    if (showMarkUnread) {
-                        DropdownMenuItem(
-                            text = { Text("Mark as unread") },
-                            onClick = onMarkUnread,
-                            leadingIcon = { Icon(Icons.Default.RemoveDone, null) },
-                        )
-                    }
-                    if (showDownload) {
-                        DropdownMenuItem(
-                            text = { Text("Download") },
-                            onClick = onDownload,
-                            leadingIcon = { Icon(Icons.Default.Download, null) },
-                        )
-                    }
-                    if (showDelete) {
-                        DropdownMenuItem(
-                            text = { Text("Delete downloads") },
-                            onClick = onDeleteDownloads,
-                            leadingIcon = { Icon(Icons.Default.Delete, null) },
-                        )
-                    }
-                    if (showCancel) {
-                        DropdownMenuItem(
-                            text = { Text("Cancel queued downloads") },
-                            onClick = onCancelDownloads,
-                            leadingIcon = { Icon(Icons.Default.Close, null) },
-                        )
-                    }
-                    if (singleSelection) {
-                        HorizontalDivider()
-                        DropdownMenuItem(
-                            text = { Text("Select all above") },
-                            onClick = onSelectAbove,
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Select all below") },
-                            onClick = onSelectBelow,
-                        )
-                    }
-                }
-            }
         },
     )
+}
+
+/** Contextual action bar shown at the bottom while chapters are selected. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ChapterSelectionBottomBar(
+    showMarkRead: Boolean,
+    showMarkUnread: Boolean,
+    showDownload: Boolean,
+    showDelete: Boolean,
+    showCancel: Boolean,
+    singleSelection: Boolean,
+    onMarkRead: () -> Unit,
+    onMarkUnread: () -> Unit,
+    onDownload: () -> Unit,
+    onDeleteDownloads: () -> Unit,
+    onCancelDownloads: () -> Unit,
+    onSelectAbove: () -> Unit,
+    onSelectBelow: () -> Unit,
+) {
+    BottomAppBar {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (showMarkRead) {
+                IconButton(onClick = onMarkRead) {
+                    Icon(Icons.Default.DoneAll, contentDescription = "Mark as read")
+                }
+            }
+            if (showMarkUnread) {
+                IconButton(onClick = onMarkUnread) {
+                    Icon(Icons.Default.RemoveDone, contentDescription = "Mark as unread")
+                }
+            }
+            if (showDownload) {
+                IconButton(onClick = onDownload) {
+                    Icon(Icons.Default.Download, contentDescription = "Download")
+                }
+            }
+            if (showDelete) {
+                IconButton(onClick = onDeleteDownloads) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete downloads")
+                }
+            }
+            if (showCancel) {
+                IconButton(onClick = onCancelDownloads) {
+                    Icon(Icons.Default.Close, contentDescription = "Cancel queued downloads")
+                }
+            }
+            if (singleSelection) {
+                IconButton(onClick = onSelectAbove) {
+                    Icon(Icons.Default.VerticalAlignTop, contentDescription = "Select all above")
+                }
+                IconButton(onClick = onSelectBelow) {
+                    Icon(Icons.Default.VerticalAlignBottom, contentDescription = "Select all below")
+                }
+            }
+        }
+    }
 }
 
 // A null onClick renders a plain, non-interactive icon with the same footprint.
