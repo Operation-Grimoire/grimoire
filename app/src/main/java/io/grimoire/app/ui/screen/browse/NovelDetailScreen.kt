@@ -114,6 +114,7 @@ import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
+import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.component.rememberShimmerAlpha
 import io.grimoire.app.ui.theme.premiumGold
@@ -1299,37 +1300,51 @@ private fun ChapterSelectionBottomBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (showMarkRead) {
-                IconButton(onClick = onMarkRead) {
-                    Icon(Icons.Default.DoneAll, contentDescription = "Mark as read")
-                }
+                TooltipIconButton(
+                    icon = Icons.Default.DoneAll,
+                    label = "Mark read",
+                    onClick = onMarkRead,
+                )
             }
             if (showMarkUnread) {
-                IconButton(onClick = onMarkUnread) {
-                    Icon(Icons.Default.RemoveDone, contentDescription = "Mark as unread")
-                }
+                TooltipIconButton(
+                    icon = Icons.Default.RemoveDone,
+                    label = "Mark unread",
+                    onClick = onMarkUnread,
+                )
             }
             if (showDownload) {
-                IconButton(onClick = onDownload) {
-                    Icon(Icons.Default.Download, contentDescription = "Download")
-                }
+                TooltipIconButton(
+                    icon = Icons.Default.Download,
+                    label = "Download",
+                    onClick = onDownload,
+                )
             }
             if (showDelete) {
-                IconButton(onClick = onDeleteDownloads) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete downloads")
-                }
+                TooltipIconButton(
+                    icon = Icons.Default.Delete,
+                    label = "Delete",
+                    onClick = onDeleteDownloads,
+                )
             }
             if (showCancel) {
-                IconButton(onClick = onCancelDownloads) {
-                    Icon(Icons.Default.Close, contentDescription = "Cancel queued downloads")
-                }
+                TooltipIconButton(
+                    icon = Icons.Default.Close,
+                    label = "Cancel",
+                    onClick = onCancelDownloads,
+                )
             }
             if (singleSelection) {
-                IconButton(onClick = onSelectAbove) {
-                    Icon(Icons.Default.VerticalAlignTop, contentDescription = "Select all above")
-                }
-                IconButton(onClick = onSelectBelow) {
-                    Icon(Icons.Default.VerticalAlignBottom, contentDescription = "Select all below")
-                }
+                TooltipIconButton(
+                    icon = Icons.Default.VerticalAlignTop,
+                    label = "Select above",
+                    onClick = onSelectAbove,
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.VerticalAlignBottom,
+                    label = "Select below",
+                    onClick = onSelectBelow,
+                )
             }
         }
     }
