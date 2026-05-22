@@ -3,8 +3,8 @@ package io.grimoire.app.data.tts
 import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.NovelPage
 import io.grimoire.app.data.local.dao.ChapterDao
-import io.grimoire.app.data.local.entity.CHAPTER_PAGE_SEPARATOR
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.local.entity.decodeChapterContent
 import io.grimoire.app.extension.ExtensionManager
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -27,9 +27,8 @@ class TtsChapterLoader @Inject constructor(
     suspend fun loadPages(pkg: String, chapter: ChapterEntity): List<NovelPage> {
         val cached = chapter.downloadedContent
         if (cached != null) {
-            return cached.split(CHAPTER_PAGE_SEPARATOR)
-                .mapIndexed { index, text -> NovelPage(index, text) }
-                .filter { it.text.isNotBlank() }
+            // Image pages carry no prose; drop them so read-aloud only speaks text.
+            return decodeChapterContent(cached).filter { it.text.isNotBlank() }
         }
         val source = extensionManager.extensions.value
             .firstOrNull { it.info.packageName == pkg }
