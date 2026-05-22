@@ -1294,11 +1294,10 @@ private fun ChapterSelectionBottomBar(
     onSelectBelow: () -> Unit,
 ) {
     BottomAppBar {
-        // Holding an action widens it to fit its label; SpaceEvenly then
-        // reflows the row, pushing the other actions left and right.
+        // Holding an action grows its weight, so it gains room for the label
+        // while the others give way as the row reflows.
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (showMarkRead) {

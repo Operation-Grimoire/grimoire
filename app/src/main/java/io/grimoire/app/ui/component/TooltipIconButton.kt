@@ -4,8 +4,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -22,22 +22,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 /**
- * Icon button that reveals a short text [label] above the icon while pressed
- * and held: the button widens to fit the label and the icon slides down to
- * make room, reversing on release. In a row, widening pushes siblings aside.
- * A quick tap just invokes [onClick].
+ * Row action button that reveals a short text [label] above the icon while
+ * pressed and held: the icon slides down to make room and the button's row
+ * weight grows, so it gains space while siblings give way. A quick tap just
+ * invokes [onClick]. Must be placed inside a [RowScope] (e.g. an action bar).
  */
 @Composable
-fun TooltipIconButton(
+fun RowScope.TooltipIconButton(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
@@ -46,24 +46,9 @@ fun TooltipIconButton(
 ) {
     var pressed by remember { mutableStateOf(false) }
     val currentOnClick by rememberUpdatedState(onClick)
-
-    val collapsedWidth = 48.dp
-    val labelStyle = MaterialTheme.typography.labelSmall
-    val textMeasurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val expandedWidth = remember(label, labelStyle, density) {
-        val textWidthPx = textMeasurer.measure(
-            text = label,
-            style = labelStyle,
-            maxLines = 1,
-            softWrap = false,
-        ).size.width
-        (with(density) { textWidthPx.toDp() } + 20.dp).coerceAtLeast(collapsedWidth)
-    }
-
-    val width by animateDpAsState(
-        targetValue = if (pressed) expandedWidth else collapsedWidth,
-        label = "tooltipWidth",
+    val weight by animateFloatAsState(
+        targetValue = if (pressed) 2f else 1f,
+        label = "tooltipWeight",
     )
     val iconShift by animateDpAsState(
         targetValue = if (pressed) 8.dp else 0.dp,
@@ -76,7 +61,7 @@ fun TooltipIconButton(
 
     Box(
         modifier = modifier
-            .width(width)
+            .weight(weight)
             .height(56.dp)
             .semantics(mergeDescendants = true) {
                 role = Role.Button
@@ -96,10 +81,14 @@ fun TooltipIconButton(
     ) {
         Text(
             text = label,
-            style = labelStyle,
+            style = MaterialTheme.typography.labelSmall,
             color = tint,
             maxLines = 1,
             softWrap = false,
+            textAlign = TextAlign.Center,
+            // Visible overflow so the label is never clipped even if the
+            // grown button is still narrower than the text.
+            overflow = TextOverflow.Visible,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .graphicsLayer {
