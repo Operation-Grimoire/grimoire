@@ -15,6 +15,7 @@ import coil.memory.MemoryCache
 import dagger.hilt.android.HiltAndroidApp
 import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.cache.CoverPreloader
+import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.repo.ExtensionRepository
 import io.grimoire.api.network.NetworkContext
@@ -28,6 +29,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject lateinit var coverPreloader: CoverPreloader
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var backupScheduler: BackupScheduler
+    @Inject lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
     @Inject lateinit var extensionRepository: ExtensionRepository
 
     override val workManagerConfiguration: Configuration
@@ -88,6 +90,13 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         ).apply { description = "Background app update downloads" }
         getSystemService(NotificationManager::class.java).createNotificationChannel(appUpdateChannel)
 
+        val libraryUpdateChannel = NotificationChannel(
+            LIBRARY_UPDATE_CHANNEL_ID,
+            "Library updates",
+            NotificationManager.IMPORTANCE_LOW,
+        ).apply { description = "Background library refresh progress and results" }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(libraryUpdateChannel)
+
         val ttsChannel = NotificationChannel(
             TTS_CHANNEL_ID,
             "Text-to-speech",
@@ -96,6 +105,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         getSystemService(NotificationManager::class.java).createNotificationChannel(ttsChannel)
 
         backupScheduler.applyPreferredSchedule()
+        libraryUpdateScheduler.applyPreferredSchedule()
     }
 
     companion object {
@@ -103,5 +113,6 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         const val BACKUP_CHANNEL_ID = "backups"
         const val APP_UPDATE_CHANNEL_ID = "app_updates"
         const val TTS_CHANNEL_ID = "tts"
+        const val LIBRARY_UPDATE_CHANNEL_ID = "library_updates"
     }
 }

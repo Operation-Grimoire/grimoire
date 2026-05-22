@@ -240,6 +240,7 @@ fun LibraryScreen(
     val categoriesLoaded by viewModel.categoriesLoaded.collectAsState()
 
     var showManage by remember { mutableStateOf(false) }
+    var libraryMenuExpanded by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var showUnlock by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
@@ -470,6 +471,40 @@ fun LibraryScreen(
                         }
                         IconButton(onClick = { showManage = true }) {
                             Icon(Icons.Default.Edit, contentDescription = "Manage categories")
+                        }
+                        Box {
+                            IconButton(onClick = { libraryMenuExpanded = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                            }
+                            val currentCategoryId = tabCategoryIds.getOrNull(currentTab)
+                                ?: ALL_TAB_CATEGORY_ID
+                            DropdownMenu(
+                                expanded = libraryMenuExpanded,
+                                onDismissRequest = { libraryMenuExpanded = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Update library") },
+                                    onClick = {
+                                        libraryMenuExpanded = false
+                                        viewModel.updateLibrary()
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Library update queued")
+                                        }
+                                    },
+                                )
+                                if (currentCategoryId != ALL_TAB_CATEGORY_ID) {
+                                    DropdownMenuItem(
+                                        text = { Text("Update \"${tabs.getOrElse(currentTab) { "" }}\"") },
+                                        onClick = {
+                                            libraryMenuExpanded = false
+                                            viewModel.updateCategory(currentCategoryId)
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("Category update queued")
+                                            }
+                                        },
+                                    )
+                                }
+                            }
                         }
                     }
                 },
