@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.app.BuildConfig
 import io.grimoire.app.data.preferences.UpdateChannel
 import io.grimoire.app.ui.update.AppUpdateViewModel
 import io.grimoire.app.ui.update.CheckState
@@ -79,7 +80,9 @@ fun AboutSettingsScreen(
             item {
                 ListItem(
                     headlineContent = { Text("Version") },
-                    supportingContent = { Text(version ?: "–") },
+                    supportingContent = {
+                        Text("${version ?: "–"}  ·  Extensions API ${BuildConfig.EXTENSIONS_API_VERSION}")
+                    },
                     trailingContent = {
                         when (checkState) {
                             is CheckState.Idle -> TextButton(onClick = updateViewModel::checkForUpdates) {
