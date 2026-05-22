@@ -60,7 +60,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -90,10 +89,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.model.Novel
@@ -165,6 +166,7 @@ fun NovelDetailScreen(
         selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
     }
     BackHandler(enabled = selectionMode) { clearSelection() }
+    val selectedChapters = chapters.filter { it.id in selectedIds }
 
     val hasUploadDates by remember(chapters) {
         derivedStateOf { chapters.any { it.uploadDate > 0L } }
@@ -395,22 +397,31 @@ fun NovelDetailScreen(
                     },
                     onDownload = {
                         selectionMenuExpanded = false
-                        viewModel.downloadChapters(chapters.filter { it.id in selectedIds })
+                        viewModel.downloadChapters(selectedChapters)
                         clearSelection()
                     },
                     onDeleteDownloads = {
                         selectionMenuExpanded = false
-                        viewModel.deleteDownloads(chapters.filter { it.id in selectedIds })
+                        viewModel.deleteDownloads(selectedChapters)
                         clearSelection()
                     },
                     onCancelDownloads = {
                         selectionMenuExpanded = false
-                        viewModel.cancelDownloads(chapters.filter { it.id in selectedIds })
+                        viewModel.cancelDownloads(selectedChapters)
                         clearSelection()
                     },
-                    showCancel = chapters.any {
-                        it.id in selectedIds &&
-                            it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
+                    showMarkRead = selectedChapters.any { !it.read },
+                    showMarkUnread = selectedChapters.any { it.read },
+                    showDownload = selectedChapters.any {
+                        !it.locked &&
+                            (it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
+                                it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
+                    },
+                    showDelete = selectedChapters.any {
+                        it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
+                    },
+                    showCancel = selectedChapters.any {
+                        it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
                     },
                     singleSelection = selectedIds.size == 1,
                     onSelectAbove = {
@@ -1172,58 +1183,56 @@ private fun ChapterItem(
                 )
             }
         } else null,
-        trailingContent = if (selectionMode) {
-            {
-                Checkbox(checked = selected, onCheckedChange = { onToggleSelection() })
-            }
-        } else if (chapter.locked) {
-            {
-                IconButton(onClick = onLockedClick) {
-                    Icon(
-                        Icons.Default.Lock,
-                        contentDescription = "Locked",
-                        tint = MaterialTheme.colorScheme.premiumGold,
+        trailingContent = {
+            // Non-interactive in selection mode so a row tap toggles selection.
+            when {
+                chapter.locked -> ChapterTrailingIcon(
+                    icon = Icons.Default.Lock,
+                    description = "Locked",
+                    tint = MaterialTheme.colorScheme.premiumGold,
+                    onClick = if (selectionMode) null else onLockedClick,
+                )
+                dlStatus == ChapterDownloadStatus.NONE -> ChapterTrailingIcon(
+                    icon = Icons.Default.Download,
+                    description = "Download",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    onClick = if (selectionMode) null else onDownload,
+                )
+                dlStatus == ChapterDownloadStatus.QUEUED -> ChapterTrailingIcon(
+                    icon = Icons.Default.Close,
+                    description = "Cancel download",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    onClick = if (selectionMode) null else onCancelDownload,
+                )
+                dlStatus == ChapterDownloadStatus.DOWNLOADING ->
+                    Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                        LinearProgressIndicator(modifier = Modifier.width(24.dp))
+                    }
+                dlStatus == ChapterDownloadStatus.DOWNLOADED -> ChapterTrailingIcon(
+                    icon = Icons.Default.DownloadDone,
+                    description = "Delete download",
+                    tint = MaterialTheme.colorScheme.primary,
+                    onClick = if (selectionMode) null else onDeleteDownload,
+                )
+                else -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    ChapterTrailingIcon(
+                        icon = Icons.Default.Close,
+                        description = "Cancel",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        onClick = if (selectionMode) null else onDeleteDownload,
+                        buttonSize = 40.dp,
+                        iconSize = 20.dp,
+                    )
+                    ChapterTrailingIcon(
+                        icon = Icons.Default.Refresh,
+                        description = "Retry",
+                        tint = MaterialTheme.colorScheme.error,
+                        onClick = if (selectionMode) null else onDownload,
+                        buttonSize = 40.dp,
+                        iconSize = 20.dp,
                     )
                 }
             }
-        } else when (dlStatus) {
-            ChapterDownloadStatus.NONE -> ({
-                IconButton(onClick = onDownload) {
-                    Icon(Icons.Default.Download, contentDescription = "Download",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            })
-            ChapterDownloadStatus.QUEUED -> ({
-                IconButton(onClick = onCancelDownload) {
-                    Icon(Icons.Default.Close, contentDescription = "Cancel download",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            })
-            ChapterDownloadStatus.DOWNLOADING -> ({
-                Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                    LinearProgressIndicator(modifier = Modifier.width(24.dp))
-                }
-            })
-            ChapterDownloadStatus.DOWNLOADED -> ({
-                IconButton(onClick = onDeleteDownload) {
-                    Icon(Icons.Default.DownloadDone, contentDescription = "Delete download",
-                        tint = MaterialTheme.colorScheme.primary)
-                }
-            })
-            ChapterDownloadStatus.ERROR -> ({
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onDeleteDownload, modifier = Modifier.size(40.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel",
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    IconButton(onClick = onDownload, modifier = Modifier.size(40.dp)) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Retry",
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.error)
-                    }
-                }
-            })
         },
         modifier = modifier.combinedClickable(
             onClick = when {
@@ -1249,6 +1258,10 @@ private fun ChapterSelectionTopBar(
     onDownload: () -> Unit,
     onDeleteDownloads: () -> Unit,
     onCancelDownloads: () -> Unit,
+    showMarkRead: Boolean,
+    showMarkUnread: Boolean,
+    showDownload: Boolean,
+    showDelete: Boolean,
     showCancel: Boolean,
     singleSelection: Boolean,
     onSelectAbove: () -> Unit,
@@ -1265,8 +1278,10 @@ private fun ChapterSelectionTopBar(
             IconButton(onClick = onSelectAll) {
                 Icon(Icons.Default.SelectAll, contentDescription = "Select all")
             }
-            IconButton(onClick = onDownload) {
-                Icon(Icons.Default.Download, contentDescription = "Download chapters")
+            if (showDownload) {
+                IconButton(onClick = onDownload) {
+                    Icon(Icons.Default.Download, contentDescription = "Download chapters")
+                }
             }
             Box {
                 IconButton(onClick = { onMenuExpandedChange(true) }) {
@@ -1276,26 +1291,34 @@ private fun ChapterSelectionTopBar(
                     expanded = menuExpanded,
                     onDismissRequest = { onMenuExpandedChange(false) },
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Mark as read") },
-                        onClick = onMarkRead,
-                        leadingIcon = { Icon(Icons.Default.DoneAll, null) },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Mark as unread") },
-                        onClick = onMarkUnread,
-                        leadingIcon = { Icon(Icons.Default.RemoveDone, null) },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Download") },
-                        onClick = onDownload,
-                        leadingIcon = { Icon(Icons.Default.Download, null) },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Delete downloads") },
-                        onClick = onDeleteDownloads,
-                        leadingIcon = { Icon(Icons.Default.Delete, null) },
-                    )
+                    if (showMarkRead) {
+                        DropdownMenuItem(
+                            text = { Text("Mark as read") },
+                            onClick = onMarkRead,
+                            leadingIcon = { Icon(Icons.Default.DoneAll, null) },
+                        )
+                    }
+                    if (showMarkUnread) {
+                        DropdownMenuItem(
+                            text = { Text("Mark as unread") },
+                            onClick = onMarkUnread,
+                            leadingIcon = { Icon(Icons.Default.RemoveDone, null) },
+                        )
+                    }
+                    if (showDownload) {
+                        DropdownMenuItem(
+                            text = { Text("Download") },
+                            onClick = onDownload,
+                            leadingIcon = { Icon(Icons.Default.Download, null) },
+                        )
+                    }
+                    if (showDelete) {
+                        DropdownMenuItem(
+                            text = { Text("Delete downloads") },
+                            onClick = onDeleteDownloads,
+                            leadingIcon = { Icon(Icons.Default.Delete, null) },
+                        )
+                    }
                     if (showCancel) {
                         DropdownMenuItem(
                             text = { Text("Cancel queued downloads") },
@@ -1318,6 +1341,29 @@ private fun ChapterSelectionTopBar(
             }
         },
     )
+}
+
+// A null onClick renders a plain, non-interactive icon with the same footprint.
+@Composable
+private fun ChapterTrailingIcon(
+    icon: ImageVector,
+    description: String,
+    tint: Color,
+    onClick: (() -> Unit)?,
+    buttonSize: Dp = 48.dp,
+    iconSize: Dp = 24.dp,
+) {
+    if (onClick != null) {
+        IconButton(onClick = onClick, modifier = Modifier.size(buttonSize)) {
+            Icon(icon, contentDescription = description, tint = tint,
+                modifier = Modifier.size(iconSize))
+        }
+    } else {
+        Box(Modifier.size(buttonSize), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = description, tint = tint,
+                modifier = Modifier.size(iconSize))
+        }
+    }
 }
 
 private val NovelStatus.displayName: String
