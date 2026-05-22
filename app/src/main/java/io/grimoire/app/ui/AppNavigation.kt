@@ -62,6 +62,7 @@ import io.grimoire.app.ui.screen.settings.about.AboutSettingsScreen
 import io.grimoire.app.ui.screen.settings.appearance.AppearanceSettingsScreen
 import io.grimoire.app.ui.screen.settings.backup.BackupSettingsScreen
 import io.grimoire.app.ui.screen.settings.libraryupdate.LibraryUpdateSettingsScreen
+import io.grimoire.app.ui.screen.tasks.TasksScreen
 import io.grimoire.app.ui.screen.updates.LibraryUpdatesScreen
 import io.grimoire.app.ui.screen.updates.UpdateIssuesScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseLanguagesScreen
@@ -109,6 +110,7 @@ private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}&migrateFrom={m
 private const val ROUTE_MIGRATE = "migrate?novelId={novelId}"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_STATISTICS = "statistics"
+private const val ROUTE_TASKS = "tasks"
 private const val ROUTE_UPDATES = "updates"
 private const val ROUTE_UPDATE_ISSUES = "update_issues"
 private const val ROUTE_SETTINGS_ROOT = "settings"
@@ -329,6 +331,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
             composable(route = TopLevelDestination.More.route) {
                 MoreScreen(
+                    onNavigateToTasks = { navController.navigate(ROUTE_TASKS) },
                     onNavigateToUpdates = { navController.navigate(ROUTE_UPDATES) },
                     onNavigateToWarnings = { navController.navigate(ROUTE_UPDATE_ISSUES) },
                     onNavigateToDownloads = { navController.navigate(ROUTE_DOWNLOADS) },
@@ -344,6 +347,10 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
             composable(route = ROUTE_STATISTICS) {
                 StatisticsScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(route = ROUTE_TASKS) {
+                TasksScreen(onNavigateBack = { navController.popBackStack() })
             }
 
             composable(route = ROUTE_UPDATES) {

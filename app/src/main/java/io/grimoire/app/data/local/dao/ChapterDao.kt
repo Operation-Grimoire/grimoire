@@ -149,6 +149,9 @@ interface ChapterDao {
     @Query("UPDATE chapters SET downloadStatus = 0 WHERE novelId = :novelId AND downloadStatus = 1")
     suspend fun cancelAllQueued(novelId: Long)
 
+    @Query("UPDATE chapters SET downloadStatus = 0 WHERE downloadStatus = 1")
+    suspend fun cancelAllQueuedDownloads()
+
     @Query("UPDATE chapters SET downloadStatus = 0, downloadedContent = NULL WHERE novelId = :novelId AND downloadStatus = 3")
     suspend fun deleteAllDownloads(novelId: Long)
 

@@ -12,6 +12,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.grimoire.app.GrimoireApp
@@ -45,6 +46,9 @@ class LibraryUpdateWorker @AssistedInject constructor(
 
         val summary = runCatching {
             libraryUpdater.updateLibrary(categoryId) { done, total, title ->
+                setProgress(
+                    workDataOf(KEY_DONE to done, KEY_TOTAL to total, KEY_TITLE to title),
+                )
                 updateProgress(done, total, title)
             }
         }.getOrElse { e ->
@@ -132,6 +136,11 @@ class LibraryUpdateWorker @AssistedInject constructor(
         const val UNIQUE_PERIODIC_NAME = "grimoire-library-update"
         const val ONE_OFF_NAME = "grimoire-library-update-oneoff"
         const val KEY_CATEGORY_ID = "category_id"
+
+        /** Progress keys published via setProgress and read by the Tasks screen. */
+        const val KEY_DONE = "done"
+        const val KEY_TOTAL = "total"
+        const val KEY_TITLE = "title"
 
         /** [KEY_CATEGORY_ID] value meaning "refresh every favorited novel". */
         const val ALL_LIBRARY = Long.MIN_VALUE

@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.PendingActions
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun MoreScreen(
     viewModel: MoreViewModel = hiltViewModel(),
+    onNavigateToTasks: () -> Unit,
     onNavigateToUpdates: () -> Unit,
     onNavigateToWarnings: () -> Unit,
     onNavigateToDownloads: () -> Unit,
@@ -43,6 +45,17 @@ fun MoreScreen(
         topBar = { TopAppBar(title = { Text("More") }) },
     ) { padding ->
         androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.padding(padding)) {
+            item {
+                ListItem(
+                    headlineContent = { Text("Tasks") },
+                    supportingContent = { Text("Running downloads and library syncs") },
+                    leadingContent = {
+                        Icon(Icons.Default.PendingActions, contentDescription = null)
+                    },
+                    modifier = Modifier.clickable(onClick = onNavigateToTasks),
+                )
+                HorizontalDivider()
+            }
             item {
                 ListItem(
                     headlineContent = { Text("Updates") },
