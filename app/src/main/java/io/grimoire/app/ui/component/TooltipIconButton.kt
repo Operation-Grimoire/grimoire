@@ -4,7 +4,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -21,17 +22,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 
 /**
  * Icon button that reveals a short text [label] above the icon while pressed
- * and held: the icon slides down to make room, then everything slides back on
- * release. A quick tap just invokes [onClick]. [onHoldChange] reports when the
- * hold begins and ends so a container can coordinate (e.g. move siblings away).
+ * and held: the button widens to fit the label and the icon slides down to
+ * make room, reversing on release. In a row, widening pushes siblings aside.
+ * A quick tap just invokes [onClick].
  */
 @Composable
 fun TooltipIconButton(
@@ -40,11 +43,28 @@ fun TooltipIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current,
-    onHoldChange: (Boolean) -> Unit = {},
 ) {
     var pressed by remember { mutableStateOf(false) }
     val currentOnClick by rememberUpdatedState(onClick)
-    val currentOnHoldChange by rememberUpdatedState(onHoldChange)
+
+    val collapsedWidth = 48.dp
+    val labelStyle = MaterialTheme.typography.labelSmall
+    val textMeasurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val expandedWidth = remember(label, labelStyle, density) {
+        val textWidthPx = textMeasurer.measure(
+            text = label,
+            style = labelStyle,
+            maxLines = 1,
+            softWrap = false,
+        ).size.width
+        (with(density) { textWidthPx.toDp() } + 20.dp).coerceAtLeast(collapsedWidth)
+    }
+
+    val width by animateDpAsState(
+        targetValue = if (pressed) expandedWidth else collapsedWidth,
+        label = "tooltipWidth",
+    )
     val iconShift by animateDpAsState(
         targetValue = if (pressed) 8.dp else 0.dp,
         label = "tooltipIconShift",
@@ -56,7 +76,8 @@ fun TooltipIconButton(
 
     Box(
         modifier = modifier
-            .size(56.dp)
+            .width(width)
+            .height(56.dp)
             .semantics(mergeDescendants = true) {
                 role = Role.Button
                 onClick { currentOnClick(); true }
@@ -64,16 +85,10 @@ fun TooltipIconButton(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { currentOnClick() },
-                    onLongPress = {
-                        pressed = true
-                        currentOnHoldChange(true)
-                    },
+                    onLongPress = { pressed = true },
                     onPress = {
                         tryAwaitRelease()
-                        if (pressed) {
-                            pressed = false
-                            currentOnHoldChange(false)
-                        }
+                        pressed = false
                     },
                 )
             },
@@ -81,7 +96,7 @@ fun TooltipIconButton(
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall,
+            style = labelStyle,
             color = tint,
             maxLines = 1,
             softWrap = false,
