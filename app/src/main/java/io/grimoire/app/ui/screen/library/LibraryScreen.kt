@@ -1052,16 +1052,6 @@ private fun NovelCard(
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
                     )
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = "Selected",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(4.dp)
-                            .background(Color.White, RoundedCornerShape(50))
-                            .size(22.dp),
-                    )
                 }
                 if (stats != null && stats.total > 0) {
                     val percent = stats.readPercent()
@@ -1208,15 +1198,7 @@ private fun NovelRow(
                                 .matchParentSize()
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Default.CheckCircle,
-                                contentDescription = "Selected",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
+                        )
                     }
                 }
             },
