@@ -424,10 +424,6 @@ class NovelDetailViewModel @Inject constructor(
         return all
     }
 
-    fun markChapterRead(chapter: ChapterEntity, read: Boolean) = viewModelScope.launch {
-        chapterDao.setRead(chapter.id, read)
-    }
-
     fun markAllRead(read: Boolean) {
         if (cachedNovelId <= 0L) return
         viewModelScope.launch { chapterDao.markAllRead(cachedNovelId, read) }
@@ -453,6 +449,11 @@ class NovelDetailViewModel @Inject constructor(
     fun cancelDownload(chapter: ChapterEntity) = downloadManager.cancel(chapter)
     fun cancelAllDownloads() { if (cachedNovelId > 0L) downloadManager.cancelAll(cachedNovelId) }
     fun deleteDownload(chapter: ChapterEntity) = downloadManager.deleteDownload(chapter)
+
+    fun downloadChapters(chapters: List<ChapterEntity>) =
+        downloadManager.enqueue(chapters.filter { !it.locked })
+    fun deleteDownloads(chapters: List<ChapterEntity>) = downloadManager.deleteDownloads(chapters)
+    fun cancelDownloads(chapters: List<ChapterEntity>) = downloadManager.cancelDownloads(chapters)
 
     /** Downloads and imports the whole-book EPUB for an [EpubSource]. */
     fun downloadBook() {

@@ -80,6 +80,17 @@ class DownloadManager @Inject constructor(
         }
     }
 
+    fun cancelDownloads(chapters: List<ChapterEntity>) {
+        scope.launch {
+            val ids = chapters
+                .filter { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }
+                .map { it.id }
+            ids.chunked(999).forEach { chunk ->
+                chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.NONE.ordinal)
+            }
+        }
+    }
+
     fun cancelAll(novelId: Long) {
         scope.launch { chapterDao.cancelAllQueued(novelId) }
     }
@@ -104,6 +115,15 @@ class DownloadManager @Inject constructor(
         scope.launch {
             chapterDao.deleteDownload(chapter.id)
             chapterImageStore.deleteChapter(chapter.novelId, chapter.url)
+        }
+    }
+
+    fun deleteDownloads(chapters: List<ChapterEntity>) {
+        scope.launch {
+            chapters.forEach { chapter ->
+                chapterDao.deleteDownload(chapter.id)
+                chapterImageStore.deleteChapter(chapter.novelId, chapter.url)
+            }
         }
     }
 
