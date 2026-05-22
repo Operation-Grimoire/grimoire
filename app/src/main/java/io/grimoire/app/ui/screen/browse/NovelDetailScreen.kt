@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -35,13 +36,17 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.HelpOutline
@@ -55,6 +60,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -63,6 +69,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -149,6 +156,15 @@ fun NovelDetailScreen(
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var showJumpDialog by remember { mutableStateOf(false) }
+
+    var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
+    val selectionMode = selectedIds.isNotEmpty()
+    var selectionMenuExpanded by remember { mutableStateOf(false) }
+    val clearSelection = { selectedIds = emptySet() }
+    val toggleSelect: (Long) -> Unit = { id ->
+        selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
+    }
+    BackHandler(enabled = selectionMode) { clearSelection() }
 
     val hasUploadDates by remember(chapters) {
         derivedStateOf { chapters.any { it.uploadDate > 0L } }
@@ -345,7 +361,7 @@ fun NovelDetailScreen(
     Scaffold(
         modifier = modifier,
         floatingActionButton = {
-            if (continueChapter != null && !viewModel.isMigrationTarget) {
+            if (continueChapter != null && !viewModel.isMigrationTarget && !selectionMode) {
                 ExtendedFloatingActionButton(
                     onClick = {
                         onChapterClick(viewModel.pkg, novel.url, continueChapter!!.url)
@@ -357,6 +373,64 @@ fun NovelDetailScreen(
             }
         },
         topBar = {
+            if (selectionMode) {
+                ChapterSelectionTopBar(
+                    count = selectedIds.size,
+                    onClear = clearSelection,
+                    onSelectAll = {
+                        val ids = displayedChapters.map { it.id }.toSet()
+                        selectedIds = if (selectedIds.containsAll(ids)) emptySet() else ids
+                    },
+                    menuExpanded = selectionMenuExpanded,
+                    onMenuExpandedChange = { selectionMenuExpanded = it },
+                    onMarkRead = {
+                        selectionMenuExpanded = false
+                        viewModel.markChaptersRead(selectedIds.toList(), true)
+                        clearSelection()
+                    },
+                    onMarkUnread = {
+                        selectionMenuExpanded = false
+                        viewModel.markChaptersRead(selectedIds.toList(), false)
+                        clearSelection()
+                    },
+                    onDownload = {
+                        selectionMenuExpanded = false
+                        viewModel.downloadChapters(chapters.filter { it.id in selectedIds })
+                        clearSelection()
+                    },
+                    onDeleteDownloads = {
+                        selectionMenuExpanded = false
+                        viewModel.deleteDownloads(chapters.filter { it.id in selectedIds })
+                        clearSelection()
+                    },
+                    onCancelDownloads = {
+                        selectionMenuExpanded = false
+                        viewModel.cancelDownloads(chapters.filter { it.id in selectedIds })
+                        clearSelection()
+                    },
+                    showCancel = chapters.any {
+                        it.id in selectedIds &&
+                            it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
+                    },
+                    singleSelection = selectedIds.size == 1,
+                    onSelectAbove = {
+                        selectionMenuExpanded = false
+                        val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
+                        if (idx >= 0) {
+                            selectedIds = selectedIds +
+                                displayedChapters.subList(0, idx + 1).map { it.id }
+                        }
+                    },
+                    onSelectBelow = {
+                        selectionMenuExpanded = false
+                        val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
+                        if (idx >= 0) {
+                            selectedIds = selectedIds +
+                                displayedChapters.subList(idx, displayedChapters.size).map { it.id }
+                        }
+                    },
+                )
+            } else {
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -400,6 +474,7 @@ fun NovelDetailScreen(
                     }
                 },
             )
+            }
         },
         bottomBar = {
             if (viewModel.isMigrationTarget && novelId > 0L && novelId != viewModel.migrateFromId) {
@@ -804,21 +879,11 @@ fun NovelDetailScreen(
                         items(displayedChapters, key = { it.url }) { chapter ->
                             ChapterItem(
                                 chapter = chapter,
+                                selected = chapter.id in selectedIds,
+                                selectionMode = selectionMode,
                                 onClick = { onChapterClick(viewModel.pkg, novel.url, chapter.url) },
                                 onLockedClick = { lockedDialogChapter = chapter },
-                                onMarkRead = { read -> viewModel.markChapterRead(chapter, read) },
-                                onMarkAllBefore = {
-                                    val idx = displayedChapters.indexOf(chapter)
-                                    if (idx > 0) viewModel.markChaptersRead(
-                                        displayedChapters.subList(0, idx).map { it.id }, true
-                                    )
-                                },
-                                onMarkAllAfter = {
-                                    val idx = displayedChapters.indexOf(chapter)
-                                    if (idx < displayedChapters.size - 1) viewModel.markChaptersRead(
-                                        displayedChapters.subList(idx + 1, displayedChapters.size).map { it.id }, true
-                                    )
-                                },
+                                onToggleSelection = { toggleSelect(chapter.id) },
                                 onDownload = { viewModel.downloadChapter(chapter) },
                                 onCancelDownload = { viewModel.cancelDownload(chapter) },
                                 onDeleteDownload = { viewModel.deleteDownload(chapter) },
@@ -1058,17 +1123,16 @@ private fun RatingLabel(
 @Composable
 private fun ChapterItem(
     chapter: ChapterEntity,
+    selected: Boolean,
+    selectionMode: Boolean,
     onClick: () -> Unit,
     onLockedClick: () -> Unit,
-    onMarkRead: (Boolean) -> Unit,
-    onMarkAllBefore: () -> Unit,
-    onMarkAllAfter: () -> Unit,
+    onToggleSelection: () -> Unit,
     onDownload: () -> Unit,
     onCancelDownload: () -> Unit,
     onDeleteDownload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
     // Read chapters dim to signal "done"; locked chapters instead use a gold
     // accent to signal "premium", so the two states stay visually distinct.
     val contentAlpha = if (chapter.read && !chapter.locked) 0.38f else 1f
@@ -1082,114 +1146,178 @@ private fun ChapterItem(
     val subText = listOfNotNull(dateText, progressText).joinToString(" · ").takeIf { it.isNotEmpty() }
     val dlStatus = ChapterDownloadStatus.entries.getOrElse(chapter.downloadStatus) { ChapterDownloadStatus.NONE }
 
-    Box {
-        ListItem(
-            headlineContent = {
+    ListItem(
+        colors = if (selected) {
+            ListItemDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+            )
+        } else {
+            ListItemDefaults.colors()
+        },
+        headlineContent = {
+            Text(
+                chapter.name,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = headlineColor,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
+        supportingContent = if (subText != null) {
+            {
                 Text(
-                    chapter.name,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = headlineColor,
-                    style = MaterialTheme.typography.bodyMedium,
+                    subText,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
+                    style = MaterialTheme.typography.bodySmall,
                 )
-            },
-            supportingContent = if (subText != null) {
-                {
-                    Text(
-                        subText,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
-                        style = MaterialTheme.typography.bodySmall,
+            }
+        } else null,
+        trailingContent = if (selectionMode) {
+            {
+                Checkbox(checked = selected, onCheckedChange = { onToggleSelection() })
+            }
+        } else if (chapter.locked) {
+            {
+                IconButton(onClick = onLockedClick) {
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = "Locked",
+                        tint = MaterialTheme.colorScheme.premiumGold,
                     )
                 }
-            } else null,
-            trailingContent = if (chapter.locked) {
-                {
-                    IconButton(onClick = onLockedClick) {
-                        Icon(
-                            Icons.Default.Lock,
-                            contentDescription = "Locked",
-                            tint = MaterialTheme.colorScheme.premiumGold,
+            }
+        } else when (dlStatus) {
+            ChapterDownloadStatus.NONE -> ({
+                IconButton(onClick = onDownload) {
+                    Icon(Icons.Default.Download, contentDescription = "Download",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            })
+            ChapterDownloadStatus.QUEUED -> ({
+                IconButton(onClick = onCancelDownload) {
+                    Icon(Icons.Default.Close, contentDescription = "Cancel download",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            })
+            ChapterDownloadStatus.DOWNLOADING -> ({
+                Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                    LinearProgressIndicator(modifier = Modifier.width(24.dp))
+                }
+            })
+            ChapterDownloadStatus.DOWNLOADED -> ({
+                IconButton(onClick = onDeleteDownload) {
+                    Icon(Icons.Default.DownloadDone, contentDescription = "Delete download",
+                        tint = MaterialTheme.colorScheme.primary)
+                }
+            })
+            ChapterDownloadStatus.ERROR -> ({
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onDeleteDownload, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    IconButton(onClick = onDownload, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Retry",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.error)
+                    }
+                }
+            })
+        },
+        modifier = modifier.combinedClickable(
+            onClick = when {
+                selectionMode -> onToggleSelection
+                chapter.locked -> onLockedClick
+                else -> onClick
+            },
+            onLongClick = onToggleSelection,
+        ),
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ChapterSelectionTopBar(
+    count: Int,
+    onClear: () -> Unit,
+    onSelectAll: () -> Unit,
+    menuExpanded: Boolean,
+    onMenuExpandedChange: (Boolean) -> Unit,
+    onMarkRead: () -> Unit,
+    onMarkUnread: () -> Unit,
+    onDownload: () -> Unit,
+    onDeleteDownloads: () -> Unit,
+    onCancelDownloads: () -> Unit,
+    showCancel: Boolean,
+    singleSelection: Boolean,
+    onSelectAbove: () -> Unit,
+    onSelectBelow: () -> Unit,
+) {
+    TopAppBar(
+        title = { Text("$count selected") },
+        navigationIcon = {
+            IconButton(onClick = onClear) {
+                Icon(Icons.Default.Close, contentDescription = "Clear selection")
+            }
+        },
+        actions = {
+            IconButton(onClick = onSelectAll) {
+                Icon(Icons.Default.SelectAll, contentDescription = "Select all")
+            }
+            IconButton(onClick = onDownload) {
+                Icon(Icons.Default.Download, contentDescription = "Download chapters")
+            }
+            Box {
+                IconButton(onClick = { onMenuExpandedChange(true) }) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { onMenuExpandedChange(false) },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Mark as read") },
+                        onClick = onMarkRead,
+                        leadingIcon = { Icon(Icons.Default.DoneAll, null) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Mark as unread") },
+                        onClick = onMarkUnread,
+                        leadingIcon = { Icon(Icons.Default.RemoveDone, null) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Download") },
+                        onClick = onDownload,
+                        leadingIcon = { Icon(Icons.Default.Download, null) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete downloads") },
+                        onClick = onDeleteDownloads,
+                        leadingIcon = { Icon(Icons.Default.Delete, null) },
+                    )
+                    if (showCancel) {
+                        DropdownMenuItem(
+                            text = { Text("Cancel queued downloads") },
+                            onClick = onCancelDownloads,
+                            leadingIcon = { Icon(Icons.Default.Close, null) },
+                        )
+                    }
+                    if (singleSelection) {
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text("Select all above") },
+                            onClick = onSelectAbove,
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Select all below") },
+                            onClick = onSelectBelow,
                         )
                     }
                 }
-            } else when (dlStatus) {
-                ChapterDownloadStatus.NONE -> ({
-                    IconButton(onClick = onDownload) {
-                        Icon(Icons.Default.Download, contentDescription = "Download",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                })
-                ChapterDownloadStatus.QUEUED -> ({
-                    IconButton(onClick = onCancelDownload) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel download",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                })
-                ChapterDownloadStatus.DOWNLOADING -> ({
-                    Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                        LinearProgressIndicator(modifier = Modifier.width(24.dp))
-                    }
-                })
-                ChapterDownloadStatus.DOWNLOADED -> ({
-                    IconButton(onClick = onDeleteDownload) {
-                        Icon(Icons.Default.DownloadDone, contentDescription = "Delete download",
-                            tint = MaterialTheme.colorScheme.primary)
-                    }
-                })
-                ChapterDownloadStatus.ERROR -> ({
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onDeleteDownload, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.Default.Close, contentDescription = "Cancel",
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        IconButton(onClick = onDownload, modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Retry",
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                })
-            },
-            modifier = modifier.combinedClickable(
-                onClick = if (chapter.locked) onLockedClick else onClick,
-                onLongClick = { menuExpanded = true },
-            ),
-        )
-        DropdownMenu(
-            expanded = menuExpanded,
-            onDismissRequest = { menuExpanded = false },
-        ) {
-            DropdownMenuItem(
-                text = { Text(if (chapter.read) "Mark as unread" else "Mark as read") },
-                onClick = { onMarkRead(!chapter.read); menuExpanded = false },
-            )
-            DropdownMenuItem(
-                text = { Text("Mark all before as read") },
-                onClick = { onMarkAllBefore(); menuExpanded = false },
-            )
-            DropdownMenuItem(
-                text = { Text("Mark all after as read") },
-                onClick = { onMarkAllAfter(); menuExpanded = false },
-            )
-            if (!chapter.locked) when (dlStatus) {
-                ChapterDownloadStatus.NONE, ChapterDownloadStatus.ERROR -> DropdownMenuItem(
-                    text = { Text("Download") },
-                    onClick = { onDownload(); menuExpanded = false },
-                    leadingIcon = { Icon(Icons.Default.Download, null) },
-                )
-                ChapterDownloadStatus.QUEUED -> DropdownMenuItem(
-                    text = { Text("Cancel download") },
-                    onClick = { onCancelDownload(); menuExpanded = false },
-                )
-                ChapterDownloadStatus.DOWNLOADED -> DropdownMenuItem(
-                    text = { Text("Delete download") },
-                    onClick = { onDeleteDownload(); menuExpanded = false },
-                )
-                ChapterDownloadStatus.DOWNLOADING -> {}
             }
-        }
-    }
+        },
+    )
 }
 
 private val NovelStatus.displayName: String
