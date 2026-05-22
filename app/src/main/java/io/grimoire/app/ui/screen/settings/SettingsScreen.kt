@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +37,7 @@ fun SettingsScreen(
     onNavigateToLanguages: () -> Unit,
     onNavigateToReader: () -> Unit,
     onNavigateToTts: () -> Unit,
+    onNavigateToLibraryUpdates: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToNovelUpdates: () -> Unit,
     onNavigateToAbout: () -> Unit,
@@ -101,6 +103,14 @@ fun SettingsScreen(
                     title = "Text-to-speech",
                     subtitle = "Engine, voices, speech rate",
                     onClick = onNavigateToTts,
+                )
+            }
+            item {
+                SettingsNavItem(
+                    icon = Icons.Default.Sync,
+                    title = "Library updates",
+                    subtitle = "Scheduled refresh of your library",
+                    onClick = onNavigateToLibraryUpdates,
                 )
             }
             item {

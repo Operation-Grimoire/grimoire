@@ -9,6 +9,7 @@ import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.epub.StagedEpub
 import io.grimoire.app.data.download.DownloadManager
+import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -41,6 +42,7 @@ class LibraryViewModel @Inject constructor(
     private val authManager: HiddenCategoriesAuthManager,
     private val epubImporter: EpubImporter,
     private val downloadManager: DownloadManager,
+    private val libraryUpdateScheduler: LibraryUpdateScheduler,
 ) : ViewModel() {
 
     // True while the picked file is being read/parsed for the preview.
@@ -237,6 +239,12 @@ class LibraryViewModel @Inject constructor(
     fun setCategoryHidden(category: CategoryEntity, hidden: Boolean) = viewModelScope.launch {
         categoryDao.upsert(category.copy(isHidden = hidden))
     }
+
+    /** Queues a background refresh of every favorited novel in the library. */
+    fun updateLibrary() = libraryUpdateScheduler.triggerOneOff(null)
+
+    /** Queues a background refresh of the favorited novels in [categoryId]. */
+    fun updateCategory(categoryId: Long) = libraryUpdateScheduler.triggerOneOff(categoryId)
 
     fun lock() {
         authManager.lock()

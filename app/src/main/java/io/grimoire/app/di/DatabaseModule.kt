@@ -12,9 +12,50 @@ import dagger.hilt.components.SingletonComponent
 import io.grimoire.app.data.local.AppDatabase
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
+import io.grimoire.app.data.local.dao.LibraryUpdateDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.RepoDao
+import io.grimoire.app.data.local.dao.UpdateIssueDao
 import javax.inject.Singleton
+
+private val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS library_updates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                novelId INTEGER NOT NULL,
+                sourcePackage TEXT NOT NULL,
+                novelUrl TEXT NOT NULL,
+                novelTitle TEXT NOT NULL,
+                novelThumbnailUrl TEXT,
+                chapterUrl TEXT NOT NULL,
+                chapterName TEXT NOT NULL,
+                chapterNumber REAL NOT NULL DEFAULT -1,
+                foundAt INTEGER NOT NULL,
+                FOREIGN KEY(novelId) REFERENCES novels(id) ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_library_updates_novelId ON library_updates (novelId)")
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS update_issues (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                novelId INTEGER NOT NULL,
+                sourcePackage TEXT NOT NULL,
+                novelUrl TEXT NOT NULL,
+                novelTitle TEXT NOT NULL,
+                severity INTEGER NOT NULL,
+                message TEXT NOT NULL,
+                occurredAt INTEGER NOT NULL,
+                FOREIGN KEY(novelId) REFERENCES novels(id) ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_update_issues_novelId ON update_issues (novelId)")
+    }
+}
 
 private val MIGRATION_13_14 = object : Migration(13, 14) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -131,11 +172,13 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "grimoire.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
             .build()
 
     @Provides fun provideNovelDao(db: AppDatabase): NovelDao = db.novelDao()
     @Provides fun provideChapterDao(db: AppDatabase): ChapterDao = db.chapterDao()
     @Provides fun provideRepoDao(db: AppDatabase): RepoDao = db.repoDao()
     @Provides fun provideCategoryDao(db: AppDatabase): CategoryDao = db.categoryDao()
+    @Provides fun provideLibraryUpdateDao(db: AppDatabase): LibraryUpdateDao = db.libraryUpdateDao()
+    @Provides fun provideUpdateIssueDao(db: AppDatabase): UpdateIssueDao = db.updateIssueDao()
 }

@@ -60,6 +60,9 @@ import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.about.AboutSettingsScreen
 import io.grimoire.app.ui.screen.settings.appearance.AppearanceSettingsScreen
 import io.grimoire.app.ui.screen.settings.backup.BackupSettingsScreen
+import io.grimoire.app.ui.screen.settings.libraryupdate.LibraryUpdateSettingsScreen
+import io.grimoire.app.ui.screen.updates.LibraryUpdatesScreen
+import io.grimoire.app.ui.screen.updates.UpdateIssuesScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseLanguagesScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseSettingsScreen
 import io.grimoire.app.ui.screen.settings.hidden.HiddenCategoriesSettingsScreen
@@ -103,7 +106,10 @@ private const val ROUTE_NOVEL_DETAIL = "novel?pkg={pkg}&url={url}&migrateFrom={m
 private const val ROUTE_MIGRATE = "migrate?novelId={novelId}"
 private const val ROUTE_DOWNLOADS = "downloads"
 private const val ROUTE_STATISTICS = "statistics"
+private const val ROUTE_UPDATES = "updates"
+private const val ROUTE_UPDATE_ISSUES = "update_issues"
 private const val ROUTE_SETTINGS_ROOT = "settings"
+private const val ROUTE_SETTINGS_LIBRARY_UPDATE = "settings/library_updates"
 private const val ROUTE_SETTINGS_APPEARANCE = "settings/appearance"
 private const val ROUTE_SETTINGS_LIBRARY = "settings/library"
 private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
@@ -314,6 +320,8 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
             composable(route = TopLevelDestination.More.route) {
                 MoreScreen(
+                    onNavigateToUpdates = { navController.navigate(ROUTE_UPDATES) },
+                    onNavigateToWarnings = { navController.navigate(ROUTE_UPDATE_ISSUES) },
                     onNavigateToDownloads = { navController.navigate(ROUTE_DOWNLOADS) },
                     onNavigateToStatistics = { navController.navigate(ROUTE_STATISTICS) },
                     onNavigateToSettings = { navController.navigate(ROUTE_SETTINGS_ROOT) },
@@ -326,6 +334,33 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
             composable(route = ROUTE_STATISTICS) {
                 StatisticsScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(route = ROUTE_UPDATES) {
+                LibraryUpdatesScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenReader = { pkg, novelUrl, chapterUrl ->
+                        navController.navigate(
+                            "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}"
+                        )
+                    },
+                    onOpenNovel = { pkg, novelUrl ->
+                        navController.navigate(
+                            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novelUrl)}"
+                        )
+                    },
+                )
+            }
+
+            composable(route = ROUTE_UPDATE_ISSUES) {
+                UpdateIssuesScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenNovel = { pkg, novelUrl ->
+                        navController.navigate(
+                            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novelUrl)}"
+                        )
+                    },
+                )
             }
 
             navigation(
@@ -343,6 +378,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         onNavigateToLanguages = { navController.navigate(ROUTE_SETTINGS_LANGUAGES) },
                         onNavigateToReader = { navController.navigate(ROUTE_SETTINGS_READER) },
                         onNavigateToTts = { navController.navigate(ROUTE_SETTINGS_TTS) },
+                        onNavigateToLibraryUpdates = { navController.navigate(ROUTE_SETTINGS_LIBRARY_UPDATE) },
                         onNavigateToBackup = { navController.navigate(ROUTE_SETTINGS_BACKUP) },
                         onNavigateToNovelUpdates = { navController.navigate(ROUTE_SETTINGS_NOVELUPDATES) },
                         onNavigateToAbout = { navController.navigate(ROUTE_SETTINGS_ABOUT) },
@@ -425,6 +461,10 @@ fun AppNavigation(modifier: Modifier = Modifier) {
 
                 composable(route = ROUTE_SETTINGS_BACKUP) {
                     BackupSettingsScreen(onNavigateBack = { navController.popBackStack() })
+                }
+
+                composable(route = ROUTE_SETTINGS_LIBRARY_UPDATE) {
+                    LibraryUpdateSettingsScreen(onNavigateBack = { navController.popBackStack() })
                 }
             }
 

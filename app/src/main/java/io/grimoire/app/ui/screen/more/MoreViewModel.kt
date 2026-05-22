@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.dao.ChapterDao
+import io.grimoire.app.data.local.dao.UpdateIssueDao
 import io.grimoire.app.extension.repo.ExtensionRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +16,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MoreViewModel @Inject constructor(
     chapterDao: ChapterDao,
+    updateIssueDao: UpdateIssueDao,
     extensionRepository: ExtensionRepository,
 ) : ViewModel() {
 
@@ -25,6 +27,10 @@ class MoreViewModel @Inject constructor(
                     it.downloadStatus == ChapterDownloadStatus.DOWNLOADING.ordinal
             }
         }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    /** Novels with an unresolved refresh problem — drives the warnings badge. */
+    val updateIssueCount: StateFlow<Int> = updateIssueDao.count()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     /** Installed extensions with an update available — drives the Browse tab badge. */
