@@ -124,12 +124,15 @@ class ElevenLabsApi @Inject constructor() {
         val detail = runCatching {
             json.decodeFromString(ErrorResponse.serializer(), body).detail?.message
         }.getOrNull()
+        // ElevenLabs' own message is the most accurate — it covers quota limits,
+        // free-tier "unusual activity" blocks and voice restrictions — so surface
+        // it directly rather than guessing from the HTTP status code.
+        if (!detail.isNullOrBlank()) return "ElevenLabs: $detail"
         return when (code) {
-            401 -> "ElevenLabs: invalid API key"
-            402 -> "ElevenLabs: this voice needs a paid plan — pick a Default voice " +
-                "in Text-to-speech settings, or upgrade your ElevenLabs plan."
+            401 -> "ElevenLabs: invalid API key, or free-tier API access is disabled"
+            402, 403 -> "ElevenLabs: your plan does not allow this — see Text-to-speech settings"
             429 -> "ElevenLabs: rate limit or character quota exceeded"
-            else -> "ElevenLabs error ($code): ${detail ?: "request failed"}"
+            else -> "ElevenLabs request failed ($code)"
         }
     }
 
