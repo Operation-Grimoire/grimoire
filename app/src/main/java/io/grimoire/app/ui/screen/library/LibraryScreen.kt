@@ -39,7 +39,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -110,6 +109,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import io.grimoire.app.ui.component.AppSearchField
+import io.grimoire.app.ui.component.MoveToCategorySheet
 import io.grimoire.app.ui.component.TooltipIconButton
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -1209,60 +1209,6 @@ private fun NovelRow(
             },
             modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick),
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MoveToCategorySheet(
-    categories: List<CategoryEntity>,
-    currentCategoryId: Long?,
-    count: Int,
-    onSelect: (Long?) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val sheetState = rememberModalBottomSheetState()
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                Text("Move to category", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    text = if (count == 1) "1 novel" else "$count novels",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            categories.forEach { cat ->
-                val targetId = if (cat.isDefault) null else cat.id
-                val isCurrent =
-                    if (cat.isDefault) currentCategoryId == null
-                    else currentCategoryId == cat.id
-                ListItem(
-                    headlineContent = { Text(cat.name) },
-                    leadingContent = {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Label,
-                            contentDescription = null,
-                            tint = if (isCurrent) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
-                    },
-                    trailingContent = if (isCurrent) {
-                        {
-                            Icon(
-                                Icons.Default.Check,
-                                contentDescription = "Current category",
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    } else null,
-                    modifier = Modifier.clickable { onSelect(targetId) },
-                )
-            }
-        }
     }
 }
 
