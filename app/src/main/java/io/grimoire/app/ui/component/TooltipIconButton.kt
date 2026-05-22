@@ -30,7 +30,8 @@ import androidx.compose.ui.unit.dp
 /**
  * Icon button that reveals a short text [label] above the icon while pressed
  * and held: the icon slides down to make room, then everything slides back on
- * release. A quick tap just invokes [onClick].
+ * release. A quick tap just invokes [onClick]. [onHoldChange] reports when the
+ * hold begins and ends so a container can coordinate (e.g. move siblings away).
  */
 @Composable
 fun TooltipIconButton(
@@ -39,9 +40,11 @@ fun TooltipIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current,
+    onHoldChange: (Boolean) -> Unit = {},
 ) {
     var pressed by remember { mutableStateOf(false) }
     val currentOnClick by rememberUpdatedState(onClick)
+    val currentOnHoldChange by rememberUpdatedState(onHoldChange)
     val iconShift by animateDpAsState(
         targetValue = if (pressed) 8.dp else 0.dp,
         label = "tooltipIconShift",
@@ -61,10 +64,16 @@ fun TooltipIconButton(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { currentOnClick() },
-                    onLongPress = { pressed = true },
+                    onLongPress = {
+                        pressed = true
+                        currentOnHoldChange(true)
+                    },
                     onPress = {
                         tryAwaitRelease()
-                        pressed = false
+                        if (pressed) {
+                            pressed = false
+                            currentOnHoldChange(false)
+                        }
                     },
                 )
             },
