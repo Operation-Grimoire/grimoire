@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,6 +35,7 @@ fun SettingsScreen(
     onNavigateToBrowse: () -> Unit,
     onNavigateToLanguages: () -> Unit,
     onNavigateToReader: () -> Unit,
+    onNavigateToTts: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToNovelUpdates: () -> Unit,
     onNavigateToAbout: () -> Unit,
@@ -91,6 +93,14 @@ fun SettingsScreen(
                     title = "Reader",
                     subtitle = "Font size, reading direction",
                     onClick = onNavigateToReader,
+                )
+            }
+            item {
+                SettingsNavItem(
+                    icon = Icons.Default.RecordVoiceOver,
+                    title = "Text-to-speech",
+                    subtitle = "Engine, voices, speech rate",
+                    onClick = onNavigateToTts,
                 )
             }
             item {

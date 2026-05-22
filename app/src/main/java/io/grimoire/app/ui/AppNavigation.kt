@@ -69,6 +69,8 @@ import io.grimoire.app.ui.screen.settings.novelupdates.NovelUpdatesSettingsScree
 import io.grimoire.app.ui.screen.settings.reader.ReaderSettingsScreen
 import io.grimoire.app.ui.screen.settings.source.SourceLanguagesScreen
 import io.grimoire.app.ui.screen.settings.source.SourceSettingsScreen
+import io.grimoire.app.ui.screen.settings.tts.TtsSettingsScreen
+import io.grimoire.app.ui.screen.settings.tts.TtsVoicePickerScreen
 
 private enum class TopLevelDestination(
     val route: String,
@@ -108,6 +110,8 @@ private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
 private const val ROUTE_SETTINGS_LANGUAGES = "settings/languages"
 private const val ROUTE_SETTINGS_CONTENT_LANGUAGES = "settings/languages/content"
 private const val ROUTE_SETTINGS_READER = "settings/reader"
+private const val ROUTE_SETTINGS_TTS = "settings/tts"
+private const val ROUTE_SETTINGS_TTS_VOICE = "settings/tts/voice?lang={lang}"
 private const val ROUTE_SETTINGS_ABOUT = "settings/about"
 private const val ROUTE_SETTINGS_BACKUP = "settings/backup"
 private const val ROUTE_SETTINGS_HIDDEN = "settings/hidden_categories"
@@ -330,6 +334,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                         onNavigateToBrowse = { navController.navigate(ROUTE_SETTINGS_BROWSE) },
                         onNavigateToLanguages = { navController.navigate(ROUTE_SETTINGS_LANGUAGES) },
                         onNavigateToReader = { navController.navigate(ROUTE_SETTINGS_READER) },
+                        onNavigateToTts = { navController.navigate(ROUTE_SETTINGS_TTS) },
                         onNavigateToBackup = { navController.navigate(ROUTE_SETTINGS_BACKUP) },
                         onNavigateToNovelUpdates = { navController.navigate(ROUTE_SETTINGS_NOVELUPDATES) },
                         onNavigateToAbout = { navController.navigate(ROUTE_SETTINGS_ABOUT) },
@@ -382,6 +387,22 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                     val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
                     val vm: SettingsViewModel = hiltViewModel(graphEntry)
                     ReaderSettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
+                }
+
+                composable(route = ROUTE_SETTINGS_TTS) {
+                    TtsSettingsScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToVoice = { lang ->
+                            navController.navigate("settings/tts/voice?lang=${Uri.encode(lang)}")
+                        },
+                    )
+                }
+
+                composable(
+                    route = ROUTE_SETTINGS_TTS_VOICE,
+                    arguments = listOf(navArgument("lang") { type = NavType.StringType }),
+                ) {
+                    TtsVoicePickerScreen(onNavigateBack = { navController.popBackStack() })
                 }
 
                 composable(route = ROUTE_SETTINGS_NOVELUPDATES) { entry ->

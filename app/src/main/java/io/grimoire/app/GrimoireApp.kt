@@ -85,6 +85,13 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         ).apply { description = "Background app update downloads" }
         getSystemService(NotificationManager::class.java).createNotificationChannel(appUpdateChannel)
 
+        val ttsChannel = NotificationChannel(
+            TTS_CHANNEL_ID,
+            "Text-to-speech",
+            NotificationManager.IMPORTANCE_LOW,
+        ).apply { description = "Read-aloud playback controls" }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(ttsChannel)
+
         backupScheduler.applyPreferredSchedule()
     }
 
@@ -92,5 +99,6 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         const val DOWNLOAD_CHANNEL_ID = "downloads"
         const val BACKUP_CHANNEL_ID = "backups"
         const val APP_UPDATE_CHANNEL_ID = "app_updates"
+        const val TTS_CHANNEL_ID = "tts"
     }
 }
