@@ -41,6 +41,22 @@ data class TtsVoice(
     val notInstalled: Boolean = false,
 )
 
+/** ElevenLabs character-quota usage for the current billing period. */
+data class ElevenLabsUsage(
+    val characterCount: Int,
+    val characterLimit: Int,
+    val nextResetUnixMs: Long?,
+    val tier: String?,
+) {
+    /** Fraction of the quota used, clamped to 0..1. */
+    val fraction: Float
+        get() = if (characterLimit > 0) {
+            (characterCount.toFloat() / characterLimit).coerceIn(0f, 1f)
+        } else {
+            0f
+        }
+}
+
 /** Everything an engine needs to start speaking; irrelevant fields are ignored per engine. */
 data class TtsEngineConfig(
     val voiceId: String?,

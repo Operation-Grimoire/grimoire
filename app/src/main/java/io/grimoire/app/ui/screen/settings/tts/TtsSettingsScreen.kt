@@ -11,10 +11,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -29,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -53,6 +56,11 @@ fun TtsSettingsScreen(
     val languages by viewModel.languages.collectAsState()
     val deviceVoices by viewModel.deviceVoiceMap.collectAsState()
     val cloudVoices by viewModel.cloudVoiceMap.collectAsState()
+    val usageState by viewModel.usageState.collectAsState()
+
+    LaunchedEffect(engine) {
+        if (engine == TtsEngineType.ELEVENLABS) viewModel.loadUsage()
+    }
 
     Scaffold(
         modifier = modifier,
@@ -119,6 +127,9 @@ fun TtsSettingsScreen(
                             .padding(horizontal = 16.dp, vertical = 4.dp),
                     )
                 }
+                item {
+                    ElevenLabsUsageCard(state = usageState, onRefresh = viewModel::loadUsage)
+                }
             }
 
             item { SettingsSectionHeader("Playback") }
@@ -182,6 +193,67 @@ fun TtsSettingsScreen(
                     },
                     modifier = Modifier.clickable { onNavigateToVoice(language) },
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ElevenLabsUsageCard(state: UsageState, onRefresh: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "Credit usage",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onRefresh) {
+                Icon(Icons.Default.Refresh, contentDescription = "Refresh usage")
+            }
+        }
+        when (state) {
+            is UsageState.Idle -> Text(
+                text = "Enter an API key above to see your remaining characters.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            is UsageState.Loading -> Text(
+                text = "Loading…",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            is UsageState.Error -> Text(
+                text = state.message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            is UsageState.Loaded -> {
+                val usage = state.usage
+                LinearProgressIndicator(
+                    progress = { usage.fraction },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    text = "%,d / %,d characters used".format(
+                        usage.characterCount, usage.characterLimit,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                usage.nextResetUnixMs?.let { resetMs ->
+                    val date = java.text.DateFormat
+                        .getDateInstance(java.text.DateFormat.MEDIUM)
+                        .format(java.util.Date(resetMs))
+                    Text(
+                        text = "Quota resets $date",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }

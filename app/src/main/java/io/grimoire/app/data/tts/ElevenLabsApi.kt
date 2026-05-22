@@ -77,6 +77,26 @@ class ElevenLabsApi @Inject constructor() {
         }
     }
 
+    /** Returns the account's character-quota usage for the current billing period. */
+    suspend fun getUsage(apiKey: String): ElevenLabsUsage = withContext(Dispatchers.IO) {
+        require(apiKey.isNotBlank()) { "Add an ElevenLabs API key first." }
+        val request = Request.Builder()
+            .url("$BASE_URL/user/subscription")
+            .header("xi-api-key", apiKey)
+            .build()
+        client.newCall(request).execute().use { response ->
+            val body = response.body?.string().orEmpty()
+            if (!response.isSuccessful) throw IOException(errorMessage(response.code, body))
+            val dto = json.decodeFromString(SubscriptionResponse.serializer(), body)
+            ElevenLabsUsage(
+                characterCount = dto.characterCount,
+                characterLimit = dto.characterLimit,
+                nextResetUnixMs = dto.nextResetUnix?.takeIf { it > 0 }?.let { it * 1000 },
+                tier = dto.tier,
+            )
+        }
+    }
+
     private fun errorMessage(code: Int, body: String): String {
         val detail = runCatching {
             json.decodeFromString(ErrorResponse.serializer(), body).detail?.message
@@ -117,6 +137,14 @@ private data class VoiceSettings(
     val stability: Float = 0.5f,
     @SerialName("similarity_boost") val similarityBoost: Float = 0.75f,
     val speed: Float = 1.0f,
+)
+
+@Serializable
+private data class SubscriptionResponse(
+    @SerialName("character_count") val characterCount: Int = 0,
+    @SerialName("character_limit") val characterLimit: Int = 0,
+    @SerialName("next_character_count_reset_unix") val nextResetUnix: Long? = null,
+    val tier: String? = null,
 )
 
 @Serializable

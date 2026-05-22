@@ -15,8 +15,10 @@ import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.preferences.ReaderPreferences
+import io.grimoire.app.data.preferences.TtsPreferences
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.data.tts.TtsController
+import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsPlaybackState
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,6 +41,7 @@ class ReaderViewModel @Inject constructor(
     private val novelDao: NovelDao,
     private val readerPreferences: ReaderPreferences,
     private val ttsController: TtsController,
+    private val ttsPreferences: TtsPreferences,
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
@@ -112,6 +115,11 @@ class ReaderViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val ttsError: StateFlow<String?> = ttsController.errorMessage
+
+    val ttsEngine: StateFlow<TtsEngineType> = ttsPreferences.engine.stateIn(viewModelScope)
+    val ttsSpeechRate: StateFlow<Int> = ttsPreferences.speechRate.stateIn(viewModelScope)
+    val ttsPitch: StateFlow<Int> = ttsPreferences.pitch.stateIn(viewModelScope)
+    val ttsAutoAdvance: StateFlow<Boolean> = ttsPreferences.autoAdvance.stateIn(viewModelScope)
 
     init {
         viewModelScope.launch {
@@ -280,6 +288,22 @@ class ReaderViewModel @Inject constructor(
 
     fun clearTtsError() {
         ttsController.consumeError()
+    }
+
+    fun setTtsEngine(value: TtsEngineType) = viewModelScope.launch {
+        ttsPreferences.engine.set(value)
+    }
+
+    fun setTtsSpeechRate(percent: Int) = viewModelScope.launch {
+        ttsPreferences.speechRate.set(percent.coerceIn(25, 300))
+    }
+
+    fun setTtsPitch(percent: Int) = viewModelScope.launch {
+        ttsPreferences.pitch.set(percent.coerceIn(50, 200))
+    }
+
+    fun setTtsAutoAdvance(value: Boolean) = viewModelScope.launch {
+        ttsPreferences.autoAdvance.set(value)
     }
 }
 
