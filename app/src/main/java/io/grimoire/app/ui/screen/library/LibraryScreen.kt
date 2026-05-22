@@ -39,6 +39,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -48,18 +49,17 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -78,6 +78,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -250,6 +251,7 @@ fun LibraryScreen(
     var showManage by remember { mutableStateOf(false) }
     var libraryMenuExpanded by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
+    var showRefreshSheet by remember { mutableStateOf(false) }
     var showUnlock by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -435,70 +437,47 @@ fun LibraryScreen(
                                 Icon(Icons.Default.Lock, contentDescription = "Lock hidden categories")
                             }
                         }
-                        IconButton(onClick = {
-                            viewModel.setDisplayMode(
-                                if (displayMode == LibraryDisplayMode.GRID) LibraryDisplayMode.LIST
-                                else LibraryDisplayMode.GRID
-                            )
-                        }) {
-                            Icon(
-                                if (displayMode == LibraryDisplayMode.GRID) Icons.Default.ViewList else Icons.Default.GridView,
-                                contentDescription = "Toggle display mode",
-                            )
-                        }
                         IconButton(onClick = { showFilterSheet = true }) {
                             BadgedBox(badge = { if (isFilterActive) Badge() }) {
                                 Icon(Icons.Default.FilterList, contentDescription = "Filter & sort")
                             }
                         }
-                        IconButton(
-                            onClick = { epubPicker.launch(EPUB_MIME_TYPES) },
-                            enabled = !importing && !staging,
-                        ) {
-                            if (importing || staging) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    strokeWidth = 2.dp,
-                                )
-                            } else {
-                                Icon(Icons.Default.LibraryAdd, contentDescription = "Import EPUB")
-                            }
-                        }
-                        IconButton(onClick = { showManage = true }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Manage categories")
-                        }
                         Box {
                             IconButton(onClick = { libraryMenuExpanded = true }) {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More actions")
                             }
-                            val currentCategoryId = tabCategoryIds.getOrNull(currentTab)
-                                ?: ALL_TAB_CATEGORY_ID
                             DropdownMenu(
                                 expanded = libraryMenuExpanded,
                                 onDismissRequest = { libraryMenuExpanded = false },
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Update library") },
+                                    text = {
+                                        Text(if (importing || staging) "Importing EPUB…" else "Import EPUB")
+                                    },
+                                    enabled = !importing && !staging,
                                     onClick = {
                                         libraryMenuExpanded = false
-                                        viewModel.updateLibrary()
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("Library update queued")
+                                        epubPicker.launch(EPUB_MIME_TYPES)
+                                    },
+                                    leadingIcon = {
+                                        if (importing || staging) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(20.dp),
+                                                strokeWidth = 2.dp,
+                                            )
+                                        } else {
+                                            Icon(Icons.Default.LibraryAdd, null)
                                         }
                                     },
                                 )
-                                if (currentCategoryId != ALL_TAB_CATEGORY_ID) {
-                                    DropdownMenuItem(
-                                        text = { Text("Update \"${tabs.getOrElse(currentTab) { "" }}\"") },
-                                        onClick = {
-                                            libraryMenuExpanded = false
-                                            viewModel.updateCategory(currentCategoryId)
-                                            scope.launch {
-                                                snackbarHostState.showSnackbar("Category update queued")
-                                            }
-                                        },
-                                    )
-                                }
+                                DropdownMenuItem(
+                                    text = { Text("Manage categories") },
+                                    onClick = {
+                                        libraryMenuExpanded = false
+                                        showManage = true
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Edit, null) },
+                                )
                             }
                         }
                     }
@@ -532,7 +511,12 @@ fun LibraryScreen(
             )
         },
     ) { padding ->
-        Column(Modifier.padding(padding)) {
+        PullToRefreshBox(
+            isRefreshing = false,
+            onRefresh = { showRefreshSheet = true },
+            modifier = Modifier.padding(padding),
+        ) {
+        Column(Modifier.fillMaxSize()) {
             if (tabs.size > 1) {
                 PrimaryScrollableTabRow(selectedTabIndex = currentTab) {
                     tabs.forEachIndexed { index, title ->
@@ -665,6 +649,7 @@ fun LibraryScreen(
                 }
             }
         }
+        }
     }
 
     if (showFilterSheet) {
@@ -682,6 +667,59 @@ fun LibraryScreen(
                 onUnreadOnlyChange = viewModel::setFilterUnreadOnly,
                 onDownloadedOnlyChange = viewModel::setFilterDownloadedOnly,
             )
+        }
+    }
+
+    if (showRefreshSheet) {
+        val refreshSheetState = rememberModalBottomSheetState()
+        val currentCategoryId = tabCategoryIds.getOrNull(currentTab) ?: ALL_TAB_CATEGORY_ID
+        val currentCategoryName = tabs.getOrElse(currentTab) { "" }
+        ModalBottomSheet(
+            onDismissRequest = { showRefreshSheet = false },
+            sheetState = refreshSheetState,
+        ) {
+            Column(Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                Text(
+                    "Refresh library",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                )
+                ListItem(
+                    headlineContent = { Text("Update library") },
+                    supportingContent = { Text("Fetch new chapters across all categories") },
+                    leadingContent = { Icon(Icons.Default.Refresh, contentDescription = null) },
+                    modifier = Modifier.clickable {
+                        viewModel.updateLibrary()
+                        scope.launch { snackbarHostState.showSnackbar("Library update queued") }
+                        showRefreshSheet = false
+                    },
+                )
+                if (currentCategoryId != ALL_TAB_CATEGORY_ID) {
+                    ListItem(
+                        headlineContent = { Text("Update \"$currentCategoryName\"") },
+                        supportingContent = {
+                            Text("Fetch new chapters for novels in this category")
+                        },
+                        leadingContent = {
+                            Icon(Icons.AutoMirrored.Filled.Label, contentDescription = null)
+                        },
+                        modifier = Modifier.clickable {
+                            viewModel.updateCategory(currentCategoryId)
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Category update queued")
+                            }
+                            showRefreshSheet = false
+                        },
+                    )
+                }
+                ListItem(
+                    headlineContent = { Text("Cancel") },
+                    leadingContent = {
+                        Icon(Icons.Default.Close, contentDescription = null)
+                    },
+                    modifier = Modifier.clickable { showRefreshSheet = false },
+                )
+            }
         }
     }
 
