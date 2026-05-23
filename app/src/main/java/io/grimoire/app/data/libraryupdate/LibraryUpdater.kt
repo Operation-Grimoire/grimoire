@@ -4,8 +4,6 @@ import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
 import io.grimoire.api.source.EpubSource
-import io.grimoire.api.source.PaginatedSource
-import io.grimoire.api.source.Source
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.dao.CategoryDao
@@ -19,10 +17,17 @@ import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.UpdateIssueEntity
 import io.grimoire.app.data.local.entity.UpdateIssueSeverity
 import io.grimoire.app.data.preferences.LibraryUpdatePreferences
+import io.grimoire.app.data.source.fetchAllChapters
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.app.extension.LoadedExtension
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -62,22 +67,42 @@ class LibraryUpdater @Inject constructor(
         onProgress: suspend (done: Int, total: Int, title: String) -> Unit = { _, _, _ -> },
     ): UpdateSummary {
         val targets = resolveTargets(categoryId)
-        var newChapters = 0
-        var warnings = 0
-        var errors = 0
-        targets.forEachIndexed { index, novel ->
-            onProgress(index, targets.size, novel.title)
-            when (val result = refreshNovel(novel)) {
-                is NovelRefreshResult.Ok -> newChapters += result.newChapters
-                is NovelRefreshResult.Warned -> {
-                    newChapters += result.newChapters
-                    warnings++
+        val total = targets.size
+        // Hoisted out of the per-novel loop: the extension list and auto-download
+        // preference don't change mid-sync, so reading them once avoids repeating
+        // the lookup/flow-collect N times.
+        val extensions = extensionManager.extensions.value
+        val autoDownload = preferences.autoDownloadNewChapters.changes().first()
+        val n = preferences.concurrency.changes().first().coerceIn(1, MAX_CONCURRENCY)
+
+        val queue = ArrayDeque(targets)
+        val mutex = Mutex()
+        val done = AtomicInteger(0)
+        val newChapters = AtomicInteger(0)
+        val warnings = AtomicInteger(0)
+        val errors = AtomicInteger(0)
+
+        coroutineScope {
+            repeat(n) {
+                launch {
+                    while (true) {
+                        val novel = mutex.withLock { queue.removeFirstOrNull() } ?: break
+                        onProgress(done.get(), total, novel.title)
+                        when (val result = refreshNovel(novel, extensions, autoDownload)) {
+                            is NovelRefreshResult.Ok -> newChapters.addAndGet(result.newChapters)
+                            is NovelRefreshResult.Warned -> {
+                                newChapters.addAndGet(result.newChapters)
+                                warnings.incrementAndGet()
+                            }
+                            NovelRefreshResult.Failed -> errors.incrementAndGet()
+                        }
+                        done.incrementAndGet()
+                    }
                 }
-                NovelRefreshResult.Failed -> errors++
             }
         }
-        onProgress(targets.size, targets.size, "")
-        return UpdateSummary(targets.size, newChapters, warnings, errors)
+        onProgress(total, total, "")
+        return UpdateSummary(total, newChapters.get(), warnings.get(), errors.get())
     }
 
     private suspend fun resolveTargets(categoryId: Long?): List<NovelEntity> {
@@ -91,9 +116,12 @@ class LibraryUpdater @Inject constructor(
         else favorites.filter { it.categoryId == categoryId }
     }
 
-    private suspend fun refreshNovel(novel: NovelEntity): NovelRefreshResult {
-        val loaded = extensionManager.extensions.value
-            .firstOrNull { it.source.id == novel.sourceId }
+    private suspend fun refreshNovel(
+        novel: NovelEntity,
+        extensions: List<LoadedExtension>,
+        autoDownload: Boolean,
+    ): NovelRefreshResult {
+        val loaded = extensions.firstOrNull { it.source.id == novel.sourceId }
         if (loaded == null) {
             setIssue(novel, "", UpdateIssueSeverity.WARNING, "Source not installed — skipped")
             return NovelRefreshResult.Warned(0)
@@ -192,7 +220,7 @@ class LibraryUpdater @Inject constructor(
                     )
                 },
             )
-            if (preferences.autoDownloadNewChapters.changes().first()) {
+            if (autoDownload) {
                 // Locked chapters can't be fetched; skip them so the queue isn't
                 // poisoned with chapters that will just fail.
                 val downloadableUrls = newChapters
@@ -255,22 +283,6 @@ class LibraryUpdater @Inject constructor(
         throw lastError ?: IllegalStateException("Retry failed")
     }
 
-    private suspend fun fetchAllChapters(src: Source, novel: Novel): List<Chapter> {
-        if (src !is PaginatedSource) return src.getChapterList(novel)
-        val all = mutableListOf<Chapter>()
-        val seen = mutableSetOf<String>()
-        var page = 1
-        while (true) {
-            val batch = src.getChapterList(novel, page)
-            if (batch.isEmpty()) break
-            val new = batch.filter { seen.add(it.url) }
-            if (new.isEmpty()) break
-            all += new
-            page++
-        }
-        return all
-    }
-
     private suspend fun setIssue(
         novel: NovelEntity,
         pkg: String,
@@ -318,5 +330,8 @@ class LibraryUpdater @Inject constructor(
 
         /** Base back-off between retries; the wait grows with each attempt. */
         const val RETRY_DELAY_MS = 2_000L
+
+        /** Upper bound for the user-tunable sync concurrency setting. */
+        const val MAX_CONCURRENCY = 8
     }
 }

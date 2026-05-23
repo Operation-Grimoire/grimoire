@@ -8,10 +8,10 @@ import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
 import io.grimoire.api.source.EpubSource
-import io.grimoire.api.source.PaginatedSource
 import io.grimoire.api.source.Source
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.api.source.WebViewLoginSource
+import io.grimoire.app.data.source.fetchAllChapters
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -419,7 +419,7 @@ class NovelDetailViewModel @Inject constructor(
         _chapterPage.value = 0
 
         runCatching {
-            fetchAllChapters(src, novel)
+            fetchAllChapters(src, novel, onPageProgress = { _chapterPage.value = it })
         }.onSuccess { list ->
             if (cachedNovelId > 0L) {
                 val existing = chapterDao.getChaptersOnce(cachedNovelId).associateBy { it.url }
@@ -442,24 +442,6 @@ class NovelDetailViewModel @Inject constructor(
 
         _isLoadingChapters.value = false
         _chapterPage.value = 0
-    }
-
-    private suspend fun fetchAllChapters(src: Source, novel: Novel): List<Chapter> {
-        if (src !is PaginatedSource) return src.getChapterList(novel)
-
-        val all = mutableListOf<Chapter>()
-        val seen = mutableSetOf<String>()
-        var page = 1
-        while (true) {
-            _chapterPage.value = page
-            val batch = src.getChapterList(novel, page)
-            if (batch.isEmpty()) break
-            val new = batch.filter { seen.add(it.url) }
-            if (new.isEmpty()) break
-            all += new
-            page++
-        }
-        return all
     }
 
     fun markAllRead(read: Boolean) {
