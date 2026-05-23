@@ -911,7 +911,11 @@ fun NovelDetailScreen(
                             }
                         }
                     } else {
-                        items(displayedChapters, key = { it.url }) { chapter ->
+                        // Key by Room id, not URL — sources occasionally emit
+                        // chapters that share a URL (e.g. paid Madara rows all
+                        // serve href="#"), and Compose crashes the screen with
+                        // IllegalArgumentException once a duplicate key composes.
+                        items(displayedChapters, key = { it.id }) { chapter ->
                             ChapterItem(
                                 chapter = chapter,
                                 selected = chapter.id in selectedIds,
