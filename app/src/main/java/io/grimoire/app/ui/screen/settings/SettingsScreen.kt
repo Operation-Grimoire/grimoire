@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +32,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAppearance: () -> Unit,
+    onNavigateToBehavior: () -> Unit,
     onNavigateToLibrary: () -> Unit,
     onNavigateToBrowse: () -> Unit,
     onNavigateToLanguages: () -> Unit,
@@ -61,6 +63,14 @@ fun SettingsScreen(
                     title = "Appearance",
                     subtitle = "Theme, dynamic color",
                     onClick = onNavigateToAppearance,
+                )
+            }
+            item {
+                SettingsNavItem(
+                    icon = Icons.Default.TouchApp,
+                    title = "Behavior",
+                    subtitle = "Haptic feedback",
+                    onClick = onNavigateToBehavior,
                 )
             }
             item {
