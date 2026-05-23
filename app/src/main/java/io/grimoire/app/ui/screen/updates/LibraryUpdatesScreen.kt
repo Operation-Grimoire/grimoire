@@ -263,8 +263,8 @@ fun LibraryUpdatesScreen(
             val days = remember(entries) {
                 entries
                     .groupBy { it.novelId to it.foundAt }
-                    // Newest chapter first so the order within a group is obvious.
-                    .map { (key, list) -> UpdateGroup(key, list.sortedByDescending { it.chapterNumber }) }
+                    // Earliest chapter first so the top entry is the next one to read.
+                    .map { (key, list) -> UpdateGroup(key, list.sortedBy { it.chapterNumber }) }
                     .groupBy { dayKey(it.first.foundAt) }
             }
             LazyColumn(modifier = Modifier.padding(padding)) {
