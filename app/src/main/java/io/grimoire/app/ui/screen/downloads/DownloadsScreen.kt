@@ -86,19 +86,22 @@ fun DownloadsScreen(
     var showSettings by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
-    var selectedNovelIds by remember { mutableStateOf(emptySet<Long>()) }
     var selectedChapterIds by remember { mutableStateOf(emptySet<Long>()) }
-    val selectionMode = selectedNovelIds.isNotEmpty() || selectedChapterIds.isNotEmpty()
-    val selectionCount = selectedNovelIds.size + selectedChapterIds.size
-    val clearSelection: () -> Unit = {
-        selectedNovelIds = emptySet()
-        selectedChapterIds = emptySet()
-    }
-    val toggleNovel: (Long) -> Unit = { id ->
-        selectedNovelIds = if (id in selectedNovelIds) selectedNovelIds - id else selectedNovelIds + id
-    }
+    val selectionMode = selectedChapterIds.isNotEmpty()
+    val clearSelection: () -> Unit = { selectedChapterIds = emptySet() }
     val toggleChapter: (Long) -> Unit = { id ->
         selectedChapterIds = if (id in selectedChapterIds) selectedChapterIds - id else selectedChapterIds + id
+    }
+    // Header tap toggles every visible (filtered) chapter under the novel:
+    // if all of them are already selected the whole novel deselects, otherwise
+    // any unselected ones are added. The header's "selected" highlight is then
+    // derived from "all my visible chapters are selected".
+    val toggleNovelChapters: (List<Long>) -> Unit = { chapterIds ->
+        selectedChapterIds = if (chapterIds.all { it in selectedChapterIds }) {
+            selectedChapterIds - chapterIds.toSet()
+        } else {
+            selectedChapterIds + chapterIds
+        }
     }
 
     BackHandler(enabled = selectionMode) { clearSelection() }
@@ -158,7 +161,7 @@ fun DownloadsScreen(
         topBar = {
             if (selectionMode) {
                 SelectionTopBar(
-                    count = selectionCount,
+                    count = selectedChapterIds.size,
                     onClear = clearSelection,
                     onSelectAll = {
                         val visibleChapterIds = (currentDownloads ?: emptyList())
@@ -201,7 +204,7 @@ fun DownloadsScreen(
         },
         bottomBar = {
             SelectionBottomBar(visible = selectionMode) {
-                val target = resolveTargets(currentDownloads, selectedNovelIds, selectedChapterIds)
+                val target = resolveTargets(currentDownloads, selectedChapterIds)
                 val hasQueued = target.chapters.any { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }
                 val hasInFlight = target.chapters.any {
                     it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal ||
@@ -320,15 +323,18 @@ fun DownloadsScreen(
                                 expandedNovels - novelId
                             }
                         }
+                        val filteredIds = filtered.map { it.id }
                         NovelDownloadHeader(
                             novelDownloads = novelDownloads,
                             collapsed = isCollapsed,
-                            selected = novelId in selectedNovelIds,
+                            selected = filteredIds.all { it in selectedChapterIds },
                             onClick = {
-                                if (selectionMode) toggleNovel(novelId) else toggleCollapse()
+                                if (selectionMode) toggleNovelChapters(filteredIds)
+                                else toggleCollapse()
                             },
                             onLongClick = {
-                                if (selectionMode) toggleCollapse() else toggleNovel(novelId)
+                                if (selectionMode) toggleCollapse()
+                                else toggleNovelChapters(filteredIds)
                             },
                             onToggleCollapse = toggleCollapse,
                         )
@@ -359,9 +365,8 @@ fun DownloadsScreen(
 }
 
 /**
- * The union of novels and chapters an action should touch. Selecting a novel
- * implicitly targets every chapter under it (after the current status filter),
- * so per-status predicates ("any selected is QUEUED") see the right thing.
+ * The chapters an action should touch, plus the set of novels they belong to —
+ * needed for novel-scoped operations like "Cancel all failed" and "Move to top".
  */
 private data class SelectionTargets(
     val novelIds: Set<Long>,
@@ -370,25 +375,20 @@ private data class SelectionTargets(
 
 private fun resolveTargets(
     downloads: List<NovelDownloads>?,
-    selectedNovelIds: Set<Long>,
     selectedChapterIds: Set<Long>,
 ): SelectionTargets {
-    if (downloads == null) return SelectionTargets(selectedNovelIds, emptyList())
+    if (downloads == null) return SelectionTargets(emptySet(), emptyList())
     val chapters = mutableListOf<ChapterEntity>()
-    val seen = mutableSetOf<Long>()
-    val effectiveNovelIds = selectedNovelIds.toMutableSet()
+    val novels = mutableSetOf<Long>()
     downloads.forEach { nd ->
-        if (nd.novel.id in selectedNovelIds) {
-            nd.chapters.forEach { if (seen.add(it.id)) chapters.add(it) }
-        }
         nd.chapters.forEach { ch ->
-            if (ch.id in selectedChapterIds && seen.add(ch.id)) {
+            if (ch.id in selectedChapterIds) {
                 chapters.add(ch)
-                effectiveNovelIds.add(nd.novel.id)
+                novels.add(nd.novel.id)
             }
         }
     }
-    return SelectionTargets(effectiveNovelIds, chapters)
+    return SelectionTargets(novels, chapters)
 }
 
 @OptIn(ExperimentalFoundationApi::class)
