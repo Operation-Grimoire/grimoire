@@ -111,7 +111,7 @@ fun RowScope.TooltipIconButton(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .graphicsLayer {
-                    alpha = labelProgress
+                    this.alpha = labelProgress
                     translationY = (1f - labelProgress) * 8.dp.toPx()
                 },
         )
