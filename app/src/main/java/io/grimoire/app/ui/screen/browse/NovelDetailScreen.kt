@@ -497,80 +497,75 @@ fun NovelDetailScreen(
                         it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
                     }
                     val singleSelection = selectedIds.size == 1
-                    if (showMarkRead) {
-                        TooltipIconButton(
-                            icon = Icons.Default.DoneAll,
-                            label = "Mark read",
-                            onClick = {
-                                viewModel.markChaptersRead(selectedIds.toList(), true)
-                                clearSelection()
-                            },
-                        )
-                    }
-                    if (showMarkUnread) {
-                        TooltipIconButton(
-                            icon = Icons.Default.RemoveDone,
-                            label = "Mark unread",
-                            onClick = {
-                                viewModel.markChaptersRead(selectedIds.toList(), false)
-                                clearSelection()
-                            },
-                        )
-                    }
-                    if (showDownload) {
-                        TooltipIconButton(
-                            icon = Icons.Default.Download,
-                            label = "Download",
-                            onClick = {
-                                viewModel.downloadChapters(selectedChapters)
-                                clearSelection()
-                            },
-                        )
-                    }
-                    if (showDelete) {
-                        TooltipIconButton(
-                            icon = Icons.Default.Delete,
-                            label = "Delete",
-                            onClick = {
-                                viewModel.deleteDownloads(selectedChapters)
-                                clearSelection()
-                            },
-                        )
-                    }
-                    if (showCancel) {
-                        TooltipIconButton(
-                            icon = Icons.Default.Close,
-                            label = "Cancel",
-                            onClick = {
-                                viewModel.cancelDownloads(selectedChapters)
-                                clearSelection()
-                            },
-                        )
-                    }
-                    if (singleSelection) {
-                        TooltipIconButton(
-                            icon = Icons.Default.VerticalAlignTop,
-                            label = "Select above",
-                            onClick = {
-                                val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
-                                if (idx >= 0) {
-                                    selectedIds = selectedIds +
-                                        displayedChapters.subList(0, idx + 1).map { it.id }
-                                }
-                            },
-                        )
-                        TooltipIconButton(
-                            icon = Icons.Default.VerticalAlignBottom,
-                            label = "Select below",
-                            onClick = {
-                                val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
-                                if (idx >= 0) {
-                                    selectedIds = selectedIds +
-                                        displayedChapters.subList(idx, displayedChapters.size).map { it.id }
-                                }
-                            },
-                        )
-                    }
+                    TooltipIconButton(
+                        visible = showMarkRead,
+                        icon = Icons.Default.DoneAll,
+                        label = "Mark read",
+                        onClick = {
+                            viewModel.markChaptersRead(selectedIds.toList(), true)
+                            clearSelection()
+                        },
+                    )
+                    TooltipIconButton(
+                        visible = showMarkUnread,
+                        icon = Icons.Default.RemoveDone,
+                        label = "Mark unread",
+                        onClick = {
+                            viewModel.markChaptersRead(selectedIds.toList(), false)
+                            clearSelection()
+                        },
+                    )
+                    TooltipIconButton(
+                        visible = showDownload,
+                        icon = Icons.Default.Download,
+                        label = "Download",
+                        onClick = {
+                            viewModel.downloadChapters(selectedChapters)
+                            clearSelection()
+                        },
+                    )
+                    TooltipIconButton(
+                        visible = showDelete,
+                        icon = Icons.Default.Delete,
+                        label = "Delete",
+                        onClick = {
+                            viewModel.deleteDownloads(selectedChapters)
+                            clearSelection()
+                        },
+                    )
+                    TooltipIconButton(
+                        visible = showCancel,
+                        icon = Icons.Default.Close,
+                        label = "Cancel",
+                        onClick = {
+                            viewModel.cancelDownloads(selectedChapters)
+                            clearSelection()
+                        },
+                    )
+                    TooltipIconButton(
+                        visible = singleSelection,
+                        icon = Icons.Default.VerticalAlignTop,
+                        label = "Select above",
+                        onClick = {
+                            val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
+                            if (idx >= 0) {
+                                selectedIds = selectedIds +
+                                    displayedChapters.subList(0, idx + 1).map { it.id }
+                            }
+                        },
+                    )
+                    TooltipIconButton(
+                        visible = singleSelection,
+                        icon = Icons.Default.VerticalAlignBottom,
+                        label = "Select below",
+                        onClick = {
+                            val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
+                            if (idx >= 0) {
+                                selectedIds = selectedIds +
+                                    displayedChapters.subList(idx, displayedChapters.size).map { it.id }
+                            }
+                        },
+                    )
                 }
             }
         },
