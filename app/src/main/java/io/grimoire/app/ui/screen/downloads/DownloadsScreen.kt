@@ -313,19 +313,22 @@ fun DownloadsScreen(
                     val isCollapsed = novelId !in expandedNovels
 
                     item(key = "header_$novelId") {
+                        val toggleCollapse = {
+                            expandedNovels = if (isCollapsed) {
+                                expandedNovels + novelId
+                            } else {
+                                expandedNovels - novelId
+                            }
+                        }
                         NovelDownloadHeader(
                             novelDownloads = novelDownloads,
                             collapsed = isCollapsed,
                             selected = novelId in selectedNovelIds,
                             onClick = {
-                                if (selectionMode) toggleNovel(novelId)
-                                else expandedNovels = if (isCollapsed) {
-                                    expandedNovels + novelId
-                                } else {
-                                    expandedNovels - novelId
-                                }
+                                if (selectionMode) toggleNovel(novelId) else toggleCollapse()
                             },
                             onLongClick = { toggleNovel(novelId) },
+                            onToggleCollapse = toggleCollapse,
                         )
                     }
 
@@ -394,6 +397,7 @@ private fun NovelDownloadHeader(
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    onToggleCollapse: () -> Unit,
 ) {
     val counts = remember(novelDownloads.chapters) {
         var downloaded = 0; var queued = 0; var downloading = 0; var error = 0
@@ -452,11 +456,13 @@ private fun NovelDownloadHeader(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Icon(
-            if (collapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        IconButton(onClick = onToggleCollapse) {
+            Icon(
+                if (collapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+                contentDescription = if (collapsed) "Expand" else "Collapse",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

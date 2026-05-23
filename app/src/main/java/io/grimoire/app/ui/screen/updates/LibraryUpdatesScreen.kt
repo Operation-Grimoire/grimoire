@@ -239,19 +239,23 @@ fun LibraryUpdatesScreen(
                         } else {
                             val collapsed = group.key !in expandedGroups
                             item(key = "group-${group.first.id}") {
+                                val toggleCollapse = {
+                                    expandedGroups = if (collapsed) {
+                                        expandedGroups + group.key
+                                    } else {
+                                        expandedGroups - group.key
+                                    }
+                                }
                                 UpdateGroupHeader(
                                     group = group,
                                     collapsed = collapsed,
                                     selected = group.first.novelId in selectedNovelIds,
                                     onClick = {
                                         if (selectionMode) toggleNovel(group.first.novelId)
-                                        else expandedGroups = if (collapsed) {
-                                            expandedGroups + group.key
-                                        } else {
-                                            expandedGroups - group.key
-                                        }
+                                        else toggleCollapse()
                                     },
                                     onLongClick = { toggleNovel(group.first.novelId) },
+                                    onToggleCollapse = toggleCollapse,
                                 )
                             }
                             if (!collapsed) {
@@ -373,13 +377,14 @@ private fun UpdateGroupHeader(
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    onToggleCollapse: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -420,11 +425,13 @@ private fun UpdateGroupHeader(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Icon(
-            imageVector = if (collapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
-            contentDescription = if (collapsed) "Expand" else "Collapse",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        IconButton(onClick = onToggleCollapse) {
+            Icon(
+                imageVector = if (collapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+                contentDescription = if (collapsed) "Expand" else "Collapse",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
