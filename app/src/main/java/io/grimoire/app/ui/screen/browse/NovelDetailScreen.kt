@@ -110,7 +110,7 @@ import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.MoveToCategorySheet
-import io.grimoire.app.ui.component.SelectionBottomBar
+import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.ZoomableCoverImage
@@ -482,7 +482,7 @@ fun NovelDetailScreen(
                         }
                     }
                 }
-                SelectionBottomBar(visible = selectionMode) {
+                TooltipBottomBar(visible = selectionMode) {
                     val showMarkRead = selectedChapters.any { !it.read }
                     val showMarkUnread = selectedChapters.any { it.read }
                     val showDownload = selectedChapters.any {

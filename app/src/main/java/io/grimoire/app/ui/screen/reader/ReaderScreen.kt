@@ -54,7 +54,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -109,6 +108,8 @@ import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsPlaybackState
+import io.grimoire.app.ui.component.TooltipBottomBar
+import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -151,6 +152,7 @@ fun ReaderScreen(
     val ttsSpokenPageIndex by viewModel.ttsSpokenPageIndex.collectAsState()
     val ttsError by viewModel.ttsError.collectAsState()
 
+    val ttsEnabled by viewModel.ttsEnabled.collectAsState()
     val ttsEngine by viewModel.ttsEngine.collectAsState()
     val ttsSpeechRate by viewModel.ttsSpeechRate.collectAsState()
     val ttsPitch by viewModel.ttsPitch.collectAsState()
@@ -400,55 +402,43 @@ fun ReaderScreen(
         }
 
         // Bottom bar — overlaid, slides in from bottom
-        AnimatedVisibility(
+        TooltipBottomBar(
             visible = barsVisible,
             modifier = Modifier.align(Alignment.BottomCenter),
             enter = slideInVertically { it } + fadeIn(),
             exit = slideOutVertically { it } + fadeOut(),
+            containerColor = colors.background.copy(alpha = 0.95f),
+            contentColor = colors.foreground,
         ) {
-            BottomAppBar(
-                containerColor = colors.background.copy(alpha = 0.95f),
-                contentColor = colors.foreground,
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    IconButton(onClick = viewModel::navigatePrev, enabled = hasPrev) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.NavigateBefore,
-                            contentDescription = "Previous chapter",
-                            tint = if (hasPrev) colors.foreground else colors.foreground.copy(alpha = 0.3f),
-                        )
-                    }
-                    IconButton(onClick = viewModel::toggleTts) {
-                        Icon(
-                            if (ttsPlayingThisChapter) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (ttsPlayingThisChapter) "Pause read-aloud" else "Read aloud",
-                            tint = colors.foreground,
-                        )
-                    }
-                    if (ttsActiveForChapter) {
-                        IconButton(onClick = viewModel::stopTts) {
-                            Icon(
-                                Icons.Default.Stop,
-                                contentDescription = "Stop read-aloud",
-                                tint = colors.foreground,
-                            )
-                        }
-                    }
-                    IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Reader settings", tint = colors.foreground)
-                    }
-                    IconButton(onClick = viewModel::navigateNext, enabled = hasNext) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.NavigateNext,
-                            contentDescription = "Next chapter",
-                            tint = if (hasNext) colors.foreground else colors.foreground.copy(alpha = 0.3f),
-                        )
-                    }
-                }
-            }
+            TooltipIconButton(
+                icon = Icons.AutoMirrored.Filled.NavigateBefore,
+                label = "Previous",
+                onClick = viewModel::navigatePrev,
+                enabled = hasPrev,
+            )
+            TooltipIconButton(
+                visible = ttsEnabled,
+                icon = if (ttsPlayingThisChapter) Icons.Default.Pause else Icons.Default.PlayArrow,
+                label = if (ttsPlayingThisChapter) "Pause" else "Read aloud",
+                onClick = viewModel::toggleTts,
+            )
+            TooltipIconButton(
+                visible = ttsEnabled && ttsActiveForChapter,
+                icon = Icons.Default.Stop,
+                label = "Stop",
+                onClick = viewModel::stopTts,
+            )
+            TooltipIconButton(
+                icon = Icons.Default.Settings,
+                label = "Settings",
+                onClick = { showSettings = true },
+            )
+            TooltipIconButton(
+                icon = Icons.AutoMirrored.Filled.NavigateNext,
+                label = "Next",
+                onClick = viewModel::navigateNext,
+                enabled = hasNext,
+            )
         }
     }
 
@@ -463,6 +453,7 @@ fun ReaderScreen(
             readerFont = readerFont,
             colorTheme = colorTheme,
             orientation = orientation,
+            ttsEnabled = ttsEnabled,
             ttsEngine = ttsEngine,
             ttsSpeechRate = ttsSpeechRate,
             ttsPitch = ttsPitch,
@@ -474,6 +465,7 @@ fun ReaderScreen(
             onFont = viewModel::setReaderFont,
             onColorTheme = viewModel::setColorTheme,
             onOrientation = viewModel::setOrientation,
+            onTtsEnabled = viewModel::setTtsEnabled,
             onTtsEngine = viewModel::setTtsEngine,
             onTtsSpeechRate = viewModel::setTtsSpeechRate,
             onTtsPitch = viewModel::setTtsPitch,
@@ -498,6 +490,7 @@ private fun ReaderSettingsSheet(
     readerFont: ReaderFont,
     colorTheme: ReaderColorTheme,
     orientation: ReaderOrientation,
+    ttsEnabled: Boolean,
     ttsEngine: TtsEngineType,
     ttsSpeechRate: Int,
     ttsPitch: Int,
@@ -509,6 +502,7 @@ private fun ReaderSettingsSheet(
     onFont: (ReaderFont) -> Unit,
     onColorTheme: (ReaderColorTheme) -> Unit,
     onOrientation: (ReaderOrientation) -> Unit,
+    onTtsEnabled: (Boolean) -> Unit,
     onTtsEngine: (TtsEngineType) -> Unit,
     onTtsSpeechRate: (Int) -> Unit,
     onTtsPitch: (Int) -> Unit,
@@ -553,10 +547,12 @@ private fun ReaderSettingsSheet(
             )
         } else {
             ReaderTtsSettings(
+                enabled = ttsEnabled,
                 engine = ttsEngine,
                 speechRate = ttsSpeechRate,
                 pitch = ttsPitch,
                 autoAdvance = ttsAutoAdvance,
+                onEnabled = onTtsEnabled,
                 onEngine = onTtsEngine,
                 onSpeechRate = onTtsSpeechRate,
                 onPitch = onTtsPitch,
@@ -646,10 +642,12 @@ private fun ReaderDisplaySettings(
 
 @Composable
 private fun ReaderTtsSettings(
+    enabled: Boolean,
     engine: TtsEngineType,
     speechRate: Int,
     pitch: Int,
     autoAdvance: Boolean,
+    onEnabled: (Boolean) -> Unit,
     onEngine: (TtsEngineType) -> Unit,
     onSpeechRate: (Int) -> Unit,
     onPitch: (Int) -> Unit,
@@ -663,6 +661,24 @@ private fun ReaderTtsSettings(
             .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Enable text-to-speech",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = "Show playback controls in the reader",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(checked = enabled, onCheckedChange = onEnabled)
+        }
+
         SettingsSectionLabel("Speech engine")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(

@@ -109,7 +109,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.MoveToCategorySheet
-import io.grimoire.app.ui.component.SelectionBottomBar
+import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
 import androidx.compose.ui.text.style.TextOverflow
@@ -487,7 +487,7 @@ fun LibraryScreen(
         },
         bottomBar = {
             // Library keeps its no-fade slide so the bar feels glued to the app nav.
-            SelectionBottomBar(
+            TooltipBottomBar(
                 visible = selectionMode,
                 enter = expandVertically(expandFrom = Alignment.Bottom),
                 exit = shrinkVertically(shrinkTowards = Alignment.Bottom),

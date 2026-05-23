@@ -58,7 +58,7 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
 import io.grimoire.app.ui.component.ChapterItem
 import io.grimoire.app.ui.component.ChapterStatusTrailing
-import io.grimoire.app.ui.component.SelectionBottomBar
+import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.theme.premiumGold
@@ -155,7 +155,7 @@ fun LibraryUpdatesScreen(
             }
         },
         bottomBar = {
-            SelectionBottomBar(visible = selectionMode) {
+            TooltipBottomBar(visible = selectionMode) {
                 val selectedChapters = selectedEntryIds.mapNotNull { chaptersByEntryId[it] }
                 val showMarkRead = selectedChapters.any { !it.read }
                 val showMarkUnread = selectedChapters.any { it.read }

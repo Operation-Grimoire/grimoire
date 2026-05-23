@@ -118,6 +118,7 @@ class ReaderViewModel @Inject constructor(
 
     val ttsError: StateFlow<String?> = ttsController.errorMessage
 
+    val ttsEnabled: StateFlow<Boolean> = ttsPreferences.enabled.stateIn(viewModelScope)
     val ttsEngine: StateFlow<TtsEngineType> = ttsPreferences.engine.stateIn(viewModelScope)
     val ttsSpeechRate: StateFlow<Int> = ttsPreferences.speechRate.stateIn(viewModelScope)
     val ttsPitch: StateFlow<Int> = ttsPreferences.pitch.stateIn(viewModelScope)
@@ -294,6 +295,11 @@ class ReaderViewModel @Inject constructor(
 
     fun clearTtsError() {
         ttsController.consumeError()
+    }
+
+    fun setTtsEnabled(value: Boolean) = viewModelScope.launch {
+        ttsPreferences.enabled.set(value)
+        if (!value) ttsController.stop()
     }
 
     fun setTtsEngine(value: TtsEngineType) = viewModelScope.launch {
