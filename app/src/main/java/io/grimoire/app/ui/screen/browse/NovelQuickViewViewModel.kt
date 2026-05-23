@@ -32,8 +32,8 @@ import kotlinx.coroutines.launch
 /** Backing VM for the long-press preview sheet; warms the same DB cache the full detail screen uses. */
 @HiltViewModel(assistedFactory = NovelQuickViewViewModel.Factory::class)
 class NovelQuickViewViewModel @AssistedInject constructor(
-    @Assisted val pkg: String,
-    @Assisted private val novelUrl: String,
+    @Assisted("pkg") val pkg: String,
+    @Assisted("novelUrl") private val novelUrl: String,
     private val extensionManager: ExtensionManager,
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
@@ -43,7 +43,10 @@ class NovelQuickViewViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(pkg: String, novelUrl: String): NovelQuickViewViewModel
+        fun create(
+            @Assisted("pkg") pkg: String,
+            @Assisted("novelUrl") novelUrl: String,
+        ): NovelQuickViewViewModel
     }
 
     private val loaded get() = extensionManager.extensions.value.firstOrNull { it.info.packageName == pkg }
