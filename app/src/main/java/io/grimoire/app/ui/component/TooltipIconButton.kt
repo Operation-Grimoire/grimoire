@@ -35,6 +35,11 @@ import androidx.compose.ui.unit.dp
  * pressed and held: the icon slides down to make room and the button's row
  * weight grows, so it gains space while siblings give way. A quick tap just
  * invokes [onClick]. Must be placed inside a [RowScope] (e.g. an action bar).
+ *
+ * When the same row toggles which actions apply to the current selection,
+ * pass [visible] for the relevant predicate instead of conditionally
+ * skipping the call — the button then smoothly shrinks/grows its weight
+ * and fades, and siblings reflow to fill the freed space.
  */
 @Composable
 fun RowScope.TooltipIconButton(
@@ -42,41 +47,55 @@ fun RowScope.TooltipIconButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    visible: Boolean = true,
     tint: Color = LocalContentColor.current,
 ) {
     var pressed by remember { mutableStateOf(false) }
     val currentOnClick by rememberUpdatedState(onClick)
+    // Combine press-grow (1f → 2f) with show/hide (×1f or ×0f). RowScope.weight
+    // requires a strictly positive value, so the hidden state floors to a
+    // sub-pixel weight that effectively removes the button from the row.
     val weight by animateFloatAsState(
-        targetValue = if (pressed) 2f else 1f,
+        targetValue = (if (visible) 1f else 0f) * (if (pressed) 2f else 1f),
         label = "tooltipWeight",
+    )
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        label = "tooltipAlpha",
     )
     val iconShift by animateDpAsState(
         targetValue = if (pressed) 8.dp else 0.dp,
         label = "tooltipIconShift",
     )
     val labelProgress by animateFloatAsState(
-        targetValue = if (pressed) 1f else 0f,
+        targetValue = if (pressed && visible) 1f else 0f,
         label = "tooltipLabelProgress",
     )
 
     Box(
         modifier = modifier
-            .weight(weight)
+            .weight(weight.coerceAtLeast(0.0001f))
             .height(56.dp)
-            .semantics(mergeDescendants = true) {
-                role = Role.Button
-                onClick { currentOnClick(); true }
-            }
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = { currentOnClick() },
-                    onLongPress = { pressed = true },
-                    onPress = {
-                        tryAwaitRelease()
-                        pressed = false
-                    },
-                )
-            },
+            .graphicsLayer { this.alpha = alpha }
+            .then(
+                if (visible) {
+                    Modifier
+                        .semantics(mergeDescendants = true) {
+                            role = Role.Button
+                            onClick { currentOnClick(); true }
+                        }
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = { currentOnClick() },
+                                onLongPress = { pressed = true },
+                                onPress = {
+                                    tryAwaitRelease()
+                                    pressed = false
+                                },
+                            )
+                        }
+                } else Modifier
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -92,7 +111,7 @@ fun RowScope.TooltipIconButton(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .graphicsLayer {
-                    alpha = labelProgress
+                    this.alpha = labelProgress
                     translationY = (1f - labelProgress) * 8.dp.toPx()
                 },
         )

@@ -52,14 +52,24 @@ class LibraryUpdatesViewModel @Inject constructor(
         if (entryIds.isNotEmpty()) libraryUpdateDao.deleteByIds(entryIds.toList())
     }
 
-    fun markEntriesRead(entryIds: Set<Long>) = viewModelScope.launch {
+    fun setEntriesRead(entryIds: Set<Long>, read: Boolean) = viewModelScope.launch {
         val chapterIds = entryIds.mapNotNull { chaptersByEntryId.value[it]?.id }
-        if (chapterIds.isNotEmpty()) chapterDao.markChapters(chapterIds, true)
+        if (chapterIds.isNotEmpty()) chapterDao.markChapters(chapterIds, read)
     }
 
-    fun downloadEntries(entryIds: Set<Long>) = viewModelScope.launch {
+    fun downloadEntries(entryIds: Set<Long>) {
         val chapters = entryIds.mapNotNull { chaptersByEntryId.value[it] }
         if (chapters.isNotEmpty()) downloadManager.enqueue(chapters)
+    }
+
+    fun cancelDownloadEntries(entryIds: Set<Long>) {
+        val chapters = entryIds.mapNotNull { chaptersByEntryId.value[it] }
+        if (chapters.isNotEmpty()) downloadManager.cancelDownloads(chapters)
+    }
+
+    fun deleteDownloadEntries(entryIds: Set<Long>) {
+        val chapters = entryIds.mapNotNull { chaptersByEntryId.value[it] }
+        if (chapters.isNotEmpty()) downloadManager.deleteDownloads(chapters)
     }
 
     fun downloadChapter(chapter: ChapterEntity) = downloadManager.enqueue(listOf(chapter))
