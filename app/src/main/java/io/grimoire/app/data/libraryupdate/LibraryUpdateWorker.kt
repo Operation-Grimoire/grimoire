@@ -18,6 +18,7 @@ import dagger.assisted.AssistedInject
 import io.grimoire.app.GrimoireApp
 import io.grimoire.app.MainActivity
 import io.grimoire.app.data.preferences.LibraryUpdatePreferences
+import io.grimoire.app.ui.NAV_TARGET_UPDATES
 
 /**
  * Runs a library refresh in the background. Used for both the periodic schedule
@@ -63,9 +64,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
         preferences.lastRunAt.set(System.currentTimeMillis().toString())
         preferences.lastRunSuccess.set(true)
         preferences.lastRunMessage.set(summaryLine(summary))
-        if (summary.newChapters > 0 || summary.errors > 0 || summary.warnings > 0) {
-            showCompletion(summary)
-        }
+        showCompletion(summary)
         return Result.success()
     }
 
@@ -80,11 +79,12 @@ class LibraryUpdateWorker @AssistedInject constructor(
 
     private fun plural(n: Int) = if (n == 1) "" else "s"
 
-    private fun tapIntent(): PendingIntent = PendingIntent.getActivity(
+    private fun tapIntent(navTarget: String? = null): PendingIntent = PendingIntent.getActivity(
         applicationContext,
-        0,
+        navTarget?.hashCode() ?: 0,
         Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            if (navTarget != null) putExtra(MainActivity.EXTRA_NAV_TARGET, navTarget)
         },
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
@@ -126,7 +126,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
             .setContentTitle("Library updated")
             .setContentText(summaryLine(summary))
             .setStyle(NotificationCompat.BigTextStyle().bigText(summaryLine(summary)))
-            .setContentIntent(tapIntent())
+            .setContentIntent(tapIntent(NAV_TARGET_UPDATES))
             .setAutoCancel(true)
             .build()
         NotificationManagerCompat.from(applicationContext).notify(COMPLETE_NOTIF_ID, notification)
