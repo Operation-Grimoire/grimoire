@@ -26,6 +26,9 @@ interface NovelDao {
     @Query("SELECT * FROM novels WHERE id = :id")
     suspend fun getById(id: Long): NovelEntity?
 
+    @Query("SELECT * FROM novels WHERE id IN (:ids)")
+    suspend fun getByIds(ids: List<Long>): List<NovelEntity>
+
     @Query("SELECT * FROM novels WHERE sourceId = :sourceId AND url = :url")
     suspend fun getBySourceUrl(sourceId: Long, url: String): NovelEntity?
 

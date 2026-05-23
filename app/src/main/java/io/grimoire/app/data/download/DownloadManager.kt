@@ -141,6 +141,10 @@ class DownloadManager @Inject constructor(
         context.startForegroundService(Intent(context, DownloadService::class.java))
     }
 
+    fun cancelAllFailed(novelId: Long) {
+        scope.launch { chapterDao.cancelAllFailed(novelId) }
+    }
+
     suspend fun processQueue(onProgress: (chapterName: String, remaining: Int) -> Unit): Int {
         if (!isProcessing.compareAndSet(false, true)) return -1
         val n = concurrency.value.coerceIn(1, 5)

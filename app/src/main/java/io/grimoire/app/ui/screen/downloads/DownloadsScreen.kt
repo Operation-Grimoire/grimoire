@@ -215,6 +215,7 @@ fun DownloadsScreen(
                             onCancelAll = { viewModel.cancelAll(novelId) },
                             onDeleteAll = { viewModel.deleteAllDownloads(novelId) },
                             onRetryAll = { viewModel.retryAll(novelId) },
+                            onCancelAllFailed = { viewModel.cancelAllFailed(novelId) },
                         )
                     }
 
@@ -248,18 +249,31 @@ private fun NovelDownloadHeader(
     onCancelAll: () -> Unit,
     onDeleteAll: () -> Unit,
     onRetryAll: () -> Unit,
+    onCancelAllFailed: () -> Unit,
 ) {
-    val downloaded = novelDownloads.chapters.count { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
-    val queued = novelDownloads.chapters.count { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }
-    val downloading = novelDownloads.chapters.count { it.downloadStatus == ChapterDownloadStatus.DOWNLOADING.ordinal }
-    val error = novelDownloads.chapters.count { it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal }
+    val counts = remember(novelDownloads.chapters) {
+        var downloaded = 0; var queued = 0; var downloading = 0; var error = 0
+        for (c in novelDownloads.chapters) when (c.downloadStatus) {
+            ChapterDownloadStatus.DOWNLOADED.ordinal -> downloaded++
+            ChapterDownloadStatus.QUEUED.ordinal -> queued++
+            ChapterDownloadStatus.DOWNLOADING.ordinal -> downloading++
+            ChapterDownloadStatus.ERROR.ordinal -> error++
+        }
+        intArrayOf(downloaded, queued, downloading, error)
+    }
+    val downloaded = counts[0]
+    val queued = counts[1]
+    val downloading = counts[2]
+    val error = counts[3]
 
-    val stats = buildList {
-        if (downloaded > 0) add("$downloaded downloaded")
-        if (queued > 0) add("$queued queued")
-        if (downloading > 0) add("$downloading downloading")
-        if (error > 0) add("$error failed")
-    }.joinToString(" • ")
+    val stats = remember(downloaded, queued, downloading, error) {
+        buildList {
+            if (downloaded > 0) add("$downloaded downloaded")
+            if (queued > 0) add("$queued queued")
+            if (downloading > 0) add("$downloading downloading")
+            if (error > 0) add("$error failed")
+        }.joinToString(" • ")
+    }
 
     var showMenu by remember { mutableStateOf(false) }
 
@@ -323,6 +337,11 @@ private fun NovelDownloadHeader(
                     text = { Text("Retry all failed") },
                     onClick = { onRetryAll(); showMenu = false },
                     leadingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) },
+                )
+                DropdownMenuItem(
+                    text = { Text("Cancel all failed") },
+                    onClick = { onCancelAllFailed(); showMenu = false },
+                    leadingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
                 )
             }
             if (downloaded > 0) {
