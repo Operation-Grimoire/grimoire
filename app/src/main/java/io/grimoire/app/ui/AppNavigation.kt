@@ -31,6 +31,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -137,11 +139,31 @@ private const val ROUTE_WEBVIEW = "webview?url={url}"
 
 private const val POP_MS = 120
 
+/** Stable name for an externally-requested destination (e.g. from a notification tap). */
+const val NAV_TARGET_UPDATES = "updates"
+
+private val EmptyNavTarget: StateFlow<String?> = MutableStateFlow(null)
+
 @Composable
-fun AppNavigation(modifier: Modifier = Modifier) {
+fun AppNavigation(
+    modifier: Modifier = Modifier,
+    pendingTarget: StateFlow<String?> = EmptyNavTarget,
+    onTargetHandled: () -> Unit = {},
+) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
+
+    val target by pendingTarget.collectAsState()
+    LaunchedEffect(target) {
+        val t = target ?: return@LaunchedEffect
+        val route = when (t) {
+            NAV_TARGET_UPDATES -> ROUTE_UPDATES
+            else -> null
+        }
+        if (route != null) navController.navigate(route) { launchSingleTop = true }
+        onTargetHandled()
+    }
 
     val isTopLevel = TopLevelDestination.entries.any { dest ->
         backStack?.destination?.hierarchy?.any { it.route == dest.route } == true

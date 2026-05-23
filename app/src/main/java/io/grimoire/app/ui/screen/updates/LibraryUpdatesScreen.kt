@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.updates
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -45,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
+import io.grimoire.app.ui.theme.premiumGold
 import java.text.DateFormat
 import java.util.Calendar
 import java.util.Date
@@ -235,13 +238,20 @@ private fun UpdateRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = entry.chapterName,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (entry.locked) LockBadge()
+                if (entry.unlockedFromLocked) UnlockedTag()
+                Text(
+                    text = entry.chapterName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         Text(
             text = timeLabel(entry.foundAt),
@@ -275,11 +285,29 @@ private fun UpdateGroupHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = "${group.entries.size} new chapters",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = "${group.entries.size} new chapters",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                val lockedCount = group.entries.count { it.locked }
+                if (lockedCount > 0) {
+                    LockBadge()
+                    Text(
+                        text = "$lockedCount locked",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                val unlockedCount = group.entries.count { it.unlockedFromLocked }
+                if (unlockedCount > 0) {
+                    UnlockedTag(label = "$unlockedCount unlocked")
+                }
+            }
         }
         Text(
             text = timeLabel(group.first.foundAt),
@@ -302,12 +330,42 @@ private fun ChapterUpdateRow(entry: LibraryUpdateEntity, onClick: () -> Unit) {
         modifier = Modifier.clickable(onClick = onClick),
         overlineContent = numberLabel?.let { label -> { Text(label) } },
         headlineContent = {
-            Text(
-                text = entry.chapterName,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (entry.locked) LockBadge()
+                if (entry.unlockedFromLocked) UnlockedTag()
+                Text(
+                    text = entry.chapterName,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         },
+    )
+}
+
+@Composable
+private fun LockBadge() {
+    Icon(
+        imageVector = Icons.Default.Lock,
+        contentDescription = "Locked",
+        modifier = Modifier.size(14.dp),
+        tint = MaterialTheme.colorScheme.premiumGold,
+    )
+}
+
+@Composable
+private fun UnlockedTag(label: String = "Unlocked") {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.premiumGold,
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(MaterialTheme.colorScheme.premiumGold.copy(alpha = 0.15f))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
     )
 }
 

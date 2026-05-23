@@ -32,4 +32,8 @@ data class LibraryUpdateEntity(
     val chapterName: String,
     val chapterNumber: Float = -1f,
     val foundAt: Long,
+    /** Snapshot of the chapter's lock state at discovery; shown as a lock badge in the log. */
+    val locked: Boolean = false,
+    /** True when this entry came from a chapter flipping from locked to unlocked, not a brand-new URL. */
+    val unlockedFromLocked: Boolean = false,
 )

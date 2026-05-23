@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,6 +45,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PauseCircle
@@ -155,6 +157,7 @@ fun NovelDetailScreen(
     val hasLockedChapters by viewModel.hasLockedChapters.collectAsState()
     val migrationState by viewModel.migrationState.collectAsState()
     val migrateFromTitle by viewModel.migrateFromTitle.collectAsState()
+    val refreshSummary by viewModel.refreshSummary.collectAsState()
 
     var showCategoryDialog by remember { mutableStateOf(false) }
     var showMigrateConfirm by remember { mutableStateOf(false) }
@@ -306,6 +309,13 @@ fun NovelDetailScreen(
             dismissButton = {
                 TextButton(onClick = { lockedDialogChapter = null }) { Text("Close") }
             },
+        )
+    }
+
+    refreshSummary?.let { summary ->
+        RefreshSummaryDialog(
+            summary = summary,
+            onDismiss = viewModel::acknowledgeRefreshSummary,
         )
     }
 
@@ -957,6 +967,89 @@ private fun JumpDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
+}
+
+@Composable
+private fun RefreshSummaryDialog(
+    summary: RefreshSummary,
+    onDismiss: () -> Unit,
+) {
+    val count = summary.chapters.size
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Default.NewReleases,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        },
+        title = { Text(if (count == 1) "1 new chapter" else "$count new chapters") },
+        text = {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 280.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(
+                    count = summary.chapters.size,
+                    key = { summary.chapters[it].let { ch -> "${ch.chapterNumber}-${ch.name}" } },
+                ) { i ->
+                    RefreshSummaryRow(summary.chapters[i])
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("OK") }
+        },
+    )
+}
+
+@Composable
+private fun RefreshSummaryRow(chapter: RefreshedChapter) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (chapter.locked) {
+            Icon(
+                Icons.Default.Lock,
+                contentDescription = "Locked",
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.premiumGold,
+            )
+        }
+        if (chapter.unlockedFromLocked) {
+            Text(
+                text = "Unlocked",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.premiumGold,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.premiumGold.copy(alpha = 0.15f))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            if (chapter.chapterNumber >= 0f) {
+                val formatted = if (chapter.chapterNumber % 1f == 0f) {
+                    chapter.chapterNumber.toInt().toString()
+                } else {
+                    chapter.chapterNumber.toString()
+                }
+                Text(
+                    text = "Chapter $formatted",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                text = chapter.name,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
 }
 
 @Composable
