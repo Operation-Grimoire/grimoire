@@ -62,8 +62,9 @@ class DownloadManager @Inject constructor(
         scope.launch {
             val ids = chapters
                 .filter {
-                    it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
-                        it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal
+                    !it.locked &&
+                        (it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
+                            it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
                 }
                 .map { it.id }
             ids.chunked(999).forEach { chunk ->
