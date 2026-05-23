@@ -10,6 +10,7 @@ import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.tts.DeviceTtsEngine
 import io.grimoire.app.data.tts.ElevenLabsApi
 import io.grimoire.app.data.tts.ElevenLabsUsage
+import io.grimoire.app.data.tts.TtsController
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsLanguageResolver
 import io.grimoire.app.data.tts.TtsVoice
@@ -52,11 +53,13 @@ class TtsSettingsViewModel @Inject constructor(
     private val deviceEngine: DeviceTtsEngine,
     private val elevenLabsApi: ElevenLabsApi,
     private val languageResolver: TtsLanguageResolver,
+    private val ttsController: TtsController,
 ) : ViewModel() {
 
     /** Non-null only on the voice-picker screen. */
     val language: String? = savedStateHandle["lang"]
 
+    val enabled: StateFlow<Boolean> = prefs.enabled.stateIn(viewModelScope)
     val engine: StateFlow<TtsEngineType> = prefs.engine.stateIn(viewModelScope)
     val speechRate: StateFlow<Int> = prefs.speechRate.stateIn(viewModelScope)
     val pitch: StateFlow<Int> = prefs.pitch.stateIn(viewModelScope)
@@ -102,6 +105,11 @@ class TtsSettingsViewModel @Inject constructor(
                 .distinctBy { ContentLanguages.normalize(it) }
         }
         if (language != null) loadVoices()
+    }
+
+    fun setEnabled(value: Boolean) = viewModelScope.launch {
+        prefs.enabled.set(value)
+        if (!value) ttsController.stop()
     }
 
     fun setEngine(value: TtsEngineType) = viewModelScope.launch { prefs.engine.set(value) }

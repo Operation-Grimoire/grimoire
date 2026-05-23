@@ -14,6 +14,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class TtsPreferences @Inject constructor(store: PreferenceStore) {
+    val enabled = store.getBoolean("tts_enabled", true)
     val engine = store.getEnum("tts_engine", TtsEngineType.DEVICE)
     val speechRate = store.getInt("tts_speech_rate_x100", 100)
     val pitch = store.getInt("tts_pitch_x100", 100)

@@ -152,6 +152,7 @@ fun ReaderScreen(
     val ttsSpokenPageIndex by viewModel.ttsSpokenPageIndex.collectAsState()
     val ttsError by viewModel.ttsError.collectAsState()
 
+    val ttsEnabled by viewModel.ttsEnabled.collectAsState()
     val ttsEngine by viewModel.ttsEngine.collectAsState()
     val ttsSpeechRate by viewModel.ttsSpeechRate.collectAsState()
     val ttsPitch by viewModel.ttsPitch.collectAsState()
@@ -416,12 +417,13 @@ fun ReaderScreen(
                 enabled = hasPrev,
             )
             TooltipIconButton(
+                visible = ttsEnabled,
                 icon = if (ttsPlayingThisChapter) Icons.Default.Pause else Icons.Default.PlayArrow,
                 label = if (ttsPlayingThisChapter) "Pause" else "Read aloud",
                 onClick = viewModel::toggleTts,
             )
             TooltipIconButton(
-                visible = ttsActiveForChapter,
+                visible = ttsEnabled && ttsActiveForChapter,
                 icon = Icons.Default.Stop,
                 label = "Stop",
                 onClick = viewModel::stopTts,
@@ -451,6 +453,7 @@ fun ReaderScreen(
             readerFont = readerFont,
             colorTheme = colorTheme,
             orientation = orientation,
+            ttsEnabled = ttsEnabled,
             ttsEngine = ttsEngine,
             ttsSpeechRate = ttsSpeechRate,
             ttsPitch = ttsPitch,
@@ -462,6 +465,7 @@ fun ReaderScreen(
             onFont = viewModel::setReaderFont,
             onColorTheme = viewModel::setColorTheme,
             onOrientation = viewModel::setOrientation,
+            onTtsEnabled = viewModel::setTtsEnabled,
             onTtsEngine = viewModel::setTtsEngine,
             onTtsSpeechRate = viewModel::setTtsSpeechRate,
             onTtsPitch = viewModel::setTtsPitch,
@@ -486,6 +490,7 @@ private fun ReaderSettingsSheet(
     readerFont: ReaderFont,
     colorTheme: ReaderColorTheme,
     orientation: ReaderOrientation,
+    ttsEnabled: Boolean,
     ttsEngine: TtsEngineType,
     ttsSpeechRate: Int,
     ttsPitch: Int,
@@ -497,6 +502,7 @@ private fun ReaderSettingsSheet(
     onFont: (ReaderFont) -> Unit,
     onColorTheme: (ReaderColorTheme) -> Unit,
     onOrientation: (ReaderOrientation) -> Unit,
+    onTtsEnabled: (Boolean) -> Unit,
     onTtsEngine: (TtsEngineType) -> Unit,
     onTtsSpeechRate: (Int) -> Unit,
     onTtsPitch: (Int) -> Unit,
@@ -541,10 +547,12 @@ private fun ReaderSettingsSheet(
             )
         } else {
             ReaderTtsSettings(
+                enabled = ttsEnabled,
                 engine = ttsEngine,
                 speechRate = ttsSpeechRate,
                 pitch = ttsPitch,
                 autoAdvance = ttsAutoAdvance,
+                onEnabled = onTtsEnabled,
                 onEngine = onTtsEngine,
                 onSpeechRate = onTtsSpeechRate,
                 onPitch = onTtsPitch,
@@ -634,10 +642,12 @@ private fun ReaderDisplaySettings(
 
 @Composable
 private fun ReaderTtsSettings(
+    enabled: Boolean,
     engine: TtsEngineType,
     speechRate: Int,
     pitch: Int,
     autoAdvance: Boolean,
+    onEnabled: (Boolean) -> Unit,
     onEngine: (TtsEngineType) -> Unit,
     onSpeechRate: (Int) -> Unit,
     onPitch: (Int) -> Unit,
@@ -651,6 +661,24 @@ private fun ReaderTtsSettings(
             .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Enable text-to-speech",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = "Show playback controls in the reader",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(checked = enabled, onCheckedChange = onEnabled)
+        }
+
         SettingsSectionLabel("Speech engine")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(

@@ -48,6 +48,7 @@ fun TtsSettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: TtsSettingsViewModel = hiltViewModel(),
 ) {
+    val enabled by viewModel.enabled.collectAsState()
     val engine by viewModel.engine.collectAsState()
     val speechRate by viewModel.speechRate.collectAsState()
     val pitch by viewModel.pitch.collectAsState()
@@ -76,6 +77,21 @@ fun TtsSettingsScreen(
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
+            item {
+                ListItem(
+                    headlineContent = { Text("Enable text-to-speech") },
+                    supportingContent = {
+                        Text("Show read-aloud controls in the reader")
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = enabled,
+                            onCheckedChange = { viewModel.setEnabled(it) },
+                        )
+                    },
+                    modifier = Modifier.clickable { viewModel.setEnabled(!enabled) },
+                )
+            }
             item { SettingsSectionHeader("Speech engine") }
             item {
                 Row(
