@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.updates
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -242,6 +243,7 @@ private fun UpdateRow(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 if (entry.locked) LockBadge()
+                if (entry.unlockedFromLocked) UnlockedTag()
                 Text(
                     text = entry.chapterName,
                     style = MaterialTheme.typography.bodySmall,
@@ -301,6 +303,10 @@ private fun UpdateGroupHeader(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                val unlockedCount = group.entries.count { it.unlockedFromLocked }
+                if (unlockedCount > 0) {
+                    UnlockedTag(label = "$unlockedCount unlocked")
+                }
             }
         }
         Text(
@@ -329,6 +335,7 @@ private fun ChapterUpdateRow(entry: LibraryUpdateEntity, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 if (entry.locked) LockBadge()
+                if (entry.unlockedFromLocked) UnlockedTag()
                 Text(
                     text = entry.chapterName,
                     maxLines = 2,
@@ -346,6 +353,19 @@ private fun LockBadge() {
         contentDescription = "Locked",
         modifier = Modifier.size(14.dp),
         tint = MaterialTheme.colorScheme.premiumGold,
+    )
+}
+
+@Composable
+private fun UnlockedTag(label: String = "Unlocked") {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.premiumGold,
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(MaterialTheme.colorScheme.premiumGold.copy(alpha = 0.15f))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
     )
 }
 

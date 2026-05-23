@@ -176,6 +176,7 @@ class LibraryUpdater @Inject constructor(
             val now = System.currentTimeMillis()
             libraryUpdateDao.insertAll(
                 newChapters.map { ch ->
+                    val prev = existingByUrl[ch.url]
                     LibraryUpdateEntity(
                         novelId = novel.id,
                         sourcePackage = pkg,
@@ -187,6 +188,7 @@ class LibraryUpdater @Inject constructor(
                         chapterNumber = ch.chapterNumber,
                         foundAt = now,
                         locked = ch.locked,
+                        unlockedFromLocked = prev != null && prev.locked && !ch.locked,
                     )
                 },
             )
