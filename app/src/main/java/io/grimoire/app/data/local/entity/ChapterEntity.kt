@@ -44,7 +44,7 @@ fun decodeChapterContent(content: String): List<NovelPage> =
         childColumns = ["novelId"],
         onDelete = ForeignKey.CASCADE,
     )],
-    indices = [Index("novelId")],
+    indices = [Index("novelId"), Index("downloadStatus")],
 )
 data class ChapterEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

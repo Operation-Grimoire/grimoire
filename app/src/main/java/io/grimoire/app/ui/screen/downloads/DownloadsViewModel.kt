@@ -38,8 +38,10 @@ class DownloadsViewModel @Inject constructor(
         .flatMapLatest { chapters ->
             flow {
                 val groups = chapters.groupBy { it.novelId }
+                val novelById = if (groups.isEmpty()) emptyMap()
+                else novelDao.getByIds(groups.keys.toList()).associateBy { it.id }
                 val result = groups.mapNotNull { (novelId, chs) ->
-                    val novel = novelDao.getById(novelId) ?: return@mapNotNull null
+                    val novel = novelById[novelId] ?: return@mapNotNull null
                     val sorted = chs.sortedWith(
                         compareBy({ STATUS_ORDER[it.downloadStatus] ?: 4 }, { it.chapterNumber })
                     )
@@ -66,6 +68,7 @@ class DownloadsViewModel @Inject constructor(
     fun retryChapter(chapter: ChapterEntity) = downloadManager.retryChapter(chapter)
     fun retryAll(novelId: Long) = downloadManager.retryAll(novelId)
     fun cancelAll(novelId: Long) = downloadManager.cancelAll(novelId)
+    fun cancelAllFailed(novelId: Long) = downloadManager.cancelAllFailed(novelId)
     fun moveToTopOfQueue(novelId: Long) = downloadManager.moveToTopOfQueue(novelId)
     fun deleteAllDownloads(novelId: Long) = downloadManager.deleteAllDownloads(novelId)
     fun cancel(chapter: ChapterEntity) = downloadManager.cancel(chapter)

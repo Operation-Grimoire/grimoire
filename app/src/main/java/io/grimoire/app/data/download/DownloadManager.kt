@@ -62,8 +62,9 @@ class DownloadManager @Inject constructor(
         scope.launch {
             val ids = chapters
                 .filter {
-                    it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
-                        it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal
+                    !it.locked &&
+                        (it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
+                            it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
                 }
                 .map { it.id }
             ids.chunked(999).forEach { chunk ->
@@ -138,6 +139,10 @@ class DownloadManager @Inject constructor(
         scope.launch { chapterDao.retryAllFailed(novelId) }
         _isPaused.value = false
         context.startForegroundService(Intent(context, DownloadService::class.java))
+    }
+
+    fun cancelAllFailed(novelId: Long) {
+        scope.launch { chapterDao.cancelAllFailed(novelId) }
     }
 
     suspend fun processQueue(onProgress: (chapterName: String, remaining: Int) -> Unit): Int {

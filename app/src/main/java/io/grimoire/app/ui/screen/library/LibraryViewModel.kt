@@ -207,7 +207,7 @@ class LibraryViewModel @Inject constructor(
 
     fun downloadNovels(ids: Set<Long>) = viewModelScope.launch {
         ids.forEach { id ->
-            val chapters = chapterDao.getChaptersOnce(id)
+            val chapters = chapterDao.getChaptersOnce(id).filter { !it.locked }
             if (chapters.isNotEmpty()) downloadManager.enqueue(chapters)
         }
     }
