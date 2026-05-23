@@ -87,6 +87,10 @@ class NovelDetailViewModel @Inject constructor(
     private val _bookDownload = MutableStateFlow<BookDownloadState>(BookDownloadState.Idle)
     val bookDownload: StateFlow<BookDownloadState> = _bookDownload.asStateFlow()
 
+    /** Diff produced by the most recent user-triggered [refresh]; the screen shows a modal while non-null. */
+    private val _refreshSummary = MutableStateFlow<RefreshSummary?>(null)
+    val refreshSummary: StateFlow<RefreshSummary?> = _refreshSummary.asStateFlow()
+
     val novelWebUrl: String get() {
         val url = _novel.value.url
         if (url.startsWith("http")) return url
@@ -270,9 +274,43 @@ class NovelDetailViewModel @Inject constructor(
         if (isLocal) return
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
+            // Snapshot the chapter list before the refresh so we can diff against the
+            // post-refresh list and surface the new/unlocked chapters to the user.
+            val before = if (cachedNovelId > 0L) {
+                chapterDao.getChaptersOnce(cachedNovelId).associateBy { it.url }
+            } else emptyMap()
+
             loadNovel(forceRefresh = true)
             refreshLoginState()
+
+            // Only emit a summary when the novel already had a chapter list — otherwise
+            // a first-time fetch would flag every chapter as "new".
+            if (before.isNotEmpty() && cachedNovelId > 0L) {
+                val after = chapterDao.getChaptersOnce(cachedNovelId)
+                val newChapters = after.filter { ch ->
+                    val prev = before[ch.url]
+                    prev == null || (prev.locked && !ch.locked)
+                }
+                if (newChapters.isNotEmpty()) {
+                    _refreshSummary.value = RefreshSummary(
+                        chapters = newChapters
+                            .sortedByDescending { it.chapterNumber }
+                            .map { ch ->
+                                RefreshedChapter(
+                                    name = ch.name,
+                                    chapterNumber = ch.chapterNumber,
+                                    locked = ch.locked,
+                                    unlockedFromLocked = before[ch.url]?.locked == true,
+                                )
+                            },
+                    )
+                }
+            }
         }
+    }
+
+    fun acknowledgeRefreshSummary() {
+        _refreshSummary.value = null
     }
 
     private fun refreshLoginState() {
@@ -533,6 +571,17 @@ sealed interface BookDownloadState {
     data object Done : BookDownloadState
     data class Error(val message: String) : BookDownloadState
 }
+
+/** Chapters discovered by a user-triggered refresh of a single novel. */
+data class RefreshSummary(val chapters: List<RefreshedChapter>)
+
+data class RefreshedChapter(
+    val name: String,
+    val chapterNumber: Float,
+    val locked: Boolean,
+    /** True when the chapter existed before but was locked, and is now unlocked. */
+    val unlockedFromLocked: Boolean,
+)
 
 /** Sign-in state of the backing source. */
 enum class LoginState { UNKNOWN, NOT_SUPPORTED, SIGNED_OUT, SIGNED_IN }
