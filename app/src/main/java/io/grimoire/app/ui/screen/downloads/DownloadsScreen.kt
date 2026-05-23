@@ -213,61 +213,58 @@ fun DownloadsScreen(
                 val hasError = target.chapters.any { it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal }
                 val hasDownloaded = target.chapters.any { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
 
-                if (hasQueued) {
-                    TooltipIconButton(
-                        icon = Icons.Default.KeyboardDoubleArrowUp,
-                        label = "Move to top",
-                        onClick = {
-                            target.novelIds.forEach { viewModel.moveToTopOfQueue(it) }
-                            clearSelection()
-                        },
-                    )
-                }
-                if (hasInFlight) {
-                    TooltipIconButton(
-                        icon = Icons.Default.Close,
-                        label = "Cancel",
-                        onClick = {
-                            target.chapters
-                                .filter { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }
-                                .forEach { viewModel.cancel(it) }
-                            clearSelection()
-                        },
-                    )
-                }
-                if (hasError) {
-                    TooltipIconButton(
-                        icon = Icons.Default.Refresh,
-                        label = "Retry",
-                        onClick = {
-                            target.chapters
-                                .filter { it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal }
-                                .forEach { viewModel.retryChapter(it) }
-                            clearSelection()
-                        },
-                    )
-                    TooltipIconButton(
-                        icon = Icons.Default.Close,
-                        label = "Cancel failed",
-                        onClick = {
-                            target.novelIds.forEach { viewModel.cancelAllFailed(it) }
-                            clearSelection()
-                        },
-                    )
-                }
-                if (hasDownloaded) {
-                    TooltipIconButton(
-                        icon = Icons.Default.Delete,
-                        label = "Delete",
-                        onClick = {
-                            target.chapters
-                                .filter { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
-                                .forEach { viewModel.deleteDownload(it) }
-                            clearSelection()
-                        },
-                        tint = MaterialTheme.colorScheme.error,
-                    )
-                }
+                TooltipIconButton(
+                    visible = hasQueued,
+                    icon = Icons.Default.KeyboardDoubleArrowUp,
+                    label = "Move to top",
+                    onClick = {
+                        target.novelIds.forEach { viewModel.moveToTopOfQueue(it) }
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    visible = hasInFlight,
+                    icon = Icons.Default.Close,
+                    label = "Cancel",
+                    onClick = {
+                        target.chapters
+                            .filter { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }
+                            .forEach { viewModel.cancel(it) }
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    visible = hasError,
+                    icon = Icons.Default.Refresh,
+                    label = "Retry",
+                    onClick = {
+                        target.chapters
+                            .filter { it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal }
+                            .forEach { viewModel.retryChapter(it) }
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    visible = hasError,
+                    icon = Icons.Default.Close,
+                    label = "Cancel failed",
+                    onClick = {
+                        target.novelIds.forEach { viewModel.cancelAllFailed(it) }
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    visible = hasDownloaded,
+                    icon = Icons.Default.Delete,
+                    label = "Delete",
+                    onClick = {
+                        target.chapters
+                            .filter { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
+                            .forEach { viewModel.deleteDownload(it) }
+                        clearSelection()
+                    },
+                    tint = MaterialTheme.colorScheme.error,
+                )
             }
         },
     ) { padding ->

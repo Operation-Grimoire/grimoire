@@ -173,71 +173,65 @@ fun LibraryUpdatesScreen(
                 val novelIdsInSelection = selectedEntryIds
                     .mapNotNull { id -> entries.firstOrNull { it.id == id }?.novelId }
                     .distinct()
-                val showOpenNovel = novelIdsInSelection.size == 1
-                if (showOpenNovel) {
-                    val novelId = novelIdsInSelection.first()
-                    val sample = entries.firstOrNull { it.novelId == novelId }
-                    if (sample != null) {
-                        TooltipIconButton(
-                            icon = Icons.Default.OpenInNew,
-                            label = "Open novel",
-                            onClick = {
-                                onOpenNovel(sample.sourcePackage, sample.novelUrl)
-                                clearSelection()
-                            },
-                        )
-                    }
-                }
-                if (showMarkRead) {
-                    TooltipIconButton(
-                        icon = Icons.Default.DoneAll,
-                        label = "Mark read",
-                        onClick = {
-                            viewModel.setEntriesRead(selectedEntryIds, true)
+                val openNovelSample = if (novelIdsInSelection.size == 1) {
+                    entries.firstOrNull { it.novelId == novelIdsInSelection.first() }
+                } else null
+                TooltipIconButton(
+                    visible = openNovelSample != null,
+                    icon = Icons.Default.OpenInNew,
+                    label = "Open novel",
+                    onClick = {
+                        openNovelSample?.let {
+                            onOpenNovel(it.sourcePackage, it.novelUrl)
                             clearSelection()
-                        },
-                    )
-                }
-                if (showMarkUnread) {
-                    TooltipIconButton(
-                        icon = Icons.Default.RemoveDone,
-                        label = "Mark unread",
-                        onClick = {
-                            viewModel.setEntriesRead(selectedEntryIds, false)
-                            clearSelection()
-                        },
-                    )
-                }
-                if (showDownload) {
-                    TooltipIconButton(
-                        icon = Icons.Default.Download,
-                        label = "Download",
-                        onClick = {
-                            viewModel.downloadEntries(selectedEntryIds)
-                            clearSelection()
-                        },
-                    )
-                }
-                if (showCancel) {
-                    TooltipIconButton(
-                        icon = Icons.Default.Close,
-                        label = "Cancel",
-                        onClick = {
-                            viewModel.cancelDownloadEntries(selectedEntryIds)
-                            clearSelection()
-                        },
-                    )
-                }
-                if (showDeleteDownload) {
-                    TooltipIconButton(
-                        icon = Icons.Default.DeleteSweep,
-                        label = "Delete download",
-                        onClick = {
-                            viewModel.deleteDownloadEntries(selectedEntryIds)
-                            clearSelection()
-                        },
-                    )
-                }
+                        }
+                    },
+                )
+                TooltipIconButton(
+                    visible = showMarkRead,
+                    icon = Icons.Default.DoneAll,
+                    label = "Mark read",
+                    onClick = {
+                        viewModel.setEntriesRead(selectedEntryIds, true)
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    visible = showMarkUnread,
+                    icon = Icons.Default.RemoveDone,
+                    label = "Mark unread",
+                    onClick = {
+                        viewModel.setEntriesRead(selectedEntryIds, false)
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    visible = showDownload,
+                    icon = Icons.Default.Download,
+                    label = "Download",
+                    onClick = {
+                        viewModel.downloadEntries(selectedEntryIds)
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    visible = showCancel,
+                    icon = Icons.Default.Close,
+                    label = "Cancel",
+                    onClick = {
+                        viewModel.cancelDownloadEntries(selectedEntryIds)
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    visible = showDeleteDownload,
+                    icon = Icons.Default.DeleteSweep,
+                    label = "Delete download",
+                    onClick = {
+                        viewModel.deleteDownloadEntries(selectedEntryIds)
+                        clearSelection()
+                    },
+                )
                 TooltipIconButton(
                     icon = Icons.Default.Delete,
                     label = "Delete from log",
