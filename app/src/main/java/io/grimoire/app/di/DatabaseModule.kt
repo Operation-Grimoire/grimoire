@@ -18,6 +18,12 @@ import io.grimoire.app.data.local.dao.RepoDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
 import javax.inject.Singleton
 
+private val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE library_updates ADD COLUMN locked INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 private val MIGRATION_14_15 = object : Migration(14, 15) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
@@ -172,7 +178,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "grimoire.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16)
             .build()
 
     @Provides fun provideNovelDao(db: AppDatabase): NovelDao = db.novelDao()

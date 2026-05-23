@@ -6,6 +6,7 @@ import io.grimoire.api.model.NovelStatus
 import io.grimoire.api.source.EpubSource
 import io.grimoire.api.source.PaginatedSource
 import io.grimoire.api.source.Source
+import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
@@ -17,9 +18,11 @@ import io.grimoire.app.data.local.entity.LibraryUpdateEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.UpdateIssueEntity
 import io.grimoire.app.data.local.entity.UpdateIssueSeverity
+import io.grimoire.app.data.preferences.LibraryUpdatePreferences
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -45,6 +48,8 @@ class LibraryUpdater @Inject constructor(
     private val libraryUpdateDao: LibraryUpdateDao,
     private val updateIssueDao: UpdateIssueDao,
     private val extensionManager: ExtensionManager,
+    private val preferences: LibraryUpdatePreferences,
+    private val downloadManager: DownloadManager,
 ) {
 
     /**
@@ -156,11 +161,16 @@ class LibraryUpdater @Inject constructor(
         )
 
         // Only log new chapters when the novel already had a chapter list, so the
-        // first refresh of a never-opened novel does not flood the log.
+        // first refresh of a never-opened novel does not flood the log. A chapter
+        // that flipped from locked to unlocked also counts as an update — the
+        // user couldn't read it before and now they can.
         val newChapters = if (existing.isEmpty()) {
             emptyList()
         } else {
-            fetchedChapters.filter { it.url !in existingByUrl }
+            fetchedChapters.filter { ch ->
+                val prev = existingByUrl[ch.url]
+                prev == null || (prev.locked && !ch.locked)
+            }
         }
         if (newChapters.isNotEmpty()) {
             val now = System.currentTimeMillis()
@@ -176,9 +186,23 @@ class LibraryUpdater @Inject constructor(
                         chapterName = ch.name,
                         chapterNumber = ch.chapterNumber,
                         foundAt = now,
+                        locked = ch.locked,
                     )
                 },
             )
+            if (preferences.autoDownloadNewChapters.changes().first()) {
+                // Locked chapters can't be fetched; skip them so the queue isn't
+                // poisoned with chapters that will just fail.
+                val downloadableUrls = newChapters
+                    .filterNot { it.locked }
+                    .map { it.url }
+                    .toSet()
+                if (downloadableUrls.isNotEmpty()) {
+                    val freshChapters = chapterDao.getChaptersOnce(novel.id)
+                        .filter { it.url in downloadableUrls }
+                    if (freshChapters.isNotEmpty()) downloadManager.enqueue(freshChapters)
+                }
+            }
         }
 
         return if (regressed) {
