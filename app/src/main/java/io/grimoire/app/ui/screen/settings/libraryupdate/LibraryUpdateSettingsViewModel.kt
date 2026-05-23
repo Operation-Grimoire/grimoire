@@ -23,6 +23,7 @@ class LibraryUpdateSettingsViewModel @Inject constructor(
     val onlyOnWifi = preferences.onlyOnWifi.stateIn(viewModelScope)
     val requiresCharging = preferences.requiresCharging.stateIn(viewModelScope)
     val autoDownloadNewChapters = preferences.autoDownloadNewChapters.stateIn(viewModelScope)
+    val concurrency = preferences.concurrency.stateIn(viewModelScope)
     val lastRunAt = preferences.lastRunAt.changes()
         .map { it.toLongOrNull() ?: 0L }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
@@ -43,6 +44,10 @@ class LibraryUpdateSettingsViewModel @Inject constructor(
 
     fun setAutoDownloadNewChapters(value: Boolean) = viewModelScope.launch {
         preferences.autoDownloadNewChapters.set(value)
+    }
+
+    fun setConcurrency(value: Int) = viewModelScope.launch {
+        preferences.concurrency.set(value.coerceIn(1, 8))
     }
 
     fun updateLibraryNow() = scheduler.triggerOneOff(null)

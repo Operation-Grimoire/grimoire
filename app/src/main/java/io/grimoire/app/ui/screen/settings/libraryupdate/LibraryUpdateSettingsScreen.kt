@@ -16,6 +16,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
@@ -45,6 +46,7 @@ fun LibraryUpdateSettingsScreen(
     val onlyOnWifi by viewModel.onlyOnWifi.collectAsState()
     val requiresCharging by viewModel.requiresCharging.collectAsState()
     val autoDownloadNewChapters by viewModel.autoDownloadNewChapters.collectAsState()
+    val concurrency by viewModel.concurrency.collectAsState()
     val lastRunAt by viewModel.lastRunAt.collectAsState()
     val lastRunSuccess by viewModel.lastRunSuccess.collectAsState()
     val lastRunMessage by viewModel.lastRunMessage.collectAsState()
@@ -130,6 +132,32 @@ fun LibraryUpdateSettingsScreen(
                     },
                 )
             }
+
+            item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
+            item { SectionHeader("Performance") }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("Sync concurrency: $concurrency") },
+                    supportingContent = {
+                        Column {
+                            Slider(
+                                value = concurrency.toFloat(),
+                                onValueChange = { viewModel.setConcurrency(it.toInt()) },
+                                valueRange = 1f..8f,
+                                steps = 6,
+                            )
+                            Text(
+                                "How many novels to refresh in parallel. Higher is faster but may trigger rate-limiting from some sources.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
+                )
+            }
+
+            item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
 
             item {
                 ListItem(
