@@ -327,7 +327,9 @@ fun DownloadsScreen(
                             onClick = {
                                 if (selectionMode) toggleNovel(novelId) else toggleCollapse()
                             },
-                            onLongClick = { toggleNovel(novelId) },
+                            onLongClick = {
+                                if (selectionMode) toggleCollapse() else toggleNovel(novelId)
+                            },
                             onToggleCollapse = toggleCollapse,
                         )
                     }

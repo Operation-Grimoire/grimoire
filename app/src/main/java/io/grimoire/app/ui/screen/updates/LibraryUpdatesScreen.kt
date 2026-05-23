@@ -254,7 +254,10 @@ fun LibraryUpdatesScreen(
                                         if (selectionMode) toggleNovel(group.first.novelId)
                                         else toggleCollapse()
                                     },
-                                    onLongClick = { toggleNovel(group.first.novelId) },
+                                    onLongClick = {
+                                        if (selectionMode) toggleCollapse()
+                                        else toggleNovel(group.first.novelId)
+                                    },
                                     onToggleCollapse = toggleCollapse,
                                 )
                             }
