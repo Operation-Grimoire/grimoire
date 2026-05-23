@@ -6,9 +6,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
+import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,6 +27,24 @@ class LibraryUpdatesViewModel @Inject constructor(
     val entries: StateFlow<List<LibraryUpdateEntity>> = libraryUpdateDao.getAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /**
+     * Live chapter state keyed by log entry id. The log denormalizes some fields
+     * at refresh time, but lock/download status changes over time, so the UI
+     * resolves them against the chapter table for an up-to-date display.
+     */
+    val chaptersByEntryId: StateFlow<Map<Long, ChapterEntity>> = entries
+        .flatMapLatest { rows ->
+            if (rows.isEmpty()) flowOf(emptyMap())
+            else chapterDao.getChaptersForNovels(rows.map { it.novelId }.distinct())
+                .map { chapters ->
+                    val byKey = chapters.associateBy { it.novelId to it.url }
+                    rows.mapNotNull { row ->
+                        byKey[row.novelId to row.chapterUrl]?.let { row.id to it }
+                    }.toMap()
+                }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
     fun clearLog() = viewModelScope.launch { libraryUpdateDao.clearAll() }
 
     /** Removes the selected log rows only; the chapter table is untouched. */
@@ -31,16 +53,16 @@ class LibraryUpdatesViewModel @Inject constructor(
     }
 
     fun markEntriesRead(entryIds: Set<Long>) = viewModelScope.launch {
-        val chapterIds = entries.value
-            .filter { it.id in entryIds }
-            .mapNotNull { chapterDao.getByUrl(it.novelId, it.chapterUrl)?.id }
+        val chapterIds = entryIds.mapNotNull { chaptersByEntryId.value[it]?.id }
         if (chapterIds.isNotEmpty()) chapterDao.markChapters(chapterIds, true)
     }
 
     fun downloadEntries(entryIds: Set<Long>) = viewModelScope.launch {
-        val chapters = entries.value
-            .filter { it.id in entryIds }
-            .mapNotNull { chapterDao.getByUrl(it.novelId, it.chapterUrl) }
+        val chapters = entryIds.mapNotNull { chaptersByEntryId.value[it] }
         if (chapters.isNotEmpty()) downloadManager.enqueue(chapters)
     }
+
+    fun downloadChapter(chapter: ChapterEntity) = downloadManager.enqueue(listOf(chapter))
+    fun cancelDownload(chapter: ChapterEntity) = downloadManager.cancel(chapter)
+    fun deleteDownload(chapter: ChapterEntity) = downloadManager.deleteDownload(chapter)
 }
