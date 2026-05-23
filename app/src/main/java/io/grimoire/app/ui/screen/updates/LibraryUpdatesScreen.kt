@@ -1,8 +1,8 @@
 package io.grimoire.app.ui.screen.updates
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,10 +16,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -28,6 +32,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -42,11 +47,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
+import io.grimoire.app.ui.component.SelectionBottomBar
+import io.grimoire.app.ui.component.SelectionTopBar
+import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.theme.premiumGold
 import java.text.DateFormat
 import java.util.Calendar
@@ -73,35 +82,111 @@ fun LibraryUpdatesScreen(
     var showClearConfirm by remember { mutableStateOf(false) }
     var expandedGroups by remember { mutableStateOf(setOf<Pair<Long, Long>>()) }
 
+    var selectedNovelIds by remember { mutableStateOf(emptySet<Long>()) }
+    var selectedEntryIds by remember { mutableStateOf(emptySet<Long>()) }
+    val selectionMode = selectedNovelIds.isNotEmpty() || selectedEntryIds.isNotEmpty()
+    val selectionCount = selectedNovelIds.size + selectedEntryIds.size
+    val clearSelection: () -> Unit = {
+        selectedNovelIds = emptySet()
+        selectedEntryIds = emptySet()
+    }
+    val toggleEntry: (Long) -> Unit = { id ->
+        selectedEntryIds = if (id in selectedEntryIds) selectedEntryIds - id else selectedEntryIds + id
+    }
+    val toggleNovel: (Long) -> Unit = { id ->
+        selectedNovelIds = if (id in selectedNovelIds) selectedNovelIds - id else selectedNovelIds + id
+    }
+
+    BackHandler(enabled = selectionMode) { clearSelection() }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                title = { Text("Updates") },
-                actions = {
-                    Box {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+            if (selectionMode) {
+                SelectionTopBar(
+                    count = selectionCount,
+                    onClear = clearSelection,
+                    onSelectAll = {
+                        val allIds = entries.map { it.id }.toSet()
+                        selectedEntryIds = if (selectedEntryIds.containsAll(allIds)) {
+                            emptySet()
+                        } else {
+                            allIds
                         }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false },
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Clear log") },
-                                onClick = {
-                                    menuExpanded = false
-                                    showClearConfirm = true
-                                },
-                            )
+                    },
+                )
+            } else {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
+                    },
+                    title = { Text("Updates") },
+                    actions = {
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                            }
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Clear log") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showClearConfirm = true
+                                    },
+                                )
+                            }
+                        }
+                    },
+                )
+            }
+        },
+        bottomBar = {
+            SelectionBottomBar(visible = selectionMode) {
+                val openNovelOnly = selectedNovelIds.size == 1 && selectedEntryIds.isEmpty()
+                if (openNovelOnly) {
+                    val novelId = selectedNovelIds.first()
+                    val sample = entries.firstOrNull { it.novelId == novelId }
+                    if (sample != null) {
+                        TooltipIconButton(
+                            icon = Icons.Default.OpenInNew,
+                            label = "Open novel",
+                            onClick = {
+                                onOpenNovel(sample.sourcePackage, sample.novelUrl)
+                                clearSelection()
+                            },
+                        )
                     }
-                },
-            )
+                }
+                TooltipIconButton(
+                    icon = Icons.Default.DoneAll,
+                    label = "Mark read",
+                    onClick = {
+                        viewModel.markEntriesRead(effectiveEntryIds(entries, selectedNovelIds, selectedEntryIds))
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.Download,
+                    label = "Download",
+                    onClick = {
+                        viewModel.downloadEntries(effectiveEntryIds(entries, selectedNovelIds, selectedEntryIds))
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.Delete,
+                    label = "Delete from log",
+                    onClick = {
+                        viewModel.deleteEntries(effectiveEntryIds(entries, selectedNovelIds, selectedEntryIds))
+                        clearSelection()
+                    },
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
         },
     ) { padding ->
         if (entries.isEmpty()) {
@@ -143,12 +228,12 @@ fun LibraryUpdatesScreen(
                             item(key = "single-${entry.id}") {
                                 UpdateRow(
                                     entry = entry,
+                                    selected = entry.id in selectedEntryIds,
                                     onClick = {
-                                        onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
+                                        if (selectionMode) toggleEntry(entry.id)
+                                        else onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
                                     },
-                                    onLongClick = {
-                                        onOpenNovel(entry.sourcePackage, entry.novelUrl)
-                                    },
+                                    onLongClick = { toggleEntry(entry.id) },
                                 )
                             }
                         } else {
@@ -157,16 +242,16 @@ fun LibraryUpdatesScreen(
                                 UpdateGroupHeader(
                                     group = group,
                                     collapsed = collapsed,
-                                    onToggle = {
-                                        expandedGroups = if (collapsed) {
+                                    selected = group.first.novelId in selectedNovelIds,
+                                    onClick = {
+                                        if (selectionMode) toggleNovel(group.first.novelId)
+                                        else expandedGroups = if (collapsed) {
                                             expandedGroups + group.key
                                         } else {
                                             expandedGroups - group.key
                                         }
                                     },
-                                    onLongClick = {
-                                        onOpenNovel(group.first.sourcePackage, group.first.novelUrl)
-                                    },
+                                    onLongClick = { toggleNovel(group.first.novelId) },
                                 )
                             }
                             if (!collapsed) {
@@ -177,13 +262,16 @@ fun LibraryUpdatesScreen(
                                     val entry = group.entries[index]
                                     ChapterUpdateRow(
                                         entry = entry,
+                                        selected = entry.id in selectedEntryIds,
                                         onClick = {
-                                            onOpenReader(
+                                            if (selectionMode) toggleEntry(entry.id)
+                                            else onOpenReader(
                                                 entry.sourcePackage,
                                                 entry.novelUrl,
                                                 entry.chapterUrl,
                                             )
                                         },
+                                        onLongClick = { toggleEntry(entry.id) },
                                     )
                                 }
                                 item(key = "group-end-${group.first.id}") {
@@ -215,16 +303,32 @@ fun LibraryUpdatesScreen(
     }
 }
 
+/**
+ * Resolves which log rows an action applies to: the explicitly selected entries,
+ * plus every entry belonging to a selected novel.
+ */
+private fun effectiveEntryIds(
+    entries: List<LibraryUpdateEntity>,
+    selectedNovelIds: Set<Long>,
+    selectedEntryIds: Set<Long>,
+): Set<Long> {
+    if (selectedNovelIds.isEmpty()) return selectedEntryIds
+    val fromNovels = entries.filter { it.novelId in selectedNovelIds }.map { it.id }
+    return selectedEntryIds + fromNovels
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun UpdateRow(
     entry: LibraryUpdateEntity,
+    selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -266,13 +370,15 @@ private fun UpdateRow(
 private fun UpdateGroupHeader(
     group: UpdateGroup,
     collapsed: Boolean,
-    onToggle: () -> Unit,
+    selected: Boolean,
+    onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(onClick = onToggle, onLongClick = onLongClick)
+            .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -322,12 +428,22 @@ private fun UpdateGroupHeader(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-private fun ChapterUpdateRow(entry: LibraryUpdateEntity, onClick: () -> Unit) {
+private fun ChapterUpdateRow(
+    entry: LibraryUpdateEntity,
+    selected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+) {
     val numberLabel = chapterNumberLabel(entry.chapterNumber)
     ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        colors = if (selected) {
+            ListItemDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+            )
+        } else ListItemDefaults.colors(),
         overlineContent = numberLabel?.let { label -> { Text(label) } },
         headlineContent = {
             Row(

@@ -19,4 +19,7 @@ interface LibraryUpdateDao {
 
     @Query("DELETE FROM library_updates")
     suspend fun clearAll()
+
+    @Query("DELETE FROM library_updates WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Long>)
 }

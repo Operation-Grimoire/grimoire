@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -63,7 +62,6 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -111,6 +109,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.MoveToCategorySheet
+import io.grimoire.app.ui.component.SelectionBottomBar
+import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -486,29 +486,54 @@ fun LibraryScreen(
             }
         },
         bottomBar = {
-            LibrarySelectionBottomBar(
+            // Library keeps its no-fade slide so the bar feels glued to the app nav.
+            SelectionBottomBar(
                 visible = selectionMode,
-                onMove = { showBulkMove = true },
-                onMarkRead = {
-                    viewModel.setNovelsRead(selectedIds, true)
-                    clearSelection()
-                },
-                onMarkUnread = {
-                    viewModel.setNovelsRead(selectedIds, false)
-                    clearSelection()
-                },
-                onDownload = {
-                    val count = selectedIds.size
-                    viewModel.downloadNovels(selectedIds)
-                    scope.launch {
-                        snackbarHostState.showSnackbar(
-                            "Queued downloads for $count novels"
-                        )
-                    }
-                    clearSelection()
-                },
-                onRemove = { showBulkRemoveConfirm = true },
-            )
+                enter = expandVertically(expandFrom = Alignment.Bottom),
+                exit = shrinkVertically(shrinkTowards = Alignment.Bottom),
+            ) {
+                TooltipIconButton(
+                    icon = Icons.Default.DriveFileMove,
+                    label = "Move",
+                    onClick = { showBulkMove = true },
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.DoneAll,
+                    label = "Mark read",
+                    onClick = {
+                        viewModel.setNovelsRead(selectedIds, true)
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.RemoveDone,
+                    label = "Mark unread",
+                    onClick = {
+                        viewModel.setNovelsRead(selectedIds, false)
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.Download,
+                    label = "Download",
+                    onClick = {
+                        val count = selectedIds.size
+                        viewModel.downloadNovels(selectedIds)
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                "Queued downloads for $count novels"
+                            )
+                        }
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.Delete,
+                    label = "Remove",
+                    onClick = { showBulkRemoveConfirm = true },
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
         },
     ) { padding ->
         PullToRefreshBox(
@@ -797,80 +822,6 @@ fun LibraryScreen(
                 TextButton(onClick = { showBulkRemoveConfirm = false }) { Text("Cancel") }
             },
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SelectionTopBar(
-    count: Int,
-    onClear: () -> Unit,
-    onSelectAll: () -> Unit,
-) {
-    TopAppBar(
-        title = { Text("$count selected") },
-        navigationIcon = {
-            IconButton(onClick = onClear) {
-                Icon(Icons.Default.Close, contentDescription = "Clear selection")
-            }
-        },
-        actions = {
-            IconButton(onClick = onSelectAll) {
-                Icon(Icons.Default.SelectAll, contentDescription = "Select all")
-            }
-        },
-    )
-}
-
-/** Contextual action bar shown at the bottom while novels are selected. */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun LibrarySelectionBottomBar(
-    visible: Boolean,
-    onMove: () -> Unit,
-    onMarkRead: () -> Unit,
-    onMarkUnread: () -> Unit,
-    onDownload: () -> Unit,
-    onRemove: () -> Unit,
-) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = expandVertically(expandFrom = Alignment.Bottom),
-        exit = shrinkVertically(shrinkTowards = Alignment.Bottom),
-    ) {
-        BottomAppBar {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TooltipIconButton(
-                    icon = Icons.Default.DriveFileMove,
-                    label = "Move",
-                    onClick = onMove,
-                )
-                TooltipIconButton(
-                    icon = Icons.Default.DoneAll,
-                    label = "Mark read",
-                    onClick = onMarkRead,
-                )
-                TooltipIconButton(
-                    icon = Icons.Default.RemoveDone,
-                    label = "Mark unread",
-                    onClick = onMarkUnread,
-                )
-                TooltipIconButton(
-                    icon = Icons.Default.Download,
-                    label = "Download",
-                    onClick = onDownload,
-                )
-                TooltipIconButton(
-                    icon = Icons.Default.Delete,
-                    label = "Remove",
-                    onClick = onRemove,
-                    tint = MaterialTheme.colorScheme.error,
-                )
-            }
-        }
     }
 }
 

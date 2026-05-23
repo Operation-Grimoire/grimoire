@@ -2,10 +2,6 @@ package io.grimoire.app.ui.screen.browse
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,7 +48,6 @@ import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.HelpOutline
@@ -67,7 +62,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -117,6 +111,8 @@ import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.MoveToCategorySheet
+import io.grimoire.app.ui.component.SelectionBottomBar
+import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.component.rememberShimmerAlpha
@@ -376,7 +372,7 @@ fun NovelDetailScreen(
         },
         topBar = {
             if (selectionMode) {
-                ChapterSelectionTopBar(
+                SelectionTopBar(
                     count = selectedIds.size,
                     onClear = clearSelection,
                     onSelectAll = {
@@ -489,61 +485,95 @@ fun NovelDetailScreen(
                         }
                     }
                 }
-                AnimatedVisibility(
-                    visible = selectionMode,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut(),
-                ) {
-                    ChapterSelectionBottomBar(
-                        showMarkRead = selectedChapters.any { !it.read },
-                        showMarkUnread = selectedChapters.any { it.read },
-                        showDownload = selectedChapters.any {
-                            !it.locked &&
-                                (it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
-                                    it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
-                        },
-                        showDelete = selectedChapters.any {
-                            it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
-                        },
-                        showCancel = selectedChapters.any {
-                            it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
-                        },
-                        singleSelection = selectedIds.size == 1,
-                        onMarkRead = {
-                            viewModel.markChaptersRead(selectedIds.toList(), true)
-                            clearSelection()
-                        },
-                        onMarkUnread = {
-                            viewModel.markChaptersRead(selectedIds.toList(), false)
-                            clearSelection()
-                        },
-                        onDownload = {
-                            viewModel.downloadChapters(selectedChapters)
-                            clearSelection()
-                        },
-                        onDeleteDownloads = {
-                            viewModel.deleteDownloads(selectedChapters)
-                            clearSelection()
-                        },
-                        onCancelDownloads = {
-                            viewModel.cancelDownloads(selectedChapters)
-                            clearSelection()
-                        },
-                        onSelectAbove = {
-                            val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
-                            if (idx >= 0) {
-                                selectedIds = selectedIds +
-                                    displayedChapters.subList(0, idx + 1).map { it.id }
-                            }
-                        },
-                        onSelectBelow = {
-                            val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
-                            if (idx >= 0) {
-                                selectedIds = selectedIds +
-                                    displayedChapters.subList(idx, displayedChapters.size).map { it.id }
-                            }
-                        },
-                    )
+                SelectionBottomBar(visible = selectionMode) {
+                    val showMarkRead = selectedChapters.any { !it.read }
+                    val showMarkUnread = selectedChapters.any { it.read }
+                    val showDownload = selectedChapters.any {
+                        !it.locked &&
+                            (it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
+                                it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
+                    }
+                    val showDelete = selectedChapters.any {
+                        it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
+                    }
+                    val showCancel = selectedChapters.any {
+                        it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
+                    }
+                    val singleSelection = selectedIds.size == 1
+                    if (showMarkRead) {
+                        TooltipIconButton(
+                            icon = Icons.Default.DoneAll,
+                            label = "Mark read",
+                            onClick = {
+                                viewModel.markChaptersRead(selectedIds.toList(), true)
+                                clearSelection()
+                            },
+                        )
+                    }
+                    if (showMarkUnread) {
+                        TooltipIconButton(
+                            icon = Icons.Default.RemoveDone,
+                            label = "Mark unread",
+                            onClick = {
+                                viewModel.markChaptersRead(selectedIds.toList(), false)
+                                clearSelection()
+                            },
+                        )
+                    }
+                    if (showDownload) {
+                        TooltipIconButton(
+                            icon = Icons.Default.Download,
+                            label = "Download",
+                            onClick = {
+                                viewModel.downloadChapters(selectedChapters)
+                                clearSelection()
+                            },
+                        )
+                    }
+                    if (showDelete) {
+                        TooltipIconButton(
+                            icon = Icons.Default.Delete,
+                            label = "Delete",
+                            onClick = {
+                                viewModel.deleteDownloads(selectedChapters)
+                                clearSelection()
+                            },
+                        )
+                    }
+                    if (showCancel) {
+                        TooltipIconButton(
+                            icon = Icons.Default.Close,
+                            label = "Cancel",
+                            onClick = {
+                                viewModel.cancelDownloads(selectedChapters)
+                                clearSelection()
+                            },
+                        )
+                    }
+                    if (singleSelection) {
+                        TooltipIconButton(
+                            icon = Icons.Default.VerticalAlignTop,
+                            label = "Select above",
+                            onClick = {
+                                val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
+                                if (idx >= 0) {
+                                    selectedIds = selectedIds +
+                                        displayedChapters.subList(0, idx + 1).map { it.id }
+                                }
+                            },
+                        )
+                        TooltipIconButton(
+                            icon = Icons.Default.VerticalAlignBottom,
+                            label = "Select below",
+                            onClick = {
+                                val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
+                                if (idx >= 0) {
+                                    selectedIds = selectedIds +
+                                        displayedChapters.subList(idx, displayedChapters.size).map { it.id }
+                                }
+                            },
+                        )
+                    }
                 }
             }
         },
@@ -1328,104 +1358,6 @@ private fun ChapterItem(
             onLongClick = onToggleSelection,
         ),
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ChapterSelectionTopBar(
-    count: Int,
-    onClear: () -> Unit,
-    onSelectAll: () -> Unit,
-) {
-    TopAppBar(
-        title = { Text("$count selected") },
-        navigationIcon = {
-            IconButton(onClick = onClear) {
-                Icon(Icons.Default.Close, contentDescription = "Clear selection")
-            }
-        },
-        actions = {
-            IconButton(onClick = onSelectAll) {
-                Icon(Icons.Default.SelectAll, contentDescription = "Select all")
-            }
-        },
-    )
-}
-
-/** Contextual action bar shown at the bottom while chapters are selected. */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ChapterSelectionBottomBar(
-    showMarkRead: Boolean,
-    showMarkUnread: Boolean,
-    showDownload: Boolean,
-    showDelete: Boolean,
-    showCancel: Boolean,
-    singleSelection: Boolean,
-    onMarkRead: () -> Unit,
-    onMarkUnread: () -> Unit,
-    onDownload: () -> Unit,
-    onDeleteDownloads: () -> Unit,
-    onCancelDownloads: () -> Unit,
-    onSelectAbove: () -> Unit,
-    onSelectBelow: () -> Unit,
-) {
-    BottomAppBar {
-        // Holding an action grows its weight, so it gains room for the label
-        // while the others give way as the row reflows.
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (showMarkRead) {
-                TooltipIconButton(
-                    icon = Icons.Default.DoneAll,
-                    label = "Mark read",
-                    onClick = onMarkRead,
-                )
-            }
-            if (showMarkUnread) {
-                TooltipIconButton(
-                    icon = Icons.Default.RemoveDone,
-                    label = "Mark unread",
-                    onClick = onMarkUnread,
-                )
-            }
-            if (showDownload) {
-                TooltipIconButton(
-                    icon = Icons.Default.Download,
-                    label = "Download",
-                    onClick = onDownload,
-                )
-            }
-            if (showDelete) {
-                TooltipIconButton(
-                    icon = Icons.Default.Delete,
-                    label = "Delete",
-                    onClick = onDeleteDownloads,
-                )
-            }
-            if (showCancel) {
-                TooltipIconButton(
-                    icon = Icons.Default.Close,
-                    label = "Cancel",
-                    onClick = onCancelDownloads,
-                )
-            }
-            if (singleSelection) {
-                TooltipIconButton(
-                    icon = Icons.Default.VerticalAlignTop,
-                    label = "Select above",
-                    onClick = onSelectAbove,
-                )
-                TooltipIconButton(
-                    icon = Icons.Default.VerticalAlignBottom,
-                    label = "Select below",
-                    onClick = onSelectBelow,
-                )
-            }
-        }
-    }
 }
 
 // A null onClick renders a plain, non-interactive icon with the same footprint.
