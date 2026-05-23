@@ -117,6 +117,7 @@ import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.component.rememberShimmerAlpha
 import io.grimoire.app.ui.theme.premiumGold
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
