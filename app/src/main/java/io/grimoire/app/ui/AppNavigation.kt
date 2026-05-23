@@ -324,6 +324,11 @@ fun AppNavigation(
                                 "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novel.url)}"
                             )
                         },
+                        onChapterClick = { pkg, novelUrl, chapterUrl ->
+                            navController.navigate(
+                                "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}"
+                            )
+                        },
                         onNavigateToSourceSearch = { pkg, query ->
                             navController.navigate("browse/$pkg?q=${Uri.encode(query)}")
                         },
@@ -562,6 +567,11 @@ fun AppNavigation(
                     onNovelClick = { novel ->
                         navController.navigate(
                             "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novel.url)}"
+                        )
+                    },
+                    onChapterClick = { p, novelUrl, chapterUrl ->
+                        navController.navigate(
+                            "reader?pkg=${Uri.encode(p)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}"
                         )
                     },
                     onOpenWebView = { url ->

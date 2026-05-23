@@ -47,7 +47,7 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val BROWSE_TTL_MS = 30 * 60 * 1000L
+internal const val BROWSE_TTL_MS = 30 * 60 * 1000L
 
 @HiltViewModel
 class NovelDetailViewModel @Inject constructor(
@@ -568,7 +568,7 @@ data class RefreshedChapter(
 /** Sign-in state of the backing source. */
 enum class LoginState { UNKNOWN, NOT_SUPPORTED, SIGNED_OUT, SIGNED_IN }
 
-private fun NovelEntity.toNovel() = Novel(
+internal fun NovelEntity.toNovel() = Novel(
     url = url,
     title = title,
     thumbnailUrl = thumbnailUrl,
@@ -582,7 +582,7 @@ private fun NovelEntity.toNovel() = Novel(
     initialized = true,
 )
 
-private fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, chapterSortOrder: Int = 0, categoryId: Long? = null, url: String = this.url, lastReadAt: Long = 0L) = NovelEntity(
+internal fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, chapterSortOrder: Int = 0, categoryId: Long? = null, url: String = this.url, lastReadAt: Long = 0L) = NovelEntity(
     id = existingId,
     sourceId = sourceId,
     url = url,
@@ -611,7 +611,7 @@ private fun ChapterEntity.toChapter() = Chapter(
     locked = locked,
 )
 
-private fun Chapter.toEntity(novelId: Long) = ChapterEntity(
+internal fun Chapter.toEntity(novelId: Long) = ChapterEntity(
     novelId = novelId,
     url = url,
     name = name,

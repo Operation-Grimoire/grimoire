@@ -1,7 +1,9 @@
 package io.grimoire.app.ui.screen.browse
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -78,6 +80,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.grimoire.app.ui.component.AppSearchField
+import io.grimoire.app.ui.component.NovelQuickViewSheet
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -91,6 +94,7 @@ import io.grimoire.app.data.preferences.BrowseDisplayMode
 fun SourceBrowseScreen(
     onNavigateBack: () -> Unit,
     onNovelClick: (Novel) -> Unit = {},
+    onChapterClick: (pkg: String, novelUrl: String, chapterUrl: String) -> Unit = { _, _, _ -> },
     onOpenWebView: (url: String) -> Unit = {},
     onOpenSourceSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -109,6 +113,7 @@ fun SourceBrowseScreen(
 
     var searchActive by remember { mutableStateOf(false) }
     var showFilters by remember { mutableStateOf(false) }
+    var quickView by remember { mutableStateOf<Novel?>(null) }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val focusRequester = remember { FocusRequester() }
 
@@ -251,12 +256,14 @@ fun SourceBrowseScreen(
                                 novel = novel,
                                 inLibrary = novel.url in libraryUrls,
                                 onClick = { onNovelClick(novel) },
+                                onLongClick = { quickView = novel },
                             )
                         } else {
                             NovelListItem(
                                 novel = novel,
                                 inLibrary = novel.url in libraryUrls,
                                 onClick = { onNovelClick(novel) },
+                                onLongClick = { quickView = novel },
                             )
                         }
                     }
@@ -275,6 +282,18 @@ fun SourceBrowseScreen(
                 }
             }
         }
+    }
+
+    quickView?.let { novel ->
+        NovelQuickViewSheet(
+            packageName = viewModel.packageName,
+            novelUrl = novel.url,
+            onOpenDetails = { onNovelClick(novel) },
+            onChapterClick = { chapterUrl ->
+                onChapterClick(viewModel.packageName, novel.url, chapterUrl)
+            },
+            onDismiss = { quickView = null },
+        )
     }
 
     if (showFilters) {
@@ -297,12 +316,19 @@ fun SourceBrowseScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun NovelCard(novel: Novel, inLibrary: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun NovelCard(
+    novel: Novel,
+    inLibrary: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(8.dp),
     ) {
@@ -351,12 +377,19 @@ private fun NovelCard(novel: Novel, inLibrary: Boolean, onClick: () -> Unit, mod
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun NovelListItem(novel: Novel, inLibrary: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun NovelListItem(
+    novel: Novel,
+    inLibrary: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
