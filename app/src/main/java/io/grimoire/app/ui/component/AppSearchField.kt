@@ -12,10 +12,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 
 /**
  * The app-wide search input: a borderless single-line field with a leading
@@ -34,9 +40,18 @@ fun AppSearchField(
     onSearch: () -> Unit = {},
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
+    // On (re)composition cursor starts at end of existing text; not saveable so it doesn't survive nav restores.
+    var selection by remember { mutableStateOf(TextRange(value.length)) }
+    val safeSelection = TextRange(
+        selection.start.coerceIn(0, value.length),
+        selection.end.coerceIn(0, value.length),
+    )
     OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
+        value = TextFieldValue(text = value, selection = safeSelection),
+        onValueChange = { newValue ->
+            selection = newValue.selection
+            if (newValue.text != value) onValueChange(newValue.text)
+        },
         placeholder = { Text(placeholder) },
         singleLine = true,
         modifier = modifier,

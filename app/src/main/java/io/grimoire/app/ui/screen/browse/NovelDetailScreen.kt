@@ -31,7 +31,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
@@ -44,16 +43,12 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
-import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material.icons.filled.VerticalAlignTop
@@ -99,7 +94,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.model.Novel
-import io.grimoire.api.model.NovelStatus
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.novelupdates.NuInfoState
@@ -110,6 +104,8 @@ import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.MoveToCategorySheet
+import io.grimoire.app.ui.component.RatingLabel
+import io.grimoire.app.ui.component.StatusLabel
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
@@ -117,7 +113,6 @@ import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.component.rememberShimmerAlpha
 import io.grimoire.app.ui.theme.premiumGold
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -1187,75 +1182,4 @@ private fun NovelHeader(novel: Novel, sourceName: String = "", isLocal: Boolean 
     }
 }
 
-@Composable
-private fun StatusLabel(status: NovelStatus, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(
-            imageVector = status.icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(16.dp),
-        )
-        Text(
-            status.displayName,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun RatingLabel(
-    rating: Float,
-    count: Int?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val clamped = rating.coerceIn(0f, 5f)
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 2.dp, vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(
-            imageVector = Icons.Default.Star,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(16.dp),
-        )
-        Text(
-            text = buildString {
-                append(String.format(Locale.getDefault(), "%.1f", clamped))
-                if (count != null && count > 0) append(" (").append(count).append(')')
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-private val NovelStatus.displayName: String
-    get() = when (this) {
-        NovelStatus.UNKNOWN -> "Unknown"
-        NovelStatus.ONGOING -> "Ongoing"
-        NovelStatus.COMPLETED -> "Completed"
-        NovelStatus.HIATUS -> "Hiatus"
-        NovelStatus.CANCELLED -> "Cancelled"
-    }
-
-private val NovelStatus.icon: ImageVector
-    get() = when (this) {
-        NovelStatus.UNKNOWN -> Icons.Default.HelpOutline
-        NovelStatus.ONGOING -> Icons.Default.Schedule
-        NovelStatus.COMPLETED -> Icons.Default.CheckCircle
-        NovelStatus.HIATUS -> Icons.Default.PauseCircle
-        NovelStatus.CANCELLED -> Icons.Default.Block
-    }
 

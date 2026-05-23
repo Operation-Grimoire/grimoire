@@ -1,7 +1,8 @@
 package io.grimoire.app.ui.screen.browse
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,7 +35,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import io.grimoire.app.ui.component.AppSearchField
+import io.grimoire.app.ui.component.NovelQuickViewSheet
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -55,6 +59,7 @@ import androidx.compose.material3.MaterialTheme
 fun GlobalSearchScreen(
     onNavigateBack: () -> Unit,
     onNovelClick: (Novel, sourcePkg: String) -> Unit = { _, _ -> },
+    onChapterClick: (pkg: String, novelUrl: String, chapterUrl: String) -> Unit = { _, _, _ -> },
     onNavigateToSourceSearch: (packageName: String, query: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: BrowseViewModel,
@@ -66,6 +71,7 @@ fun GlobalSearchScreen(
 
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
+    var quickView by remember { mutableStateOf<Pair<Novel, String>?>(null) }
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
@@ -101,6 +107,7 @@ fun GlobalSearchScreen(
                 results = searchResults,
                 libraryKeys = libraryKeys,
                 onNovelClick = onNovelClick,
+                onNovelLongClick = { novel, pkg -> quickView = novel to pkg },
                 onSeeAll = { pkg -> onNavigateToSourceSearch(pkg, searchQuery) },
                 modifier = Modifier.padding(padding),
             )
@@ -132,6 +139,16 @@ fun GlobalSearchScreen(
             }
         }
     }
+
+    quickView?.let { (novel, pkg) ->
+        NovelQuickViewSheet(
+            packageName = pkg,
+            novelUrl = novel.url,
+            onOpenDetails = { onNovelClick(novel, pkg) },
+            onChapterClick = { chapterUrl -> onChapterClick(pkg, novel.url, chapterUrl) },
+            onDismiss = { quickView = null },
+        )
+    }
 }
 
 @Composable
@@ -139,6 +156,7 @@ internal fun GlobalSearchResults(
     results: List<GlobalSearchResult>,
     libraryKeys: Set<Pair<Long, String>>,
     onNovelClick: (Novel, String) -> Unit,
+    onNovelLongClick: (Novel, String) -> Unit = { _, _ -> },
     onSeeAll: (packageName: String) -> Unit,
     modifier: Modifier = Modifier,
     showSeeAll: Boolean = true,
@@ -202,6 +220,7 @@ internal fun GlobalSearchResults(
                                 novel = novel,
                                 inLibrary = (group.sourceId to novel.url) in libraryKeys,
                                 onClick = { onNovelClick(novel, group.packageName) },
+                                onLongClick = { onNovelLongClick(novel, group.packageName) },
                             )
                         }
                     }
@@ -215,12 +234,18 @@ internal fun GlobalSearchResults(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun NovelCoverCard(novel: Novel, inLibrary: Boolean = false, onClick: () -> Unit) {
+internal fun NovelCoverCard(
+    novel: Novel,
+    inLibrary: Boolean = false,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {},
+) {
     Column(
         modifier = Modifier
             .width(96.dp)
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Box {
