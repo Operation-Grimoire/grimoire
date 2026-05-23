@@ -54,7 +54,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -109,6 +108,8 @@ import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsPlaybackState
+import io.grimoire.app.ui.component.TooltipBottomBar
+import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -400,55 +401,42 @@ fun ReaderScreen(
         }
 
         // Bottom bar — overlaid, slides in from bottom
-        AnimatedVisibility(
+        TooltipBottomBar(
             visible = barsVisible,
             modifier = Modifier.align(Alignment.BottomCenter),
             enter = slideInVertically { it } + fadeIn(),
             exit = slideOutVertically { it } + fadeOut(),
+            containerColor = colors.background.copy(alpha = 0.95f),
+            contentColor = colors.foreground,
         ) {
-            BottomAppBar(
-                containerColor = colors.background.copy(alpha = 0.95f),
-                contentColor = colors.foreground,
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    IconButton(onClick = viewModel::navigatePrev, enabled = hasPrev) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.NavigateBefore,
-                            contentDescription = "Previous chapter",
-                            tint = if (hasPrev) colors.foreground else colors.foreground.copy(alpha = 0.3f),
-                        )
-                    }
-                    IconButton(onClick = viewModel::toggleTts) {
-                        Icon(
-                            if (ttsPlayingThisChapter) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (ttsPlayingThisChapter) "Pause read-aloud" else "Read aloud",
-                            tint = colors.foreground,
-                        )
-                    }
-                    if (ttsActiveForChapter) {
-                        IconButton(onClick = viewModel::stopTts) {
-                            Icon(
-                                Icons.Default.Stop,
-                                contentDescription = "Stop read-aloud",
-                                tint = colors.foreground,
-                            )
-                        }
-                    }
-                    IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Reader settings", tint = colors.foreground)
-                    }
-                    IconButton(onClick = viewModel::navigateNext, enabled = hasNext) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.NavigateNext,
-                            contentDescription = "Next chapter",
-                            tint = if (hasNext) colors.foreground else colors.foreground.copy(alpha = 0.3f),
-                        )
-                    }
-                }
-            }
+            TooltipIconButton(
+                icon = Icons.AutoMirrored.Filled.NavigateBefore,
+                label = "Previous",
+                onClick = viewModel::navigatePrev,
+                enabled = hasPrev,
+            )
+            TooltipIconButton(
+                icon = if (ttsPlayingThisChapter) Icons.Default.Pause else Icons.Default.PlayArrow,
+                label = if (ttsPlayingThisChapter) "Pause" else "Read aloud",
+                onClick = viewModel::toggleTts,
+            )
+            TooltipIconButton(
+                visible = ttsActiveForChapter,
+                icon = Icons.Default.Stop,
+                label = "Stop",
+                onClick = viewModel::stopTts,
+            )
+            TooltipIconButton(
+                icon = Icons.Default.Settings,
+                label = "Settings",
+                onClick = { showSettings = true },
+            )
+            TooltipIconButton(
+                icon = Icons.AutoMirrored.Filled.NavigateNext,
+                label = "Next",
+                onClick = viewModel::navigateNext,
+                enabled = hasNext,
+            )
         }
     }
 

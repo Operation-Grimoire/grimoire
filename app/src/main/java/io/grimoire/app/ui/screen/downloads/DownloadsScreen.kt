@@ -67,7 +67,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
-import io.grimoire.app.ui.component.SelectionBottomBar
+import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
 
@@ -203,7 +203,7 @@ fun DownloadsScreen(
             }
         },
         bottomBar = {
-            SelectionBottomBar(visible = selectionMode) {
+            TooltipBottomBar(visible = selectionMode) {
                 val target = resolveTargets(currentDownloads, selectedChapterIds)
                 val hasQueued = target.chapters.any { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }
                 val hasInFlight = target.chapters.any {

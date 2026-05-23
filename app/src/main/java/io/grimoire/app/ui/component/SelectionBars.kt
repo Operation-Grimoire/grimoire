@@ -14,14 +14,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,17 +51,21 @@ fun SelectionTopBar(
 }
 
 /**
- * Contextual bottom action bar shown while items are selected. The caller supplies
- * action buttons (typically [TooltipIconButton]) via [content], and may override the
- * [enter]/[exit] transitions to give each screen a distinct slide.
+ * Bottom action bar that hosts [TooltipIconButton]s in a full-width row, so each
+ * action can grow on long-press while siblings make room. Visibility animates
+ * via [enter]/[exit] (callers can override to give each screen a distinct
+ * slide), and [containerColor]/[contentColor] let the bar adopt non-default
+ * theming (e.g. the reader's themed background).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SelectionBottomBar(
+fun TooltipBottomBar(
     visible: Boolean,
     modifier: Modifier = Modifier,
     enter: EnterTransition = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
     exit: ExitTransition = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut(),
+    containerColor: Color = BottomAppBarDefaults.containerColor,
+    contentColor: Color = contentColorFor(containerColor),
     content: @Composable RowScope.() -> Unit,
 ) {
     AnimatedVisibility(
@@ -67,7 +74,10 @@ fun SelectionBottomBar(
         exit = exit,
         modifier = modifier,
     ) {
-        BottomAppBar {
+        BottomAppBar(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,

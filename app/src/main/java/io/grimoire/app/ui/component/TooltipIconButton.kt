@@ -41,7 +41,9 @@ import androidx.compose.ui.unit.dp
  * When the same row toggles which actions apply to the current selection,
  * pass [visible] for the relevant predicate instead of conditionally
  * skipping the call — the button then smoothly shrinks/grows its weight
- * and fades, and siblings reflow to fill the freed space.
+ * and fades, and siblings reflow to fill the freed space. [enabled] keeps
+ * the button visible but dims the icon and ignores taps (the tooltip still
+ * appears on long-press, so the action remains discoverable).
  */
 @Composable
 fun RowScope.TooltipIconButton(
@@ -50,10 +52,12 @@ fun RowScope.TooltipIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     visible: Boolean = true,
+    enabled: Boolean = true,
     tint: Color = LocalContentColor.current,
 ) {
     var pressed by remember { mutableStateOf(false) }
     val currentOnClick by rememberUpdatedState(onClick)
+    val currentEnabled by rememberUpdatedState(enabled)
     val haptics = LocalHapticFeedback.current
     // Combine press-grow (1f → 2f) with show/hide (×1f or ×0f). RowScope.weight
     // requires a strictly positive value, so the hidden state floors to a
@@ -63,7 +67,11 @@ fun RowScope.TooltipIconButton(
         label = "tooltipWeight",
     )
     val alpha by animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
+        targetValue = when {
+            !visible -> 0f
+            !enabled -> 0.38f
+            else -> 1f
+        },
         label = "tooltipAlpha",
     )
     val iconShift by animateDpAsState(
@@ -85,11 +93,11 @@ fun RowScope.TooltipIconButton(
                     Modifier
                         .semantics(mergeDescendants = true) {
                             role = Role.Button
-                            onClick { currentOnClick(); true }
+                            onClick { if (currentEnabled) { currentOnClick(); true } else false }
                         }
                         .pointerInput(Unit) {
                             detectTapGestures(
-                                onTap = { currentOnClick() },
+                                onTap = { if (currentEnabled) currentOnClick() },
                                 onLongPress = {
                                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                     pressed = true
