@@ -71,7 +71,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -97,7 +96,6 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.model.Novel
@@ -106,6 +104,7 @@ import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.domain.migration.MigrationState
+import io.grimoire.app.ui.component.ChapterItem
 import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ExpandableText
@@ -118,8 +117,6 @@ import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.component.rememberShimmerAlpha
 import io.grimoire.app.ui.theme.premiumGold
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -1245,144 +1242,6 @@ private fun RatingLabel(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun ChapterItem(
-    chapter: ChapterEntity,
-    selected: Boolean,
-    selectionMode: Boolean,
-    onClick: () -> Unit,
-    onLockedClick: () -> Unit,
-    onToggleSelection: () -> Unit,
-    onDownload: () -> Unit,
-    onCancelDownload: () -> Unit,
-    onDeleteDownload: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    // Read chapters dim to signal "done"; locked chapters instead use a gold
-    // accent to signal "premium", so the two states stay visually distinct.
-    val contentAlpha = if (chapter.read && !chapter.locked) 0.38f else 1f
-    val headlineColor = if (chapter.locked) {
-        MaterialTheme.colorScheme.premiumGold
-    } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha)
-    }
-    val dateText = remember(chapter.uploadDate) { if (chapter.uploadDate > 0L) formatDate(chapter.uploadDate) else null }
-    val progressText = if (!chapter.read && chapter.readProgress > 0f) "${(chapter.readProgress * 100).toInt()}%" else null
-    val subText = listOfNotNull(dateText, progressText).joinToString(" · ").takeIf { it.isNotEmpty() }
-    val dlStatus = ChapterDownloadStatus.entries.getOrElse(chapter.downloadStatus) { ChapterDownloadStatus.NONE }
-
-    ListItem(
-        colors = if (selected) {
-            ListItemDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-            )
-        } else {
-            ListItemDefaults.colors()
-        },
-        headlineContent = {
-            Text(
-                chapter.name,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = headlineColor,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        },
-        supportingContent = if (subText != null) {
-            {
-                Text(
-                    subText,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        } else null,
-        trailingContent = {
-            // Non-interactive in selection mode so a row tap toggles selection.
-            when {
-                chapter.locked -> ChapterTrailingIcon(
-                    icon = Icons.Default.Lock,
-                    description = "Locked",
-                    tint = MaterialTheme.colorScheme.premiumGold,
-                    onClick = if (selectionMode) null else onLockedClick,
-                )
-                dlStatus == ChapterDownloadStatus.NONE -> ChapterTrailingIcon(
-                    icon = Icons.Default.Download,
-                    description = "Download",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    onClick = if (selectionMode) null else onDownload,
-                )
-                dlStatus == ChapterDownloadStatus.QUEUED -> ChapterTrailingIcon(
-                    icon = Icons.Default.Close,
-                    description = "Cancel download",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    onClick = if (selectionMode) null else onCancelDownload,
-                )
-                dlStatus == ChapterDownloadStatus.DOWNLOADING ->
-                    Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                        LinearProgressIndicator(modifier = Modifier.width(24.dp))
-                    }
-                dlStatus == ChapterDownloadStatus.DOWNLOADED -> ChapterTrailingIcon(
-                    icon = Icons.Default.DownloadDone,
-                    description = "Delete download",
-                    tint = MaterialTheme.colorScheme.primary,
-                    onClick = if (selectionMode) null else onDeleteDownload,
-                )
-                else -> Row(verticalAlignment = Alignment.CenterVertically) {
-                    ChapterTrailingIcon(
-                        icon = Icons.Default.Close,
-                        description = "Cancel",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = if (selectionMode) null else onDeleteDownload,
-                        buttonSize = 40.dp,
-                        iconSize = 20.dp,
-                    )
-                    ChapterTrailingIcon(
-                        icon = Icons.Default.Refresh,
-                        description = "Retry",
-                        tint = MaterialTheme.colorScheme.error,
-                        onClick = if (selectionMode) null else onDownload,
-                        buttonSize = 40.dp,
-                        iconSize = 20.dp,
-                    )
-                }
-            }
-        },
-        modifier = modifier.combinedClickable(
-            onClick = when {
-                selectionMode -> onToggleSelection
-                chapter.locked -> onLockedClick
-                else -> onClick
-            },
-            onLongClick = onToggleSelection,
-        ),
-    )
-}
-
-// A null onClick renders a plain, non-interactive icon with the same footprint.
-@Composable
-private fun ChapterTrailingIcon(
-    icon: ImageVector,
-    description: String,
-    tint: Color,
-    onClick: (() -> Unit)?,
-    buttonSize: Dp = 48.dp,
-    iconSize: Dp = 24.dp,
-) {
-    if (onClick != null) {
-        IconButton(onClick = onClick, modifier = Modifier.size(buttonSize)) {
-            Icon(icon, contentDescription = description, tint = tint,
-                modifier = Modifier.size(iconSize))
-        }
-    } else {
-        Box(Modifier.size(buttonSize), contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = description, tint = tint,
-                modifier = Modifier.size(iconSize))
-        }
-    }
-}
-
 private val NovelStatus.displayName: String
     get() = when (this) {
         NovelStatus.UNKNOWN -> "Unknown"
@@ -1401,5 +1260,3 @@ private val NovelStatus.icon: ImageVector
         NovelStatus.CANCELLED -> Icons.Default.Block
     }
 
-private fun formatDate(millis: Long): String =
-    SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(millis))

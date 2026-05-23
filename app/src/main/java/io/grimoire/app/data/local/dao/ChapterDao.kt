@@ -164,6 +164,9 @@ interface ChapterDao {
     @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
     fun getAllDownloads(): Flow<List<ChapterEntity>>
 
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId IN (:novelIds)")
+    fun getChaptersForNovels(novelIds: List<Long>): Flow<List<ChapterEntity>>
+
     @Query("""
         SELECT novelId,
                COUNT(*) AS total,

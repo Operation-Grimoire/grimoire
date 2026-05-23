@@ -16,12 +16,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.AlertDialog
@@ -31,8 +31,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -52,7 +50,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import io.grimoire.app.data.download.ChapterDownloadStatus
+import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
+import io.grimoire.app.ui.component.ChapterItem
+import io.grimoire.app.ui.component.ChapterStatusTrailing
 import io.grimoire.app.ui.component.SelectionBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
@@ -78,6 +80,7 @@ fun LibraryUpdatesScreen(
     viewModel: LibraryUpdatesViewModel = hiltViewModel(),
 ) {
     val entries by viewModel.entries.collectAsState()
+    val chaptersByEntryId by viewModel.chaptersByEntryId.collectAsState()
     var menuExpanded by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var expandedGroups by remember { mutableStateOf(setOf<Pair<Long, Long>>()) }
@@ -225,15 +228,25 @@ fun LibraryUpdatesScreen(
                     dayGroups.forEach { group ->
                         if (group.entries.size == 1) {
                             val entry = group.first
+                            val liveChapter = chaptersByEntryId[entry.id]
                             item(key = "single-${entry.id}") {
                                 UpdateRow(
                                     entry = entry,
+                                    chapter = liveChapter,
                                     selected = entry.id in selectedEntryIds,
+                                    selectionMode = selectionMode,
                                     onClick = {
                                         if (selectionMode) toggleEntry(entry.id)
-                                        else onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
+                                        else if (liveChapter?.locked == true) {
+                                            onOpenNovel(entry.sourcePackage, entry.novelUrl)
+                                        } else {
+                                            onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
+                                        }
                                     },
                                     onLongClick = { toggleEntry(entry.id) },
+                                    onDownload = { liveChapter?.let(viewModel::downloadChapter) },
+                                    onCancelDownload = { liveChapter?.let(viewModel::cancelDownload) },
+                                    onDeleteDownload = { liveChapter?.let(viewModel::deleteDownload) },
                                 )
                             }
                         } else {
@@ -248,6 +261,7 @@ fun LibraryUpdatesScreen(
                                 }
                                 UpdateGroupHeader(
                                     group = group,
+                                    chaptersByEntryId = chaptersByEntryId,
                                     collapsed = collapsed,
                                     selected = group.first.novelId in selectedNovelIds,
                                     onClick = {
@@ -267,18 +281,26 @@ fun LibraryUpdatesScreen(
                                     key = { "chapter-${group.entries[it].id}" },
                                 ) { index ->
                                     val entry = group.entries[index]
-                                    ChapterUpdateRow(
-                                        entry = entry,
+                                    val chapter = chaptersByEntryId[entry.id]
+                                        ?: stubChapterFromEntry(entry)
+                                    ChapterItem(
+                                        chapter = chapter,
                                         selected = entry.id in selectedEntryIds,
+                                        selectionMode = selectionMode,
                                         onClick = {
-                                            if (selectionMode) toggleEntry(entry.id)
-                                            else onOpenReader(
+                                            onOpenReader(
                                                 entry.sourcePackage,
                                                 entry.novelUrl,
                                                 entry.chapterUrl,
                                             )
                                         },
-                                        onLongClick = { toggleEntry(entry.id) },
+                                        onLockedClick = {
+                                            onOpenNovel(entry.sourcePackage, entry.novelUrl)
+                                        },
+                                        onToggleSelection = { toggleEntry(entry.id) },
+                                        onDownload = { chaptersByEntryId[entry.id]?.let(viewModel::downloadChapter) },
+                                        onCancelDownload = { chaptersByEntryId[entry.id]?.let(viewModel::cancelDownload) },
+                                        onDeleteDownload = { chaptersByEntryId[entry.id]?.let(viewModel::deleteDownload) },
                                     )
                                 }
                                 item(key = "group-end-${group.first.id}") {
@@ -324,20 +346,38 @@ private fun effectiveEntryIds(
     return selectedEntryIds + fromNovels
 }
 
+/**
+ * Fallback ChapterEntity built from the log snapshot when the real row has been
+ * replaced by a later refresh. Keeps the locked badge visible at least.
+ */
+private fun stubChapterFromEntry(entry: LibraryUpdateEntity): ChapterEntity = ChapterEntity(
+    id = entry.id,
+    novelId = entry.novelId,
+    url = entry.chapterUrl,
+    name = entry.chapterName,
+    chapterNumber = entry.chapterNumber,
+    locked = entry.locked,
+)
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun UpdateRow(
     entry: LibraryUpdateEntity,
+    chapter: ChapterEntity?,
     selected: Boolean,
+    selectionMode: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    onDownload: () -> Unit,
+    onCancelDownload: () -> Unit,
+    onDeleteDownload: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -353,7 +393,6 @@ private fun UpdateRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                if (entry.locked) LockBadge()
                 if (entry.unlockedFromLocked) UnlockedTag()
                 Text(
                     text = entry.chapterName,
@@ -369,6 +408,14 @@ private fun UpdateRow(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        ChapterStatusTrailing(
+            chapter = chapter ?: stubChapterFromEntry(entry),
+            selectionMode = selectionMode,
+            onLockedClick = onClick,
+            onDownload = onDownload,
+            onCancelDownload = onCancelDownload,
+            onDeleteDownload = onDeleteDownload,
+        )
     }
 }
 
@@ -376,12 +423,26 @@ private fun UpdateRow(
 @Composable
 private fun UpdateGroupHeader(
     group: UpdateGroup,
+    chaptersByEntryId: Map<Long, ChapterEntity>,
     collapsed: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggleCollapse: () -> Unit,
 ) {
+    val total = group.entries.size
+    val lockedCount = group.entries.count { e ->
+        chaptersByEntryId[e.id]?.locked ?: e.locked
+    }
+    val downloadedCount = group.entries.count { e ->
+        chaptersByEntryId[e.id]?.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
+    }
+    val unlockedCount = group.entries.count { it.unlockedFromLocked }
+    // "All downloaded" treats locked entries as unavailable, since they can't be
+    // downloaded without unlocking on the source.
+    val downloadableTotal = total - lockedCount
+    val allDownloaded = downloadableTotal > 0 && downloadedCount >= downloadableTotal
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -403,21 +464,24 @@ private fun UpdateGroupHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
+                val parts = buildList {
+                    add("$total new")
+                    if (lockedCount > 0) add("$lockedCount locked")
+                    if (downloadedCount > 0) add("$downloadedCount downloaded")
+                }
                 Text(
-                    text = "${group.entries.size} new chapters",
+                    text = parts.joinToString(" • "),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                val lockedCount = group.entries.count { it.locked }
-                if (lockedCount > 0) {
-                    LockBadge()
-                    Text(
-                        text = "$lockedCount locked",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                if (allDownloaded) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "All downloaded",
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
-                val unlockedCount = group.entries.count { it.unlockedFromLocked }
                 if (unlockedCount > 0) {
                     UnlockedTag(label = "$unlockedCount unlocked")
                 }
@@ -438,50 +502,6 @@ private fun UpdateGroupHeader(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
-@Composable
-private fun ChapterUpdateRow(
-    entry: LibraryUpdateEntity,
-    selected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
-) {
-    val numberLabel = chapterNumberLabel(entry.chapterNumber)
-    ListItem(
-        modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick),
-        colors = if (selected) {
-            ListItemDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-            )
-        } else ListItemDefaults.colors(),
-        overlineContent = numberLabel?.let { label -> { Text(label) } },
-        headlineContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                if (entry.locked) LockBadge()
-                if (entry.unlockedFromLocked) UnlockedTag()
-                Text(
-                    text = entry.chapterName,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        },
-    )
-}
-
-@Composable
-private fun LockBadge() {
-    Icon(
-        imageVector = Icons.Default.Lock,
-        contentDescription = "Locked",
-        modifier = Modifier.size(14.dp),
-        tint = MaterialTheme.colorScheme.premiumGold,
-    )
-}
-
 @Composable
 private fun UnlockedTag(label: String = "Unlocked") {
     Text(
@@ -493,17 +513,6 @@ private fun UnlockedTag(label: String = "Unlocked") {
             .background(MaterialTheme.colorScheme.premiumGold.copy(alpha = 0.15f))
             .padding(horizontal = 6.dp, vertical = 2.dp),
     )
-}
-
-/** "Chapter 142" / "Chapter 142.5", or null when the source gave no number. */
-private fun chapterNumberLabel(chapterNumber: Float): String? {
-    if (chapterNumber < 0f) return null
-    val formatted = if (chapterNumber % 1f == 0f) {
-        chapterNumber.toInt().toString()
-    } else {
-        chapterNumber.toString()
-    }
-    return "Chapter $formatted"
 }
 
 @Composable
