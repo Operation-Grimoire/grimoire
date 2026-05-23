@@ -17,13 +17,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -85,19 +88,23 @@ fun LibraryUpdatesScreen(
     var showClearConfirm by remember { mutableStateOf(false) }
     var expandedGroups by remember { mutableStateOf(setOf<Pair<Long, Long>>()) }
 
-    var selectedNovelIds by remember { mutableStateOf(emptySet<Long>()) }
     var selectedEntryIds by remember { mutableStateOf(emptySet<Long>()) }
-    val selectionMode = selectedNovelIds.isNotEmpty() || selectedEntryIds.isNotEmpty()
-    val selectionCount = selectedNovelIds.size + selectedEntryIds.size
-    val clearSelection: () -> Unit = {
-        selectedNovelIds = emptySet()
-        selectedEntryIds = emptySet()
-    }
+    val selectionMode = selectedEntryIds.isNotEmpty()
+    val clearSelection: () -> Unit = { selectedEntryIds = emptySet() }
     val toggleEntry: (Long) -> Unit = { id ->
         selectedEntryIds = if (id in selectedEntryIds) selectedEntryIds - id else selectedEntryIds + id
     }
-    val toggleNovel: (Long) -> Unit = { id ->
-        selectedNovelIds = if (id in selectedNovelIds) selectedNovelIds - id else selectedNovelIds + id
+    // Selecting a novel header (long-press, or tap while in selection mode)
+    // toggles every entry under it: if all are already selected, deselect them;
+    // otherwise add the ones that aren't. The header's "selected" state is then
+    // derived from "all its entries are selected", so unselecting any single
+    // chapter automatically un-highlights the header.
+    val toggleNovelEntries: (List<Long>) -> Unit = { entryIds ->
+        selectedEntryIds = if (entryIds.all { it in selectedEntryIds }) {
+            selectedEntryIds - entryIds.toSet()
+        } else {
+            selectedEntryIds + entryIds
+        }
     }
 
     BackHandler(enabled = selectionMode) { clearSelection() }
@@ -106,7 +113,7 @@ fun LibraryUpdatesScreen(
         topBar = {
             if (selectionMode) {
                 SelectionTopBar(
-                    count = selectionCount,
+                    count = selectedEntryIds.size,
                     onClear = clearSelection,
                     onSelectAll = {
                         val allIds = entries.map { it.id }.toSet()
@@ -149,9 +156,26 @@ fun LibraryUpdatesScreen(
         },
         bottomBar = {
             SelectionBottomBar(visible = selectionMode) {
-                val openNovelOnly = selectedNovelIds.size == 1 && selectedEntryIds.isEmpty()
-                if (openNovelOnly) {
-                    val novelId = selectedNovelIds.first()
+                val selectedChapters = selectedEntryIds.mapNotNull { chaptersByEntryId[it] }
+                val showMarkRead = selectedChapters.any { !it.read }
+                val showMarkUnread = selectedChapters.any { it.read }
+                val showDownload = selectedChapters.any {
+                    !it.locked &&
+                        (it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
+                            it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
+                }
+                val showCancel = selectedChapters.any {
+                    it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
+                }
+                val showDeleteDownload = selectedChapters.any {
+                    it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
+                }
+                val novelIdsInSelection = selectedEntryIds
+                    .mapNotNull { id -> entries.firstOrNull { it.id == id }?.novelId }
+                    .distinct()
+                val showOpenNovel = novelIdsInSelection.size == 1
+                if (showOpenNovel) {
+                    val novelId = novelIdsInSelection.first()
                     val sample = entries.firstOrNull { it.novelId == novelId }
                     if (sample != null) {
                         TooltipIconButton(
@@ -164,27 +188,61 @@ fun LibraryUpdatesScreen(
                         )
                     }
                 }
-                TooltipIconButton(
-                    icon = Icons.Default.DoneAll,
-                    label = "Mark read",
-                    onClick = {
-                        viewModel.markEntriesRead(effectiveEntryIds(entries, selectedNovelIds, selectedEntryIds))
-                        clearSelection()
-                    },
-                )
-                TooltipIconButton(
-                    icon = Icons.Default.Download,
-                    label = "Download",
-                    onClick = {
-                        viewModel.downloadEntries(effectiveEntryIds(entries, selectedNovelIds, selectedEntryIds))
-                        clearSelection()
-                    },
-                )
+                if (showMarkRead) {
+                    TooltipIconButton(
+                        icon = Icons.Default.DoneAll,
+                        label = "Mark read",
+                        onClick = {
+                            viewModel.setEntriesRead(selectedEntryIds, true)
+                            clearSelection()
+                        },
+                    )
+                }
+                if (showMarkUnread) {
+                    TooltipIconButton(
+                        icon = Icons.Default.RemoveDone,
+                        label = "Mark unread",
+                        onClick = {
+                            viewModel.setEntriesRead(selectedEntryIds, false)
+                            clearSelection()
+                        },
+                    )
+                }
+                if (showDownload) {
+                    TooltipIconButton(
+                        icon = Icons.Default.Download,
+                        label = "Download",
+                        onClick = {
+                            viewModel.downloadEntries(selectedEntryIds)
+                            clearSelection()
+                        },
+                    )
+                }
+                if (showCancel) {
+                    TooltipIconButton(
+                        icon = Icons.Default.Close,
+                        label = "Cancel",
+                        onClick = {
+                            viewModel.cancelDownloadEntries(selectedEntryIds)
+                            clearSelection()
+                        },
+                    )
+                }
+                if (showDeleteDownload) {
+                    TooltipIconButton(
+                        icon = Icons.Default.DeleteSweep,
+                        label = "Delete download",
+                        onClick = {
+                            viewModel.deleteDownloadEntries(selectedEntryIds)
+                            clearSelection()
+                        },
+                    )
+                }
                 TooltipIconButton(
                     icon = Icons.Default.Delete,
                     label = "Delete from log",
                     onClick = {
-                        viewModel.deleteEntries(effectiveEntryIds(entries, selectedNovelIds, selectedEntryIds))
+                        viewModel.deleteEntries(selectedEntryIds)
                         clearSelection()
                     },
                     tint = MaterialTheme.colorScheme.error,
@@ -259,18 +317,19 @@ fun LibraryUpdatesScreen(
                                         expandedGroups - group.key
                                     }
                                 }
+                                val groupEntryIds = group.entries.map { it.id }
                                 UpdateGroupHeader(
                                     group = group,
                                     chaptersByEntryId = chaptersByEntryId,
                                     collapsed = collapsed,
-                                    selected = group.first.novelId in selectedNovelIds,
+                                    selected = groupEntryIds.all { it in selectedEntryIds },
                                     onClick = {
-                                        if (selectionMode) toggleNovel(group.first.novelId)
+                                        if (selectionMode) toggleNovelEntries(groupEntryIds)
                                         else toggleCollapse()
                                     },
                                     onLongClick = {
                                         if (selectionMode) toggleCollapse()
-                                        else toggleNovel(group.first.novelId)
+                                        else toggleNovelEntries(groupEntryIds)
                                     },
                                     onToggleCollapse = toggleCollapse,
                                 )
@@ -330,20 +389,6 @@ fun LibraryUpdatesScreen(
             },
         )
     }
-}
-
-/**
- * Resolves which log rows an action applies to: the explicitly selected entries,
- * plus every entry belonging to a selected novel.
- */
-private fun effectiveEntryIds(
-    entries: List<LibraryUpdateEntity>,
-    selectedNovelIds: Set<Long>,
-    selectedEntryIds: Set<Long>,
-): Set<Long> {
-    if (selectedNovelIds.isEmpty()) return selectedEntryIds
-    val fromNovels = entries.filter { it.novelId in selectedNovelIds }.map { it.id }
-    return selectedEntryIds + fromNovels
 }
 
 /**
