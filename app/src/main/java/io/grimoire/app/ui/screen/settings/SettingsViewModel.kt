@@ -35,6 +35,7 @@ class SettingsViewModel @Inject constructor(
     val themeMode = uiPreferences.themeMode.stateIn(viewModelScope)
     val useDynamicColor = uiPreferences.useDynamicColor.stateIn(viewModelScope)
     val colorTheme = uiPreferences.colorTheme.stateIn(viewModelScope)
+    val hapticsEnabled = uiPreferences.hapticsEnabled.stateIn(viewModelScope)
     val browseDisplayMode = browsePreferences.displayMode.stateIn(viewModelScope)
     val browseGridColumns = browsePreferences.gridColumns.stateIn(viewModelScope)
     val libraryDisplayMode = libraryPreferences.displayMode.stateIn(viewModelScope)
@@ -44,6 +45,7 @@ class SettingsViewModel @Inject constructor(
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { uiPreferences.themeMode.set(mode) }
     fun setDynamicColor(enabled: Boolean) = viewModelScope.launch { uiPreferences.useDynamicColor.set(enabled) }
     fun setColorTheme(theme: ColorTheme) = viewModelScope.launch { uiPreferences.colorTheme.set(theme) }
+    fun setHapticsEnabled(enabled: Boolean) = viewModelScope.launch { uiPreferences.hapticsEnabled.set(enabled) }
     fun setBrowseDisplayMode(mode: BrowseDisplayMode) = viewModelScope.launch { browsePreferences.displayMode.set(mode) }
     fun setBrowseGridColumns(columns: Int) = viewModelScope.launch { browsePreferences.gridColumns.set(columns.coerceIn(2, 4)) }
     fun setLibraryDisplayMode(mode: LibraryDisplayMode) = viewModelScope.launch { libraryPreferences.displayMode.set(mode) }

@@ -21,7 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
@@ -52,6 +54,7 @@ fun RowScope.TooltipIconButton(
 ) {
     var pressed by remember { mutableStateOf(false) }
     val currentOnClick by rememberUpdatedState(onClick)
+    val haptics = LocalHapticFeedback.current
     // Combine press-grow (1f → 2f) with show/hide (×1f or ×0f). RowScope.weight
     // requires a strictly positive value, so the hidden state floors to a
     // sub-pixel weight that effectively removes the button from the row.
@@ -87,7 +90,10 @@ fun RowScope.TooltipIconButton(
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = { currentOnClick() },
-                                onLongPress = { pressed = true },
+                                onLongPress = {
+                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    pressed = true
+                                },
                                 onPress = {
                                     tryAwaitRelease()
                                     pressed = false

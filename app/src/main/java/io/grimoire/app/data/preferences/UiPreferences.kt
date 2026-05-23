@@ -20,4 +20,5 @@ class UiPreferences @Inject constructor(store: PreferenceStore) {
     val themeMode = store.getEnum("theme_mode", ThemeMode.SYSTEM)
     val useDynamicColor = store.getBoolean("use_dynamic_color", true)
     val colorTheme = store.getEnum("color_theme", ColorTheme.DEFAULT)
+    val hapticsEnabled = store.getBoolean("haptics_enabled", true)
 }

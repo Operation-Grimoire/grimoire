@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import dagger.hilt.android.AndroidEntryPoint
 import io.grimoire.app.data.preferences.UiPreferences
 import io.grimoire.app.ui.AppNavigation
+import io.grimoire.app.ui.component.ProvideAppHaptics
 import io.grimoire.app.ui.theme.GrimoireTheme
 import io.grimoire.app.ui.update.AppUpdateUi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,16 +50,20 @@ class MainActivity : FragmentActivity() {
                 .collectAsState(initial = uiPreferences.useDynamicColor.defaultValue())
             val colorTheme by uiPreferences.colorTheme.changes()
                 .collectAsState(initial = uiPreferences.colorTheme.defaultValue())
+            val hapticsEnabled by uiPreferences.hapticsEnabled.changes()
+                .collectAsState(initial = uiPreferences.hapticsEnabled.defaultValue())
             GrimoireTheme(
                 themeMode = themeMode,
                 dynamicColor = dynamicColor,
                 colorTheme = colorTheme,
             ) {
-                AppNavigation(
-                    pendingTarget = pendingTarget.asStateFlow(),
-                    onTargetHandled = { pendingTarget.value = null },
-                )
-                AppUpdateUi()
+                ProvideAppHaptics(enabled = hapticsEnabled) {
+                    AppNavigation(
+                        pendingTarget = pendingTarget.asStateFlow(),
+                        onTargetHandled = { pendingTarget.value = null },
+                    )
+                    AppUpdateUi()
+                }
             }
         }
     }

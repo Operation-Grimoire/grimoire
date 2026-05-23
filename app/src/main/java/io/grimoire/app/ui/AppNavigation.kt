@@ -31,6 +31,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -68,6 +70,7 @@ import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.about.AboutSettingsScreen
 import io.grimoire.app.ui.screen.settings.appearance.AppearanceSettingsScreen
 import io.grimoire.app.ui.screen.settings.backup.BackupSettingsScreen
+import io.grimoire.app.ui.screen.settings.behavior.BehaviorSettingsScreen
 import io.grimoire.app.ui.screen.settings.libraryupdate.LibraryUpdateSettingsScreen
 import io.grimoire.app.ui.screen.tasks.TasksScreen
 import io.grimoire.app.ui.screen.updates.LibraryUpdatesScreen
@@ -123,6 +126,7 @@ private const val ROUTE_UPDATE_ISSUES = "update_issues"
 private const val ROUTE_SETTINGS_ROOT = "settings"
 private const val ROUTE_SETTINGS_LIBRARY_UPDATE = "settings/library_updates"
 private const val ROUTE_SETTINGS_APPEARANCE = "settings/appearance"
+private const val ROUTE_SETTINGS_BEHAVIOR = "settings/behavior"
 private const val ROUTE_SETTINGS_LIBRARY = "settings/library"
 private const val ROUTE_SETTINGS_BROWSE = "settings/browse"
 private const val ROUTE_SETTINGS_LANGUAGES = "settings/languages"
@@ -191,12 +195,17 @@ fun AppNavigation(
                     exit = shrinkVertically() + fadeOut(),
                 ) {
                 NavigationBar {
+                    val haptics = LocalHapticFeedback.current
                     TopLevelDestination.entries.forEach { dest ->
+                        val isSelected = backStack?.destination?.hierarchy
+                            ?.any { it.route == dest.route } == true
                         NavigationBarItem(
-                            selected = backStack?.destination?.hierarchy?.any { it.route == dest.route } == true,
+                            selected = isSelected,
                             onClick = {
-                                val alreadyOnTab = backStack?.destination?.hierarchy
-                                    ?.any { it.route == dest.route } == true
+                                val alreadyOnTab = isSelected
+                                if (!alreadyOnTab) {
+                                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                }
                                 if (alreadyOnTab && dest == TopLevelDestination.Browse) {
                                     navController.navigate(ROUTE_GLOBAL_SEARCH) {
                                         launchSingleTop = true
@@ -434,6 +443,7 @@ fun AppNavigation(
                     SettingsScreen(
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToAppearance = { navController.navigate(ROUTE_SETTINGS_APPEARANCE) },
+                        onNavigateToBehavior = { navController.navigate(ROUTE_SETTINGS_BEHAVIOR) },
                         onNavigateToLibrary = { navController.navigate(ROUTE_SETTINGS_LIBRARY) },
                         onNavigateToBrowse = { navController.navigate(ROUTE_SETTINGS_BROWSE) },
                         onNavigateToLanguages = { navController.navigate(ROUTE_SETTINGS_LANGUAGES) },
@@ -449,6 +459,12 @@ fun AppNavigation(
                     val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
                     val vm: SettingsViewModel = hiltViewModel(graphEntry)
                     AppearanceSettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
+                }
+
+                composable(route = ROUTE_SETTINGS_BEHAVIOR) { entry ->
+                    val graphEntry = remember(entry) { navController.getBackStackEntry("settings_graph") }
+                    val vm: SettingsViewModel = hiltViewModel(graphEntry)
+                    BehaviorSettingsScreen(viewModel = vm, onNavigateBack = { navController.popBackStack() })
                 }
 
                 composable(route = ROUTE_SETTINGS_LIBRARY) { entry ->
