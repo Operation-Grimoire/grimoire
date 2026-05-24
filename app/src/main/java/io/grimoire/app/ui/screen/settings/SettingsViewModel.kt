@@ -8,6 +8,7 @@ import io.grimoire.app.data.preferences.BrowsePreferences
 import io.grimoire.app.data.preferences.ColorTheme
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
+import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.data.preferences.NovelUpdatesPreferences
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
@@ -60,8 +61,17 @@ class SettingsViewModel @Inject constructor(
     fun setLibraryShowDownloadedBadge(value: Boolean) = viewModelScope.launch { libraryPreferences.showDownloadedBadge.set(value) }
     fun setLibraryShowLockedBadge(value: Boolean) = viewModelScope.launch { libraryPreferences.showLockedBadge.set(value) }
 
+    val readerMarkAsReadStrategy = readerPreferences.markAsReadStrategy.stateIn(viewModelScope)
+    fun setReaderMarkAsReadStrategy(value: MarkAsReadStrategy) =
+        viewModelScope.launch { readerPreferences.markAsReadStrategy.set(value) }
+
     val readerMarkAsReadThreshold = readerPreferences.markAsReadThreshold.stateIn(viewModelScope)
-    fun setReaderMarkAsReadThreshold(value: Int) = viewModelScope.launch { readerPreferences.markAsReadThreshold.set(value.coerceIn(50, 100)) }
+    fun setReaderMarkAsReadThreshold(value: Int) =
+        viewModelScope.launch { readerPreferences.markAsReadThreshold.set(value.coerceIn(50, 100)) }
+
+    val readerMarkAsReadParagraphsFromEnd = readerPreferences.markAsReadParagraphsFromEnd.stateIn(viewModelScope)
+    fun setReaderMarkAsReadParagraphsFromEnd(value: Int) =
+        viewModelScope.launch { readerPreferences.markAsReadParagraphsFromEnd.set(value.coerceIn(0, 20)) }
 
     val readerOrientation = readerPreferences.orientation.stateIn(viewModelScope)
     fun setReaderOrientation(value: ReaderOrientation) = viewModelScope.launch { readerPreferences.orientation.set(value) }

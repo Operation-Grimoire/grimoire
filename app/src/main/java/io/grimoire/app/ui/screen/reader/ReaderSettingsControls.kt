@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
@@ -131,6 +132,28 @@ internal fun FontPicker(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+internal fun MarkAsReadStrategyPicker(
+    selected: MarkAsReadStrategy,
+    onSelect: (MarkAsReadStrategy) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        MarkAsReadStrategy.entries.forEach { value ->
+            val label = when (value) {
+                MarkAsReadStrategy.PERCENT -> "Percent"
+                MarkAsReadStrategy.PARAGRAPHS_FROM_END -> "Near end"
+                MarkAsReadStrategy.AT_END -> "At end"
+            }
+            FilterChip(
+                selected = selected == value,
+                onClick = { onSelect(value) },
+                label = { Text(label) },
+            )
         }
     }
 }

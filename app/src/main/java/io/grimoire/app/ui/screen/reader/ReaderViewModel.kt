@@ -12,6 +12,7 @@ import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
 import io.grimoire.api.source.SourceInfo
+import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
@@ -91,7 +92,11 @@ class ReaderViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    val markAsReadStrategy: StateFlow<MarkAsReadStrategy> =
+        readerPreferences.markAsReadStrategy.stateIn(viewModelScope)
     val markAsReadThreshold: StateFlow<Int> = readerPreferences.markAsReadThreshold.stateIn(viewModelScope)
+    val markAsReadParagraphsFromEnd: StateFlow<Int> =
+        readerPreferences.markAsReadParagraphsFromEnd.stateIn(viewModelScope)
     val fontSize: StateFlow<Int> = readerPreferences.fontSize.stateIn(viewModelScope)
     val lineHeightTimes10: StateFlow<Int> = readerPreferences.lineHeightTimes10.stateIn(viewModelScope)
     val paragraphSpacing: StateFlow<Int> = readerPreferences.paragraphSpacing.stateIn(viewModelScope)
@@ -157,6 +162,18 @@ class ReaderViewModel @Inject constructor(
 
     fun setShowNovelProgressPercent(value: Boolean) = viewModelScope.launch {
         readerPreferences.showNovelProgressPercent.set(value)
+    }
+
+    fun setMarkAsReadStrategy(value: MarkAsReadStrategy) = viewModelScope.launch {
+        readerPreferences.markAsReadStrategy.set(value)
+    }
+
+    fun setMarkAsReadThreshold(percent: Int) = viewModelScope.launch {
+        readerPreferences.markAsReadThreshold.set(percent.coerceIn(50, 100))
+    }
+
+    fun setMarkAsReadParagraphsFromEnd(n: Int) = viewModelScope.launch {
+        readerPreferences.markAsReadParagraphsFromEnd.set(n.coerceIn(0, 20))
     }
 
     /** Raw read-aloud playback state, shared across the whole app. */
@@ -285,21 +302,31 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    fun updateProgress(fraction: Float, anchorIndex: Int, anchorOffset: Int) {
+    fun updateProgress(
+        fraction: Float,
+        anchorIndex: Int,
+        anchorOffset: Int,
+        lastVisibleIndex: Int,
+        totalItems: Int,
+    ) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
-        val threshold = markAsReadThreshold.value / 100f
         // Persist the real fraction (not clamped to 1f) so the chapter % chip moves both
         // directions as the user scrolls — including back up after the auto-mark-as-read
-        // threshold was crossed. The `read` flag is sticky once set: crossing the threshold
+        // threshold was crossed. The `read` flag is sticky once set: crossing the trigger
         // promotes it, but scrolling back doesn't un-mark.
-        val markRead = !chapter.read && fraction >= threshold
+        val shouldMark = !chapter.read && totalItems > 0 && when (markAsReadStrategy.value) {
+            MarkAsReadStrategy.PERCENT -> fraction >= markAsReadThreshold.value / 100f
+            MarkAsReadStrategy.PARAGRAPHS_FROM_END ->
+                (totalItems - 1 - lastVisibleIndex) <= markAsReadParagraphsFromEnd.value
+            MarkAsReadStrategy.AT_END -> lastVisibleIndex >= totalItems - 1
+        }
         // Update in-memory state FIRST so the chip stays live during scrolling. If we awaited
         // the DB writes, every subsequent updateProgress call would queue behind setRead's
         // backfillWordCountsFromDownloads scan and the % display would visibly freeze.
         _chapters.update { list ->
             list.map {
                 if (it.id == chapter.id) it.copy(
-                    read = it.read || markRead,
+                    read = it.read || shouldMark,
                     readProgress = fraction,
                     readAnchorItemIndex = anchorIndex,
                     readAnchorItemOffset = anchorOffset,
@@ -308,7 +335,7 @@ class ReaderViewModel @Inject constructor(
         }
         viewModelScope.launch {
             chapterDao.setReadAnchor(chapter.id, fraction, anchorIndex, anchorOffset)
-            if (markRead) chapterDao.setRead(chapter.id, true)
+            if (shouldMark) chapterDao.setRead(chapter.id, true)
         }
     }
 
