@@ -3,18 +3,28 @@ package io.grimoire.app.data.epub
 import android.content.Context
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.grimoire.api.model.NovelPage
 import io.grimoire.api.model.NovelStatus
 import io.grimoire.app.data.download.ChapterDownloadStatus
+import io.grimoire.app.data.download.ChapterImageStore
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.local.entity.encodeChapterContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+
+/**
+ * Sentinel URL written into encoded chapter content for an EPUB-embedded image.
+ * The reader replaces it with a `file://` URI from [ChapterImageStore] before
+ * rendering, so the placeholder is never loaded over the network.
+ */
+private const val EPUB_EMBEDDED_IMAGE_URL = "local://epub-image"
 
 /** Outcome of an EPUB import: the stored novel's id and title. */
 data class EpubImportResult(val novelId: Long, val title: String)
@@ -40,6 +50,7 @@ class EpubImporter @Inject constructor(
     @ApplicationContext private val context: Context,
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
+    private val chapterImageStore: ChapterImageStore,
 ) {
     /**
      * Reads and parses the EPUB at [uri] without touching the library, so the
@@ -167,25 +178,46 @@ class EpubImporter @Inject constructor(
         // from any existing chapter with the same URL into its replacement.
         val previous = chapterDao.getChaptersOnce(novelId).associateBy { it.url }
 
-        chapterDao.replaceChapters(
-            novelId,
-            parsed.chapters.mapIndexed { index, ch ->
-                val chapterUrl = "$url/$index"
-                val prior = previous[chapterUrl]
-                ChapterEntity(
-                    novelId = novelId,
-                    url = chapterUrl,
-                    name = ch.title,
-                    chapterNumber = (index + 1).toFloat(),
-                    read = prior?.read ?: false,
-                    readProgress = prior?.readProgress ?: 0f,
-                    firstReadAt = prior?.firstReadAt,
-                    downloadStatus = ChapterDownloadStatus.DOWNLOADED.ordinal,
-                    downloadedContent = ch.content,
-                    wordCount = ch.content.countWords(),
-                )
-            },
-        )
+        val entities = parsed.chapters.mapIndexed { index, ch ->
+            val chapterUrl = "$url/$index"
+            val prior = previous[chapterUrl]
+            val novelPages = ch.pages.mapIndexed { pageIndex, page ->
+                when (page) {
+                    is EpubPage.Text -> NovelPage(index = pageIndex, text = page.text)
+                    is EpubPage.Image -> NovelPage(
+                        index = pageIndex,
+                        text = "",
+                        imageUrl = EPUB_EMBEDDED_IMAGE_URL,
+                    )
+                }
+            }
+            val encoded = encodeChapterContent(novelPages)
+            ChapterEntity(
+                novelId = novelId,
+                url = chapterUrl,
+                name = ch.title,
+                chapterNumber = (index + 1).toFloat(),
+                read = prior?.read ?: false,
+                readProgress = prior?.readProgress ?: 0f,
+                firstReadAt = prior?.firstReadAt,
+                downloadStatus = ChapterDownloadStatus.DOWNLOADED.ordinal,
+                downloadedContent = encoded,
+                wordCount = encoded.countWords(),
+            )
+        }
+        chapterDao.replaceChapters(novelId, entities)
+
+        // Write each chapter's in-EPUB illustration bytes to the same on-disk
+        // layout DownloadManager uses for web-source images, so the reader's
+        // ChapterImageStore lookup resolves them transparently.
+        parsed.chapters.forEachIndexed { index, ch ->
+            val images = ch.pages.mapIndexedNotNull { pageIndex, page ->
+                (page as? EpubPage.Image)?.let { pageIndex to it.bytes }
+            }
+            if (images.isNotEmpty()) {
+                chapterImageStore.saveLocalImages(novelId, "$url/$index", images)
+            }
+        }
 
         return EpubImportResult(novelId, parsed.title)
     }

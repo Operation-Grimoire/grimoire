@@ -1,6 +1,5 @@
 package io.grimoire.app.data.epub
 
-import io.grimoire.app.data.local.entity.CHAPTER_PAGE_SEPARATOR
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.parser.Parser
@@ -8,8 +7,14 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.zip.ZipFile
 
-/** One chapter extracted from an EPUB: a title and its content pre-joined with [CHAPTER_PAGE_SEPARATOR]. */
-data class EpubChapter(val title: String, val content: String)
+/** One page within an EPUB chapter — either a text run or an embedded illustration. */
+sealed interface EpubPage {
+    data class Text(val text: String) : EpubPage
+    data class Image(val bytes: ByteArray) : EpubPage
+}
+
+/** One chapter extracted from an EPUB: a title and its pages in document order. */
+data class EpubChapter(val title: String, val pages: List<EpubPage>)
 
 /** Cover image bytes plus the file extension to store it under. */
 data class EpubCover(val bytes: ByteArray, val extension: String)
@@ -118,19 +123,37 @@ object EpubParser {
             val xhtml = zip.readText(path) ?: return@forEachIndexed
             val doc = Jsoup.parse(xhtml)
             doc.select("script, style").remove()
+            val spineDir = path.substringBeforeLast('/', "")
             val pages = doc.body()?.let { body ->
-                body.select("p, h1, h2, h3, h4, h5, h6, blockquote, li")
-                    .map { it.text().trim() }
-                    .filter { it.isNotEmpty() }
-                    .ifEmpty {
-                        body.wholeText().split("\n").map { it.trim() }.filter { it.isNotEmpty() }
+                val collected = ArrayList<EpubPage>()
+                // Walk prose elements and images in document order. `<img>` /
+                // SVG `<image>` carry the chapter's illustrations; their src is
+                // resolved against the spine document's directory and loaded
+                // from the EPUB's own ZIP, so each illustration becomes an
+                // EpubPage.Image inlined at its in-flow position.
+                body.select(
+                    "p, h1, h2, h3, h4, h5, h6, blockquote, li, img, image",
+                ).forEach { el ->
+                    when (el.local().lowercase()) {
+                        "img" -> el.imageBytes(zip, spineDir)?.let { collected += EpubPage.Image(it) }
+                        "image" -> el.svgImageBytes(zip, spineDir)?.let { collected += EpubPage.Image(it) }
+                        else -> {
+                            val t = el.text().trim()
+                            if (t.isNotEmpty()) collected += EpubPage.Text(t)
+                        }
                     }
+                }
+                if (collected.none { it is EpubPage.Text }) {
+                    body.wholeText().split("\n").map { it.trim() }.filter { it.isNotEmpty() }
+                        .forEach { collected += EpubPage.Text(it) }
+                }
+                collected
             }.orEmpty()
             if (pages.isEmpty()) return@forEachIndexed
             val name = tocTitles[path]
                 ?: doc.title().trim().takeIf { it.isNotEmpty() }
                 ?: "Chapter ${index + 1}"
-            chapters += EpubChapter(name, pages.joinToString(CHAPTER_PAGE_SEPARATOR))
+            chapters += EpubChapter(name, pages)
         }
         require(chapters.isNotEmpty()) { "EPUB contains no readable chapters" }
 
@@ -177,6 +200,24 @@ object EpubParser {
 
     /** Element tag name without its XML namespace prefix (`opf:item` -> `item`). */
     private fun Element.local(): String = tagName().substringAfterLast(':')
+
+    /** Resolves an `<img>` src against [spineDir] and returns the bytes from [zip], or null if missing/unreadable. */
+    private fun Element.imageBytes(zip: ZipFile, spineDir: String): ByteArray? {
+        val src = listOf("src", "data-src", "data-original")
+            .map { attr(it).trim() }
+            .firstOrNull { it.isNotEmpty() && !it.startsWith("data:") && !it.startsWith("http") }
+            ?: return null
+        return zip.readBytes(resolvePath(spineDir, src))
+    }
+
+    /** SVG `<image xlink:href="…">` (or `href`) referenced from a spine document. */
+    private fun Element.svgImageBytes(zip: ZipFile, spineDir: String): ByteArray? {
+        val src = listOf("xlink:href", "href")
+            .map { attr(it).trim() }
+            .firstOrNull { it.isNotEmpty() && !it.startsWith("data:") && !it.startsWith("http") }
+            ?: return null
+        return zip.readBytes(resolvePath(spineDir, src))
+    }
 
     /** First element in the tree whose local name is [name] (prefix-insensitive). */
     private fun Element.firstByLocal(name: String): Element? =
