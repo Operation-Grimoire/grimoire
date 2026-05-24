@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.HideImage
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -311,11 +312,12 @@ fun ReaderScreen(
                             val imageModifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = paragraphSpacing.dp)
-                            if (hideInlineImages && imageUrl !in revealedImageUrls) {
+                            if (hideInlineImages) {
                                 PrivacyImage(
                                     model = imageUrl,
                                     contentDescription = null,
-                                    onTapReveal = { viewModel.revealImage(imageUrl) },
+                                    revealed = imageUrl in revealedImageUrls,
+                                    onTapToggle = { viewModel.toggleImageReveal(imageUrl) },
                                     modifier = imageModifier,
                                 )
                             } else {
@@ -396,15 +398,19 @@ fun ReaderScreen(
                     )
                 },
                 actions = {
-                    val hasHiddenImage = hideInlineImages && visiblePages.any { page ->
-                        val url = page.imageUrl
-                        url != null && url !in revealedImageUrls
-                    }
-                    if (hasHiddenImage) {
-                        IconButton(onClick = viewModel::revealAllImagesInCurrentChapter) {
+                    val chapterImageUrls = visiblePages.mapNotNull { it.imageUrl }
+                    if (hideInlineImages && chapterImageUrls.isNotEmpty()) {
+                        val allRevealed = chapterImageUrls.all { it in revealedImageUrls }
+                        IconButton(
+                            onClick = {
+                                if (allRevealed) viewModel.hideAllImagesInCurrentChapter()
+                                else viewModel.revealAllImagesInCurrentChapter()
+                            },
+                        ) {
                             Icon(
-                                Icons.Outlined.Image,
-                                contentDescription = "Reveal all images in this chapter",
+                                if (allRevealed) Icons.Outlined.HideImage else Icons.Outlined.Image,
+                                contentDescription = if (allRevealed) "Hide all images in this chapter"
+                                                     else "Reveal all images in this chapter",
                                 tint = colors.foreground,
                             )
                         }
@@ -480,6 +486,7 @@ fun ReaderScreen(
             readerFont = readerFont,
             colorTheme = colorTheme,
             orientation = orientation,
+            hideInlineImages = hideInlineImages,
             ttsEnabled = ttsEnabled,
             ttsEngine = ttsEngine,
             ttsSpeechRate = ttsSpeechRate,
@@ -492,6 +499,7 @@ fun ReaderScreen(
             onFont = viewModel::setReaderFont,
             onColorTheme = viewModel::setColorTheme,
             onOrientation = viewModel::setOrientation,
+            onHideInlineImages = viewModel::setHideInlineImages,
             onTtsEnabled = viewModel::setTtsEnabled,
             onTtsEngine = viewModel::setTtsEngine,
             onTtsSpeechRate = viewModel::setTtsSpeechRate,
@@ -517,6 +525,7 @@ private fun ReaderSettingsSheet(
     readerFont: ReaderFont,
     colorTheme: ReaderColorTheme,
     orientation: ReaderOrientation,
+    hideInlineImages: Boolean,
     ttsEnabled: Boolean,
     ttsEngine: TtsEngineType,
     ttsSpeechRate: Int,
@@ -529,6 +538,7 @@ private fun ReaderSettingsSheet(
     onFont: (ReaderFont) -> Unit,
     onColorTheme: (ReaderColorTheme) -> Unit,
     onOrientation: (ReaderOrientation) -> Unit,
+    onHideInlineImages: (Boolean) -> Unit,
     onTtsEnabled: (Boolean) -> Unit,
     onTtsEngine: (TtsEngineType) -> Unit,
     onTtsSpeechRate: (Int) -> Unit,
@@ -565,12 +575,14 @@ private fun ReaderSettingsSheet(
                 readerFont = readerFont,
                 colorTheme = colorTheme,
                 orientation = orientation,
+                hideInlineImages = hideInlineImages,
                 onFontSize = onFontSize,
                 onLineHeight = onLineHeight,
                 onParagraphSpacing = onParagraphSpacing,
                 onFont = onFont,
                 onColorTheme = onColorTheme,
                 onOrientation = onOrientation,
+                onHideInlineImages = onHideInlineImages,
             )
         } else {
             ReaderTtsSettings(
@@ -600,12 +612,14 @@ private fun ReaderDisplaySettings(
     readerFont: ReaderFont,
     colorTheme: ReaderColorTheme,
     orientation: ReaderOrientation,
+    hideInlineImages: Boolean,
     onFontSize: (Int) -> Unit,
     onLineHeight: (Int) -> Unit,
     onParagraphSpacing: (Int) -> Unit,
     onFont: (ReaderFont) -> Unit,
     onColorTheme: (ReaderColorTheme) -> Unit,
     onOrientation: (ReaderOrientation) -> Unit,
+    onHideInlineImages: (Boolean) -> Unit,
 ) {
     // Live preview
     Box(
@@ -664,6 +678,25 @@ private fun ReaderDisplaySettings(
 
         SettingsSectionLabel("Screen rotation")
         OrientationPicker(selected = orientation, onSelect = onOrientation)
+
+        SettingsSectionLabel("Privacy")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Hide images",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = "Tap to reveal · hold to peek",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(checked = hideInlineImages, onCheckedChange = onHideInlineImages)
+        }
     }
 }
 

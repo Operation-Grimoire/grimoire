@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -33,25 +34,32 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
-private const val FADE_DURATION_MS = 250
-private const val TAP_REVEAL_THRESHOLD_MS = 200L
+private const val FADE_IN_DURATION_MS = 2000
+private const val FADE_OUT_DURATION_MS = 400
+private const val TAP_TOGGLE_THRESHOLD_MS = 200L
 private const val DEFAULT_PLACEHOLDER_ASPECT = 3f / 2f
 
-/** Hidden behind a placeholder until pressed; short tap calls [onTapReveal], long press fades the image in only while held. Image bytes aren't requested until first interaction. */
+/** Hidden behind a placeholder until pressed; short tap toggles [revealed] via [onTapToggle], long press fades the image in only while held. Image bytes aren't requested until first interaction. */
 @Composable
 fun PrivacyImage(
     model: String,
     contentDescription: String?,
+    revealed: Boolean,
+    onTapToggle: () -> Unit,
     modifier: Modifier = Modifier,
-    onTapReveal: () -> Unit,
 ) {
-    var triggered by remember(model) { mutableStateOf(false) }
+    var triggered by remember(model) { mutableStateOf(revealed) }
     var pressed by remember(model) { mutableStateOf(false) }
     var loadedAspect by remember(model) { mutableFloatStateOf(DEFAULT_PLACEHOLDER_ASPECT) }
 
+    LaunchedEffect(revealed) {
+        if (revealed) triggered = true
+    }
+
+    val target = if (revealed || pressed) 1f else 0f
     val alpha by animateFloatAsState(
-        targetValue = if (pressed) 1f else 0f,
-        animationSpec = tween(durationMillis = FADE_DURATION_MS),
+        targetValue = target,
+        animationSpec = tween(durationMillis = if (target == 1f) FADE_IN_DURATION_MS else FADE_OUT_DURATION_MS),
         label = "privacyImageAlpha",
     )
 
@@ -68,8 +76,8 @@ fun PrivacyImage(
                         val startMs = System.currentTimeMillis()
                         val released = tryAwaitRelease()
                         pressed = false
-                        if (released && System.currentTimeMillis() - startMs < TAP_REVEAL_THRESHOLD_MS) {
-                            onTapReveal()
+                        if (released && System.currentTimeMillis() - startMs < TAP_TOGGLE_THRESHOLD_MS) {
+                            onTapToggle()
                         }
                     },
                 )
