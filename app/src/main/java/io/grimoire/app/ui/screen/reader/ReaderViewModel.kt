@@ -98,14 +98,24 @@ class ReaderViewModel @Inject constructor(
     private val _revealedImageUrls = MutableStateFlow<Set<String>>(emptySet())
     val revealedImageUrls: StateFlow<Set<String>> = _revealedImageUrls.asStateFlow()
 
-    fun revealImage(url: String) {
-        _revealedImageUrls.update { it + url }
+    fun toggleImageReveal(url: String) {
+        _revealedImageUrls.update { if (url in it) it - url else it + url }
     }
 
     fun revealAllImagesInCurrentChapter() {
         val urls = _pages.value.mapNotNull { it.imageUrl }
         if (urls.isEmpty()) return
         _revealedImageUrls.update { it + urls }
+    }
+
+    fun hideAllImagesInCurrentChapter() {
+        val urls = _pages.value.mapNotNull { it.imageUrl }.toSet()
+        if (urls.isEmpty()) return
+        _revealedImageUrls.update { it - urls }
+    }
+
+    fun setHideInlineImages(value: Boolean) = viewModelScope.launch {
+        readerPreferences.hideInlineImages.set(value)
     }
 
     /** Raw read-aloud playback state, shared across the whole app. */
