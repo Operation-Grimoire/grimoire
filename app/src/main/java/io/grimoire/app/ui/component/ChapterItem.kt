@@ -12,6 +12,8 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -20,7 +22,10 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,6 +59,7 @@ fun ChapterItem(
     onDownload: () -> Unit,
     onCancelDownload: () -> Unit,
     onDeleteDownload: () -> Unit,
+    onRedownload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Read chapters dim to signal "done"; locked chapters instead use a gold
@@ -106,6 +112,7 @@ fun ChapterItem(
                 onDownload = onDownload,
                 onCancelDownload = onCancelDownload,
                 onDeleteDownload = onDeleteDownload,
+                onRedownload = onRedownload,
             )
         },
         modifier = modifier.combinedClickable(
@@ -132,6 +139,7 @@ fun ChapterStatusTrailing(
     onDownload: () -> Unit,
     onCancelDownload: () -> Unit,
     onDeleteDownload: () -> Unit,
+    onRedownload: () -> Unit,
 ) {
     val dlStatus = ChapterDownloadStatus.entries.getOrElse(chapter.downloadStatus) { ChapterDownloadStatus.NONE }
     when {
@@ -157,12 +165,36 @@ fun ChapterStatusTrailing(
             Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 LinearProgressIndicator(modifier = Modifier.width(24.dp))
             }
-        dlStatus == ChapterDownloadStatus.DOWNLOADED -> ChapterTrailingIcon(
-            icon = Icons.Default.DownloadDone,
-            description = "Delete download",
-            tint = MaterialTheme.colorScheme.primary,
-            onClick = if (selectionMode) null else onDeleteDownload,
-        )
+        dlStatus == ChapterDownloadStatus.DOWNLOADED -> {
+            var menuExpanded by remember { mutableStateOf(false) }
+            Box {
+                ChapterTrailingIcon(
+                    icon = Icons.Default.DownloadDone,
+                    description = "Downloaded",
+                    tint = MaterialTheme.colorScheme.primary,
+                    onClick = if (selectionMode) null else { { menuExpanded = true } },
+                )
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Redownload") },
+                        onClick = {
+                            menuExpanded = false
+                            onRedownload()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete download") },
+                        onClick = {
+                            menuExpanded = false
+                            onDeleteDownload()
+                        },
+                    )
+                }
+            }
+        }
         else -> Row(verticalAlignment = Alignment.CenterVertically) {
             ChapterTrailingIcon(
                 icon = Icons.Default.Close,

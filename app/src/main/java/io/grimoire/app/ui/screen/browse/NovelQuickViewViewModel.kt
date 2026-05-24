@@ -194,6 +194,8 @@ class NovelQuickViewViewModel @AssistedInject constructor(
     fun downloadChapter(chapter: ChapterEntity) = downloadManager.enqueue(listOf(chapter))
     fun cancelDownload(chapter: ChapterEntity) = downloadManager.cancel(chapter)
     fun deleteDownload(chapter: ChapterEntity) = downloadManager.deleteDownload(chapter)
+    fun redownloadChapter(chapter: ChapterEntity) =
+        downloadManager.enqueue(listOf(chapter), force = true)
 
     companion object {
         const val LATEST_PREVIEW_LIMIT = 5

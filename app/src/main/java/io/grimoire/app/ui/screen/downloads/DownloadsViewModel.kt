@@ -73,4 +73,8 @@ class DownloadsViewModel @Inject constructor(
     fun deleteAllDownloads(novelId: Long) = downloadManager.deleteAllDownloads(novelId)
     fun cancel(chapter: ChapterEntity) = downloadManager.cancel(chapter)
     fun deleteDownload(chapter: ChapterEntity) = downloadManager.deleteDownload(chapter)
+    fun redownloadChapter(chapter: ChapterEntity) =
+        downloadManager.enqueue(listOf(chapter), force = true)
+    fun redownloadChapters(chapters: List<ChapterEntity>) =
+        downloadManager.enqueue(chapters.filter { !it.locked }, force = true)
 }
