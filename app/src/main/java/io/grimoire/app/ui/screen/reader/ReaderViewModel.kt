@@ -11,7 +11,9 @@ import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
+import io.grimoire.app.data.local.entity.effectiveTotal
 import io.grimoire.api.source.SourceInfo
+import io.grimoire.app.data.preferences.LibraryPreferences
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
@@ -48,6 +50,7 @@ class ReaderViewModel @Inject constructor(
     private val chapterDao: ChapterDao,
     private val novelDao: NovelDao,
     private val readerPreferences: ReaderPreferences,
+    private val libraryPreferences: LibraryPreferences,
     private val ttsController: TtsController,
     private val ttsPreferences: TtsPreferences,
     private val chapterImageStore: ChapterImageStore,
@@ -114,15 +117,18 @@ class ReaderViewModel @Inject constructor(
 
     /**
      * Fraction (0..1) of chapters in the current chapter's novel that are marked read. Computed
-     * by chapter count from the existing [ChapterDao.getStatsForAll] query.
+     * by chapter count from the existing [ChapterDao.getStatsForAll] query. Honors the library's
+     * "Include locked chapters in totals" preference so the in-reader Book % matches what the
+     * library row shows for the same novel.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     val novelProgress: StateFlow<Float> = currentChapter
         .filterNotNull()
         .flatMapLatest { chapter ->
-            chapterDao.getStatsForAll().map { all ->
-                val stats = all.firstOrNull { it.novelId == chapter.novelId } ?: return@map 0f
-                if (stats.total <= 0) 0f else stats.readCount.toFloat() / stats.total
+            combine(chapterDao.getStatsForAll(), libraryPreferences.includeLockedInTotals.changes()) { all, includeLocked ->
+                val stats = all.firstOrNull { it.novelId == chapter.novelId } ?: return@combine 0f
+                val denom = stats.effectiveTotal(includeLocked)
+                if (denom <= 0) 0f else stats.readCount.toFloat() / denom
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0f)

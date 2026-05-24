@@ -120,6 +120,8 @@ import io.grimoire.app.data.epub.StagedEpub
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.local.entity.effectiveTotal
+import io.grimoire.app.data.local.entity.readPercent
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibrarySort
@@ -152,14 +154,6 @@ private val SORT_OPTIONS = listOf(
     LibrarySort.UNREAD_DESC to "Unread chapters",
     LibrarySort.TOTAL_DESC to "Total chapters",
 )
-
-private fun NovelChapterStats.effectiveTotal(includeLocked: Boolean): Int =
-    if (includeLocked) total else (total - lockedCount).coerceAtLeast(0)
-
-private fun NovelChapterStats.readPercent(includeLocked: Boolean): Int {
-    val denom = effectiveTotal(includeLocked)
-    return if (denom > 0) (readCount * 100 / denom).coerceIn(0, 100) else 0
-}
 
 private fun computeTabNovels(
     tabIndex: Int,
