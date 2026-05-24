@@ -6,6 +6,12 @@ import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateColor
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -58,6 +64,7 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.HideImage
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -97,8 +104,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -107,6 +118,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
@@ -122,6 +136,12 @@ import io.grimoire.app.ui.component.ZoomableCoverImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+
+// Whole-word, case-insensitive — allows trailing "s" so "grimoires" is also styled. The
+// match runs on the *parsed* AnnotatedString (post-HTML), so HTML attribute values like
+// href="grimoire" don't leak into the rendered text and can't false-match.
+private val GRIMOIRE_REGEX = "\\bgrimoires?\\b".toRegex(RegexOption.IGNORE_CASE)
+private const val GRIMOIRE_ANNOTATION_TAG = "grimoire_tag"
 
 private fun Context.findActivity(): Activity? {
     var c: Context? = this
@@ -166,6 +186,7 @@ fun ReaderScreen(
     val hideInlineImages by viewModel.hideInlineImages.collectAsState()
     val showChapterProgressPercent by viewModel.showChapterProgressPercent.collectAsState()
     val showNovelProgressPercent by viewModel.showNovelProgressPercent.collectAsState()
+    val grimoireEasterEggEnabled by viewModel.grimoireEasterEggEnabled.collectAsState()
     val markAsReadStrategy by viewModel.markAsReadStrategy.collectAsState()
     val markAsReadThreshold by viewModel.markAsReadThreshold.collectAsState()
     val markAsReadParagraphsFromEnd by viewModel.markAsReadParagraphsFromEnd.collectAsState()
@@ -233,8 +254,40 @@ fun ReaderScreen(
     }
     var barsVisible by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var showGrimoirePopup by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     var restoredScrollUrl by remember { mutableStateOf<String?>(null) }
+
+    // Pause the easter-egg colour animation when the reader leaves the foreground —
+    // avoids waking the recomposer for off-screen frames.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var isResumed by remember { mutableStateOf(true) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> isResumed = true
+                Lifecycle.Event.ON_PAUSE -> isResumed = false
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Shared infinite transition for all "grimoire" highlights on screen — one ticker, not
+    // one per match.
+    val grimoireTransition = rememberInfiniteTransition(label = "grimoire")
+    val animatedGrimoireColor by grimoireTransition.animateColor(
+        initialValue = Color(0xFF1B5E20),
+        targetValue = Color(0xFF66BB6A),
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "grimoire_color",
+    )
+    val grimoireEffectActive = grimoireEasterEggEnabled && isResumed
+    val grimoireColor = if (grimoireEffectActive) animatedGrimoireColor else Color(0xFF388E3C)
 
     // Reset scroll only on genuine chapter changes (next/prev/TTS auto-advance) — NOT on
     // composition re-entry from transient screens (e.g. returning from the in-chapter webview).
@@ -401,9 +454,46 @@ fun ReaderScreen(
                                     page.formattedText?.let { AnnotatedString.fromHtml(it) }
                                         ?: AnnotatedString(page.text.trim())
                                 }
+                                val grimoireMatches = remember(rendered) {
+                                    GRIMOIRE_REGEX.findAll(rendered.text).map { it.range }.toList()
+                                }
+                                val hasMatches = grimoireMatches.isNotEmpty()
+                                val displayText = if (grimoireEffectActive && hasMatches) {
+                                    buildAnnotatedString {
+                                        append(rendered)
+                                        val style = SpanStyle(
+                                            color = grimoireColor,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        grimoireMatches.forEach { r ->
+                                            addStyle(style, r.first, r.last + 1)
+                                            addStringAnnotation(
+                                                GRIMOIRE_ANNOTATION_TAG,
+                                                rendered.text.substring(r),
+                                                r.first,
+                                                r.last + 1,
+                                            )
+                                        }
+                                    }
+                                } else rendered
+                                var layoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+                                val tapModifier = if (grimoireEffectActive && hasMatches) {
+                                    Modifier.pointerInput(grimoireMatches) {
+                                        detectTapGestures { pos ->
+                                            val lr = layoutResult
+                                            val onWord = lr != null && grimoireMatches.any { range ->
+                                                val offset = lr.getOffsetForPosition(pos)
+                                                offset in range.first..range.last
+                                            }
+                                            if (onWord) showGrimoirePopup = true
+                                            else barsVisible = !barsVisible
+                                        }
+                                    }
+                                } else Modifier
                                 Text(
-                                    text = rendered,
+                                    text = displayText,
                                     style = textStyle,
+                                    onTextLayout = { layoutResult = it },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .then(
@@ -413,6 +503,7 @@ fun ReaderScreen(
                                                 Modifier
                                             },
                                         )
+                                        .then(tapModifier)
                                         .padding(bottom = paragraphSpacing.dp),
                                 )
                             }
@@ -572,6 +663,14 @@ fun ReaderScreen(
         }
     }
 
+    if (showGrimoirePopup) {
+        GrimoireEasterEggDialog(
+            enabled = grimoireEasterEggEnabled,
+            onToggle = viewModel::setGrimoireEasterEggEnabled,
+            onDismiss = { showGrimoirePopup = false },
+        )
+    }
+
     if (showSettings) {
         ReaderSettingsSheet(
             sheetState = sheetState,
@@ -586,6 +685,7 @@ fun ReaderScreen(
             hideInlineImages = hideInlineImages,
             showChapterProgressPercent = showChapterProgressPercent,
             showNovelProgressPercent = showNovelProgressPercent,
+            grimoireEasterEggEnabled = grimoireEasterEggEnabled,
             markAsReadStrategy = markAsReadStrategy,
             markAsReadThreshold = markAsReadThreshold,
             markAsReadParagraphsFromEnd = markAsReadParagraphsFromEnd,
@@ -604,6 +704,7 @@ fun ReaderScreen(
             onHideInlineImages = viewModel::setHideInlineImages,
             onShowChapterProgressPercent = viewModel::setShowChapterProgressPercent,
             onShowNovelProgressPercent = viewModel::setShowNovelProgressPercent,
+            onGrimoireEasterEggEnabled = viewModel::setGrimoireEasterEggEnabled,
             onMarkAsReadStrategy = viewModel::setMarkAsReadStrategy,
             onMarkAsReadThreshold = viewModel::setMarkAsReadThreshold,
             onMarkAsReadParagraphsFromEnd = viewModel::setMarkAsReadParagraphsFromEnd,
@@ -635,6 +736,7 @@ private fun ReaderSettingsSheet(
     hideInlineImages: Boolean,
     showChapterProgressPercent: Boolean,
     showNovelProgressPercent: Boolean,
+    grimoireEasterEggEnabled: Boolean,
     markAsReadStrategy: MarkAsReadStrategy,
     markAsReadThreshold: Int,
     markAsReadParagraphsFromEnd: Int,
@@ -653,6 +755,7 @@ private fun ReaderSettingsSheet(
     onHideInlineImages: (Boolean) -> Unit,
     onShowChapterProgressPercent: (Boolean) -> Unit,
     onShowNovelProgressPercent: (Boolean) -> Unit,
+    onGrimoireEasterEggEnabled: (Boolean) -> Unit,
     onMarkAsReadStrategy: (MarkAsReadStrategy) -> Unit,
     onMarkAsReadThreshold: (Int) -> Unit,
     onMarkAsReadParagraphsFromEnd: (Int) -> Unit,
@@ -695,6 +798,7 @@ private fun ReaderSettingsSheet(
                 hideInlineImages = hideInlineImages,
                 showChapterProgressPercent = showChapterProgressPercent,
                 showNovelProgressPercent = showNovelProgressPercent,
+                grimoireEasterEggEnabled = grimoireEasterEggEnabled,
                 markAsReadStrategy = markAsReadStrategy,
                 markAsReadThreshold = markAsReadThreshold,
                 markAsReadParagraphsFromEnd = markAsReadParagraphsFromEnd,
@@ -707,6 +811,7 @@ private fun ReaderSettingsSheet(
                 onHideInlineImages = onHideInlineImages,
                 onShowChapterProgressPercent = onShowChapterProgressPercent,
                 onShowNovelProgressPercent = onShowNovelProgressPercent,
+                onGrimoireEasterEggEnabled = onGrimoireEasterEggEnabled,
                 onMarkAsReadStrategy = onMarkAsReadStrategy,
                 onMarkAsReadThreshold = onMarkAsReadThreshold,
                 onMarkAsReadParagraphsFromEnd = onMarkAsReadParagraphsFromEnd,
@@ -742,6 +847,7 @@ private fun ReaderDisplaySettings(
     hideInlineImages: Boolean,
     showChapterProgressPercent: Boolean,
     showNovelProgressPercent: Boolean,
+    grimoireEasterEggEnabled: Boolean,
     markAsReadStrategy: MarkAsReadStrategy,
     markAsReadThreshold: Int,
     markAsReadParagraphsFromEnd: Int,
@@ -754,6 +860,7 @@ private fun ReaderDisplaySettings(
     onHideInlineImages: (Boolean) -> Unit,
     onShowChapterProgressPercent: (Boolean) -> Unit,
     onShowNovelProgressPercent: (Boolean) -> Unit,
+    onGrimoireEasterEggEnabled: (Boolean) -> Unit,
     onMarkAsReadStrategy: (MarkAsReadStrategy) -> Unit,
     onMarkAsReadThreshold: (Int) -> Unit,
     onMarkAsReadParagraphsFromEnd: (Int) -> Unit,
@@ -891,8 +998,62 @@ private fun ReaderDisplaySettings(
             )
             MarkAsReadStrategy.AT_END -> Unit
         }
+
+        SettingsSectionLabel("Easter eggs")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Animate the word \"grimoire\"",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = "Tap a styled word in any chapter for details",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(
+                checked = grimoireEasterEggEnabled,
+                onCheckedChange = onGrimoireEasterEggEnabled,
+            )
+        }
     }
     }
+}
+
+@Composable
+private fun GrimoireEasterEggDialog(
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("You found the grimoire ✨") },
+        text = {
+            Column {
+                Text(
+                    text = "Every time the word \"grimoire\" appears in a chapter, the reader gives it a shimmering green flourish — a small wink to the app's namesake.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Animate the word",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(checked = enabled, onCheckedChange = onToggle)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+    )
 }
 
 @Composable
