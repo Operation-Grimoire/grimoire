@@ -22,12 +22,18 @@ import io.grimoire.app.data.tts.TtsController
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsPlaybackState
 import io.grimoire.app.extension.ExtensionManager
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -94,6 +100,30 @@ class ReaderViewModel @Inject constructor(
     val orientation: StateFlow<ReaderOrientation> = readerPreferences.orientation.stateIn(viewModelScope)
     val hideNotificationBar: StateFlow<Boolean> = readerPreferences.hideNotificationBar.stateIn(viewModelScope)
     val hideInlineImages: StateFlow<Boolean> = readerPreferences.hideInlineImages.stateIn(viewModelScope)
+    val showProgressPercent: StateFlow<Boolean> = readerPreferences.showProgressPercent.stateIn(viewModelScope)
+
+    /**
+     * Fraction (0..1) of chapters in the current chapter's novel that are marked read. Computed
+     * by chapter count from the existing [ChapterDao.getStatsForAll] query.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val novelProgress: StateFlow<Float> = currentChapter
+        .filterNotNull()
+        .flatMapLatest { chapter ->
+            chapterDao.getStatsForAll().map { all ->
+                val stats = all.firstOrNull { it.novelId == chapter.novelId } ?: return@map 0f
+                if (stats.total <= 0) 0f else stats.readCount.toFloat() / stats.total
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0f)
+
+    /**
+     * Emits whenever the user (or TTS auto-advance) moves to a different chapter — so the reader
+     * screen knows to reset scroll. Not emitted on initial load or on transient screen returns
+     * (e.g. coming back from the webview), so saved scroll position survives those.
+     */
+    private val _chapterChanged = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val chapterChanged: SharedFlow<String> = _chapterChanged.asSharedFlow()
 
     private val _revealedImageUrls = MutableStateFlow<Set<String>>(emptySet())
     val revealedImageUrls: StateFlow<Set<String>> = _revealedImageUrls.asStateFlow()
@@ -116,6 +146,10 @@ class ReaderViewModel @Inject constructor(
 
     fun setHideInlineImages(value: Boolean) = viewModelScope.launch {
         readerPreferences.hideInlineImages.set(value)
+    }
+
+    fun setShowProgressPercent(value: Boolean) = viewModelScope.launch {
+        readerPreferences.showProgressPercent.set(value)
     }
 
     /** Raw read-aloud playback state, shared across the whole app. */
@@ -169,6 +203,7 @@ class ReaderViewModel @Inject constructor(
                 val index = _chapters.value.indexOfFirst { it.url == url }
                 if (index >= 0 && index != _currentIndex.value) {
                     _currentIndex.value = index
+                    _chapterChanged.tryEmit(url)
                     loadPages()
                 }
             }
@@ -223,6 +258,7 @@ class ReaderViewModel @Inject constructor(
     fun navigatePrev() {
         if (_currentIndex.value > 0) {
             _currentIndex.value--
+            _chapters.value.getOrNull(_currentIndex.value)?.url?.let { _chapterChanged.tryEmit(it) }
             loadPages()
         }
     }
@@ -237,24 +273,38 @@ class ReaderViewModel @Inject constructor(
                 }
             }
             _currentIndex.value++
+            _chapters.value.getOrNull(_currentIndex.value)?.url?.let { _chapterChanged.tryEmit(it) }
             loadPages()
         }
     }
 
-    fun updateProgress(fraction: Float) {
+    fun updateProgress(fraction: Float, anchorIndex: Int, anchorOffset: Int) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
         if (chapter.read) return
         val threshold = markAsReadThreshold.value / 100f
         viewModelScope.launch {
-            chapterDao.setReadProgress(chapter.id, fraction)
+            chapterDao.setReadAnchor(chapter.id, fraction, anchorIndex, anchorOffset)
             if (fraction >= threshold) {
                 chapterDao.setRead(chapter.id, true)
                 _chapters.update { list ->
-                    list.map { if (it.id == chapter.id) it.copy(read = true, readProgress = 1f) else it }
+                    list.map {
+                        if (it.id == chapter.id) it.copy(
+                            read = true,
+                            readProgress = 1f,
+                            readAnchorItemIndex = anchorIndex,
+                            readAnchorItemOffset = anchorOffset,
+                        ) else it
+                    }
                 }
             } else {
                 _chapters.update { list ->
-                    list.map { if (it.id == chapter.id) it.copy(readProgress = fraction) else it }
+                    list.map {
+                        if (it.id == chapter.id) it.copy(
+                            readProgress = fraction,
+                            readAnchorItemIndex = anchorIndex,
+                            readAnchorItemOffset = anchorOffset,
+                        ) else it
+                    }
                 }
             }
         }

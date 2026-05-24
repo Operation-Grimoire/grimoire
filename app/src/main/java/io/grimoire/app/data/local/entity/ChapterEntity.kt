@@ -81,6 +81,8 @@ data class ChapterEntity(
     val translator: String? = null,
     val read: Boolean = false,
     val readProgress: Float = 0f,
+    val readAnchorItemIndex: Int = 0,
+    val readAnchorItemOffset: Int = 0,
     val downloadStatus: Int = 0,
     val downloadedContent: String? = null,
     val queueOrder: Long = 0L,
