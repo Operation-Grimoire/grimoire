@@ -126,6 +126,9 @@ import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibrarySort
 import io.grimoire.app.ui.theme.premiumGold
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
@@ -135,6 +138,8 @@ private val EPUB_MIME_TYPES = arrayOf(
     "application/zip",
     "application/octet-stream",
 )
+
+private val EmptyExternalEpubUri: StateFlow<Uri?> = MutableStateFlow(null).asStateFlow()
 
 private val STATUS_OPTIONS = listOf(
     -1 to "All",
@@ -227,6 +232,8 @@ fun LibraryScreen(
     onBrowse: () -> Unit,
     modifier: Modifier = Modifier,
     onSelectionActiveChange: (Boolean) -> Unit = {},
+    pendingEpubUri: StateFlow<Uri?> = EmptyExternalEpubUri,
+    onEpubUriHandled: () -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val categories by viewModel.categories.collectAsState()
@@ -287,6 +294,13 @@ fun LibraryScreen(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri: Uri? ->
         if (uri != null) viewModel.stageEpub(uri)
+    }
+
+    val externalEpubUri by pendingEpubUri.collectAsState()
+    LaunchedEffect(externalEpubUri) {
+        val uri = externalEpubUri ?: return@LaunchedEffect
+        viewModel.stageEpub(uri)
+        onEpubUriHandled()
     }
 
     LaunchedEffect(searchActive) {
