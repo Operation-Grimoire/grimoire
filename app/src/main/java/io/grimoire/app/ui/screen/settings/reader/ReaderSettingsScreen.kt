@@ -39,6 +39,7 @@ fun ReaderSettingsScreen(
     val threshold by viewModel.readerMarkAsReadThreshold.collectAsState()
     val orientation by viewModel.readerOrientation.collectAsState()
     val hideNotificationBar by viewModel.readerHideNotificationBar.collectAsState()
+    val hideInlineImages by viewModel.readerHideInlineImages.collectAsState()
     val colorTheme by viewModel.readerColorTheme.collectAsState()
     val font by viewModel.readerFont.collectAsState()
     val fontSize by viewModel.readerFontSize.collectAsState()
@@ -158,6 +159,22 @@ fun ReaderSettingsScreen(
                     },
                     modifier = Modifier.clickable {
                         viewModel.setReaderHideNotificationBar(!hideNotificationBar)
+                    },
+                )
+            }
+            item { SettingsSectionHeader("Privacy") }
+            item {
+                ListItem(
+                    headlineContent = { Text("Hide images") },
+                    supportingContent = { Text("Hide inline images until you tap to reveal or hold to peek") },
+                    trailingContent = {
+                        Switch(
+                            checked = hideInlineImages,
+                            onCheckedChange = { viewModel.setReaderHideInlineImages(it) },
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        viewModel.setReaderHideInlineImages(!hideInlineImages)
                     },
                 )
             }

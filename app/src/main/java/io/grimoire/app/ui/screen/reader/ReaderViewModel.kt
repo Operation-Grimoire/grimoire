@@ -93,6 +93,20 @@ class ReaderViewModel @Inject constructor(
     val colorTheme: StateFlow<ReaderColorTheme> = readerPreferences.colorTheme.stateIn(viewModelScope)
     val orientation: StateFlow<ReaderOrientation> = readerPreferences.orientation.stateIn(viewModelScope)
     val hideNotificationBar: StateFlow<Boolean> = readerPreferences.hideNotificationBar.stateIn(viewModelScope)
+    val hideInlineImages: StateFlow<Boolean> = readerPreferences.hideInlineImages.stateIn(viewModelScope)
+
+    private val _revealedImageUrls = MutableStateFlow<Set<String>>(emptySet())
+    val revealedImageUrls: StateFlow<Set<String>> = _revealedImageUrls.asStateFlow()
+
+    fun revealImage(url: String) {
+        _revealedImageUrls.update { it + url }
+    }
+
+    fun revealAllImagesInCurrentChapter() {
+        val urls = _pages.value.mapNotNull { it.imageUrl }
+        if (urls.isEmpty()) return
+        _revealedImageUrls.update { it + urls }
+    }
 
     /** Raw read-aloud playback state, shared across the whole app. */
     val ttsState: StateFlow<TtsPlaybackState> = ttsController.state

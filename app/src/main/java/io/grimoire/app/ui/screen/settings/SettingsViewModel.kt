@@ -61,6 +61,9 @@ class SettingsViewModel @Inject constructor(
     val readerHideNotificationBar = readerPreferences.hideNotificationBar.stateIn(viewModelScope)
     fun setReaderHideNotificationBar(value: Boolean) = viewModelScope.launch { readerPreferences.hideNotificationBar.set(value) }
 
+    val readerHideInlineImages = readerPreferences.hideInlineImages.stateIn(viewModelScope)
+    fun setReaderHideInlineImages(value: Boolean) = viewModelScope.launch { readerPreferences.hideInlineImages.set(value) }
+
     val readerColorTheme = readerPreferences.colorTheme.stateIn(viewModelScope)
     fun setReaderColorTheme(value: ReaderColorTheme) = viewModelScope.launch { readerPreferences.colorTheme.set(value) }
 
