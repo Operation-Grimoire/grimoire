@@ -3,6 +3,7 @@ package io.grimoire.app
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -33,6 +34,9 @@ class MainActivity : FragmentActivity() {
     /** Destination requested by an inbound intent (e.g. a notification tap); cleared once consumed. */
     private val pendingTarget = MutableStateFlow<String?>(null)
 
+    /** EPUB URI from an external "Open with" intent; cleared once the import flow picks it up. */
+    private val pendingEpubUri = MutableStateFlow<Uri?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -43,6 +47,7 @@ class MainActivity : FragmentActivity() {
             notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         pendingTarget.value = consumeNavTarget(intent)
+        pendingEpubUri.value = consumeEpubUri(intent)
         setContent {
             val themeMode by uiPreferences.themeMode.changes()
                 .collectAsState(initial = uiPreferences.themeMode.defaultValue())
@@ -61,6 +66,8 @@ class MainActivity : FragmentActivity() {
                     AppNavigation(
                         pendingTarget = pendingTarget.asStateFlow(),
                         onTargetHandled = { pendingTarget.value = null },
+                        pendingEpubUri = pendingEpubUri.asStateFlow(),
+                        onEpubUriHandled = { pendingEpubUri.value = null },
                     )
                     AppUpdateUi()
                 }
@@ -72,6 +79,7 @@ class MainActivity : FragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         consumeNavTarget(intent)?.let { pendingTarget.value = it }
+        consumeEpubUri(intent)?.let { pendingEpubUri.value = it }
     }
 
     /**
@@ -83,6 +91,17 @@ class MainActivity : FragmentActivity() {
         val target = intent.getStringExtra(EXTRA_NAV_TARGET) ?: return null
         intent.removeExtra(EXTRA_NAV_TARGET)
         return target
+    }
+
+    /**
+     * Extracts an EPUB URI from a VIEW intent and clears it from the activity intent
+     * so a config-change rebuild doesn't re-trigger the import dialog on every rotation.
+     */
+    private fun consumeEpubUri(intent: Intent?): Uri? {
+        if (intent == null || intent.action != Intent.ACTION_VIEW) return null
+        val uri = intent.data ?: return null
+        intent.data = null
+        return uri
     }
 
     companion object {

@@ -147,12 +147,15 @@ private const val POP_MS = 120
 const val NAV_TARGET_UPDATES = "updates"
 
 private val EmptyNavTarget: StateFlow<String?> = MutableStateFlow(null)
+private val EmptyEpubUri: StateFlow<Uri?> = MutableStateFlow(null)
 
 @Composable
 fun AppNavigation(
     modifier: Modifier = Modifier,
     pendingTarget: StateFlow<String?> = EmptyNavTarget,
     onTargetHandled: () -> Unit = {},
+    pendingEpubUri: StateFlow<Uri?> = EmptyEpubUri,
+    onEpubUriHandled: () -> Unit = {},
 ) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
@@ -167,6 +170,19 @@ fun AppNavigation(
         }
         if (route != null) navController.navigate(route) { launchSingleTop = true }
         onTargetHandled()
+    }
+
+    // An EPUB arriving from an external "Open with" needs the Library tab to be
+    // visible so its import-preview dialog has somewhere to render. LibraryScreen
+    // is the one that actually consumes the URI and clears the flow.
+    val epubUri by pendingEpubUri.collectAsState()
+    LaunchedEffect(epubUri) {
+        if (epubUri == null) return@LaunchedEffect
+        navController.navigate(TopLevelDestination.Library.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
     }
 
     val isTopLevel = TopLevelDestination.entries.any { dest ->
@@ -276,6 +292,8 @@ fun AppNavigation(
                         }
                     },
                     onSelectionActiveChange = { libraryInSelection = it },
+                    pendingEpubUri = pendingEpubUri,
+                    onEpubUriHandled = onEpubUriHandled,
                 )
             }
 
