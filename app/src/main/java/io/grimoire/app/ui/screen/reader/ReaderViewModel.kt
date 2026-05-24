@@ -100,7 +100,10 @@ class ReaderViewModel @Inject constructor(
     val orientation: StateFlow<ReaderOrientation> = readerPreferences.orientation.stateIn(viewModelScope)
     val hideNotificationBar: StateFlow<Boolean> = readerPreferences.hideNotificationBar.stateIn(viewModelScope)
     val hideInlineImages: StateFlow<Boolean> = readerPreferences.hideInlineImages.stateIn(viewModelScope)
-    val showProgressPercent: StateFlow<Boolean> = readerPreferences.showProgressPercent.stateIn(viewModelScope)
+    val showChapterProgressPercent: StateFlow<Boolean> =
+        readerPreferences.showChapterProgressPercent.stateIn(viewModelScope)
+    val showNovelProgressPercent: StateFlow<Boolean> =
+        readerPreferences.showNovelProgressPercent.stateIn(viewModelScope)
 
     /**
      * Fraction (0..1) of chapters in the current chapter's novel that are marked read. Computed
@@ -148,8 +151,12 @@ class ReaderViewModel @Inject constructor(
         readerPreferences.hideInlineImages.set(value)
     }
 
-    fun setShowProgressPercent(value: Boolean) = viewModelScope.launch {
-        readerPreferences.showProgressPercent.set(value)
+    fun setShowChapterProgressPercent(value: Boolean) = viewModelScope.launch {
+        readerPreferences.showChapterProgressPercent.set(value)
+    }
+
+    fun setShowNovelProgressPercent(value: Boolean) = viewModelScope.launch {
+        readerPreferences.showNovelProgressPercent.set(value)
     }
 
     /** Raw read-aloud playback state, shared across the whole app. */
@@ -280,31 +287,23 @@ class ReaderViewModel @Inject constructor(
 
     fun updateProgress(fraction: Float, anchorIndex: Int, anchorOffset: Int) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
-        if (chapter.read) return
         val threshold = markAsReadThreshold.value / 100f
+        // Persist the real fraction (not clamped to 1f) so the chapter % chip moves both
+        // directions as the user scrolls — including back up after the auto-mark-as-read
+        // threshold was crossed. The `read` flag is sticky once set: crossing the threshold
+        // promotes it, but scrolling back doesn't un-mark.
+        val markRead = !chapter.read && fraction >= threshold
         viewModelScope.launch {
             chapterDao.setReadAnchor(chapter.id, fraction, anchorIndex, anchorOffset)
-            if (fraction >= threshold) {
-                chapterDao.setRead(chapter.id, true)
-                _chapters.update { list ->
-                    list.map {
-                        if (it.id == chapter.id) it.copy(
-                            read = true,
-                            readProgress = 1f,
-                            readAnchorItemIndex = anchorIndex,
-                            readAnchorItemOffset = anchorOffset,
-                        ) else it
-                    }
-                }
-            } else {
-                _chapters.update { list ->
-                    list.map {
-                        if (it.id == chapter.id) it.copy(
-                            readProgress = fraction,
-                            readAnchorItemIndex = anchorIndex,
-                            readAnchorItemOffset = anchorOffset,
-                        ) else it
-                    }
+            if (markRead) chapterDao.setRead(chapter.id, true)
+            _chapters.update { list ->
+                list.map {
+                    if (it.id == chapter.id) it.copy(
+                        read = it.read || markRead,
+                        readProgress = fraction,
+                        readAnchorItemIndex = anchorIndex,
+                        readAnchorItemOffset = anchorOffset,
+                    ) else it
                 }
             }
         }
