@@ -39,6 +39,10 @@ fun LibrarySettingsScreen(
     val displayMode by viewModel.libraryDisplayMode.collectAsState()
     val gridColumns by viewModel.libraryGridColumns.collectAsState()
     val showAllTab by viewModel.libraryShowAllTab.collectAsState()
+    val includeLockedInTotals by viewModel.libraryIncludeLockedInTotals.collectAsState()
+    val showReadBadge by viewModel.libraryShowReadBadge.collectAsState()
+    val showDownloadedBadge by viewModel.libraryShowDownloadedBadge.collectAsState()
+    val showLockedBadge by viewModel.libraryShowLockedBadge.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -128,6 +132,62 @@ fun LibrarySettingsScreen(
                         )
                     },
                     modifier = Modifier.clickable { onNavigateToHiddenCategories() },
+                )
+            }
+
+            item { SettingsSectionHeader("Chapter counts") }
+            item {
+                ListItem(
+                    headlineContent = { Text("Include locked chapters in totals") },
+                    supportingContent = { Text("Count locked chapters in the total and read percentage shown on library badges and the novel details page") },
+                    trailingContent = {
+                        Switch(
+                            checked = includeLockedInTotals,
+                            onCheckedChange = { viewModel.setLibraryIncludeLockedInTotals(it) },
+                        )
+                    },
+                    modifier = Modifier.clickable { viewModel.setLibraryIncludeLockedInTotals(!includeLockedInTotals) },
+                )
+            }
+
+            item { SettingsSectionHeader("Cover badges") }
+            item {
+                ListItem(
+                    headlineContent = { Text("Show read progress badge") },
+                    supportingContent = { Text("Show read count and percentage on library covers") },
+                    trailingContent = {
+                        Switch(
+                            checked = showReadBadge,
+                            onCheckedChange = { viewModel.setLibraryShowReadBadge(it) },
+                        )
+                    },
+                    modifier = Modifier.clickable { viewModel.setLibraryShowReadBadge(!showReadBadge) },
+                )
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text("Show downloaded badge") },
+                    supportingContent = { Text("Show the downloaded-chapter count on library covers") },
+                    trailingContent = {
+                        Switch(
+                            checked = showDownloadedBadge,
+                            onCheckedChange = { viewModel.setLibraryShowDownloadedBadge(it) },
+                        )
+                    },
+                    modifier = Modifier.clickable { viewModel.setLibraryShowDownloadedBadge(!showDownloadedBadge) },
+                )
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text("Show locked chapters badge") },
+                    supportingContent = { Text("Show a gold lock badge with the locked-chapter count on library covers") },
+                    trailingContent = {
+                        Switch(
+                            checked = showLockedBadge,
+                            onCheckedChange = { viewModel.setLibraryShowLockedBadge(it) },
+                        )
+                    },
+                    modifier = Modifier.clickable { viewModel.setLibraryShowLockedBadge(!showLockedBadge) },
                 )
             }
         }

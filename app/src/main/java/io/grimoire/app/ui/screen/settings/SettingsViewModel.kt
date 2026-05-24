@@ -41,6 +41,10 @@ class SettingsViewModel @Inject constructor(
     val libraryDisplayMode = libraryPreferences.displayMode.stateIn(viewModelScope)
     val libraryGridColumns = libraryPreferences.gridColumns.stateIn(viewModelScope)
     val libraryShowAllTab = libraryPreferences.showAllTab.stateIn(viewModelScope)
+    val libraryIncludeLockedInTotals = libraryPreferences.includeLockedInTotals.stateIn(viewModelScope)
+    val libraryShowReadBadge = libraryPreferences.showReadBadge.stateIn(viewModelScope)
+    val libraryShowDownloadedBadge = libraryPreferences.showDownloadedBadge.stateIn(viewModelScope)
+    val libraryShowLockedBadge = libraryPreferences.showLockedBadge.stateIn(viewModelScope)
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { uiPreferences.themeMode.set(mode) }
     fun setDynamicColor(enabled: Boolean) = viewModelScope.launch { uiPreferences.useDynamicColor.set(enabled) }
@@ -51,6 +55,10 @@ class SettingsViewModel @Inject constructor(
     fun setLibraryDisplayMode(mode: LibraryDisplayMode) = viewModelScope.launch { libraryPreferences.displayMode.set(mode) }
     fun setLibraryGridColumns(columns: Int) = viewModelScope.launch { libraryPreferences.gridColumns.set(columns.coerceIn(2, 5)) }
     fun setLibraryShowAllTab(show: Boolean) = viewModelScope.launch { libraryPreferences.showAllTab.set(show) }
+    fun setLibraryIncludeLockedInTotals(value: Boolean) = viewModelScope.launch { libraryPreferences.includeLockedInTotals.set(value) }
+    fun setLibraryShowReadBadge(value: Boolean) = viewModelScope.launch { libraryPreferences.showReadBadge.set(value) }
+    fun setLibraryShowDownloadedBadge(value: Boolean) = viewModelScope.launch { libraryPreferences.showDownloadedBadge.set(value) }
+    fun setLibraryShowLockedBadge(value: Boolean) = viewModelScope.launch { libraryPreferences.showLockedBadge.set(value) }
 
     val readerMarkAsReadThreshold = readerPreferences.markAsReadThreshold.stateIn(viewModelScope)
     fun setReaderMarkAsReadThreshold(value: Int) = viewModelScope.launch { readerPreferences.markAsReadThreshold.set(value.coerceIn(50, 100)) }

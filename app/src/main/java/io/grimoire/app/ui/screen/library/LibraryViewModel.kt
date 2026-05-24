@@ -142,6 +142,10 @@ class LibraryViewModel @Inject constructor(
     val filterUnreadOnly: StateFlow<Boolean> = libraryPreferences.filterUnreadOnly.stateIn(viewModelScope)
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
     val includeHiddenInAll: StateFlow<Boolean> = libraryPreferences.includeHiddenInAll.stateIn(viewModelScope)
+    val includeLockedInTotals: StateFlow<Boolean> = libraryPreferences.includeLockedInTotals.stateIn(viewModelScope)
+    val showReadBadge: StateFlow<Boolean> = libraryPreferences.showReadBadge.stateIn(viewModelScope)
+    val showDownloadedBadge: StateFlow<Boolean> = libraryPreferences.showDownloadedBadge.stateIn(viewModelScope)
+    val showLockedBadge: StateFlow<Boolean> = libraryPreferences.showLockedBadge.stateIn(viewModelScope)
 
     // null until the persisted value is read from disk, so the restore can wait for
     // the real id instead of acting on the default and locking in the wrong tab.
