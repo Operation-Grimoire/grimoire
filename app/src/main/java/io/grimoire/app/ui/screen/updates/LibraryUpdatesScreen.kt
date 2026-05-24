@@ -165,7 +165,7 @@ fun LibraryUpdatesScreen(
                             it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
                 }
                 val showCancel = selectedChapters.any {
-                    it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
+                    it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS
                 }
                 val showDeleteDownload = selectedChapters.any {
                     it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
@@ -478,7 +478,7 @@ private fun UpdateGroupHeader(
         chaptersByEntryId[e.id]?.locked ?: e.locked
     }
     val downloadedCount = group.entries.count { e ->
-        chaptersByEntryId[e.id]?.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
+        chaptersByEntryId[e.id]?.downloadStatus in ChapterDownloadStatus.HAS_CONTENT_ORDINALS
     }
     val unlockedCount = group.entries.count { it.unlockedFromLocked }
     // "All downloaded" treats locked entries as unavailable, since they can't be

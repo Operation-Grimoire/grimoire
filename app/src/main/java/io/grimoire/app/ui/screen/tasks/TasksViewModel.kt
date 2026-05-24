@@ -66,10 +66,7 @@ class TasksViewModel @Inject constructor(
     }
 
     private val downloadTask = chapterDao.getAllDownloads().map { chapters ->
-        val active = chapters.count {
-            it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal ||
-                it.downloadStatus == ChapterDownloadStatus.DOWNLOADING.ordinal
-        }
+        val active = chapters.count { it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS }
         if (active == 0) {
             null
         } else {

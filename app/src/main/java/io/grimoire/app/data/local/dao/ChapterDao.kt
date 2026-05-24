@@ -131,34 +131,63 @@ interface ChapterDao {
     @Query("UPDATE chapters SET downloadStatus = 0, downloadedContent = NULL WHERE id = :id")
     suspend fun deleteDownload(id: Long)
 
-    @Query("SELECT * FROM chapters WHERE downloadStatus = 1 ORDER BY queueOrder DESC, id ASC LIMIT 1")
+    // Picks up either a fresh QUEUED (1) or a REDOWNLOAD_QUEUED (5) — the worker reads
+    // chapter.downloadStatus to decide which DOWNLOADING / ERROR variant to write back.
+    @Query("SELECT * FROM chapters WHERE downloadStatus IN (1, 5) ORDER BY queueOrder DESC, id ASC LIMIT 1")
     suspend fun getNextQueued(): ChapterEntity?
 
-    @Query("UPDATE chapters SET queueOrder = :order WHERE novelId = :novelId AND downloadStatus = 1")
+    @Query("UPDATE chapters SET queueOrder = :order WHERE novelId = :novelId AND downloadStatus IN (1, 5)")
     suspend fun setQueueOrder(novelId: Long, order: Long)
 
     @Query("UPDATE chapters SET queueOrder = :order WHERE id = :id")
     suspend fun setChapterQueueOrder(id: Long, order: Long)
 
-    @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus = 1")
+    @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus IN (1, 5)")
     suspend fun getQueuedCount(): Int
 
-    @Query("UPDATE chapters SET downloadStatus = 1 WHERE downloadStatus = 2")
+    // Reset both DOWNLOADING (2) → QUEUED (1) and REDOWNLOADING (6) → REDOWNLOAD_QUEUED (5).
+    @Query(
+        "UPDATE chapters " +
+            "SET downloadStatus = CASE WHEN downloadStatus = 6 THEN 5 ELSE 1 END " +
+            "WHERE downloadStatus IN (2, 6)"
+    )
     suspend fun resetStuckDownloads()
 
-    @Query("UPDATE chapters SET downloadStatus = 0 WHERE novelId = :novelId AND downloadStatus = 1")
+    // Cancelling a queued row: fresh (1) → NONE (0); refresh (5) → DOWNLOADED (3), preserving
+    // the existing saved content so the row keeps showing as downloaded.
+    @Query(
+        "UPDATE chapters " +
+            "SET downloadStatus = CASE WHEN downloadStatus = 5 THEN 3 ELSE 0 END " +
+            "WHERE novelId = :novelId AND downloadStatus IN (1, 5)"
+    )
     suspend fun cancelAllQueued(novelId: Long)
 
-    @Query("UPDATE chapters SET downloadStatus = 0 WHERE downloadStatus = 1")
+    @Query(
+        "UPDATE chapters " +
+            "SET downloadStatus = CASE WHEN downloadStatus = 5 THEN 3 ELSE 0 END " +
+            "WHERE downloadStatus IN (1, 5)"
+    )
     suspend fun cancelAllQueuedDownloads()
 
+    // Only deletes settled DOWNLOADED rows — leaves anything in flight to settle first.
     @Query("UPDATE chapters SET downloadStatus = 0, downloadedContent = NULL WHERE novelId = :novelId AND downloadStatus = 3")
     suspend fun deleteAllDownloads(novelId: Long)
 
-    @Query("UPDATE chapters SET downloadStatus = 1 WHERE novelId = :novelId AND downloadStatus = 4")
+    // Retry of failed: fresh (4) → QUEUED (1); refresh (7) → REDOWNLOAD_QUEUED (5).
+    @Query(
+        "UPDATE chapters " +
+            "SET downloadStatus = CASE WHEN downloadStatus = 7 THEN 5 ELSE 1 END " +
+            "WHERE novelId = :novelId AND downloadStatus IN (4, 7)"
+    )
     suspend fun retryAllFailed(novelId: Long)
 
-    @Query("UPDATE chapters SET downloadStatus = 0 WHERE novelId = :novelId AND downloadStatus = 4")
+    // Cancel of failed: fresh (4) → NONE (0); refresh (7) → DOWNLOADED (3), keeping the
+    // existing saved content (the failed refresh didn't wipe it).
+    @Query(
+        "UPDATE chapters " +
+            "SET downloadStatus = CASE WHEN downloadStatus = 7 THEN 3 ELSE 0 END " +
+            "WHERE novelId = :novelId AND downloadStatus IN (4, 7)"
+    )
     suspend fun cancelAllFailed(novelId: Long)
 
     @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
@@ -171,7 +200,7 @@ interface ChapterDao {
         SELECT novelId,
                COUNT(*) AS total,
                SUM(read) AS readCount,
-               SUM(CASE WHEN downloadStatus = 3 THEN 1 ELSE 0 END) AS downloadedCount,
+               SUM(CASE WHEN downloadStatus IN (3, 5, 6, 7) THEN 1 ELSE 0 END) AS downloadedCount,
                SUM(CASE WHEN locked = 1 THEN 1 ELSE 0 END) AS lockedCount
         FROM chapters
         GROUP BY novelId
@@ -212,7 +241,7 @@ interface ChapterDao {
              JOIN novels n ON c.novelId = n.id WHERE n.favorite = 1) AS libraryChapters,
           (SELECT COUNT(*) FROM chapters c
              JOIN novels n ON c.novelId = n.id WHERE n.favorite = 1 AND c.read = 0) AS libraryUnreadChapters,
-          (SELECT COUNT(*) FROM chapters WHERE downloadStatus = 3) AS downloadedChapters
+          (SELECT COUNT(*) FROM chapters WHERE downloadStatus IN (3, 5, 6, 7)) AS downloadedChapters
     """)
     fun getLibraryStats(): Flow<LibraryStats>
 }

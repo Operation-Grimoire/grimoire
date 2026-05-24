@@ -427,7 +427,7 @@ fun NovelDetailScreen(
                                             leadingIcon = { Icon(Icons.Default.Download, null) },
                                         )
                                     }
-                                    if (chapters.any { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }) {
+                                    if (chapters.any { it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }) {
                                         DropdownMenuItem(
                                             text = { Text("Cancel all downloads") },
                                             onClick = { viewModel.cancelAllDownloads(); overflowMenuExpanded = false },
@@ -490,10 +490,13 @@ fun NovelDetailScreen(
                         it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
                     }
                     val showRedownload = selectedChapters.any {
-                        !it.locked && it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
+                        !it.locked && (
+                            it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal ||
+                                it.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
+                            )
                     }
                     val showCancel = selectedChapters.any {
-                        it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
+                        it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS
                     }
                     val singleSelection = selectedIds.size == 1
                     TooltipIconButton(
@@ -783,7 +786,7 @@ fun NovelDetailScreen(
                             if (!isLoadingChapters && chaptersError == null && chapters.isNotEmpty()) {
                                 val readCount = chapters.count { it.read }
                                 val downloadedCount = chapters.count {
-                                    it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
+                                    it.downloadStatus in ChapterDownloadStatus.HAS_CONTENT_ORDINALS
                                 }
                                 val lockedCount = chapters.count { it.locked }
                                 val displayedTotal = if (includeLockedInTotals) {
