@@ -24,10 +24,7 @@ class MoreViewModel @Inject constructor(
 
     val activeDownloadCount = chapterDao.getAllDownloads()
         .map { chapters ->
-            chapters.count {
-                it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal ||
-                    it.downloadStatus == ChapterDownloadStatus.DOWNLOADING.ordinal
-            }
+            chapters.count { it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 

@@ -60,17 +60,25 @@ class DownloadManager @Inject constructor(
 
     fun enqueue(chapters: List<ChapterEntity>, force: Boolean = false) {
         scope.launch {
-            val ids = chapters
-                .filter { ch ->
-                    if (ch.locked) return@filter false
-                    val status = ch.downloadStatus
-                    status == ChapterDownloadStatus.NONE.ordinal ||
-                        status == ChapterDownloadStatus.ERROR.ordinal ||
-                        (force && status == ChapterDownloadStatus.DOWNLOADED.ordinal)
+            // NONE / ERROR rows become a fresh QUEUED; DOWNLOADED / REDOWNLOAD_ERROR (only
+            // when force=true) become REDOWNLOAD_QUEUED so the row keeps reading as
+            // downloaded throughout the refresh.
+            val freshIds = mutableListOf<Long>()
+            val refreshIds = mutableListOf<Long>()
+            for (ch in chapters) {
+                if (ch.locked) continue
+                when (ch.downloadStatus) {
+                    ChapterDownloadStatus.NONE.ordinal,
+                    ChapterDownloadStatus.ERROR.ordinal -> freshIds += ch.id
+                    ChapterDownloadStatus.DOWNLOADED.ordinal,
+                    ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> if (force) refreshIds += ch.id
                 }
-                .map { it.id }
-            ids.chunked(999).forEach { chunk ->
+            }
+            freshIds.chunked(999).forEach { chunk ->
                 chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.QUEUED.ordinal)
+            }
+            refreshIds.chunked(999).forEach { chunk ->
+                chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal)
             }
         }
         _isPaused.value = false
@@ -78,18 +86,27 @@ class DownloadManager @Inject constructor(
     }
 
     fun cancel(chapter: ChapterEntity) {
-        if (chapter.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal) {
-            scope.launch { chapterDao.setDownloadStatus(chapter.id, ChapterDownloadStatus.NONE.ordinal) }
+        val restoredStatus = when (chapter.downloadStatus) {
+            ChapterDownloadStatus.QUEUED.ordinal -> ChapterDownloadStatus.NONE.ordinal
+            ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal -> ChapterDownloadStatus.DOWNLOADED.ordinal
+            else -> return
         }
+        scope.launch { chapterDao.setDownloadStatus(chapter.id, restoredStatus) }
     }
 
     fun cancelDownloads(chapters: List<ChapterEntity>) {
         scope.launch {
-            val ids = chapters
+            val freshIds = chapters
                 .filter { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }
                 .map { it.id }
-            ids.chunked(999).forEach { chunk ->
+            val refreshIds = chapters
+                .filter { it.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal }
+                .map { it.id }
+            freshIds.chunked(999).forEach { chunk ->
                 chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.NONE.ordinal)
+            }
+            refreshIds.chunked(999).forEach { chunk ->
+                chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.DOWNLOADED.ordinal)
             }
         }
     }
@@ -131,8 +148,12 @@ class DownloadManager @Inject constructor(
     }
 
     fun retryChapter(chapter: ChapterEntity) {
-        if (chapter.downloadStatus != ChapterDownloadStatus.ERROR.ordinal) return
-        scope.launch { chapterDao.setDownloadStatus(chapter.id, ChapterDownloadStatus.QUEUED.ordinal) }
+        val target = when (chapter.downloadStatus) {
+            ChapterDownloadStatus.ERROR.ordinal -> ChapterDownloadStatus.QUEUED.ordinal
+            ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal
+            else -> return
+        }
+        scope.launch { chapterDao.setDownloadStatus(chapter.id, target) }
         _isPaused.value = false
         context.startForegroundService(Intent(context, DownloadService::class.java))
     }
@@ -158,11 +179,16 @@ class DownloadManager @Inject constructor(
                 repeat(n) {
                     launch {
                         while (!_isPaused.value) {
-                            val chapter = mutex.withLock {
+                            val picked = mutex.withLock {
                                 val ch = chapterDao.getNextQueued() ?: return@withLock null
-                                chapterDao.setDownloadStatus(ch.id, ChapterDownloadStatus.DOWNLOADING.ordinal)
-                                ch
+                                val isRefresh = ch.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal
+                                val inflight = if (isRefresh) ChapterDownloadStatus.REDOWNLOADING.ordinal
+                                               else ChapterDownloadStatus.DOWNLOADING.ordinal
+                                chapterDao.setDownloadStatus(ch.id, inflight)
+                                ch to isRefresh
                             } ?: break
+                            val chapter = picked.first
+                            val isRefresh = picked.second
                             runCatching {
                                 val novel = novelDao.getById(chapter.novelId) ?: error("Novel not found")
                                 val src = extensionManager.extensions.value
@@ -178,7 +204,9 @@ class DownloadManager @Inject constructor(
                                 }
                                 downloaded.incrementAndGet()
                             }.onFailure {
-                                chapterDao.setDownloadStatus(chapter.id, ChapterDownloadStatus.ERROR.ordinal)
+                                val errorStatus = if (isRefresh) ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
+                                                  else ChapterDownloadStatus.ERROR.ordinal
+                                chapterDao.setDownloadStatus(chapter.id, errorStatus)
                             }
                             onProgress(chapter.name, chapterDao.getQueuedCount())
                         }

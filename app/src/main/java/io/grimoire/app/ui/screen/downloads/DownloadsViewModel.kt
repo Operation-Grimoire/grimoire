@@ -17,9 +17,12 @@ import javax.inject.Inject
 
 private val STATUS_ORDER = mapOf(
     ChapterDownloadStatus.DOWNLOADING.ordinal to 0,
+    ChapterDownloadStatus.REDOWNLOADING.ordinal to 0,
     ChapterDownloadStatus.QUEUED.ordinal to 1,
+    ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal to 1,
     ChapterDownloadStatus.DOWNLOADED.ordinal to 2,
     ChapterDownloadStatus.ERROR.ordinal to 3,
+    ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal to 3,
 )
 
 data class NovelDownloads(
@@ -47,10 +50,7 @@ class DownloadsViewModel @Inject constructor(
                     )
                     NovelDownloads(novel, sorted)
                 }.sortedByDescending { nd ->
-                    nd.chapters.any {
-                        it.downloadStatus == ChapterDownloadStatus.DOWNLOADING.ordinal ||
-                            it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
-                    }
+                    nd.chapters.any { it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS }
                 }
                 emit(result)
             }

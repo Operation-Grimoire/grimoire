@@ -85,7 +85,7 @@ fun DownloadsScreen(
     val isPaused by viewModel.isPaused.collectAsState()
     val concurrency by viewModel.concurrency.collectAsState()
     var expandedNovels by remember { mutableStateOf(setOf<Long>()) }
-    var statusFilter by remember { mutableStateOf<Int?>(null) }
+    var statusFilter by remember { mutableStateOf<Set<Int>?>(null) }
     var showSettings by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
@@ -169,8 +169,9 @@ fun DownloadsScreen(
                     onSelectAll = {
                         val visibleChapterIds = (currentDownloads ?: emptyList())
                             .flatMap { nd ->
-                                if (statusFilter == null) nd.chapters
-                                else nd.chapters.filter { it.downloadStatus == statusFilter }
+                                val f = statusFilter
+                                if (f == null) nd.chapters
+                                else nd.chapters.filter { it.downloadStatus in f }
                             }
                             .map { it.id }
                             .toSet()
@@ -208,13 +209,16 @@ fun DownloadsScreen(
         bottomBar = {
             TooltipBottomBar(visible = selectionMode) {
                 val target = resolveTargets(currentDownloads, selectedChapterIds)
-                val hasQueued = target.chapters.any { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }
-                val hasInFlight = target.chapters.any {
-                    it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal ||
-                        it.downloadStatus == ChapterDownloadStatus.DOWNLOADING.ordinal
-                }
-                val hasError = target.chapters.any { it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal }
+                val hasQueued = target.chapters.any { it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }
+                val hasInFlight = target.chapters.any { it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS }
+                val hasError = target.chapters.any { it.downloadStatus in ChapterDownloadStatus.ERROR_ORDINALS }
                 val hasDownloaded = target.chapters.any { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
+                val hasRedownloadable = target.chapters.any {
+                    !it.locked && (
+                        it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal ||
+                            it.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
+                        )
+                }
 
                 TooltipIconButton(
                     visible = hasQueued,
@@ -231,7 +235,7 @@ fun DownloadsScreen(
                     label = "Cancel",
                     onClick = {
                         target.chapters
-                            .filter { it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal }
+                            .filter { it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }
                             .forEach { viewModel.cancel(it) }
                         clearSelection()
                     },
@@ -242,7 +246,7 @@ fun DownloadsScreen(
                     label = "Retry",
                     onClick = {
                         target.chapters
-                            .filter { it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal }
+                            .filter { it.downloadStatus in ChapterDownloadStatus.ERROR_ORDINALS }
                             .forEach { viewModel.retryChapter(it) }
                         clearSelection()
                     },
@@ -257,13 +261,17 @@ fun DownloadsScreen(
                     },
                 )
                 TooltipIconButton(
-                    visible = hasDownloaded,
+                    visible = hasRedownloadable,
                     icon = Icons.Default.Refresh,
                     label = "Redownload",
                     onClick = {
-                        val downloaded = target.chapters
-                            .filter { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
-                        viewModel.redownloadChapters(downloaded)
+                        val redownloadable = target.chapters.filter {
+                            !it.locked && (
+                                it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal ||
+                                    it.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
+                                )
+                        }
+                        viewModel.redownloadChapters(redownloadable)
                         clearSelection()
                     },
                 )
@@ -301,12 +309,12 @@ fun DownloadsScreen(
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        val chips = listOf(
+                        val chips: List<Pair<String, Set<Int>?>> = listOf(
                             "All" to null,
-                            "Downloading" to ChapterDownloadStatus.DOWNLOADING.ordinal,
-                            "Queued" to ChapterDownloadStatus.QUEUED.ordinal,
-                            "Done" to ChapterDownloadStatus.DOWNLOADED.ordinal,
-                            "Failed" to ChapterDownloadStatus.ERROR.ordinal,
+                            "Downloading" to ChapterDownloadStatus.DOWNLOADING_ORDINALS,
+                            "Queued" to ChapterDownloadStatus.QUEUED_ORDINALS,
+                            "Done" to setOf(ChapterDownloadStatus.DOWNLOADED.ordinal),
+                            "Failed" to ChapterDownloadStatus.ERROR_ORDINALS,
                         )
                         items(chips) { (label, value) ->
                             FilterChip(
@@ -319,8 +327,9 @@ fun DownloadsScreen(
                 }
 
                 currentDownloads.forEach { novelDownloads ->
-                    val filtered = if (statusFilter == null) novelDownloads.chapters
-                        else novelDownloads.chapters.filter { it.downloadStatus == statusFilter }
+                    val activeFilter = statusFilter
+                    val filtered = if (activeFilter == null) novelDownloads.chapters
+                        else novelDownloads.chapters.filter { it.downloadStatus in activeFilter }
                     if (filtered.isEmpty()) return@forEach
 
                     val novelId = novelDownloads.novel.id
@@ -417,9 +426,12 @@ private fun NovelDownloadHeader(
         var downloaded = 0; var queued = 0; var downloading = 0; var error = 0
         for (c in novelDownloads.chapters) when (c.downloadStatus) {
             ChapterDownloadStatus.DOWNLOADED.ordinal -> downloaded++
-            ChapterDownloadStatus.QUEUED.ordinal -> queued++
-            ChapterDownloadStatus.DOWNLOADING.ordinal -> downloading++
-            ChapterDownloadStatus.ERROR.ordinal -> error++
+            ChapterDownloadStatus.QUEUED.ordinal,
+            ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal -> queued++
+            ChapterDownloadStatus.DOWNLOADING.ordinal,
+            ChapterDownloadStatus.REDOWNLOADING.ordinal -> downloading++
+            ChapterDownloadStatus.ERROR.ordinal,
+            ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> error++
         }
         intArrayOf(downloaded, queued, downloading, error)
     }
@@ -507,13 +519,15 @@ private fun ChapterDownloadItem(
         },
         leadingContent = {
             when (status) {
-                ChapterDownloadStatus.QUEUED -> Icon(
+                ChapterDownloadStatus.QUEUED,
+                ChapterDownloadStatus.REDOWNLOAD_QUEUED -> Icon(
                     Icons.Default.HourglassEmpty,
                     contentDescription = "Queued",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp),
                 )
-                ChapterDownloadStatus.DOWNLOADING -> CircularProgressIndicator(
+                ChapterDownloadStatus.DOWNLOADING,
+                ChapterDownloadStatus.REDOWNLOADING -> CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
                 )
@@ -523,7 +537,8 @@ private fun ChapterDownloadItem(
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp),
                 )
-                ChapterDownloadStatus.ERROR -> Icon(
+                ChapterDownloadStatus.ERROR,
+                ChapterDownloadStatus.REDOWNLOAD_ERROR -> Icon(
                     Icons.Default.ErrorOutline,
                     contentDescription = "Error",
                     tint = MaterialTheme.colorScheme.error,
@@ -537,10 +552,12 @@ private fun ChapterDownloadItem(
         } else {
             {
                 when (status) {
-                    ChapterDownloadStatus.QUEUED -> IconButton(onClick = onCancel) {
+                    ChapterDownloadStatus.QUEUED,
+                    ChapterDownloadStatus.REDOWNLOAD_QUEUED -> IconButton(onClick = onCancel) {
                         Icon(Icons.Default.Close, contentDescription = "Cancel")
                     }
-                    ChapterDownloadStatus.ERROR -> IconButton(onClick = onRetry) {
+                    ChapterDownloadStatus.ERROR,
+                    ChapterDownloadStatus.REDOWNLOAD_ERROR -> IconButton(onClick = onRetry) {
                         Icon(Icons.Default.Refresh, contentDescription = "Retry")
                     }
                     ChapterDownloadStatus.DOWNLOADED -> {
