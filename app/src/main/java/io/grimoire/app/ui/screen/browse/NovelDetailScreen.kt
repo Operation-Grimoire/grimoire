@@ -143,6 +143,7 @@ fun NovelDetailScreen(
     val nuState by viewModel.nuState.collectAsState()
     val loginState by viewModel.loginState.collectAsState()
     val hasLockedChapters by viewModel.hasLockedChapters.collectAsState()
+    val includeLockedInTotals by viewModel.includeLockedInTotals.collectAsState()
     val migrationState by viewModel.migrationState.collectAsState()
     val migrateFromTitle by viewModel.migrateFromTitle.collectAsState()
     val refreshSummary by viewModel.refreshSummary.collectAsState()
@@ -773,7 +774,14 @@ fun NovelDetailScreen(
                                     it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
                                 }
                                 val lockedCount = chapters.count { it.locked }
-                                val percent = (readCount * 100 / chapters.size).coerceIn(0, 100)
+                                val displayedTotal = if (includeLockedInTotals) {
+                                    chapters.size
+                                } else {
+                                    (chapters.size - lockedCount).coerceAtLeast(0)
+                                }
+                                val percent = if (displayedTotal > 0) {
+                                    (readCount * 100 / displayedTotal).coerceIn(0, 100)
+                                } else 0
                                 Row(
                                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp),
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -790,7 +798,7 @@ fun NovelDetailScreen(
                                             tint = MaterialTheme.colorScheme.primary,
                                         )
                                         Text(
-                                            text = "$readCount / ${chapters.size} ($percent%)",
+                                            text = "$readCount / $displayedTotal ($percent%)",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface,
                                         )

@@ -171,7 +171,8 @@ interface ChapterDao {
         SELECT novelId,
                COUNT(*) AS total,
                SUM(read) AS readCount,
-               SUM(CASE WHEN downloadStatus = 3 THEN 1 ELSE 0 END) AS downloadedCount
+               SUM(CASE WHEN downloadStatus = 3 THEN 1 ELSE 0 END) AS downloadedCount,
+               SUM(CASE WHEN locked = 1 THEN 1 ELSE 0 END) AS lockedCount
         FROM chapters
         GROUP BY novelId
     """)

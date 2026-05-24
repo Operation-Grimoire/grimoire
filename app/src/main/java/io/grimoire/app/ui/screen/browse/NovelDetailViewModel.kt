@@ -25,6 +25,8 @@ import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.data.novelupdates.NuSearchResult
+import io.grimoire.app.data.preferences.LibraryPreferences
+import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.domain.migration.MigrationState
 import io.grimoire.app.domain.migration.NovelMigrator
 import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
@@ -61,7 +63,12 @@ class NovelDetailViewModel @Inject constructor(
     private val epubImporter: EpubImporter,
     private val novelUpdatesRepository: NovelUpdatesInfoRepository,
     private val migrator: NovelMigrator,
+    libraryPreferences: LibraryPreferences,
 ) : ViewModel() {
+
+    /** Mirrors the library preference that decides whether locked chapters count toward totals. */
+    val includeLockedInTotals: StateFlow<Boolean> =
+        libraryPreferences.includeLockedInTotals.stateIn(viewModelScope)
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
     private val novelUrl: String = checkNotNull(savedStateHandle["url"])

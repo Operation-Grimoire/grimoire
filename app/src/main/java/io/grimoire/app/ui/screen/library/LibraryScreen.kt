@@ -123,6 +123,7 @@ import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibrarySort
+import io.grimoire.app.ui.theme.premiumGold
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
@@ -152,8 +153,13 @@ private val SORT_OPTIONS = listOf(
     LibrarySort.TOTAL_DESC to "Total chapters",
 )
 
-private fun NovelChapterStats.readPercent(): Int =
-    if (total > 0) (readCount * 100 / total).coerceIn(0, 100) else 0
+private fun NovelChapterStats.effectiveTotal(includeLocked: Boolean): Int =
+    if (includeLocked) total else (total - lockedCount).coerceAtLeast(0)
+
+private fun NovelChapterStats.readPercent(includeLocked: Boolean): Int {
+    val denom = effectiveTotal(includeLocked)
+    return if (denom > 0) (readCount * 100 / denom).coerceIn(0, 100) else 0
+}
 
 private fun computeTabNovels(
     tabIndex: Int,
@@ -168,6 +174,7 @@ private fun computeTabNovels(
     isUnlocked: Boolean,
     hiddenCategoryIds: Set<Long>,
     includeHiddenInAll: Boolean,
+    includeLockedInTotals: Boolean,
     searchQuery: String,
 ): List<NovelEntity>? {
     val loaded = novels ?: return null
@@ -199,16 +206,18 @@ private fun computeTabNovels(
         LibrarySort.LAST_UPDATED_DESC -> compareByDescending<NovelEntity> { it.lastUpdated }
         LibrarySort.LAST_UPDATED_ASC -> compareBy<NovelEntity> { it.lastUpdated }
         LibrarySort.UNREAD_DESC -> compareByDescending<NovelEntity> {
-            chapterStats[it.id]?.let { s -> s.total - s.readCount } ?: 0
+            chapterStats[it.id]?.let { s -> s.effectiveTotal(includeLockedInTotals) - s.readCount } ?: 0
         }
-        LibrarySort.TOTAL_DESC -> compareByDescending<NovelEntity> { chapterStats[it.id]?.total ?: 0 }
+        LibrarySort.TOTAL_DESC -> compareByDescending<NovelEntity> {
+            chapterStats[it.id]?.effectiveTotal(includeLockedInTotals) ?: 0
+        }
         LibrarySort.LAST_READ_DESC -> compareByDescending<NovelEntity> { it.lastReadAt }
     }
     val trimmedQuery = searchQuery.trim()
     return tabFiltered
         .filter { novel ->
             (filterStatus == -1 || novel.status == filterStatus) &&
-            (!filterUnreadOnly || (chapterStats[novel.id]?.let { it.total - it.readCount > 0 } == true)) &&
+            (!filterUnreadOnly || (chapterStats[novel.id]?.let { it.effectiveTotal(includeLockedInTotals) - it.readCount > 0 } == true)) &&
             (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
             (trimmedQuery.isEmpty() ||
                 novel.title.contains(trimmedQuery, ignoreCase = true) ||
@@ -241,6 +250,10 @@ fun LibraryScreen(
     val hiddenCategoryIds by viewModel.hiddenCategoryIds.collectAsState()
     val biometricEnabled by viewModel.biometricEnabled.collectAsState()
     val includeHiddenInAll by viewModel.includeHiddenInAll.collectAsState()
+    val includeLockedInTotals by viewModel.includeLockedInTotals.collectAsState()
+    val showReadBadge by viewModel.showReadBadge.collectAsState()
+    val showDownloadedBadge by viewModel.showDownloadedBadge.collectAsState()
+    val showLockedBadge by viewModel.showLockedBadge.collectAsState()
     val staging by viewModel.staging.collectAsState()
     val importing by viewModel.importing.collectAsState()
     val pendingImport by viewModel.pendingImport.collectAsState()
@@ -360,6 +373,7 @@ fun LibraryScreen(
             isUnlocked = isUnlocked,
             hiddenCategoryIds = hiddenCategoryIds,
             includeHiddenInAll = includeHiddenInAll,
+            includeLockedInTotals = includeLockedInTotals,
             searchQuery = searchQuery,
         )
     }
@@ -367,7 +381,7 @@ fun LibraryScreen(
     val displayedNovels: List<NovelEntity>? = remember(
         novels, currentTab, categories, showAllTab,
         sortOrder, filterStatus, filterUnreadOnly, filterDownloadedOnly, chapterStats,
-        isUnlocked, hiddenCategoryIds, includeHiddenInAll, searchQuery,
+        isUnlocked, hiddenCategoryIds, includeHiddenInAll, includeLockedInTotals, searchQuery,
     ) { novelsForTab(currentTab) }
 
     Scaffold(
@@ -645,6 +659,10 @@ fun LibraryScreen(
                                     NovelCard(
                                         novel = novel,
                                         stats = chapterStats[novel.id],
+                                        includeLockedInTotals = includeLockedInTotals,
+                                        showReadBadge = showReadBadge,
+                                        showDownloadedBadge = showDownloadedBadge,
+                                        showLockedBadge = showLockedBadge,
                                         selected = novel.id in selectedIds,
                                         onClick = {
                                             if (selectionMode) toggleSelect(novel.id)
@@ -660,6 +678,10 @@ fun LibraryScreen(
                                     NovelRow(
                                         novel = novel,
                                         stats = chapterStats[novel.id],
+                                        includeLockedInTotals = includeLockedInTotals,
+                                        showReadBadge = showReadBadge,
+                                        showDownloadedBadge = showDownloadedBadge,
+                                        showLockedBadge = showLockedBadge,
                                         selected = novel.id in selectedIds,
                                         onClick = {
                                             if (selectionMode) toggleSelect(novel.id)
@@ -1012,6 +1034,10 @@ private fun SortTab(
 private fun NovelCard(
     novel: NovelEntity,
     stats: NovelChapterStats?,
+    includeLockedInTotals: Boolean,
+    showReadBadge: Boolean,
+    showDownloadedBadge: Boolean,
+    showLockedBadge: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -1046,8 +1072,9 @@ private fun NovelCard(
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
                     )
                 }
-                if (stats != null && stats.total > 0) {
-                    val percent = stats.readPercent()
+                if (showReadBadge && stats != null && stats.effectiveTotal(includeLockedInTotals) > 0) {
+                    val displayedTotal = stats.effectiveTotal(includeLockedInTotals)
+                    val percent = stats.readPercent(includeLockedInTotals)
                     Row(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
@@ -1058,7 +1085,7 @@ private fun NovelCard(
                         horizontalArrangement = Arrangement.spacedBy(3.dp),
                     ) {
                         Text(
-                            text = "${stats.readCount}/${stats.total}",
+                            text = "${stats.readCount}/$displayedTotal",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White,
                         )
@@ -1074,27 +1101,54 @@ private fun NovelCard(
                         )
                     }
                 }
-                if (stats != null && stats.downloadedCount > 0) {
-                    Row(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(4.dp)
-                            .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    ) {
-                        Icon(
-                            Icons.Default.Download,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(11.dp),
-                        )
-                        Text(
-                            text = "${stats.downloadedCount}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
-                        )
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    if (showDownloadedBadge && stats != null && stats.downloadedCount > 0) {
+                        Row(
+                            modifier = Modifier
+                                .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 4.dp, vertical = 1.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Download,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(11.dp),
+                            )
+                            Text(
+                                text = "${stats.downloadedCount}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White,
+                            )
+                        }
+                    }
+                    if (showLockedBadge && stats != null && stats.lockedCount > 0) {
+                        Row(
+                            modifier = Modifier
+                                .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 4.dp, vertical = 1.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = "Locked chapters",
+                                tint = MaterialTheme.colorScheme.premiumGold,
+                                modifier = Modifier.size(11.dp),
+                            )
+                            Text(
+                                text = "${stats.lockedCount}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White,
+                            )
+                        }
                     }
                 }
             }
@@ -1114,6 +1168,10 @@ private fun NovelCard(
 private fun NovelRow(
     novel: NovelEntity,
     stats: NovelChapterStats?,
+    includeLockedInTotals: Boolean,
+    showReadBadge: Boolean,
+    showDownloadedBadge: Boolean,
+    showLockedBadge: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -1130,50 +1188,75 @@ private fun NovelRow(
                 containerColor = Color.Transparent,
             ),
             headlineContent = { Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-            supportingContent = if (stats != null && stats.total > 0) {
-                {
-                    val percent = stats.readPercent()
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
+            supportingContent = run {
+                val showRead = showReadBadge && stats != null && stats.effectiveTotal(includeLockedInTotals) > 0
+                val showDownloaded = showDownloadedBadge && stats != null && stats.downloadedCount > 0
+                val showLocked = showLockedBadge && stats != null && stats.lockedCount > 0
+                if (showRead || showDownloaded || showLocked) {
+                    {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Icon(
-                                Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                            Text(
-                                "${stats.readCount}/${stats.total} ($percent%)",
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                        if (stats.downloadedCount > 0) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                Icon(
-                                    Icons.Default.Download,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                                Text(
-                                    "${stats.downloadedCount}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
+                            if (showRead) {
+                                val displayedTotal = stats!!.effectiveTotal(includeLockedInTotals)
+                                val percent = stats.readPercent(includeLockedInTotals)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                    Text(
+                                        "${stats.readCount}/$displayedTotal ($percent%)",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                }
+                            }
+                            if (showDownloaded) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Default.Download,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                    Text(
+                                        "${stats!!.downloadedCount}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                }
+                            }
+                            if (showLocked) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Default.Lock,
+                                        contentDescription = "Locked chapters",
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.premiumGold,
+                                    )
+                                    Text(
+                                        "${stats!!.lockedCount}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                }
                             }
                         }
                     }
-                }
-            } else if (!novel.author.isNullOrBlank()) {
-                { Text(novel.author!!, maxLines = 1) }
-            } else null,
+                } else if (!novel.author.isNullOrBlank()) {
+                    { Text(novel.author!!, maxLines = 1) }
+                } else null
+            },
             leadingContent = {
                 Box {
                     AsyncImage(
