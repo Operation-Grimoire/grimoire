@@ -63,6 +63,30 @@ class ChapterImageStore @Inject constructor(
         }
     }
 
+    /**
+     * Persists already-in-hand illustration bytes for a chapter (e.g. images
+     * unpacked from an imported EPUB). Mirrors [saveImages]'s on-disk layout
+     * so [localImageUri] resolves them the same way, but skips the HTTP fetch
+     * because the bytes are already available.
+     */
+    suspend fun saveLocalImages(
+        novelId: Long,
+        chapterUrl: String,
+        images: List<Pair<Int, ByteArray>>,
+    ) {
+        if (images.isEmpty()) return
+        withContext(Dispatchers.IO) {
+            val dir = chapterDir(novelId, chapterUrl)
+            dir.deleteRecursively()
+            dir.mkdirs()
+            for ((index, bytes) in images) {
+                runCatching {
+                    File(dir, index.toString()).outputStream().use { it.write(bytes) }
+                }
+            }
+        }
+    }
+
     /** A `file://` URI for a saved illustration, or null when it was not downloaded. */
     fun localImageUri(novelId: Long, chapterUrl: String, index: Int): String? {
         val file = File(chapterDir(novelId, chapterUrl), index.toString())
