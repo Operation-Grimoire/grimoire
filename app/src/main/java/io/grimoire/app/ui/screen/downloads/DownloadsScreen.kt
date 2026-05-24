@@ -30,12 +30,15 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -255,6 +258,17 @@ fun DownloadsScreen(
                 )
                 TooltipIconButton(
                     visible = hasDownloaded,
+                    icon = Icons.Default.Refresh,
+                    label = "Redownload",
+                    onClick = {
+                        val downloaded = target.chapters
+                            .filter { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
+                        viewModel.redownloadChapters(downloaded)
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    visible = hasDownloaded,
                     icon = Icons.Default.Delete,
                     label = "Delete",
                     onClick = {
@@ -348,6 +362,7 @@ fun DownloadsScreen(
                                 onCancel = { viewModel.cancel(chapter) },
                                 onRetry = { viewModel.retryChapter(chapter) },
                                 onDelete = { viewModel.deleteDownload(chapter) },
+                                onRedownload = { viewModel.redownloadChapter(chapter) },
                             )
                         }
                     }
@@ -476,6 +491,7 @@ private fun ChapterDownloadItem(
     onCancel: () -> Unit,
     onRetry: () -> Unit,
     onDelete: () -> Unit,
+    onRedownload: () -> Unit,
 ) {
     val status = ChapterDownloadStatus.entries.getOrElse(chapter.downloadStatus) { ChapterDownloadStatus.NONE }
 
@@ -527,8 +543,32 @@ private fun ChapterDownloadItem(
                     ChapterDownloadStatus.ERROR -> IconButton(onClick = onRetry) {
                         Icon(Icons.Default.Refresh, contentDescription = "Retry")
                     }
-                    ChapterDownloadStatus.DOWNLOADED -> IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    ChapterDownloadStatus.DOWNLOADED -> {
+                        var menuExpanded by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "Download options")
+                            }
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Redownload") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onRedownload()
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Delete download") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onDelete()
+                                    },
+                                )
+                            }
+                        }
                     }
                     else -> Spacer(modifier = Modifier.width(48.dp))
                 }
