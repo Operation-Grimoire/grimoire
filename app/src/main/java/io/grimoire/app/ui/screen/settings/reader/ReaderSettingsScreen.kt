@@ -12,7 +12,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -21,13 +20,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.ui.screen.reader.ColorThemePicker
 import io.grimoire.app.ui.screen.reader.FontPicker
+import io.grimoire.app.ui.screen.reader.MarkAsReadStrategyPicker
 import io.grimoire.app.ui.screen.reader.OrientationPicker
 import io.grimoire.app.ui.screen.reader.StepperRow
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +36,9 @@ fun ReaderSettingsScreen(
     viewModel: SettingsViewModel,
     modifier: Modifier = Modifier,
 ) {
+    val markAsReadStrategy by viewModel.readerMarkAsReadStrategy.collectAsState()
     val threshold by viewModel.readerMarkAsReadThreshold.collectAsState()
+    val paragraphsFromEnd by viewModel.readerMarkAsReadParagraphsFromEnd.collectAsState()
     val orientation by viewModel.readerOrientation.collectAsState()
     val hideNotificationBar by viewModel.readerHideNotificationBar.collectAsState()
     val hideInlineImages by viewModel.readerHideInlineImages.collectAsState()
@@ -122,14 +124,37 @@ fun ReaderSettingsScreen(
             item { SettingsSectionHeader("Reading") }
             item {
                 ListItem(
-                    headlineContent = { Text("Mark as read at $threshold%") },
+                    headlineContent = { Text("Auto-mark as read") },
                     supportingContent = {
-                        Slider(
-                            value = threshold.toFloat(),
-                            onValueChange = { viewModel.setReaderMarkAsReadThreshold(it.roundToInt()) },
-                            valueRange = 50f..100f,
-                            steps = 9,
-                        )
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(top = 4.dp),
+                        ) {
+                            MarkAsReadStrategyPicker(
+                                selected = markAsReadStrategy,
+                                onSelect = viewModel::setReaderMarkAsReadStrategy,
+                            )
+                            when (markAsReadStrategy) {
+                                MarkAsReadStrategy.PERCENT -> StepperRow(
+                                    label = "Mark at",
+                                    value = "$threshold%",
+                                    onDecrement = { viewModel.setReaderMarkAsReadThreshold(threshold - 5) },
+                                    onIncrement = { viewModel.setReaderMarkAsReadThreshold(threshold + 5) },
+                                    decrementEnabled = threshold > 50,
+                                    incrementEnabled = threshold < 100,
+                                )
+                                MarkAsReadStrategy.PARAGRAPHS_FROM_END -> StepperRow(
+                                    label = "Within last",
+                                    value = if (paragraphsFromEnd == 1) "1 paragraph"
+                                            else "$paragraphsFromEnd paragraphs",
+                                    onDecrement = { viewModel.setReaderMarkAsReadParagraphsFromEnd(paragraphsFromEnd - 1) },
+                                    onIncrement = { viewModel.setReaderMarkAsReadParagraphsFromEnd(paragraphsFromEnd + 1) },
+                                    decrementEnabled = paragraphsFromEnd > 0,
+                                    incrementEnabled = paragraphsFromEnd < 20,
+                                )
+                                MarkAsReadStrategy.AT_END -> Unit
+                            }
+                        }
                     },
                 )
             }

@@ -109,6 +109,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
@@ -131,7 +132,13 @@ private fun Context.findActivity(): Activity? {
     return null
 }
 
-private data class ProgressSnapshot(val index: Int, val offset: Int, val fraction: Float)
+private data class ProgressSnapshot(
+    val anchorIndex: Int,
+    val anchorOffset: Int,
+    val lastVisibleIndex: Int,
+    val totalItems: Int,
+    val fraction: Float,
+)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -159,6 +166,9 @@ fun ReaderScreen(
     val hideInlineImages by viewModel.hideInlineImages.collectAsState()
     val showChapterProgressPercent by viewModel.showChapterProgressPercent.collectAsState()
     val showNovelProgressPercent by viewModel.showNovelProgressPercent.collectAsState()
+    val markAsReadStrategy by viewModel.markAsReadStrategy.collectAsState()
+    val markAsReadThreshold by viewModel.markAsReadThreshold.collectAsState()
+    val markAsReadParagraphsFromEnd by viewModel.markAsReadParagraphsFromEnd.collectAsState()
     val novelProgress by viewModel.novelProgress.collectAsState()
     val revealedImageUrls by viewModel.revealedImageUrls.collectAsState()
 
@@ -263,11 +273,25 @@ fun ReaderScreen(
             // Fraction is last-visible-based so it matches the existing scrollbar percentage
             // (see ReaderScrollbar `readFraction`) — what the user has actually scrolled past.
             val fraction = ((last.index + 1).toFloat() / total).coerceIn(0f, 1f)
-            ProgressSnapshot(first.index, listState.firstVisibleItemScrollOffset, fraction)
+            ProgressSnapshot(
+                anchorIndex = first.index,
+                anchorOffset = listState.firstVisibleItemScrollOffset,
+                lastVisibleIndex = last.index,
+                totalItems = total,
+                fraction = fraction,
+            )
         }
             .filterNotNull()
             .distinctUntilChanged()
-            .collect { viewModel.updateProgress(it.fraction, it.index, it.offset) }
+            .collect {
+                viewModel.updateProgress(
+                    fraction = it.fraction,
+                    anchorIndex = it.anchorIndex,
+                    anchorOffset = it.anchorOffset,
+                    lastVisibleIndex = it.lastVisibleIndex,
+                    totalItems = it.totalItems,
+                )
+            }
     }
 
     // Follow TTS: scroll the paragraph being spoken into view, unless the user is scrolling.
@@ -562,6 +586,9 @@ fun ReaderScreen(
             hideInlineImages = hideInlineImages,
             showChapterProgressPercent = showChapterProgressPercent,
             showNovelProgressPercent = showNovelProgressPercent,
+            markAsReadStrategy = markAsReadStrategy,
+            markAsReadThreshold = markAsReadThreshold,
+            markAsReadParagraphsFromEnd = markAsReadParagraphsFromEnd,
             ttsEnabled = ttsEnabled,
             ttsEngine = ttsEngine,
             ttsSpeechRate = ttsSpeechRate,
@@ -577,6 +604,9 @@ fun ReaderScreen(
             onHideInlineImages = viewModel::setHideInlineImages,
             onShowChapterProgressPercent = viewModel::setShowChapterProgressPercent,
             onShowNovelProgressPercent = viewModel::setShowNovelProgressPercent,
+            onMarkAsReadStrategy = viewModel::setMarkAsReadStrategy,
+            onMarkAsReadThreshold = viewModel::setMarkAsReadThreshold,
+            onMarkAsReadParagraphsFromEnd = viewModel::setMarkAsReadParagraphsFromEnd,
             onTtsEnabled = viewModel::setTtsEnabled,
             onTtsEngine = viewModel::setTtsEngine,
             onTtsSpeechRate = viewModel::setTtsSpeechRate,
@@ -605,6 +635,9 @@ private fun ReaderSettingsSheet(
     hideInlineImages: Boolean,
     showChapterProgressPercent: Boolean,
     showNovelProgressPercent: Boolean,
+    markAsReadStrategy: MarkAsReadStrategy,
+    markAsReadThreshold: Int,
+    markAsReadParagraphsFromEnd: Int,
     ttsEnabled: Boolean,
     ttsEngine: TtsEngineType,
     ttsSpeechRate: Int,
@@ -620,6 +653,9 @@ private fun ReaderSettingsSheet(
     onHideInlineImages: (Boolean) -> Unit,
     onShowChapterProgressPercent: (Boolean) -> Unit,
     onShowNovelProgressPercent: (Boolean) -> Unit,
+    onMarkAsReadStrategy: (MarkAsReadStrategy) -> Unit,
+    onMarkAsReadThreshold: (Int) -> Unit,
+    onMarkAsReadParagraphsFromEnd: (Int) -> Unit,
     onTtsEnabled: (Boolean) -> Unit,
     onTtsEngine: (TtsEngineType) -> Unit,
     onTtsSpeechRate: (Int) -> Unit,
@@ -659,6 +695,9 @@ private fun ReaderSettingsSheet(
                 hideInlineImages = hideInlineImages,
                 showChapterProgressPercent = showChapterProgressPercent,
                 showNovelProgressPercent = showNovelProgressPercent,
+                markAsReadStrategy = markAsReadStrategy,
+                markAsReadThreshold = markAsReadThreshold,
+                markAsReadParagraphsFromEnd = markAsReadParagraphsFromEnd,
                 onFontSize = onFontSize,
                 onLineHeight = onLineHeight,
                 onParagraphSpacing = onParagraphSpacing,
@@ -668,6 +707,9 @@ private fun ReaderSettingsSheet(
                 onHideInlineImages = onHideInlineImages,
                 onShowChapterProgressPercent = onShowChapterProgressPercent,
                 onShowNovelProgressPercent = onShowNovelProgressPercent,
+                onMarkAsReadStrategy = onMarkAsReadStrategy,
+                onMarkAsReadThreshold = onMarkAsReadThreshold,
+                onMarkAsReadParagraphsFromEnd = onMarkAsReadParagraphsFromEnd,
             )
         } else {
             ReaderTtsSettings(
@@ -700,6 +742,9 @@ private fun ReaderDisplaySettings(
     hideInlineImages: Boolean,
     showChapterProgressPercent: Boolean,
     showNovelProgressPercent: Boolean,
+    markAsReadStrategy: MarkAsReadStrategy,
+    markAsReadThreshold: Int,
+    markAsReadParagraphsFromEnd: Int,
     onFontSize: (Int) -> Unit,
     onLineHeight: (Int) -> Unit,
     onParagraphSpacing: (Int) -> Unit,
@@ -709,6 +754,9 @@ private fun ReaderDisplaySettings(
     onHideInlineImages: (Boolean) -> Unit,
     onShowChapterProgressPercent: (Boolean) -> Unit,
     onShowNovelProgressPercent: (Boolean) -> Unit,
+    onMarkAsReadStrategy: (MarkAsReadStrategy) -> Unit,
+    onMarkAsReadThreshold: (Int) -> Unit,
+    onMarkAsReadParagraphsFromEnd: (Int) -> Unit,
 ) {
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
     // Live preview
@@ -816,6 +864,32 @@ private fun ReaderDisplaySettings(
                 checked = showNovelProgressPercent,
                 onCheckedChange = onShowNovelProgressPercent,
             )
+        }
+
+        SettingsSectionLabel("Auto-mark as read")
+        MarkAsReadStrategyPicker(
+            selected = markAsReadStrategy,
+            onSelect = onMarkAsReadStrategy,
+        )
+        when (markAsReadStrategy) {
+            MarkAsReadStrategy.PERCENT -> StepperRow(
+                label = "Mark at",
+                value = "$markAsReadThreshold%",
+                onDecrement = { onMarkAsReadThreshold(markAsReadThreshold - 5) },
+                onIncrement = { onMarkAsReadThreshold(markAsReadThreshold + 5) },
+                decrementEnabled = markAsReadThreshold > 50,
+                incrementEnabled = markAsReadThreshold < 100,
+            )
+            MarkAsReadStrategy.PARAGRAPHS_FROM_END -> StepperRow(
+                label = "Within last",
+                value = if (markAsReadParagraphsFromEnd == 1) "1 paragraph"
+                        else "$markAsReadParagraphsFromEnd paragraphs",
+                onDecrement = { onMarkAsReadParagraphsFromEnd(markAsReadParagraphsFromEnd - 1) },
+                onIncrement = { onMarkAsReadParagraphsFromEnd(markAsReadParagraphsFromEnd + 1) },
+                decrementEnabled = markAsReadParagraphsFromEnd > 0,
+                incrementEnabled = markAsReadParagraphsFromEnd < 20,
+            )
+            MarkAsReadStrategy.AT_END -> Unit
         }
     }
     }
