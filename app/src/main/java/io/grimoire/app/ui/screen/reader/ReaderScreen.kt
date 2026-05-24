@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -108,6 +109,7 @@ import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsPlaybackState
+import io.grimoire.app.ui.component.PrivacyImage
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.ZoomableCoverImage
@@ -146,6 +148,8 @@ fun ReaderScreen(
     val colorTheme by viewModel.colorTheme.collectAsState()
     val orientation by viewModel.orientation.collectAsState()
     val hideNotificationBar by viewModel.hideNotificationBar.collectAsState()
+    val hideInlineImages by viewModel.hideInlineImages.collectAsState()
+    val revealedImageUrls by viewModel.revealedImageUrls.collectAsState()
 
     val ttsState by viewModel.ttsState.collectAsState()
     val ttsCurrentUrl by viewModel.ttsCurrentUrl.collectAsState()
@@ -304,14 +308,24 @@ fun ReaderScreen(
                     items(visiblePages, key = { it.index }) { page ->
                         val imageUrl = page.imageUrl
                         if (imageUrl != null) {
-                            ZoomableCoverImage(
-                                model = imageUrl,
-                                contentDescription = null,
-                                contentScale = ContentScale.FillWidth,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = paragraphSpacing.dp),
-                            )
+                            val imageModifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = paragraphSpacing.dp)
+                            if (hideInlineImages && imageUrl !in revealedImageUrls) {
+                                PrivacyImage(
+                                    model = imageUrl,
+                                    contentDescription = null,
+                                    onTapReveal = { viewModel.revealImage(imageUrl) },
+                                    modifier = imageModifier,
+                                )
+                            } else {
+                                ZoomableCoverImage(
+                                    model = imageUrl,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.FillWidth,
+                                    modifier = imageModifier,
+                                )
+                            }
                         } else {
                             val highlighted = page.index == ttsSpokenPageIndex
                             Text(
@@ -382,6 +396,19 @@ fun ReaderScreen(
                     )
                 },
                 actions = {
+                    val hasHiddenImage = hideInlineImages && visiblePages.any { page ->
+                        val url = page.imageUrl
+                        url != null && url !in revealedImageUrls
+                    }
+                    if (hasHiddenImage) {
+                        IconButton(onClick = viewModel::revealAllImagesInCurrentChapter) {
+                            Icon(
+                                Icons.Outlined.Image,
+                                contentDescription = "Reveal all images in this chapter",
+                                tint = colors.foreground,
+                            )
+                        }
+                    }
                     IconButton(onClick = { onOpenWebView(viewModel.chapterWebUrl) }) {
                         Icon(
                             Icons.Default.Language,
