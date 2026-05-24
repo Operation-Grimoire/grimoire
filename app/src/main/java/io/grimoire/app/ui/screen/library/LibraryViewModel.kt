@@ -18,7 +18,8 @@ import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
-import io.grimoire.app.data.preferences.LibrarySort
+import io.grimoire.app.data.preferences.SortDirection
+import io.grimoire.app.data.preferences.SortField
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
@@ -137,10 +138,33 @@ class LibraryViewModel @Inject constructor(
     val displayMode: StateFlow<LibraryDisplayMode> = libraryPreferences.displayMode.stateIn(viewModelScope)
     val gridColumns: StateFlow<Int> = libraryPreferences.gridColumns.stateIn(viewModelScope)
     val showAllTab: StateFlow<Boolean> = libraryPreferences.showAllTab.stateIn(viewModelScope)
-    val sortOrder: StateFlow<LibrarySort> = libraryPreferences.sortOrder.stateIn(viewModelScope)
+    val sortField: StateFlow<SortField> = libraryPreferences.sortField.stateIn(viewModelScope)
+    val sortDirection: StateFlow<SortDirection> = libraryPreferences.sortDirection.stateIn(viewModelScope)
     val filterStatus: StateFlow<Int> = libraryPreferences.filterStatus.stateIn(viewModelScope)
     val filterUnreadOnly: StateFlow<Boolean> = libraryPreferences.filterUnreadOnly.stateIn(viewModelScope)
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
+    val filterSourceId: StateFlow<Long> = libraryPreferences.filterSourceId.stateIn(viewModelScope)
+
+    /**
+     * Source ids that appear in the user's library, paired with their human label
+     * (extension's source name, "Local" for imported EPUBs, or a fallback for
+     * sources whose extension is no longer installed). Drives the source filter
+     * chip row so it only lists sources the user actually has novels from.
+     */
+    val librarySources: StateFlow<List<Pair<Long, String>>> = combine(
+        novelDao.getFavorites(),
+        extensionManager.extensions,
+    ) { favorites, exts ->
+        val sourceIds = favorites.map { it.sourceId }.toSortedSet()
+        val nameBySourceId = exts.associate { it.source.id to it.source.name }
+        sourceIds.map { id ->
+            val name = when {
+                id == LOCAL_SOURCE_ID -> "Local"
+                else -> nameBySourceId[id] ?: "Source $id"
+            }
+            id to name
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val includeHiddenInAll: StateFlow<Boolean> = libraryPreferences.includeHiddenInAll.stateIn(viewModelScope)
     val includeLockedInTotals: StateFlow<Boolean> = libraryPreferences.includeLockedInTotals.stateIn(viewModelScope)
     val showReadBadge: StateFlow<Boolean> = libraryPreferences.showReadBadge.stateIn(viewModelScope)
@@ -224,8 +248,14 @@ class LibraryViewModel @Inject constructor(
         libraryPreferences.gridColumns.set(count.coerceIn(2, 5))
     }
 
-    fun setSortOrder(sort: LibrarySort) = viewModelScope.launch {
-        libraryPreferences.sortOrder.set(sort)
+    fun setSortField(field: SortField) = viewModelScope.launch {
+        libraryPreferences.sortField.set(field)
+    }
+
+    /** Flips the persisted sort direction without changing the active sort field. */
+    fun toggleSortDirection() = viewModelScope.launch {
+        val next = if (sortDirection.value == SortDirection.ASC) SortDirection.DESC else SortDirection.ASC
+        libraryPreferences.sortDirection.set(next)
     }
 
     fun setFilterStatus(status: Int) = viewModelScope.launch {
@@ -238,6 +268,10 @@ class LibraryViewModel @Inject constructor(
 
     fun setFilterDownloadedOnly(value: Boolean) = viewModelScope.launch {
         libraryPreferences.filterDownloadedOnly.set(value)
+    }
+
+    fun setFilterSourceId(sourceId: Long) = viewModelScope.launch {
+        libraryPreferences.filterSourceId.set(sourceId)
     }
 
     fun setCategoryHidden(category: CategoryEntity, hidden: Boolean) = viewModelScope.launch {

@@ -48,6 +48,8 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LibraryAdd
@@ -77,7 +79,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -122,9 +123,11 @@ import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.effectiveTotal
 import io.grimoire.app.data.local.entity.readPercent
+import io.grimoire.app.data.preferences.ALL_SOURCES_FILTER_ID
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
 import io.grimoire.app.data.preferences.LibraryDisplayMode
-import io.grimoire.app.data.preferences.LibrarySort
+import io.grimoire.app.data.preferences.SortDirection
+import io.grimoire.app.data.preferences.SortField
 import io.grimoire.app.ui.theme.premiumGold
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -150,14 +153,12 @@ private val STATUS_OPTIONS = listOf(
     0 to "Unknown",
 )
 
-private val SORT_OPTIONS = listOf(
-    LibrarySort.LAST_READ_DESC to "Last read",
-    LibrarySort.TITLE_ASC to "Title A → Z",
-    LibrarySort.TITLE_DESC to "Title Z → A",
-    LibrarySort.LAST_UPDATED_DESC to "Last updated (newest)",
-    LibrarySort.LAST_UPDATED_ASC to "Last updated (oldest)",
-    LibrarySort.UNREAD_DESC to "Unread chapters",
-    LibrarySort.TOTAL_DESC to "Total chapters",
+private val SORT_FIELD_OPTIONS = listOf(
+    SortField.LAST_READ to "Last read",
+    SortField.TITLE to "Title",
+    SortField.LAST_UPDATED to "Last updated",
+    SortField.UNREAD to "Unread chapters",
+    SortField.TOTAL to "Total chapters",
 )
 
 private fun computeTabNovels(
@@ -166,10 +167,12 @@ private fun computeTabNovels(
     categories: List<CategoryEntity>,
     showAllTab: Boolean,
     chapterStats: Map<Long, NovelChapterStats>,
-    sortOrder: LibrarySort,
+    sortField: SortField,
+    sortDirection: SortDirection,
     filterStatus: Int,
     filterUnreadOnly: Boolean,
     filterDownloadedOnly: Boolean,
+    filterSourceId: Long,
     isUnlocked: Boolean,
     hiddenCategoryIds: Set<Long>,
     includeHiddenInAll: Boolean,
@@ -195,29 +198,30 @@ private fun computeTabNovels(
             }
         }
     }
-    val comparator: Comparator<NovelEntity> = when (sortOrder) {
-        LibrarySort.TITLE_ASC -> Comparator { a: NovelEntity, b: NovelEntity ->
+    // Build an ASC comparator for the field, then flip when the user wants DESC.
+    // Centralizing the flip keeps the per-field branch from having to spell out
+    // both directions and guarantees every field supports both ASC and DESC.
+    val ascComparator: Comparator<NovelEntity> = when (sortField) {
+        SortField.TITLE -> Comparator { a: NovelEntity, b: NovelEntity ->
             String.CASE_INSENSITIVE_ORDER.compare(a.title, b.title)
         }
-        LibrarySort.TITLE_DESC -> Comparator { a: NovelEntity, b: NovelEntity ->
-            String.CASE_INSENSITIVE_ORDER.compare(b.title, a.title)
-        }
-        LibrarySort.LAST_UPDATED_DESC -> compareByDescending<NovelEntity> { it.lastUpdated }
-        LibrarySort.LAST_UPDATED_ASC -> compareBy<NovelEntity> { it.lastUpdated }
-        LibrarySort.UNREAD_DESC -> compareByDescending<NovelEntity> {
+        SortField.LAST_UPDATED -> compareBy<NovelEntity> { it.lastUpdated }
+        SortField.UNREAD -> compareBy<NovelEntity> {
             chapterStats[it.id]?.let { s -> s.effectiveTotal(includeLockedInTotals) - s.readCount } ?: 0
         }
-        LibrarySort.TOTAL_DESC -> compareByDescending<NovelEntity> {
+        SortField.TOTAL -> compareBy<NovelEntity> {
             chapterStats[it.id]?.effectiveTotal(includeLockedInTotals) ?: 0
         }
-        LibrarySort.LAST_READ_DESC -> compareByDescending<NovelEntity> { it.lastReadAt }
+        SortField.LAST_READ -> compareBy<NovelEntity> { it.lastReadAt }
     }
+    val comparator = if (sortDirection == SortDirection.DESC) ascComparator.reversed() else ascComparator
     val trimmedQuery = searchQuery.trim()
     return tabFiltered
         .filter { novel ->
             (filterStatus == -1 || novel.status == filterStatus) &&
             (!filterUnreadOnly || (chapterStats[novel.id]?.let { it.effectiveTotal(includeLockedInTotals) - it.readCount > 0 } == true)) &&
             (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
+            (filterSourceId == ALL_SOURCES_FILTER_ID || novel.sourceId == filterSourceId) &&
             (trimmedQuery.isEmpty() ||
                 novel.title.contains(trimmedQuery, ignoreCase = true) ||
                 (novel.author?.contains(trimmedQuery, ignoreCase = true) == true))
@@ -242,10 +246,13 @@ fun LibraryScreen(
     val displayMode by viewModel.displayMode.collectAsState()
     val gridColumns by viewModel.gridColumns.collectAsState()
     val showAllTab by viewModel.showAllTab.collectAsState()
-    val sortOrder by viewModel.sortOrder.collectAsState()
+    val sortField by viewModel.sortField.collectAsState()
+    val sortDirection by viewModel.sortDirection.collectAsState()
     val filterStatus by viewModel.filterStatus.collectAsState()
     val filterUnreadOnly by viewModel.filterUnreadOnly.collectAsState()
     val filterDownloadedOnly by viewModel.filterDownloadedOnly.collectAsState()
+    val filterSourceId by viewModel.filterSourceId.collectAsState()
+    val librarySources by viewModel.librarySources.collectAsState()
     val isUnlocked by viewModel.isUnlocked.collectAsState()
     val hasPin by viewModel.hasPin.collectAsState()
     val hiddenCategoryIds by viewModel.hiddenCategoryIds.collectAsState()
@@ -314,7 +321,8 @@ fun LibraryScreen(
         }
     }
 
-    val isFilterActive = filterStatus != -1 || filterUnreadOnly || filterDownloadedOnly
+    val isFilterActive = filterStatus != -1 || filterUnreadOnly || filterDownloadedOnly ||
+        filterSourceId != ALL_SOURCES_FILTER_ID
 
     val tabs = buildList {
         if (showAllTab) add("All")
@@ -374,10 +382,12 @@ fun LibraryScreen(
             categories = categories,
             showAllTab = showAllTab,
             chapterStats = chapterStats,
-            sortOrder = sortOrder,
+            sortField = sortField,
+            sortDirection = sortDirection,
             filterStatus = filterStatus,
             filterUnreadOnly = filterUnreadOnly,
             filterDownloadedOnly = filterDownloadedOnly,
+            filterSourceId = filterSourceId,
             isUnlocked = isUnlocked,
             hiddenCategoryIds = hiddenCategoryIds,
             includeHiddenInAll = includeHiddenInAll,
@@ -388,7 +398,8 @@ fun LibraryScreen(
 
     val displayedNovels: List<NovelEntity>? = remember(
         novels, currentTab, categories, showAllTab,
-        sortOrder, filterStatus, filterUnreadOnly, filterDownloadedOnly, chapterStats,
+        sortField, sortDirection, filterStatus, filterUnreadOnly, filterDownloadedOnly,
+        filterSourceId, chapterStats,
         isUnlocked, hiddenCategoryIds, includeHiddenInAll, includeLockedInTotals, searchQuery,
     ) { novelsForTab(currentTab) }
 
@@ -588,7 +599,8 @@ fun LibraryScreen(
             ) { page ->
                 val pageNovels = remember(
                     novels, page, categories, showAllTab,
-                    sortOrder, filterStatus, filterUnreadOnly, filterDownloadedOnly, chapterStats,
+                    sortField, sortDirection, filterStatus, filterUnreadOnly, filterDownloadedOnly,
+                    filterSourceId, chapterStats,
                     isUnlocked, hiddenCategoryIds, includeHiddenInAll, searchQuery,
                 ) { novelsForTab(page) }
 
@@ -713,14 +725,19 @@ fun LibraryScreen(
             sheetState = filterSheetState,
         ) {
             FilterSortContent(
-                sortOrder = sortOrder,
+                sortField = sortField,
+                sortDirection = sortDirection,
                 filterStatus = filterStatus,
                 filterUnreadOnly = filterUnreadOnly,
                 filterDownloadedOnly = filterDownloadedOnly,
-                onSortChange = viewModel::setSortOrder,
+                filterSourceId = filterSourceId,
+                librarySources = librarySources,
+                onSortFieldChange = viewModel::setSortField,
+                onToggleSortDirection = viewModel::toggleSortDirection,
                 onFilterStatusChange = viewModel::setFilterStatus,
                 onUnreadOnlyChange = viewModel::setFilterUnreadOnly,
                 onDownloadedOnlyChange = viewModel::setFilterDownloadedOnly,
+                onFilterSourceChange = viewModel::setFilterSourceId,
             )
         }
     }
@@ -943,14 +960,19 @@ private fun EpubImportPreviewDialog(
 
 @Composable
 private fun FilterSortContent(
-    sortOrder: LibrarySort,
+    sortField: SortField,
+    sortDirection: SortDirection,
     filterStatus: Int,
     filterUnreadOnly: Boolean,
     filterDownloadedOnly: Boolean,
-    onSortChange: (LibrarySort) -> Unit,
+    filterSourceId: Long,
+    librarySources: List<Pair<Long, String>>,
+    onSortFieldChange: (SortField) -> Unit,
+    onToggleSortDirection: () -> Unit,
     onFilterStatusChange: (Int) -> Unit,
     onUnreadOnlyChange: (Boolean) -> Unit,
     onDownloadedOnlyChange: (Boolean) -> Unit,
+    onFilterSourceChange: (Long) -> Unit,
 ) {
     var tab by remember { mutableIntStateOf(0) }
     Column {
@@ -959,8 +981,23 @@ private fun FilterSortContent(
             Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Sort") })
         }
         when (tab) {
-            0 -> FilterTab(filterStatus, filterUnreadOnly, filterDownloadedOnly, onFilterStatusChange, onUnreadOnlyChange, onDownloadedOnlyChange)
-            1 -> SortTab(sortOrder, onSortChange)
+            0 -> FilterTab(
+                filterStatus = filterStatus,
+                filterUnreadOnly = filterUnreadOnly,
+                filterDownloadedOnly = filterDownloadedOnly,
+                filterSourceId = filterSourceId,
+                librarySources = librarySources,
+                onFilterStatusChange = onFilterStatusChange,
+                onUnreadOnlyChange = onUnreadOnlyChange,
+                onDownloadedOnlyChange = onDownloadedOnlyChange,
+                onFilterSourceChange = onFilterSourceChange,
+            )
+            1 -> SortTab(
+                sortField = sortField,
+                sortDirection = sortDirection,
+                onSortFieldChange = onSortFieldChange,
+                onToggleSortDirection = onToggleSortDirection,
+            )
         }
         Spacer(Modifier.height(32.dp))
     }
@@ -971,9 +1008,12 @@ private fun FilterTab(
     filterStatus: Int,
     filterUnreadOnly: Boolean,
     filterDownloadedOnly: Boolean,
+    filterSourceId: Long,
+    librarySources: List<Pair<Long, String>>,
     onFilterStatusChange: (Int) -> Unit,
     onUnreadOnlyChange: (Boolean) -> Unit,
     onDownloadedOnlyChange: (Boolean) -> Unit,
+    onFilterSourceChange: (Long) -> Unit,
 ) {
     Column {
         Text(
@@ -994,6 +1034,39 @@ private fun FilterTab(
                     },
                     label = { Text(label) },
                 )
+            }
+        }
+        if (librarySources.size > 1) {
+            Text(
+                "Source",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+            )
+            // Build the chip list with an explicit "All" entry rather than collapsing
+            // an empty selection into "All" so the user can always deselect a source
+            // by tapping the leftmost chip — matches how the status row works.
+            val sourceChips = buildList {
+                add(ALL_SOURCES_FILTER_ID to "All")
+                addAll(librarySources)
+            }
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(sourceChips) { (id, label) ->
+                    FilterChip(
+                        selected = filterSourceId == id,
+                        onClick = {
+                            onFilterSourceChange(
+                                if (filterSourceId == id && id != ALL_SOURCES_FILTER_ID) {
+                                    ALL_SOURCES_FILTER_ID
+                                } else id
+                            )
+                        },
+                        label = { Text(label) },
+                    )
+                }
             }
         }
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -1018,20 +1091,39 @@ private fun FilterTab(
 
 @Composable
 private fun SortTab(
-    sortOrder: LibrarySort,
-    onSortChange: (LibrarySort) -> Unit,
+    sortField: SortField,
+    sortDirection: SortDirection,
+    onSortFieldChange: (SortField) -> Unit,
+    onToggleSortDirection: () -> Unit,
 ) {
     Column(Modifier.padding(vertical = 8.dp)) {
-        SORT_OPTIONS.forEach { (sort, label) ->
+        SORT_FIELD_OPTIONS.forEach { (field, label) ->
+            val selected = sortField == field
+            // Tapping the active row flips the direction in place; tapping any other
+            // row promotes that field to active without changing the direction. This
+            // is the standard Material sort pattern and avoids needing a separate
+            // arrow button per row.
             ListItem(
                 headlineContent = { Text(label) },
                 leadingContent = {
-                    RadioButton(
-                        selected = sortOrder == sort,
-                        onClick = { onSortChange(sort) },
-                    )
+                    if (selected) {
+                        Icon(
+                            imageVector = if (sortDirection == SortDirection.ASC) {
+                                Icons.Default.ArrowUpward
+                            } else Icons.Default.ArrowDownward,
+                            contentDescription = if (sortDirection == SortDirection.ASC) {
+                                "Ascending, tap to flip"
+                            } else "Descending, tap to flip",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    } else {
+                        // Reserve the leading slot so labels stay aligned across rows.
+                        Spacer(Modifier.size(24.dp))
+                    }
                 },
-                modifier = Modifier.clickable { onSortChange(sort) },
+                modifier = Modifier.clickable {
+                    if (selected) onToggleSortDirection() else onSortFieldChange(field)
+                },
             )
         }
     }
