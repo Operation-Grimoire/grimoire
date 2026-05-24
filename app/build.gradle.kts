@@ -43,7 +43,7 @@ val appGitSha = gitSha()
 
 // Single source of truth for the extensions-api version — used for the Gradle
 // dependency and for the BuildConfig field shown on the About screen.
-val extensionsApiVersion = "0.2.0"
+val extensionsApiVersion = "0.4.0-SNAPSHOT"
 
 android {
     namespace = "io.grimoire.app"

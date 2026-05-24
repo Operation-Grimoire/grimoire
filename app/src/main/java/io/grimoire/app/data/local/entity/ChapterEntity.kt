@@ -20,19 +20,44 @@ val CHAPTER_PAGE_SEPARATOR: String = 31.toChar().toString()
  */
 val CHAPTER_IMAGE_MARKER: String = 30.toChar().toString()
 
+/**
+ * Token value marking a persisted page as a scene-break (NovelPage.isSeparator). Uses the
+ * ASCII Group Separator, distinct from the image marker so old downloads (which contain
+ * neither) keep decoding as plain text.
+ */
+val CHAPTER_SEPARATOR_MARKER: String = 29.toChar().toString()
+
+/**
+ * Within a text page token, splits the plain `text` field from an optional `formattedText`
+ * (constrained-HTML) payload. ASCII File Separator — same rationale: legacy tokens without
+ * this byte decode unchanged with `formattedText = null`.
+ */
+val CHAPTER_FORMATTED_MARKER: String = 28.toChar().toString()
+
 /** Serialises chapter [pages] into the single string stored in [ChapterEntity.downloadedContent]. */
 fun encodeChapterContent(pages: List<NovelPage>): String =
     pages.joinToString(CHAPTER_PAGE_SEPARATOR) { page ->
-        page.imageUrl?.let { CHAPTER_IMAGE_MARKER + it } ?: page.text
+        when {
+            page.isSeparator -> CHAPTER_SEPARATOR_MARKER
+            page.imageUrl != null -> CHAPTER_IMAGE_MARKER + page.imageUrl
+            page.formattedText != null -> page.text + CHAPTER_FORMATTED_MARKER + page.formattedText
+            else -> page.text
+        }
     }
 
 /** Reconstructs the chapter pages previously serialised by [encodeChapterContent]. */
 fun decodeChapterContent(content: String): List<NovelPage> =
     content.split(CHAPTER_PAGE_SEPARATOR).mapIndexed { index, token ->
-        if (token.startsWith(CHAPTER_IMAGE_MARKER)) {
-            NovelPage(index = index, text = "", imageUrl = token.removePrefix(CHAPTER_IMAGE_MARKER))
-        } else {
-            NovelPage(index = index, text = token)
+        when {
+            token == CHAPTER_SEPARATOR_MARKER ->
+                NovelPage(index = index, text = "", isSeparator = true)
+            token.startsWith(CHAPTER_IMAGE_MARKER) ->
+                NovelPage(index = index, text = "", imageUrl = token.removePrefix(CHAPTER_IMAGE_MARKER))
+            token.contains(CHAPTER_FORMATTED_MARKER) -> {
+                val parts = token.split(CHAPTER_FORMATTED_MARKER, limit = 2)
+                NovelPage(index = index, text = parts[0], formattedText = parts[1])
+            }
+            else -> NovelPage(index = index, text = token)
         }
     }
 

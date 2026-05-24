@@ -94,8 +94,10 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -209,7 +211,7 @@ fun ReaderScreen(
 
     val listState = rememberLazyListState()
     val visiblePages = remember(pages) {
-        pages.filter { it.text.isNotBlank() || it.imageUrl != null }
+        pages.filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
     }
     var barsVisible by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
@@ -308,42 +310,68 @@ fun ReaderScreen(
                     }
                     items(visiblePages, key = { it.index }) { page ->
                         val imageUrl = page.imageUrl
-                        if (imageUrl != null) {
-                            val imageModifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = paragraphSpacing.dp)
-                            if (hideInlineImages) {
-                                PrivacyImage(
-                                    model = imageUrl,
-                                    contentDescription = null,
-                                    revealed = imageUrl in revealedImageUrls,
-                                    onTapToggle = { viewModel.toggleImageReveal(imageUrl) },
-                                    modifier = imageModifier,
-                                )
-                            } else {
-                                ZoomableCoverImage(
-                                    model = imageUrl,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.FillWidth,
-                                    modifier = imageModifier,
+                        when {
+                            page.isSeparator -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = (paragraphSpacing * 2).dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.fillMaxWidth(0.4f),
+                                        color = colors.foreground.copy(alpha = 0.4f),
+                                    )
+                                }
+                            }
+                            imageUrl != null -> {
+                                val imageModifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = paragraphSpacing.dp)
+                                if (hideInlineImages) {
+                                    PrivacyImage(
+                                        model = imageUrl,
+                                        contentDescription = null,
+                                        revealed = imageUrl in revealedImageUrls,
+                                        onTapToggle = { viewModel.toggleImageReveal(imageUrl) },
+                                        modifier = imageModifier,
+                                    )
+                                } else {
+                                    ZoomableCoverImage(
+                                        model = imageUrl,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.FillWidth,
+                                        modifier = imageModifier,
+                                    )
+                                }
+                            }
+                            else -> {
+                                val highlighted = page.index == ttsSpokenPageIndex
+                                // Sources that opt into rich formatting populate
+                                // `formattedText` with the constrained-HTML subset that
+                                // AnnotatedString.fromHtml understands (<i>, <b>, <u>,
+                                // <a>, <br>, &nbsp;). Otherwise fall back to plain text.
+                                // Cached per page so we don't re-parse HTML on every
+                                // recomposition (scroll, TTS highlight, etc.).
+                                val rendered = remember(page.formattedText, page.text) {
+                                    page.formattedText?.let { AnnotatedString.fromHtml(it) }
+                                        ?: AnnotatedString(page.text.trim())
+                                }
+                                Text(
+                                    text = rendered,
+                                    style = textStyle,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .then(
+                                            if (highlighted) {
+                                                Modifier.background(colors.foreground.copy(alpha = 0.10f))
+                                            } else {
+                                                Modifier
+                                            },
+                                        )
+                                        .padding(bottom = paragraphSpacing.dp),
                                 )
                             }
-                        } else {
-                            val highlighted = page.index == ttsSpokenPageIndex
-                            Text(
-                                text = page.text.trim(),
-                                style = textStyle,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .then(
-                                        if (highlighted) {
-                                            Modifier.background(colors.foreground.copy(alpha = 0.10f))
-                                        } else {
-                                            Modifier
-                                        },
-                                    )
-                                    .padding(bottom = paragraphSpacing.dp),
-                            )
                         }
                     }
                     item {
