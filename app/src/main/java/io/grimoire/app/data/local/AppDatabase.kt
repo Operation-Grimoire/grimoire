@@ -24,7 +24,7 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
         LibraryUpdateEntity::class,
         UpdateIssueEntity::class,
     ],
-    version = 18,
+    version = 19,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {

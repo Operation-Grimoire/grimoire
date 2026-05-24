@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ChapterDao {
-    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
     fun getChapters(novelId: Long): Flow<List<ChapterEntity>>
 
     @Query("SELECT * FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
@@ -55,6 +55,9 @@ interface ChapterDao {
 
     @Query("UPDATE chapters SET readProgress = :progress WHERE id = :id")
     suspend fun setReadProgress(id: Long, progress: Float)
+
+    @Query("UPDATE chapters SET readProgress = :progress, readAnchorItemIndex = :index, readAnchorItemOffset = :offset WHERE id = :id")
+    suspend fun setReadAnchor(id: Long, progress: Float, index: Int, offset: Int)
 
     @Query("UPDATE chapters SET wordCount = :count WHERE id = :id AND wordCount != :count")
     suspend fun setWordCount(id: Long, count: Int)
@@ -190,10 +193,10 @@ interface ChapterDao {
     )
     suspend fun cancelAllFailed(novelId: Long)
 
-    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
     fun getAllDownloads(): Flow<List<ChapterEntity>>
 
-    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId IN (:novelIds)")
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId IN (:novelIds)")
     fun getChaptersForNovels(novelIds: List<Long>): Flow<List<ChapterEntity>>
 
     @Query("""
