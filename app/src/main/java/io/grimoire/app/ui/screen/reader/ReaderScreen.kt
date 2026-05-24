@@ -6,9 +6,9 @@ import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -97,6 +97,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -136,12 +137,28 @@ import io.grimoire.app.ui.component.ZoomableCoverImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlin.math.PI
+import kotlin.math.sin
 
 // Whole-word, case-insensitive — allows trailing "s" so "grimoires" is also styled. The
 // match runs on the *parsed* AnnotatedString (post-HTML), so HTML attribute values like
 // href="grimoire" don't leak into the rendered text and can't false-match.
 private val GRIMOIRE_REGEX = "\\bgrimoires?\\b".toRegex(RegexOption.IGNORE_CASE)
 private const val GRIMOIRE_ANNOTATION_TAG = "grimoire_tag"
+
+// Wave runs in deep-green → emerald → deep-green, modulated per character so the highlight
+// reads like a pulse travelling along the word.
+private val GRIMOIRE_DARK = Color(0xFF0A3A0A)
+private val GRIMOIRE_LIGHT = Color(0xFF7CFC4D)
+// >1 puts more than one crest in the word so even short matches (~8 chars) show
+// visible banding rather than a single fade.
+private const val GRIMOIRE_WAVE_FREQUENCY = 1.5f
+
+private fun grimoireWaveColor(phase: Float, charPos: Float): Color {
+    val arg = (GRIMOIRE_WAVE_FREQUENCY * charPos - phase).mod(1f)
+    val w = (sin(arg * 2f * PI.toFloat()) + 1f) / 2f
+    return lerp(GRIMOIRE_DARK, GRIMOIRE_LIGHT, w)
+}
 
 private fun Context.findActivity(): Activity? {
     var c: Context? = this
@@ -274,20 +291,19 @@ fun ReaderScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Shared infinite transition for all "grimoire" highlights on screen — one ticker, not
-    // one per match.
+    // One ticker drives every visible "grimoire" — each character samples this phase plus
+    // its own position so the highlight reads as a wave rolling along the word.
     val grimoireTransition = rememberInfiniteTransition(label = "grimoire")
-    val animatedGrimoireColor by grimoireTransition.animateColor(
-        initialValue = Color(0xFF1B5E20),
-        targetValue = Color(0xFF66BB6A),
+    val grimoireWavePhase by grimoireTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1400, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
+            animation = tween(1800, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
         ),
-        label = "grimoire_color",
+        label = "grimoire_wave_phase",
     )
     val grimoireEffectActive = grimoireEasterEggEnabled && isResumed
-    val grimoireColor = if (grimoireEffectActive) animatedGrimoireColor else Color(0xFF388E3C)
 
     // Reset scroll only on genuine chapter changes (next/prev/TTS auto-advance) — NOT on
     // composition re-entry from transient screens (e.g. returning from the in-chapter webview).
@@ -461,12 +477,22 @@ fun ReaderScreen(
                                 val displayText = if (grimoireEffectActive && hasMatches) {
                                     buildAnnotatedString {
                                         append(rendered)
-                                        val style = SpanStyle(
-                                            color = grimoireColor,
-                                            fontWeight = FontWeight.Bold,
-                                        )
                                         grimoireMatches.forEach { r ->
-                                            addStyle(style, r.first, r.last + 1)
+                                            val len = (r.last - r.first + 1).coerceAtLeast(1)
+                                            // One SpanStyle per character so each letter can carry a
+                                            // different phase of the wave.
+                                            for (i in 0 until len) {
+                                                val pos = i.toFloat() / len
+                                                val color = grimoireWaveColor(grimoireWavePhase, pos)
+                                                addStyle(
+                                                    SpanStyle(
+                                                        color = color,
+                                                        fontWeight = FontWeight.Bold,
+                                                    ),
+                                                    r.first + i,
+                                                    r.first + i + 1,
+                                                )
+                                            }
                                             addStringAnnotation(
                                                 GRIMOIRE_ANNOTATION_TAG,
                                                 rendered.text.substring(r),
@@ -1032,17 +1058,17 @@ private fun GrimoireEasterEggDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("You found the grimoire ✨") },
+        title = { Text("Grimoire highlight") },
         text = {
             Column {
                 Text(
-                    text = "Every time the word \"grimoire\" appears in a chapter, the reader gives it a shimmering green flourish — a small wink to the app's namesake.",
+                    text = "Animates every occurrence of \"grimoire\" in chapter text. Toggle it off here or from reader settings.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "Animate the word",
+                        text = "Enabled",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f),
                     )
