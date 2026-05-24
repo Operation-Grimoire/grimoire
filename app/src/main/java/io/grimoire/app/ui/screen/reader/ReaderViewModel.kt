@@ -293,19 +293,22 @@ class ReaderViewModel @Inject constructor(
         // threshold was crossed. The `read` flag is sticky once set: crossing the threshold
         // promotes it, but scrolling back doesn't un-mark.
         val markRead = !chapter.read && fraction >= threshold
+        // Update in-memory state FIRST so the chip stays live during scrolling. If we awaited
+        // the DB writes, every subsequent updateProgress call would queue behind setRead's
+        // backfillWordCountsFromDownloads scan and the % display would visibly freeze.
+        _chapters.update { list ->
+            list.map {
+                if (it.id == chapter.id) it.copy(
+                    read = it.read || markRead,
+                    readProgress = fraction,
+                    readAnchorItemIndex = anchorIndex,
+                    readAnchorItemOffset = anchorOffset,
+                ) else it
+            }
+        }
         viewModelScope.launch {
             chapterDao.setReadAnchor(chapter.id, fraction, anchorIndex, anchorOffset)
             if (markRead) chapterDao.setRead(chapter.id, true)
-            _chapters.update { list ->
-                list.map {
-                    if (it.id == chapter.id) it.copy(
-                        read = it.read || markRead,
-                        readProgress = fraction,
-                        readAnchorItemIndex = anchorIndex,
-                        readAnchorItemOffset = anchorOffset,
-                    ) else it
-                }
-            }
         }
     }
 
