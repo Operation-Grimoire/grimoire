@@ -1058,17 +1058,17 @@ private fun GrimoireEasterEggDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("You found the grimoire ✨") },
+        title = { Text("Grimoire highlight") },
         text = {
             Column {
                 Text(
-                    text = "Every time the word \"grimoire\" appears in a chapter, the reader gives it a shimmering green flourish — a small wink to the app's namesake.",
+                    text = "Animates every occurrence of \"grimoire\" in chapter text. Toggle it off here or from reader settings.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "Animate the word",
+                        text = "Enabled",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f),
                     )
