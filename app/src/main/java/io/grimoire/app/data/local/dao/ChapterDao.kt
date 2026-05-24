@@ -222,12 +222,20 @@ data class ChapterContent(val id: Long, val downloadedContent: String)
 private fun countWordsIn(s: String): Int {
     var count = 0
     var inWord = false
+    // When a page carries a formattedText payload (rich-HTML duplicate of the
+    // plain text, delimited by CHAPTER_FORMATTED_MARKER … CHAPTER_PAGE_SEPARATOR),
+    // skip those characters — counting them would inflate the per-chapter total
+    // by the same prose appearing twice plus all the HTML tags.
+    val FS = 28.toChar()
+    val US = 31.toChar()
+    var skipping = false
     for (ch in s) {
-        if (ch.isWhitespace()) {
-            inWord = false
-        } else if (!inWord) {
-            inWord = true
-            count++
+        when {
+            ch == FS -> { skipping = true; inWord = false }
+            ch == US -> { skipping = false; inWord = false }
+            skipping -> Unit
+            ch.isWhitespace() -> inWord = false
+            !inWord -> { inWord = true; count++ }
         }
     }
     return count

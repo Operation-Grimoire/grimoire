@@ -180,7 +180,7 @@ class ReaderViewModel @Inject constructor(
         val cached = chapter.downloadedContent
         if (cached != null) {
             val pages = decodeChapterContent(cached)
-                .filter { it.text.isNotBlank() || it.imageUrl != null }
+                .filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
                 .map { page ->
                     if (page.imageUrl == null) return@map page
                     val local = chapterImageStore.localImageUri(chapter.novelId, chapter.url, page.index)
