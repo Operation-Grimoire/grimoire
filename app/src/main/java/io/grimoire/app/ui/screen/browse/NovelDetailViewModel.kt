@@ -476,11 +476,15 @@ class NovelDetailViewModel @Inject constructor(
     fun cancelDownload(chapter: ChapterEntity) = downloadManager.cancel(chapter)
     fun cancelAllDownloads() { if (cachedNovelId > 0L) downloadManager.cancelAll(cachedNovelId) }
     fun deleteDownload(chapter: ChapterEntity) = downloadManager.deleteDownload(chapter)
+    fun redownloadChapter(chapter: ChapterEntity) =
+        downloadManager.enqueue(listOf(chapter), force = true)
 
     fun downloadChapters(chapters: List<ChapterEntity>) =
         downloadManager.enqueue(chapters.filter { !it.locked })
     fun deleteDownloads(chapters: List<ChapterEntity>) = downloadManager.deleteDownloads(chapters)
     fun cancelDownloads(chapters: List<ChapterEntity>) = downloadManager.cancelDownloads(chapters)
+    fun redownloadChapters(chapters: List<ChapterEntity>) =
+        downloadManager.enqueue(chapters.filter { !it.locked }, force = true)
 
     /** Downloads and imports the whole-book EPUB for an [EpubSource]. */
     fun downloadBook() {

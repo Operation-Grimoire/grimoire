@@ -489,6 +489,9 @@ fun NovelDetailScreen(
                     val showDelete = selectedChapters.any {
                         it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
                     }
+                    val showRedownload = selectedChapters.any {
+                        !it.locked && it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
+                    }
                     val showCancel = selectedChapters.any {
                         it.downloadStatus == ChapterDownloadStatus.QUEUED.ordinal
                     }
@@ -526,6 +529,15 @@ fun NovelDetailScreen(
                         label = "Delete",
                         onClick = {
                             viewModel.deleteDownloads(selectedChapters)
+                            clearSelection()
+                        },
+                    )
+                    TooltipIconButton(
+                        visible = showRedownload,
+                        icon = Icons.Default.Refresh,
+                        label = "Redownload",
+                        onClick = {
+                            viewModel.redownloadChapters(selectedChapters)
                             clearSelection()
                         },
                     )
@@ -929,6 +941,7 @@ fun NovelDetailScreen(
                                 onDownload = { viewModel.downloadChapter(chapter) },
                                 onCancelDownload = { viewModel.cancelDownload(chapter) },
                                 onDeleteDownload = { viewModel.deleteDownload(chapter) },
+                                onRedownload = { viewModel.redownloadChapter(chapter) },
                             )
                         }
                     }

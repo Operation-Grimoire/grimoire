@@ -299,6 +299,7 @@ fun LibraryUpdatesScreen(
                                     onDownload = { liveChapter?.let(viewModel::downloadChapter) },
                                     onCancelDownload = { liveChapter?.let(viewModel::cancelDownload) },
                                     onDeleteDownload = { liveChapter?.let(viewModel::deleteDownload) },
+                                    onRedownload = { liveChapter?.let(viewModel::redownloadChapter) },
                                 )
                             }
                         } else {
@@ -354,6 +355,7 @@ fun LibraryUpdatesScreen(
                                         onDownload = { chaptersByEntryId[entry.id]?.let(viewModel::downloadChapter) },
                                         onCancelDownload = { chaptersByEntryId[entry.id]?.let(viewModel::cancelDownload) },
                                         onDeleteDownload = { chaptersByEntryId[entry.id]?.let(viewModel::deleteDownload) },
+                                        onRedownload = { chaptersByEntryId[entry.id]?.let(viewModel::redownloadChapter) },
                                     )
                                 }
                                 item(key = "group-end-${group.first.id}") {
@@ -410,6 +412,7 @@ private fun UpdateRow(
     onDownload: () -> Unit,
     onCancelDownload: () -> Unit,
     onDeleteDownload: () -> Unit,
+    onRedownload: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -454,6 +457,7 @@ private fun UpdateRow(
             onDownload = onDownload,
             onCancelDownload = onCancelDownload,
             onDeleteDownload = onDeleteDownload,
+            onRedownload = onRedownload,
         )
     }
 }

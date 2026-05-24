@@ -58,13 +58,15 @@ class DownloadManager @Inject constructor(
         scope.launch { downloadPreferences.concurrency.set(value.coerceIn(1, 5)) }
     }
 
-    fun enqueue(chapters: List<ChapterEntity>) {
+    fun enqueue(chapters: List<ChapterEntity>, force: Boolean = false) {
         scope.launch {
             val ids = chapters
-                .filter {
-                    !it.locked &&
-                        (it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
-                            it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
+                .filter { ch ->
+                    if (ch.locked) return@filter false
+                    val status = ch.downloadStatus
+                    status == ChapterDownloadStatus.NONE.ordinal ||
+                        status == ChapterDownloadStatus.ERROR.ordinal ||
+                        (force && status == ChapterDownloadStatus.DOWNLOADED.ordinal)
                 }
                 .map { it.id }
             ids.chunked(999).forEach { chunk ->

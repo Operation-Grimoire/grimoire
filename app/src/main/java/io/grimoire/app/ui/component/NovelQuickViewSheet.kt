@@ -151,6 +151,7 @@ fun NovelQuickViewSheet(
                         onDownload = vm::downloadChapter,
                         onCancelDownload = vm::cancelDownload,
                         onDeleteDownload = vm::deleteDownload,
+                        onRedownload = vm::redownloadChapter,
                         // Locked rows route through full detail so its unlock dialog handles them.
                         onLockedClick = { dismissAndRun(onOpenDetails) },
                     )
@@ -272,6 +273,7 @@ private fun ChapterSection(
     onDownload: (ChapterEntity) -> Unit,
     onCancelDownload: (ChapterEntity) -> Unit,
     onDeleteDownload: (ChapterEntity) -> Unit,
+    onRedownload: (ChapterEntity) -> Unit,
     onLockedClick: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth()) {
@@ -318,6 +320,7 @@ private fun ChapterSection(
                     onDownload = { onDownload(chapter) },
                     onCancelDownload = { onCancelDownload(chapter) },
                     onDeleteDownload = { onDeleteDownload(chapter) },
+                    onRedownload = { onRedownload(chapter) },
                 )
             }
         }
