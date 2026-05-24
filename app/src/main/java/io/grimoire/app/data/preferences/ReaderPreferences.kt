@@ -18,5 +18,6 @@ class ReaderPreferences @Inject constructor(store: PreferenceStore) {
     val orientation = store.getEnum("reader_orientation", ReaderOrientation.FREE)
     val hideNotificationBar = store.getBoolean("reader_hide_notification_bar", false)
     val hideInlineImages = store.getBoolean("reader_hide_inline_images", false)
-    val showProgressPercent = store.getBoolean("reader_show_progress_percent", true)
+    val showChapterProgressPercent = store.getBoolean("reader_show_chapter_progress_percent", true)
+    val showNovelProgressPercent = store.getBoolean("reader_show_novel_progress_percent", true)
 }

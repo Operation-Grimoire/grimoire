@@ -41,8 +41,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
@@ -65,7 +67,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -156,7 +157,8 @@ fun ReaderScreen(
     val orientation by viewModel.orientation.collectAsState()
     val hideNotificationBar by viewModel.hideNotificationBar.collectAsState()
     val hideInlineImages by viewModel.hideInlineImages.collectAsState()
-    val showProgressPercent by viewModel.showProgressPercent.collectAsState()
+    val showChapterProgressPercent by viewModel.showChapterProgressPercent.collectAsState()
+    val showNovelProgressPercent by viewModel.showNovelProgressPercent.collectAsState()
     val novelProgress by viewModel.novelProgress.collectAsState()
     val revealedImageUrls by viewModel.revealedImageUrls.collectAsState()
 
@@ -417,35 +419,15 @@ fun ReaderScreen(
             }
         }
 
-        // Reading-progress chip — bottom-left overlay (right side is occupied by the scrollbar).
-        // Shows current chapter % and overall novel % (chapter-count based). Toggled in settings.
-        if (showProgressPercent) {
-            val chapterPct = ((currentChapter?.readProgress ?: 0f) * 100).toInt().coerceIn(0, 100)
-            val novelPct = (novelProgress * 100).toInt().coerceIn(0, 100)
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
-                    .padding(start = 12.dp, bottom = 12.dp),
-                color = colors.background.copy(alpha = 0.7f),
-                shape = RoundedCornerShape(8.dp),
-            ) {
-                Text(
-                    text = "Ch $chapterPct% · Book $novelPct%",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.foreground.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                )
-            }
-        }
-
-        // Top bar — overlaid, slides in from top
+        // Top bar — overlaid, slides in from top. The progress bar slides in with it as a
+        // single unit so the layout below the chrome stays consistent.
         AnimatedVisibility(
             visible = barsVisible,
             modifier = Modifier.align(Alignment.TopCenter),
             enter = slideInVertically { -it } + fadeIn(),
             exit = slideOutVertically { -it } + fadeOut(),
         ) {
+            Column {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = colors.background.copy(alpha = 0.95f),
@@ -500,6 +482,29 @@ fun ReaderScreen(
                     }
                 },
             )
+            // Thin progress strip directly under the top bar; hides with it.
+            if (showChapterProgressPercent || showNovelProgressPercent) {
+                val chapterPct = ((currentChapter?.readProgress ?: 0f) * 100).toInt().coerceIn(0, 100)
+                val novelPct = (novelProgress * 100).toInt().coerceIn(0, 100)
+                val parts = buildList {
+                    if (showChapterProgressPercent) add("Chapter $chapterPct%")
+                    if (showNovelProgressPercent) add("Book $novelPct%")
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(colors.background.copy(alpha = 0.95f))
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        text = parts.joinToString(" · "),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.foreground.copy(alpha = 0.7f),
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                    )
+                }
+            }
+            }
         }
 
         // Bottom bar — overlaid, slides in from bottom
@@ -555,7 +560,8 @@ fun ReaderScreen(
             colorTheme = colorTheme,
             orientation = orientation,
             hideInlineImages = hideInlineImages,
-            showProgressPercent = showProgressPercent,
+            showChapterProgressPercent = showChapterProgressPercent,
+            showNovelProgressPercent = showNovelProgressPercent,
             ttsEnabled = ttsEnabled,
             ttsEngine = ttsEngine,
             ttsSpeechRate = ttsSpeechRate,
@@ -569,7 +575,8 @@ fun ReaderScreen(
             onColorTheme = viewModel::setColorTheme,
             onOrientation = viewModel::setOrientation,
             onHideInlineImages = viewModel::setHideInlineImages,
-            onShowProgressPercent = viewModel::setShowProgressPercent,
+            onShowChapterProgressPercent = viewModel::setShowChapterProgressPercent,
+            onShowNovelProgressPercent = viewModel::setShowNovelProgressPercent,
             onTtsEnabled = viewModel::setTtsEnabled,
             onTtsEngine = viewModel::setTtsEngine,
             onTtsSpeechRate = viewModel::setTtsSpeechRate,
@@ -596,7 +603,8 @@ private fun ReaderSettingsSheet(
     colorTheme: ReaderColorTheme,
     orientation: ReaderOrientation,
     hideInlineImages: Boolean,
-    showProgressPercent: Boolean,
+    showChapterProgressPercent: Boolean,
+    showNovelProgressPercent: Boolean,
     ttsEnabled: Boolean,
     ttsEngine: TtsEngineType,
     ttsSpeechRate: Int,
@@ -610,7 +618,8 @@ private fun ReaderSettingsSheet(
     onColorTheme: (ReaderColorTheme) -> Unit,
     onOrientation: (ReaderOrientation) -> Unit,
     onHideInlineImages: (Boolean) -> Unit,
-    onShowProgressPercent: (Boolean) -> Unit,
+    onShowChapterProgressPercent: (Boolean) -> Unit,
+    onShowNovelProgressPercent: (Boolean) -> Unit,
     onTtsEnabled: (Boolean) -> Unit,
     onTtsEngine: (TtsEngineType) -> Unit,
     onTtsSpeechRate: (Int) -> Unit,
@@ -648,7 +657,8 @@ private fun ReaderSettingsSheet(
                 colorTheme = colorTheme,
                 orientation = orientation,
                 hideInlineImages = hideInlineImages,
-                showProgressPercent = showProgressPercent,
+                showChapterProgressPercent = showChapterProgressPercent,
+                showNovelProgressPercent = showNovelProgressPercent,
                 onFontSize = onFontSize,
                 onLineHeight = onLineHeight,
                 onParagraphSpacing = onParagraphSpacing,
@@ -656,7 +666,8 @@ private fun ReaderSettingsSheet(
                 onColorTheme = onColorTheme,
                 onOrientation = onOrientation,
                 onHideInlineImages = onHideInlineImages,
-                onShowProgressPercent = onShowProgressPercent,
+                onShowChapterProgressPercent = onShowChapterProgressPercent,
+                onShowNovelProgressPercent = onShowNovelProgressPercent,
             )
         } else {
             ReaderTtsSettings(
@@ -687,7 +698,8 @@ private fun ReaderDisplaySettings(
     colorTheme: ReaderColorTheme,
     orientation: ReaderOrientation,
     hideInlineImages: Boolean,
-    showProgressPercent: Boolean,
+    showChapterProgressPercent: Boolean,
+    showNovelProgressPercent: Boolean,
     onFontSize: (Int) -> Unit,
     onLineHeight: (Int) -> Unit,
     onParagraphSpacing: (Int) -> Unit,
@@ -695,8 +707,10 @@ private fun ReaderDisplaySettings(
     onColorTheme: (ReaderColorTheme) -> Unit,
     onOrientation: (ReaderOrientation) -> Unit,
     onHideInlineImages: (Boolean) -> Unit,
-    onShowProgressPercent: (Boolean) -> Unit,
+    onShowChapterProgressPercent: (Boolean) -> Unit,
+    onShowNovelProgressPercent: (Boolean) -> Unit,
 ) {
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
     // Live preview
     Box(
         modifier = Modifier
@@ -779,19 +793,31 @@ private fun ReaderDisplaySettings(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Show progress %",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = "Chapter and book percentage overlay",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Switch(checked = showProgressPercent, onCheckedChange = onShowProgressPercent)
+            Text(
+                text = "Show chapter %",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(
+                checked = showChapterProgressPercent,
+                onCheckedChange = onShowChapterProgressPercent,
+            )
         }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Show book %",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(
+                checked = showNovelProgressPercent,
+                onCheckedChange = onShowNovelProgressPercent,
+            )
+        }
+    }
     }
 }
 
@@ -811,6 +837,7 @@ private fun ReaderTtsSettings(
 ) {
     Column(
         modifier = Modifier
+            .verticalScroll(rememberScrollState())
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .padding(bottom = 16.dp),
