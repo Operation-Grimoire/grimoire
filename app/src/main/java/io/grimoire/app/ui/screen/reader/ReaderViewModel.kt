@@ -109,6 +109,8 @@ class ReaderViewModel @Inject constructor(
         readerPreferences.showChapterProgressPercent.stateIn(viewModelScope)
     val showNovelProgressPercent: StateFlow<Boolean> =
         readerPreferences.showNovelProgressPercent.stateIn(viewModelScope)
+    val grimoireEasterEggEnabled: StateFlow<Boolean> =
+        readerPreferences.grimoireEasterEggEnabled.stateIn(viewModelScope)
 
     /**
      * Fraction (0..1) of chapters in the current chapter's novel that are marked read. Computed
@@ -162,6 +164,10 @@ class ReaderViewModel @Inject constructor(
 
     fun setShowNovelProgressPercent(value: Boolean) = viewModelScope.launch {
         readerPreferences.showNovelProgressPercent.set(value)
+    }
+
+    fun setGrimoireEasterEggEnabled(value: Boolean) = viewModelScope.launch {
+        readerPreferences.grimoireEasterEggEnabled.set(value)
     }
 
     fun setMarkAsReadStrategy(value: MarkAsReadStrategy) = viewModelScope.launch {

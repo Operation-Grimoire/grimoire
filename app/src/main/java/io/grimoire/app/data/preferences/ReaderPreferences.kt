@@ -32,4 +32,5 @@ class ReaderPreferences @Inject constructor(store: PreferenceStore) {
     val hideInlineImages = store.getBoolean("reader_hide_inline_images", false)
     val showChapterProgressPercent = store.getBoolean("reader_show_chapter_progress_percent", true)
     val showNovelProgressPercent = store.getBoolean("reader_show_novel_progress_percent", true)
+    val grimoireEasterEggEnabled = store.getBoolean("reader_grimoire_easter_egg_enabled", true)
 }
