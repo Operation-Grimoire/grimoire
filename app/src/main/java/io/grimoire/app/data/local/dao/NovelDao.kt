@@ -53,8 +53,13 @@ interface NovelDao {
     @Query("UPDATE novels SET notifyOnNewLockedChapters = :value WHERE id = :id")
     suspend fun updateNotifyOnNewLockedChapters(id: Long, value: Boolean)
 
-    @Query("SELECT id FROM novels WHERE notifyOnNewChapters = 1 OR notifyOnNewLockedChapters = 1")
-    fun getSubscribedNovelIds(): Flow<List<Long>>
+    @Query("""
+        SELECT n.id FROM novels n
+        LEFT JOIN categories c ON c.id = n.categoryId
+        WHERE (n.notifyOnNewChapters = 1 OR n.notifyOnNewLockedChapters = 1)
+          AND (:excludeHidden = 0 OR IFNULL(c.isHidden, 0) = 0)
+    """)
+    fun getSubscribedNovelIds(excludeHidden: Boolean): Flow<List<Long>>
 
     @Delete
     suspend fun delete(novel: NovelEntity)

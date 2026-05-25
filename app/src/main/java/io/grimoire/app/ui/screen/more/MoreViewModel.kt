@@ -7,9 +7,12 @@ import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
+import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.repo.ExtensionRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
@@ -20,20 +23,26 @@ class MoreViewModel @Inject constructor(
     libraryUpdateDao: LibraryUpdateDao,
     updateIssueDao: UpdateIssueDao,
     extensionRepository: ExtensionRepository,
+    authManager: HiddenCategoriesAuthManager,
 ) : ViewModel() {
 
-    val activeDownloadCount = chapterDao.getAllDownloads()
+    private val excludeHidden = authManager.isUnlocked.map { !it }.distinctUntilChanged()
+
+    val activeDownloadCount = excludeHidden
+        .flatMapLatest { chapterDao.getAllDownloads(it) }
         .map { chapters ->
             chapters.count { it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     /** New chapters logged on the Updates page — drives the More tab icon and row count. */
-    val updateCount: StateFlow<Int> = libraryUpdateDao.count()
+    val updateCount: StateFlow<Int> = excludeHidden
+        .flatMapLatest { libraryUpdateDao.count(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     /** Novels with an unresolved refresh problem — drives the warnings badge. */
-    val updateIssueCount: StateFlow<Int> = updateIssueDao.count()
+    val updateIssueCount: StateFlow<Int> = excludeHidden
+        .flatMapLatest { updateIssueDao.count(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     /** Installed extensions with an update available — drives the Browse tab badge. */

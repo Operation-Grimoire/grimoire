@@ -18,8 +18,10 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.grimoire.app.GrimoireApp
 import io.grimoire.app.MainActivity
+import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryUpdatePreferences
+import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
 
 /**
@@ -37,6 +39,8 @@ class LibraryUpdateWorker @AssistedInject constructor(
     private val libraryUpdater: LibraryUpdater,
     private val preferences: LibraryUpdatePreferences,
     private val extensionManager: ExtensionManager,
+    private val categoryDao: CategoryDao,
+    private val authManager: HiddenCategoriesAuthManager,
 ) : CoroutineWorker(applicationContext, params) {
 
     override suspend fun getForegroundInfo(): ForegroundInfo =
@@ -111,9 +115,10 @@ class LibraryUpdateWorker @AssistedInject constructor(
     /** Updates the ongoing foreground notification by re-posting it under the same id. */
     private fun updateProgress(done: Int, total: Int, title: String) {
         if (total <= 0 || done >= total) return
+        val text = if (title.isBlank()) "${done + 1}/$total" else "${done + 1}/$total · $title"
         NotificationManagerCompat.from(applicationContext).notify(
             PROGRESS_NOTIF_ID,
-            buildProgressNotification("${done + 1}/$total · $title", total, done),
+            buildProgressNotification(text, total, done),
         )
     }
 
@@ -128,10 +133,18 @@ class LibraryUpdateWorker @AssistedInject constructor(
             .setSilent(true)
             .build()
 
-    private fun maybeNotifyNovel(novel: NovelEntity, newReadable: Int, newLocked: Int) {
+    private suspend fun maybeNotifyNovel(novel: NovelEntity, newReadable: Int, newLocked: Int) {
         val readablePart = if (novel.notifyOnNewChapters) newReadable else 0
         val lockedPart = if (novel.notifyOnNewLockedChapters) newLocked else 0
         if (readablePart == 0 && lockedPart == 0) return
+
+        // Hidden-category novels do not surface a notification when the app is locked.
+        // Novels with categoryId == null are in the default category and never hidden.
+        if (!authManager.isUnlocked.value && novel.categoryId != null) {
+            val hidden = categoryDao.getAllOnce()
+                .firstOrNull { it.id == novel.categoryId }?.isHidden == true
+            if (hidden) return
+        }
 
         val body = when {
             readablePart > 0 && lockedPart > 0 ->

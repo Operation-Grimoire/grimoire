@@ -12,9 +12,12 @@ import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
 import io.grimoire.app.data.libraryupdate.LibraryUpdateWorker
 import io.grimoire.app.data.local.dao.ChapterDao
+import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
@@ -36,6 +39,7 @@ class TasksViewModel @Inject constructor(
     chapterDao: ChapterDao,
     private val downloadManager: DownloadManager,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
+    authManager: HiddenCategoriesAuthManager,
 ) : ViewModel() {
 
     private val workManager = WorkManager.getInstance(context)
@@ -65,7 +69,9 @@ class TasksViewModel @Inject constructor(
         )
     }
 
-    private val downloadTask = chapterDao.getAllDownloads().map { chapters ->
+    private val downloadTask = authManager.isUnlocked.map { !it }.distinctUntilChanged()
+        .flatMapLatest { chapterDao.getAllDownloads(it) }
+        .map { chapters ->
         val active = chapters.count { it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS }
         if (active == 0) {
             null

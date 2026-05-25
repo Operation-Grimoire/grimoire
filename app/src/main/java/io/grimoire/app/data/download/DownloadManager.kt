@@ -4,11 +4,13 @@ import android.content.Context
 import android.content.Intent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.Chapter
+import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.encodeChapterContent
 import io.grimoire.app.data.preferences.DownloadPreferences
+import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,9 +34,11 @@ class DownloadManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val chapterDao: ChapterDao,
     private val novelDao: NovelDao,
+    private val categoryDao: CategoryDao,
     private val extensionManager: ExtensionManager,
     private val downloadPreferences: DownloadPreferences,
     private val chapterImageStore: ChapterImageStore,
+    private val authManager: HiddenCategoriesAuthManager,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val isProcessing = AtomicBoolean(false)
@@ -189,8 +193,13 @@ class DownloadManager @Inject constructor(
                             } ?: break
                             val chapter = picked.first
                             val isRefresh = picked.second
+                            var redactName = false
                             runCatching {
                                 val novel = novelDao.getById(chapter.novelId) ?: error("Novel not found")
+                                redactName = !authManager.isUnlocked.value &&
+                                    novel.categoryId != null &&
+                                    categoryDao.getAllOnce()
+                                        .firstOrNull { it.id == novel.categoryId }?.isHidden == true
                                 val src = extensionManager.extensions.value
                                     .firstOrNull { it.source.id == novel.sourceId }?.source
                                     ?: error("Source not available")
@@ -208,7 +217,8 @@ class DownloadManager @Inject constructor(
                                                   else ChapterDownloadStatus.ERROR.ordinal
                                 chapterDao.setDownloadStatus(chapter.id, errorStatus)
                             }
-                            onProgress(chapter.name, chapterDao.getQueuedCount())
+                            val displayName = if (redactName) "" else chapter.name
+                            onProgress(displayName, chapterDao.getQueuedCount())
                         }
                     }
                 }

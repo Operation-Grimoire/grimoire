@@ -9,9 +9,12 @@ import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -35,9 +38,11 @@ class DownloadsViewModel @Inject constructor(
     private val chapterDao: ChapterDao,
     private val novelDao: NovelDao,
     private val downloadManager: DownloadManager,
+    authManager: HiddenCategoriesAuthManager,
 ) : ViewModel() {
 
-    val downloads = chapterDao.getAllDownloads()
+    val downloads = authManager.isUnlocked.map { !it }.distinctUntilChanged()
+        .flatMapLatest { excludeHidden -> chapterDao.getAllDownloads(excludeHidden) }
         .flatMapLatest { chapters ->
             flow {
                 val groups = chapters.groupBy { it.novelId }
