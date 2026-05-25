@@ -832,6 +832,7 @@ fun LibraryScreen(
     }
 
     if (showBulkMove) {
+        val canUnlockHidden by viewModel.canUnlockHidden.collectAsState()
         MoveToCategorySheet(
             categories = categories,
             count = selectedIds.size,
@@ -841,6 +842,7 @@ fun LibraryScreen(
                 clearSelection()
             },
             onDismiss = { showBulkMove = false },
+            onUnlockClick = if (canUnlockHidden) { { showUnlock = true } } else null,
         )
     }
 
