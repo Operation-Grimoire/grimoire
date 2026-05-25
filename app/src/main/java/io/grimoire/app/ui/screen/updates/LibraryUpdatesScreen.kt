@@ -84,6 +84,7 @@ fun LibraryUpdatesScreen(
 ) {
     val entries by viewModel.entries.collectAsState()
     val chaptersByEntryId by viewModel.chaptersByEntryId.collectAsState()
+    val subscribedNovelIds by viewModel.subscribedNovelIds.collectAsState()
     var menuExpanded by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var expandedGroups by remember { mutableStateOf(setOf<Pair<Long, Long>>()) }
@@ -260,16 +261,37 @@ fun LibraryUpdatesScreen(
         } else {
             // Each refresh inserts a novel's new chapters with the same timestamp,
             // so (novelId, foundAt) groups one novel's findings from one sync.
-            val days = remember(entries) {
-                entries
+            // When the user has subscribed any novel to notifications, those
+            // novels' entries are surfaced in their own section above the rest.
+            val sections = remember(entries, subscribedNovelIds) {
+                val subscribed = entries.filter { it.novelId in subscribedNovelIds }
+                val other = entries.filter { it.novelId !in subscribedNovelIds }
+                fun bucket(list: List<LibraryUpdateEntity>) = list
                     .groupBy { it.novelId to it.foundAt }
-                    // Earliest chapter first so the top entry is the next one to read.
-                    .map { (key, list) -> UpdateGroup(key, list.sortedBy { it.chapterNumber }) }
+                    .map { (key, l) -> UpdateGroup(key, l.sortedBy { it.chapterNumber }) }
                     .groupBy { dayKey(it.first.foundAt) }
+                buildList {
+                    val subDays = bucket(subscribed)
+                    val otherDays = bucket(other)
+                    val showHeaders = subDays.isNotEmpty()
+                    if (subDays.isNotEmpty()) add(Triple("subscribed", "Subscribed".takeIf { showHeaders }, subDays))
+                    if (otherDays.isNotEmpty()) add(Triple("other", "Other".takeIf { showHeaders }, otherDays))
+                }
             }
             LazyColumn(modifier = Modifier.padding(padding)) {
+                sections.forEach { (sectionKey, sectionLabel, days) ->
+                    if (sectionLabel != null) {
+                        item(key = "section-$sectionKey") {
+                            Text(
+                                text = sectionLabel,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            )
+                        }
+                    }
                 days.forEach { (_, dayGroups) ->
-                    item(key = "day-${dayKey(dayGroups.first().first.foundAt)}") {
+                    item(key = "day-$sectionKey-${dayKey(dayGroups.first().first.foundAt)}") {
                         Text(
                             text = dayLabel(dayGroups.first().first.foundAt),
                             style = MaterialTheme.typography.labelLarge,
@@ -364,6 +386,7 @@ fun LibraryUpdatesScreen(
                             }
                         }
                     }
+                }
                 }
             }
         }

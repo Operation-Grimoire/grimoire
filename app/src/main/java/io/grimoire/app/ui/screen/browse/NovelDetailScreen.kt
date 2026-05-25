@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
@@ -67,6 +68,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Switch
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -144,6 +148,8 @@ fun NovelDetailScreen(
     val loginState by viewModel.loginState.collectAsState()
     val hasLockedChapters by viewModel.hasLockedChapters.collectAsState()
     val includeLockedInTotals by viewModel.includeLockedInTotals.collectAsState()
+    val notifyOnNewChapters by viewModel.notifyOnNewChapters.collectAsState()
+    val notifyOnNewLockedChapters by viewModel.notifyOnNewLockedChapters.collectAsState()
     val migrationState by viewModel.migrationState.collectAsState()
     val migrateFromTitle by viewModel.migrateFromTitle.collectAsState()
     val refreshSummary by viewModel.refreshSummary.collectAsState()
@@ -152,6 +158,7 @@ fun NovelDetailScreen(
     var showMigrateConfirm by remember { mutableStateOf(false) }
     var migrateMatchCount by remember { mutableStateOf(0) }
     var overflowMenuExpanded by remember { mutableStateOf(false) }
+    var showNotifSheet by remember { mutableStateOf(false) }
     var lockedDialogChapter by remember { mutableStateOf<ChapterEntity?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
@@ -233,6 +240,69 @@ fun NovelDetailScreen(
             currentCategoryId = categoryId,
             showCurrent = true,
         )
+    }
+
+    if (showNotifSheet) {
+        val notifSheetState = rememberModalBottomSheetState()
+        ModalBottomSheet(
+            onDismissRequest = { showNotifSheet = false },
+            sheetState = notifSheetState,
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text(
+                    "Notifications",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                Text(
+                    "Choose what to be alerted about when this novel finds new chapters.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.setNotifyOnNewChapters(!notifyOnNewChapters) }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Notify on new chapters", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "When sync finds chapters you can read now.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = notifyOnNewChapters,
+                        onCheckedChange = { viewModel.setNotifyOnNewChapters(it) },
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.setNotifyOnNewLockedChapters(!notifyOnNewLockedChapters) }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Notify on new locked chapters", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "When sync finds chapters gated behind a paid tier.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = notifyOnNewLockedChapters,
+                        onCheckedChange = { viewModel.setNotifyOnNewLockedChapters(it) },
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
     }
 
     if (showJumpDialog) {
@@ -397,7 +467,8 @@ fun NovelDetailScreen(
                     }
                     val hasBulkActions = chapters.isNotEmpty()
                     val canMigrate = isFavorite && novelId > 0L
-                    if (hasBulkActions || canMigrate) {
+                    val canConfigureNotifications = isFavorite && novelId > 0L && !viewModel.isLocal
+                    if (hasBulkActions || canMigrate || canConfigureNotifications) {
                         Box {
                             IconButton(onClick = { overflowMenuExpanded = true }) {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More actions")
@@ -444,6 +515,17 @@ fun NovelDetailScreen(
                                             onMigrate(novelId)
                                         },
                                         leadingIcon = { Icon(Icons.Default.SwapVert, contentDescription = null) },
+                                    )
+                                }
+                                if (canConfigureNotifications) {
+                                    if (hasBulkActions || canMigrate) HorizontalDivider()
+                                    DropdownMenuItem(
+                                        text = { Text("Notifications") },
+                                        onClick = {
+                                            overflowMenuExpanded = false
+                                            showNotifSheet = true
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Notifications, contentDescription = null) },
                                     )
                                 }
                             }

@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
+import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,10 +23,16 @@ class LibraryUpdatesViewModel @Inject constructor(
     private val libraryUpdateDao: LibraryUpdateDao,
     private val chapterDao: ChapterDao,
     private val downloadManager: DownloadManager,
+    novelDao: NovelDao,
 ) : ViewModel() {
 
     val entries: StateFlow<List<LibraryUpdateEntity>> = libraryUpdateDao.getAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Novel ids the user has opted in to notifications for; surfaced as a separate section above the rest. */
+    val subscribedNovelIds: StateFlow<Set<Long>> = novelDao.getSubscribedNovelIds()
+        .map { it.toSet() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     /**
      * Live chapter state keyed by log entry id. The log denormalizes some fields

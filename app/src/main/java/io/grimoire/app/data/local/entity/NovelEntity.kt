@@ -26,4 +26,6 @@ data class NovelEntity(
     val rating: Float? = null,
     val ratingCount: Int? = null,
     val language: String? = null,
+    val notifyOnNewChapters: Boolean = false,
+    val notifyOnNewLockedChapters: Boolean = false,
 )

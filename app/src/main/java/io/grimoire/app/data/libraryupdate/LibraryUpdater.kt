@@ -65,6 +65,7 @@ class LibraryUpdater @Inject constructor(
     suspend fun updateLibrary(
         categoryId: Long?,
         onProgress: suspend (done: Int, total: Int, title: String) -> Unit = { _, _, _ -> },
+        onNovelComplete: suspend (novel: NovelEntity, newReadable: Int, newLocked: Int) -> Unit = { _, _, _ -> },
     ): UpdateSummary {
         val targets = resolveTargets(categoryId)
         val total = targets.size
@@ -89,10 +90,14 @@ class LibraryUpdater @Inject constructor(
                         val novel = mutex.withLock { queue.removeFirstOrNull() } ?: break
                         onProgress(done.get(), total, novel.title)
                         when (val result = refreshNovel(novel, extensions, autoDownload)) {
-                            is NovelRefreshResult.Ok -> newChapters.addAndGet(result.newChapters)
+                            is NovelRefreshResult.Ok -> {
+                                newChapters.addAndGet(result.newChapters)
+                                onNovelComplete(novel, result.newReadable, result.newLocked)
+                            }
                             is NovelRefreshResult.Warned -> {
                                 newChapters.addAndGet(result.newChapters)
                                 warnings.incrementAndGet()
+                                onNovelComplete(novel, result.newReadable, result.newLocked)
                             }
                             NovelRefreshResult.Failed -> errors.incrementAndGet()
                         }
@@ -235,12 +240,14 @@ class LibraryUpdater @Inject constructor(
             }
         }
 
+        val newLocked = newChapters.count { it.locked }
+        val newReadable = newChapters.size - newLocked
         return if (regressed) {
             setIssue(novel, pkg, UpdateIssueSeverity.WARNING, REGRESSION_MESSAGE)
-            NovelRefreshResult.Warned(newChapters.size)
+            NovelRefreshResult.Warned(newChapters.size, newReadable, newLocked)
         } else {
             updateIssueDao.clearForNovel(novel.id)
-            NovelRefreshResult.Ok(newChapters.size)
+            NovelRefreshResult.Ok(newChapters.size, newReadable, newLocked)
         }
     }
 
@@ -316,8 +323,20 @@ class LibraryUpdater @Inject constructor(
     )
 
     private sealed interface NovelRefreshResult {
-        data class Ok(val newChapters: Int) : NovelRefreshResult
-        data class Warned(val newChapters: Int) : NovelRefreshResult
+        val newChapters: Int get() = 0
+        val newReadable: Int get() = 0
+        val newLocked: Int get() = 0
+
+        data class Ok(
+            override val newChapters: Int,
+            override val newReadable: Int = newChapters,
+            override val newLocked: Int = 0,
+        ) : NovelRefreshResult
+        data class Warned(
+            override val newChapters: Int,
+            override val newReadable: Int = newChapters,
+            override val newLocked: Int = 0,
+        ) : NovelRefreshResult
         data object Failed : NovelRefreshResult
     }
 

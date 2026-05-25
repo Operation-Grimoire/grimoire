@@ -134,6 +134,8 @@ class NovelQuickViewViewModel @AssistedInject constructor(
                         categoryId = current?.categoryId,
                         url = novelUrl,
                         lastReadAt = current?.lastReadAt ?: 0L,
+                        notifyOnNewChapters = current?.notifyOnNewChapters ?: false,
+                        notifyOnNewLockedChapters = current?.notifyOnNewLockedChapters ?: false,
                     )
                 )
                 cachedNovelId = current?.id ?: upsertId

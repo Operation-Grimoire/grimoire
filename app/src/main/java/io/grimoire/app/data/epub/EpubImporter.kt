@@ -164,6 +164,8 @@ class EpubImporter @Inject constructor(
                 chapterSortOrder = existing?.chapterSortOrder ?: 0,
                 categoryId = existing?.categoryId,
                 lastReadAt = if (markRead) System.currentTimeMillis() else (existing?.lastReadAt ?: 0L),
+                notifyOnNewChapters = existing?.notifyOnNewChapters ?: false,
+                notifyOnNewLockedChapters = existing?.notifyOnNewLockedChapters ?: false,
             ),
         )
         // @Upsert returns -1 on the update path, so resolve the real row
