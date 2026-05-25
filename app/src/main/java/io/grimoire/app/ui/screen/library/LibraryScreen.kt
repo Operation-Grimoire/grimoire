@@ -29,7 +29,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -123,7 +124,6 @@ import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.effectiveTotal
 import io.grimoire.app.data.local.entity.readPercent
-import io.grimoire.app.data.preferences.ALL_SOURCES_FILTER_ID
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.SortDirection
@@ -145,7 +145,6 @@ private val EPUB_MIME_TYPES = arrayOf(
 private val EmptyExternalEpubUri: StateFlow<Uri?> = MutableStateFlow(null).asStateFlow()
 
 private val STATUS_OPTIONS = listOf(
-    -1 to "All",
     1 to "Ongoing",
     2 to "Completed",
     3 to "Hiatus",
@@ -169,10 +168,10 @@ private fun computeTabNovels(
     chapterStats: Map<Long, NovelChapterStats>,
     sortField: SortField,
     sortDirection: SortDirection,
-    filterStatus: Int,
+    filterStatuses: Set<Int>,
     filterUnreadOnly: Boolean,
     filterDownloadedOnly: Boolean,
-    filterSourceId: Long,
+    filterSourceIds: Set<Long>,
     isUnlocked: Boolean,
     hiddenCategoryIds: Set<Long>,
     includeHiddenInAll: Boolean,
@@ -218,10 +217,10 @@ private fun computeTabNovels(
     val trimmedQuery = searchQuery.trim()
     return tabFiltered
         .filter { novel ->
-            (filterStatus == -1 || novel.status == filterStatus) &&
+            (filterStatuses.isEmpty() || novel.status in filterStatuses) &&
             (!filterUnreadOnly || (chapterStats[novel.id]?.let { it.effectiveTotal(includeLockedInTotals) - it.readCount > 0 } == true)) &&
             (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
-            (filterSourceId == ALL_SOURCES_FILTER_ID || novel.sourceId == filterSourceId) &&
+            (filterSourceIds.isEmpty() || novel.sourceId in filterSourceIds) &&
             (trimmedQuery.isEmpty() ||
                 novel.title.contains(trimmedQuery, ignoreCase = true) ||
                 (novel.author?.contains(trimmedQuery, ignoreCase = true) == true))
@@ -248,10 +247,10 @@ fun LibraryScreen(
     val showAllTab by viewModel.showAllTab.collectAsState()
     val sortField by viewModel.sortField.collectAsState()
     val sortDirection by viewModel.sortDirection.collectAsState()
-    val filterStatus by viewModel.filterStatus.collectAsState()
+    val filterStatuses by viewModel.filterStatuses.collectAsState()
     val filterUnreadOnly by viewModel.filterUnreadOnly.collectAsState()
     val filterDownloadedOnly by viewModel.filterDownloadedOnly.collectAsState()
-    val filterSourceId by viewModel.filterSourceId.collectAsState()
+    val filterSourceIds by viewModel.filterSourceIds.collectAsState()
     val librarySources by viewModel.librarySources.collectAsState()
     val isUnlocked by viewModel.isUnlocked.collectAsState()
     val hasPin by viewModel.hasPin.collectAsState()
@@ -321,8 +320,8 @@ fun LibraryScreen(
         }
     }
 
-    val isFilterActive = filterStatus != -1 || filterUnreadOnly || filterDownloadedOnly ||
-        filterSourceId != ALL_SOURCES_FILTER_ID
+    val isFilterActive = filterStatuses.isNotEmpty() || filterUnreadOnly || filterDownloadedOnly ||
+        filterSourceIds.isNotEmpty()
 
     val tabs = buildList {
         if (showAllTab) add("All")
@@ -384,10 +383,10 @@ fun LibraryScreen(
             chapterStats = chapterStats,
             sortField = sortField,
             sortDirection = sortDirection,
-            filterStatus = filterStatus,
+            filterStatuses = filterStatuses,
             filterUnreadOnly = filterUnreadOnly,
             filterDownloadedOnly = filterDownloadedOnly,
-            filterSourceId = filterSourceId,
+            filterSourceIds = filterSourceIds,
             isUnlocked = isUnlocked,
             hiddenCategoryIds = hiddenCategoryIds,
             includeHiddenInAll = includeHiddenInAll,
@@ -398,8 +397,8 @@ fun LibraryScreen(
 
     val displayedNovels: List<NovelEntity>? = remember(
         novels, currentTab, categories, showAllTab,
-        sortField, sortDirection, filterStatus, filterUnreadOnly, filterDownloadedOnly,
-        filterSourceId, chapterStats,
+        sortField, sortDirection, filterStatuses, filterUnreadOnly, filterDownloadedOnly,
+        filterSourceIds, chapterStats,
         isUnlocked, hiddenCategoryIds, includeHiddenInAll, includeLockedInTotals, searchQuery,
     ) { novelsForTab(currentTab) }
 
@@ -599,8 +598,8 @@ fun LibraryScreen(
             ) { page ->
                 val pageNovels = remember(
                     novels, page, categories, showAllTab,
-                    sortField, sortDirection, filterStatus, filterUnreadOnly, filterDownloadedOnly,
-                    filterSourceId, chapterStats,
+                    sortField, sortDirection, filterStatuses, filterUnreadOnly, filterDownloadedOnly,
+                    filterSourceIds, chapterStats,
                     isUnlocked, hiddenCategoryIds, includeHiddenInAll, searchQuery,
                 ) { novelsForTab(page) }
 
@@ -727,17 +726,17 @@ fun LibraryScreen(
             FilterSortContent(
                 sortField = sortField,
                 sortDirection = sortDirection,
-                filterStatus = filterStatus,
+                filterStatuses = filterStatuses,
                 filterUnreadOnly = filterUnreadOnly,
                 filterDownloadedOnly = filterDownloadedOnly,
-                filterSourceId = filterSourceId,
+                filterSourceIds = filterSourceIds,
                 librarySources = librarySources,
                 onSortFieldChange = viewModel::setSortField,
                 onToggleSortDirection = viewModel::toggleSortDirection,
-                onFilterStatusChange = viewModel::setFilterStatus,
+                onToggleFilterStatus = viewModel::toggleFilterStatus,
                 onUnreadOnlyChange = viewModel::setFilterUnreadOnly,
                 onDownloadedOnlyChange = viewModel::setFilterDownloadedOnly,
-                onFilterSourceChange = viewModel::setFilterSourceId,
+                onToggleFilterSource = viewModel::toggleFilterSource,
             )
         }
     }
@@ -962,17 +961,17 @@ private fun EpubImportPreviewDialog(
 private fun FilterSortContent(
     sortField: SortField,
     sortDirection: SortDirection,
-    filterStatus: Int,
+    filterStatuses: Set<Int>,
     filterUnreadOnly: Boolean,
     filterDownloadedOnly: Boolean,
-    filterSourceId: Long,
+    filterSourceIds: Set<Long>,
     librarySources: List<Pair<Long, String>>,
     onSortFieldChange: (SortField) -> Unit,
     onToggleSortDirection: () -> Unit,
-    onFilterStatusChange: (Int) -> Unit,
+    onToggleFilterStatus: (Int?) -> Unit,
     onUnreadOnlyChange: (Boolean) -> Unit,
     onDownloadedOnlyChange: (Boolean) -> Unit,
-    onFilterSourceChange: (Long) -> Unit,
+    onToggleFilterSource: (Long?) -> Unit,
 ) {
     var tab by remember { mutableIntStateOf(0) }
     Column {
@@ -982,15 +981,15 @@ private fun FilterSortContent(
         }
         when (tab) {
             0 -> FilterTab(
-                filterStatus = filterStatus,
+                filterStatuses = filterStatuses,
                 filterUnreadOnly = filterUnreadOnly,
                 filterDownloadedOnly = filterDownloadedOnly,
-                filterSourceId = filterSourceId,
+                filterSourceIds = filterSourceIds,
                 librarySources = librarySources,
-                onFilterStatusChange = onFilterStatusChange,
+                onToggleFilterStatus = onToggleFilterStatus,
                 onUnreadOnlyChange = onUnreadOnlyChange,
                 onDownloadedOnlyChange = onDownloadedOnlyChange,
-                onFilterSourceChange = onFilterSourceChange,
+                onToggleFilterSource = onToggleFilterSource,
             )
             1 -> SortTab(
                 sortField = sortField,
@@ -1003,17 +1002,18 @@ private fun FilterSortContent(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FilterTab(
-    filterStatus: Int,
+    filterStatuses: Set<Int>,
     filterUnreadOnly: Boolean,
     filterDownloadedOnly: Boolean,
-    filterSourceId: Long,
+    filterSourceIds: Set<Long>,
     librarySources: List<Pair<Long, String>>,
-    onFilterStatusChange: (Int) -> Unit,
+    onToggleFilterStatus: (Int?) -> Unit,
     onUnreadOnlyChange: (Boolean) -> Unit,
     onDownloadedOnlyChange: (Boolean) -> Unit,
-    onFilterSourceChange: (Long) -> Unit,
+    onToggleFilterSource: (Long?) -> Unit,
 ) {
     Column {
         Text(
@@ -1022,16 +1022,29 @@ private fun FilterTab(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
         )
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        // FlowRow wraps chips onto multiple lines instead of clipping past the
+        // edge — a long status/source list stays visible without horizontal
+        // scrolling, which is the multi-select pattern most apps use.
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            items(STATUS_OPTIONS) { (ordinal, label) ->
+            // "All" is rendered first as a distinct chip: tapping it clears the
+            // entire selection set rather than toggling a status value. This lets
+            // a user always reach the unfiltered state in one tap even when many
+            // statuses are selected.
+            FilterChip(
+                selected = filterStatuses.isEmpty(),
+                onClick = { onToggleFilterStatus(null) },
+                label = { Text("All") },
+            )
+            STATUS_OPTIONS.forEach { (ordinal, label) ->
                 FilterChip(
-                    selected = filterStatus == ordinal,
-                    onClick = {
-                        onFilterStatusChange(if (filterStatus == ordinal && ordinal != -1) -1 else ordinal)
-                    },
+                    selected = ordinal in filterStatuses,
+                    onClick = { onToggleFilterStatus(ordinal) },
                     label = { Text(label) },
                 )
             }
@@ -1043,27 +1056,22 @@ private fun FilterTab(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
             )
-            // Build the chip list with an explicit "All" entry rather than collapsing
-            // an empty selection into "All" so the user can always deselect a source
-            // by tapping the leftmost chip — matches how the status row works.
-            val sourceChips = buildList {
-                add(ALL_SOURCES_FILTER_ID to "All")
-                addAll(librarySources)
-            }
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                items(sourceChips) { (id, label) ->
+                FilterChip(
+                    selected = filterSourceIds.isEmpty(),
+                    onClick = { onToggleFilterSource(null) },
+                    label = { Text("All") },
+                )
+                librarySources.forEach { (id, label) ->
                     FilterChip(
-                        selected = filterSourceId == id,
-                        onClick = {
-                            onFilterSourceChange(
-                                if (filterSourceId == id && id != ALL_SOURCES_FILTER_ID) {
-                                    ALL_SOURCES_FILTER_ID
-                                } else id
-                            )
-                        },
+                        selected = id in filterSourceIds,
+                        onClick = { onToggleFilterSource(id) },
                         label = { Text(label) },
                     )
                 }

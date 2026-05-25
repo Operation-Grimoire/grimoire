@@ -140,10 +140,10 @@ class LibraryViewModel @Inject constructor(
     val showAllTab: StateFlow<Boolean> = libraryPreferences.showAllTab.stateIn(viewModelScope)
     val sortField: StateFlow<SortField> = libraryPreferences.sortField.stateIn(viewModelScope)
     val sortDirection: StateFlow<SortDirection> = libraryPreferences.sortDirection.stateIn(viewModelScope)
-    val filterStatus: StateFlow<Int> = libraryPreferences.filterStatus.stateIn(viewModelScope)
+    val filterStatuses: StateFlow<Set<Int>> = libraryPreferences.filterStatuses.stateIn(viewModelScope)
     val filterUnreadOnly: StateFlow<Boolean> = libraryPreferences.filterUnreadOnly.stateIn(viewModelScope)
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
-    val filterSourceId: StateFlow<Long> = libraryPreferences.filterSourceId.stateIn(viewModelScope)
+    val filterSourceIds: StateFlow<Set<Long>> = libraryPreferences.filterSourceIds.stateIn(viewModelScope)
 
     /**
      * Source ids that appear in the user's library, paired with their human label
@@ -258,8 +258,15 @@ class LibraryViewModel @Inject constructor(
         libraryPreferences.sortDirection.set(next)
     }
 
-    fun setFilterStatus(status: Int) = viewModelScope.launch {
-        libraryPreferences.filterStatus.set(status)
+    /** Toggles [status] in the active filter set, or clears the set entirely when null. */
+    fun toggleFilterStatus(status: Int?) = viewModelScope.launch {
+        val current = filterStatuses.value
+        val next = when {
+            status == null -> emptySet()
+            status in current -> current - status
+            else -> current + status
+        }
+        libraryPreferences.filterStatuses.set(next)
     }
 
     fun setFilterUnreadOnly(value: Boolean) = viewModelScope.launch {
@@ -270,8 +277,15 @@ class LibraryViewModel @Inject constructor(
         libraryPreferences.filterDownloadedOnly.set(value)
     }
 
-    fun setFilterSourceId(sourceId: Long) = viewModelScope.launch {
-        libraryPreferences.filterSourceId.set(sourceId)
+    /** Toggles [sourceId] in the active source filter set, or clears it entirely when null. */
+    fun toggleFilterSource(sourceId: Long?) = viewModelScope.launch {
+        val current = filterSourceIds.value
+        val next = when {
+            sourceId == null -> emptySet()
+            sourceId in current -> current - sourceId
+            else -> current + sourceId
+        }
+        libraryPreferences.filterSourceIds.set(next)
     }
 
     fun setCategoryHidden(category: CategoryEntity, hidden: Boolean) = viewModelScope.launch {

@@ -10,9 +10,6 @@ enum class LibraryDisplayMode { GRID, LIST }
 /** Sentinel [LibraryPreferences.selectedCategoryId] value for the "All" tab, which has no category. */
 const val ALL_TAB_CATEGORY_ID = -1L
 
-/** Sentinel [LibraryPreferences.filterSourceId] value meaning "no source filter applied". */
-const val ALL_SOURCES_FILTER_ID = -1L
-
 enum class SortField { TITLE, LAST_UPDATED, UNREAD, TOTAL, LAST_READ }
 
 enum class SortDirection { ASC, DESC }
@@ -32,6 +29,12 @@ private fun parseLegacySort(value: String): Pair<SortField, SortDirection>? = wh
     "LAST_READ_DESC" -> SortField.LAST_READ to SortDirection.DESC
     else -> null
 }
+
+// Multi-select filters store the chosen values as a CSV with a leading "!" marker.
+// The marker exists so we can tell "user has explicitly cleared the filter" (stored
+// as "!" — meaning "show all") apart from "key was never written" (stored as the
+// default "", which means "fall back to the legacy single-value preference").
+private const val FILTER_SET_MARKER = "!"
 
 @Singleton
 class LibraryPreferences @Inject constructor(store: PreferenceStore) {
@@ -65,10 +68,32 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
         legacyExtract = { parseLegacySort(it)?.second },
     )
 
-    val filterStatus = store.getInt("library_filter_status", -1)
     val filterUnreadOnly = store.getBoolean("library_filter_unread_only", false)
     val filterDownloadedOnly = store.getBoolean("library_filter_downloaded_only", false)
-    val filterSourceId = store.getLong("library_filter_source_id", ALL_SOURCES_FILTER_ID)
+
+    // Status and source filters are multi-select sets. An empty set means "no
+    // restriction" (show all), so users can either tap "All" to clear or tap any
+    // combination of chips. The legacy single-value keys are read as a fallback so
+    // a user who picked "Ongoing" before the upgrade still sees that filter
+    // applied as the one-element set {1}.
+    private val filterStatusesRaw = store.getString("library_filter_statuses", "")
+    private val legacyFilterStatus = store.getInt("library_filter_status", -1)
+    val filterStatuses: Preference<Set<Int>> = MigratedSetPreference(
+        key = "library_filter_statuses",
+        raw = filterStatusesRaw,
+        legacy = legacyFilterStatus.changes(),
+        legacyToSet = { if (it == -1) emptySet() else setOf(it) },
+        parseElement = { it.toIntOrNull() },
+        serializeElement = { it.toString() },
+    )
+
+    val filterSourceIds: Preference<Set<Long>> = store.getObject(
+        key = "library_filter_source_ids",
+        defaultValue = emptySet(),
+        serialize = { it.serializeFilterSet { v -> v.toString() } },
+        deserialize = { it.deserializeFilterSet { token -> token.toLongOrNull() } },
+    )
+
     val includeHiddenInAll = store.getBoolean("library_include_hidden_in_all", false)
 
     // When false, locked chapters are excluded from the "total" used to compute the
@@ -112,3 +137,38 @@ private class MigratedSortPreference<T : Enum<T>>(
     }
     override suspend fun set(value: T) { raw.set(value.name) }
 }
+
+/**
+ * Stores a Set<T> using the [FILTER_SET_MARKER] serialization. The marker lets us
+ * tell "user explicitly cleared the filter" (stored as "!" → empty set) apart from
+ * "key was never written" (default "" → fall back to [legacy]).
+ */
+private class MigratedSetPreference<T : Any, L>(
+    private val key: String,
+    private val raw: Preference<String>,
+    private val legacy: Flow<L>,
+    private val legacyToSet: (L) -> Set<T>,
+    private val parseElement: (String) -> T?,
+    private val serializeElement: (T) -> String,
+) : Preference<Set<T>> {
+    override fun key(): String = key
+    override fun defaultValue(): Set<T> = emptySet()
+    override fun changes(): Flow<Set<T>> = combine(raw.changes(), legacy) { r, l ->
+        r.deserializeFilterSet(parseElement) ?: legacyToSet(l)
+    }
+    override suspend fun set(value: Set<T>) {
+        raw.set(value.serializeFilterSet(serializeElement))
+    }
+}
+
+private fun <T> Set<T>.serializeFilterSet(serialize: (T) -> String): String =
+    FILTER_SET_MARKER + joinToString(",", transform = serialize)
+
+private fun <T> String.deserializeFilterSet(parse: (String) -> T?): Set<T>? =
+    if (startsWith(FILTER_SET_MARKER)) {
+        removePrefix(FILTER_SET_MARKER)
+            .split(",")
+            .filter { it.isNotEmpty() }
+            .mapNotNull(parse)
+            .toSet()
+    } else null
