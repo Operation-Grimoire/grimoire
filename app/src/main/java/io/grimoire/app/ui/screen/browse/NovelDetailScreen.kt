@@ -109,6 +109,7 @@ import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.MoveToCategorySheet
 import io.grimoire.app.ui.component.RatingLabel
+import io.grimoire.app.ui.screen.library.HiddenCategoriesUnlockDialog
 import io.grimoire.app.ui.component.StatusLabel
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
@@ -155,6 +156,9 @@ fun NovelDetailScreen(
     val refreshSummary by viewModel.refreshSummary.collectAsState()
 
     var showCategoryDialog by remember { mutableStateOf(false) }
+    var showUnlockDialog by remember { mutableStateOf(false) }
+    val biometricEnabled by viewModel.biometricEnabled.collectAsState()
+    val canUnlockHidden by viewModel.canUnlockHidden.collectAsState()
     var showMigrateConfirm by remember { mutableStateOf(false) }
     var migrateMatchCount by remember { mutableStateOf(0) }
     var overflowMenuExpanded by remember { mutableStateOf(false) }
@@ -239,6 +243,16 @@ fun NovelDetailScreen(
             onDismiss = { showCategoryDialog = false },
             currentCategoryId = categoryId,
             showCurrent = true,
+            onUnlockClick = if (canUnlockHidden) { { showUnlockDialog = true } } else null,
+        )
+    }
+
+    if (showUnlockDialog) {
+        HiddenCategoriesUnlockDialog(
+            biometricEnabled = biometricEnabled,
+            onVerifyPin = { pin -> viewModel.verifyAndUnlock(pin) },
+            onUnlockedByBiometric = { viewModel.unlockFromBiometric() },
+            onDismiss = { showUnlockDialog = false },
         )
     }
 

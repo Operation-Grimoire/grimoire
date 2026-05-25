@@ -45,6 +45,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.model.NovelStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.ui.screen.browse.NovelQuickViewViewModel
+import io.grimoire.app.ui.screen.library.HiddenCategoriesUnlockDialog
 import kotlinx.coroutines.launch
 
 /**
@@ -76,9 +77,12 @@ fun NovelQuickViewSheet(
     val chapterCount by vm.chapterCount.collectAsState()
     val categories by vm.categories.collectAsState()
     val categoryId by vm.categoryId.collectAsState()
+    val biometricEnabled by vm.biometricEnabled.collectAsState()
+    val canUnlockHidden by vm.canUnlockHidden.collectAsState()
 
     var chaptersExpanded by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
+    var showUnlockDialog by remember { mutableStateOf(false) }
 
     fun dismissAndRun(action: () -> Unit) {
         scope.launch {
@@ -171,6 +175,16 @@ fun NovelQuickViewSheet(
             onDismiss = { showCategorySheet = false },
             currentCategoryId = categoryId,
             showCurrent = true,
+            onUnlockClick = if (canUnlockHidden) { { showUnlockDialog = true } } else null,
+        )
+    }
+
+    if (showUnlockDialog) {
+        HiddenCategoriesUnlockDialog(
+            biometricEnabled = biometricEnabled,
+            onVerifyPin = { pin -> vm.verifyAndUnlock(pin) },
+            onUnlockedByBiometric = { vm.unlockFromBiometric() },
+            onDismiss = { showUnlockDialog = false },
         )
     }
 }

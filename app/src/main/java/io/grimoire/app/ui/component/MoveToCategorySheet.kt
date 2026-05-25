@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -23,7 +25,9 @@ import io.grimoire.app.data.local.entity.CategoryEntity
  * Bottom-sheet picker for moving one or more novels to a category. Tap a row
  * to apply. [count] drives the subtitle ("1 novel" / "N novels"). When
  * [showCurrent] is true, the row matching [currentCategoryId] (or the default
- * category if it is null) is tinted primary with a trailing check.
+ * category if it is null) is tinted primary with a trailing check. When
+ * [onUnlockClick] is non-null, a footer row offers to unlock hidden categories
+ * so the user can pick one without leaving the sheet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +38,7 @@ fun MoveToCategorySheet(
     onDismiss: () -> Unit,
     currentCategoryId: Long? = null,
     showCurrent: Boolean = false,
+    onUnlockClick: (() -> Unit)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
@@ -75,6 +80,20 @@ fun MoveToCategorySheet(
                         }
                     } else null,
                     modifier = Modifier.clickable { onSelect(targetId) },
+                )
+            }
+            if (onUnlockClick != null) {
+                HorizontalDivider()
+                ListItem(
+                    headlineContent = { Text("Unlock hidden categories") },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.LockOpen,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    },
+                    modifier = Modifier.clickable { onUnlockClick() },
                 )
             }
         }
