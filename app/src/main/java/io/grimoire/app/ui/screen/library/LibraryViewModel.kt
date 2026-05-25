@@ -128,6 +128,14 @@ class LibraryViewModel @Inject constructor(
         .map { list -> list.orEmpty().filter { it.isHidden }.map { it.id }.toSet() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
+    /** True when an unlock prompt would be useful: locked, a PIN is set, and at least one category is hidden. */
+    val canUnlockHidden: StateFlow<Boolean> = combine(
+        authManager.isUnlocked,
+        authManager.hasPin,
+        hiddenCategoryIds,
+    ) { unlocked, hasPin, hidden -> !unlocked && hasPin && hidden.isNotEmpty() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     val novels: StateFlow<List<NovelEntity>?> = novelDao.getFavorites()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 

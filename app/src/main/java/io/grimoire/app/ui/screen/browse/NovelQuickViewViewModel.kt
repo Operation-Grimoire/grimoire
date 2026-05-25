@@ -16,12 +16,14 @@ import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.source.fetchAllChapters
+import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -39,6 +41,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
     private val chapterDao: ChapterDao,
     private val categoryDao: CategoryDao,
     private val downloadManager: DownloadManager,
+    private val authManager: HiddenCategoriesAuthManager,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -88,8 +91,32 @@ class NovelQuickViewViewModel @AssistedInject constructor(
         .map { list -> list.sortedByDescending { it.uploadDate.takeIf { d -> d > 0L } ?: it.id }.take(LATEST_PREVIEW_LIMIT) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val categories: StateFlow<List<CategoryEntity>> = categoryDao.getAll()
+    private val allCategories: StateFlow<List<CategoryEntity>> = categoryDao.getAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val categories: StateFlow<List<CategoryEntity>> =
+        combine(allCategories, authManager.isUnlocked) { list, unlocked ->
+            if (unlocked) list else list.filter { !it.isHidden }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val biometricEnabled: StateFlow<Boolean> = authManager.biometricEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /** True when an unlock prompt would be useful: locked, a PIN is set, and at least one category is hidden. */
+    val canUnlockHidden: StateFlow<Boolean> = combine(
+        authManager.isUnlocked,
+        authManager.hasPin,
+        allCategories,
+    ) { unlocked, hasPin, all -> !unlocked && hasPin && all.any { it.isHidden } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    suspend fun verifyAndUnlock(pin: String): Boolean {
+        val ok = authManager.verifyPin(pin)
+        if (ok) authManager.unlock()
+        return ok
+    }
+
+    fun unlockFromBiometric() = authManager.unlock()
 
     private var cachedNovelId: Long = -1L
 
