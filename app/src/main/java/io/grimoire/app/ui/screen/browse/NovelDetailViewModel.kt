@@ -143,6 +143,12 @@ class NovelDetailViewModel @Inject constructor(
     private val _isFavorite = MutableStateFlow(false)
     val isFavorite: StateFlow<Boolean> = _isFavorite.asStateFlow()
 
+    private val _notifyOnNewChapters = MutableStateFlow(false)
+    val notifyOnNewChapters: StateFlow<Boolean> = _notifyOnNewChapters.asStateFlow()
+
+    private val _notifyOnNewLockedChapters = MutableStateFlow(false)
+    val notifyOnNewLockedChapters: StateFlow<Boolean> = _notifyOnNewLockedChapters.asStateFlow()
+
     /** Title of the novel being migrated from, shown in the migration prompt. */
     private val _migrateFromTitle = MutableStateFlow("")
     val migrateFromTitle: StateFlow<String> = _migrateFromTitle.asStateFlow()
@@ -271,6 +277,8 @@ class NovelDetailViewModel @Inject constructor(
         _liveNovelId.value = existing.id
         _novel.value = existing.toNovel()
         _isFavorite.value = existing.favorite
+        _notifyOnNewChapters.value = existing.notifyOnNewChapters
+        _notifyOnNewLockedChapters.value = existing.notifyOnNewLockedChapters
         _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
         _categoryId.value = existing.categoryId
         _isLoadingNovel.value = false
@@ -366,6 +374,8 @@ class NovelDetailViewModel @Inject constructor(
                     _liveNovelId.value = existing.id
                     _novel.value = existing.toNovel()
                     _isFavorite.value = existing.favorite
+                    _notifyOnNewChapters.value = existing.notifyOnNewChapters
+                    _notifyOnNewLockedChapters.value = existing.notifyOnNewLockedChapters
                     _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
                     _categoryId.value = existing.categoryId
                     _isLoadingNovel.value = false
@@ -404,10 +414,22 @@ class NovelDetailViewModel @Inject constructor(
         }.onSuccess { novel ->
             _novel.value = novel
             val existing = novelDao.getBySourceUrl(src.id, novelUrl)
-            val upsertId = novelDao.upsert(novel.toEntity(src.id, existing?.id ?: 0L, existing?.favorite ?: false, existing?.chapterSortOrder ?: 0, existing?.categoryId, novelUrl, existing?.lastReadAt ?: 0L))
+            val upsertId = novelDao.upsert(novel.toEntity(
+                sourceId = src.id,
+                existingId = existing?.id ?: 0L,
+                favorite = existing?.favorite ?: false,
+                chapterSortOrder = existing?.chapterSortOrder ?: 0,
+                categoryId = existing?.categoryId,
+                url = novelUrl,
+                lastReadAt = existing?.lastReadAt ?: 0L,
+                notifyOnNewChapters = existing?.notifyOnNewChapters ?: false,
+                notifyOnNewLockedChapters = existing?.notifyOnNewLockedChapters ?: false,
+            ))
             cachedNovelId = existing?.id ?: upsertId
             _liveNovelId.value = cachedNovelId
             _isFavorite.value = existing?.favorite ?: false
+            _notifyOnNewChapters.value = existing?.notifyOnNewChapters ?: false
+            _notifyOnNewLockedChapters.value = existing?.notifyOnNewLockedChapters ?: false
             _chapterSort.value = ChapterSort.entries.getOrElse(existing?.chapterSortOrder ?: 0) { ChapterSort.NUMBER_ASC }
             _categoryId.value = existing?.categoryId
         }.onFailure { e ->
@@ -527,6 +549,20 @@ class NovelDetailViewModel @Inject constructor(
         }
     }
 
+    fun setNotifyOnNewChapters(value: Boolean) {
+        _notifyOnNewChapters.value = value
+        if (cachedNovelId > 0L) viewModelScope.launch {
+            novelDao.updateNotifyOnNewChapters(cachedNovelId, value)
+        }
+    }
+
+    fun setNotifyOnNewLockedChapters(value: Boolean) {
+        _notifyOnNewLockedChapters.value = value
+        if (cachedNovelId > 0L) viewModelScope.launch {
+            novelDao.updateNotifyOnNewLockedChapters(cachedNovelId, value)
+        }
+    }
+
     /** How many of this novel's chapters the pending migration would mark read. */
     suspend fun migrationMatchCount(): Int {
         if (!isMigrationTarget || cachedNovelId <= 0L) return 0
@@ -593,7 +629,17 @@ internal fun NovelEntity.toNovel() = Novel(
     initialized = true,
 )
 
-internal fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean, chapterSortOrder: Int = 0, categoryId: Long? = null, url: String = this.url, lastReadAt: Long = 0L) = NovelEntity(
+internal fun Novel.toEntity(
+    sourceId: Long,
+    existingId: Long,
+    favorite: Boolean,
+    chapterSortOrder: Int = 0,
+    categoryId: Long? = null,
+    url: String = this.url,
+    lastReadAt: Long = 0L,
+    notifyOnNewChapters: Boolean = false,
+    notifyOnNewLockedChapters: Boolean = false,
+) = NovelEntity(
     id = existingId,
     sourceId = sourceId,
     url = url,
@@ -611,6 +657,8 @@ internal fun Novel.toEntity(sourceId: Long, existingId: Long, favorite: Boolean,
     rating = rating,
     ratingCount = ratingCount,
     language = language,
+    notifyOnNewChapters = notifyOnNewChapters,
+    notifyOnNewLockedChapters = notifyOnNewLockedChapters,
 )
 
 private fun ChapterEntity.toChapter() = Chapter(

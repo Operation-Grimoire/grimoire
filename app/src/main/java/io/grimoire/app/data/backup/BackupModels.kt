@@ -50,6 +50,8 @@ data class BackupNovel(
     val lastReadAt: Long = 0L,
     val rating: Float? = null,
     val ratingCount: Int? = null,
+    val notifyOnNewChapters: Boolean = false,
+    val notifyOnNewLockedChapters: Boolean = false,
     val chapters: List<BackupChapter> = emptyList(),
 )
 

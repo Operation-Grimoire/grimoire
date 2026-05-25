@@ -164,8 +164,10 @@ fun AppNavigation(
     val target by pendingTarget.collectAsState()
     LaunchedEffect(target) {
         val t = target ?: return@LaunchedEffect
-        val route = when (t) {
-            NAV_TARGET_UPDATES -> ROUTE_UPDATES
+        val route = when {
+            t == NAV_TARGET_UPDATES -> ROUTE_UPDATES
+            // A per-novel notification passes the navigate-ready route directly.
+            t.startsWith("novel?") -> t
             else -> null
         }
         if (route != null) navController.navigate(route) { launchSingleTop = true }

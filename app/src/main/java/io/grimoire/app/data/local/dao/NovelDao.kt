@@ -47,6 +47,15 @@ interface NovelDao {
     @Query("UPDATE novels SET lastReadAt = :timestamp WHERE id = :id")
     suspend fun updateLastReadAt(id: Long, timestamp: Long)
 
+    @Query("UPDATE novels SET notifyOnNewChapters = :value WHERE id = :id")
+    suspend fun updateNotifyOnNewChapters(id: Long, value: Boolean)
+
+    @Query("UPDATE novels SET notifyOnNewLockedChapters = :value WHERE id = :id")
+    suspend fun updateNotifyOnNewLockedChapters(id: Long, value: Boolean)
+
+    @Query("SELECT id FROM novels WHERE notifyOnNewChapters = 1 OR notifyOnNewLockedChapters = 1")
+    fun getSubscribedNovelIds(): Flow<List<Long>>
+
     @Delete
     suspend fun delete(novel: NovelEntity)
 }

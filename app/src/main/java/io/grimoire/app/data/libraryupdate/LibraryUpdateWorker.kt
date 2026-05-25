@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -17,8 +18,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.grimoire.app.GrimoireApp
 import io.grimoire.app.MainActivity
+import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryUpdatePreferences
-import io.grimoire.app.ui.NAV_TARGET_UPDATES
+import io.grimoire.app.extension.ExtensionManager
 
 /**
  * Runs a library refresh in the background. Used for both the periodic schedule
@@ -34,6 +36,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val libraryUpdater: LibraryUpdater,
     private val preferences: LibraryUpdatePreferences,
+    private val extensionManager: ExtensionManager,
 ) : CoroutineWorker(applicationContext, params) {
 
     override suspend fun getForegroundInfo(): ForegroundInfo =
@@ -46,12 +49,18 @@ class LibraryUpdateWorker @AssistedInject constructor(
         runCatching { setForeground(getForegroundInfo()) }
 
         val summary = runCatching {
-            libraryUpdater.updateLibrary(categoryId) { done, total, title ->
-                setProgress(
-                    workDataOf(KEY_DONE to done, KEY_TOTAL to total, KEY_TITLE to title),
-                )
-                updateProgress(done, total, title)
-            }
+            libraryUpdater.updateLibrary(
+                categoryId,
+                onProgress = { done, total, title ->
+                    setProgress(
+                        workDataOf(KEY_DONE to done, KEY_TOTAL to total, KEY_TITLE to title),
+                    )
+                    updateProgress(done, total, title)
+                },
+                onNovelComplete = { novel, newReadable, newLocked ->
+                    maybeNotifyNovel(novel, newReadable, newLocked)
+                },
+            )
         }.getOrElse { e ->
             preferences.lastRunAt.set(System.currentTimeMillis().toString())
             preferences.lastRunSuccess.set(false)
@@ -64,7 +73,6 @@ class LibraryUpdateWorker @AssistedInject constructor(
         preferences.lastRunAt.set(System.currentTimeMillis().toString())
         preferences.lastRunSuccess.set(true)
         preferences.lastRunMessage.set(summaryLine(summary))
-        showCompletion(summary)
         return Result.success()
     }
 
@@ -120,16 +128,36 @@ class LibraryUpdateWorker @AssistedInject constructor(
             .setSilent(true)
             .build()
 
-    private fun showCompletion(summary: UpdateSummary) {
+    private fun maybeNotifyNovel(novel: NovelEntity, newReadable: Int, newLocked: Int) {
+        val readablePart = if (novel.notifyOnNewChapters) newReadable else 0
+        val lockedPart = if (novel.notifyOnNewLockedChapters) newLocked else 0
+        if (readablePart == 0 && lockedPart == 0) return
+
+        val body = when {
+            readablePart > 0 && lockedPart > 0 ->
+                "${readablePart} new chapter${plural(readablePart)} · ${lockedPart} locked"
+            readablePart > 0 ->
+                "${readablePart} new chapter${plural(readablePart)}"
+            else ->
+                "${lockedPart} new locked chapter${plural(lockedPart)}"
+        }
+
+        val pkg = extensionManager.extensions.value
+            .firstOrNull { it.source.id == novel.sourceId }
+            ?.info?.packageName
+        val target = if (pkg != null) {
+            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novel.url)}"
+        } else null
+
         val notification = NotificationCompat.Builder(applicationContext, GrimoireApp.LIBRARY_UPDATE_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
-            .setContentTitle("Library updated")
-            .setContentText(summaryLine(summary))
-            .setStyle(NotificationCompat.BigTextStyle().bigText(summaryLine(summary)))
-            .setContentIntent(tapIntent(NAV_TARGET_UPDATES))
+            .setContentTitle(novel.title)
+            .setContentText(body)
+            .setContentIntent(tapIntent(target))
             .setAutoCancel(true)
             .build()
-        NotificationManagerCompat.from(applicationContext).notify(COMPLETE_NOTIF_ID, notification)
+        NotificationManagerCompat.from(applicationContext)
+            .notify(NOVEL_NOTIF_ID_BASE + novel.id.toInt(), notification)
     }
 
     companion object {
@@ -146,6 +174,9 @@ class LibraryUpdateWorker @AssistedInject constructor(
         const val ALL_LIBRARY = Long.MIN_VALUE
 
         private const val PROGRESS_NOTIF_ID = 1101
-        private const val COMPLETE_NOTIF_ID = 1102
+
+        /** Base offset for per-novel notification ids; added to novel.id so each
+         *  novel gets a stable, distinct slot a follow-up sync can replace. */
+        private const val NOVEL_NOTIF_ID_BASE = 2_000_000
     }
 }
