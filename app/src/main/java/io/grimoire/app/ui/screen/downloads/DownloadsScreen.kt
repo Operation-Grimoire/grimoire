@@ -7,7 +7,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,7 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -74,7 +74,20 @@ import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Each chip in the downloads filter row represents a logical "category" of download
+ * statuses (downloading, queued, …). Storing the selection as a Set<DownloadStatusFilter>
+ * lets the user pick any combination — the actual ordinal predicate the list filters
+ * on is the union of every selected category's [ordinals].
+ */
+private enum class DownloadStatusFilter(val label: String, val ordinals: Set<Int>) {
+    DOWNLOADING("Downloading", ChapterDownloadStatus.DOWNLOADING_ORDINALS),
+    QUEUED("Queued", ChapterDownloadStatus.QUEUED_ORDINALS),
+    DONE("Done", setOf(ChapterDownloadStatus.DOWNLOADED.ordinal)),
+    FAILED("Failed", ChapterDownloadStatus.ERROR_ORDINALS),
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DownloadsScreen(
     viewModel: DownloadsViewModel = hiltViewModel(),
@@ -85,7 +98,12 @@ fun DownloadsScreen(
     val isPaused by viewModel.isPaused.collectAsState()
     val concurrency by viewModel.concurrency.collectAsState()
     var expandedNovels by remember { mutableStateOf(setOf<Long>()) }
-    var statusFilter by remember { mutableStateOf<Set<Int>?>(null) }
+    var selectedStatusFilters by remember { mutableStateOf(emptySet<DownloadStatusFilter>()) }
+    // Empty selection collapses to null (no restriction) so downstream code keeps the
+    // same null-vs-non-null shape it had before this was multi-select.
+    val statusFilter: Set<Int>? = selectedStatusFilters
+        .takeIf { it.isNotEmpty() }
+        ?.flatMapTo(mutableSetOf()) { it.ordinals }
     var showSettings by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
@@ -305,22 +323,35 @@ fun DownloadsScreen(
             }
             else -> LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
                 item {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    // FlowRow wraps chips onto multiple lines so the full set of
+                    // categories stays visible without horizontal scrolling, and
+                    // tapping a chip toggles it in or out of the selection set.
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        val chips: List<Pair<String, Set<Int>?>> = listOf(
-                            "All" to null,
-                            "Downloading" to ChapterDownloadStatus.DOWNLOADING_ORDINALS,
-                            "Queued" to ChapterDownloadStatus.QUEUED_ORDINALS,
-                            "Done" to setOf(ChapterDownloadStatus.DOWNLOADED.ordinal),
-                            "Failed" to ChapterDownloadStatus.ERROR_ORDINALS,
+                        // "All" is its own chip that clears the selection rather
+                        // than toggling a value — guarantees the unfiltered state
+                        // is always one tap away regardless of what else is on.
+                        FilterChip(
+                            selected = selectedStatusFilters.isEmpty(),
+                            onClick = { selectedStatusFilters = emptySet() },
+                            label = { Text("All") },
                         )
-                        items(chips) { (label, value) ->
+                        DownloadStatusFilter.entries.forEach { chip ->
                             FilterChip(
-                                selected = statusFilter == value,
-                                onClick = { statusFilter = value },
-                                label = { Text(label) },
+                                selected = chip in selectedStatusFilters,
+                                onClick = {
+                                    selectedStatusFilters = if (chip in selectedStatusFilters) {
+                                        selectedStatusFilters - chip
+                                    } else {
+                                        selectedStatusFilters + chip
+                                    }
+                                },
+                                label = { Text(chip.label) },
                             )
                         }
                     }
