@@ -30,7 +30,12 @@ class DownloadService : Service() {
         showNotification("Starting…")
         scope.launch {
             val downloaded = downloadManager.processQueue { chapterName, remaining ->
-                val text = if (remaining > 0) "$chapterName  (+$remaining queued)" else chapterName
+                val text = when {
+                    chapterName.isBlank() && remaining > 0 -> "+$remaining queued"
+                    chapterName.isBlank() -> "Downloading…"
+                    remaining > 0 -> "$chapterName  (+$remaining queued)"
+                    else -> chapterName
+                }
                 showNotification(text)
             }
             if (downloaded == -1) return@launch  // already processing in another coroutine — don't stop

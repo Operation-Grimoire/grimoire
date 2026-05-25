@@ -193,8 +193,19 @@ interface ChapterDao {
     )
     suspend fun cancelAllFailed(novelId: Long)
 
-    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE downloadStatus != 0 ORDER BY novelId ASC, chapterNumber ASC")
-    fun getAllDownloads(): Flow<List<ChapterEntity>>
+    @Query("""
+        SELECT ch.id, ch.novelId, ch.url, ch.name, ch.uploadDate, ch.chapterNumber,
+               ch.translator, ch.read, ch.readProgress, ch.readAnchorItemIndex,
+               ch.readAnchorItemOffset, ch.downloadStatus, ch.queueOrder,
+               ch.firstReadAt, ch.wordCount, ch.locked
+        FROM chapters ch
+        INNER JOIN novels n ON n.id = ch.novelId
+        LEFT JOIN categories c ON c.id = n.categoryId
+        WHERE ch.downloadStatus != 0
+          AND (:excludeHidden = 0 OR IFNULL(c.isHidden, 0) = 0)
+        ORDER BY ch.novelId ASC, ch.chapterNumber ASC
+    """)
+    fun getAllDownloads(excludeHidden: Boolean): Flow<List<ChapterEntity>>
 
     @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId IN (:novelIds)")
     fun getChaptersForNovels(novelIds: List<Long>): Flow<List<ChapterEntity>>

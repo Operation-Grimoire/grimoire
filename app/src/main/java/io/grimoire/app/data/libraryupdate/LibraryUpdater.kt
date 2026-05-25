@@ -18,6 +18,7 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
 import io.grimoire.app.data.local.entity.UpdateIssueSeverity
 import io.grimoire.app.data.preferences.LibraryUpdatePreferences
 import io.grimoire.app.data.source.fetchAllChapters
+import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.extension.LoadedExtension
 import kotlinx.coroutines.CancellationException
@@ -55,6 +56,7 @@ class LibraryUpdater @Inject constructor(
     private val extensionManager: ExtensionManager,
     private val preferences: LibraryUpdatePreferences,
     private val downloadManager: DownloadManager,
+    private val authManager: HiddenCategoriesAuthManager,
 ) {
 
     /**
@@ -75,6 +77,13 @@ class LibraryUpdater @Inject constructor(
         val extensions = extensionManager.extensions.value
         val autoDownload = preferences.autoDownloadNewChapters.changes().first()
         val n = preferences.concurrency.changes().first().coerceIn(1, MAX_CONCURRENCY)
+        // Snapshot hidden categories once per run; per-call read of authManager.isUnlocked.value
+        // lets a mid-sync unlock/lock toggle take effect on subsequent progress emissions.
+        val hiddenCategoryIds = categoryDao.getAllOnce()
+            .filter { it.isHidden }.map { it.id }.toSet()
+        fun titleFor(novel: NovelEntity): String =
+            if (!authManager.isUnlocked.value && novel.categoryId in hiddenCategoryIds) ""
+            else novel.title
 
         val queue = ArrayDeque(targets)
         val mutex = Mutex()
@@ -88,7 +97,7 @@ class LibraryUpdater @Inject constructor(
                 launch {
                     while (true) {
                         val novel = mutex.withLock { queue.removeFirstOrNull() } ?: break
-                        onProgress(done.get(), total, novel.title)
+                        onProgress(done.get(), total, titleFor(novel))
                         when (val result = refreshNovel(novel, extensions, autoDownload)) {
                             is NovelRefreshResult.Ok -> {
                                 newChapters.addAndGet(result.newChapters)

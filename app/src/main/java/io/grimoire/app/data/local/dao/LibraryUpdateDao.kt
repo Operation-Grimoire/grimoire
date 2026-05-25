@@ -8,11 +8,24 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LibraryUpdateDao {
-    @Query("SELECT * FROM library_updates ORDER BY foundAt DESC, id DESC")
-    fun getAll(): Flow<List<LibraryUpdateEntity>>
+    // The LEFT JOIN keeps rows whose novel is in the default category (categoryId = NULL)
+    // visible regardless of :excludeHidden, matching the LibraryScreen filter semantics.
+    @Query("""
+        SELECT lu.* FROM library_updates lu
+        INNER JOIN novels n ON n.id = lu.novelId
+        LEFT JOIN categories c ON c.id = n.categoryId
+        WHERE :excludeHidden = 0 OR IFNULL(c.isHidden, 0) = 0
+        ORDER BY lu.foundAt DESC, lu.id DESC
+    """)
+    fun getAll(excludeHidden: Boolean): Flow<List<LibraryUpdateEntity>>
 
-    @Query("SELECT COUNT(*) FROM library_updates")
-    fun count(): Flow<Int>
+    @Query("""
+        SELECT COUNT(*) FROM library_updates lu
+        INNER JOIN novels n ON n.id = lu.novelId
+        LEFT JOIN categories c ON c.id = n.categoryId
+        WHERE :excludeHidden = 0 OR IFNULL(c.isHidden, 0) = 0
+    """)
+    fun count(excludeHidden: Boolean): Flow<Int>
 
     @Insert
     suspend fun insertAll(entries: List<LibraryUpdateEntity>)

@@ -9,8 +9,10 @@ import io.grimoire.app.data.local.dao.LibraryUpdateDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
+import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -24,14 +26,18 @@ class LibraryUpdatesViewModel @Inject constructor(
     private val chapterDao: ChapterDao,
     private val downloadManager: DownloadManager,
     novelDao: NovelDao,
+    authManager: HiddenCategoriesAuthManager,
 ) : ViewModel() {
 
-    val entries: StateFlow<List<LibraryUpdateEntity>> = libraryUpdateDao.getAll()
+    private val excludeHidden = authManager.isUnlocked.map { !it }.distinctUntilChanged()
+
+    val entries: StateFlow<List<LibraryUpdateEntity>> = excludeHidden
+        .flatMapLatest { libraryUpdateDao.getAll(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Novel ids the user has opted in to notifications for; surfaced as a separate section above the rest. */
-    val subscribedNovelIds: StateFlow<Set<Long>> = novelDao.getSubscribedNovelIds()
-        .map { it.toSet() }
+    val subscribedNovelIds: StateFlow<Set<Long>> = excludeHidden
+        .flatMapLatest { novelDao.getSubscribedNovelIds(it).map { ids -> ids.toSet() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     /**
