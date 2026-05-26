@@ -6,11 +6,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MenuBook
@@ -42,7 +42,7 @@ fun SettingsScreen(
     onNavigateToLibraryUpdates: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToNovelUpdates: () -> Unit,
-    onNavigateToGitHubAccount: () -> Unit,
+    onNavigateToConnections: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -141,10 +141,10 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.AccountCircle,
-                    title = "GitHub account",
-                    subtitle = "Connect to install extensions from private repos",
-                    onClick = onNavigateToGitHubAccount,
+                    icon = Icons.Default.Hub,
+                    title = "Connections",
+                    subtitle = "External accounts and services",
+                    onClick = onNavigateToConnections,
                 )
             }
         }
