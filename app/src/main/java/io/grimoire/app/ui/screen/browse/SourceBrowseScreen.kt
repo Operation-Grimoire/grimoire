@@ -841,7 +841,41 @@ private fun FilterGroupPickerDialog(
                         }
                     }
                 }
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                // Anything-selected check uses the same dispatch shape as the
+                // rows above so Clear lights up for both CheckBox and TriState
+                // children, and disabling it when nothing is set keeps the
+                // affordance from looking actionable on an empty group.
+                val anySelected = children.any { c ->
+                    when (c) {
+                        is Filter.TriState -> c.state != Filter.TriState.STATE_IGNORE
+                        is Filter.CheckBox -> c.state
+                        else -> false
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(
+                        enabled = anySelected,
+                        onClick = {
+                            children.forEachIndexed { i, child ->
+                                when (child) {
+                                    is Filter.CheckBox -> {
+                                        child.state = false
+                                        states[i] = false
+                                    }
+                                    is Filter.TriState -> {
+                                        child.state = Filter.TriState.STATE_IGNORE
+                                        states[i] = Filter.TriState.STATE_IGNORE
+                                    }
+                                    else -> Unit
+                                }
+                            }
+                            onChanged()
+                        },
+                    ) { Text("Clear") }
                     TextButton(onClick = onDismiss) { Text("Done") }
                 }
             }
