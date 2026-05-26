@@ -740,7 +740,14 @@ private fun FilterItem(
     }
 }
 
-/** A searchable include/exclude picker for the children of a [Filter.Group]. */
+/**
+ * A searchable picker for the children of a [Filter.Group]. Each row's
+ * affordance is chosen from the child's runtime type: [Filter.CheckBox]
+ * renders as a binary toggle, [Filter.TriState] cycles include/exclude/any.
+ * Treating every child as tri-state regardless of declared type used to
+ * write `Int` into a CheckBox's `Boolean state` and crash at the source
+ * with `ClassCastException`.
+ */
 @Composable
 private fun FilterGroupPickerDialog(
     title: String,
@@ -749,12 +756,12 @@ private fun FilterGroupPickerDialog(
     onDismiss: () -> Unit,
 ) {
     var search by remember { mutableStateOf("") }
-    // Compose-observable mirror of each child's tri-state, keyed by index.
+    // Compose-observable mirror of each child's state, keyed by index. The
+    // value type matches the child filter type (Boolean for CheckBox, Int for
+    // TriState) — the per-row branch below reads and writes the right shape.
     val states = remember(children) {
-        mutableStateMapOf<Int, Int>().apply {
-            children.forEachIndexed { i, c ->
-                put(i, c.state as? Int ?: Filter.TriState.STATE_IGNORE)
-            }
+        mutableStateMapOf<Int, Any?>().apply {
+            children.forEachIndexed { i, c -> put(i, c.state) }
         }
     }
     val filtered = remember(search, children) {
@@ -794,20 +801,34 @@ private fun FilterGroupPickerDialog(
                 }
                 LazyColumn(Modifier.weight(1f, fill = false)) {
                     lazyItems(filtered, key = { it }) { idx ->
-                        val current = states[idx] ?: Filter.TriState.STATE_IGNORE
-                        TriStatePickerRow(
-                            name = children[idx].name,
-                            state = current,
-                        ) {
-                            val next = when (current) {
-                                Filter.TriState.STATE_IGNORE -> Filter.TriState.STATE_INCLUDE
-                                Filter.TriState.STATE_INCLUDE -> Filter.TriState.STATE_EXCLUDE
-                                else -> Filter.TriState.STATE_IGNORE
+                        val child = children[idx]
+                        when (child) {
+                            is Filter.CheckBox -> {
+                                val checked = states[idx] as? Boolean ?: false
+                                CheckBoxPickerRow(name = child.name, checked = checked) {
+                                    val next = !checked
+                                    states[idx] = next
+                                    child.state = next
+                                    onChanged()
+                                }
                             }
-                            states[idx] = next
-                            @Suppress("UNCHECKED_CAST")
-                            (children[idx] as Filter<Any?>).state = next
-                            onChanged()
+                            is Filter.TriState -> {
+                                val current = states[idx] as? Int
+                                    ?: Filter.TriState.STATE_IGNORE
+                                TriStatePickerRow(name = child.name, state = current) {
+                                    val next = when (current) {
+                                        Filter.TriState.STATE_IGNORE -> Filter.TriState.STATE_INCLUDE
+                                        Filter.TriState.STATE_INCLUDE -> Filter.TriState.STATE_EXCLUDE
+                                        else -> Filter.TriState.STATE_IGNORE
+                                    }
+                                    states[idx] = next
+                                    child.state = next
+                                    onChanged()
+                                }
+                            }
+                            // Other Filter subtypes (Text, Select, …) inside a
+                            // Group aren't meaningful — skip rather than guess.
+                            else -> Unit
                         }
                     }
                 }
@@ -816,6 +837,21 @@ private fun FilterGroupPickerDialog(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CheckBoxPickerRow(name: String, checked: Boolean, onToggle: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggle() }
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = { onToggle() })
+        Spacer(Modifier.width(8.dp))
+        Text(name, modifier = Modifier.weight(1f))
     }
 }
 
