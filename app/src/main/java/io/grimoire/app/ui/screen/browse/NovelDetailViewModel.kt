@@ -165,6 +165,26 @@ class NovelDetailViewModel @Inject constructor(
     private val _chapterSort = MutableStateFlow(ChapterSort.NUMBER_ASC)
     val chapterSort: StateFlow<ChapterSort> = _chapterSort.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    fun setSearchQuery(value: String) {
+        _searchQuery.value = value
+    }
+
+    /**
+     * Sorted + search-filtered chapters fed to the screen. Single source of truth so the
+     * pager, the FAB, and the fast scroller always agree about what the list will render.
+     */
+    @OptIn(FlowPreview::class)
+    val displayedChapters: StateFlow<List<ChapterEntity>> = combine(
+        chapters,
+        _chapterSort,
+        _searchQuery.debounce(120L),
+    ) { list, sort, query ->
+        projectChapters(list, sort, query)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     private val _categoryId = MutableStateFlow<Long?>(null)
     val categoryId: StateFlow<Long?> = _categoryId.asStateFlow()
 
