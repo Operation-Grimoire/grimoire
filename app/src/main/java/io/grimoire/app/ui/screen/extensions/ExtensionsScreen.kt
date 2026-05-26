@@ -558,6 +558,7 @@ private fun AuthRequiredBanner(
                     "github.com/settings/applications" to "https://github.com/settings/applications",
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                OutlinedButton(onClick = onConnect) { Text("Manage GitHub connection") }
             }
         }
     }
