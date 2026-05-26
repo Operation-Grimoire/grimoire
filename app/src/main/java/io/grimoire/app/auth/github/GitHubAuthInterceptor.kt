@@ -33,14 +33,18 @@ class GitHubAuthInterceptor @Inject constructor(
         if (token != null) {
             builder.header("Authorization", "Bearer $token")
         }
-        // GitHub serves private-repo release-asset URLs as 404 to anything
-        // whose Accept header doesn't allow octet-stream, even when a valid
-        // token is attached. Public-repo downloads happily accept */* (the
-        // OkHttp default), so adding this is harmless across the board.
-        if (host == "github.com" &&
-            original.header("Accept") == null &&
-            original.url.encodedPath.contains("/releases/download/")
-        ) {
+        // GitHub serves release-asset bytes only when the request accepts
+        // application/octet-stream. Two URL shapes hit this path:
+        //  - github.com/{owner}/{repo}/releases/download/{tag}/{name}
+        //    (browser-style; used by public-repo index entries and any pre-
+        //    rewrite stragglers).
+        //  - api.github.com/repos/{owner}/{repo}/releases/assets/{id}
+        //    (API style; what ExtensionIndexFetcher rewrites to for private
+        //    repos, and what Coil hits for icon loads).
+        val path = original.url.encodedPath
+        val isAssetFetch = (host == "github.com" && path.contains("/releases/download/")) ||
+            (host == "api.github.com" && path.startsWith("/repos/") && path.contains("/releases/assets/"))
+        if (isAssetFetch && original.header("Accept") == null) {
             builder.header("Accept", "application/octet-stream")
         }
 

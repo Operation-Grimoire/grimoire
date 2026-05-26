@@ -21,7 +21,7 @@ class ExtensionIndexFetcher @Inject constructor(
     @ApplicationContext context: Context,
     @GitHubAuthorized private val client: OkHttpClient,
 ) {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val cacheDir = File(context.cacheDir, "ext_index").also { it.mkdirs() }
 
     private fun cacheFile(indexUrl: String) =
@@ -36,59 +36,93 @@ class ExtensionIndexFetcher @Inject constructor(
     suspend fun fetch(indexUrl: String): Result<List<RemoteExtension>> =
         withContext(Dispatchers.IO) {
             runCatching {
-                val body = GitHubReleaseAsset.parse(indexUrl)
+                val list = GitHubReleaseAsset.parse(indexUrl)
                     ?.let { fetchViaGitHubApi(it, indexUrl) }
                     ?: fetchDirect(indexUrl)
-                val list = json.decodeFromString<List<RemoteExtension>>(body)
-                cacheFile(indexUrl).writeText(body)
+                cacheFile(indexUrl).writeText(json.encodeToString(list))
                 list
             }
         }
 
-    private fun fetchDirect(indexUrl: String): String {
+    private fun fetchDirect(indexUrl: String): List<RemoteExtension> {
         val request = Request.Builder().url(indexUrl).build()
         return client.newCall(request).execute().use { response ->
             checkSuccess(response, indexUrl)
-            response.body!!.string()
+            json.decodeFromString(response.body!!.string())
         }
     }
 
     /**
      * GitHub serves private-repo release assets reliably through its REST
      * API. Walks two API hops:
-     *  1. `/repos/{owner}/{repo}/releases/tags/{tag}` to look up the asset's
-     *     numeric id (the only way; asset name isn't a valid lookup key on
-     *     the assets endpoint).
+     *  1. `/repos/{owner}/{repo}/releases/tags/{tag}` to enumerate the
+     *     release's assets (id + name for each).
      *  2. `/repos/{owner}/{repo}/releases/assets/{id}` with
-     *     `Accept: application/octet-stream` to download. The interceptor
-     *     attaches the Bearer token; OkHttp follows the 302 to the signed
-     *     CDN URL (stripping Authorization on the cross-host hop, which is
-     *     correct — the signed URL self-authenticates).
+     *     `Accept: application/octet-stream` to download the index.
+     *
+     * While we have the assets list in hand we also rewrite every browser-
+     * style download URL inside the index (APK url + iconUrl) to its
+     * api.github.com asset URL. Downstream consumers — Coil for icons, the
+     * APK installer, the cache — then transparently hit endpoints that
+     * actually accept Bearer auth on private repos.
      */
-    private fun fetchViaGitHubApi(asset: GitHubReleaseAsset, indexUrl: String): String {
-        val releaseReq = Request.Builder()
-            .url(asset.releaseByTagUrl())
-            .header("Accept", "application/vnd.github+json")
-            .build()
-        val releaseJson = client.newCall(releaseReq).execute().use { resp ->
-            checkSuccess(resp, asset.releaseByTagUrl())
-            resp.body!!.string()
-        }
-        val release = json.decodeFromString<GitHubRelease>(releaseJson)
-        val match = release.assets.firstOrNull { it.name == asset.name }
+    private fun fetchViaGitHubApi(asset: GitHubReleaseAsset, indexUrl: String): List<RemoteExtension> {
+        val release = fetchRelease(asset)
+        val indexAsset = release.assets.firstOrNull { it.name == asset.name }
             ?: throw IndexAuthRequiredException(
                 "Release ${asset.tag} has no asset named ${asset.name}.",
                 statusCode = 404,
             )
+        val indexBody = downloadAsset(asset, indexAsset.id, indexUrl)
+        val raw: List<RemoteExtension> = json.decodeFromString(indexBody)
+        val byName = release.assets.associateBy { it.name }
+        return raw.map { it.rewriteGitHubUrls(asset, byName) }
+    }
 
-        val assetReq = Request.Builder()
-            .url(asset.assetDownloadUrl(match.id))
+    private fun fetchRelease(asset: GitHubReleaseAsset): GitHubRelease {
+        val req = Request.Builder()
+            .url(asset.releaseByTagUrl())
+            .header("Accept", "application/vnd.github+json")
+            .build()
+        return client.newCall(req).execute().use { resp ->
+            checkSuccess(resp, asset.releaseByTagUrl())
+            json.decodeFromString(resp.body!!.string())
+        }
+    }
+
+    private fun downloadAsset(asset: GitHubReleaseAsset, assetId: Long, indexUrl: String): String {
+        val req = Request.Builder()
+            .url(asset.assetDownloadUrl(assetId))
             .header("Accept", "application/octet-stream")
             .build()
-        return client.newCall(assetReq).execute().use { resp ->
+        return client.newCall(req).execute().use { resp ->
             checkSuccess(resp, indexUrl)
             resp.body!!.string()
         }
+    }
+
+    private fun RemoteExtension.rewriteGitHubUrls(
+        source: GitHubReleaseAsset,
+        assetsByName: Map<String, GitHubAsset>,
+    ): RemoteExtension = copy(
+        url = rewriteAssetUrl(url, source, assetsByName) ?: url,
+        iconUrl = iconUrl?.let { rewriteAssetUrl(it, source, assetsByName) ?: it },
+    )
+
+    private fun rewriteAssetUrl(
+        url: String,
+        source: GitHubReleaseAsset,
+        assetsByName: Map<String, GitHubAsset>,
+    ): String? {
+        val parsed = GitHubReleaseAsset.parse(url) ?: return null
+        // Only rewrite within the same release we just fetched; an
+        // index.json that points at a different repo's release stays
+        // untouched.
+        if (parsed.owner != source.owner || parsed.repo != source.repo || parsed.tag != source.tag) {
+            return null
+        }
+        val match = assetsByName[parsed.name] ?: return null
+        return source.assetDownloadUrl(match.id)
     }
 
     private fun checkSuccess(response: Response, requestedUrl: String) {
