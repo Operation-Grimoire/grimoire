@@ -111,7 +111,9 @@ private fun ParsedReleaseNotes(text: String) {
 
 @Composable
 private fun ChangelogSectionCard(section: ChangelogSection) {
-    var expanded by remember { mutableStateOf(true) }
+    // Start collapsed so the dialog opens at a glanceable height — section
+    // headers + counts read as a summary, taps reveal the individual items.
+    var expanded by remember { mutableStateOf(false) }
     val chevronRotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         label = "changelog-chevron",
