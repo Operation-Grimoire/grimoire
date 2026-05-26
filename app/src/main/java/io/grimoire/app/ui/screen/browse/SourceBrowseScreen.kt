@@ -26,7 +26,9 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -78,6 +80,7 @@ fun SourceBrowseScreen(
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
     val hasMore by viewModel.hasMore.collectAsState()
     val error by viewModel.error.collectAsState()
+    val cloudflareBlocked by viewModel.cloudflareBlocked.collectAsState()
     val mode by viewModel.mode.collectAsState()
     val query by viewModel.query.collectAsState()
     val displayMode by viewModel.displayMode.collectAsState()
@@ -199,6 +202,42 @@ fun SourceBrowseScreen(
             when {
                 isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
+                }
+                cloudflareBlocked && novels.isEmpty() -> Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.Shield,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(48.dp),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            "Cloudflare challenge",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "${viewModel.sourceName} is protected by a Cloudflare challenge " +
+                                "that couldn't be solved automatically. Open it in WebView, " +
+                                "solve the challenge there, then come back and retry.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Button(onClick = { onOpenWebView(viewModel.sourceBaseUrl) }) {
+                            Icon(Icons.Default.Language, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Open in WebView")
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        TextButton(onClick = { viewModel.retry() }) { Text("Retry") }
+                    }
                 }
                 error != null && novels.isEmpty() -> Box(
                     Modifier.fillMaxSize(),

@@ -43,7 +43,10 @@ val appGitSha = gitSha()
 
 // Single source of truth for the extensions-api version — used for the Gradle
 // dependency and for the BuildConfig field shown on the About screen.
-val extensionsApiVersion = "0.3.0"
+// 0.4.0-SNAPSHOT picks up CloudflareException (typed Cloudflare-block
+// surface) consumed by SourceBrowseViewModel. Re-pin to the immutable
+// 0.4.0 release once it is cut.
+val extensionsApiVersion = "0.4.0-SNAPSHOT"
 
 // OAuth App client ID — public, ships in the APK. Read from gradle.properties
 // (or env GITHUB_OAUTH_CLIENT_ID) so a fork can substitute its own without
