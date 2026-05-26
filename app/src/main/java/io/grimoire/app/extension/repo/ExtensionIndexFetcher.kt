@@ -6,6 +6,8 @@ import io.grimoire.app.di.GitHubAuthorized
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -39,7 +41,9 @@ class ExtensionIndexFetcher @Inject constructor(
                 val list = GitHubReleaseAsset.parse(indexUrl)
                     ?.let { fetchViaGitHubApi(it, indexUrl) }
                     ?: fetchDirect(indexUrl)
-                cacheFile(indexUrl).writeText(json.encodeToString(list))
+                cacheFile(indexUrl).writeText(
+                    json.encodeToString(ListSerializer(RemoteExtension.serializer()), list),
+                )
                 list
             }
         }
