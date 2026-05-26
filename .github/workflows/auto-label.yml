@@ -1,0 +1,68 @@
+name: Auto-label PRs
+
+# Labels every pull request by inspecting its title and applying one of the
+# labels that `.github/release.yml` already consumes for the release-notes
+# `categories` block. Without this step every PR ends up under the "*"
+# catch-all on the release page, which shows up in the in-app updates
+# screen as a single undifferentiated "Other changes" section.
+#
+# Precedence (first match wins, so a "Fix crash when adding X" lands in
+# Bug fixes rather than Features):
+#   1. bug-fix verbs / keywords → `bug`
+#   2. source / extension keywords → `source`
+#   3. documentation keywords → `documentation`
+#   4. feature verbs → `enhancement`
+# Anything else stays unlabelled, which keeps the catch-all behaviour for
+# refactors / housekeeping PRs.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const title = (pr.title || '').toLowerCase();
+
+            const matchers = [
+              { label: 'bug', pattern: /^(fix(es|ed)?|repair|correct|resolve|patch|restore|guard|prevent|stop)\b|crash|regression|broken|race condition|leak/ },
+              { label: 'source', pattern: /\b(source|extension)s?\b/ },
+              { label: 'documentation', pattern: /^(doc|docs|readme|documentation)\b/ },
+              { label: 'enhancement', pattern: /^(add|adds|introduce|implement|support|enable|expose|allow|show|surface|track|expand)\b|\b(feature|enhancement)\b/ },
+            ];
+
+            const toApply = [];
+            for (const { label, pattern } of matchers) {
+              if (pattern.test(title)) {
+                toApply.push(label);
+                break;
+              }
+            }
+
+            if (toApply.length === 0) {
+              core.info(`No label match for PR title: "${pr.title}"`);
+              return;
+            }
+
+            const existing = (pr.labels || []).map(l => l.name);
+            const missing = toApply.filter(l => !existing.includes(l));
+            if (missing.length === 0) {
+              core.info(`PR already carries ${toApply.join(', ')}`);
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: missing,
+            });
+            core.info(`Applied: ${missing.join(', ')}`);
