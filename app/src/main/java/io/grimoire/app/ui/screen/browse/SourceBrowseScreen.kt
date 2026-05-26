@@ -703,9 +703,18 @@ private fun FilterItem(
             val children = remember(filter) {
                 (filter.state as? List<*>).orEmpty().filterIsInstance<Filter<*>>()
             }
+            // Mirror the dispatch in FilterGroupPickerDialog: count tri-state
+            // include/exclude AND checked binary boxes so the badge reflects
+            // whichever shape this Group's children take.
             val selectedCount = (state as? List<*>).orEmpty()
-                .filterIsInstance<Filter.TriState>()
-                .count { it.state != Filter.TriState.STATE_IGNORE }
+                .filterIsInstance<Filter<*>>()
+                .count { child ->
+                    when (child) {
+                        is Filter.TriState -> child.state != Filter.TriState.STATE_IGNORE
+                        is Filter.CheckBox -> child.state
+                        else -> false
+                    }
+                }
             var showPicker by remember { mutableStateOf(false) }
             Row(
                 modifier = Modifier
