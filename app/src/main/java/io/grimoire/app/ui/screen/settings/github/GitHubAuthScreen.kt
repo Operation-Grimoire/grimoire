@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.auth.github.AuthFailure
 import io.grimoire.app.auth.github.GitHubAuthState
+import io.grimoire.app.ui.component.LinkText
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,10 +76,11 @@ fun GitHubAuthScreen(
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(
-                "Connect a GitHub account to install extensions from your own private repositories. " +
+            LinkText(
+                text = "Connect a GitHub account to install extensions from your own private repositories. " +
                     "Your access token is stored only on this device and is sent only to github.com. " +
                     "Revoke any time at github.com/settings/applications.",
+                "github.com/settings/applications" to "https://github.com/settings/applications",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
