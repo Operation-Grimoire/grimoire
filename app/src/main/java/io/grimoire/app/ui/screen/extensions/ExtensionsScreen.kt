@@ -30,6 +30,8 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -71,6 +73,7 @@ import io.grimoire.app.util.languageLabel
 fun ExtensionsScreen(
     onNavigateBack: () -> Unit = {},
     onOpenSourceSettings: (pkg: String) -> Unit = {},
+    onConnectGitHub: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ExtensionsViewModel = hiltViewModel(),
 ) {
@@ -78,6 +81,7 @@ fun ExtensionsScreen(
     val repos by viewModel.repos.collectAsState()
     val isFetching by viewModel.isFetching.collectAsState()
     val installStates by viewModel.installStates.collectAsState()
+    val authRequiredRepos by viewModel.authRequiredRepos.collectAsState()
 
     val installed = items.filterIsInstance<ExtensionItem.Installed>() +
             items.filterIsInstance<ExtensionItem.InstalledOnly>()
@@ -153,6 +157,14 @@ fun ExtensionsScreen(
             EmptyState("No extensions found\nAdd a repository to discover extensions", Modifier.padding(padding))
         } else {
             LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+                if (authRequiredRepos.isNotEmpty()) {
+                    item {
+                        AuthRequiredBanner(
+                            repoNames = authRequiredRepos.map { it.name },
+                            onConnect = onConnectGitHub,
+                        )
+                    }
+                }
                 if (installed.isNotEmpty()) {
                     item {
                         SectionHeader("Installed")
@@ -498,6 +510,37 @@ private fun RepoDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
+}
+
+@Composable
+private fun AuthRequiredBanner(
+    repoNames: List<String>,
+    onConnect: () -> Unit,
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+    ) {
+        Column(
+            Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                if (repoNames.size == 1) "Sign-in required for ${repoNames.first()}"
+                else "Sign-in required for ${repoNames.joinToString(", ")}",
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                "These look like private GitHub repositories. Connect a GitHub account to load them.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            OutlinedButton(onClick = onConnect) { Text("Connect GitHub") }
+        }
+    }
 }
 
 @Composable

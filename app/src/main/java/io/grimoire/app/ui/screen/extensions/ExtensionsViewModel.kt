@@ -32,6 +32,7 @@ class ExtensionsViewModel @Inject constructor(
     val items: StateFlow<List<ExtensionItem>> = repository.items
     val isFetching: StateFlow<Boolean> = repository.isFetching
     val fetchError: StateFlow<String?> = repository.fetchError
+    val authRequiredRepos: StateFlow<List<RepoEntity>> = repository.authRequiredRepos
 
     val repos: StateFlow<List<RepoEntity>> = repository.reposFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())

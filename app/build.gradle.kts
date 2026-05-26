@@ -45,6 +45,14 @@ val appGitSha = gitSha()
 // dependency and for the BuildConfig field shown on the About screen.
 val extensionsApiVersion = "0.3.0"
 
+// OAuth App client ID — public, ships in the APK. Read from gradle.properties
+// (or env GITHUB_OAUTH_CLIENT_ID) so a fork can substitute its own without
+// patching code.
+val githubOAuthClientId: String =
+    (project.findProperty("GITHUB_OAUTH_CLIENT_ID") as? String)
+        ?: System.getenv("GITHUB_OAUTH_CLIENT_ID")
+        ?: ""
+
 android {
     namespace = "io.grimoire.app"
     compileSdk {
@@ -62,6 +70,7 @@ android {
 
         buildConfigField("String", "GIT_SHA", "\"$appGitSha\"")
         buildConfigField("String", "EXTENSIONS_API_VERSION", "\"$extensionsApiVersion\"")
+        buildConfigField("String", "GITHUB_OAUTH_CLIENT_ID", "\"$githubOAuthClientId\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -121,6 +130,7 @@ dependencies {
     implementation(libs.androidx.documentfile)
     implementation(libs.androidx.media)
     implementation(libs.okhttp)
+    implementation(libs.androidx.security.crypto)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

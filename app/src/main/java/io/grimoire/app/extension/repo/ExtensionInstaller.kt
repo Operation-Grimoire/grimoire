@@ -2,9 +2,10 @@ package io.grimoire.app.extension.repo
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.api.network.defaultOkHttpClient
+import io.grimoire.app.di.GitHubAuthorized
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.security.MessageDigest
@@ -19,8 +20,8 @@ class HashMismatchException(
 @Singleton
 class ExtensionInstaller @Inject constructor(
     @ApplicationContext private val context: Context,
+    @GitHubAuthorized private val client: OkHttpClient,
 ) {
-    private val client = defaultOkHttpClient()
 
     suspend fun download(
         apkUrl: String,

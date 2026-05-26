@@ -80,6 +80,7 @@ import io.grimoire.app.ui.screen.settings.browse.BrowseSettingsScreen
 import io.grimoire.app.ui.screen.settings.hidden.HiddenCategoriesSettingsScreen
 import io.grimoire.app.ui.screen.settings.languages.LanguagesSettingsScreen
 import io.grimoire.app.ui.screen.settings.library.LibrarySettingsScreen
+import io.grimoire.app.ui.screen.settings.github.GitHubAuthScreen
 import io.grimoire.app.ui.screen.settings.novelupdates.NovelUpdatesSettingsScreen
 import io.grimoire.app.ui.screen.settings.reader.ReaderSettingsScreen
 import io.grimoire.app.ui.screen.settings.source.SourceLanguagesScreen
@@ -138,6 +139,7 @@ private const val ROUTE_ABOUT = "about"
 private const val ROUTE_SETTINGS_BACKUP = "settings/backup"
 private const val ROUTE_SETTINGS_HIDDEN = "settings/hidden_categories"
 private const val ROUTE_SETTINGS_NOVELUPDATES = "settings/novelupdates"
+private const val ROUTE_SETTINGS_GITHUB = "settings/github"
 private const val ROUTE_READER = "reader?pkg={pkg}&novelUrl={novelUrl}&chapterUrl={chapterUrl}"
 private const val ROUTE_WEBVIEW = "webview?url={url}"
 
@@ -477,7 +479,12 @@ fun AppNavigation(
                         onNavigateToLibraryUpdates = { navController.navigate(ROUTE_SETTINGS_LIBRARY_UPDATE) },
                         onNavigateToBackup = { navController.navigate(ROUTE_SETTINGS_BACKUP) },
                         onNavigateToNovelUpdates = { navController.navigate(ROUTE_SETTINGS_NOVELUPDATES) },
+                        onNavigateToGitHubAccount = { navController.navigate(ROUTE_SETTINGS_GITHUB) },
                     )
+                }
+
+                composable(route = ROUTE_SETTINGS_GITHUB) {
+                    GitHubAuthScreen(onNavigateBack = { navController.popBackStack() })
                 }
 
                 composable(route = ROUTE_SETTINGS_APPEARANCE) { entry ->
@@ -571,6 +578,7 @@ fun AppNavigation(
                     onOpenSourceSettings = { pkg ->
                         navController.navigate("settings/source/${Uri.encode(pkg)}")
                     },
+                    onConnectGitHub = { navController.navigate(ROUTE_SETTINGS_GITHUB) },
                 )
             }
 

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.ColorLens
@@ -41,6 +42,7 @@ fun SettingsScreen(
     onNavigateToLibraryUpdates: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToNovelUpdates: () -> Unit,
+    onNavigateToGitHubAccount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -135,6 +137,14 @@ fun SettingsScreen(
                     title = "NovelUpdates",
                     subtitle = "Show the NovelUpdates info panel",
                     onClick = onNavigateToNovelUpdates,
+                )
+            }
+            item {
+                SettingsNavItem(
+                    icon = Icons.Default.AccountCircle,
+                    title = "GitHub account",
+                    subtitle = "Connect to install extensions from private repos",
+                    onClick = onNavigateToGitHubAccount,
                 )
             }
         }
