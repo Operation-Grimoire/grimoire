@@ -30,6 +30,8 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -64,6 +66,7 @@ import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.component.ExtensionIcon
+import io.grimoire.app.ui.component.LinkText
 import io.grimoire.app.util.languageLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,6 +74,7 @@ import io.grimoire.app.util.languageLabel
 fun ExtensionsScreen(
     onNavigateBack: () -> Unit = {},
     onOpenSourceSettings: (pkg: String) -> Unit = {},
+    onConnectGitHub: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ExtensionsViewModel = hiltViewModel(),
 ) {
@@ -78,6 +82,8 @@ fun ExtensionsScreen(
     val repos by viewModel.repos.collectAsState()
     val isFetching by viewModel.isFetching.collectAsState()
     val installStates by viewModel.installStates.collectAsState()
+    val authRequiredRepos by viewModel.authRequiredRepos.collectAsState()
+    val githubLogin by viewModel.githubLogin.collectAsState()
 
     val installed = items.filterIsInstance<ExtensionItem.Installed>() +
             items.filterIsInstance<ExtensionItem.InstalledOnly>()
@@ -153,6 +159,15 @@ fun ExtensionsScreen(
             EmptyState("No extensions found\nAdd a repository to discover extensions", Modifier.padding(padding))
         } else {
             LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+                if (authRequiredRepos.isNotEmpty()) {
+                    item {
+                        AuthRequiredBanner(
+                            repoNames = authRequiredRepos.map { it.name },
+                            signedInAs = githubLogin,
+                            onConnect = onConnectGitHub,
+                        )
+                    }
+                }
                 if (installed.isNotEmpty()) {
                     item {
                         SectionHeader("Installed")
@@ -498,6 +513,55 @@ private fun RepoDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
+}
+
+@Composable
+private fun AuthRequiredBanner(
+    repoNames: List<String>,
+    signedInAs: String?,
+    onConnect: () -> Unit,
+) {
+    val joinedNames = repoNames.joinToString(", ")
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+    ) {
+        Column(
+            Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (signedInAs == null) {
+                Text(
+                    if (repoNames.size == 1) "Sign-in required for ${repoNames.first()}"
+                    else "Sign-in required for $joinedNames",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    "These look like private GitHub repositories. Connect a GitHub account to load them.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                OutlinedButton(onClick = onConnect) { Text("Connect GitHub") }
+            } else {
+                Text(
+                    if (repoNames.size == 1) "No access to ${repoNames.first()}"
+                    else "No access to $joinedNames",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                LinkText(
+                    text = "Signed in as @$signedInAs, but this OAuth app hasn't been granted access " +
+                        "to the owning organization yet. Approve it at github.com/settings/applications, " +
+                        "then pull to refresh.",
+                    "github.com/settings/applications" to "https://github.com/settings/applications",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                OutlinedButton(onClick = onConnect) { Text("Manage GitHub connection") }
+            }
+        }
+    }
 }
 
 @Composable

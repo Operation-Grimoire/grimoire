@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MenuBook
@@ -41,6 +42,7 @@ fun SettingsScreen(
     onNavigateToLibraryUpdates: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToNovelUpdates: () -> Unit,
+    onNavigateToConnections: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -135,6 +137,14 @@ fun SettingsScreen(
                     title = "NovelUpdates",
                     subtitle = "Show the NovelUpdates info panel",
                     onClick = onNavigateToNovelUpdates,
+                )
+            }
+            item {
+                SettingsNavItem(
+                    icon = Icons.Default.Hub,
+                    title = "Connections",
+                    subtitle = "External accounts and services",
+                    onClick = onNavigateToConnections,
                 )
             }
         }

@@ -3,6 +3,7 @@ package io.grimoire.app.ui.screen.extensions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.grimoire.app.auth.github.GitHubAuthStore
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionInstaller
 import io.grimoire.app.extension.repo.ExtensionItem
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -27,11 +29,22 @@ sealed class InstallState {
 class ExtensionsViewModel @Inject constructor(
     private val repository: ExtensionRepository,
     private val installer: ExtensionInstaller,
+    githubAuthStore: GitHubAuthStore,
 ) : ViewModel() {
 
     val items: StateFlow<List<ExtensionItem>> = repository.items
     val isFetching: StateFlow<Boolean> = repository.isFetching
     val fetchError: StateFlow<String?> = repository.fetchError
+    val authRequiredRepos: StateFlow<List<RepoEntity>> = repository.authRequiredRepos
+
+    /** Login of the currently-connected GitHub account, or null if disconnected. */
+    val githubLogin: StateFlow<String?> = githubAuthStore.account
+        .map { it?.login }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            githubAuthStore.account.value?.login,
+        )
 
     val repos: StateFlow<List<RepoEntity>> = repository.reposFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())

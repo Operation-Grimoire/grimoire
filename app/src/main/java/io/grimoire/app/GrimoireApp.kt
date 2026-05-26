@@ -17,9 +17,10 @@ import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.cache.CoverPreloader
 import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
+import io.grimoire.app.di.GitHubAuthorized
 import io.grimoire.app.extension.repo.ExtensionRepository
 import io.grimoire.api.network.NetworkContext
-import io.grimoire.api.network.defaultOkHttpClient
+import okhttp3.OkHttpClient
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -31,6 +32,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject lateinit var backupScheduler: BackupScheduler
     @Inject lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
     @Inject lateinit var extensionRepository: ExtensionRepository
+    @Inject @GitHubAuthorized lateinit var imageHttpClient: OkHttpClient
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -38,11 +40,15 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
             .build()
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
-        // Reuse the extension network stack so covers carry the WebView
-        // cf_clearance cookie + matching User-Agent. Without this, images on
-        // Cloudflare-protected sites (e.g. Foxaholic) get a challenge page
-        // instead of the image. Lambda form keeps client init off the main thread.
-        .okHttpClient { defaultOkHttpClient() }
+        // Reuse the @GitHubAuthorized extension network stack so:
+        //  - covers carry the WebView cf_clearance cookie + matching
+        //    User-Agent (default stack), so Cloudflare-protected sites
+        //    (e.g. Foxaholic) serve images rather than a challenge page;
+        //  - extension icons hosted in private GitHub repos receive the
+        //    Bearer token and the Accept: application/octet-stream the
+        //    api.github.com asset endpoint requires.
+        // Lambda form keeps client init off the main thread.
+        .okHttpClient { imageHttpClient }
         .memoryCache {
             MemoryCache.Builder(this)
                 .maxSizePercent(0.15)

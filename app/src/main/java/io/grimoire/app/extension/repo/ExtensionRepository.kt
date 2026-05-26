@@ -38,6 +38,15 @@ class ExtensionRepository @Inject constructor(
     private val _fetchError = MutableStateFlow<String?>(null)
     val fetchError: StateFlow<String?> = _fetchError.asStateFlow()
 
+    /**
+     * Set when at least one enabled repo's index returned 401/404 from a
+     * github.com host — the user almost certainly needs to connect their
+     * GitHub account before that repo will load. UI consumes this to surface
+     * a connect prompt. Cleared on the next refresh that doesn't see one.
+     */
+    private val _authRequiredRepos = MutableStateFlow<List<RepoEntity>>(emptyList())
+    val authRequiredRepos: StateFlow<List<RepoEntity>> = _authRequiredRepos.asStateFlow()
+
     /** Count of installed extensions that have a newer version in an enabled repo. */
     val updateCount: StateFlow<Int> = items
         .map { list -> list.count { it is ExtensionItem.Installed && it.hasUpdate } }
@@ -62,13 +71,18 @@ class ExtensionRepository @Inject constructor(
             // Slow path: fetch fresh index, then re-emit.
             val fresh = mutableMapOf<String, RemoteExtension>()
             val errors = mutableListOf<String>()
+            val authRequired = mutableListOf<RepoEntity>()
             for (repo in enabledRepos) {
                 fetcher.fetch(repo.indexUrl)
                     .onSuccess { list -> list.forEach { fresh[it.pkg] = it } }
-                    .onFailure { errors.add("${repo.name}: ${it.message}") }
+                    .onFailure { e ->
+                        if (e is IndexAuthRequiredException) authRequired.add(repo)
+                        errors.add("${repo.name}: ${e.message}")
+                    }
             }
 
-            if (errors.isNotEmpty()) _fetchError.value = errors.joinToString("\n")
+            _fetchError.value = errors.takeIf { it.isNotEmpty() }?.joinToString("\n")
+            _authRequiredRepos.value = authRequired
             _items.value = merge(installed, fresh)
         } finally {
             _isFetching.value = false
