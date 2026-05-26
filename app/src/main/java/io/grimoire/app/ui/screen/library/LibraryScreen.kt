@@ -45,7 +45,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.DriveFileMove
+import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -83,7 +83,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -423,7 +423,7 @@ fun LibraryScreen(
                 exit = shrinkVertically(shrinkTowards = Alignment.Bottom),
             ) {
                 TooltipIconButton(
-                    icon = Icons.Default.DriveFileMove,
+                    icon = Icons.AutoMirrored.Filled.DriveFileMove,
                     label = "Move",
                     onClick = { showBulkMove = true },
                 )
@@ -868,7 +868,7 @@ private fun FilterSortContent(
 ) {
     var tab by remember { mutableIntStateOf(0) }
     Column {
-        TabRow(selectedTabIndex = tab) {
+        SecondaryTabRow(selectedTabIndex = tab) {
             Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Filter") })
             Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Sort") })
         }
