@@ -13,13 +13,9 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,7 +27,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
@@ -40,7 +35,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
@@ -53,11 +47,9 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material.icons.filled.VerticalAlignTop
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -93,28 +85,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import io.grimoire.api.model.Novel
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.domain.migration.MigrationState
 import io.grimoire.app.ui.component.ChapterItem
 import io.grimoire.app.ui.component.FastScroller
-import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.MoveToCategorySheet
-import io.grimoire.app.ui.component.RatingLabel
 import io.grimoire.app.ui.screen.library.HiddenCategoriesUnlockDialog
-import io.grimoire.app.ui.component.StatusLabel
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
-import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.component.rememberShimmerAlpha
 import io.grimoire.app.ui.theme.premiumGold
 import kotlinx.coroutines.launch
@@ -1058,248 +1044,4 @@ fun NovelDetailScreen(
         }
     }
 }
-
-@Composable
-private fun JumpDialog(
-    nextUnreadLabel: String?,
-    onJumpToNextUnread: () -> Unit,
-    onDismiss: () -> Unit,
-    onJump: (Int) -> Unit,
-) {
-    var input by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Jump to chapter") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (nextUnreadLabel != null) {
-                    AssistChip(
-                        onClick = onJumpToNextUnread,
-                        label = {
-                            Text(
-                                "Next unread: $nextUnreadLabel",
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null)
-                        },
-                    )
-                }
-                OutlinedTextField(
-                    value = input,
-                    onValueChange = { input = it.filter { c -> c.isDigit() } },
-                    label = { Text("Chapter number") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Go,
-                    ),
-                    keyboardActions = KeyboardActions(onGo = { input.toIntOrNull()?.let(onJump) }),
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { input.toIntOrNull()?.let(onJump) },
-                enabled = input.isNotBlank(),
-            ) { Text("Go") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
-}
-
-@Composable
-private fun RefreshSummaryDialog(
-    summary: RefreshSummary,
-    onDismiss: () -> Unit,
-) {
-    val count = summary.chapters.size
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = {
-            Icon(
-                Icons.Default.NewReleases,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        },
-        title = { Text(if (count == 1) "1 new chapter" else "$count new chapters") },
-        text = {
-            LazyColumn(
-                modifier = Modifier.heightIn(max = 280.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(
-                    count = summary.chapters.size,
-                    key = { summary.chapters[it].let { ch -> "${ch.chapterNumber}-${ch.name}" } },
-                ) { i ->
-                    RefreshSummaryRow(summary.chapters[i])
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("OK") }
-        },
-    )
-}
-
-@Composable
-private fun RefreshSummaryRow(chapter: RefreshedChapter) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        if (chapter.locked) {
-            Icon(
-                Icons.Default.Lock,
-                contentDescription = "Locked",
-                modifier = Modifier.size(14.dp),
-                tint = MaterialTheme.colorScheme.premiumGold,
-            )
-        }
-        if (chapter.unlockedFromLocked) {
-            Text(
-                text = "Unlocked",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.premiumGold,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(MaterialTheme.colorScheme.premiumGold.copy(alpha = 0.15f))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-            )
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            if (chapter.chapterNumber >= 0f) {
-                val formatted = if (chapter.chapterNumber % 1f == 0f) {
-                    chapter.chapterNumber.toInt().toString()
-                } else {
-                    chapter.chapterNumber.toString()
-                }
-                Text(
-                    text = "Chapter $formatted",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Text(
-                text = chapter.name,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
-@Composable
-private fun NovelHeaderSkeleton(modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier.fillMaxWidth().padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        ShimmerBox(modifier = Modifier.width(120.dp).aspectRatio(2f / 3f), shape = RoundedCornerShape(8.dp))
-        Column(
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            ShimmerBox(modifier = Modifier.fillMaxWidth().height(20.dp))
-            ShimmerBox(modifier = Modifier.fillMaxWidth(0.6f).height(14.dp))
-            ShimmerBox(modifier = Modifier.fillMaxWidth(0.35f).height(12.dp))
-        }
-    }
-}
-
-@Composable
-private fun ChapterSkeletonItem(alpha: Float, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            ShimmerBox(modifier = Modifier.fillMaxWidth(0.65f).height(15.dp), alpha = alpha)
-            ShimmerBox(modifier = Modifier.fillMaxWidth(0.35f).height(11.dp), alpha = alpha)
-        }
-        ShimmerBox(modifier = Modifier.size(20.dp), shape = CircleShape, alpha = alpha)
-    }
-}
-
-@Composable
-private fun NovelHeader(novel: Novel, sourceName: String = "", isLocal: Boolean = false, modifier: Modifier = Modifier) {
-    var showRatingInfo by remember { mutableStateOf(false) }
-
-    if (showRatingInfo) {
-        AlertDialog(
-            onDismissRequest = { showRatingInfo = false },
-            title = { Text("About this rating") },
-            text = {
-                Text(
-                    "This rating is reported by ${sourceName.ifBlank { "the source" }} " +
-                        "and reflects readers there — not your activity in Grimoire.",
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { showRatingInfo = false }) { Text("Got it") }
-            },
-        )
-    }
-
-    Row(
-        modifier = modifier.fillMaxWidth().padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        ZoomableCoverImage(
-            model = novel.thumbnailUrl,
-            contentDescription = novel.title,
-            modifier = Modifier
-                .width(120.dp)
-                .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(8.dp)),
-        )
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(novel.title, style = MaterialTheme.typography.titleLarge)
-            if (!novel.author.isNullOrBlank()) {
-                Text(novel.author!!, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                StatusLabel(status = novel.status)
-                novel.rating?.let {
-                    RatingLabel(
-                        rating = it,
-                        count = novel.ratingCount,
-                        onClick = { showRatingInfo = true },
-                    )
-                }
-            }
-            if (isLocal) {
-                AssistChip(
-                    onClick = {},
-                    enabled = false,
-                    label = { Text("EPUB") },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Book,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    },
-                )
-            } else if (sourceName.isNotBlank()) {
-                val lang = novel.language?.trim().orEmpty()
-                Text(
-                    if (lang.isNotEmpty()) "$sourceName · $lang" else sourceName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
 
