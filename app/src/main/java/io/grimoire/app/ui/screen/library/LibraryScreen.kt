@@ -41,7 +41,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
@@ -79,7 +78,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PrimaryScrollableTabRow
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -160,74 +158,6 @@ private val SORT_FIELD_OPTIONS = listOf(
     SortField.TOTAL to "Total chapters",
 )
 
-private fun computeTabNovels(
-    tabIndex: Int,
-    novels: List<NovelEntity>?,
-    categories: List<CategoryEntity>,
-    showAllTab: Boolean,
-    chapterStats: Map<Long, NovelChapterStats>,
-    sortField: SortField,
-    sortDirection: SortDirection,
-    filterStatuses: Set<Int>,
-    filterUnreadOnly: Boolean,
-    filterDownloadedOnly: Boolean,
-    filterSourceIds: Set<Long>,
-    isUnlocked: Boolean,
-    hiddenCategoryIds: Set<Long>,
-    includeHiddenInAll: Boolean,
-    includeLockedInTotals: Boolean,
-    searchQuery: String,
-): List<NovelEntity>? {
-    val loaded = novels ?: return null
-    val allTabOffset = if (showAllTab) 1 else 0
-    val isAllTab = showAllTab && tabIndex == 0
-    val excludeHidden = !isUnlocked || (isAllTab && !includeHiddenInAll)
-    val baseFiltered = if (excludeHidden) {
-        loaded.filter { it.categoryId !in hiddenCategoryIds }
-    } else loaded
-    val tabFiltered = when {
-        isAllTab -> baseFiltered
-        else -> {
-            val catIndex = tabIndex - allTabOffset
-            val cat = categories.getOrNull(catIndex)
-            when {
-                cat == null -> baseFiltered
-                cat.isDefault -> baseFiltered.filter { it.categoryId == null }
-                else -> baseFiltered.filter { it.categoryId == cat.id }
-            }
-        }
-    }
-    // Build an ASC comparator for the field, then flip when the user wants DESC.
-    // Centralizing the flip keeps the per-field branch from having to spell out
-    // both directions and guarantees every field supports both ASC and DESC.
-    val ascComparator: Comparator<NovelEntity> = when (sortField) {
-        SortField.TITLE -> Comparator { a: NovelEntity, b: NovelEntity ->
-            String.CASE_INSENSITIVE_ORDER.compare(a.title, b.title)
-        }
-        SortField.LAST_UPDATED -> compareBy<NovelEntity> { it.lastUpdated }
-        SortField.UNREAD -> compareBy<NovelEntity> {
-            chapterStats[it.id]?.let { s -> s.effectiveTotal(includeLockedInTotals) - s.readCount } ?: 0
-        }
-        SortField.TOTAL -> compareBy<NovelEntity> {
-            chapterStats[it.id]?.effectiveTotal(includeLockedInTotals) ?: 0
-        }
-        SortField.LAST_READ -> compareBy<NovelEntity> { it.lastReadAt }
-    }
-    val comparator = if (sortDirection == SortDirection.DESC) ascComparator.reversed() else ascComparator
-    val trimmedQuery = searchQuery.trim()
-    return tabFiltered
-        .filter { novel ->
-            (filterStatuses.isEmpty() || novel.status in filterStatuses) &&
-            (!filterUnreadOnly || (chapterStats[novel.id]?.let { it.effectiveTotal(includeLockedInTotals) - it.readCount > 0 } == true)) &&
-            (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
-            (filterSourceIds.isEmpty() || novel.sourceId in filterSourceIds) &&
-            (trimmedQuery.isEmpty() ||
-                novel.title.contains(trimmedQuery, ignoreCase = true) ||
-                (novel.author?.contains(trimmedQuery, ignoreCase = true) == true))
-        }
-        .sortedWith(comparator)
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LibraryScreen(
@@ -240,11 +170,9 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val categories by viewModel.categories.collectAsState()
-    val novels by viewModel.novels.collectAsState()
     val chapterStats by viewModel.chapterStats.collectAsState()
     val displayMode by viewModel.displayMode.collectAsState()
     val gridColumns by viewModel.gridColumns.collectAsState()
-    val showAllTab by viewModel.showAllTab.collectAsState()
     val sortField by viewModel.sortField.collectAsState()
     val sortDirection by viewModel.sortDirection.collectAsState()
     val filterStatuses by viewModel.filterStatuses.collectAsState()
@@ -254,9 +182,7 @@ fun LibraryScreen(
     val librarySources by viewModel.librarySources.collectAsState()
     val isUnlocked by viewModel.isUnlocked.collectAsState()
     val hasPin by viewModel.hasPin.collectAsState()
-    val hiddenCategoryIds by viewModel.hiddenCategoryIds.collectAsState()
     val biometricEnabled by viewModel.biometricEnabled.collectAsState()
-    val includeHiddenInAll by viewModel.includeHiddenInAll.collectAsState()
     val includeLockedInTotals by viewModel.includeLockedInTotals.collectAsState()
     val showReadBadge by viewModel.showReadBadge.collectAsState()
     val showDownloadedBadge by viewModel.showDownloadedBadge.collectAsState()
@@ -267,6 +193,8 @@ fun LibraryScreen(
     val importMessage by viewModel.importMessage.collectAsState()
     val persistedCategoryId by viewModel.persistedCategoryId.collectAsState()
     val categoriesLoaded by viewModel.categoriesLoaded.collectAsState()
+    val displayedTabs by viewModel.displayedTabs.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
 
     var showManage by remember { mutableStateOf(false) }
     var libraryMenuExpanded by remember { mutableStateOf(false) }
@@ -274,7 +202,6 @@ fun LibraryScreen(
     var showRefreshSheet by remember { mutableStateOf(false) }
     var showUnlock by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
     val searchFocusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -323,15 +250,9 @@ fun LibraryScreen(
     val isFilterActive = filterStatuses.isNotEmpty() || filterUnreadOnly || filterDownloadedOnly ||
         filterSourceIds.isNotEmpty()
 
-    val tabs = buildList {
-        if (showAllTab) add("All")
-        addAll(categories.map { it.name })
-    }
+    val tabs = displayedTabs.map { it.label }
     // Parallel to `tabs`: the category id behind each tab, or ALL_TAB_CATEGORY_ID for "All".
-    val tabCategoryIds = buildList {
-        if (showAllTab) add(ALL_TAB_CATEGORY_ID)
-        addAll(categories.map { it.id })
-    }
+    val tabCategoryIds = displayedTabs.map { it.categoryId }
 
     val pageCount = tabs.size.coerceAtLeast(1)
     val pagerState = rememberPagerState(
@@ -374,33 +295,7 @@ fun LibraryScreen(
             }
     }
 
-    val novelsForTab: (Int) -> List<NovelEntity>? = { tabIndex ->
-        computeTabNovels(
-            tabIndex = tabIndex,
-            novels = novels,
-            categories = categories,
-            showAllTab = showAllTab,
-            chapterStats = chapterStats,
-            sortField = sortField,
-            sortDirection = sortDirection,
-            filterStatuses = filterStatuses,
-            filterUnreadOnly = filterUnreadOnly,
-            filterDownloadedOnly = filterDownloadedOnly,
-            filterSourceIds = filterSourceIds,
-            isUnlocked = isUnlocked,
-            hiddenCategoryIds = hiddenCategoryIds,
-            includeHiddenInAll = includeHiddenInAll,
-            includeLockedInTotals = includeLockedInTotals,
-            searchQuery = searchQuery,
-        )
-    }
-
-    val displayedNovels: List<NovelEntity>? = remember(
-        novels, currentTab, categories, showAllTab,
-        sortField, sortDirection, filterStatuses, filterUnreadOnly, filterDownloadedOnly,
-        filterSourceIds, chapterStats,
-        isUnlocked, hiddenCategoryIds, includeHiddenInAll, includeLockedInTotals, searchQuery,
-    ) { novelsForTab(currentTab) }
+    val displayedNovels: List<NovelEntity>? = displayedTabs.getOrNull(currentTab)?.novels
 
     Scaffold(
         modifier = modifier,
@@ -432,7 +327,7 @@ fun LibraryScreen(
                     if (searchActive) {
                         AppSearchField(
                             value = searchQuery,
-                            onValueChange = { searchQuery = it },
+                            onValueChange = { viewModel.setSearchQuery(it) },
                             placeholder = "Search library…",
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -452,7 +347,7 @@ fun LibraryScreen(
                     IconButton(onClick = {
                         if (searchActive) {
                             searchActive = false
-                            searchQuery = ""
+                            viewModel.setSearchQuery("")
                             keyboard?.hide()
                         } else {
                             searchActive = true
@@ -473,6 +368,9 @@ fun LibraryScreen(
                             BadgedBox(badge = { if (isFilterActive) Badge() }) {
                                 Icon(Icons.Default.FilterList, contentDescription = "Filter & sort")
                             }
+                        }
+                        IconButton(onClick = { showRefreshSheet = true }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh library")
                         }
                         Box {
                             IconButton(onClick = { libraryMenuExpanded = true }) {
@@ -568,12 +466,11 @@ fun LibraryScreen(
             }
         },
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = false,
-            onRefresh = { showRefreshSheet = true },
-            modifier = Modifier.padding(padding),
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(padding),
         ) {
-        Column(Modifier.fillMaxSize()) {
             if (tabs.size > 1) {
                 PrimaryScrollableTabRow(selectedTabIndex = currentTab) {
                     tabs.forEachIndexed { index, title ->
@@ -596,12 +493,7 @@ fun LibraryScreen(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
             ) { page ->
-                val pageNovels = remember(
-                    novels, page, categories, showAllTab,
-                    sortField, sortDirection, filterStatuses, filterUnreadOnly, filterDownloadedOnly,
-                    filterSourceIds, chapterStats,
-                    isUnlocked, hiddenCategoryIds, includeHiddenInAll, searchQuery,
-                ) { novelsForTab(page) }
+                val pageNovels = displayedTabs.getOrNull(page)?.novels
 
                 when {
                     pageNovels == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -714,7 +606,6 @@ fun LibraryScreen(
                     }
                 }
             }
-        }
         }
     }
 
@@ -1182,81 +1073,44 @@ private fun NovelCard(
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
                     )
                 }
-                if (showReadBadge && stats != null && stats.effectiveTotal(includeLockedInTotals) > 0) {
-                    val displayedTotal = stats.effectiveTotal(includeLockedInTotals)
-                    val percent = stats.readPercent(includeLockedInTotals)
-                    Row(
+                val visibility = resolveBadgeVisibility(
+                    stats = stats,
+                    includeLockedInTotals = includeLockedInTotals,
+                    showReadBadge = showReadBadge,
+                    showDownloadedBadge = showDownloadedBadge,
+                    showLockedBadge = showLockedBadge,
+                )
+                if (visibility.showRead && stats != null) {
+                    NovelReadBadgeOverlay(
+                        stats = stats,
+                        includeLockedInTotals = includeLockedInTotals,
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .padding(4.dp)
-                            .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp),
-                    ) {
-                        Text(
-                            text = "${stats.readCount}/$displayedTotal",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
-                        )
-                        Text(
-                            text = "·",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.5f),
-                        )
-                        Text(
-                            text = "$percent%",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.8f),
-                        )
-                    }
+                            .padding(4.dp),
+                    )
                 }
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    if (showDownloadedBadge && stats != null && stats.downloadedCount > 0) {
-                        Row(
-                            modifier = Modifier
-                                .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
-                                .padding(horizontal = 4.dp, vertical = 1.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        ) {
-                            Icon(
-                                Icons.Default.Download,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(11.dp),
-                            )
-                            Text(
-                                text = "${stats.downloadedCount}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
+                if (stats != null && (visibility.showDownloaded || visibility.showLocked)) {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(4.dp),
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        if (visibility.showDownloaded) {
+                            NovelCountBadgeOverlay(
+                                count = stats.downloadedCount,
+                                icon = Icons.Default.Download,
+                                iconContentDescription = null,
+                                iconTint = Color.White,
                             )
                         }
-                    }
-                    if (showLockedBadge && stats != null && stats.lockedCount > 0) {
-                        Row(
-                            modifier = Modifier
-                                .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
-                                .padding(horizontal = 4.dp, vertical = 1.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        ) {
-                            Icon(
-                                Icons.Default.Lock,
-                                contentDescription = "Locked chapters",
-                                tint = MaterialTheme.colorScheme.premiumGold,
-                                modifier = Modifier.size(11.dp),
-                            )
-                            Text(
-                                text = "${stats.lockedCount}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
+                        if (visibility.showLocked) {
+                            NovelCountBadgeOverlay(
+                                count = stats.lockedCount,
+                                icon = Icons.Default.Lock,
+                                iconContentDescription = "Locked chapters",
+                                iconTint = MaterialTheme.colorScheme.premiumGold,
                             )
                         }
                     }
@@ -1299,73 +1153,28 @@ private fun NovelRow(
             ),
             headlineContent = { Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             supportingContent = run {
-                val showRead = showReadBadge && stats != null && stats.effectiveTotal(includeLockedInTotals) > 0
-                val showDownloaded = showDownloadedBadge && stats != null && stats.downloadedCount > 0
-                val showLocked = showLockedBadge && stats != null && stats.lockedCount > 0
-                if (showRead || showDownloaded || showLocked) {
-                    {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            if (showRead) {
-                                val displayedTotal = stats!!.effectiveTotal(includeLockedInTotals)
-                                val percent = stats.readPercent(includeLockedInTotals)
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Default.CheckCircle,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                    Text(
-                                        "${stats.readCount}/$displayedTotal ($percent%)",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                }
-                            }
-                            if (showDownloaded) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Default.Download,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                    Text(
-                                        "${stats!!.downloadedCount}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                }
-                            }
-                            if (showLocked) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Default.Lock,
-                                        contentDescription = "Locked chapters",
-                                        modifier = Modifier.size(14.dp),
-                                        tint = MaterialTheme.colorScheme.premiumGold,
-                                    )
-                                    Text(
-                                        "${stats!!.lockedCount}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                }
-                            }
+                val visibility = resolveBadgeVisibility(
+                    stats = stats,
+                    includeLockedInTotals = includeLockedInTotals,
+                    showReadBadge = showReadBadge,
+                    showDownloadedBadge = showDownloadedBadge,
+                    showLockedBadge = showLockedBadge,
+                )
+                when {
+                    visibility.any && stats != null -> {
+                        {
+                            NovelStatsRowInline(
+                                stats = stats,
+                                includeLockedInTotals = includeLockedInTotals,
+                                visibility = visibility,
+                            )
                         }
                     }
-                } else if (!novel.author.isNullOrBlank()) {
-                    { Text(novel.author!!, maxLines = 1) }
-                } else null
+                    !novel.author.isNullOrBlank() -> {
+                        { Text(novel.author!!, maxLines = 1) }
+                    }
+                    else -> null
+                }
             },
             leadingContent = {
                 Box {
