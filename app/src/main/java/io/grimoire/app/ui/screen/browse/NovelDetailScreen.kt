@@ -152,7 +152,7 @@ fun NovelDetailScreen(
     var lockedDialogChapter by remember { mutableStateOf<ChapterEntity?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
+    val searchQuery by viewModel.searchQuery.collectAsState()
     var showJumpDialog by remember { mutableStateOf(false) }
 
     var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
@@ -182,18 +182,7 @@ fun NovelDetailScreen(
     // locked chapters and the source supports login but isn't signed in.
     val showLoginBanner = loginState == LoginState.SIGNED_OUT && hasLockedChapters
 
-    val displayedChapters by remember(chapters, chapterSort, searchQuery) {
-        derivedStateOf {
-            val sorted = when (chapterSort) {
-                ChapterSort.NUMBER_ASC -> chapters
-                ChapterSort.NUMBER_DESC -> chapters.reversed()
-                ChapterSort.DATE_ASC -> chapters.sortedBy { it.uploadDate }
-                ChapterSort.DATE_DESC -> chapters.sortedByDescending { it.uploadDate }
-            }
-            if (searchQuery.isBlank()) sorted
-            else sorted.filter { it.name.contains(searchQuery, ignoreCase = true) }
-        }
-    }
+    val displayedChapters by viewModel.displayedChapters.collectAsState()
 
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -828,7 +817,7 @@ fun NovelDetailScreen(
                                 if (chapters.isNotEmpty()) {
                                     IconButton(onClick = {
                                         searchActive = !searchActive
-                                        if (!searchActive) searchQuery = ""
+                                        if (!searchActive) viewModel.setSearchQuery("")
                                     }) {
                                         Icon(
                                             if (searchActive) Icons.Default.Close else Icons.Default.Search,
@@ -941,7 +930,7 @@ fun NovelDetailScreen(
                             AnimatedVisibility(visible = searchActive) {
                                 OutlinedTextField(
                                     value = searchQuery,
-                                    onValueChange = { searchQuery = it },
+                                    onValueChange = { viewModel.setSearchQuery(it) },
                                     placeholder = { Text("Search chapters…") },
                                     singleLine = true,
                                     modifier = Modifier
