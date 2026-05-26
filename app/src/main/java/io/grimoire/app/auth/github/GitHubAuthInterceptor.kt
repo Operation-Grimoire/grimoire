@@ -21,18 +21,30 @@ class GitHubAuthInterceptor @Inject constructor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
         val host = original.url.host
-        val needsAuth = host in GITHUB_HOSTS && original.header("Authorization") == null
-        val token = if (needsAuth) store.currentToken() else null
+        if (host !in GITHUB_HOSTS) return chain.proceed(original)
 
-        val request = if (token != null) {
-            original.newBuilder()
-                .header("Authorization", "Bearer $token")
-                .build()
+        val token = if (original.header("Authorization") == null) {
+            store.currentToken()
         } else {
-            original
+            null
         }
 
-        val response = chain.proceed(request)
+        val builder = original.newBuilder()
+        if (token != null) {
+            builder.header("Authorization", "Bearer $token")
+        }
+        // GitHub serves private-repo release-asset URLs as 404 to anything
+        // whose Accept header doesn't allow octet-stream, even when a valid
+        // token is attached. Public-repo downloads happily accept */* (the
+        // OkHttp default), so adding this is harmless across the board.
+        if (host == "github.com" &&
+            original.header("Accept") == null &&
+            original.url.encodedPath.contains("/releases/download/")
+        ) {
+            builder.header("Accept", "application/octet-stream")
+        }
+
+        val response = chain.proceed(builder.build())
         if (token != null && response.code == 401) {
             store.clear()
         }

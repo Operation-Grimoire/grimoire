@@ -12,7 +12,7 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
-class IndexAuthRequiredException(message: String) : RuntimeException(message)
+class IndexAuthRequiredException(message: String, val statusCode: Int) : RuntimeException(message)
 
 @Singleton
 class ExtensionIndexFetcher @Inject constructor(
@@ -44,6 +44,7 @@ class ExtensionIndexFetcher @Inject constructor(
                     ) {
                         throw IndexAuthRequiredException(
                             "HTTP ${response.code} for $indexUrl — repo may be private or require sign-in.",
+                            statusCode = response.code,
                         )
                     }
                     check(response.isSuccessful) { "HTTP ${response.code} for $indexUrl" }
