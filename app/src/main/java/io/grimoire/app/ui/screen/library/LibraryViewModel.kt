@@ -23,11 +23,15 @@ import io.grimoire.app.data.preferences.SortField
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -183,6 +187,65 @@ class LibraryViewModel @Inject constructor(
     // the real id instead of acting on the default and locking in the wrong tab.
     val persistedCategoryId: StateFlow<Long?> = libraryPreferences.selectedCategoryId.changes()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    fun setSearchQuery(value: String) {
+        _searchQuery.value = value
+    }
+
+    /**
+     * All visible tabs precomputed (filter + sort + search applied) off the main thread.
+     *
+     * Replaces the per-pager-page recomputation in the screen — the pager just picks the
+     * tab by index and reads `novels`. A single combine drives the whole library view, so
+     * preference toggles never leave a stale page hanging.
+     */
+    internal val displayedTabs: StateFlow<List<LibraryTab>> = libraryDisplayInputs()
+        .map { buildLibraryTabs(it) }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    @OptIn(FlowPreview::class)
+    private fun libraryDisplayInputs() = combine(
+        listOf<kotlinx.coroutines.flow.Flow<Any?>>(
+            novels,
+            categories,
+            chapterStats,
+            showAllTab,
+            sortField,
+            sortDirection,
+            filterStatuses,
+            filterUnreadOnly,
+            filterDownloadedOnly,
+            filterSourceIds,
+            isUnlocked,
+            hiddenCategoryIds,
+            includeHiddenInAll,
+            includeLockedInTotals,
+            _searchQuery.debounce(120L),
+        ),
+    ) { values ->
+        @Suppress("UNCHECKED_CAST")
+        LibraryFilterInputs(
+            novels = values[0] as List<NovelEntity>?,
+            categories = values[1] as List<CategoryEntity>,
+            chapterStats = values[2] as Map<Long, NovelChapterStats>,
+            showAllTab = values[3] as Boolean,
+            sortField = values[4] as SortField,
+            sortDirection = values[5] as SortDirection,
+            filterStatuses = values[6] as Set<Int>,
+            filterUnreadOnly = values[7] as Boolean,
+            filterDownloadedOnly = values[8] as Boolean,
+            filterSourceIds = values[9] as Set<Long>,
+            isUnlocked = values[10] as Boolean,
+            hiddenCategoryIds = values[11] as Set<Long>,
+            includeHiddenInAll = values[12] as Boolean,
+            includeLockedInTotals = values[13] as Boolean,
+            searchQuery = values[14] as String,
+        )
+    }
 
     fun setSelectedCategoryId(id: Long) = viewModelScope.launch {
         libraryPreferences.selectedCategoryId.set(id)
