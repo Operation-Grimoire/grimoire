@@ -57,8 +57,13 @@ class GitHubDeviceAuth @Inject constructor(
 
     /**
      * Polls until success, [AuthFailure.AccessDenied], [AuthFailure.Expired],
-     * or network failure. Honors the `slow_down` response by extending the poll
-     * interval (per spec, by at least 5 seconds).
+     * or cancellation. Transient network failures (e.g. a DNS blip when the
+     * user tabs to the browser and the OS briefly suspends the app's network)
+     * are swallowed — the next interval retries. Only deadline expiry or an
+     * explicit failure response from GitHub terminates polling.
+     *
+     * Honors the `slow_down` response by extending the poll interval (per
+     * spec, by at least 5 seconds).
      */
     suspend fun pollForToken(
         clientId: String,
@@ -82,10 +87,22 @@ class GitHubDeviceAuth @Inject constructor(
                     .header("Accept", "application/json")
                     .post(form)
                     .build()
-                val body = client.newCall(req).execute().use { resp ->
-                    check(resp.isSuccessful) { "HTTP ${resp.code} from token endpoint" }
-                    resp.body!!.string()
-                }
+                val body = try {
+                    client.newCall(req).execute().use { resp ->
+                        if (!resp.isSuccessful) {
+                            // 5xx or other transient — keep polling rather
+                            // than tear down the whole flow.
+                            null
+                        } else {
+                            resp.body!!.string()
+                        }
+                    }
+                } catch (e: java.io.IOException) {
+                    // DNS blip, connection reset, app backgrounded — retry on
+                    // the next interval. Real terminal errors come from the
+                    // response body's `error` field below, not from IO.
+                    null
+                } ?: continue
                 val r = json.decodeFromString<TokenResponse>(body)
                 if (r.access_token != null) return@runCatching r.access_token
                 when (r.error) {
