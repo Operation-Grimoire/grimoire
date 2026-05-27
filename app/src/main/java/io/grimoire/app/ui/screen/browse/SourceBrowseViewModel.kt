@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.model.Filter
 import io.grimoire.api.model.Novel
+import io.grimoire.api.network.CloudflareException
 import io.grimoire.api.source.CatalogueSource
 import io.grimoire.api.source.ConfigurableSource
 import io.grimoire.api.source.MultiLanguageSource
@@ -105,6 +106,15 @@ class SourceBrowseViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    /**
+     * True when the most recent load hit a Cloudflare challenge that the
+     * silent interceptor couldn't solve. Surfaced separately from [_error]
+     * because the UI shows a dedicated "open in WebView" CTA rather than the
+     * generic error message + retry.
+     */
+    private val _cloudflareBlocked = MutableStateFlow(false)
+    val cloudflareBlocked: StateFlow<Boolean> = _cloudflareBlocked.asStateFlow()
 
     private val _mode = MutableStateFlow(BrowseMode.POPULAR)
     val mode: StateFlow<BrowseMode> = _mode.asStateFlow()
@@ -235,6 +245,7 @@ class SourceBrowseViewModel @Inject constructor(
                 page++
             }
             _error.value = null
+            _cloudflareBlocked.value = false
 
             runCatching {
                 val result = when (_mode.value) {
@@ -253,7 +264,11 @@ class SourceBrowseViewModel @Inject constructor(
                 _hasMore.value = if (reset) result.isNotEmpty() else grew
             }.onFailure { e ->
                 Log.e(TAG, "Load failed [mode=${_mode.value} page=$page pkg=$packageName]", e)
-                _error.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
+                if (e is CloudflareException) {
+                    _cloudflareBlocked.value = true
+                } else {
+                    _error.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
+                }
                 if (!reset) page--
             }
 
