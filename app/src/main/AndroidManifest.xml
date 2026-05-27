@@ -115,6 +115,32 @@
                 <data android:pathPattern=".*\\..*\\..*\\.epub" />
                 <data android:pathPattern=".*\\..*\\..*\\..*\\.epub" />
             </intent-filter>
+
+            <!-- Magic add-repo links. Verified App Link opens the app directly;
+                 without verification (or on Android < 12) the system may still
+                 offer the app via the chooser. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="https"
+                    android:host="grimoireapp.org"
+                    android:pathPrefix="/add-repo" />
+            </intent-filter>
+
+            <!-- Custom-scheme fallback the landing page uses via an intent://
+                 redirect when the https App Link isn't verified. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="grimoire" android:host="add-repo" />
+            </intent-filter>
         </activity>
     </application>
 

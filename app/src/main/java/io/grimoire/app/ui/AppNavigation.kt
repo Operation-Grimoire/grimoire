@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 private val EmptyNavTarget: StateFlow<String?> = MutableStateFlow(null)
 private val EmptyEpubUri: StateFlow<Uri?> = MutableStateFlow(null)
+private val EmptyAddRepo: StateFlow<PendingAddRepo?> = MutableStateFlow(null)
 
 @Composable
 fun AppNavigation(
@@ -48,6 +49,8 @@ fun AppNavigation(
     onTargetHandled: () -> Unit = {},
     pendingEpubUri: StateFlow<Uri?> = EmptyEpubUri,
     onEpubUriHandled: () -> Unit = {},
+    pendingAddRepo: StateFlow<PendingAddRepo?> = EmptyAddRepo,
+    onAddRepoHandled: () -> Unit = {},
 ) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
@@ -77,6 +80,15 @@ fun AppNavigation(
             launchSingleTop = true
             restoreState = true
         }
+    }
+
+    // An add-repo magic link needs the Extensions screen to render the
+    // pre-filled "Add repository" dialog. The screen consumes the value and
+    // clears the flow.
+    val addRepo by pendingAddRepo.collectAsState()
+    LaunchedEffect(addRepo) {
+        if (addRepo == null) return@LaunchedEffect
+        navController.navigate(ROUTE_EXTENSION_MANAGE) { launchSingleTop = true }
     }
 
     val isTopLevel = TopLevelDestination.entries.any { dest ->
@@ -178,7 +190,11 @@ fun AppNavigation(
             browseGraph(navController)
             moreDestinations(navController)
             settingsGraph(navController)
-            sourceDestinations(navController)
+            sourceDestinations(
+                navController = navController,
+                pendingAddRepo = pendingAddRepo,
+                onAddRepoHandled = onAddRepoHandled,
+            )
             novelDetailDestinations(navController)
             readerDestinations(navController)
         }

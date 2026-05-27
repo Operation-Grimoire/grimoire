@@ -11,6 +11,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import io.grimoire.app.ui.screen.browse.BrowseScreen
 import io.grimoire.app.ui.screen.browse.BrowseViewModel
@@ -350,7 +351,11 @@ internal fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
     }
 }
 
-internal fun NavGraphBuilder.sourceDestinations(navController: NavHostController) {
+internal fun NavGraphBuilder.sourceDestinations(
+    navController: NavHostController,
+    pendingAddRepo: StateFlow<PendingAddRepo?> = MutableStateFlow(null),
+    onAddRepoHandled: () -> Unit = {},
+) {
     composable(route = ROUTE_EXTENSION_MANAGE) {
         ExtensionsScreen(
             onNavigateBack = { navController.popBackStack() },
@@ -358,6 +363,8 @@ internal fun NavGraphBuilder.sourceDestinations(navController: NavHostController
                 navController.navigate("settings/source/${Uri.encode(pkg)}")
             },
             onConnectGitHub = { navController.navigate(ROUTE_SETTINGS_GITHUB) },
+            pendingAddRepo = pendingAddRepo,
+            onAddRepoHandled = onAddRepoHandled,
         )
     }
     composable(

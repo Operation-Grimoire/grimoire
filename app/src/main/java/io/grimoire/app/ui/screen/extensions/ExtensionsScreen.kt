@@ -65,9 +65,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
+import io.grimoire.app.ui.PendingAddRepo
 import io.grimoire.app.ui.component.ExtensionIcon
 import io.grimoire.app.ui.component.LinkText
 import io.grimoire.app.util.languageLabel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,6 +80,8 @@ fun ExtensionsScreen(
     onConnectGitHub: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ExtensionsViewModel = hiltViewModel(),
+    pendingAddRepo: StateFlow<PendingAddRepo?> = MutableStateFlow(null),
+    onAddRepoHandled: () -> Unit = {},
 ) {
     val items by viewModel.items.collectAsState()
     val repos by viewModel.repos.collectAsState()
@@ -125,8 +130,17 @@ fun ExtensionsScreen(
     var showRepos by remember { mutableStateOf(false) }
     var showAddRepo by remember { mutableStateOf(false) }
     var editRepo by remember { mutableStateOf<RepoEntity?>(null) }
+    var addRepoPrefill by remember { mutableStateOf<PendingAddRepo?>(null) }
     var pendingRemove by remember { mutableStateOf<ExtensionItem?>(null) }
     val repoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    val incomingAddRepo by pendingAddRepo.collectAsState()
+    LaunchedEffect(incomingAddRepo) {
+        incomingAddRepo?.let {
+            addRepoPrefill = it
+            onAddRepoHandled()
+        }
+    }
 
     Scaffold(
         modifier = modifier,
@@ -369,15 +383,29 @@ fun ExtensionsScreen(
 
     if (showAddRepo) {
         RepoDialog(
-            initial = null,
+            initialName = "",
+            initialUrl = "",
+            isEdit = false,
             onConfirm = { name, url -> viewModel.addRepo(name, url); showAddRepo = false },
             onDismiss = { showAddRepo = false },
         )
     }
 
+    addRepoPrefill?.let { prefill ->
+        RepoDialog(
+            initialName = prefill.name.orEmpty(),
+            initialUrl = prefill.url,
+            isEdit = false,
+            onConfirm = { name, url -> viewModel.addRepo(name, url); addRepoPrefill = null },
+            onDismiss = { addRepoPrefill = null },
+        )
+    }
+
     editRepo?.let { repo ->
         RepoDialog(
-            initial = repo,
+            initialName = repo.name,
+            initialUrl = repo.indexUrl,
+            isEdit = true,
             onConfirm = { name, url -> viewModel.updateRepo(repo, name, url); editRepo = null },
             onDismiss = { editRepo = null },
         )
@@ -471,17 +499,19 @@ private fun SectionHeader(title: String) {
 
 @Composable
 private fun RepoDialog(
-    initial: RepoEntity?,
+    initialName: String,
+    initialUrl: String,
+    isEdit: Boolean,
     onConfirm: (name: String, url: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var name by remember { mutableStateOf(initial?.name ?: "") }
-    var url by remember { mutableStateOf(initial?.indexUrl ?: "") }
+    var name by remember { mutableStateOf(initialName) }
+    var url by remember { mutableStateOf(initialUrl) }
     val urlError = url.isNotEmpty() && (!url.startsWith("http") || !url.endsWith(".json"))
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial == null) "Add Repository" else "Edit Repository") },
+        title = { Text(if (isEdit) "Edit Repository" else "Add Repository") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
