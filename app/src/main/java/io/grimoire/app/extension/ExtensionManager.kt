@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.source.ConfigurableSource
 import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +18,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 @Singleton
@@ -28,13 +30,23 @@ class ExtensionManager @Inject constructor(
     private val _extensions = MutableStateFlow<List<LoadedExtension>>(emptyList())
     val extensions: StateFlow<List<LoadedExtension>> = _extensions.asStateFlow()
 
-    init {
-        // Eagerly scan installed extensions so the list is ready before the first refresh().
-        @Suppress("OPT_IN_USAGE")
-        GlobalScope.launch(Dispatchers.IO) { scanPackages() }
+    // Eagerly scan installed extensions so the list is ready before the first refresh().
+    // Background callers (e.g. LibraryUpdateWorker) must await this before reading
+    // [extensions] or they will observe an empty list and treat every novel as
+    // "Source not installed".
+    @Suppress("OPT_IN_USAGE")
+    private val initialScan: Deferred<Unit> =
+        GlobalScope.async(Dispatchers.IO) { scanPackages() }
+
+    /** Suspends until the initial package scan has populated [extensions]. */
+    suspend fun awaitReady() {
+        initialScan.await()
     }
 
-    suspend fun refresh() = withContext(Dispatchers.IO) { scanPackages() }
+    suspend fun refresh() = withContext(Dispatchers.IO) {
+        initialScan.await()
+        scanPackages()
+    }
 
     /** Re-reads persisted settings for [pkg] and pushes them into its source. */
     fun reapplyPreferences(pkg: String) {
