@@ -39,7 +39,10 @@ class LibraryUpdateScheduler @Inject constructor(
                 preferences.frequency.changes(),
                 preferences.onlyOnWifi.changes(),
                 preferences.requiresCharging.changes(),
-            ) { freq, wifi, charging -> Schedule(freq, wifi, charging) }
+                preferences.preferredTimeOfDayMinutes.changes(),
+            ) { freq, wifi, charging, minutes ->
+                Schedule(freq, wifi, charging, minutes)
+            }
                 .distinctUntilChanged()
                 .collectLatest { applySchedule(it) }
         }
@@ -73,6 +76,7 @@ class LibraryUpdateScheduler @Inject constructor(
                     preferences.frequency.changes().first(),
                     preferences.onlyOnWifi.changes().first(),
                     preferences.requiresCharging.changes().first(),
+                    preferences.preferredTimeOfDayMinutes.changes().first(),
                 ),
             )
         }
@@ -92,10 +96,18 @@ class LibraryUpdateScheduler @Inject constructor(
             .setRequiredNetworkType(if (s.onlyOnWifi) NetworkType.UNMETERED else NetworkType.CONNECTED)
             .setRequiresCharging(s.requiresCharging)
             .build()
+        // Anchor the first run to the user's preferred time-of-day. WorkManager
+        // schedules each subsequent run on the repeat interval from that anchor,
+        // so they should land near the same hour barring Doze / constraint
+        // delays. We avoid the flex-interval constructor because flex windows
+        // sit at the END of each repeat period, which would push the first run
+        // ~[repeatInterval] past the requested time.
+        val initialDelay = computeInitialDelayMillis(System.currentTimeMillis(), s.preferredMinutes)
         val request = PeriodicWorkRequestBuilder<LibraryUpdateWorker>(
             s.frequency.hours, TimeUnit.HOURS,
         )
             .setConstraints(constraints)
+            .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
             .setInputData(categoryData(null))
             .build()
         wm.enqueueUniquePeriodicWork(
@@ -109,5 +121,6 @@ class LibraryUpdateScheduler @Inject constructor(
         val frequency: LibraryUpdateFrequency,
         val onlyOnWifi: Boolean,
         val requiresCharging: Boolean,
+        val preferredMinutes: Int,
     )
 }

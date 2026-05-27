@@ -24,6 +24,7 @@ class LibraryUpdateSettingsViewModel @Inject constructor(
     val requiresCharging = preferences.requiresCharging.stateIn(viewModelScope)
     val autoDownloadNewChapters = preferences.autoDownloadNewChapters.stateIn(viewModelScope)
     val concurrency = preferences.concurrency.stateIn(viewModelScope)
+    val preferredTimeOfDayMinutes = preferences.preferredTimeOfDayMinutes.stateIn(viewModelScope)
     val lastRunAt = preferences.lastRunAt.changes()
         .map { it.toLongOrNull() ?: 0L }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
@@ -48,6 +49,11 @@ class LibraryUpdateSettingsViewModel @Inject constructor(
 
     fun setConcurrency(value: Int) = viewModelScope.launch {
         preferences.concurrency.set(value.coerceIn(1, 8))
+    }
+
+    fun setPreferredTimeOfDay(hour: Int, minute: Int) = viewModelScope.launch {
+        val minutes = (hour.coerceIn(0, 23) * 60 + minute.coerceIn(0, 59))
+        preferences.preferredTimeOfDayMinutes.set(minutes)
     }
 
     fun updateLibraryNow() = scheduler.triggerOneOff(null)
