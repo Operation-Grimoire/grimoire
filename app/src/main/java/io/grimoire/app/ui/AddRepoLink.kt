@@ -11,6 +11,16 @@ package io.grimoire.app.ui
 data class PendingAddRepo(val name: String?, val url: String)
 
 /**
+ * True iff the URI's scheme/host/path matches one of the add-repo deep-link
+ * forms. Used to decide whether `MainActivity` should consume (and clear)
+ * the URI even when the query params don't parse — otherwise a malformed
+ * `grimoire://add-repo?…` would fall through to the EPUB import flow.
+ */
+internal fun isAddRepoLink(scheme: String?, host: String?, path: String?): Boolean =
+    (scheme == "https" && host == "grimoireapp.org" && path == "/add-repo") ||
+        (scheme == "grimoire" && host == "add-repo")
+
+/**
  * Pure validation for an inbound add-repo deep link. Extracted so it's
  * testable on the JVM without an Android `Uri` instance.
  *
@@ -25,9 +35,7 @@ internal fun parseAddRepoLink(
     urlParam: String?,
     nameParam: String?,
 ): PendingAddRepo? {
-    val matches = (scheme == "https" && host == "grimoireapp.org" && path == "/add-repo") ||
-        (scheme == "grimoire" && host == "add-repo")
-    if (!matches) return null
+    if (!isAddRepoLink(scheme, host, path)) return null
     val url = urlParam?.trim()?.takeIf { it.isNotEmpty() } ?: return null
     val lower = url.lowercase()
     if (!lower.startsWith("http://") && !lower.startsWith("https://")) return null

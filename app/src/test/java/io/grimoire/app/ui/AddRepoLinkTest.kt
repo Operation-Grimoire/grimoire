@@ -126,4 +126,13 @@ class AddRepoLinkTest {
         )
         assertEquals(PendingAddRepo(name = "Sample", url = "http://example.com/index.json"), result)
     }
+
+    @Test
+    fun isAddRepoLink_matches_both_forms_and_rejects_others() {
+        assertEquals(true, isAddRepoLink("https", "grimoireapp.org", "/add-repo"))
+        assertEquals(true, isAddRepoLink("grimoire", "add-repo", ""))
+        assertEquals(false, isAddRepoLink("https", "evil.com", "/add-repo"))
+        assertEquals(false, isAddRepoLink("content", "media", "/foo"))
+        assertEquals(false, isAddRepoLink("file", null, "/sdcard/x.epub"))
+    }
 }
