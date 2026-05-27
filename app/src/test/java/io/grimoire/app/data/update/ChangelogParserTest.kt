@@ -60,34 +60,35 @@ class ChangelogParserTest {
     }
 
     @Test
-    fun parse_betaGitLogFormat_skipsFramingParagraphs() {
+    fun parse_betaPrFormat_groupsByCategory() {
+        // Body shape produced by .github/workflows/nightly.yml — framing
+        // paragraphs above/below the /generate-notes output should be ignored.
         val raw = """
             Auto-built from `master` @ abc123def456.
 
             Version: `0.0.21-beta.58+abc123d`
 
-            ## Changes since previous beta
+            ## What's Changed
+            ### Features
+            * Aggregate beta changelog like stable by @alice in https://github.com/owner/repo/pull/60
+            ### Bug fixes
+            * Stop overwriting beta tag on every push by @bob in https://github.com/owner/repo/pull/59
 
-            - Use git log for beta release notes instead of /generate-notes
-            - Match library badge by sourceId and url
-
-            This is a rolling beta release. Each push to `master` replaces it with a fresh build.
+            **Full Changelog**: https://github.com/owner/repo/compare/v0.0.21-beta.57...v0.0.21-beta.58
         """.trimIndent()
 
         val sections = ChangelogParser.parse(raw)
 
-        assertEquals(1, sections.size)
-        // "## Changes since previous beta" falls through to CHANGES because no
-        // other keyword matches the heading.
-        assertEquals(ChangelogCategory.CHANGES, sections[0].category)
-        assertEquals(2, sections[0].items.size)
-        assertEquals(
-            "Use git log for beta release notes instead of /generate-notes",
-            sections[0].items[0].text,
-        )
-        // No PR data in commit-subject format.
-        assertNull(sections[0].items[0].prNumber)
-        assertNull(sections[0].items[0].author)
+        assertEquals(2, sections.size)
+        val features = sections[0]
+        assertEquals(ChangelogCategory.FEATURES, features.category)
+        assertEquals("Aggregate beta changelog like stable", features.items[0].text)
+        assertEquals(60, features.items[0].prNumber)
+        assertEquals("alice", features.items[0].author)
+        val fixes = sections[1]
+        assertEquals(ChangelogCategory.BUG_FIXES, fixes.category)
+        assertEquals("Stop overwriting beta tag on every push", fixes.items[0].text)
+        assertEquals(59, fixes.items[0].prNumber)
     }
 
     @Test
