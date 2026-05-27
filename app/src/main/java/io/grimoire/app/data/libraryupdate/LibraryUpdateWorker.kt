@@ -137,6 +137,9 @@ class LibraryUpdateWorker @AssistedInject constructor(
         val readablePart = if (novel.notifyOnNewChapters) newReadable else 0
         val lockedPart = if (novel.notifyOnNewLockedChapters) newLocked else 0
         if (readablePart == 0 && lockedPart == 0) return
+        // Same race as the updater: the eager scan may not be done yet on a
+        // fresh background run, so the notification could lose its deep-link.
+        extensionManager.awaitReady()
 
         // Hidden-category novels do not surface a notification when the app is locked.
         // Novels with categoryId == null are in the default category and never hidden.

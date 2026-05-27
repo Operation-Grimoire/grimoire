@@ -71,6 +71,10 @@ class LibraryUpdater @Inject constructor(
     ): UpdateSummary {
         val targets = resolveTargets(categoryId)
         val total = targets.size
+        // Background runs can wake the process before ExtensionManager's eager
+        // scan completes; without this every novel would be flagged "Source not
+        // installed".
+        extensionManager.awaitReady()
         // Hoisted out of the per-novel loop: the extension list and auto-download
         // preference don't change mid-sync, so reading them once avoids repeating
         // the lookup/flow-collect N times.
@@ -143,8 +147,13 @@ class LibraryUpdater @Inject constructor(
         val pkg = loaded.info.packageName
         val src = loaded.source
         // EPUB sources have no scraped chapter list; their chapters arrive when the
-        // user downloads the book, so there is nothing to refresh here.
-        if (src is EpubSource) return NovelRefreshResult.Ok(0)
+        // user downloads the book, so there is nothing to refresh here. Clear any
+        // stale issue (e.g. a "Source not installed" warning left by an earlier
+        // sync that ran before the extension scan completed).
+        if (src is EpubSource) {
+            updateIssueDao.clearForNovel(novel.id)
+            return NovelRefreshResult.Ok(0)
+        }
 
         val fetched = runCatching {
             withRetry { src.getNovelDetails(Novel(url = novel.url, title = "")) }
