@@ -83,12 +83,15 @@ fun AppNavigation(
     }
 
     // An add-repo magic link needs the Extensions screen to render the
-    // pre-filled "Add repository" dialog. The screen consumes the value and
-    // clears the flow.
-    val addRepo by pendingAddRepo.collectAsState()
-    LaunchedEffect(addRepo) {
-        if (addRepo == null) return@LaunchedEffect
-        navController.navigate(ROUTE_EXTENSION_MANAGE) { launchSingleTop = true }
+    // pre-filled "Add repository" dialog. Collect the flow directly so the
+    // navigation fires on every emission, including when onNewIntent sets
+    // the value while the composition is in onStop.
+    LaunchedEffect(pendingAddRepo) {
+        pendingAddRepo.collect { value ->
+            if (value != null) {
+                navController.navigate(ROUTE_EXTENSION_MANAGE) { launchSingleTop = true }
+            }
+        }
     }
 
     val isTopLevel = TopLevelDestination.entries.any { dest ->

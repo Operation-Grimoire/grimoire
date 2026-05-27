@@ -134,11 +134,16 @@ fun ExtensionsScreen(
     var pendingRemove by remember { mutableStateOf<ExtensionItem?>(null) }
     val repoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val incomingAddRepo by pendingAddRepo.collectAsState()
-    LaunchedEffect(incomingAddRepo) {
-        incomingAddRepo?.let {
-            addRepoPrefill = it
-            onAddRepoHandled()
+    LaunchedEffect(pendingAddRepo) {
+        // Collect the flow directly rather than reacting to a collectAsState
+        // value change — when the activity comes back via onNewIntent while
+        // Extensions is already on top, the State<T> re-emission isn't
+        // reliable across the lifecycle hop and the dialog would fail to open.
+        pendingAddRepo.collect { value ->
+            value?.let {
+                addRepoPrefill = it
+                onAddRepoHandled()
+            }
         }
     }
 
