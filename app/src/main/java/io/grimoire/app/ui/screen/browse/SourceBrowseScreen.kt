@@ -22,12 +22,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -156,17 +154,6 @@ fun SourceBrowseScreen(
                             IconButton(onClick = onOpenSourceSettings) {
                                 Icon(Icons.Default.Settings, contentDescription = "Source settings")
                             }
-                        }
-                        IconButton(onClick = {
-                            viewModel.setDisplayMode(
-                                if (displayMode == BrowseDisplayMode.GRID) BrowseDisplayMode.LIST
-                                else BrowseDisplayMode.GRID
-                            )
-                        }) {
-                            Icon(
-                                if (displayMode == BrowseDisplayMode.GRID) Icons.Default.ViewList else Icons.Default.GridView,
-                                contentDescription = "Toggle display mode",
-                            )
                         }
                     }
                     if (filterLoadState != FilterLoadState.None) {
