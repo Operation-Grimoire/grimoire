@@ -217,10 +217,6 @@ class SourceBrowseViewModel @Inject constructor(
         load(reset = true)
     }
 
-    fun setDisplayMode(mode: BrowseDisplayMode) = viewModelScope.launch {
-        browsePreferences.displayMode.set(mode)
-    }
-
     fun setGridColumns(count: Int) = viewModelScope.launch {
         browsePreferences.gridColumns.set(count.coerceIn(2, 5))
     }
