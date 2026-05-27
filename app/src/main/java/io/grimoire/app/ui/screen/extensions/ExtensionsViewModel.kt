@@ -106,18 +106,30 @@ class ExtensionsViewModel @Inject constructor(
     }
 
     fun addRepo(name: String, url: String) {
-        viewModelScope.launch { repository.addRepo(name.trim(), url.trim()) }
+        viewModelScope.launch {
+            repository.addRepo(name.trim(), url.trim())
+            repository.refresh()
+        }
     }
 
     fun updateRepo(repo: RepoEntity, name: String, url: String) {
-        viewModelScope.launch { repository.updateRepo(repo.copy(name = name.trim(), indexUrl = url.trim())) }
+        viewModelScope.launch {
+            repository.updateRepo(repo.copy(name = name.trim(), indexUrl = url.trim()))
+            repository.refresh()
+        }
     }
 
     fun toggleRepo(repo: RepoEntity) {
-        viewModelScope.launch { repository.updateRepo(repo.copy(enabled = !repo.enabled)) }
+        viewModelScope.launch {
+            repository.updateRepo(repo.copy(enabled = !repo.enabled))
+            repository.refresh()
+        }
     }
 
     fun deleteRepo(repo: RepoEntity) {
-        viewModelScope.launch { repository.deleteRepo(repo) }
+        viewModelScope.launch {
+            repository.deleteRepo(repo)
+            repository.refresh()
+        }
     }
 }
