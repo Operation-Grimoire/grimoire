@@ -23,12 +23,15 @@ jobs:
       - name: Compute beta version
         id: ver
         run: |
-          LATEST=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -n1)
+          LATEST=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname \
+            | grep -Ev -- '-beta\.' | head -n1)
           LATEST=${LATEST:-v0.0.0}
           SHORT=$(git rev-parse --short HEAD)
           RUN=${{ github.run_number }}
+          TAG="${LATEST}-beta.${RUN}"
           VERSION_NAME="${LATEST#v}-beta.${RUN}+${SHORT}"
           echo "base_tag=${LATEST}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
           echo "beta_number=${RUN}" >> "$GITHUB_OUTPUT"
           echo "short_sha=${SHORT}" >> "$GITHUB_OUTPUT"
@@ -81,35 +84,37 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SHA: ${{ github.sha }}
           VERSION_NAME: ${{ steps.ver.outputs.version_name }}
+          BASE_TAG: ${{ steps.ver.outputs.base_tag }}
+          TAG: ${{ steps.ver.outputs.tag }}
         run: |
           set -euo pipefail
-          # The beta tag is rolling. GitHub's /generate-notes can't diff a tag
-          # against itself (it resolves both ends to the same existing commit),
-          # so we capture the previous beta commit before the release step
-          # overwrites it and use `git log` directly. fetch-depth: 0 above
-          # ensures the full history is available.
-          PREV_SHA=$(gh api "repos/${{ github.repository }}/releases/tags/beta" \
-            --jq .target_commitish 2>/dev/null || true)
-          CHANGES=""
-          if [ -n "$PREV_SHA" ] && git cat-file -e "$PREV_SHA" 2>/dev/null; then
-            CHANGES=$(git log --no-merges --pretty=format:'- %s' "$PREV_SHA..$SHA" || true)
-          fi
+          # Each nightly publishes its own versioned prerelease so the app can
+          # aggregate stored bodies on upgrade (matching the stable flow).
+          # /generate-notes diffs the new tag against the previous beta tag
+          # (or last stable if no prior beta exists), giving a categorised PR
+          # list per .github/release.yml.
+          PREV=$(gh release list --limit 50 \
+            --json tagName,isPrerelease,createdAt \
+            --jq '[.[] | select(.isPrerelease and (.tagName | test("^v.+-beta\\..+")))]
+                  | sort_by(.createdAt) | reverse | .[0].tagName // empty')
+          PREV=${PREV:-$BASE_TAG}
+          NOTES=$(gh api "repos/${{ github.repository }}/releases/generate-notes" \
+            -f "tag_name=$TAG" \
+            -f "target_commitish=$SHA" \
+            -f "previous_tag_name=$PREV" \
+            --jq .body)
           {
             echo 'body<<RELNOTES_EOF'
             printf 'Auto-built from `master` @ %s.\n\n' "$SHA"
             printf 'Version: `%s`\n\n' "$VERSION_NAME"
-            if [ -n "$CHANGES" ]; then
-              printf '## Changes since previous beta\n\n'
-              printf '%s\n\n' "$CHANGES"
-            fi
-            printf 'This is a rolling beta release. Each push to `master` replaces it with a fresh build.\n'
+            printf '%s\n' "$NOTES"
             echo RELNOTES_EOF
           } >> "$GITHUB_OUTPUT"
 
-      - name: Publish/refresh beta release
+      - name: Publish beta release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: beta
+          tag_name: ${{ steps.ver.outputs.tag }}
           name: Grimoire ${{ steps.ver.outputs.version_name }}
           prerelease: true
           make_latest: 'false'
@@ -120,3 +125,26 @@ jobs:
             app/build/outputs/apk/release/grimoire.apk.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prune old beta releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Keep the most recent 10 beta releases; delete older ones along
+          # with their git tags. Caps storage and matches the checker's
+          # MAX_AGGREGATED_RELEASES = 10.
+          OLD=$(gh release list --limit 100 \
+            --json tagName,isPrerelease,createdAt \
+            --jq '[.[] | select(.isPrerelease and (.tagName | test("^v.+-beta\\..+")))]
+                  | sort_by(.createdAt) | reverse | .[10:] | .[].tagName')
+          if [ -z "$OLD" ]; then
+            echo "No old beta releases to prune."
+            exit 0
+          fi
+          while IFS= read -r TAG; do
+            [ -z "$TAG" ] && continue
+            echo "Deleting $TAG"
+            gh release delete "$TAG" --cleanup-tag --yes \
+              --repo "${{ github.repository }}"
+          done <<< "$OLD"

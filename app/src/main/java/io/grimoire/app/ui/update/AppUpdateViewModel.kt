@@ -67,16 +67,23 @@ class AppUpdateViewModel @Inject constructor(
             } else if (BuildConfig.VERSION_CODE > lastSeen) {
                 val autoChangelogEnabled = updatePreferences.autoChangelogEnabled.changes().first()
                 if (autoChangelogEnabled) {
+                    val prevName = appPreferences.lastSeenVersionName.changes().first()
+                    val hasPrev = prevName.isNotBlank() && prevName != BuildConfig.VERSION_NAME
                     val remote: String? = when (channel) {
                         UpdateChannel.STABLE -> {
-                            val prevName = appPreferences.lastSeenVersionName.changes().first()
-                            if (prevName.isNotBlank() && prevName != BuildConfig.VERSION_NAME) {
+                            if (hasPrev) {
                                 checker.fetchStableNotesSince(prevName, BuildConfig.VERSION_NAME)
                             } else {
-                                checker.fetchStableNotesForVersion(BuildConfig.VERSION_NAME)
+                                checker.fetchNotesForVersion(BuildConfig.VERSION_NAME)
                             }
                         }
-                        UpdateChannel.BETA -> checker.fetchBetaNotesForSha(BuildConfig.GIT_SHA)
+                        UpdateChannel.BETA -> {
+                            if (hasPrev) {
+                                checker.fetchBetaNotesSince(prevName, BuildConfig.VERSION_NAME)
+                            } else {
+                                checker.fetchNotesForVersion(BuildConfig.VERSION_NAME)
+                            }
+                        }
                     }
                     _changelogText.value = remote ?: Changelog.since(lastSeen, BuildConfig.VERSION_CODE)
                 } else {
@@ -125,11 +132,7 @@ class AppUpdateViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoadingChangelog.value = true
             try {
-                val channel = updatePreferences.channel.changes().first()
-                val remote = when (channel) {
-                    UpdateChannel.STABLE -> checker.fetchStableNotesForVersion(BuildConfig.VERSION_NAME)
-                    UpdateChannel.BETA -> checker.fetchBetaNotesForSha(BuildConfig.GIT_SHA)
-                }
+                val remote = checker.fetchNotesForVersion(BuildConfig.VERSION_NAME)
                 _changelogText.value = remote
                     ?: "No changelog available for ${BuildConfig.VERSION_NAME}."
             } finally {

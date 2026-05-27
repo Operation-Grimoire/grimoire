@@ -18,10 +18,10 @@ import javax.inject.Singleton
 
 private const val REPO = "Operation-Grimoire/grimoire"
 private const val LATEST_RELEASE_URL = "https://api.github.com/repos/$REPO/releases/latest"
-private const val BETA_RELEASE_URL = "https://api.github.com/repos/$REPO/releases/tags/beta"
 private const val RELEASES_LIST_URL = "https://api.github.com/repos/$REPO/releases?per_page=30"
 private const val APK_MIME = "application/vnd.android.package-archive"
 private const val MAX_AGGREGATED_RELEASES = 10
+private val BETA_TAG_REGEX = Regex("""^v.+-beta\..+""")
 
 class AppUpdateHashMismatchException(
     val expected: String,
@@ -36,11 +36,10 @@ class AppUpdateChecker @Inject constructor(
 
     suspend fun checkForUpdate(channel: UpdateChannel): ReleaseInfo? = withContext(Dispatchers.IO) {
         runCatching {
-            val url = when (channel) {
-                UpdateChannel.STABLE -> LATEST_RELEASE_URL
-                UpdateChannel.BETA -> BETA_RELEASE_URL
-            }
-            val release = fetchRelease(url) ?: return@runCatching null
+            val release = when (channel) {
+                UpdateChannel.STABLE -> fetchRelease(LATEST_RELEASE_URL)
+                UpdateChannel.BETA -> latestBetaRelease()
+            } ?: return@runCatching null
             if (!isUpdate(release, channel)) return@runCatching null
             val apk = release.assets.firstOrNull { it.name.endsWith(".apk") }
                 ?: return@runCatching null
@@ -96,29 +95,12 @@ class AppUpdateChecker @Inject constructor(
     }
 
     suspend fun fetchStableNotesSince(fromTag: String, toTag: String): String? =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                val from = fromTag.removePrefix("v")
-                val to = toTag.removePrefix("v")
-                val releases = fetchReleases(RELEASES_LIST_URL) ?: return@runCatching null
-                val included = releases.asSequence()
-                    .filter { !it.prerelease && it.tag_name.isNotBlank() }
-                    .map { it to it.tag_name.removePrefix("v") }
-                    .filter { (_, name) ->
-                        compareSemver(name, from) > 0 && compareSemver(name, to) <= 0
-                    }
-                    .sortedWith(compareByDescending { (_, name) -> SemverKey(name) })
-                    .take(MAX_AGGREGATED_RELEASES)
-                    .toList()
-                if (included.isEmpty()) return@runCatching null
-                included.joinToString("\n\n") { (release, _) ->
-                    val header = "## ${release.tag_name}"
-                    if (release.body.isBlank()) header else "$header\n\n${release.body.trim()}"
-                }
-            }.getOrNull()
-        }
+        fetchAggregatedNotes(fromTag, toTag) { !it.prerelease }
 
-    suspend fun fetchStableNotesForVersion(toName: String): String? =
+    suspend fun fetchBetaNotesSince(fromTag: String, toTag: String): String? =
+        fetchAggregatedNotes(fromTag, toTag) { it.prerelease && BETA_TAG_REGEX.matches(it.tag_name) }
+
+    suspend fun fetchNotesForVersion(toName: String): String? =
         withContext(Dispatchers.IO) {
             runCatching {
                 val tag = if (toName.startsWith("v")) toName else "v$toName"
@@ -128,30 +110,88 @@ class AppUpdateChecker @Inject constructor(
             }.getOrNull()
         }
 
-    suspend fun fetchBetaNotesForSha(expectedSha: String): String? =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                if (expectedSha.isBlank()) return@runCatching null
-                val release = fetchRelease(BETA_RELEASE_URL) ?: return@runCatching null
-                if (release.target_commitish.isBlank()) return@runCatching null
-                if (release.target_commitish != expectedSha) return@runCatching null
-                release.body.takeIf { it.isNotBlank() }
-            }.getOrNull()
-        }
+    private suspend fun fetchAggregatedNotes(
+        fromTag: String,
+        toTag: String,
+        filter: (GitHubRelease) -> Boolean,
+    ): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val from = fromTag.removePrefix("v")
+            val to = toTag.removePrefix("v")
+            val releases = fetchReleases(RELEASES_LIST_URL) ?: return@runCatching null
+            val included = releases.asSequence()
+                .filter { it.tag_name.isNotBlank() && filter(it) }
+                .map { it to it.tag_name.removePrefix("v") }
+                .filter { (_, name) ->
+                    compareSemver(name, from) > 0 && compareSemver(name, to) <= 0
+                }
+                .sortedWith(compareByDescending { (_, name) -> SemverKey(name) })
+                .take(MAX_AGGREGATED_RELEASES)
+                .toList()
+            if (included.isEmpty()) return@runCatching null
+            included.joinToString("\n\n") { (release, _) ->
+                val header = "## ${release.tag_name}"
+                if (release.body.isBlank()) header else "$header\n\n${release.body.trim()}"
+            }
+        }.getOrNull()
+    }
 
-    private data class SemverKey(val name: String) : Comparable<SemverKey> {
-        private val parts: List<Int> = name.substringBefore('-').substringBefore('+')
+    private fun latestBetaRelease(): GitHubRelease? {
+        val releases = fetchReleases(RELEASES_LIST_URL) ?: return null
+        return releases.asSequence()
+            .filter { it.prerelease && BETA_TAG_REGEX.matches(it.tag_name) }
+            .maxByOrNull { SemverKey(it.tag_name.removePrefix("v")) }
+    }
+
+    internal data class SemverKey(val name: String) : Comparable<SemverKey> {
+        private val coreString: String = name.substringBefore('+')
+        private val baseParts: List<Int> = coreString.substringBefore('-')
             .split('.')
             .map { it.toIntOrNull() ?: 0 }
+        private val prereleaseParts: List<PrereleasePart> =
+            coreString.substringAfter('-', missingDelimiterValue = "")
+                .takeIf { it.isNotEmpty() }
+                ?.split('.')
+                ?.map { token ->
+                    token.toIntOrNull()?.let { PrereleasePart.Numeric(it) }
+                        ?: PrereleasePart.Alpha(token)
+                }
+                ?: emptyList()
+        private val isPrerelease: Boolean = prereleaseParts.isNotEmpty()
 
         override fun compareTo(other: SemverKey): Int {
-            val len = maxOf(parts.size, other.parts.size)
+            val len = maxOf(baseParts.size, other.baseParts.size)
             for (i in 0 until len) {
-                val a = parts.getOrElse(i) { 0 }
-                val b = other.parts.getOrElse(i) { 0 }
+                val a = baseParts.getOrElse(i) { 0 }
+                val b = other.baseParts.getOrElse(i) { 0 }
                 if (a != b) return a.compareTo(b)
             }
+            // Same base. Semver: a release without prerelease > one with.
+            if (!isPrerelease && other.isPrerelease) return 1
+            if (isPrerelease && !other.isPrerelease) return -1
+            val pl = maxOf(prereleaseParts.size, other.prereleaseParts.size)
+            for (i in 0 until pl) {
+                val a = prereleaseParts.getOrNull(i)
+                val b = other.prereleaseParts.getOrNull(i)
+                if (a == null) return -1
+                if (b == null) return 1
+                val cmp = a.compareTo(b)
+                if (cmp != 0) return cmp
+            }
             return 0
+        }
+
+        sealed class PrereleasePart : Comparable<PrereleasePart> {
+            data class Numeric(val value: Int) : PrereleasePart()
+            data class Alpha(val value: String) : PrereleasePart()
+
+            override fun compareTo(other: PrereleasePart): Int = when {
+                this is Numeric && other is Numeric -> value.compareTo(other.value)
+                this is Alpha && other is Alpha -> value.compareTo(other.value)
+                // Semver: numeric identifiers always have lower precedence than alphanumeric.
+                this is Numeric -> -1
+                else -> 1
+            }
         }
     }
 
@@ -173,12 +213,10 @@ class AppUpdateChecker @Inject constructor(
     private fun isUpdate(release: GitHubRelease, channel: UpdateChannel): Boolean {
         return when (channel) {
             UpdateChannel.STABLE -> release.tag_name.removePrefix("v") != BuildConfig.VERSION_NAME
-            // The beta tag is rolling, so compare the build commit SHA instead of the tag name.
-            UpdateChannel.BETA -> {
-                val remoteSha = release.target_commitish
-                val localSha = BuildConfig.GIT_SHA
-                remoteSha.isNotBlank() && localSha.isNotBlank() && remoteSha != localSha
-            }
+            UpdateChannel.BETA -> compareSemver(
+                release.tag_name.removePrefix("v"),
+                BuildConfig.VERSION_NAME,
+            ) > 0
         }
     }
 
