@@ -96,10 +96,10 @@ class LibraryUpdateWorker @AssistedInject constructor(
     }
 
     private fun downloadingText(chapterName: String, remaining: Int): String = when {
-        chapterName.isBlank() && remaining > 0 -> "Downloading · +$remaining queued"
-        chapterName.isBlank() -> "Downloading…"
-        remaining > 0 -> "Downloading $chapterName · +$remaining queued"
-        else -> "Downloading $chapterName"
+        chapterName.isBlank() && remaining > 0 -> "+$remaining queued"
+        chapterName.isBlank() -> "Starting…"
+        remaining > 0 -> "$chapterName · +$remaining queued"
+        else -> chapterName
     }
 
     private fun summaryLine(s: UpdateSummary): String {
@@ -144,10 +144,15 @@ class LibraryUpdateWorker @AssistedInject constructor(
         )
     }
 
-    private fun buildProgressNotification(text: String, total: Int, done: Int): Notification =
+    private fun buildProgressNotification(
+        text: String,
+        total: Int,
+        done: Int,
+        title: String = "Updating library",
+    ): Notification =
         NotificationCompat.Builder(applicationContext, GrimoireApp.LIBRARY_UPDATE_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
-            .setContentTitle("Updating library")
+            .setContentTitle(title)
             .setContentText(text)
             .setProgress(total.coerceAtLeast(1), done, total <= 0)
             .setContentIntent(tapIntent())
@@ -155,11 +160,11 @@ class LibraryUpdateWorker @AssistedInject constructor(
             .setSilent(true)
             .build()
 
-    /** Re-posts the ongoing notification with new body text and an indeterminate bar. */
+    /** Re-posts the ongoing notification with the download-phase title. */
     private fun updateForegroundText(text: String) {
         NotificationManagerCompat.from(applicationContext).notify(
             PROGRESS_NOTIF_ID,
-            buildProgressNotification(text, total = 0, done = 0),
+            buildProgressNotification(text, total = 0, done = 0, title = "Downloading new chapters"),
         )
     }
 
