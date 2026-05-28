@@ -18,11 +18,13 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.grimoire.app.GrimoireApp
 import io.grimoire.app.MainActivity
+import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryUpdatePreferences
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
+import kotlinx.coroutines.flow.first
 
 /**
  * Runs a library refresh in the background. Used for both the periodic schedule
@@ -41,6 +43,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
     private val extensionManager: ExtensionManager,
     private val categoryDao: CategoryDao,
     private val authManager: HiddenCategoriesAuthManager,
+    private val downloadManager: DownloadManager,
 ) : CoroutineWorker(applicationContext, params) {
 
     override suspend fun getForegroundInfo(): ForegroundInfo =
@@ -74,10 +77,29 @@ class LibraryUpdateWorker @AssistedInject constructor(
             return Result.retry()
         }
 
+        // Auto-download queues chapters via DownloadManager.enqueue, but the
+        // startForegroundService() call there is a no-op for background callers
+        // on Android 12+. Drain the queue inline from this foreground worker
+        // so the chapters actually download in the same run.
+        if (summary.newChapters > 0 && preferences.autoDownloadNewChapters.changes().first()) {
+            runCatching {
+                downloadManager.processQueue { chapterName, remaining ->
+                    updateForegroundText(downloadingText(chapterName, remaining))
+                }
+            }
+        }
+
         preferences.lastRunAt.set(System.currentTimeMillis().toString())
         preferences.lastRunSuccess.set(true)
         preferences.lastRunMessage.set(summaryLine(summary))
         return Result.success()
+    }
+
+    private fun downloadingText(chapterName: String, remaining: Int): String = when {
+        chapterName.isBlank() && remaining > 0 -> "Downloading · +$remaining queued"
+        chapterName.isBlank() -> "Downloading…"
+        remaining > 0 -> "Downloading $chapterName · +$remaining queued"
+        else -> "Downloading $chapterName"
     }
 
     private fun summaryLine(s: UpdateSummary): String {
@@ -132,6 +154,14 @@ class LibraryUpdateWorker @AssistedInject constructor(
             .setOngoing(true)
             .setSilent(true)
             .build()
+
+    /** Re-posts the ongoing notification with new body text and an indeterminate bar. */
+    private fun updateForegroundText(text: String) {
+        NotificationManagerCompat.from(applicationContext).notify(
+            PROGRESS_NOTIF_ID,
+            buildProgressNotification(text, total = 0, done = 0),
+        )
+    }
 
     private suspend fun maybeNotifyNovel(novel: NovelEntity, newReadable: Int, newLocked: Int) {
         val readablePart = if (novel.notifyOnNewChapters) newReadable else 0
