@@ -55,7 +55,7 @@ class DownloadManager @Inject constructor(
 
     fun resume() {
         _isPaused.value = false
-        context.startForegroundService(Intent(context, DownloadService::class.java))
+        requestServiceStart()
     }
 
     fun setConcurrency(value: Int) {
@@ -86,7 +86,7 @@ class DownloadManager @Inject constructor(
             }
         }
         _isPaused.value = false
-        context.startForegroundService(Intent(context, DownloadService::class.java))
+        requestServiceStart()
     }
 
     fun cancel(chapter: ChapterEntity) {
@@ -159,13 +159,27 @@ class DownloadManager @Inject constructor(
         }
         scope.launch { chapterDao.setDownloadStatus(chapter.id, target) }
         _isPaused.value = false
-        context.startForegroundService(Intent(context, DownloadService::class.java))
+        requestServiceStart()
     }
 
     fun retryAll(novelId: Long) {
         scope.launch { chapterDao.retryAllFailed(novelId) }
         _isPaused.value = false
-        context.startForegroundService(Intent(context, DownloadService::class.java))
+        requestServiceStart()
+    }
+
+    /**
+     * Tries to wake [DownloadService]. Android 12+ refuses a foreground service
+     * start from a background-only context (e.g. a WorkManager worker), so we
+     * swallow the [IllegalStateException] subclass; the queued rows stay in the
+     * DB and the calling worker (or the next foreground tap) drains them.
+     */
+    private fun requestServiceStart() {
+        try {
+            context.startForegroundService(Intent(context, DownloadService::class.java))
+        } catch (_: IllegalStateException) {
+            // ForegroundServiceStartNotAllowedException on API 31+.
+        }
     }
 
     fun cancelAllFailed(novelId: Long) {
