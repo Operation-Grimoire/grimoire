@@ -207,13 +207,22 @@ class DownloadManager @Inject constructor(
                             } ?: break
                             val chapter = picked.first
                             val isRefresh = picked.second
-                            var redactName = false
+                            // Look up the novel before starting the fetch so the progress
+                            // notification can announce what's currently being downloaded —
+                            // not just what just finished. With concurrent downloads the
+                            // post-completion callback alone made the notification look
+                            // frozen on whichever chapter happened to finish last.
+                            val novel = novelDao.getById(chapter.novelId)
+                            val redactName = novel != null &&
+                                !authManager.isUnlocked.value &&
+                                novel.categoryId != null &&
+                                categoryDao.getAllOnce()
+                                    .firstOrNull { it.id == novel.categoryId }?.isHidden == true
+                            val displayName = if (redactName) "" else chapter.name
+                            onProgress(displayName, chapterDao.getQueuedCount())
+
                             runCatching {
-                                val novel = novelDao.getById(chapter.novelId) ?: error("Novel not found")
-                                redactName = !authManager.isUnlocked.value &&
-                                    novel.categoryId != null &&
-                                    categoryDao.getAllOnce()
-                                        .firstOrNull { it.id == novel.categoryId }?.isHidden == true
+                                if (novel == null) error("Novel not found")
                                 val src = extensionManager.extensions.value
                                     .firstOrNull { it.source.id == novel.sourceId }?.source
                                     ?: error("Source not available")
@@ -231,8 +240,6 @@ class DownloadManager @Inject constructor(
                                                   else ChapterDownloadStatus.ERROR.ordinal
                                 chapterDao.setDownloadStatus(chapter.id, errorStatus)
                             }
-                            val displayName = if (redactName) "" else chapter.name
-                            onProgress(displayName, chapterDao.getQueuedCount())
                         }
                     }
                 }
