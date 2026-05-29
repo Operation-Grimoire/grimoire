@@ -209,14 +209,17 @@ fun LibraryScreen(
     )
     val currentTab = pagerState.currentPage.coerceIn(0, pageCount - 1)
 
-    // Restore the last-viewed category once the persisted id and the category list are
-    // both loaded. A remembered category that is now hidden (the app starts locked) is
-    // absent from `tabCategoryIds`, so it falls back to the first tab and stays hidden.
+    // Restore the last-viewed category once the persisted id, the category list, AND the
+    // built tabs are all available. `resolveRestoreTargetPage` returns null until then so
+    // the restore can't fire during the startup window where the tabs are still empty and
+    // latch onto the fallback tab, losing the saved category. A remembered category that is
+    // now hidden (the app starts locked) is absent from `tabCategoryIds`, so it resolves to
+    // the first tab and stays hidden.
     var restored by remember { mutableStateOf(false) }
     LaunchedEffect(restored, categoriesLoaded, persistedCategoryId, tabCategoryIds) {
-        if (restored || !categoriesLoaded) return@LaunchedEffect
-        val savedId = persistedCategoryId ?: return@LaunchedEffect
-        val target = tabCategoryIds.indexOf(savedId).takeIf { it >= 0 } ?: 0
+        if (restored) return@LaunchedEffect
+        val target = resolveRestoreTargetPage(categoriesLoaded, persistedCategoryId, tabCategoryIds)
+            ?: return@LaunchedEffect
         if (target != pagerState.currentPage) pagerState.scrollToPage(target)
         restored = true
     }
