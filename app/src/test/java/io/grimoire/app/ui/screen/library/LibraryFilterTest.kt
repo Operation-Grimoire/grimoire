@@ -302,4 +302,66 @@ class LibraryFilterTest {
         )
         assertEquals(listOf("Same", "Less", "More"), tabs[0].novels!!.map { it.title })
     }
+
+    @Test
+    fun `restore target waits until categories are loaded`() {
+        assertNull(
+            resolveRestoreTargetPage(
+                categoriesLoaded = false,
+                persistedCategoryId = 5L,
+                tabCategoryIds = listOf(-1L, 5L),
+            ),
+        )
+    }
+
+    @Test
+    fun `restore target waits until persisted id is known`() {
+        assertNull(
+            resolveRestoreTargetPage(
+                categoriesLoaded = true,
+                persistedCategoryId = null,
+                tabCategoryIds = listOf(-1L, 5L),
+            ),
+        )
+    }
+
+    @Test
+    fun `restore target waits until tabs are built`() {
+        // The bug: categories + persisted id are ready but the tabs combine hasn't
+        // emitted yet. Returning a page here would latch the restore onto the fallback
+        // and drop the saved category.
+        assertNull(
+            resolveRestoreTargetPage(
+                categoriesLoaded = true,
+                persistedCategoryId = 5L,
+                tabCategoryIds = emptyList(),
+            ),
+        )
+    }
+
+    @Test
+    fun `restore target resolves to the saved category's page`() {
+        assertEquals(
+            2,
+            resolveRestoreTargetPage(
+                categoriesLoaded = true,
+                persistedCategoryId = 7L,
+                tabCategoryIds = listOf(-1L, 5L, 7L),
+            ),
+        )
+    }
+
+    @Test
+    fun `restore target falls back to the first tab for a hidden saved category`() {
+        // App started locked: the saved category is filtered out of the tabs. Now that
+        // the tabs exist, falling back to page 0 is correct.
+        assertEquals(
+            0,
+            resolveRestoreTargetPage(
+                categoriesLoaded = true,
+                persistedCategoryId = 9L,
+                tabCategoryIds = listOf(-1L, 5L, 7L),
+            ),
+        )
+    }
 }

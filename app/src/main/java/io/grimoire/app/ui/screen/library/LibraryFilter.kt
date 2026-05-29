@@ -33,6 +33,32 @@ internal data class LibraryTab(
 )
 
 /**
+ * Resolves which pager page the last-viewed category should be restored to, or
+ * `null` when the decision must wait for more state to load.
+ *
+ * Returning `null` is essential: the tabs ([tabCategoryIds]) are built by a
+ * `combine` that emits after the categories list and the persisted id are already
+ * available, so there is a startup window where `categoriesLoaded` is true and
+ * [persistedCategoryId] is known but [tabCategoryIds] is still empty. Acting then
+ * would fall back to page 0 and latch the restore as done, dropping the user's
+ * saved category. Waiting until the tabs exist avoids that race.
+ *
+ * Once the tabs are present, a saved id that isn't among them — a category hidden
+ * because the app started locked — resolves to page 0 without disturbing the
+ * persisted id, so it is restored again on a later unlocked reopen.
+ */
+internal fun resolveRestoreTargetPage(
+    categoriesLoaded: Boolean,
+    persistedCategoryId: Long?,
+    tabCategoryIds: List<Long>,
+): Int? {
+    if (!categoriesLoaded) return null
+    val savedId = persistedCategoryId ?: return null
+    if (tabCategoryIds.isEmpty()) return null
+    return tabCategoryIds.indexOf(savedId).takeIf { it >= 0 } ?: 0
+}
+
+/**
  * Pure projection of all library tabs from a single snapshot of inputs.
  *
  * Returns one [LibraryTab] per visible tab (optionally including the synthetic "All" tab)
