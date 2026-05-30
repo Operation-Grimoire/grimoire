@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -68,6 +69,14 @@ class BrowseViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val pinnedPackages: StateFlow<Set<String>> = browsePreferences.pinnedSources.stateIn(viewModelScope)
+
+    /**
+     * Held in the VM (not remembered in the screen) so the Browse scroll
+     * position survives navigating to a novel and back. rememberLazyListState's
+     * saver would clamp the restored index to the top while the source list is
+     * momentarily short on return; a persistent state object avoids that.
+     */
+    val listState = LazyListState()
 
     val showNovelUpdates: StateFlow<Boolean> = browsePreferences.showNovelUpdates.stateIn(viewModelScope)
 
