@@ -47,6 +47,15 @@ class ExtensionRepository @Inject constructor(
     private val _authRequiredRepos = MutableStateFlow<List<RepoEntity>>(emptyList())
     val authRequiredRepos: StateFlow<List<RepoEntity>> = _authRequiredRepos.asStateFlow()
 
+    /**
+     * True after the last refresh hit a GitHub 403 rate limit. The UI uses this
+     * to prompt the user to connect their GitHub account (5,000/hr) instead of
+     * the 60/hr anonymous bucket. Only emits a fresh value when it changes, so
+     * a dismissed prompt won't keep re-firing on identical refreshes.
+     */
+    private val _rateLimited = MutableStateFlow(false)
+    val rateLimited: StateFlow<Boolean> = _rateLimited.asStateFlow()
+
     /** Count of installed extensions that have a newer version in an enabled repo. */
     val updateCount: StateFlow<Int> = items
         .map { list -> list.count { it is ExtensionItem.Installed && it.hasUpdate } }
@@ -72,17 +81,28 @@ class ExtensionRepository @Inject constructor(
             val fresh = mutableMapOf<String, RemoteExtension>()
             val errors = mutableListOf<String>()
             val authRequired = mutableListOf<RepoEntity>()
+            var rateLimited = false
             for (repo in enabledRepos) {
                 fetcher.fetch(repo.indexUrl)
                     .onSuccess { list -> list.forEach { fresh[it.pkg] = it } }
                     .onFailure { e ->
                         if (e is IndexAuthRequiredException) authRequired.add(repo)
+                        if (e is GitHubRateLimitException) rateLimited = true
                         errors.add("${repo.name}: ${e.message}")
+                        // A transient fetch failure shouldn't blank a repo that
+                        // loaded fine moments ago — keep its cached entries so
+                        // the list doesn't collapse to installed-only. A
+                        // successful repo's fresh data still wins (assignment
+                        // above overrides putIfAbsent here).
+                        fetcher.loadCached(repo.indexUrl)?.forEach {
+                            fresh.putIfAbsent(it.pkg, it)
+                        }
                     }
             }
 
             _fetchError.value = errors.takeIf { it.isNotEmpty() }?.joinToString("\n")
             _authRequiredRepos.value = authRequired
+            _rateLimited.value = rateLimited
             _items.value = merge(installed, fresh)
         } finally {
             _isFetching.value = false

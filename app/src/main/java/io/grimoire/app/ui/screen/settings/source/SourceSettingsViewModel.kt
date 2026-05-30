@@ -10,6 +10,8 @@ import io.grimoire.api.source.SourcePreference
 import io.grimoire.api.source.WebViewLoginSource
 import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import io.grimoire.app.data.preferences.AppLanguagePreferences
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
@@ -104,28 +106,59 @@ class SourceSettingsViewModel @Inject constructor(
             }
         }
         if (supportsWebViewLogin) {
-            checkLoginState()
+            // Poll on creation: navigating back from the login WebView recreates
+            // this VM, and the source confirms its session over the network so a
+            // single immediate check right after login often reports signed-out.
+            checkLoginState(retry = true)
             // Re-check after returning from the login WebView (it sets this key).
             viewModelScope.launch {
                 savedStateHandle.getStateFlow(SOURCE_LOGIN_RESULT_KEY, false).collect { done ->
                     if (done) {
                         savedStateHandle[SOURCE_LOGIN_RESULT_KEY] = false
-                        checkLoginState()
+                        checkLoginState(retry = true)
                     }
                 }
             }
         }
     }
 
-    /** Refreshes the source's sign-in state. */
-    fun checkLoginState() {
-        val src = loaded?.source as? WebViewLoginSource ?: return
-        viewModelScope.launch {
-            val signedIn = withContext(Dispatchers.IO) {
-                runCatching { src.isLoggedIn() }.getOrDefault(false)
+    private var loginCheckJob: Job? = null
+
+    /**
+     * Refreshes the source's sign-in state.
+     *
+     * A source confirms its session over the network, and right after the login
+     * WebView returns the server may not report the session as live on the very
+     * first check. When [retry] is set we keep polling with backoff for a few
+     * seconds so a freshly-completed login is picked up. The first result is
+     * surfaced immediately (so the row never sticks on "Checking…"); later
+     * attempts can still upgrade a signed-out result to signed-in.
+     */
+    fun checkLoginState(retry: Boolean = false) {
+        if (loaded?.source !is WebViewLoginSource) return
+        loginCheckJob?.cancel()
+        loginCheckJob = viewModelScope.launch {
+            // First entry is immediate; the rest back off to ~7s total.
+            val waits = if (retry) {
+                longArrayOf(0, 300, 500, 800, 1200, 1800, 2500)
+            } else {
+                longArrayOf(0)
             }
-            _loginState.value =
-                if (signedIn) LoginUiState.SIGNED_IN else LoginUiState.SIGNED_OUT
+            for ((i, wait) in waits.withIndex()) {
+                if (wait > 0) delay(wait)
+                val src = loaded?.source as? WebViewLoginSource ?: return@launch
+                val signedIn = withContext(Dispatchers.IO) {
+                    runCatching { src.isLoggedIn() }.getOrDefault(false)
+                }
+                if (signedIn) {
+                    _loginState.value = LoginUiState.SIGNED_IN
+                    return@launch
+                }
+                // Show "Not signed in" after the first miss rather than holding
+                // the row on "Checking…" for the whole poll; keep polling in
+                // case the session comes up a moment later (just-logged-in case).
+                if (i == 0) _loginState.value = LoginUiState.SIGNED_OUT
+            }
         }
     }
 

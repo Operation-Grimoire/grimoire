@@ -8,6 +8,7 @@ import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionInstaller
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.extension.repo.ExtensionRepository
+import io.grimoire.app.extension.repo.GitHubRateLimitException
 import io.grimoire.app.extension.repo.HashMismatchException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -56,8 +57,23 @@ class ExtensionsViewModel @Inject constructor(
     private val _pendingInstall = MutableStateFlow<File?>(null)
     val pendingInstall: StateFlow<File?> = _pendingInstall.asStateFlow()
 
+    /**
+     * True when a GitHub 403 rate limit was hit (during refresh or a download).
+     * The screen shows a prompt to connect GitHub / try later; dismissing it
+     * clears this until the next time the limit is hit.
+     */
+    private val _rateLimitPrompt = MutableStateFlow(false)
+    val rateLimitPrompt: StateFlow<Boolean> = _rateLimitPrompt.asStateFlow()
+
     init {
         refresh()
+        viewModelScope.launch {
+            repository.rateLimited.collect { if (it) _rateLimitPrompt.value = true }
+        }
+    }
+
+    fun dismissRateLimitPrompt() {
+        _rateLimitPrompt.value = false
     }
 
     fun refresh() {
@@ -84,6 +100,10 @@ class ExtensionsViewModel @Inject constructor(
                     val msg = when (e) {
                         is HashMismatchException ->
                             "Download verification failed — try again or switch networks"
+                        is GitHubRateLimitException -> {
+                            _rateLimitPrompt.value = true
+                            "GitHub rate limit reached"
+                        }
                         else -> e.message ?: "Download failed"
                     }
                     _installStates.update { it + (pkg to InstallState.Error(msg)) }
