@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -90,11 +89,9 @@ fun SourceBrowseScreen(
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val focusRequester = remember { FocusRequester() }
 
-    val gridState = rememberLazyGridState()
-    // One grid state is shared across Popular / Latest / Search; switching mode
-    // replaces the list but the grid keeps its old scroll offset. Jump back to
-    // the top whenever the mode changes so a new tab doesn't open mid-list.
-    LaunchedEffect(mode) { gridState.scrollToItem(0) }
+    // Held in the VM so scroll survives navigating to a novel and back; the VM
+    // also resets it to the top on real mode changes (Popular / Latest / Search).
+    val gridState = viewModel.gridState
     val reachedBottom by remember {
         derivedStateOf {
             val last = gridState.layoutInfo.visibleItemsInfo.lastOrNull()

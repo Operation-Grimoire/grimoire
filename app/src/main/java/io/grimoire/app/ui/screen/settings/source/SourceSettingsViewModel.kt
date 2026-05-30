@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.source.ConfigurableSource
+import io.grimoire.api.source.MultiHostSource
 import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.api.source.SourcePreference
 import io.grimoire.api.source.WebViewLoginSource
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -66,6 +68,22 @@ class SourceSettingsViewModel @Inject constructor(
     /** Multi-language sources get the dedicated content-language picker row. */
     val isMultiLanguage: Boolean =
         loaded?.source is MultiLanguageSource || loaded?.source?.lang == "all"
+
+    /** Mirror hosts for a multi-host source, most-preferred first (empty otherwise). */
+    val hosts: List<String> = (loaded?.source as? MultiHostSource)?.hosts.orEmpty()
+    val isMultiHost: Boolean = hosts.isNotEmpty()
+
+    /** The pinned mirror; falls back to the source's first host when unset. */
+    val activeHost: StateFlow<String> = sourceSettings.activeHost(pkg).changes()
+        .map { it.ifBlank { hosts.firstOrNull().orEmpty() } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), hosts.firstOrNull().orEmpty())
+
+    fun setActiveHost(host: String) {
+        viewModelScope.launch {
+            sourceSettings.activeHost(pkg).set(host)
+            extensionManager.reapplyPreferences(pkg)
+        }
+    }
 
     /**
      * Summary shown on the "Content languages" nav row. Reflects the effective

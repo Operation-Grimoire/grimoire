@@ -18,6 +18,16 @@ class SourceSettingsPreferences @Inject constructor(
     fun pref(pkg: String, key: String, default: String = ""): Preference<String> =
         store.getString("source.$pkg.$key", default)
 
+    /**
+     * Pinned mirror host for a [io.grimoire.api.source.MultiHostSource], as a
+     * scheme-qualified origin. Empty means "no override" — the source falls back
+     * to its first/default host.
+     */
+    fun activeHost(pkg: String): Preference<String> =
+        store.getString("source.$pkg.active_host", "")
+
+    suspend fun activeHostNow(pkg: String): String = activeHost(pkg).changes().first()
+
     /** Reads the current value of every [keys] entry for [pkg] as a snapshot map. */
     suspend fun snapshot(pkg: String, keys: List<String>): Map<String, String> =
         keys.associateWith { pref(pkg, it).changes().first() }

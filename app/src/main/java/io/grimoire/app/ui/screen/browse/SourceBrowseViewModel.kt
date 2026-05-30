@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,6 +10,7 @@ import io.grimoire.api.model.Novel
 import io.grimoire.api.network.CloudflareException
 import io.grimoire.api.source.CatalogueSource
 import io.grimoire.api.source.ConfigurableSource
+import io.grimoire.api.source.MultiHostSource
 import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.app.data.local.dao.NovelDao
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -76,7 +79,8 @@ class SourceBrowseViewModel @Inject constructor(
 
     val isConfigurable: Boolean
         get() = loaded?.source is ConfigurableSource ||
-            loaded?.source is MultiLanguageSource
+            loaded?.source is MultiLanguageSource ||
+            loaded?.source is MultiHostSource
 
     val sourceName: String get() = loaded?.info?.label?.substringAfter(": ", loaded?.info?.label.orEmpty()).orEmpty()
         .ifEmpty { packageName }
@@ -119,6 +123,14 @@ class SourceBrowseViewModel @Inject constructor(
     private val _mode = MutableStateFlow(BrowseMode.POPULAR)
     val mode: StateFlow<BrowseMode> = _mode.asStateFlow()
 
+    /**
+     * Held in the VM so the grid scroll position survives navigating to a novel
+     * and back (the VM outlives the screen on the source-browse back-stack entry).
+     * Resetting to the top happens on real mode changes only — see the collector
+     * in [init] — so returning from a novel doesn't jump to the top.
+     */
+    val gridState = LazyGridState()
+
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
@@ -132,6 +144,12 @@ class SourceBrowseViewModel @Inject constructor(
         if (!initialQuery.isNullOrBlank()) {
             _query.value = initialQuery
             _mode.value = BrowseMode.SEARCH
+        }
+        // Jump to the top only when the user actually switches Popular/Latest/
+        // Search — drop(1) skips the initial value so it never fires on screen
+        // re-entry (e.g. returning from a novel).
+        viewModelScope.launch {
+            _mode.drop(1).collect { gridState.scrollToItem(0) }
         }
         // Wait for ExtensionManager scan to finish before loading.
         // StateFlow emits current value immediately, so if scan already completed this is instant.
