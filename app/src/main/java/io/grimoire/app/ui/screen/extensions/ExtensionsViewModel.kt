@@ -32,7 +32,7 @@ sealed class InstallState {
 }
 
 /** Which extensions section the user is viewing on the Extensions screen. */
-enum class ExtensionSection { INSTALLED, AVAILABLE, UPDATES }
+enum class ExtensionSection { ALL, INSTALLED, AVAILABLE, UPDATES }
 
 /**
  * Name/language-filtered, partitioned extension lists plus the available
@@ -92,7 +92,7 @@ class ExtensionsViewModel @Inject constructor(
     private val _languageFilter = MutableStateFlow<String?>(null)
     val languageFilter: StateFlow<String?> = _languageFilter.asStateFlow()
 
-    private val _section = MutableStateFlow(ExtensionSection.INSTALLED)
+    private val _section = MutableStateFlow(ExtensionSection.ALL)
     val section: StateFlow<ExtensionSection> = _section.asStateFlow()
 
     fun setNameFilter(query: String) { _nameFilter.value = query }
