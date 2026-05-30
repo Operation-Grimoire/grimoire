@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.source.ConfigurableSource
+import io.grimoire.api.source.MultiHostSource
 import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
 import kotlinx.coroutines.Deferred
@@ -77,6 +78,7 @@ class ExtensionManager @Inject constructor(
         (loaded.source as? MultiLanguageSource)?.setEnabledLanguages(
             sourceSettings.effectiveLanguages(pkg),
         )
+        (loaded.source as? MultiHostSource)?.setActiveHost(sourceSettings.activeHostNow(pkg))
     }
 
     private suspend fun scanPackages() {

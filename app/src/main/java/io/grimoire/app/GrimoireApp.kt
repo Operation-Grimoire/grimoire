@@ -48,7 +48,27 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         //    Bearer token and the Accept: application/octet-stream the
         //    api.github.com asset endpoint requires.
         // Lambda form keeps client init off the main thread.
-        .okHttpClient { imageHttpClient }
+        .okHttpClient {
+            // Some cover hosts (e.g. LibGen) hotlink-protect images and answer
+            // 200 with an empty body unless the request carries a same-site
+            // Referer. Add the image's own origin as Referer when none is set —
+            // harmless for hosts that ignore it, and it makes protected covers
+            // load without coupling the loader to any one source.
+            imageHttpClient.newBuilder()
+                .addInterceptor { chain ->
+                    val request = chain.request()
+                    if (request.header("Referer") != null) {
+                        chain.proceed(request)
+                    } else {
+                        chain.proceed(
+                            request.newBuilder()
+                                .header("Referer", "${request.url.scheme}://${request.url.host}/")
+                                .build(),
+                        )
+                    }
+                }
+                .build()
+        }
         .memoryCache {
             MemoryCache.Builder(this)
                 .maxSizePercent(0.15)

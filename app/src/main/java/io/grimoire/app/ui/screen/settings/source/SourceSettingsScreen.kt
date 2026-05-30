@@ -20,12 +20,16 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -36,6 +40,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -89,7 +96,7 @@ fun SourceSettingsScreen(
         },
     ) { padding ->
         if (viewModel.preferences.isEmpty() && !viewModel.isMultiLanguage &&
-            !viewModel.supportsWebViewLogin
+            !viewModel.supportsWebViewLogin && !viewModel.isMultiHost
         ) {
             Column(
                 Modifier.fillMaxSize().padding(padding),
@@ -132,10 +139,49 @@ fun SourceSettingsScreen(
                 )
             }
 
+            if (viewModel.isMultiHost) {
+                val activeHost by viewModel.activeHost.collectAsState()
+                if (viewModel.isMultiLanguage) HorizontalDivider()
+                SectionHeader("Mirror")
+                var expanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                ) {
+                    OutlinedTextField(
+                        value = activeHost.substringAfter("://").ifEmpty { activeHost },
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Mirror") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                    ) {
+                        viewModel.hosts.forEach { host ->
+                            DropdownMenuItem(
+                                text = { Text(host.substringAfter("://").ifEmpty { host }) },
+                                onClick = {
+                                    viewModel.setActiveHost(host)
+                                    expanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+
             if (viewModel.supportsWebViewLogin) {
                 val loginState by viewModel.loginState.collectAsState()
                 val signedIn = loginState == SourceSettingsViewModel.LoginUiState.SIGNED_IN
-                if (viewModel.isMultiLanguage) HorizontalDivider()
+                if (viewModel.isMultiLanguage || viewModel.isMultiHost) HorizontalDivider()
                 SectionHeader("Account")
                 ListItem(
                     headlineContent = { Text("Sign-in status") },
@@ -173,7 +219,7 @@ fun SourceSettingsScreen(
             }
 
             if (viewModel.preferences.isNotEmpty() || viewModel.canValidate) {
-                if (viewModel.isMultiLanguage || viewModel.supportsWebViewLogin) {
+                if (viewModel.isMultiLanguage || viewModel.supportsWebViewLogin || viewModel.isMultiHost) {
                     HorizontalDivider()
                 }
                 SectionHeader("Configuration")

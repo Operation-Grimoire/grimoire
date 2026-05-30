@@ -75,6 +75,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.source.ConfigurableSource
+import io.grimoire.api.source.MultiHostSource
 import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.api.source.WebViewLoginSource
 import io.grimoire.app.data.local.entity.RepoEntity
@@ -827,7 +828,8 @@ private fun ExtensionItem.hasSettings(): Boolean {
     }
     return source is ConfigurableSource ||
         source is MultiLanguageSource ||
-        source is WebViewLoginSource
+        source is WebViewLoginSource ||
+        source is MultiHostSource
 }
 
 private const val MULTI_LANGUAGE_PREVIEW_COUNT = 3
