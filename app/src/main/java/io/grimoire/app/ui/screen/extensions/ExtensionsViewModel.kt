@@ -10,10 +10,15 @@ import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.extension.repo.ExtensionRepository
 import io.grimoire.app.extension.repo.GitHubRateLimitException
 import io.grimoire.app.extension.repo.HashMismatchException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -25,6 +30,22 @@ sealed class InstallState {
     data class Downloading(val bytesRead: Long, val totalBytes: Long) : InstallState()
     data class Error(val message: String) : InstallState()
 }
+
+/** Which extensions section the user is viewing on the Extensions screen. */
+enum class ExtensionSection { INSTALLED, AVAILABLE, UPDATES }
+
+/**
+ * Name/language-filtered, partitioned extension lists plus the available
+ * language codes (for the chips) and the count of installed extensions with a
+ * pending update (for the Updates chip badge).
+ */
+data class ExtensionsUi(
+    val installed: List<ExtensionItem> = emptyList(),
+    val available: List<ExtensionItem> = emptyList(),
+    val updates: List<ExtensionItem> = emptyList(),
+    val languages: List<String> = emptyList(),
+    val updateCount: Int = 0,
+)
 
 @HiltViewModel
 class ExtensionsViewModel @Inject constructor(
@@ -64,6 +85,59 @@ class ExtensionsViewModel @Inject constructor(
      */
     private val _rateLimitPrompt = MutableStateFlow(false)
     val rateLimitPrompt: StateFlow<Boolean> = _rateLimitPrompt.asStateFlow()
+
+    private val _nameFilter = MutableStateFlow("")
+    val nameFilter: StateFlow<String> = _nameFilter.asStateFlow()
+
+    private val _languageFilter = MutableStateFlow<String?>(null)
+    val languageFilter: StateFlow<String?> = _languageFilter.asStateFlow()
+
+    private val _section = MutableStateFlow(ExtensionSection.INSTALLED)
+    val section: StateFlow<ExtensionSection> = _section.asStateFlow()
+
+    fun setNameFilter(query: String) { _nameFilter.value = query }
+    fun setLanguageFilter(lang: String?) { _languageFilter.value = lang }
+    fun setSection(value: ExtensionSection) { _section.value = value }
+
+    @OptIn(FlowPreview::class)
+    val ui: StateFlow<ExtensionsUi> = combine(
+        items,
+        _nameFilter.debounce(120L),
+        _languageFilter,
+    ) { all, query, langFilter ->
+        val q = query.trim()
+        fun matches(item: ExtensionItem): Boolean =
+            (q.isBlank() || item.name.contains(q, ignoreCase = true)) &&
+                (langFilter == null || item.lang.uppercase() == langFilter)
+
+        val languages = all.map { it.lang.uppercase() }.distinct().sorted()
+        val updateCount = all.filterIsInstance<ExtensionItem.Installed>().count { it.hasUpdate }
+
+        val installed = (all.filterIsInstance<ExtensionItem.Installed>() +
+            all.filterIsInstance<ExtensionItem.InstalledOnly>())
+            .filter(::matches)
+            .sortedBy { it.name.lowercase() }
+        val available = all.filterIsInstance<ExtensionItem.Available>()
+            .filter(::matches)
+            .sortedBy { it.name.lowercase() }
+        val updates = installed.filter { it is ExtensionItem.Installed && it.hasUpdate }
+
+        ExtensionsUi(
+            installed = installed,
+            available = available,
+            updates = updates,
+            languages = languages,
+            updateCount = updateCount,
+        )
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExtensionsUi())
+
+    /** Download every installed extension that has a newer version available. */
+    fun updateAll() {
+        items.value.filterIsInstance<ExtensionItem.Installed>()
+            .filter { it.hasUpdate }
+            .forEach { update(it) }
+    }
 
     init {
         refresh()

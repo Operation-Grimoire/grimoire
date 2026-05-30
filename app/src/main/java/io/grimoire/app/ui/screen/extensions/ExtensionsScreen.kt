@@ -9,6 +9,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,6 +39,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -66,8 +70,10 @@ import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.PendingAddRepo
-import io.grimoire.app.ui.component.ExtensionIcon
+import io.grimoire.app.ui.component.AppSearchField
+import io.grimoire.app.ui.component.LanguageFilterChips
 import io.grimoire.app.ui.component.LinkText
+import io.grimoire.app.ui.component.SourceListItem
 import io.grimoire.app.util.languageLabel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -83,17 +89,16 @@ fun ExtensionsScreen(
     pendingAddRepo: StateFlow<PendingAddRepo?> = MutableStateFlow(null),
     onAddRepoHandled: () -> Unit = {},
 ) {
-    val items by viewModel.items.collectAsState()
+    val ui by viewModel.ui.collectAsState()
     val repos by viewModel.repos.collectAsState()
     val isFetching by viewModel.isFetching.collectAsState()
     val installStates by viewModel.installStates.collectAsState()
     val authRequiredRepos by viewModel.authRequiredRepos.collectAsState()
     val githubLogin by viewModel.githubLogin.collectAsState()
     val rateLimitPrompt by viewModel.rateLimitPrompt.collectAsState()
-
-    val installed = items.filterIsInstance<ExtensionItem.Installed>() +
-            items.filterIsInstance<ExtensionItem.InstalledOnly>()
-    val available = items.filterIsInstance<ExtensionItem.Available>()
+    val nameFilter by viewModel.nameFilter.collectAsState()
+    val languageFilter by viewModel.languageFilter.collectAsState()
+    val section by viewModel.section.collectAsState()
 
     val context = LocalContext.current
     val pendingInstall by viewModel.pendingInstall.collectAsState()
@@ -159,6 +164,11 @@ fun ExtensionsScreen(
                 },
                 title = { Text("Extensions") },
                 actions = {
+                    if (ui.updateCount > 0) {
+                        IconButton(onClick = viewModel::updateAll) {
+                            Icon(Icons.Default.SystemUpdateAlt, contentDescription = "Update all")
+                        }
+                    }
                     if (isFetching) {
                         Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
@@ -175,126 +185,54 @@ fun ExtensionsScreen(
             )
         },
     ) { padding ->
-        if (installed.isEmpty() && available.isEmpty()) {
-            EmptyState("No extensions found\nAdd a repository to discover extensions", Modifier.padding(padding))
-        } else {
-            LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-                if (authRequiredRepos.isNotEmpty()) {
-                    item {
-                        AuthRequiredBanner(
-                            repoNames = authRequiredRepos.map { it.name },
-                            signedInAs = githubLogin,
-                            onConnect = onConnectGitHub,
-                        )
-                    }
-                }
-                if (installed.isNotEmpty()) {
-                    item {
-                        SectionHeader("Installed")
-                    }
-                    items(installed, key = { it.packageName }) { item ->
-                        val state = installStates[item.packageName]
-                        val hasUpdate = item is ExtensionItem.Installed && item.hasUpdate
-                        val languages = item.multiLanguageOptions()
-                        ListItem(
-                            headlineContent = { Text(item.name) },
-                            supportingContent = {
-                                Column {
-                                    Text("${languageLabel(item.lang)} · v${item.versionName}")
-                                    if (!languages.isNullOrEmpty()) {
-                                        Text(
-                                            multiLanguageSummary(languages),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                    if (hasUpdate && state == null) {
-                                        Text(
-                                            "Update available: v${(item as ExtensionItem.Installed).remoteVersionName}",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    }
-                                    InstallProgressRow(state)
-                                }
-                            },
-                            leadingContent = {
-                                ExtensionIcon(item.packageName, item.lang, item.iconUrl)
-                            },
-                            trailingContent = {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    when {
-                                        state is InstallState.Downloading -> {
-                                            Text(
-                                                text = "${downloadPercent(state)}%",
-                                                style = MaterialTheme.typography.labelMedium,
-                                            )
-                                        }
-                                        state is InstallState.Error -> {
-                                            OutlinedButton(onClick = {
-                                                if (item is ExtensionItem.Installed) viewModel.update(item)
-                                                else viewModel.dismissInstallError(item.packageName)
-                                            }) { Text("Retry") }
-                                        }
-                                        hasUpdate -> {
-                                            OutlinedButton(onClick = {
-                                                viewModel.update(item as ExtensionItem.Installed)
-                                            }) { Text("Update") }
-                                        }
-                                    }
-                                    IconButton(onClick = { onOpenSourceSettings(item.packageName) }) {
-                                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                                    }
-                                    IconButton(onClick = { pendingRemove = item }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Remove")
-                                    }
-                                }
-                            },
-                        )
-                        HorizontalDivider()
-                    }
-                }
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            AppSearchField(
+                value = nameFilter,
+                onValueChange = viewModel::setNameFilter,
+                placeholder = "Search extensions…",
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            )
+            SectionFilterChips(
+                section = section,
+                updateCount = ui.updateCount,
+                onSelect = viewModel::setSection,
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
+            LanguageFilterChips(
+                languages = ui.languages,
+                selected = languageFilter,
+                onSelect = viewModel::setLanguageFilter,
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
 
-                if (available.isNotEmpty()) {
-                    item {
-                        SectionHeader("Available")
+            val list = when (section) {
+                ExtensionSection.INSTALLED -> ui.installed
+                ExtensionSection.AVAILABLE -> ui.available
+                ExtensionSection.UPDATES -> ui.updates
+            }
+
+            if (list.isEmpty() && authRequiredRepos.isEmpty()) {
+                EmptyState(emptyExtensionsMessage(section))
+            } else {
+                LazyColumn(Modifier.fillMaxSize()) {
+                    if (authRequiredRepos.isNotEmpty()) {
+                        item(key = "__auth__") {
+                            AuthRequiredBanner(
+                                repoNames = authRequiredRepos.map { it.name },
+                                signedInAs = githubLogin,
+                                onConnect = onConnectGitHub,
+                            )
+                        }
                     }
-                    items(available, key = { it.packageName }) { item ->
-                        val state = installStates[item.packageName]
-                        ListItem(
-                            headlineContent = { Text(item.name) },
-                            supportingContent = {
-                                Column {
-                                    Text("${languageLabel(item.lang)} · v${item.versionName}")
-                                    InstallProgressRow(state)
-                                }
-                            },
-                            leadingContent = {
-                                ExtensionIcon(item.packageName, item.lang, item.iconUrl)
-                            },
-                            trailingContent = {
-                                when (state) {
-                                    is InstallState.Downloading -> {
-                                        Text(
-                                            text = "${downloadPercent(state)}%",
-                                            style = MaterialTheme.typography.labelMedium,
-                                        )
-                                    }
-                                    is InstallState.Error -> {
-                                        OutlinedButton(onClick = { viewModel.install(item) }) {
-                                            Text("Retry")
-                                        }
-                                    }
-                                    null -> {
-                                        IconButton(onClick = { viewModel.install(item) }) {
-                                            Icon(Icons.Default.Download, contentDescription = "Install")
-                                        }
-                                    }
-                                }
-                            },
+                    items(list, key = { it.packageName }) { item ->
+                        ExtensionRow(
+                            item = item,
+                            state = installStates[item.packageName],
+                            onInstall = viewModel::install,
+                            onUpdate = viewModel::update,
+                            onDismissError = viewModel::dismissInstallError,
+                            onSettings = onOpenSourceSettings,
+                            onRemove = { pendingRemove = it },
                         )
                         HorizontalDivider()
                     }
@@ -525,15 +463,126 @@ private fun downloadLabel(state: InstallState.Downloading): String {
 }
 
 @Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+private fun SectionFilterChips(
+    section: ExtensionSection,
+    updateCount: Int,
+    onSelect: (ExtensionSection) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        FilterChip(
+            selected = section == ExtensionSection.INSTALLED,
+            onClick = { onSelect(ExtensionSection.INSTALLED) },
+            label = { Text("Installed") },
+        )
+        FilterChip(
+            selected = section == ExtensionSection.AVAILABLE,
+            onClick = { onSelect(ExtensionSection.AVAILABLE) },
+            label = { Text("Available") },
+        )
+        FilterChip(
+            selected = section == ExtensionSection.UPDATES,
+            onClick = { onSelect(ExtensionSection.UPDATES) },
+            label = { Text(if (updateCount > 0) "Updates ($updateCount)" else "Updates") },
+        )
+    }
+}
+
+@Composable
+private fun ExtensionRow(
+    item: ExtensionItem,
+    state: InstallState?,
+    onInstall: (ExtensionItem.Available) -> Unit,
+    onUpdate: (ExtensionItem.Installed) -> Unit,
+    onDismissError: (String) -> Unit,
+    onSettings: (String) -> Unit,
+    onRemove: (ExtensionItem) -> Unit,
+) {
+    val isInstalled = item is ExtensionItem.Installed || item is ExtensionItem.InstalledOnly
+    val hasUpdate = item is ExtensionItem.Installed && item.hasUpdate
+    val languages = item.multiLanguageOptions()
+    SourceListItem(
+        name = item.name,
+        lang = item.lang,
+        packageName = item.packageName,
+        iconUrl = item.iconUrl,
+        onClick = {
+            if (isInstalled) onSettings(item.packageName)
+            else if (item is ExtensionItem.Available) onInstall(item)
+        },
+        supporting = {
+            Column {
+                Text("${languageLabel(item.lang)} · v${item.versionName}")
+                if (!languages.isNullOrEmpty()) {
+                    Text(
+                        multiLanguageSummary(languages),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (hasUpdate && state == null) {
+                    Text(
+                        "Update available: v${(item as ExtensionItem.Installed).remoteVersionName}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                InstallProgressRow(state)
+            }
+        },
+        trailing = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (isInstalled) {
+                    when {
+                        state is InstallState.Downloading -> Text(
+                            "${downloadPercent(state)}%",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                        state is InstallState.Error -> OutlinedButton(onClick = {
+                            if (item is ExtensionItem.Installed) onUpdate(item)
+                            else onDismissError(item.packageName)
+                        }) { Text("Retry") }
+                        hasUpdate -> OutlinedButton(onClick = {
+                            onUpdate(item as ExtensionItem.Installed)
+                        }) { Text("Update") }
+                    }
+                    IconButton(onClick = { onSettings(item.packageName) }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
+                    IconButton(onClick = { onRemove(item) }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Remove")
+                    }
+                } else {
+                    when (state) {
+                        is InstallState.Downloading -> Text(
+                            "${downloadPercent(state)}%",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                        is InstallState.Error -> OutlinedButton(onClick = {
+                            (item as? ExtensionItem.Available)?.let(onInstall)
+                        }) { Text("Retry") }
+                        null -> IconButton(onClick = {
+                            (item as? ExtensionItem.Available)?.let(onInstall)
+                        }) { Icon(Icons.Default.Download, contentDescription = "Install") }
+                    }
+                }
+            }
+        },
     )
+}
+
+private fun emptyExtensionsMessage(section: ExtensionSection): String = when (section) {
+    ExtensionSection.INSTALLED -> "No installed extensions\nAdd a repository to discover extensions"
+    ExtensionSection.AVAILABLE -> "No available extensions\nAdd a repository to discover extensions"
+    ExtensionSection.UPDATES -> "Everything's up to date"
 }
 
 @Composable

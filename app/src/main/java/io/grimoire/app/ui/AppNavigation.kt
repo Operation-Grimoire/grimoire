@@ -105,11 +105,13 @@ fun AppNavigation(
         backStack?.destination?.hierarchy?.any { it.route == dest.route } == true
     } && currentRoute !in routesWithoutBottomBar
 
-    // The Library hides the app nav while multi-selecting so its selection
-    // action bar can take that space.
+    // Library and Browse hide the app nav while multi-selecting so their
+    // selection action bar can take that space.
     var libraryInSelection by remember { mutableStateOf(false) }
-    val hideNavForSelection = libraryInSelection &&
-        currentRoute == TopLevelDestination.Library.route
+    var browseInSelection by remember { mutableStateOf(false) }
+    val hideNavForSelection =
+        (libraryInSelection && currentRoute == TopLevelDestination.Library.route) ||
+            (browseInSelection && currentRoute == ROUTE_BROWSE_HOME)
 
     val moreVm: MoreViewModel = hiltViewModel()
     val activeDownloadCount by moreVm.activeDownloadCount.collectAsState()
@@ -197,7 +199,10 @@ fun AppNavigation(
                 pendingEpubUri = pendingEpubUri,
                 onEpubUriHandled = onEpubUriHandled,
             )
-            browseGraph(navController)
+            browseGraph(
+                navController = navController,
+                onSelectionActiveChange = { browseInSelection = it },
+            )
             moreDestinations(navController)
             settingsGraph(navController)
             sourceDestinations(

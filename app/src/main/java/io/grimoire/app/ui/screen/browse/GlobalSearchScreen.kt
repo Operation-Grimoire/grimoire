@@ -3,6 +3,8 @@ package io.grimoire.app.ui.screen.browse
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,6 +71,9 @@ fun GlobalSearchScreen(
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
     val libraryKeys by viewModel.libraryKeys.collectAsState()
+    val pinned by viewModel.pinnedPackages.collectAsState()
+    val includeAllSources by viewModel.includeAllSources.collectAsState()
+    val pinnedOnly = pinned.isNotEmpty() && !includeAllSources
 
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -92,7 +98,7 @@ fun GlobalSearchScreen(
                     AppSearchField(
                         value = searchQuery,
                         onValueChange = viewModel::setQuery,
-                        placeholder = "Search all sources…",
+                        placeholder = if (pinnedOnly) "Search pinned sources…" else "Search all sources…",
                         modifier = Modifier
                             .fillMaxWidth()
                             .focusRequester(focusRequester),
@@ -102,40 +108,42 @@ fun GlobalSearchScreen(
             )
         },
     ) { padding ->
-        when {
-            searchResults.isNotEmpty() -> GlobalSearchResults(
-                results = searchResults,
-                libraryKeys = libraryKeys,
-                onNovelClick = onNovelClick,
-                onNovelLongClick = { novel, pkg -> quickView = novel to pkg },
-                onSeeAll = { pkg -> onNavigateToSourceSearch(pkg, searchQuery) },
-                modifier = Modifier.padding(padding),
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            SearchScopeBar(
+                pinnedCount = pinned.size,
+                includeAll = includeAllSources,
+                onSelectScope = viewModel::setIncludeAllSources,
             )
-            isSearching -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
-            searchQuery.isNotBlank() && !isSearching -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    "No results found",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            else -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    "Type to search all sources",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Box(Modifier.fillMaxSize()) {
+                when {
+                    searchResults.isNotEmpty() -> GlobalSearchResults(
+                        results = searchResults,
+                        libraryKeys = libraryKeys,
+                        onNovelClick = onNovelClick,
+                        onNovelLongClick = { novel, pkg -> quickView = novel to pkg },
+                        onSeeAll = { pkg -> onNavigateToSourceSearch(pkg, searchQuery) },
+                    )
+                    isSearching -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                    searchQuery.isNotBlank() && !isSearching -> Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "No results found",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            if (pinnedOnly) "Type to search your pinned sources" else "Type to search all sources",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
         }
     }
@@ -147,6 +155,46 @@ fun GlobalSearchScreen(
             onOpenDetails = { onNovelClick(novel, pkg) },
             onChapterClick = { chapterUrl -> onChapterClick(pkg, novel.url, chapterUrl) },
             onDismiss = { quickView = null },
+        )
+    }
+}
+
+/**
+ * Scope selector shown under the search bar. With pinned sources, two chips
+ * toggle between pinned-only (default) and all sources. With none pinned, it
+ * instead shows a tip on how to pin so future searches can be narrowed.
+ */
+@Composable
+private fun SearchScopeBar(
+    pinnedCount: Int,
+    includeAll: Boolean,
+    onSelectScope: (includeAll: Boolean) -> Unit,
+) {
+    if (pinnedCount > 0) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterChip(
+                selected = !includeAll,
+                onClick = { onSelectScope(false) },
+                label = { Text("Pinned ($pinnedCount)") },
+            )
+            FilterChip(
+                selected = includeAll,
+                onClick = { onSelectScope(true) },
+                label = { Text("All sources") },
+            )
+        }
+    } else {
+        Text(
+            "Searching all sources. Tip: long-press a source on Browse and tap Pin to search just your favorites.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
     }
 }
