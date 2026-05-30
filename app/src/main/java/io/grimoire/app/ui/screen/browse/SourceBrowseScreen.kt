@@ -91,6 +91,10 @@ fun SourceBrowseScreen(
     val focusRequester = remember { FocusRequester() }
 
     val gridState = rememberLazyGridState()
+    // One grid state is shared across Popular / Latest / Search; switching mode
+    // replaces the list but the grid keeps its old scroll offset. Jump back to
+    // the top whenever the mode changes so a new tab doesn't open mid-list.
+    LaunchedEffect(mode) { gridState.scrollToItem(0) }
     val reachedBottom by remember {
         derivedStateOf {
             val last = gridState.layoutInfo.visibleItemsInfo.lastOrNull()

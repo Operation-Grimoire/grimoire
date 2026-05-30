@@ -18,6 +18,14 @@ import javax.inject.Singleton
 
 class IndexAuthRequiredException(message: String, val statusCode: Int) : RuntimeException(message)
 
+/**
+ * Thrown when GitHub answers a 403 because the request budget is exhausted.
+ * Unauthenticated callers get 60 requests/hour shared across index fetches,
+ * icon loads and APK downloads; once spent every GitHub call 403s until reset.
+ * Connecting a GitHub account lifts the ceiling to 5,000/hour.
+ */
+class GitHubRateLimitException(message: String) : RuntimeException(message)
+
 @Singleton
 class ExtensionIndexFetcher @Inject constructor(
     @ApplicationContext context: Context,
@@ -132,9 +140,11 @@ class ExtensionIndexFetcher @Inject constructor(
     private fun checkSuccess(response: Response, requestedUrl: String) {
         if (response.isSuccessful) return
         val host = response.request.url.host
-        if ((host == "github.com" || host == "api.github.com") &&
-            (response.code == 401 || response.code == 404)
-        ) {
+        val isGitHub = host == "github.com" || host == "api.github.com"
+        if (isGitHub && response.code == 403 && response.isRateLimited()) {
+            throw GitHubRateLimitException("GitHub rate limit reached for $requestedUrl.")
+        }
+        if (isGitHub && (response.code == 401 || response.code == 404)) {
             throw IndexAuthRequiredException(
                 "HTTP ${response.code} for $requestedUrl — repo may be private or require sign-in.",
                 statusCode = response.code,
@@ -142,6 +152,13 @@ class ExtensionIndexFetcher @Inject constructor(
         }
         error("HTTP ${response.code} for $requestedUrl")
     }
+
+    /**
+     * A 403 from GitHub means rate limiting when the remaining-requests header
+     * is exhausted (primary limit) or a secondary-limit Retry-After is present.
+     */
+    private fun Response.isRateLimited(): Boolean =
+        header("X-RateLimit-Remaining") == "0" || header("Retry-After") != null
 
     @Serializable
     private data class GitHubRelease(val assets: List<GitHubAsset> = emptyList())

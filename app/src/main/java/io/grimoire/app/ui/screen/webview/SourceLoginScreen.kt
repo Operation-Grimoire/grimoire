@@ -140,7 +140,15 @@ fun SourceLoginScreen(
                                     isLoading = false
                                     canGoBack = view.canGoBack()
                                     val success = viewModel.loginSuccessUrl
-                                    if (success != null && url.startsWith(success)) {
+                                    // Some sources use a success prefix broad
+                                    // enough to also match the login page itself
+                                    // (e.g. the site root), which would close the
+                                    // WebView the instant it opens. Only treat it
+                                    // as success once we've left the login page.
+                                    val onLoginPage =
+                                        url.trimEnd('/').substringBefore('?') ==
+                                            loginUrl.trimEnd('/').substringBefore('?')
+                                    if (success != null && url.startsWith(success) && !onLoginPage) {
                                         finish()
                                     }
                                 }

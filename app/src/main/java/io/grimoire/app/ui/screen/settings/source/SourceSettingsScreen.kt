@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -30,9 +33,13 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -52,6 +59,21 @@ fun SourceSettingsScreen(
     val saved by viewModel.saved.collectAsState()
     val validation by viewModel.validation.collectAsState()
     val languageSummary by viewModel.languageSummary.collectAsState()
+
+    // Re-check sign-in every time the screen resumes. Navigating to the login
+    // WebView recreates this entry/observer, so a "wasPaused" gate would reset
+    // and miss the return; an unconditional resume check is what reliably picks
+    // up a freshly-completed login. checkLoginState polls + de-dupes itself.
+    if (viewModel.supportsWebViewLogin) {
+        val lifecycleOwner = LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) viewModel.checkLoginState(retry = true)
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
+    }
 
     Scaffold(
         modifier = modifier,
@@ -87,13 +109,13 @@ fun SourceSettingsScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Spacer(Modifier.height(4.dp))
 
             if (viewModel.isMultiLanguage) {
+                SectionHeader("Content")
                 ListItem(
                     headlineContent = { Text("Content languages") },
                     supportingContent = { Text(languageSummary) },
@@ -113,8 +135,10 @@ fun SourceSettingsScreen(
             if (viewModel.supportsWebViewLogin) {
                 val loginState by viewModel.loginState.collectAsState()
                 val signedIn = loginState == SourceSettingsViewModel.LoginUiState.SIGNED_IN
+                if (viewModel.isMultiLanguage) HorizontalDivider()
+                SectionHeader("Account")
                 ListItem(
-                    headlineContent = { Text("Account") },
+                    headlineContent = { Text("Sign-in status") },
                     supportingContent = {
                         Text(
                             when (loginState) {
@@ -128,7 +152,12 @@ fun SourceSettingsScreen(
                         Icon(Icons.Default.AccountCircle, contentDescription = null)
                     },
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     Button(onClick = onNavigateToLogin, modifier = Modifier.weight(1f)) {
                         Text(if (signedIn) "Log in again" else "Log in")
                     }
@@ -141,6 +170,13 @@ fun SourceSettingsScreen(
                         }
                     }
                 }
+            }
+
+            if (viewModel.preferences.isNotEmpty() || viewModel.canValidate) {
+                if (viewModel.isMultiLanguage || viewModel.supportsWebViewLogin) {
+                    HorizontalDivider()
+                }
+                SectionHeader("Configuration")
             }
 
             viewModel.preferences.forEach { pref ->
@@ -157,7 +193,9 @@ fun SourceSettingsScreen(
                             } else {
                                 androidx.compose.ui.text.input.VisualTransformation.None
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
                         )
                     }
 
@@ -183,22 +221,23 @@ fun SourceSettingsScreen(
             }
 
             if (viewModel.canValidate) {
-                Spacer(Modifier.height(8.dp))
                 val running = validation is SourceSettingsViewModel.ValidationState.Running
                 OutlinedButton(
                     onClick = viewModel::validate,
                     enabled = !running,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                 ) {
                     if (running) {
                         CircularProgressIndicator(
-                            modifier = Modifier.height(18.dp),
+                            modifier = Modifier.size(18.dp),
                             strokeWidth = 2.dp,
                         )
-                        Spacer(Modifier.height(0.dp))
-                        Text("  Checking…")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Checking…")
                     } else {
-                        Text("Test login")
+                        Text("Test configuration")
                     }
                 }
                 (validation as? SourceSettingsViewModel.ValidationState.Done)?.let { result ->
@@ -210,15 +249,17 @@ fun SourceSettingsScreen(
                         } else {
                             MaterialTheme.colorScheme.error
                         },
+                        modifier = Modifier.padding(horizontal = 16.dp),
                     )
                 }
             }
 
             if (viewModel.preferences.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = viewModel::save,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                 ) {
                     Text(if (saved) "Saved" else "Save")
                 }
@@ -226,4 +267,14 @@ fun SourceSettingsScreen(
             Spacer(Modifier.height(16.dp))
         }
     }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
 }

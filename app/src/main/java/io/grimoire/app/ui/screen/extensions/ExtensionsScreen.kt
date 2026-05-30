@@ -89,6 +89,7 @@ fun ExtensionsScreen(
     val installStates by viewModel.installStates.collectAsState()
     val authRequiredRepos by viewModel.authRequiredRepos.collectAsState()
     val githubLogin by viewModel.githubLogin.collectAsState()
+    val rateLimitPrompt by viewModel.rateLimitPrompt.collectAsState()
 
     val installed = items.filterIsInstance<ExtensionItem.Installed>() +
             items.filterIsInstance<ExtensionItem.InstalledOnly>()
@@ -413,6 +414,39 @@ fun ExtensionsScreen(
             isEdit = true,
             onConfirm = { name, url -> viewModel.updateRepo(repo, name, url); editRepo = null },
             onDismiss = { editRepo = null },
+        )
+    }
+
+    if (rateLimitPrompt) {
+        val notConnected = githubLogin == null
+        AlertDialog(
+            onDismissRequest = viewModel::dismissRateLimitPrompt,
+            title = { Text("GitHub rate limit reached") },
+            text = {
+                Text(
+                    if (notConnected) {
+                        "You've hit GitHub's anonymous request limit (60 per hour). " +
+                            "Connect a GitHub account to raise it to 5,000 per hour, or try again later."
+                    } else {
+                        "You've hit GitHub's request limit. Please wait a little while and try again."
+                    }
+                )
+            },
+            confirmButton = {
+                if (notConnected) {
+                    TextButton(onClick = {
+                        viewModel.dismissRateLimitPrompt()
+                        onConnectGitHub()
+                    }) { Text("Connect GitHub") }
+                } else {
+                    TextButton(onClick = viewModel::dismissRateLimitPrompt) { Text("OK") }
+                }
+            },
+            dismissButton = if (notConnected) {
+                { TextButton(onClick = viewModel::dismissRateLimitPrompt) { Text("Later") } }
+            } else {
+                null
+            },
         )
     }
 
