@@ -69,6 +69,11 @@ class BrowseViewModel @Inject constructor(
 
     val pinnedPackages: StateFlow<Set<String>> = browsePreferences.pinnedSources.stateIn(viewModelScope)
 
+    val showNovelUpdates: StateFlow<Boolean> = browsePreferences.showNovelUpdates.stateIn(viewModelScope)
+
+    private val duplicatePinned: StateFlow<Boolean> =
+        browsePreferences.duplicatePinnedInLanguages.stateIn(viewModelScope)
+
     private val _nameFilter = MutableStateFlow("")
     val nameFilter: StateFlow<String> = _nameFilter.asStateFlow()
 
@@ -94,7 +99,8 @@ class BrowseViewModel @Inject constructor(
         pinnedPackages,
         _nameFilter.debounce(120L),
         _languageFilter,
-    ) { sources, pinned, query, langFilter ->
+        duplicatePinned,
+    ) { sources, pinned, query, langFilter, duplicate ->
         val q = query.trim()
         val languages = sources.map { it.lang.uppercase() }.distinct().sorted()
         val nameMatched =
@@ -104,7 +110,10 @@ class BrowseViewModel @Inject constructor(
             .sortedBy { it.name.lowercase() }
         val langMatched =
             if (langFilter == null) nameMatched else nameMatched.filter { it.lang.uppercase() == langFilter }
-        val byLanguage = langMatched
+        // Pinned sources show in the Pinned section; only repeat them under their
+        // language group when the user opts into duplicates.
+        val langPool = if (duplicate) langMatched else langMatched.filter { it.packageName !in pinned }
+        val byLanguage = langPool
             .sortedBy { it.name.lowercase() }
             .groupBy { it.lang.uppercase() }
             .toSortedMap()

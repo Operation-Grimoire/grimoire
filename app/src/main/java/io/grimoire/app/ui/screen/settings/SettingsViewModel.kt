@@ -39,6 +39,8 @@ class SettingsViewModel @Inject constructor(
     val hapticsEnabled = uiPreferences.hapticsEnabled.stateIn(viewModelScope)
     val browseDisplayMode = browsePreferences.displayMode.stateIn(viewModelScope)
     val browseGridColumns = browsePreferences.gridColumns.stateIn(viewModelScope)
+    val browseShowNovelUpdates = browsePreferences.showNovelUpdates.stateIn(viewModelScope)
+    val browseDuplicatePinned = browsePreferences.duplicatePinnedInLanguages.stateIn(viewModelScope)
     val libraryDisplayMode = libraryPreferences.displayMode.stateIn(viewModelScope)
     val libraryGridColumns = libraryPreferences.gridColumns.stateIn(viewModelScope)
     val libraryShowAllTab = libraryPreferences.showAllTab.stateIn(viewModelScope)
@@ -53,6 +55,8 @@ class SettingsViewModel @Inject constructor(
     fun setHapticsEnabled(enabled: Boolean) = viewModelScope.launch { uiPreferences.hapticsEnabled.set(enabled) }
     fun setBrowseDisplayMode(mode: BrowseDisplayMode) = viewModelScope.launch { browsePreferences.displayMode.set(mode) }
     fun setBrowseGridColumns(columns: Int) = viewModelScope.launch { browsePreferences.gridColumns.set(columns.coerceIn(2, 4)) }
+    fun setBrowseShowNovelUpdates(enabled: Boolean) = viewModelScope.launch { browsePreferences.showNovelUpdates.set(enabled) }
+    fun setBrowseDuplicatePinned(enabled: Boolean) = viewModelScope.launch { browsePreferences.duplicatePinnedInLanguages.set(enabled) }
     fun setLibraryDisplayMode(mode: LibraryDisplayMode) = viewModelScope.launch { libraryPreferences.displayMode.set(mode) }
     fun setLibraryGridColumns(columns: Int) = viewModelScope.launch { libraryPreferences.gridColumns.set(columns.coerceIn(2, 5)) }
     fun setLibraryShowAllTab(show: Boolean) = viewModelScope.launch { libraryPreferences.showAllTab.set(show) }

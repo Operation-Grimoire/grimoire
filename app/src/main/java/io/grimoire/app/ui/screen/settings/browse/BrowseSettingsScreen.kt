@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.settings.browse
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -33,6 +35,8 @@ fun BrowseSettingsScreen(
 ) {
     val displayMode by viewModel.browseDisplayMode.collectAsState()
     val gridColumns by viewModel.browseGridColumns.collectAsState()
+    val showNovelUpdates by viewModel.browseShowNovelUpdates.collectAsState()
+    val duplicatePinned by viewModel.browseDuplicatePinned.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -93,6 +97,42 @@ fun BrowseSettingsScreen(
                         },
                     )
                 }
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("NovelUpdates shortcuts") },
+                    supportingContent = {
+                        Text("Show the NovelUpdates search, rankings, and latest links on Browse.")
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = showNovelUpdates,
+                            onCheckedChange = viewModel::setBrowseShowNovelUpdates,
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        viewModel.setBrowseShowNovelUpdates(!showNovelUpdates)
+                    },
+                )
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("Show pinned in language groups") },
+                    supportingContent = {
+                        Text("Also list pinned sources under their language, not just in Pinned.")
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = duplicatePinned,
+                            onCheckedChange = viewModel::setBrowseDuplicatePinned,
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        viewModel.setBrowseDuplicatePinned(!duplicatePinned)
+                    },
+                )
             }
         }
     }

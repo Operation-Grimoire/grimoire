@@ -76,6 +76,7 @@ fun BrowseScreen(
     val nameFilter by viewModel.nameFilter.collectAsState()
     val languageFilter by viewModel.languageFilter.collectAsState()
     val pinned by viewModel.pinnedPackages.collectAsState()
+    val showNovelUpdates by viewModel.showNovelUpdates.collectAsState()
     val context = LocalContext.current
 
     var selected by remember { mutableStateOf(emptySet<String>()) }
@@ -166,67 +167,72 @@ fun BrowseScreen(
             }
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            NovelUpdatesCard(
-                onSearch = onNavigateToNovelUpdatesSearch,
-                onRankings = onNavigateToNovelUpdatesRankings,
-                onLatest = onNavigateToNovelUpdatesLatest,
-            )
-
-            if (installed.isNotEmpty()) {
-                AppSearchField(
-                    value = nameFilter,
-                    onValueChange = viewModel::setNameFilter,
-                    placeholder = "Filter sources…",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                )
+        LazyColumn(Modifier.fillMaxSize().padding(padding), state = listState) {
+            if (showNovelUpdates) {
+                item(key = "__nu__") {
+                    NovelUpdatesCard(
+                        onSearch = onNavigateToNovelUpdatesSearch,
+                        onRankings = onNavigateToNovelUpdatesRankings,
+                        onLatest = onNavigateToNovelUpdatesLatest,
+                    )
+                }
             }
 
-            LazyColumn(Modifier.fillMaxSize(), state = listState) {
-                if (ui.languages.size > 1) {
-                    item(key = "__lang_chips__") {
-                        LanguageFilterChips(
-                            languages = ui.languages,
-                            selected = languageFilter,
-                            onSelect = viewModel::setLanguageFilter,
-                            modifier = Modifier.padding(vertical = 4.dp),
+            if (installed.isNotEmpty()) {
+                item(key = "__filter__") {
+                    AppSearchField(
+                        value = nameFilter,
+                        onValueChange = viewModel::setNameFilter,
+                        placeholder = "Filter sources…",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                    )
+                }
+            }
+
+            if (ui.languages.size > 1) {
+                item(key = "__lang_chips__") {
+                    LanguageFilterChips(
+                        languages = ui.languages,
+                        selected = languageFilter,
+                        onSelect = viewModel::setLanguageFilter,
+                        modifier = Modifier.padding(vertical = 4.dp),
+                    )
+                }
+            }
+
+            if (installed.isEmpty()) {
+                item(key = "__empty__") {
+                    Box(
+                        Modifier.fillMaxWidth().padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "No extensions installed\nTap the extension icon to add one",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
+                if (ui.pinned.isNotEmpty()) {
+                    item(key = "__pinned_header__") { SectionHeader("Pinned") }
+                    items(ui.pinned, key = { "pin_${it.packageName}" }) { item ->
+                        SourceListItem(
+                            name = item.name,
+                            lang = item.lang,
+                            packageName = item.packageName,
+                            iconUrl = item.iconUrl,
+                            pinned = true,
+                            selected = item.packageName in selected,
+                            onClick = { onSourceClick(item.packageName) },
+                            onLongClick = { toggleSelect(item.packageName) },
                         )
                     }
                 }
 
-                if (installed.isEmpty()) {
-                    item(key = "__empty__") {
-                        Box(
-                            Modifier.fillMaxWidth().padding(32.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                "No extensions installed\nTap the extension icon to add one",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                } else {
-                    if (ui.pinned.isNotEmpty()) {
-                        item(key = "__pinned_header__") { SectionHeader("Pinned") }
-                        items(ui.pinned, key = { "pin_${it.packageName}" }) { item ->
-                            SourceListItem(
-                                name = item.name,
-                                lang = item.lang,
-                                packageName = item.packageName,
-                                iconUrl = item.iconUrl,
-                                pinned = true,
-                                selected = item.packageName in selected,
-                                onClick = { onSourceClick(item.packageName) },
-                                onLongClick = { toggleSelect(item.packageName) },
-                            )
-                        }
-                    }
-
-                    ui.byLanguage.forEach { (lang, sources) ->
+                ui.byLanguage.forEach { (lang, sources) ->
                         item(key = "__lang_$lang") { SectionHeader(languageLabel(lang)) }
                         items(sources, key = { it.packageName }) { item ->
                             SourceListItem(
@@ -244,7 +250,6 @@ fun BrowseScreen(
                 }
             }
         }
-    }
 
     if (showUninstallConfirm) {
         val count = selected.size

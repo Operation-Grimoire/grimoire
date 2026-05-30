@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.extensions
 
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.DisposableEffect
@@ -13,33 +14,37 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,6 +54,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.TopAppBar
@@ -63,10 +69,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.api.source.ConfigurableSource
 import io.grimoire.api.source.MultiLanguageSource
+import io.grimoire.api.source.WebViewLoginSource
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.PendingAddRepo
@@ -138,7 +148,21 @@ fun ExtensionsScreen(
     var editRepo by remember { mutableStateOf<RepoEntity?>(null) }
     var addRepoPrefill by remember { mutableStateOf<PendingAddRepo?>(null) }
     var pendingRemove by remember { mutableStateOf<ExtensionItem?>(null) }
+    var showFilters by remember { mutableStateOf(false) }
+    var searchActive by remember { mutableStateOf(false) }
+    val searchFocusRequester = remember { FocusRequester() }
     val repoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val filterSheetState = rememberModalBottomSheetState()
+    val filtersActive = section != ExtensionSection.ALL || languageFilter != null
+
+    val exitSearch = {
+        searchActive = false
+        viewModel.setNameFilter("")
+    }
+    BackHandler(enabled = searchActive) { exitSearch() }
+    LaunchedEffect(searchActive) {
+        if (searchActive) searchFocusRequester.requestFocus()
+    }
 
     LaunchedEffect(pendingAddRepo) {
         // Collect the flow directly rather than reacting to a collectAsState
@@ -155,66 +179,91 @@ fun ExtensionsScreen(
 
     Scaffold(
         modifier = modifier,
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showFilters = true }) {
+                if (filtersActive) {
+                    BadgedBox(badge = { Badge() }) {
+                        Icon(Icons.Default.FilterList, contentDescription = "Filters")
+                    }
+                } else {
+                    Icon(Icons.Default.FilterList, contentDescription = "Filters")
+                }
+            }
+        },
         topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                title = { Text("Extensions") },
-                actions = {
-                    if (ui.updateCount > 0) {
-                        IconButton(onClick = viewModel::updateAll) {
-                            Icon(Icons.Default.SystemUpdateAlt, contentDescription = "Update all")
+            if (searchActive) {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = exitSearch) {
+                            Icon(Icons.Default.Close, contentDescription = "Close search")
                         }
-                    }
-                    if (isFetching) {
-                        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                    },
+                    title = {
+                        AppSearchField(
+                            value = nameFilter,
+                            onValueChange = viewModel::setNameFilter,
+                            placeholder = "Search extensions…",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(searchFocusRequester),
+                        )
+                    },
+                )
+            } else {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
-                    } else {
-                        IconButton(onClick = viewModel::refresh) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                    },
+                    title = { Text("Extensions") },
+                    actions = {
+                        IconButton(onClick = { searchActive = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
                         }
-                    }
-                    IconButton(onClick = { showRepos = true }) {
-                        Icon(Icons.Default.Storage, contentDescription = "Repositories")
-                    }
-                },
-            )
+                        if (ui.updateCount > 0) {
+                            IconButton(onClick = viewModel::updateAll) {
+                                Icon(Icons.Default.SystemUpdateAlt, contentDescription = "Update all")
+                            }
+                        }
+                        IconButton(onClick = { showRepos = true }) {
+                            Icon(Icons.Default.Storage, contentDescription = "Repositories")
+                        }
+                    },
+                )
+            }
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            AppSearchField(
-                value = nameFilter,
-                onValueChange = viewModel::setNameFilter,
-                placeholder = "Search extensions…",
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-            )
-            SectionFilterChips(
-                section = section,
-                updateCount = ui.updateCount,
-                onSelect = viewModel::setSection,
-                modifier = Modifier.padding(vertical = 4.dp),
-            )
-            LanguageFilterChips(
-                languages = ui.languages,
-                selected = languageFilter,
-                onSelect = viewModel::setLanguageFilter,
-                modifier = Modifier.padding(vertical = 4.dp),
-            )
-
-            val list = when (section) {
-                ExtensionSection.INSTALLED -> ui.installed
-                ExtensionSection.AVAILABLE -> ui.available
-                ExtensionSection.UPDATES -> ui.updates
-            }
-
+        val list = when (section) {
+            ExtensionSection.ALL -> ui.installed + ui.available
+            ExtensionSection.INSTALLED -> ui.installed
+            ExtensionSection.AVAILABLE -> ui.available
+            ExtensionSection.UPDATES -> ui.updates
+        }
+        PullToRefreshBox(
+            isRefreshing = isFetching,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
             if (list.isEmpty() && authRequiredRepos.isEmpty()) {
-                EmptyState(emptyExtensionsMessage(section))
-            } else {
+                // A single full-size item keeps the empty state centered while
+                // staying scrollable, so pull-to-refresh still works.
                 LazyColumn(Modifier.fillMaxSize()) {
+                    item {
+                        Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(
+                                emptyExtensionsMessage(section),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            } else {
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 88.dp),
+                ) {
                     if (authRequiredRepos.isNotEmpty()) {
                         item(key = "__auth__") {
                             AuthRequiredBanner(
@@ -224,7 +273,8 @@ fun ExtensionsScreen(
                             )
                         }
                     }
-                    items(list, key = { it.packageName }) { item ->
+
+                    val extensionRow: @Composable (ExtensionItem) -> Unit = { item ->
                         ExtensionRow(
                             item = item,
                             state = installStates[item.packageName],
@@ -236,6 +286,51 @@ fun ExtensionsScreen(
                         )
                         HorizontalDivider()
                     }
+
+                    if (section == ExtensionSection.ALL) {
+                        // "All" splits into labelled Installed / Available groups.
+                        if (ui.installed.isNotEmpty()) {
+                            item(key = "__installed_header__") { ExtensionSectionHeader("Installed") }
+                            items(ui.installed, key = { it.packageName }) { extensionRow(it) }
+                        }
+                        if (ui.available.isNotEmpty()) {
+                            item(key = "__available_header__") { ExtensionSectionHeader("Available") }
+                            items(ui.available, key = { it.packageName }) { extensionRow(it) }
+                        }
+                    } else {
+                        items(list, key = { it.packageName }) { extensionRow(it) }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showFilters) {
+        ModalBottomSheet(
+            onDismissRequest = { showFilters = false },
+            sheetState = filterSheetState,
+        ) {
+            Column(Modifier.padding(bottom = 24.dp)) {
+                Text(
+                    "Filters",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+                FilterSheetLabel("Show")
+                SectionFilterChips(
+                    section = section,
+                    updateCount = ui.updateCount,
+                    onSelect = viewModel::setSection,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+                if (ui.languages.size > 1) {
+                    FilterSheetLabel("Language")
+                    LanguageFilterChips(
+                        languages = ui.languages,
+                        selected = languageFilter,
+                        onSelect = viewModel::setLanguageFilter,
+                        modifier = Modifier.padding(vertical = 4.dp),
+                    )
                 }
             }
         }
@@ -463,6 +558,28 @@ private fun downloadLabel(state: InstallState.Downloading): String {
 }
 
 @Composable
+private fun ExtensionSectionHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+}
+
+@Composable
+private fun FilterSheetLabel(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 2.dp),
+    )
+}
+
+@Composable
 private fun SectionFilterChips(
     section: ExtensionSection,
     updateCount: Int,
@@ -475,6 +592,11 @@ private fun SectionFilterChips(
             .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        FilterChip(
+            selected = section == ExtensionSection.ALL,
+            onClick = { onSelect(ExtensionSection.ALL) },
+            label = { Text("All") },
+        )
         FilterChip(
             selected = section == ExtensionSection.INSTALLED,
             onClick = { onSelect(ExtensionSection.INSTALLED) },
@@ -505,6 +627,7 @@ private fun ExtensionRow(
 ) {
     val isInstalled = item is ExtensionItem.Installed || item is ExtensionItem.InstalledOnly
     val hasUpdate = item is ExtensionItem.Installed && item.hasUpdate
+    val hasSettings = item.hasSettings()
     val languages = item.multiLanguageOptions()
     SourceListItem(
         name = item.name,
@@ -512,7 +635,7 @@ private fun ExtensionRow(
         packageName = item.packageName,
         iconUrl = item.iconUrl,
         onClick = {
-            if (isInstalled) onSettings(item.packageName)
+            if (isInstalled) { if (hasSettings) onSettings(item.packageName) }
             else if (item is ExtensionItem.Available) onInstall(item)
         },
         supporting = {
@@ -554,8 +677,10 @@ private fun ExtensionRow(
                             onUpdate(item as ExtensionItem.Installed)
                         }) { Text("Update") }
                     }
-                    IconButton(onClick = { onSettings(item.packageName) }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    if (hasSettings) {
+                        IconButton(onClick = { onSettings(item.packageName) }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
                     }
                     IconButton(onClick = { onRemove(item) }) {
                         Icon(Icons.Default.Delete, contentDescription = "Remove")
@@ -580,6 +705,7 @@ private fun ExtensionRow(
 }
 
 private fun emptyExtensionsMessage(section: ExtensionSection): String = when (section) {
+    ExtensionSection.ALL -> "No extensions found\nAdd a repository to discover extensions"
     ExtensionSection.INSTALLED -> "No installed extensions\nAdd a repository to discover extensions"
     ExtensionSection.AVAILABLE -> "No available extensions\nAdd a repository to discover extensions"
     ExtensionSection.UPDATES -> "Everything's up to date"
@@ -682,21 +808,26 @@ private fun AuthRequiredBanner(
     }
 }
 
-@Composable
-private fun EmptyState(text: String, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
 private fun ExtensionItem.multiLanguageOptions(): List<String>? = when (this) {
     is ExtensionItem.Installed -> (loaded.source as? MultiLanguageSource)?.availableLanguages()
     is ExtensionItem.InstalledOnly -> (loaded.source as? MultiLanguageSource)?.availableLanguages()
     is ExtensionItem.Available -> null
+}
+
+/**
+ * Whether opening source settings would show anything: a configurable source, a
+ * multi-language picker, or a WebView login. Mirrors the source-settings screen
+ * so we don't surface a gear that leads to an empty page.
+ */
+private fun ExtensionItem.hasSettings(): Boolean {
+    val source = when (this) {
+        is ExtensionItem.Installed -> loaded.source
+        is ExtensionItem.InstalledOnly -> loaded.source
+        is ExtensionItem.Available -> return false
+    }
+    return source is ConfigurableSource ||
+        source is MultiLanguageSource ||
+        source is WebViewLoginSource
 }
 
 private const val MULTI_LANGUAGE_PREVIEW_COUNT = 3
