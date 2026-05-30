@@ -9,4 +9,16 @@ enum class BrowseDisplayMode { GRID, LIST }
 class BrowsePreferences @Inject constructor(store: PreferenceStore) {
     val displayMode = store.getEnum("browse_display_mode", BrowseDisplayMode.GRID)
     val gridColumns = store.getInt("browse_grid_columns", 3)
+
+    /**
+     * Package names the user has pinned on the Browse home. Stored as a
+     * newline-joined string; blank lines are dropped on read so a trailing
+     * separator can never resurrect an empty package name.
+     */
+    val pinnedSources: Preference<Set<String>> = store.getObject(
+        key = "browse_pinned_sources",
+        defaultValue = emptySet(),
+        serialize = { it.joinToString("\n") },
+        deserialize = { raw -> raw.split("\n").filter { it.isNotBlank() }.toSet() },
+    )
 }

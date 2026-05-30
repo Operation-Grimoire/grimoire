@@ -1,35 +1,60 @@
 package io.grimoire.app.ui.screen.browse
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import io.grimoire.app.ui.component.ExtensionIcon
+import io.grimoire.app.ui.component.AppSearchField
+import io.grimoire.app.ui.component.LanguageFilterChips
+import io.grimoire.app.ui.component.SelectionTopBar
+import io.grimoire.app.ui.component.SourceListItem
+import io.grimoire.app.ui.component.TooltipBottomBar
+import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.util.languageLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,86 +66,263 @@ fun BrowseScreen(
     onNavigateToNovelUpdatesSearch: () -> Unit = {},
     onNavigateToNovelUpdatesRankings: () -> Unit = {},
     onNavigateToNovelUpdatesLatest: () -> Unit = {},
+    onOpenSourceSettings: (packageName: String) -> Unit = {},
+    onSelectionActiveChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: BrowseViewModel = hiltViewModel(),
 ) {
     val installed by viewModel.installed.collectAsState()
+    val ui by viewModel.sourcesUi.collectAsState()
+    val nameFilter by viewModel.nameFilter.collectAsState()
+    val languageFilter by viewModel.languageFilter.collectAsState()
+    val pinned by viewModel.pinnedPackages.collectAsState()
+    val context = LocalContext.current
 
-    val sourcesByLanguage = installed
-        .sortedBy { it.name.lowercase() }
-        .groupBy { it.lang.uppercase() }
-        .toSortedMap()
+    var selected by remember { mutableStateOf(emptySet<String>()) }
+    val selectionMode = selected.isNotEmpty()
+    val clearSelection = { selected = emptySet() }
+    val toggleSelect: (String) -> Unit = { pkg ->
+        selected = if (pkg in selected) selected - pkg else selected + pkg
+    }
+    var showUninstallConfirm by remember { mutableStateOf(false) }
 
-    Column(modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text("Browse") },
-            actions = {
-                IconButton(onClick = onNavigateToGlobalSearch) {
-                    Icon(Icons.Default.Search, contentDescription = "Search all sources")
+    val listState = rememberLazyListState()
+    val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex < 1 } }
+
+    // Every visible source package (each source appears once per language group),
+    // for the select-all toggle.
+    val allVisible = ui.byLanguage.values.flatten().map { it.packageName }.toSet()
+    val allSelectedPinned = selected.isNotEmpty() && selected.all { it in pinned }
+
+    BackHandler(enabled = selectionMode) { clearSelection() }
+    LaunchedEffect(selectionMode) { onSelectionActiveChange(selectionMode) }
+
+    val onSourceClick: (String) -> Unit = { pkg ->
+        if (selectionMode) toggleSelect(pkg) else onNavigateToSource(pkg)
+    }
+
+    Scaffold(
+        modifier = modifier,
+        contentWindowInsets = WindowInsets(0),
+        topBar = {
+            if (selectionMode) {
+                SelectionTopBar(
+                    count = selected.size,
+                    onClear = clearSelection,
+                    onSelectAll = {
+                        selected = if (allVisible.isNotEmpty() && selected.containsAll(allVisible)) {
+                            selected - allVisible
+                        } else {
+                            selected + allVisible
+                        }
+                    },
+                )
+            } else {
+                TopAppBar(
+                    title = { Text("Browse") },
+                    actions = {
+                        IconButton(onClick = onNavigateToManage) {
+                            Icon(Icons.Default.Extension, contentDescription = "Manage extensions")
+                        }
+                    },
+                )
+            }
+        },
+        floatingActionButton = {
+            if (!selectionMode) {
+                ExtendedFloatingActionButton(
+                    onClick = onNavigateToGlobalSearch,
+                    icon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    text = { Text("Search") },
+                    expanded = fabExpanded,
+                )
+            }
+        },
+        bottomBar = {
+            TooltipBottomBar(visible = selectionMode) {
+                TooltipIconButton(
+                    icon = Icons.Default.Settings,
+                    label = "Settings",
+                    visible = selected.size == 1,
+                    onClick = {
+                        selected.firstOrNull()?.let(onOpenSourceSettings)
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.PushPin,
+                    label = if (allSelectedPinned) "Unpin" else "Pin",
+                    onClick = {
+                        viewModel.setPinned(selected, !allSelectedPinned)
+                        clearSelection()
+                    },
+                )
+                TooltipIconButton(
+                    icon = Icons.Default.Delete,
+                    label = "Uninstall",
+                    tint = MaterialTheme.colorScheme.error,
+                    onClick = { showUninstallConfirm = true },
+                )
+            }
+        },
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            NovelUpdatesCard(
+                onSearch = onNavigateToNovelUpdatesSearch,
+                onRankings = onNavigateToNovelUpdatesRankings,
+                onLatest = onNavigateToNovelUpdatesLatest,
+            )
+
+            if (installed.isNotEmpty()) {
+                AppSearchField(
+                    value = nameFilter,
+                    onValueChange = viewModel::setNameFilter,
+                    placeholder = "Filter sources…",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                )
+            }
+
+            LazyColumn(Modifier.fillMaxSize(), state = listState) {
+                if (ui.languages.size > 1) {
+                    item(key = "__lang_chips__") {
+                        LanguageFilterChips(
+                            languages = ui.languages,
+                            selected = languageFilter,
+                            onSelect = viewModel::setLanguageFilter,
+                            modifier = Modifier.padding(vertical = 4.dp),
+                        )
+                    }
                 }
-                IconButton(onClick = onNavigateToManage) {
-                    Icon(Icons.Default.Extension, contentDescription = "Manage extensions")
+
+                if (installed.isEmpty()) {
+                    item(key = "__empty__") {
+                        Box(
+                            Modifier.fillMaxWidth().padding(32.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                "No extensions installed\nTap the extension icon to add one",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                } else {
+                    if (ui.pinned.isNotEmpty()) {
+                        item(key = "__pinned_header__") { SectionHeader("Pinned") }
+                        items(ui.pinned, key = { "pin_${it.packageName}" }) { item ->
+                            SourceListItem(
+                                name = item.name,
+                                lang = item.lang,
+                                packageName = item.packageName,
+                                iconUrl = item.iconUrl,
+                                pinned = true,
+                                selected = item.packageName in selected,
+                                onClick = { onSourceClick(item.packageName) },
+                                onLongClick = { toggleSelect(item.packageName) },
+                            )
+                        }
+                    }
+
+                    ui.byLanguage.forEach { (lang, sources) ->
+                        item(key = "__lang_$lang") { SectionHeader(languageLabel(lang)) }
+                        items(sources, key = { it.packageName }) { item ->
+                            SourceListItem(
+                                name = item.name,
+                                lang = item.lang,
+                                packageName = item.packageName,
+                                iconUrl = item.iconUrl,
+                                pinned = item.packageName in pinned,
+                                selected = item.packageName in selected,
+                                onClick = { onSourceClick(item.packageName) },
+                                onLongClick = { toggleSelect(item.packageName) },
+                            )
+                        }
+                    }
                 }
+            }
+        }
+    }
+
+    if (showUninstallConfirm) {
+        val count = selected.size
+        AlertDialog(
+            onDismissRequest = { showUninstallConfirm = false },
+            title = { Text(if (count == 1) "Uninstall extension?" else "Uninstall $count extensions?") },
+            text = {
+                Text(
+                    if (count == 1) "Android will ask you to confirm the removal."
+                    else "Android will ask you to confirm each removal in turn."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    selected.forEach { pkg ->
+                        @Suppress("DEPRECATION")
+                        context.startActivity(
+                            Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
+                                data = Uri.parse("package:$pkg")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                        )
+                    }
+                    showUninstallConfirm = false
+                    clearSelection()
+                }) { Text("Uninstall") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUninstallConfirm = false }) { Text("Cancel") }
             },
         )
+    }
+}
 
-        LazyColumn(Modifier.fillMaxSize()) {
-            item(key = "__nu_header__") { SectionHeader("NovelUpdates") }
-            item(key = "__nu_search__") {
-                NavRow(
-                    icon = Icons.Default.Search,
-                    title = "Search NovelUpdates",
-                    subtitle = "Find a series by title",
-                    onClick = onNavigateToNovelUpdatesSearch,
-                )
-            }
-            item(key = "__nu_rankings__") {
-                NavRow(
-                    icon = Icons.Default.TrendingUp,
-                    title = "Rankings",
-                    subtitle = "Popular and most active series",
-                    onClick = onNavigateToNovelUpdatesRankings,
-                )
-            }
-            item(key = "__nu_latest__") {
-                NavRow(
-                    icon = Icons.Default.NewReleases,
-                    title = "Latest releases",
-                    subtitle = "Newest translated chapters",
-                    onClick = onNavigateToNovelUpdatesLatest,
-                )
-                HorizontalDivider()
-            }
+/** NovelUpdates entry points as a single compact row of tonal cards. */
+@Composable
+private fun NovelUpdatesCard(
+    onSearch: () -> Unit,
+    onRankings: () -> Unit,
+    onLatest: () -> Unit,
+) {
+    Column {
+        SectionHeader("NovelUpdates")
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            NuEntry(Icons.Default.Search, "Search", onSearch, Modifier.weight(1f))
+            NuEntry(Icons.Default.TrendingUp, "Rankings", onRankings, Modifier.weight(1f))
+            NuEntry(Icons.Default.NewReleases, "Latest", onLatest, Modifier.weight(1f))
+        }
+    }
+}
 
-            if (installed.isEmpty()) {
-                item(key = "__empty__") {
-                    Box(
-                        Modifier.fillMaxWidth().padding(32.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            "No extensions installed\nTap the extension icon to add one",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            } else {
-                sourcesByLanguage.forEach { (lang, sources) ->
-                    item(key = "__lang_$lang") { SectionHeader(languageLabel(lang)) }
-                    items(sources, key = { it.packageName }) { item ->
-                        ListItem(
-                            headlineContent = { Text(item.name) },
-                            supportingContent = { Text(languageLabel(item.lang)) },
-                            leadingContent = { ExtensionIcon(item.packageName, item.lang) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onNavigateToSource(item.packageName) },
-                        )
-                        HorizontalDivider()
-                    }
-                }
-            }
+@Composable
+private fun NuEntry(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        ),
+        modifier = modifier.clickable(onClick = onClick),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Text(label, style = MaterialTheme.typography.labelMedium)
         }
     }
 }
@@ -136,27 +338,3 @@ private fun SectionHeader(text: String) {
             .padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }
-
-@Composable
-private fun NavRow(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(subtitle) },
-        leadingContent = {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-    )
-}
-

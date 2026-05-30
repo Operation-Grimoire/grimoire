@@ -84,7 +84,10 @@ internal fun NavGraphBuilder.libraryDestination(
     }
 }
 
-internal fun NavGraphBuilder.browseGraph(navController: NavHostController) {
+internal fun NavGraphBuilder.browseGraph(
+    navController: NavHostController,
+    onSelectionActiveChange: (Boolean) -> Unit = {},
+) {
     navigation(
         startDestination = ROUTE_BROWSE_HOME,
         route = TopLevelDestination.Browse.route,
@@ -105,6 +108,10 @@ internal fun NavGraphBuilder.browseGraph(navController: NavHostController) {
                 onNavigateToNovelUpdatesLatest = {
                     navController.navigate("nu_browser?mode=LATEST")
                 },
+                onOpenSourceSettings = { pkg ->
+                    navController.navigate("settings/source/${Uri.encode(pkg)}")
+                },
+                onSelectionActiveChange = onSelectionActiveChange,
                 viewModel = vm,
             )
         }
