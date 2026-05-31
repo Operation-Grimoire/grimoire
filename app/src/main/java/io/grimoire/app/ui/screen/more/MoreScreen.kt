@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.PendingActions
@@ -57,18 +58,29 @@ fun MoreScreen(
                 HorizontalDivider()
             }
             item {
+                val hasUpdates = updateCount > 0
                 ListItem(
                     headlineContent = { Text("Updates") },
                     supportingContent = {
                         Text(
-                            if (updateCount > 0) {
+                            if (hasUpdates) {
                                 "$updateCount new chapter${if (updateCount == 1) "" else "s"}"
                             } else {
-                                "New chapters found in your library"
+                                "No new chapters"
                             }
                         )
                     },
-                    leadingContent = { Icon(Icons.Default.NewReleases, contentDescription = null) },
+                    leadingContent = {
+                        if (hasUpdates) {
+                            Icon(Icons.Default.NewReleases, contentDescription = null)
+                        } else {
+                            Icon(
+                                Icons.Default.Inbox,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
                     modifier = Modifier.clickable(onClick = onNavigateToUpdates),
                 )
                 HorizontalDivider()

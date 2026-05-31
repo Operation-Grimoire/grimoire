@@ -27,6 +27,15 @@ interface LibraryUpdateDao {
     """)
     fun count(excludeHidden: Boolean): Flow<Int>
 
+    @Query("""
+        SELECT COUNT(*) FROM library_updates lu
+        INNER JOIN novels n ON n.id = lu.novelId
+        LEFT JOIN categories c ON c.id = n.categoryId
+        WHERE (:excludeHidden = 0 OR IFNULL(c.isHidden, 0) = 0)
+          AND (n.notifyOnNewChapters = 1 OR n.notifyOnNewLockedChapters = 1)
+    """)
+    fun countSubscribed(excludeHidden: Boolean): Flow<Int>
+
     @Insert
     suspend fun insertAll(entries: List<LibraryUpdateEntity>)
 

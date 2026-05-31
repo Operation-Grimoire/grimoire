@@ -35,9 +35,14 @@ class MoreViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    /** New chapters logged on the Updates page — drives the More tab icon and row count. */
+    /** Total new chapters logged on the Updates page — drives the More tab row count. */
     val updateCount: StateFlow<Int> = excludeHidden
         .flatMapLatest { libraryUpdateDao.count(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    /** New chapters from subscribed novels — drives the More tab alert icon. */
+    val subscribedUpdateCount: StateFlow<Int> = excludeHidden
+        .flatMapLatest { libraryUpdateDao.countSubscribed(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     /** Novels with an unresolved refresh problem — drives the warnings badge. */

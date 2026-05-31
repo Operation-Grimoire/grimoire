@@ -115,7 +115,7 @@ fun AppNavigation(
 
     val moreVm: MoreViewModel = hiltViewModel()
     val activeDownloadCount by moreVm.activeDownloadCount.collectAsState()
-    val updateCount by moreVm.updateCount.collectAsState()
+    val subscribedUpdateCount by moreVm.subscribedUpdateCount.collectAsState()
     val extensionUpdateCount by moreVm.extensionUpdateCount.collectAsState()
 
     Scaffold(
@@ -162,7 +162,7 @@ fun AppNavigation(
                                 // The More tab swaps to the Updates icon while the
                                 // updates log has entries to surface.
                                 val hasUpdates = dest == TopLevelDestination.More &&
-                                    updateCount > 0
+                                    subscribedUpdateCount > 0
                                 val tabIcon = if (hasUpdates) dest.activeIcon else dest.icon
                                 when {
                                     updateBadge -> BadgedBox(
