@@ -110,14 +110,17 @@ class LibraryUpdateScheduler @Inject constructor(
             .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
             .setInputData(categoryData(null))
             .build()
-        // Cancel-then-enqueue rather than ExistingPeriodicWorkPolicy.UPDATE: UPDATE
-        // preserves the existing next-run-time and ignores a new setInitialDelay,
-        // so changing the preferred time-of-day on a schedule that's already
-        // running would never take effect.
-        wm.cancelUniqueWork(LibraryUpdateWorker.UNIQUE_PERIODIC_NAME)
+        // REPLACE rather than UPDATE: UPDATE preserves the existing next-run-time
+        // and ignores a new setInitialDelay, so changing the preferred time-of-day
+        // on an already-running schedule would never take effect. REPLACE cancels
+        // and re-enqueues atomically in one transaction, re-anchoring the initial
+        // delay. We deliberately avoid a manual cancelUniqueWork + KEEP: the cancel
+        // is an unawaited async Operation, so KEEP can observe the still-live work
+        // and silently drop the new request, leaving the stale anchor in place.
+        @Suppress("DEPRECATION")
         wm.enqueueUniquePeriodicWork(
             LibraryUpdateWorker.UNIQUE_PERIODIC_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.REPLACE,
             request,
         )
     }
