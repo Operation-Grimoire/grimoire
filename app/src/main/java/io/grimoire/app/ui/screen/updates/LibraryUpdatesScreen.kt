@@ -35,7 +35,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -44,6 +46,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,6 +77,22 @@ private data class UpdateGroup(
     val first: LibraryUpdateEntity get() = entries.first()
 }
 
+private const val SUBSCRIBED_TAB = 0
+private const val ALL_TAB = 1
+
+/**
+ * Buckets log entries into day-grouped novel update groups. Each library refresh
+ * inserts a novel's new chapters with the same timestamp, so (novelId, foundAt)
+ * identifies one novel's findings from one sync; those groups are then grouped by
+ * day. Returns day buckets in the entries' existing order (newest first).
+ */
+private fun bucketDays(entries: List<LibraryUpdateEntity>): List<Pair<Long, List<UpdateGroup>>> =
+    entries
+        .groupBy { it.novelId to it.foundAt }
+        .map { (key, l) -> UpdateGroup(key, l.sortedBy { it.chapterNumber }) }
+        .groupBy { dayKey(it.first.foundAt) }
+        .toList()
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryUpdatesScreen(
@@ -88,6 +107,23 @@ fun LibraryUpdatesScreen(
     var menuExpanded by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var expandedGroups by remember { mutableStateOf(setOf<Pair<Long, Long>>()) }
+
+    // When the user has subscribed any novel to notifications, split the log into
+    // a "Subscribed" and an "All" tab. Each tab is its own day-grouped timeline,
+    // so the day headers (Today / Yesterday / …) never bleed across the two
+    // groupings the way stacked sections did. With nothing subscribed there is
+    // only one timeline and no tab row.
+    val hasSubscribed = subscribedNovelIds.isNotEmpty()
+    // 0 = Subscribed, 1 = All.
+    var selectedTab by rememberSaveable { mutableStateOf(SUBSCRIBED_TAB) }
+    val allDays = remember(entries) { bucketDays(entries) }
+    val subscribedDays = remember(entries, subscribedNovelIds) {
+        bucketDays(entries.filter { it.novelId in subscribedNovelIds })
+    }
+    val days = if (hasSubscribed && selectedTab == SUBSCRIBED_TAB) subscribedDays else allDays
+    val visibleEntryIds = remember(days) {
+        days.flatMap { (_, groups) -> groups.flatMap { g -> g.entries.map { it.id } } }.toSet()
+    }
 
     var selectedEntryIds by remember { mutableStateOf(emptySet<Long>()) }
     val selectionMode = selectedEntryIds.isNotEmpty()
@@ -117,11 +153,10 @@ fun LibraryUpdatesScreen(
                     count = selectedEntryIds.size,
                     onClear = clearSelection,
                     onSelectAll = {
-                        val allIds = entries.map { it.id }.toSet()
-                        selectedEntryIds = if (selectedEntryIds.containsAll(allIds)) {
+                        selectedEntryIds = if (selectedEntryIds.containsAll(visibleEntryIds)) {
                             emptySet()
                         } else {
-                            allIds
+                            visibleEntryIds
                         }
                     },
                 )
@@ -259,134 +294,135 @@ fun LibraryUpdatesScreen(
                 )
             }
         } else {
-            // Each refresh inserts a novel's new chapters with the same timestamp,
-            // so (novelId, foundAt) groups one novel's findings from one sync.
-            // When the user has subscribed any novel to notifications, those
-            // novels' entries are surfaced in their own section above the rest.
-            val sections = remember(entries, subscribedNovelIds) {
-                val subscribed = entries.filter { it.novelId in subscribedNovelIds }
-                val other = entries.filter { it.novelId !in subscribedNovelIds }
-                fun bucket(list: List<LibraryUpdateEntity>) = list
-                    .groupBy { it.novelId to it.foundAt }
-                    .map { (key, l) -> UpdateGroup(key, l.sortedBy { it.chapterNumber }) }
-                    .groupBy { dayKey(it.first.foundAt) }
-                buildList {
-                    val subDays = bucket(subscribed)
-                    val otherDays = bucket(other)
-                    val showHeaders = subDays.isNotEmpty()
-                    if (subDays.isNotEmpty()) add(Triple("subscribed", "Subscribed".takeIf { showHeaders }, subDays))
-                    if (otherDays.isNotEmpty()) add(Triple("other", "Other".takeIf { showHeaders }, otherDays))
-                }
-            }
-            LazyColumn(modifier = Modifier.padding(padding)) {
-                sections.forEach { (sectionKey, sectionLabel, days) ->
-                    if (sectionLabel != null) {
-                        item(key = "section-$sectionKey") {
-                            Text(
-                                text = sectionLabel,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                            )
-                        }
-                    }
-                days.forEach { (_, dayGroups) ->
-                    item(key = "day-$sectionKey-${dayKey(dayGroups.first().first.foundAt)}") {
-                        Text(
-                            text = dayLabel(dayGroups.first().first.foundAt),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            Column(modifier = Modifier.padding(padding)) {
+                if (hasSubscribed) {
+                    PrimaryTabRow(selectedTabIndex = selectedTab) {
+                        Tab(
+                            selected = selectedTab == SUBSCRIBED_TAB,
+                            onClick = { selectedTab = SUBSCRIBED_TAB },
+                            text = { Text("Subscribed") },
+                        )
+                        Tab(
+                            selected = selectedTab == ALL_TAB,
+                            onClick = { selectedTab = ALL_TAB },
+                            text = { Text("All") },
                         )
                     }
-                    dayGroups.forEach { group ->
-                        if (group.entries.size == 1) {
-                            val entry = group.first
-                            val liveChapter = chaptersByEntryId[entry.id]
-                            item(key = "single-${entry.id}") {
-                                UpdateRow(
-                                    entry = entry,
-                                    chapter = liveChapter,
-                                    selected = entry.id in selectedEntryIds,
-                                    selectionMode = selectionMode,
-                                    onClick = {
-                                        if (selectionMode) toggleEntry(entry.id)
-                                        else if (liveChapter?.locked == true) {
-                                            onOpenNovel(entry.sourcePackage, entry.novelUrl)
-                                        } else {
-                                            onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
-                                        }
-                                    },
-                                    onLongClick = { toggleEntry(entry.id) },
-                                    onDownload = { liveChapter?.let(viewModel::downloadChapter) },
-                                    onCancelDownload = { liveChapter?.let(viewModel::cancelDownload) },
-                                    onDeleteDownload = { liveChapter?.let(viewModel::deleteDownload) },
-                                    onRedownload = { liveChapter?.let(viewModel::redownloadChapter) },
+                }
+                if (days.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "No updates from subscribed novels yet.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else {
+                    LazyColumn {
+                        // Each refresh inserts a novel's new chapters with the same
+                        // timestamp, so (novelId, foundAt) groups one novel's findings
+                        // from one sync; those groups are then bucketed by day.
+                        days.forEach { (dayKeyValue, dayGroups) ->
+                            item(key = "day-$dayKeyValue") {
+                                Text(
+                                    text = dayLabel(dayGroups.first().first.foundAt),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                                 )
                             }
-                        } else {
-                            val collapsed = group.key !in expandedGroups
-                            item(key = "group-${group.first.id}") {
-                                val toggleCollapse = {
-                                    expandedGroups = if (collapsed) {
-                                        expandedGroups + group.key
-                                    } else {
-                                        expandedGroups - group.key
+                            dayGroups.forEach { group ->
+                                if (group.entries.size == 1) {
+                                    val entry = group.first
+                                    val liveChapter = chaptersByEntryId[entry.id]
+                                    item(key = "single-${entry.id}") {
+                                        UpdateRow(
+                                            entry = entry,
+                                            chapter = liveChapter,
+                                            selected = entry.id in selectedEntryIds,
+                                            selectionMode = selectionMode,
+                                            onClick = {
+                                                if (selectionMode) toggleEntry(entry.id)
+                                                else if (liveChapter?.locked == true) {
+                                                    onOpenNovel(entry.sourcePackage, entry.novelUrl)
+                                                } else {
+                                                    onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
+                                                }
+                                            },
+                                            onLongClick = { toggleEntry(entry.id) },
+                                            onDownload = { liveChapter?.let(viewModel::downloadChapter) },
+                                            onCancelDownload = { liveChapter?.let(viewModel::cancelDownload) },
+                                            onDeleteDownload = { liveChapter?.let(viewModel::deleteDownload) },
+                                            onRedownload = { liveChapter?.let(viewModel::redownloadChapter) },
+                                        )
                                     }
-                                }
-                                val groupEntryIds = group.entries.map { it.id }
-                                UpdateGroupHeader(
-                                    group = group,
-                                    chaptersByEntryId = chaptersByEntryId,
-                                    collapsed = collapsed,
-                                    selected = groupEntryIds.all { it in selectedEntryIds },
-                                    onClick = {
-                                        if (selectionMode) toggleNovelEntries(groupEntryIds)
-                                        else toggleCollapse()
-                                    },
-                                    onLongClick = {
-                                        if (selectionMode) toggleCollapse()
-                                        else toggleNovelEntries(groupEntryIds)
-                                    },
-                                    onToggleCollapse = toggleCollapse,
-                                )
-                            }
-                            if (!collapsed) {
-                                items(
-                                    count = group.entries.size,
-                                    key = { "chapter-${group.entries[it].id}" },
-                                ) { index ->
-                                    val entry = group.entries[index]
-                                    val chapter = chaptersByEntryId[entry.id]
-                                        ?: stubChapterFromEntry(entry)
-                                    ChapterItem(
-                                        chapter = chapter,
-                                        selected = entry.id in selectedEntryIds,
-                                        selectionMode = selectionMode,
-                                        onClick = {
-                                            onOpenReader(
-                                                entry.sourcePackage,
-                                                entry.novelUrl,
-                                                entry.chapterUrl,
+                                } else {
+                                    val collapsed = group.key !in expandedGroups
+                                    item(key = "group-${group.first.id}") {
+                                        val toggleCollapse = {
+                                            expandedGroups = if (collapsed) {
+                                                expandedGroups + group.key
+                                            } else {
+                                                expandedGroups - group.key
+                                            }
+                                        }
+                                        val groupEntryIds = group.entries.map { it.id }
+                                        UpdateGroupHeader(
+                                            group = group,
+                                            chaptersByEntryId = chaptersByEntryId,
+                                            collapsed = collapsed,
+                                            selected = groupEntryIds.all { it in selectedEntryIds },
+                                            onClick = {
+                                                if (selectionMode) toggleNovelEntries(groupEntryIds)
+                                                else toggleCollapse()
+                                            },
+                                            onLongClick = {
+                                                if (selectionMode) toggleCollapse()
+                                                else toggleNovelEntries(groupEntryIds)
+                                            },
+                                            onToggleCollapse = toggleCollapse,
+                                        )
+                                    }
+                                    if (!collapsed) {
+                                        items(
+                                            count = group.entries.size,
+                                            key = { "chapter-${group.entries[it].id}" },
+                                        ) { index ->
+                                            val entry = group.entries[index]
+                                            val chapter = chaptersByEntryId[entry.id]
+                                                ?: stubChapterFromEntry(entry)
+                                            ChapterItem(
+                                                chapter = chapter,
+                                                selected = entry.id in selectedEntryIds,
+                                                selectionMode = selectionMode,
+                                                onClick = {
+                                                    onOpenReader(
+                                                        entry.sourcePackage,
+                                                        entry.novelUrl,
+                                                        entry.chapterUrl,
+                                                    )
+                                                },
+                                                onLockedClick = {
+                                                    onOpenNovel(entry.sourcePackage, entry.novelUrl)
+                                                },
+                                                onToggleSelection = { toggleEntry(entry.id) },
+                                                onDownload = { chaptersByEntryId[entry.id]?.let(viewModel::downloadChapter) },
+                                                onCancelDownload = { chaptersByEntryId[entry.id]?.let(viewModel::cancelDownload) },
+                                                onDeleteDownload = { chaptersByEntryId[entry.id]?.let(viewModel::deleteDownload) },
+                                                onRedownload = { chaptersByEntryId[entry.id]?.let(viewModel::redownloadChapter) },
                                             )
-                                        },
-                                        onLockedClick = {
-                                            onOpenNovel(entry.sourcePackage, entry.novelUrl)
-                                        },
-                                        onToggleSelection = { toggleEntry(entry.id) },
-                                        onDownload = { chaptersByEntryId[entry.id]?.let(viewModel::downloadChapter) },
-                                        onCancelDownload = { chaptersByEntryId[entry.id]?.let(viewModel::cancelDownload) },
-                                        onDeleteDownload = { chaptersByEntryId[entry.id]?.let(viewModel::deleteDownload) },
-                                        onRedownload = { chaptersByEntryId[entry.id]?.let(viewModel::redownloadChapter) },
-                                    )
-                                }
-                                item(key = "group-end-${group.first.id}") {
-                                    HorizontalDivider()
+                                        }
+                                        item(key = "group-end-${group.first.id}") {
+                                            HorizontalDivider()
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                }
                 }
             }
         }
