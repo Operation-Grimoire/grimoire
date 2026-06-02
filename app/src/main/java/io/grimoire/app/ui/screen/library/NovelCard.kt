@@ -88,6 +88,16 @@ internal fun NovelCard(
                             .padding(4.dp),
                     )
                 }
+                val showNotifyBadge = novel.notifyOnNewChapters || novel.notifyOnNewLockedChapters
+                if (showNotifyBadge || novel.autoDownloadNewChapters) {
+                    NovelStatusBadgeOverlay(
+                        showNotify = showNotifyBadge,
+                        showAutoDownload = novel.autoDownloadNewChapters,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(4.dp),
+                    )
+                }
                 if (stats != null && (visibility.showDownloaded || visibility.showLocked)) {
                     Column(
                         modifier = Modifier

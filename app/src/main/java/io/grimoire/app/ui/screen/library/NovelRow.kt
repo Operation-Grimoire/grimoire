@@ -3,15 +3,23 @@ package io.grimoire.app.ui.screen.library
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -91,6 +99,34 @@ internal fun NovelRow(
                         )
                     }
                 }
+            },
+            trailingContent = run {
+                val showNotify = novel.notifyOnNewChapters || novel.notifyOnNewLockedChapters
+                if (showNotify || novel.autoDownloadNewChapters) {
+                    {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            if (showNotify) {
+                                Icon(
+                                    Icons.Default.Notifications,
+                                    contentDescription = "Notifications enabled",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                            if (novel.autoDownloadNewChapters) {
+                                Icon(
+                                    Icons.Default.CloudDownload,
+                                    contentDescription = "Auto-download enabled",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    }
+                } else null
             },
             modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick),
         )

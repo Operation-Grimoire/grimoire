@@ -21,6 +21,9 @@ class LibraryFilterTest {
         status: Int = 0,
         lastUpdated: Long = 0L,
         lastReadAt: Long = 0L,
+        notifyOnNewChapters: Boolean = false,
+        notifyOnNewLockedChapters: Boolean = false,
+        autoDownloadNewChapters: Boolean = false,
     ) = NovelEntity(
         id = id,
         sourceId = sourceId,
@@ -32,6 +35,9 @@ class LibraryFilterTest {
         lastUpdated = lastUpdated,
         categoryId = categoryId,
         lastReadAt = lastReadAt,
+        notifyOnNewChapters = notifyOnNewChapters,
+        notifyOnNewLockedChapters = notifyOnNewLockedChapters,
+        autoDownloadNewChapters = autoDownloadNewChapters,
     )
 
     private fun category(id: Long, name: String, isDefault: Boolean = false, isHidden: Boolean = false) =
@@ -61,6 +67,8 @@ class LibraryFilterTest {
         filterStatuses: Set<Int> = emptySet(),
         filterUnreadOnly: Boolean = false,
         filterDownloadedOnly: Boolean = false,
+        filterNotifyEnabled: Boolean = false,
+        filterAutoDownloadEnabled: Boolean = false,
         filterSourceIds: Set<Long> = emptySet(),
         isUnlocked: Boolean = true,
         hiddenCategoryIds: Set<Long> = emptySet(),
@@ -77,6 +85,8 @@ class LibraryFilterTest {
         filterStatuses = filterStatuses,
         filterUnreadOnly = filterUnreadOnly,
         filterDownloadedOnly = filterDownloadedOnly,
+        filterNotifyEnabled = filterNotifyEnabled,
+        filterAutoDownloadEnabled = filterAutoDownloadEnabled,
         filterSourceIds = filterSourceIds,
         isUnlocked = isUnlocked,
         hiddenCategoryIds = hiddenCategoryIds,
@@ -247,6 +257,31 @@ class LibraryFilterTest {
             baseInputs(novels = novels, chapterStats = stats, filterDownloadedOnly = true),
         )
         assertEquals(listOf("Has"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `notify-enabled filter keeps novels with either notify flag set`() {
+        val novels = listOf(
+            novel(1, title = "Chapters", notifyOnNewChapters = true),
+            novel(2, title = "Locked", notifyOnNewLockedChapters = true),
+            novel(3, title = "Off"),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterNotifyEnabled = true),
+        )
+        assertEquals(listOf("Chapters", "Locked"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `auto-download filter keeps only novels with auto-download on`() {
+        val novels = listOf(
+            novel(1, title = "On", autoDownloadNewChapters = true),
+            novel(2, title = "Off"),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterAutoDownloadEnabled = true),
+        )
+        assertEquals(listOf("On"), tabs[0].novels!!.map { it.title })
     }
 
     @Test
