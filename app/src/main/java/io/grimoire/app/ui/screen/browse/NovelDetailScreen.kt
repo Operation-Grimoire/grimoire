@@ -71,6 +71,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -88,6 +89,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.novelupdates.NuInfoState
@@ -140,6 +144,21 @@ fun NovelDetailScreen(
     val migrationState by viewModel.migrationState.collectAsState()
     val migrateFromTitle by viewModel.migrateFromTitle.collectAsState()
     val refreshSummary by viewModel.refreshSummary.collectAsState()
+
+    // Re-check sign-in on every resume. Returning from the login WebView fires a
+    // resume reliably, whereas the nav saved-state result is easy to miss — so
+    // this is what clears the locked-chapters banner after a fresh login. Mirrors
+    // SourceSettingsScreen. recheckLoginState polls + de-dupes itself.
+    if (viewModel.supportsWebViewLogin) {
+        val lifecycleOwner = LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) viewModel.recheckLoginState()
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
+    }
 
     var showCategoryDialog by remember { mutableStateOf(false) }
     var showUnlockDialog by remember { mutableStateOf(false) }
