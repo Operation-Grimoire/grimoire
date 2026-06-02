@@ -62,7 +62,14 @@ class DownloadManager @Inject constructor(
         scope.launch { downloadPreferences.concurrency.set(value.coerceIn(1, 5)) }
     }
 
-    fun enqueue(chapters: List<ChapterEntity>, force: Boolean = false) {
+    /**
+     * Queues [chapters] for download. [startService] wakes [DownloadService] so
+     * the queue drains on its own with its own notification — the right thing
+     * for a user-initiated download. The library sync passes `false`: it drains
+     * the queue inline from its foreground worker, so a second download
+     * notification would just collide with the sync's own progress notification.
+     */
+    fun enqueue(chapters: List<ChapterEntity>, force: Boolean = false, startService: Boolean = true) {
         scope.launch {
             // NONE / ERROR rows become a fresh QUEUED; DOWNLOADED / REDOWNLOAD_ERROR (only
             // when force=true) become REDOWNLOAD_QUEUED so the row keeps reading as
@@ -86,7 +93,7 @@ class DownloadManager @Inject constructor(
             }
         }
         _isPaused.value = false
-        requestServiceStart()
+        if (startService) requestServiceStart()
     }
 
     fun cancel(chapter: ChapterEntity) {

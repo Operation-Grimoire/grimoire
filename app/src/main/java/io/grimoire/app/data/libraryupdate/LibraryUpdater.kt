@@ -253,7 +253,12 @@ class LibraryUpdater @Inject constructor(
                 if (downloadableUrls.isNotEmpty()) {
                     val freshChapters = chapterDao.getChaptersOnce(novel.id)
                         .filter { it.url in downloadableUrls }
-                    if (freshChapters.isNotEmpty()) downloadManager.enqueue(freshChapters)
+                    // startService = false: the worker drains this queue inline
+                    // after the sync, so we must not spawn DownloadService and its
+                    // competing download notification mid-sync.
+                    if (freshChapters.isNotEmpty()) {
+                        downloadManager.enqueue(freshChapters, startService = false)
+                    }
                 }
             }
         }
