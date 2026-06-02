@@ -35,6 +35,7 @@ class LibraryUpdateScheduler @Inject constructor(
 
     fun applyPreferredSchedule() {
         scope.launch {
+            var isInitial = true
             combine(
                 preferences.frequency.changes(),
                 preferences.onlyOnWifi.changes(),
@@ -44,7 +45,14 @@ class LibraryUpdateScheduler @Inject constructor(
                 Schedule(freq, wifi, charging, minutes)
             }
                 .distinctUntilChanged()
-                .collectLatest { applySchedule(it) }
+                .collectLatest {
+                    // The first emission is the stored prefs replayed at process
+                    // start — not a real change — so KEEP the live schedule and
+                    // its existing next-run anchor. Only a genuine later change
+                    // (the user editing a pref) re-anchors via REPLACE.
+                    applySchedule(it, reAnchor = !isInitial)
+                    isInitial = false
+                }
         }
     }
 
@@ -78,6 +86,7 @@ class LibraryUpdateScheduler @Inject constructor(
                     preferences.requiresCharging.changes().first(),
                     preferences.preferredTimeOfDayMinutes.changes().first(),
                 ),
+                reAnchor = true,
             )
         }
     }
@@ -86,7 +95,7 @@ class LibraryUpdateScheduler @Inject constructor(
         .putLong(LibraryUpdateWorker.KEY_CATEGORY_ID, categoryId ?: LibraryUpdateWorker.ALL_LIBRARY)
         .build()
 
-    private fun applySchedule(s: Schedule) {
+    private fun applySchedule(s: Schedule, reAnchor: Boolean) {
         val wm = WorkManager.getInstance(context)
         if (s.frequency == LibraryUpdateFrequency.OFF) {
             wm.cancelUniqueWork(LibraryUpdateWorker.UNIQUE_PERIODIC_NAME)
@@ -110,17 +119,29 @@ class LibraryUpdateScheduler @Inject constructor(
             .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
             .setInputData(categoryData(null))
             .build()
-        // REPLACE rather than UPDATE: UPDATE preserves the existing next-run-time
-        // and ignores a new setInitialDelay, so changing the preferred time-of-day
-        // on an already-running schedule would never take effect. REPLACE cancels
-        // and re-enqueues atomically in one transaction, re-anchoring the initial
-        // delay. We deliberately avoid a manual cancelUniqueWork + KEEP: the cancel
-        // is an unawaited async Operation, so KEEP can observe the still-live work
-        // and silently drop the new request, leaving the stale anchor in place.
-        @Suppress("DEPRECATION")
+        // Policy depends on whether this is a genuine change ([reAnchor]) or just
+        // the stored prefs replayed at process start.
+        //
+        // - reAnchor: REPLACE cancels and re-enqueues atomically in one
+        //   transaction, re-anchoring the initial delay. UPDATE would preserve
+        //   the existing next-run-time and ignore the new setInitialDelay, so a
+        //   changed preferred time-of-day would never take effect. We avoid a
+        //   manual cancelUniqueWork + KEEP because the cancel is an unawaited
+        //   async Operation, so KEEP could observe the still-live work and
+        //   silently drop the new request, leaving the stale anchor in place.
+        // - otherwise: KEEP preserves any already-enqueued schedule and its
+        //   existing next-run anchor. Without this, every app launch would
+        //   re-anchor the initial delay to the next preferred time, so a user
+        //   who opens the app daily before that time would perpetually push the
+        //   run forward and the scheduled sync would never fire.
+        val policy = if (reAnchor) {
+            ExistingPeriodicWorkPolicy.REPLACE
+        } else {
+            ExistingPeriodicWorkPolicy.KEEP
+        }
         wm.enqueueUniquePeriodicWork(
             LibraryUpdateWorker.UNIQUE_PERIODIC_NAME,
-            ExistingPeriodicWorkPolicy.REPLACE,
+            policy,
             request,
         )
     }
