@@ -33,8 +33,11 @@ import io.grimoire.app.domain.migration.NovelMigrator
 import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -229,6 +232,7 @@ class NovelDetailViewModel @Inject constructor(
     private var cachedNovelId: Long = -1L
     private var loadJob: Job? = null
     private var nuJob: Job? = null
+    private var loginCheckJob: Job? = null
 
     init {
         if (isMigrationTarget) viewModelScope.launch {
@@ -266,7 +270,9 @@ class NovelDetailViewModel @Inject constructor(
             savedStateHandle.getStateFlow(SOURCE_LOGIN_RESULT_KEY, false).collect { done ->
                 if (done) {
                     savedStateHandle[SOURCE_LOGIN_RESULT_KEY] = false
-                    refresh()
+                    // Poll sign-in state: the source confirms over the network and
+                    // the first check right after login often still reports out.
+                    refresh(retryLogin = true)
                 }
             }
         }
@@ -334,7 +340,7 @@ class NovelDetailViewModel @Inject constructor(
         _isLoadingChapters.value = false
     }
 
-    fun refresh() {
+    fun refresh(retryLogin: Boolean = false) {
         if (isLocal) return
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
@@ -345,7 +351,7 @@ class NovelDetailViewModel @Inject constructor(
             } else emptyMap()
 
             loadNovel(forceRefresh = true)
-            refreshLoginState()
+            refreshLoginState(retry = retryLogin)
 
             // Only emit a summary when the novel already had a chapter list — otherwise
             // a first-time fetch would flag every chapter as "new".
@@ -377,15 +383,41 @@ class NovelDetailViewModel @Inject constructor(
         _refreshSummary.value = null
     }
 
-    private fun refreshLoginState() {
+    /**
+     * Refreshes the source's sign-in state.
+     *
+     * A source confirms its session over the network, and right after the login
+     * WebView returns the server often doesn't report the session as live on the
+     * very first check. When [retry] is set we poll with backoff for a few
+     * seconds so a freshly-completed login is picked up and the locked-chapter
+     * banner clears without having to leave and reopen the page. The first miss
+     * still surfaces SIGNED_OUT immediately so the banner never sticks on
+     * "Checking…"; later attempts can upgrade it to SIGNED_IN.
+     */
+    private fun refreshLoginState(retry: Boolean = false) {
         val src = source
         if (src !is WebViewLoginSource) {
             _loginState.value = LoginState.NOT_SUPPORTED
             return
         }
-        viewModelScope.launch {
-            val signedIn = runCatching { src.isLoggedIn() }.getOrDefault(false)
-            _loginState.value = if (signedIn) LoginState.SIGNED_IN else LoginState.SIGNED_OUT
+        loginCheckJob?.cancel()
+        loginCheckJob = viewModelScope.launch {
+            val waits = if (retry) {
+                longArrayOf(0, 300, 500, 800, 1200, 1800, 2500)
+            } else {
+                longArrayOf(0)
+            }
+            for ((i, wait) in waits.withIndex()) {
+                if (wait > 0) delay(wait)
+                val signedIn = withContext(Dispatchers.IO) {
+                    runCatching { src.isLoggedIn() }.getOrDefault(false)
+                }
+                if (signedIn) {
+                    _loginState.value = LoginState.SIGNED_IN
+                    return@launch
+                }
+                if (i == 0) _loginState.value = LoginState.SIGNED_OUT
+            }
         }
     }
 
