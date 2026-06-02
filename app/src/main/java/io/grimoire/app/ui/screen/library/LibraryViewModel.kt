@@ -155,6 +155,8 @@ class LibraryViewModel @Inject constructor(
     val filterStatuses: StateFlow<Set<Int>> = libraryPreferences.filterStatuses.stateIn(viewModelScope)
     val filterUnreadOnly: StateFlow<Boolean> = libraryPreferences.filterUnreadOnly.stateIn(viewModelScope)
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
+    val filterNotifyEnabled: StateFlow<Boolean> = libraryPreferences.filterNotifyEnabled.stateIn(viewModelScope)
+    val filterAutoDownloadEnabled: StateFlow<Boolean> = libraryPreferences.filterAutoDownloadEnabled.stateIn(viewModelScope)
     val filterSourceIds: StateFlow<Set<Long>> = libraryPreferences.filterSourceIds.stateIn(viewModelScope)
 
     /**
@@ -225,6 +227,10 @@ class LibraryViewModel @Inject constructor(
             includeHiddenInAll,
             includeLockedInTotals,
             _searchQuery.debounce(120L),
+            // Appended after searchQuery so the existing positional indices below
+            // stay put; read at [15]/[16].
+            filterNotifyEnabled,
+            filterAutoDownloadEnabled,
         ),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
@@ -244,6 +250,8 @@ class LibraryViewModel @Inject constructor(
             includeHiddenInAll = values[12] as Boolean,
             includeLockedInTotals = values[13] as Boolean,
             searchQuery = values[14] as String,
+            filterNotifyEnabled = values[15] as Boolean,
+            filterAutoDownloadEnabled = values[16] as Boolean,
         )
     }
 
@@ -346,6 +354,14 @@ class LibraryViewModel @Inject constructor(
 
     fun setFilterDownloadedOnly(value: Boolean) = viewModelScope.launch {
         libraryPreferences.filterDownloadedOnly.set(value)
+    }
+
+    fun setFilterNotifyEnabled(value: Boolean) = viewModelScope.launch {
+        libraryPreferences.filterNotifyEnabled.set(value)
+    }
+
+    fun setFilterAutoDownloadEnabled(value: Boolean) = viewModelScope.launch {
+        libraryPreferences.filterAutoDownloadEnabled.set(value)
     }
 
     /** Toggles [sourceId] in the active source filter set, or clears it entirely when null. */

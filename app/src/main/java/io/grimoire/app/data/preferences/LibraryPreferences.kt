@@ -70,6 +70,8 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
 
     val filterUnreadOnly = store.getBoolean("library_filter_unread_only", false)
     val filterDownloadedOnly = store.getBoolean("library_filter_downloaded_only", false)
+    val filterNotifyEnabled = store.getBoolean("library_filter_notify_enabled", false)
+    val filterAutoDownloadEnabled = store.getBoolean("library_filter_auto_download_enabled", false)
 
     // Status and source filters are multi-select sets. An empty set means "no
     // restriction" (show all), so users can either tap "All" to clear or tap any

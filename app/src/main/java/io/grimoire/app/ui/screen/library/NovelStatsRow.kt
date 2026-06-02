@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -173,5 +175,47 @@ internal fun NovelCountBadgeOverlay(
             style = MaterialTheme.typography.labelSmall,
             color = Color.White,
         )
+    }
+}
+
+/**
+ * Cover overlay that flags the per-novel "new chapter" settings — a bell when
+ * notifications are on, an auto-download glyph when auto-download is on. Distinct
+ * from [NovelCountBadgeOverlay] (which counts chapters) so the static download
+ * count and the auto-download flag never read as the same thing. Callers should
+ * only render this when at least one flag is set.
+ */
+@Composable
+internal fun NovelStatusBadgeOverlay(
+    showNotify: Boolean,
+    showAutoDownload: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .background(
+                MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f),
+                MaterialTheme.shapes.extraSmall,
+            )
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        if (showNotify) {
+            Icon(
+                Icons.Default.Notifications,
+                contentDescription = "Notifications enabled",
+                tint = Color.White,
+                modifier = Modifier.size(11.dp),
+            )
+        }
+        if (showAutoDownload) {
+            Icon(
+                Icons.Default.CloudDownload,
+                contentDescription = "Auto-download enabled",
+                tint = Color.White,
+                modifier = Modifier.size(11.dp),
+            )
+        }
     }
 }

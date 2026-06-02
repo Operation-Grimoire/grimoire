@@ -55,6 +55,8 @@ internal fun FilterSortContent(
     filterStatuses: Set<Int>,
     filterUnreadOnly: Boolean,
     filterDownloadedOnly: Boolean,
+    filterNotifyEnabled: Boolean,
+    filterAutoDownloadEnabled: Boolean,
     filterSourceIds: Set<Long>,
     librarySources: List<Pair<Long, String>>,
     onSortFieldChange: (SortField) -> Unit,
@@ -62,6 +64,8 @@ internal fun FilterSortContent(
     onToggleFilterStatus: (Int?) -> Unit,
     onUnreadOnlyChange: (Boolean) -> Unit,
     onDownloadedOnlyChange: (Boolean) -> Unit,
+    onNotifyEnabledChange: (Boolean) -> Unit,
+    onAutoDownloadEnabledChange: (Boolean) -> Unit,
     onToggleFilterSource: (Long?) -> Unit,
 ) {
     var tab by remember { mutableIntStateOf(0) }
@@ -75,11 +79,15 @@ internal fun FilterSortContent(
                 filterStatuses = filterStatuses,
                 filterUnreadOnly = filterUnreadOnly,
                 filterDownloadedOnly = filterDownloadedOnly,
+                filterNotifyEnabled = filterNotifyEnabled,
+                filterAutoDownloadEnabled = filterAutoDownloadEnabled,
                 filterSourceIds = filterSourceIds,
                 librarySources = librarySources,
                 onToggleFilterStatus = onToggleFilterStatus,
                 onUnreadOnlyChange = onUnreadOnlyChange,
                 onDownloadedOnlyChange = onDownloadedOnlyChange,
+                onNotifyEnabledChange = onNotifyEnabledChange,
+                onAutoDownloadEnabledChange = onAutoDownloadEnabledChange,
                 onToggleFilterSource = onToggleFilterSource,
             )
             1 -> SortTab(
@@ -99,11 +107,15 @@ private fun FilterTab(
     filterStatuses: Set<Int>,
     filterUnreadOnly: Boolean,
     filterDownloadedOnly: Boolean,
+    filterNotifyEnabled: Boolean,
+    filterAutoDownloadEnabled: Boolean,
     filterSourceIds: Set<Long>,
     librarySources: List<Pair<Long, String>>,
     onToggleFilterStatus: (Int?) -> Unit,
     onUnreadOnlyChange: (Boolean) -> Unit,
     onDownloadedOnlyChange: (Boolean) -> Unit,
+    onNotifyEnabledChange: (Boolean) -> Unit,
+    onAutoDownloadEnabledChange: (Boolean) -> Unit,
     onToggleFilterSource: (Long?) -> Unit,
 ) {
     Column {
@@ -184,6 +196,22 @@ private fun FilterTab(
                 Switch(checked = filterDownloadedOnly, onCheckedChange = onDownloadedOnlyChange)
             },
             modifier = Modifier.clickable { onDownloadedOnlyChange(!filterDownloadedOnly) },
+        )
+        ListItem(
+            headlineContent = { Text("Notifications on") },
+            supportingContent = { Text("Show only novels set to notify on new chapters") },
+            trailingContent = {
+                Switch(checked = filterNotifyEnabled, onCheckedChange = onNotifyEnabledChange)
+            },
+            modifier = Modifier.clickable { onNotifyEnabledChange(!filterNotifyEnabled) },
+        )
+        ListItem(
+            headlineContent = { Text("Auto-download on") },
+            supportingContent = { Text("Show only novels set to auto-download new chapters") },
+            trailingContent = {
+                Switch(checked = filterAutoDownloadEnabled, onCheckedChange = onAutoDownloadEnabledChange)
+            },
+            modifier = Modifier.clickable { onAutoDownloadEnabledChange(!filterAutoDownloadEnabled) },
         )
     }
 }

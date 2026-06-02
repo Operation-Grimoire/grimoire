@@ -125,6 +125,8 @@ fun LibraryScreen(
     val filterStatuses by viewModel.filterStatuses.collectAsState()
     val filterUnreadOnly by viewModel.filterUnreadOnly.collectAsState()
     val filterDownloadedOnly by viewModel.filterDownloadedOnly.collectAsState()
+    val filterNotifyEnabled by viewModel.filterNotifyEnabled.collectAsState()
+    val filterAutoDownloadEnabled by viewModel.filterAutoDownloadEnabled.collectAsState()
     val filterSourceIds by viewModel.filterSourceIds.collectAsState()
     val librarySources by viewModel.librarySources.collectAsState()
     val isUnlocked by viewModel.isUnlocked.collectAsState()
@@ -195,7 +197,7 @@ fun LibraryScreen(
     }
 
     val isFilterActive = filterStatuses.isNotEmpty() || filterUnreadOnly || filterDownloadedOnly ||
-        filterSourceIds.isNotEmpty()
+        filterNotifyEnabled || filterAutoDownloadEnabled || filterSourceIds.isNotEmpty()
 
     val tabs = displayedTabs.map { it.label }
     // Parallel to `tabs`: the category id behind each tab, or ALL_TAB_CATEGORY_ID for "All".
@@ -570,6 +572,8 @@ fun LibraryScreen(
                 filterStatuses = filterStatuses,
                 filterUnreadOnly = filterUnreadOnly,
                 filterDownloadedOnly = filterDownloadedOnly,
+                filterNotifyEnabled = filterNotifyEnabled,
+                filterAutoDownloadEnabled = filterAutoDownloadEnabled,
                 filterSourceIds = filterSourceIds,
                 librarySources = librarySources,
                 onSortFieldChange = viewModel::setSortField,
@@ -577,6 +581,8 @@ fun LibraryScreen(
                 onToggleFilterStatus = viewModel::toggleFilterStatus,
                 onUnreadOnlyChange = viewModel::setFilterUnreadOnly,
                 onDownloadedOnlyChange = viewModel::setFilterDownloadedOnly,
+                onNotifyEnabledChange = viewModel::setFilterNotifyEnabled,
+                onAutoDownloadEnabledChange = viewModel::setFilterAutoDownloadEnabled,
                 onToggleFilterSource = viewModel::toggleFilterSource,
             )
         }
