@@ -270,9 +270,9 @@ class NovelDetailViewModel @Inject constructor(
             savedStateHandle.getStateFlow(SOURCE_LOGIN_RESULT_KEY, false).collect { done ->
                 if (done) {
                     savedStateHandle[SOURCE_LOGIN_RESULT_KEY] = false
-                    // Poll sign-in state: the source confirms over the network and
-                    // the first check right after login often still reports out.
-                    refresh(retryLogin = true)
+                    // Backup to the screen's ON_RESUME re-check; the saved-state
+                    // result is easy to miss, so this isn't the primary trigger.
+                    recheckLoginState()
                 }
             }
         }
@@ -340,7 +340,7 @@ class NovelDetailViewModel @Inject constructor(
         _isLoadingChapters.value = false
     }
 
-    fun refresh(retryLogin: Boolean = false) {
+    fun refresh() {
         if (isLocal) return
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
@@ -351,7 +351,7 @@ class NovelDetailViewModel @Inject constructor(
             } else emptyMap()
 
             loadNovel(forceRefresh = true)
-            refreshLoginState(retry = retryLogin)
+            refreshLoginState()
 
             // Only emit a summary when the novel already had a chapter list — otherwise
             // a first-time fetch would flag every chapter as "new".
@@ -394,6 +394,17 @@ class NovelDetailViewModel @Inject constructor(
      * still surfaces SIGNED_OUT immediately so the banner never sticks on
      * "Checking…"; later attempts can upgrade it to SIGNED_IN.
      */
+    /** Whether this source signs in through a WebView (locked-chapter access). */
+    val supportsWebViewLogin: Boolean get() = source is WebViewLoginSource
+
+    /**
+     * Re-checks sign-in, polling with backoff so a just-completed login is
+     * picked up. Called from the screen's ON_RESUME: returning from the login
+     * WebView reliably fires a resume, whereas the nav saved-state result is
+     * easy to miss (see SourceSettingsScreen for the same approach).
+     */
+    fun recheckLoginState() = refreshLoginState(retry = true)
+
     private fun refreshLoginState(retry: Boolean = false) {
         val src = source
         if (src !is WebViewLoginSource) {
@@ -413,7 +424,13 @@ class NovelDetailViewModel @Inject constructor(
                     runCatching { src.isLoggedIn() }.getOrDefault(false)
                 }
                 if (signedIn) {
+                    // Only a genuine signed-out -> signed-in flip means the user
+                    // just logged in; reload so newly-unlocked chapters appear.
+                    // UNKNOWN -> SIGNED_IN is the normal initial load and must not
+                    // force a network refresh on every open.
+                    val justLoggedIn = _loginState.value == LoginState.SIGNED_OUT
                     _loginState.value = LoginState.SIGNED_IN
+                    if (justLoggedIn) refresh()
                     return@launch
                 }
                 if (i == 0) _loginState.value = LoginState.SIGNED_OUT
