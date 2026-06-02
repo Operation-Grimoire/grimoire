@@ -5,27 +5,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,13 +28,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import io.grimoire.app.data.preferences.LibraryUpdateFrequency
+import io.grimoire.app.ui.screen.settings.IntervalSelector
+import io.grimoire.app.ui.screen.settings.TimeOfDayPickerDialog
+import io.grimoire.app.ui.screen.settings.formatTimeOfDay
+import io.grimoire.app.ui.screen.settings.intervalSummary
 import kotlinx.coroutines.launch
 import java.text.DateFormat
-import java.util.Calendar
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,7 +45,9 @@ fun LibraryUpdateSettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: LibraryUpdateSettingsViewModel = hiltViewModel(),
 ) {
-    val frequency by viewModel.frequency.collectAsState()
+    val enabled by viewModel.enabled.collectAsState()
+    val intervalCount by viewModel.intervalCount.collectAsState()
+    val intervalUnit by viewModel.intervalUnit.collectAsState()
     val onlyOnWifi by viewModel.onlyOnWifi.collectAsState()
     val requiresCharging by viewModel.requiresCharging.collectAsState()
     val autoDownloadNewChapters by viewModel.autoDownloadNewChapters.collectAsState()
@@ -90,21 +87,34 @@ fun LibraryUpdateSettingsScreen(
                 )
             }
 
-            items(LibraryUpdateFrequency.entries) { entry ->
+            item {
                 ListItem(
-                    leadingContent = {
-                        RadioButton(
-                            selected = frequency == entry,
-                            onClick = { viewModel.setFrequency(entry) },
+                    headlineContent = { Text("Update automatically") },
+                    supportingContent = {
+                        Text(
+                            if (enabled) "Runs every ${intervalSummary(intervalCount, intervalUnit)}"
+                            else "Off",
                         )
                     },
-                    headlineContent = { Text(entry.displayName) },
-                    modifier = Modifier.clickable { viewModel.setFrequency(entry) },
+                    trailingContent = {
+                        Switch(checked = enabled, onCheckedChange = viewModel::setEnabled)
+                    },
+                    modifier = Modifier.clickable { viewModel.setEnabled(!enabled) },
                 )
             }
 
+            if (enabled) {
+                item {
+                    IntervalSelector(
+                        count = intervalCount,
+                        unit = intervalUnit,
+                        onCountChange = viewModel::setIntervalCount,
+                        onUnitChange = viewModel::setIntervalUnit,
+                    )
+                }
+            }
+
             item {
-                val enabled = frequency != LibraryUpdateFrequency.OFF
                 ListItem(
                     headlineContent = { Text("Time of day") },
                     supportingContent = {
@@ -248,44 +258,6 @@ fun LibraryUpdateSettingsScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TimeOfDayPickerDialog(
-    initialHour: Int,
-    initialMinute: Int,
-    onConfirm: (Int, Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val context = LocalContext.current
-    val state = rememberTimePickerState(
-        initialHour = initialHour,
-        initialMinute = initialMinute,
-        is24Hour = android.text.format.DateFormat.is24HourFormat(context),
-    )
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Sync time") },
-        text = { TimePicker(state = state) },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(state.hour, state.minute) }) { Text("Set") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
-    )
-}
-
-private fun formatTimeOfDay(minutesSinceMidnight: Int): String {
-    val safe = minutesSinceMidnight.coerceIn(0, 24 * 60 - 1)
-    val cal = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, safe / 60)
-        set(Calendar.MINUTE, safe % 60)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }
-    return DateFormat.getTimeInstance(DateFormat.SHORT).format(cal.time)
-}
-
 @Composable
 private fun SectionHeader(title: String) {
     Text(
@@ -295,11 +267,3 @@ private fun SectionHeader(title: String) {
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }
-
-private val LibraryUpdateFrequency.displayName: String
-    get() = when (this) {
-        LibraryUpdateFrequency.OFF -> "Off"
-        LibraryUpdateFrequency.DAILY -> "Daily"
-        LibraryUpdateFrequency.EVERY_3_DAYS -> "Every 3 days"
-        LibraryUpdateFrequency.WEEKLY -> "Weekly"
-    }

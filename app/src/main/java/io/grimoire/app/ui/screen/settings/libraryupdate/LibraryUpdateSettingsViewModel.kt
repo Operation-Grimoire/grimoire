@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
-import io.grimoire.app.data.preferences.LibraryUpdateFrequency
 import io.grimoire.app.data.preferences.LibraryUpdatePreferences
+import io.grimoire.app.data.schedule.SCHEDULE_MAX_COUNT
+import io.grimoire.app.data.schedule.SCHEDULE_MIN_COUNT
+import io.grimoire.app.data.schedule.ScheduleUnit
 import io.grimoire.app.data.preferences.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -19,7 +21,9 @@ class LibraryUpdateSettingsViewModel @Inject constructor(
     private val scheduler: LibraryUpdateScheduler,
 ) : ViewModel() {
 
-    val frequency = preferences.frequency.stateIn(viewModelScope)
+    val enabled = preferences.enabled.stateIn(viewModelScope)
+    val intervalCount = preferences.intervalCount.stateIn(viewModelScope)
+    val intervalUnit = preferences.intervalUnit.stateIn(viewModelScope)
     val onlyOnWifi = preferences.onlyOnWifi.stateIn(viewModelScope)
     val requiresCharging = preferences.requiresCharging.stateIn(viewModelScope)
     val autoDownloadNewChapters = preferences.autoDownloadNewChapters.stateIn(viewModelScope)
@@ -31,8 +35,16 @@ class LibraryUpdateSettingsViewModel @Inject constructor(
     val lastRunSuccess = preferences.lastRunSuccess.stateIn(viewModelScope)
     val lastRunMessage = preferences.lastRunMessage.stateIn(viewModelScope)
 
-    fun setFrequency(value: LibraryUpdateFrequency) = viewModelScope.launch {
-        preferences.frequency.set(value)
+    fun setEnabled(value: Boolean) = viewModelScope.launch {
+        preferences.enabled.set(value)
+    }
+
+    fun setIntervalCount(value: Int) = viewModelScope.launch {
+        preferences.intervalCount.set(value.coerceIn(SCHEDULE_MIN_COUNT, SCHEDULE_MAX_COUNT))
+    }
+
+    fun setIntervalUnit(value: ScheduleUnit) = viewModelScope.launch {
+        preferences.intervalUnit.set(value)
     }
 
     fun setOnlyOnWifi(value: Boolean) = viewModelScope.launch {

@@ -9,8 +9,10 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.app.data.preferences.BackupFrequency
 import io.grimoire.app.data.preferences.BackupPreferences
+import io.grimoire.app.data.schedule.ScheduleUnit
+import io.grimoire.app.data.schedule.computeInitialDelayMillis
+import io.grimoire.app.data.schedule.scheduleIntervalHours
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,19 +34,47 @@ class BackupScheduler @Inject constructor(
 
     fun applyPreferredSchedule() {
         scope.launch {
-            // Observe changes to relevant preferences and re-schedule accordingly.
+            var isInitial = true
+            // Pack count + unit into one flow so the outer combine stays within
+            // the typed 5-arg overload (the vararg overload reifies a mixed-type
+            // array, which Kotlin warns about).
+            val interval = combine(
+                preferences.intervalCount.changes(),
+                preferences.intervalUnit.changes(),
+            ) { count, unit -> count to unit }
             combine(
-                preferences.frequency.changes(),
+                preferences.enabled.changes(),
                 preferences.backupFolderUri.changes(),
-                preferences.onlyOnWifi.changes(),
-                preferences.requiresCharging.changes(),
-            ) { freq, folder, wifi, charging ->
-                Schedule(freq, folder, wifi, charging)
+                interval,
+                schedulingConstraints(),
+                preferences.preferredTimeOfDayMinutes.changes(),
+            ) { enabled, folder, (count, unit), constraints, minutes ->
+                Schedule(
+                    enabled = enabled,
+                    folderUri = folder,
+                    count = count,
+                    unit = unit,
+                    onlyOnWifi = constraints.first,
+                    requiresCharging = constraints.second,
+                    preferredMinutes = minutes,
+                )
             }
                 .distinctUntilChanged()
-                .collectLatest { applySchedule(it) }
+                .collectLatest {
+                    // The first emission is the stored prefs replayed at process
+                    // start — not a real change — so KEEP the live schedule and
+                    // its existing next-run anchor. Only a genuine later change
+                    // (the user editing a pref) re-anchors via REPLACE.
+                    applySchedule(it, reAnchor = !isInitial)
+                    isInitial = false
+                }
         }
     }
+
+    private fun schedulingConstraints() = combine(
+        preferences.onlyOnWifi.changes(),
+        preferences.requiresCharging.changes(),
+    ) { wifi, charging -> wifi to charging }
 
     fun triggerOneOffNow() {
         val request = OneTimeWorkRequestBuilder<BackupWorker>().build()
@@ -59,9 +89,9 @@ class BackupScheduler @Inject constructor(
         WorkManager.getInstance(context).cancelUniqueWork(BackupWorker.UNIQUE_PERIODIC_NAME)
     }
 
-    private fun applySchedule(s: Schedule) {
+    private fun applySchedule(s: Schedule, reAnchor: Boolean) {
         val wm = WorkManager.getInstance(context)
-        if (s.frequency == BackupFrequency.OFF || s.folderUri.isBlank()) {
+        if (!s.enabled || s.folderUri.isBlank()) {
             wm.cancelUniqueWork(BackupWorker.UNIQUE_PERIODIC_NAME)
             return
         }
@@ -70,20 +100,38 @@ class BackupScheduler @Inject constructor(
             .setRequiresCharging(s.requiresCharging)
             .setRequiresStorageNotLow(true)
             .build()
+        // Anchor the first run to the user's preferred time-of-day; see
+        // LibraryUpdateScheduler for why we avoid the flex-interval constructor.
+        val initialDelay = computeInitialDelayMillis(System.currentTimeMillis(), s.preferredMinutes)
         val request = PeriodicWorkRequestBuilder<BackupWorker>(
-            s.frequency.hours, TimeUnit.HOURS,
-        ).setConstraints(constraints).build()
+            scheduleIntervalHours(s.count, s.unit), TimeUnit.HOURS,
+        )
+            .setConstraints(constraints)
+            .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+            .build()
+        // KEEP on the initial application preserves the live schedule and its
+        // next-run anchor across app restarts; REPLACE on a genuine change
+        // re-anchors so a new interval / time-of-day takes effect. See
+        // LibraryUpdateScheduler for the full rationale.
+        val policy = if (reAnchor) {
+            ExistingPeriodicWorkPolicy.REPLACE
+        } else {
+            ExistingPeriodicWorkPolicy.KEEP
+        }
         wm.enqueueUniquePeriodicWork(
             BackupWorker.UNIQUE_PERIODIC_NAME,
-            ExistingPeriodicWorkPolicy.UPDATE,
+            policy,
             request,
         )
     }
 
     private data class Schedule(
-        val frequency: BackupFrequency,
+        val enabled: Boolean,
         val folderUri: String,
+        val count: Int,
+        val unit: ScheduleUnit,
         val onlyOnWifi: Boolean,
         val requiresCharging: Boolean,
+        val preferredMinutes: Int,
     )
 }

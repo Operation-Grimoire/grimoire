@@ -1,18 +1,16 @@
 package io.grimoire.app.data.preferences
 
+import io.grimoire.app.data.schedule.ScheduleUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class LibraryUpdateFrequency(val hours: Long) {
-    OFF(0),
-    DAILY(24),
-    EVERY_3_DAYS(72),
-    WEEKLY(168),
-}
-
 @Singleton
 class LibraryUpdatePreferences @Inject constructor(store: PreferenceStore) {
-    val frequency = store.getEnum("library_update_frequency", LibraryUpdateFrequency.OFF)
+    /** Whether the periodic library refresh is scheduled at all. */
+    val enabled = store.getBoolean("library_update_enabled", false)
+    /** Multiplier on [intervalUnit]; e.g. count 3 + HOURS = every 3 hours. */
+    val intervalCount = store.getInt("library_update_interval_count", 1)
+    val intervalUnit = store.getEnum("library_update_interval_unit", ScheduleUnit.DAYS)
     val onlyOnWifi = store.getBoolean("library_update_only_on_wifi", false)
     val requiresCharging = store.getBoolean("library_update_requires_charging", false)
     val autoDownloadNewChapters = store.getBoolean("library_update_auto_download", false)

@@ -10,8 +10,10 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.app.data.preferences.LibraryUpdateFrequency
 import io.grimoire.app.data.preferences.LibraryUpdatePreferences
+import io.grimoire.app.data.schedule.ScheduleUnit
+import io.grimoire.app.data.schedule.computeInitialDelayMillis
+import io.grimoire.app.data.schedule.scheduleIntervalHours
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,13 +38,21 @@ class LibraryUpdateScheduler @Inject constructor(
     fun applyPreferredSchedule() {
         scope.launch {
             var isInitial = true
+            // Pack count + unit into one flow so the outer combine stays within
+            // the typed 5-arg overload (the vararg overload reifies a mixed-type
+            // array, which Kotlin warns about).
+            val interval = combine(
+                preferences.intervalCount.changes(),
+                preferences.intervalUnit.changes(),
+            ) { count, unit -> count to unit }
             combine(
-                preferences.frequency.changes(),
+                preferences.enabled.changes(),
+                interval,
                 preferences.onlyOnWifi.changes(),
                 preferences.requiresCharging.changes(),
                 preferences.preferredTimeOfDayMinutes.changes(),
-            ) { freq, wifi, charging, minutes ->
-                Schedule(freq, wifi, charging, minutes)
+            ) { enabled, (count, unit), wifi, charging, minutes ->
+                Schedule(enabled, count, unit, wifi, charging, minutes)
             }
                 .distinctUntilChanged()
                 .collectLatest {
@@ -81,10 +91,12 @@ class LibraryUpdateScheduler @Inject constructor(
             wm.cancelUniqueWork(LibraryUpdateWorker.UNIQUE_PERIODIC_NAME)
             applySchedule(
                 Schedule(
-                    preferences.frequency.changes().first(),
-                    preferences.onlyOnWifi.changes().first(),
-                    preferences.requiresCharging.changes().first(),
-                    preferences.preferredTimeOfDayMinutes.changes().first(),
+                    enabled = preferences.enabled.changes().first(),
+                    count = preferences.intervalCount.changes().first(),
+                    unit = preferences.intervalUnit.changes().first(),
+                    onlyOnWifi = preferences.onlyOnWifi.changes().first(),
+                    requiresCharging = preferences.requiresCharging.changes().first(),
+                    preferredMinutes = preferences.preferredTimeOfDayMinutes.changes().first(),
                 ),
                 reAnchor = true,
             )
@@ -97,10 +109,11 @@ class LibraryUpdateScheduler @Inject constructor(
 
     private fun applySchedule(s: Schedule, reAnchor: Boolean) {
         val wm = WorkManager.getInstance(context)
-        if (s.frequency == LibraryUpdateFrequency.OFF) {
+        if (!s.enabled) {
             wm.cancelUniqueWork(LibraryUpdateWorker.UNIQUE_PERIODIC_NAME)
             return
         }
+        val intervalHours = scheduleIntervalHours(s.count, s.unit)
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(if (s.onlyOnWifi) NetworkType.UNMETERED else NetworkType.CONNECTED)
             .setRequiresCharging(s.requiresCharging)
@@ -113,7 +126,7 @@ class LibraryUpdateScheduler @Inject constructor(
         // ~[repeatInterval] past the requested time.
         val initialDelay = computeInitialDelayMillis(System.currentTimeMillis(), s.preferredMinutes)
         val request = PeriodicWorkRequestBuilder<LibraryUpdateWorker>(
-            s.frequency.hours, TimeUnit.HOURS,
+            intervalHours, TimeUnit.HOURS,
         )
             .setConstraints(constraints)
             .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
@@ -147,7 +160,9 @@ class LibraryUpdateScheduler @Inject constructor(
     }
 
     private data class Schedule(
-        val frequency: LibraryUpdateFrequency,
+        val enabled: Boolean,
+        val count: Int,
+        val unit: ScheduleUnit,
         val onlyOnWifi: Boolean,
         val requiresCharging: Boolean,
         val preferredMinutes: Int,
