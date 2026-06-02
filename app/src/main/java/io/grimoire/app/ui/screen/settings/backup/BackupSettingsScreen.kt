@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -25,7 +24,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -45,7 +43,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
-import io.grimoire.app.data.preferences.BackupFrequency
+import io.grimoire.app.ui.screen.settings.IntervalSelector
+import io.grimoire.app.ui.screen.settings.TimeOfDayPickerDialog
+import io.grimoire.app.ui.screen.settings.formatTimeOfDay
+import io.grimoire.app.ui.screen.settings.intervalSummary
 import java.text.DateFormat
 import java.util.Date
 
@@ -58,7 +59,10 @@ fun BackupSettingsScreen(
 ) {
     val context = LocalContext.current
     val folderUri by viewModel.folderUri.collectAsState()
-    val frequency by viewModel.frequency.collectAsState()
+    val enabled by viewModel.enabled.collectAsState()
+    val intervalCount by viewModel.intervalCount.collectAsState()
+    val intervalUnit by viewModel.intervalUnit.collectAsState()
+    val preferredMinutes by viewModel.preferredTimeOfDayMinutes.collectAsState()
     val onlyOnWifi by viewModel.onlyOnWifi.collectAsState()
     val requiresCharging by viewModel.requiresCharging.collectAsState()
     val lastAutoBackupAt by viewModel.lastAutoBackupAt.collectAsState()
@@ -71,6 +75,7 @@ fun BackupSettingsScreen(
 
     var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
     var pickerMode by rememberSaveable { mutableStateOf(FolderPickerMode.NONE) }
+    var showTimePicker by remember { mutableStateOf(false) }
 
     val folderPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
@@ -195,17 +200,54 @@ fun BackupSettingsScreen(
                 )
             }
 
-            items(BackupFrequency.entries) { entry ->
-                val selected = frequency == entry
+            item {
                 ListItem(
-                    leadingContent = {
-                        RadioButton(
-                            selected = selected,
-                            onClick = { viewModel.setFrequency(entry) },
+                    headlineContent = { Text("Back up automatically") },
+                    supportingContent = {
+                        Text(
+                            if (enabled) "Runs every ${intervalSummary(intervalCount, intervalUnit)}"
+                            else "Off",
                         )
                     },
-                    headlineContent = { Text(entry.displayName) },
-                    modifier = Modifier.clickable { viewModel.setFrequency(entry) },
+                    trailingContent = {
+                        Switch(checked = enabled, onCheckedChange = viewModel::setEnabled)
+                    },
+                    modifier = Modifier.clickable { viewModel.setEnabled(!enabled) },
+                )
+            }
+
+            if (enabled) {
+                item {
+                    IntervalSelector(
+                        count = intervalCount,
+                        unit = intervalUnit,
+                        onCountChange = viewModel::setIntervalCount,
+                        onUnitChange = viewModel::setIntervalUnit,
+                    )
+                }
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("Time of day") },
+                    supportingContent = {
+                        Text(
+                            if (enabled) "Runs around ${formatTimeOfDay(preferredMinutes)}"
+                            else "Runs around ${formatTimeOfDay(preferredMinutes)} when scheduled",
+                        )
+                    },
+                    trailingContent = {
+                        Text(
+                            formatTimeOfDay(preferredMinutes),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (enabled) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    },
+                    modifier = Modifier.clickable { showTimePicker = true },
                 )
             }
 
@@ -241,7 +283,7 @@ fun BackupSettingsScreen(
                     headlineContent = { Text("Run scheduled backup now") },
                     supportingContent = { Text("Uses the selected folder and schedule constraints") },
                     modifier = Modifier.clickable(
-                        enabled = folderUri.isNotBlank() && frequency != BackupFrequency.OFF,
+                        enabled = folderUri.isNotBlank() && enabled,
                     ) { viewModel.triggerScheduledBackupNow() },
                 )
             }
@@ -298,6 +340,18 @@ fun BackupSettingsScreen(
             },
         )
     }
+
+    if (showTimePicker) {
+        TimeOfDayPickerDialog(
+            initialHour = preferredMinutes / 60,
+            initialMinute = preferredMinutes % 60,
+            onConfirm = { hour, minute ->
+                viewModel.setPreferredTimeOfDay(hour, minute)
+                showTimePicker = false
+            },
+            onDismiss = { showTimePicker = false },
+        )
+    }
 }
 
 @Composable
@@ -311,14 +365,6 @@ private fun SectionHeader(title: String) {
 }
 
 private enum class FolderPickerMode { NONE, SELECT_ONLY, BACKUP_NOW }
-
-private val BackupFrequency.displayName: String
-    get() = when (this) {
-        BackupFrequency.OFF -> "Off"
-        BackupFrequency.DAILY -> "Daily"
-        BackupFrequency.EVERY_3_DAYS -> "Every 3 days"
-        BackupFrequency.WEEKLY -> "Weekly"
-    }
 
 private fun displayFolderName(uri: String): String = runCatching {
     val parsed = uri.toUri()

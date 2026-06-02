@@ -7,6 +7,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.work.Configuration
 import coil.ImageLoader
 import coil.ImageLoaderFactory
@@ -16,10 +17,12 @@ import dagger.hilt.android.HiltAndroidApp
 import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.cache.CoverPreloader
 import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
+import io.grimoire.app.data.schedule.ScheduleMigrator
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.di.GitHubAuthorized
 import io.grimoire.app.extension.repo.ExtensionRepository
 import io.grimoire.api.network.NetworkContext
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import javax.inject.Inject
 
@@ -31,6 +34,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var backupScheduler: BackupScheduler
     @Inject lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
+    @Inject lateinit var scheduleMigrator: ScheduleMigrator
     @Inject lateinit var extensionRepository: ExtensionRepository
     @Inject @GitHubAuthorized lateinit var imageHttpClient: OkHttpClient
 
@@ -130,8 +134,13 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         ).apply { description = "Read-aloud playback controls" }
         getSystemService(NotificationManager::class.java).createNotificationChannel(ttsChannel)
 
-        backupScheduler.applyPreferredSchedule()
-        libraryUpdateScheduler.applyPreferredSchedule()
+        // Carry old fixed-frequency prefs into the new count + unit model before
+        // the schedulers read them, so an upgraded install keeps its schedule.
+        ProcessLifecycleOwner.get().lifecycleScope.launch {
+            scheduleMigrator.migrateIfNeeded()
+            backupScheduler.applyPreferredSchedule()
+            libraryUpdateScheduler.applyPreferredSchedule()
+        }
     }
 
     companion object {

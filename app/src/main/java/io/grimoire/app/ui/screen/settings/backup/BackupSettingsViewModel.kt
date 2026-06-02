@@ -8,9 +8,11 @@ import io.grimoire.app.data.backup.BackupManager
 import io.grimoire.app.data.backup.BackupResult
 import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.backup.RestoreResult
-import io.grimoire.app.data.preferences.BackupFrequency
 import io.grimoire.app.data.preferences.BackupPreferences
 import io.grimoire.app.data.preferences.stateIn
+import io.grimoire.app.data.schedule.SCHEDULE_MAX_COUNT
+import io.grimoire.app.data.schedule.SCHEDULE_MIN_COUNT
+import io.grimoire.app.data.schedule.ScheduleUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,7 +40,10 @@ class BackupSettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     val folderUri = backupPreferences.backupFolderUri.stateIn(viewModelScope)
-    val frequency = backupPreferences.frequency.stateIn(viewModelScope)
+    val enabled = backupPreferences.enabled.stateIn(viewModelScope)
+    val intervalCount = backupPreferences.intervalCount.stateIn(viewModelScope)
+    val intervalUnit = backupPreferences.intervalUnit.stateIn(viewModelScope)
+    val preferredTimeOfDayMinutes = backupPreferences.preferredTimeOfDayMinutes.stateIn(viewModelScope)
     val onlyOnWifi = backupPreferences.onlyOnWifi.stateIn(viewModelScope)
     val requiresCharging = backupPreferences.requiresCharging.stateIn(viewModelScope)
     val lastAutoBackupAt = backupPreferences.lastAutoBackupAt.changes()
@@ -55,8 +60,21 @@ class BackupSettingsViewModel @Inject constructor(
         backupPreferences.backupFolderUri.set(uri)
     }
 
-    fun setFrequency(value: BackupFrequency) = viewModelScope.launch {
-        backupPreferences.frequency.set(value)
+    fun setEnabled(value: Boolean) = viewModelScope.launch {
+        backupPreferences.enabled.set(value)
+    }
+
+    fun setIntervalCount(value: Int) = viewModelScope.launch {
+        backupPreferences.intervalCount.set(value.coerceIn(SCHEDULE_MIN_COUNT, SCHEDULE_MAX_COUNT))
+    }
+
+    fun setIntervalUnit(value: ScheduleUnit) = viewModelScope.launch {
+        backupPreferences.intervalUnit.set(value)
+    }
+
+    fun setPreferredTimeOfDay(hour: Int, minute: Int) = viewModelScope.launch {
+        val minutes = (hour.coerceIn(0, 23) * 60 + minute.coerceIn(0, 59))
+        backupPreferences.preferredTimeOfDayMinutes.set(minutes)
     }
 
     fun setOnlyOnWifi(value: Boolean) = viewModelScope.launch {

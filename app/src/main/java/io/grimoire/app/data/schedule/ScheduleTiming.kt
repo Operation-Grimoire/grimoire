@@ -1,4 +1,4 @@
-package io.grimoire.app.data.libraryupdate
+package io.grimoire.app.data.schedule
 
 import java.time.Instant
 import java.time.ZoneId
@@ -8,11 +8,12 @@ import java.time.ZoneId
  * time-of-day [preferredMinutes] (minutes since local midnight). If today's
  * occurrence has already passed, the next one is tomorrow.
  *
- * Pulled out as a top-level function so [LibraryUpdateScheduler] stays a thin
- * WorkManager wrapper and the day-rollover edge case can be unit-tested
- * without an Android runtime.
+ * Shared by the library refresh and backup schedulers to anchor a periodic
+ * work request's first run to the user's preferred time. Pulled out as a
+ * top-level function so the day-rollover edge case can be unit-tested without
+ * an Android runtime.
  */
-internal fun computeInitialDelayMillis(
+fun computeInitialDelayMillis(
     nowMillis: Long,
     preferredMinutes: Int,
     zoneId: ZoneId = ZoneId.systemDefault(),

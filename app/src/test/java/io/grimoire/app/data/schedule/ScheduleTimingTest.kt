@@ -1,4 +1,4 @@
-package io.grimoire.app.data.libraryupdate
+package io.grimoire.app.data.schedule
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -7,7 +7,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.concurrent.TimeUnit
 
-class LibraryUpdateInitialDelayTest {
+class ScheduleTimingTest {
 
     @Test
     fun `later today returns the gap to the target hour`() {
