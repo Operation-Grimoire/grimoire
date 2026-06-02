@@ -50,7 +50,6 @@ fun LibraryUpdateSettingsScreen(
     val intervalUnit by viewModel.intervalUnit.collectAsState()
     val onlyOnWifi by viewModel.onlyOnWifi.collectAsState()
     val requiresCharging by viewModel.requiresCharging.collectAsState()
-    val autoDownloadNewChapters by viewModel.autoDownloadNewChapters.collectAsState()
     val concurrency by viewModel.concurrency.collectAsState()
     val preferredMinutes by viewModel.preferredTimeOfDayMinutes.collectAsState()
     val lastRunAt by viewModel.lastRunAt.collectAsState()
@@ -159,22 +158,6 @@ fun LibraryUpdateSettingsScreen(
                         )
                     },
                     modifier = Modifier.clickable { viewModel.setRequiresCharging(!requiresCharging) },
-                )
-            }
-
-            item {
-                ListItem(
-                    headlineContent = { Text("Auto-download new chapters") },
-                    supportingContent = { Text("Queue new chapters for download as they're found") },
-                    trailingContent = {
-                        Switch(
-                            checked = autoDownloadNewChapters,
-                            onCheckedChange = viewModel::setAutoDownloadNewChapters,
-                        )
-                    },
-                    modifier = Modifier.clickable {
-                        viewModel.setAutoDownloadNewChapters(!autoDownloadNewChapters)
-                    },
                 )
             }
 

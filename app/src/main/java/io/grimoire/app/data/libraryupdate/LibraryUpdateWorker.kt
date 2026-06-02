@@ -24,7 +24,6 @@ import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryUpdatePreferences
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
-import kotlinx.coroutines.flow.first
 
 /**
  * Runs a library refresh in the background. Used for both the periodic schedule
@@ -77,11 +76,12 @@ class LibraryUpdateWorker @AssistedInject constructor(
             return Result.retry()
         }
 
-        // Auto-download queues chapters via DownloadManager.enqueue, but the
-        // startForegroundService() call there is a no-op for background callers
-        // on Android 12+. Drain the queue inline from this foreground worker
-        // so the chapters actually download in the same run.
-        if (summary.newChapters > 0 && preferences.autoDownloadNewChapters.changes().first()) {
+        // Per-novel auto-download queues chapters via DownloadManager.enqueue, but
+        // the startForegroundService() call there is a no-op for background callers
+        // on Android 12+. Drain the queue inline from this foreground worker so the
+        // chapters actually download in the same run. processQueue is a no-op when
+        // nothing was enqueued (no subscribed novel had new chapters).
+        if (summary.newChapters > 0) {
             runCatching {
                 downloadManager.processQueue { chapterName, remaining ->
                     updateForegroundText(downloadingText(chapterName, remaining))

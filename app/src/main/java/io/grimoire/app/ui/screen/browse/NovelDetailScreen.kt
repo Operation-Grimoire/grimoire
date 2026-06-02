@@ -141,6 +141,7 @@ fun NovelDetailScreen(
     val includeLockedInTotals by viewModel.includeLockedInTotals.collectAsState()
     val notifyOnNewChapters by viewModel.notifyOnNewChapters.collectAsState()
     val notifyOnNewLockedChapters by viewModel.notifyOnNewLockedChapters.collectAsState()
+    val autoDownloadNewChapters by viewModel.autoDownloadNewChapters.collectAsState()
     val migrationState by viewModel.migrationState.collectAsState()
     val migrateFromTitle by viewModel.migrateFromTitle.collectAsState()
     val refreshSummary by viewModel.refreshSummary.collectAsState()
@@ -258,12 +259,12 @@ fun NovelDetailScreen(
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(
-                    "Notifications",
+                    "New chapters",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
                 Text(
-                    "Choose what to be alerted about when this novel finds new chapters.",
+                    "Choose what happens when sync finds new chapters for this novel.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 12.dp),
@@ -306,6 +307,26 @@ fun NovelDetailScreen(
                     Switch(
                         checked = notifyOnNewLockedChapters,
                         onCheckedChange = { viewModel.setNotifyOnNewLockedChapters(it) },
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.setAutoDownloadNewChapters(!autoDownloadNewChapters) }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Auto-download new chapters", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Queue readable chapters for download as sync finds them.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = autoDownloadNewChapters,
+                        onCheckedChange = { viewModel.setAutoDownloadNewChapters(it) },
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -475,8 +496,8 @@ fun NovelDetailScreen(
                     }
                     val hasBulkActions = chapters.isNotEmpty()
                     val canMigrate = isFavorite && novelId > 0L
-                    val canConfigureNotifications = isFavorite && novelId > 0L && !viewModel.isLocal
-                    if (hasBulkActions || canMigrate || canConfigureNotifications) {
+                    val canConfigureNewChapters = isFavorite && novelId > 0L && !viewModel.isLocal
+                    if (hasBulkActions || canMigrate || canConfigureNewChapters) {
                         Box {
                             IconButton(onClick = { overflowMenuExpanded = true }) {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More actions")
@@ -525,10 +546,10 @@ fun NovelDetailScreen(
                                         leadingIcon = { Icon(Icons.Default.SwapVert, contentDescription = null) },
                                     )
                                 }
-                                if (canConfigureNotifications) {
+                                if (canConfigureNewChapters) {
                                     if (hasBulkActions || canMigrate) HorizontalDivider()
                                     DropdownMenuItem(
-                                        text = { Text("Notifications") },
+                                        text = { Text("Notifications & download") },
                                         onClick = {
                                             overflowMenuExpanded = false
                                             showNotifSheet = true
