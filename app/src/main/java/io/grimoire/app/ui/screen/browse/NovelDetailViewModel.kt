@@ -155,6 +155,9 @@ class NovelDetailViewModel @Inject constructor(
     private val _notifyOnNewLockedChapters = MutableStateFlow(false)
     val notifyOnNewLockedChapters: StateFlow<Boolean> = _notifyOnNewLockedChapters.asStateFlow()
 
+    private val _autoDownloadNewChapters = MutableStateFlow(false)
+    val autoDownloadNewChapters: StateFlow<Boolean> = _autoDownloadNewChapters.asStateFlow()
+
     /** Title of the novel being migrated from, shown in the migration prompt. */
     private val _migrateFromTitle = MutableStateFlow("")
     val migrateFromTitle: StateFlow<String> = _migrateFromTitle.asStateFlow()
@@ -334,6 +337,7 @@ class NovelDetailViewModel @Inject constructor(
         _isFavorite.value = existing.favorite
         _notifyOnNewChapters.value = existing.notifyOnNewChapters
         _notifyOnNewLockedChapters.value = existing.notifyOnNewLockedChapters
+        _autoDownloadNewChapters.value = existing.autoDownloadNewChapters
         _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
         _categoryId.value = existing.categoryId
         _isLoadingNovel.value = false
@@ -474,6 +478,7 @@ class NovelDetailViewModel @Inject constructor(
                     _isFavorite.value = existing.favorite
                     _notifyOnNewChapters.value = existing.notifyOnNewChapters
                     _notifyOnNewLockedChapters.value = existing.notifyOnNewLockedChapters
+                    _autoDownloadNewChapters.value = existing.autoDownloadNewChapters
                     _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
                     _categoryId.value = existing.categoryId
                     _isLoadingNovel.value = false
@@ -522,12 +527,14 @@ class NovelDetailViewModel @Inject constructor(
                 lastReadAt = existing?.lastReadAt ?: 0L,
                 notifyOnNewChapters = existing?.notifyOnNewChapters ?: false,
                 notifyOnNewLockedChapters = existing?.notifyOnNewLockedChapters ?: false,
+                autoDownloadNewChapters = existing?.autoDownloadNewChapters ?: false,
             ))
             cachedNovelId = existing?.id ?: upsertId
             _liveNovelId.value = cachedNovelId
             _isFavorite.value = existing?.favorite ?: false
             _notifyOnNewChapters.value = existing?.notifyOnNewChapters ?: false
             _notifyOnNewLockedChapters.value = existing?.notifyOnNewLockedChapters ?: false
+            _autoDownloadNewChapters.value = existing?.autoDownloadNewChapters ?: false
             _chapterSort.value = ChapterSort.entries.getOrElse(existing?.chapterSortOrder ?: 0) { ChapterSort.NUMBER_ASC }
             _categoryId.value = existing?.categoryId
         }.onFailure { e ->
@@ -661,6 +668,13 @@ class NovelDetailViewModel @Inject constructor(
         }
     }
 
+    fun setAutoDownloadNewChapters(value: Boolean) {
+        _autoDownloadNewChapters.value = value
+        if (cachedNovelId > 0L) viewModelScope.launch {
+            novelDao.updateAutoDownloadNewChapters(cachedNovelId, value)
+        }
+    }
+
     /** How many of this novel's chapters the pending migration would mark read. */
     suspend fun migrationMatchCount(): Int {
         if (!isMigrationTarget || cachedNovelId <= 0L) return 0
@@ -737,6 +751,7 @@ internal fun Novel.toEntity(
     lastReadAt: Long = 0L,
     notifyOnNewChapters: Boolean = false,
     notifyOnNewLockedChapters: Boolean = false,
+    autoDownloadNewChapters: Boolean = false,
 ) = NovelEntity(
     id = existingId,
     sourceId = sourceId,
@@ -757,6 +772,7 @@ internal fun Novel.toEntity(
     language = language,
     notifyOnNewChapters = notifyOnNewChapters,
     notifyOnNewLockedChapters = notifyOnNewLockedChapters,
+    autoDownloadNewChapters = autoDownloadNewChapters,
 )
 
 private fun ChapterEntity.toChapter() = Chapter(

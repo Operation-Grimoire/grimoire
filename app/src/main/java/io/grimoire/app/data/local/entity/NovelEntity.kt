@@ -28,4 +28,5 @@ data class NovelEntity(
     val language: String? = null,
     val notifyOnNewChapters: Boolean = false,
     val notifyOnNewLockedChapters: Boolean = false,
+    val autoDownloadNewChapters: Boolean = false,
 )

@@ -53,6 +53,9 @@ interface NovelDao {
     @Query("UPDATE novels SET notifyOnNewLockedChapters = :value WHERE id = :id")
     suspend fun updateNotifyOnNewLockedChapters(id: Long, value: Boolean)
 
+    @Query("UPDATE novels SET autoDownloadNewChapters = :value WHERE id = :id")
+    suspend fun updateAutoDownloadNewChapters(id: Long, value: Boolean)
+
     @Query("""
         SELECT n.id FROM novels n
         LEFT JOIN categories c ON c.id = n.categoryId

@@ -26,7 +26,6 @@ class LibraryUpdateSettingsViewModel @Inject constructor(
     val intervalUnit = preferences.intervalUnit.stateIn(viewModelScope)
     val onlyOnWifi = preferences.onlyOnWifi.stateIn(viewModelScope)
     val requiresCharging = preferences.requiresCharging.stateIn(viewModelScope)
-    val autoDownloadNewChapters = preferences.autoDownloadNewChapters.stateIn(viewModelScope)
     val concurrency = preferences.concurrency.stateIn(viewModelScope)
     val preferredTimeOfDayMinutes = preferences.preferredTimeOfDayMinutes.stateIn(viewModelScope)
     val lastRunAt = preferences.lastRunAt.changes()
@@ -53,10 +52,6 @@ class LibraryUpdateSettingsViewModel @Inject constructor(
 
     fun setRequiresCharging(value: Boolean) = viewModelScope.launch {
         preferences.requiresCharging.set(value)
-    }
-
-    fun setAutoDownloadNewChapters(value: Boolean) = viewModelScope.launch {
-        preferences.autoDownloadNewChapters.set(value)
     }
 
     fun setConcurrency(value: Int) = viewModelScope.launch {

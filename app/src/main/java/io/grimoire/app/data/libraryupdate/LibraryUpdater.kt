@@ -75,11 +75,10 @@ class LibraryUpdater @Inject constructor(
         // scan completes; without this every novel would be flagged "Source not
         // installed".
         extensionManager.awaitReady()
-        // Hoisted out of the per-novel loop: the extension list and auto-download
-        // preference don't change mid-sync, so reading them once avoids repeating
-        // the lookup/flow-collect N times.
+        // Hoisted out of the per-novel loop: the extension list doesn't change
+        // mid-sync, so reading it once avoids repeating the lookup N times.
+        // Auto-download is now a per-novel flag, read off each NovelEntity below.
         val extensions = extensionManager.extensions.value
-        val autoDownload = preferences.autoDownloadNewChapters.changes().first()
         val n = preferences.concurrency.changes().first().coerceIn(1, MAX_CONCURRENCY)
         // Snapshot hidden categories once per run; per-call read of authManager.isUnlocked.value
         // lets a mid-sync unlock/lock toggle take effect on subsequent progress emissions.
@@ -102,7 +101,7 @@ class LibraryUpdater @Inject constructor(
                     while (true) {
                         val novel = mutex.withLock { queue.removeFirstOrNull() } ?: break
                         onProgress(done.get(), total, titleFor(novel))
-                        when (val result = refreshNovel(novel, extensions, autoDownload)) {
+                        when (val result = refreshNovel(novel, extensions)) {
                             is NovelRefreshResult.Ok -> {
                                 newChapters.addAndGet(result.newChapters)
                                 onNovelComplete(novel, result.newReadable, result.newLocked)
@@ -137,7 +136,6 @@ class LibraryUpdater @Inject constructor(
     private suspend fun refreshNovel(
         novel: NovelEntity,
         extensions: List<LoadedExtension>,
-        autoDownload: Boolean,
     ): NovelRefreshResult {
         val loaded = extensions.firstOrNull { it.source.id == novel.sourceId }
         if (loaded == null) {
@@ -243,7 +241,7 @@ class LibraryUpdater @Inject constructor(
                     )
                 },
             )
-            if (autoDownload) {
+            if (novel.autoDownloadNewChapters) {
                 // Locked chapters can't be fetched; skip them so the queue isn't
                 // poisoned with chapters that will just fail.
                 val downloadableUrls = newChapters
