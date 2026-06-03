@@ -1,5 +1,8 @@
 package io.grimoire.app.ui.screen.novelupdates
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,10 +19,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -31,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,13 +46,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
 import io.grimoire.app.data.novelupdates.NuReview
+import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.ZoomableCoverImage
+import io.grimoire.app.ui.screen.extensions.InstallState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,10 +65,32 @@ fun NovelUpdatesSeriesScreen(
     onFindInSources: (title: String) -> Unit,
     onOpenSeries: (slug: String) -> Unit,
     onOpenWebView: (url: String) -> Unit,
+    onOpenSource: (pkg: String, query: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NovelUpdatesSeriesViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val sourceLinks by viewModel.sourceLinks.collectAsState()
+    val installStates by viewModel.installStates.collectAsState()
+
+    // Mirror the Extensions screen's install handoff: the VM downloads + verifies
+    // the APK, then surfaces a File the screen hands to the system installer.
+    val context = LocalContext.current
+    val pendingInstall by viewModel.pendingInstall.collectAsState()
+    val installLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { viewModel.onInstallResult() }
+    LaunchedEffect(pendingInstall) {
+        pendingInstall?.let { file ->
+            viewModel.consumePendingInstall()
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            installLauncher.launch(intent)
+        }
+    }
 
     Scaffold(
         modifier = modifier,
@@ -181,6 +214,15 @@ fun NovelUpdatesSeriesScreen(
                             Text("Find in my sources")
                         }
 
+                        if (sourceLinks.isNotEmpty()) {
+                            NuSourceLinks(
+                                links = sourceLinks,
+                                installStates = installStates,
+                                onOpen = { pkg -> onOpenSource(pkg, series.title) },
+                                onInstall = viewModel::install,
+                            )
+                        }
+
                         NovelUpdatesSeriesContent(
                             series = series,
                             onRecommendationClick = { url ->
@@ -204,6 +246,77 @@ fun NovelUpdatesSeriesScreen(
                                 pageCount = series.reviewPageCount,
                                 onMore = { onOpenWebView(series.url) },
                             )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Sources whose declared NovelUpdates groups match this series' release groups
+ * or English publisher. Installed ones offer "Open" (deep-links into the source
+ * browser, pre-searching the series title); not-yet-installed ones offer a
+ * one-tap "Install" reusing the extension installer.
+ */
+@Composable
+private fun NuSourceLinks(
+    links: List<ExtensionItem>,
+    installStates: Map<String, InstallState>,
+    onOpen: (pkg: String) -> Unit,
+    onInstall: (ExtensionItem.Available) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Read with", style = MaterialTheme.typography.titleSmall)
+        links.forEach { item ->
+            val install = installStates[item.packageName]
+            Card(Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier.fillMaxWidth().padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(item.name, style = MaterialTheme.typography.bodyLarge)
+                        val isError = install is InstallState.Error
+                        val sub = when {
+                            isError -> (install as InstallState.Error).message
+                            item is ExtensionItem.Available -> "Tap to install this source"
+                            else -> "Installed · open to read"
+                        }
+                        Text(
+                            sub,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isError) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    when {
+                        install is InstallState.Downloading ->
+                            CircularProgressIndicator(
+                                Modifier.size(22.dp),
+                                strokeWidth = 2.dp,
+                            )
+
+                        item is ExtensionItem.Available -> Button(onClick = { onInstall(item) }) {
+                            Icon(
+                                Icons.Default.Download,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(if (install is InstallState.Error) "Retry" else "Install")
+                        }
+
+                        else -> Button(onClick = { onOpen(item.packageName) }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.MenuBook,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text("Open")
                         }
                     }
                 }

@@ -196,6 +196,9 @@ internal fun NavGraphBuilder.browseGraph(
                 onOpenWebView = { url ->
                     navController.navigate("webview?url=${Uri.encode(url)}")
                 },
+                onOpenSource = { pkg, query ->
+                    navController.navigate("browse/${Uri.encode(pkg)}?q=${Uri.encode(query)}")
+                },
             )
         }
     }

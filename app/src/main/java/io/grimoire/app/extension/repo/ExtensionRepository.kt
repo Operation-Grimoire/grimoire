@@ -132,6 +132,37 @@ class ExtensionRepository @Inject constructor(
         return merged.sortedBy { it.name.lowercase() }
     }
 
+    /**
+     * Index entries (with install state) whose declared NovelUpdates groups
+     * intersect [groups], matched case-insensitively. Reads each enabled repo's
+     * cached index, falling back to a network fetch only when no cache exists —
+     * so opening a NovelUpdates series can surface a "read with this source"
+     * link without forcing a full refresh. Returns [ExtensionItem.Installed]
+     * when the matched extension is already installed, else
+     * [ExtensionItem.Available].
+     */
+    suspend fun extensionsForNovelUpdatesGroups(groups: Collection<String>): List<ExtensionItem> {
+        val wanted = groups.mapNotNull { it.trim().lowercase().takeIf(String::isNotEmpty) }.toSet()
+        if (wanted.isEmpty()) return emptyList()
+
+        extensionManager.refresh()
+        val installed = extensionManager.extensions.value.associateBy { it.info.packageName }
+
+        val remotes = mutableMapOf<String, RemoteExtension>()
+        for (repo in repoDao.getEnabled()) {
+            val list = fetcher.loadCached(repo.indexUrl) ?: fetcher.fetch(repo.indexUrl).getOrNull()
+            list?.forEach { remotes[it.pkg] = it }
+        }
+
+        return remotes.values
+            .filter { rem -> rem.novelUpdatesGroups.any { it.trim().lowercase() in wanted } }
+            .map { rem ->
+                installed[rem.pkg]?.let { ExtensionItem.Installed(it, rem) }
+                    ?: ExtensionItem.Available(rem)
+            }
+            .sortedBy { it.name.lowercase() }
+    }
+
     suspend fun addRepo(name: String, indexUrl: String) =
         repoDao.insert(RepoEntity(name = name, indexUrl = indexUrl))
 
