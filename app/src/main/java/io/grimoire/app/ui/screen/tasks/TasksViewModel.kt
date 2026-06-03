@@ -12,6 +12,8 @@ import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
 import io.grimoire.app.data.libraryupdate.LibraryUpdateWorker
 import io.grimoire.app.data.local.dao.ChapterDao
+import io.grimoire.app.data.local.dao.TaskLogDao
+import io.grimoire.app.data.local.entity.TaskLogType
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +22,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** Identifies a kind of background task; cancellation is routed by this. */
@@ -33,10 +36,21 @@ data class TaskUiState(
     val progress: Float?,
 )
 
+/** One finished run shown in the history list below the running tasks. */
+data class TaskLogUiState(
+    val id: Long,
+    val kind: TaskId,
+    val title: String,
+    val summary: String,
+    val success: Boolean,
+    val completedAt: Long,
+)
+
 @HiltViewModel
 class TasksViewModel @Inject constructor(
     @ApplicationContext context: Context,
     chapterDao: ChapterDao,
+    private val taskLogDao: TaskLogDao,
     private val downloadManager: DownloadManager,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
     authManager: HiddenCategoriesAuthManager,
@@ -90,10 +104,34 @@ class TasksViewModel @Inject constructor(
             listOfNotNull(sync, download)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    // Aggregate-only rows (counts, never titles), so the log is shown in full
+    // regardless of the hidden-category lock state — nothing here needs redacting.
+    val history: StateFlow<List<TaskLogUiState>> =
+        taskLogDao.getRecent(TaskLogDao.MAX_ENTRIES)
+            .map { entries ->
+                entries.map { e ->
+                    val kind = if (e.type == TaskLogType.DOWNLOAD.ordinal) TaskId.DOWNLOADS
+                               else TaskId.LIBRARY_SYNC
+                    TaskLogUiState(
+                        id = e.id,
+                        kind = kind,
+                        title = if (kind == TaskId.DOWNLOADS) "Downloads" else "Library sync",
+                        summary = e.summary,
+                        success = e.success,
+                        completedAt = e.completedAt,
+                    )
+                }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     fun cancel(id: TaskId) {
         when (id) {
             TaskId.LIBRARY_SYNC -> libraryUpdateScheduler.cancelRunning()
             TaskId.DOWNLOADS -> downloadManager.cancelAll()
         }
+    }
+
+    fun clearHistory() {
+        viewModelScope.launch { taskLogDao.clearAll() }
     }
 }

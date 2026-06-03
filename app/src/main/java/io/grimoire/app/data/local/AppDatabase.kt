@@ -7,12 +7,14 @@ import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.RepoDao
+import io.grimoire.app.data.local.dao.TaskLogDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.RepoEntity
+import io.grimoire.app.data.local.entity.TaskLogEntity
 import io.grimoire.app.data.local.entity.UpdateIssueEntity
 
 @Database(
@@ -23,8 +25,9 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
         CategoryEntity::class,
         LibraryUpdateEntity::class,
         UpdateIssueEntity::class,
+        TaskLogEntity::class,
     ],
-    version = 21,
+    version = 22,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -34,4 +37,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun libraryUpdateDao(): LibraryUpdateDao
     abstract fun updateIssueDao(): UpdateIssueDao
+    abstract fun taskLogDao(): TaskLogDao
 }

@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.tasks
 
+import android.text.format.DateUtils
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -21,12 +27,17 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -38,6 +49,8 @@ fun TasksScreen(
     viewModel: TasksViewModel = hiltViewModel(),
 ) {
     val tasks by viewModel.tasks.collectAsState()
+    val history by viewModel.history.collectAsState()
+    var confirmClear by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -48,10 +61,17 @@ fun TasksScreen(
                     }
                 },
                 title = { Text("Tasks") },
+                actions = {
+                    if (history.isNotEmpty()) {
+                        IconButton(onClick = { confirmClear = true }) {
+                            Icon(Icons.Default.DeleteSweep, contentDescription = "Clear log")
+                        }
+                    }
+                },
             )
         },
     ) { padding ->
-        if (tasks.isEmpty()) {
+        if (tasks.isEmpty() && history.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -59,21 +79,58 @@ fun TasksScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "No tasks running.\nDownloads and library syncs appear here while they run.",
+                    "No tasks yet.\nDownloads and library syncs appear here while they run,\nand their results are kept below.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
             LazyColumn(modifier = Modifier.padding(padding)) {
-                items(tasks.size) { index ->
-                    val task = tasks[index]
-                    TaskRow(task = task, onCancel = { viewModel.cancel(task.id) })
-                    HorizontalDivider()
+                if (tasks.isNotEmpty()) {
+                    item { SectionHeader("Running") }
+                    items(tasks.size) { index ->
+                        val task = tasks[index]
+                        TaskRow(task = task, onCancel = { viewModel.cancel(task.id) })
+                        HorizontalDivider()
+                    }
+                }
+                if (history.isNotEmpty()) {
+                    item { SectionHeader("History") }
+                    items(history.size) { index ->
+                        HistoryRow(entry = history[index])
+                        HorizontalDivider()
+                    }
                 }
             }
         }
     }
+
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text("Clear task log?") },
+            text = { Text("Removes the history of completed library syncs and downloads. Running tasks are not affected.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.clearHistory()
+                    confirmClear = false
+                }) { Text("Clear") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClear = false }) { Text("Cancel") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+    )
 }
 
 @Composable
@@ -110,6 +167,58 @@ private fun TaskRow(task: TaskUiState, onCancel: () -> Unit) {
         Spacer(Modifier.width(8.dp))
         IconButton(onClick = onCancel) {
             Icon(Icons.Default.Close, contentDescription = "Cancel ${task.title}")
+        }
+    }
+}
+
+@Composable
+private fun HistoryRow(entry: TaskLogUiState) {
+    val kindIcon: ImageVector =
+        if (entry.kind == TaskId.DOWNLOADS) Icons.Default.Download else Icons.Default.Sync
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = kindIcon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = entry.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = DateUtils.getRelativeTimeSpanString(
+                        entry.completedAt,
+                        System.currentTimeMillis(),
+                        DateUtils.MINUTE_IN_MILLIS,
+                    ).toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = entry.summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (!entry.success) {
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.Default.ErrorOutline,
+                contentDescription = "Finished with errors",
+                tint = MaterialTheme.colorScheme.error,
+            )
         }
     }
 }

@@ -10,6 +10,9 @@ import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.AndroidEntryPoint
 import io.grimoire.app.GrimoireApp
 import io.grimoire.app.MainActivity
+import io.grimoire.app.data.local.dao.TaskLogDao
+import io.grimoire.app.data.local.entity.TaskLogEntity
+import io.grimoire.app.data.local.entity.TaskLogType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,6 +24,7 @@ import javax.inject.Inject
 class DownloadService : Service() {
 
     @Inject lateinit var downloadManager: DownloadManager
+    @Inject lateinit var taskLogDao: TaskLogDao
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -29,7 +33,7 @@ class DownloadService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         showNotification("Starting…")
         scope.launch {
-            val downloaded = downloadManager.processQueue { chapterName, remaining ->
+            val result = downloadManager.processQueue { chapterName, remaining ->
                 val text = when {
                     chapterName.isBlank() && remaining > 0 -> "+$remaining queued"
                     chapterName.isBlank() -> "Downloading…"
@@ -38,14 +42,32 @@ class DownloadService : Service() {
                 }
                 showNotification(text)
             }
-            if (downloaded == -1) return@launch  // already processing in another coroutine — don't stop
+            if (result.skipped) return@launch  // already processing in another coroutine — don't stop
             stopForeground(STOP_FOREGROUND_REMOVE)
-            if (!downloadManager.isPaused.value && downloaded > 0) {
-                showCompletionNotification(downloaded)
+            if (!downloadManager.isPaused.value && result.downloaded > 0) {
+                showCompletionNotification(result.downloaded)
             }
+            recordHistory(result.downloaded, result.failed)
             stopSelf()
         }
         return START_NOT_STICKY
+    }
+
+    /** Logs a finished batch to the Tasks history; a no-op drain (nothing done) isn't recorded. */
+    private suspend fun recordHistory(downloaded: Int, failed: Int) {
+        if (downloaded == 0 && failed == 0) return
+        val summary = buildString {
+            append("$downloaded chapter${if (downloaded == 1) "" else "s"} downloaded")
+            if (failed > 0) append(" · $failed failed")
+        }
+        taskLogDao.record(
+            TaskLogEntity(
+                type = TaskLogType.DOWNLOAD.ordinal,
+                completedAt = System.currentTimeMillis(),
+                success = failed == 0,
+                summary = summary,
+            ),
+        )
     }
 
     override fun onDestroy() {

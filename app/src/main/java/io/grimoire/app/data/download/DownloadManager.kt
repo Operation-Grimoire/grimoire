@@ -193,10 +193,11 @@ class DownloadManager @Inject constructor(
         scope.launch { chapterDao.cancelAllFailed(novelId) }
     }
 
-    suspend fun processQueue(onProgress: (chapterName: String, remaining: Int) -> Unit): Int {
-        if (!isProcessing.compareAndSet(false, true)) return -1
+    suspend fun processQueue(onProgress: (chapterName: String, remaining: Int) -> Unit): DownloadBatchResult {
+        if (!isProcessing.compareAndSet(false, true)) return DownloadBatchResult.SKIPPED
         val n = concurrency.value.coerceIn(1, 5)
         val downloaded = AtomicInteger(0)
+        val failed = AtomicInteger(0)
         val mutex = Mutex()
         try {
             chapterDao.resetStuckDownloads()
@@ -246,6 +247,7 @@ class DownloadManager @Inject constructor(
                                 val errorStatus = if (isRefresh) ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
                                                   else ChapterDownloadStatus.ERROR.ordinal
                                 chapterDao.setDownloadStatus(chapter.id, errorStatus)
+                                failed.incrementAndGet()
                             }
                         }
                     }
@@ -254,7 +256,22 @@ class DownloadManager @Inject constructor(
         } finally {
             isProcessing.set(false)
         }
-        return downloaded.get()
+        return DownloadBatchResult(downloaded = downloaded.get(), failed = failed.get())
+    }
+}
+
+/**
+ * Outcome of one [DownloadManager.processQueue] drain. [skipped] is true when
+ * another drain was already in flight (the call did nothing and should not be
+ * treated as a finished batch).
+ */
+data class DownloadBatchResult(
+    val downloaded: Int,
+    val failed: Int,
+    val skipped: Boolean = false,
+) {
+    companion object {
+        val SKIPPED = DownloadBatchResult(downloaded = 0, failed = 0, skipped = true)
     }
 }
 
