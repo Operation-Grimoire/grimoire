@@ -142,7 +142,7 @@ class ExtensionRepository @Inject constructor(
      * [ExtensionItem.Available].
      */
     suspend fun extensionsForNovelUpdatesGroups(groups: Collection<String>): List<ExtensionItem> {
-        val wanted = groups.mapNotNull { it.trim().lowercase().takeIf(String::isNotEmpty) }.toSet()
+        val wanted = groups.mapNotNull { normalizeGroupKey(it).takeIf(String::isNotEmpty) }.toSet()
         if (wanted.isEmpty()) return emptyList()
 
         extensionManager.refresh()
@@ -155,13 +155,22 @@ class ExtensionRepository @Inject constructor(
         }
 
         return remotes.values
-            .filter { rem -> rem.novelUpdatesGroups.any { it.trim().lowercase() in wanted } }
+            .filter { rem -> rem.novelUpdatesGroups.any { normalizeGroupKey(it) in wanted } }
             .map { rem ->
                 installed[rem.pkg]?.let { ExtensionItem.Installed(it, rem) }
                     ?: ExtensionItem.Available(rem)
             }
             .sortedBy { it.name.lowercase() }
     }
+
+    /**
+     * Collapses a NovelUpdates group identifier to a comparison key: lowercase,
+     * alphanumeric only. This bridges the gap between a declared display name
+     * ("Cale Red Hair") and the slug/handle NU actually shows ("caleredhair"),
+     * so either form a source declares matches what's scraped from a release.
+     */
+    private fun normalizeGroupKey(s: String): String =
+        s.lowercase().filter(Char::isLetterOrDigit)
 
     suspend fun addRepo(name: String, indexUrl: String) =
         repoDao.insert(RepoEntity(name = name, indexUrl = indexUrl))

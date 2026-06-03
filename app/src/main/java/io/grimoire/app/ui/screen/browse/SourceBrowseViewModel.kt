@@ -134,6 +134,14 @@ class SourceBrowseViewModel @Inject constructor(
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
+    /**
+     * True when the screen was opened with a preset search query (e.g. a deep
+     * link from the NovelUpdates browser's "Read with"). The screen uses this to
+     * start in active-search mode so the query bar is visible instead of the
+     * Popular tab.
+     */
+    val openedWithSearch: Boolean = !savedStateHandle.get<String>("q").isNullOrBlank()
+
     private val _activeFilters = MutableStateFlow<List<Filter<*>>>(emptyList())
     val activeFilters: StateFlow<List<Filter<*>>> = _activeFilters.asStateFlow()
 

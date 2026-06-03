@@ -83,7 +83,9 @@ fun SourceBrowseScreen(
     val displayMode by viewModel.displayMode.collectAsState()
     val gridColumns by viewModel.gridColumns.collectAsState()
 
-    var searchActive by remember { mutableStateOf(false) }
+    // Start in active-search mode when opened with a preset query (deep link),
+    // so the query bar is shown instead of the Popular tab.
+    var searchActive by remember { mutableStateOf(viewModel.openedWithSearch) }
     var showFilters by remember { mutableStateOf(false) }
     var quickView by remember { mutableStateOf<Novel?>(null) }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -102,7 +104,10 @@ fun SourceBrowseScreen(
         snapshotFlow { reachedBottom }.collect { if (it) viewModel.loadMore() }
     }
     LaunchedEffect(searchActive) {
-        if (searchActive) focusRequester.requestFocus()
+        // Focus (and raise the keyboard) only when opening an empty search to
+        // type. When we arrive with a preset query the results are already
+        // shown, so don't pop the keyboard over them.
+        if (searchActive && query.isBlank()) focusRequester.requestFocus()
     }
 
     val filters by viewModel.filters.collectAsState()

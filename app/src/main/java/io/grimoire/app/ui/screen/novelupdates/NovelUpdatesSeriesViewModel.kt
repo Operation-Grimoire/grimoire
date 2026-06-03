@@ -79,15 +79,16 @@ class NovelUpdatesSeriesViewModel @Inject constructor(
     }
 
     private fun refreshSourceLinks(series: NuSeries) {
-        // Match against each release's group by both its stable URL slug (the
-        // precise key) and its display name, plus the English publisher (a
-        // licensed title may have no fan-translation release row at all).
+        // Match only against the actual release groups — by both the stable URL
+        // slug (the precise key) and the displayed group name. Deliberately NOT
+        // the English publisher: that's the licensor (e.g. Webnovel on a Qidian
+        // title), not who's releasing the tracked translation, so folding it in
+        // surfaced the publisher instead of the real fan-translation sources.
         val groups = buildSet {
             series.releases.forEach {
                 add(it.group)
                 NovelUpdatesEndpoints.groupSlugFromUrl(it.groupUrl)?.let(::add)
             }
-            addAll(series.englishPublishers)
         }
         viewModelScope.launch {
             runCatching { extensionRepository.extensionsForNovelUpdatesGroups(groups) }
