@@ -20,7 +20,10 @@ import io.grimoire.app.GrimoireApp
 import io.grimoire.app.MainActivity
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.CategoryDao
+import io.grimoire.app.data.local.dao.TaskLogDao
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.local.entity.TaskLogEntity
+import io.grimoire.app.data.local.entity.TaskLogType
 import io.grimoire.app.data.preferences.LibraryUpdatePreferences
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
@@ -43,6 +46,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
     private val categoryDao: CategoryDao,
     private val authManager: HiddenCategoriesAuthManager,
     private val downloadManager: DownloadManager,
+    private val taskLogDao: TaskLogDao,
 ) : CoroutineWorker(applicationContext, params) {
 
     override suspend fun getForegroundInfo(): ForegroundInfo =
@@ -68,11 +72,11 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 },
             )
         }.getOrElse { e ->
+            val message = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
             preferences.lastRunAt.set(System.currentTimeMillis().toString())
             preferences.lastRunSuccess.set(false)
-            preferences.lastRunMessage.set(
-                "${e::class.simpleName}: ${e.message ?: "(no message)"}",
-            )
+            preferences.lastRunMessage.set(message)
+            recordHistory(success = false, summary = "Library sync failed · $message")
             return Result.retry()
         }
 
@@ -89,10 +93,26 @@ class LibraryUpdateWorker @AssistedInject constructor(
             }
         }
 
+        val line = summaryLine(summary)
         preferences.lastRunAt.set(System.currentTimeMillis().toString())
         preferences.lastRunSuccess.set(true)
-        preferences.lastRunMessage.set(summaryLine(summary))
+        preferences.lastRunMessage.set(line)
+        recordHistory(success = true, summary = line)
         return Result.success()
+    }
+
+    /** Appends one library-sync row to the Tasks history log. */
+    private suspend fun recordHistory(success: Boolean, summary: String) {
+        runCatching {
+            taskLogDao.record(
+                TaskLogEntity(
+                    type = TaskLogType.LIBRARY_SYNC.ordinal,
+                    completedAt = System.currentTimeMillis(),
+                    success = success,
+                    summary = summary,
+                ),
+            )
+        }
     }
 
     private fun downloadingText(chapterName: String, remaining: Int): String = when {

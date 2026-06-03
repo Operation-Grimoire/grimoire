@@ -49,7 +49,7 @@ fun MoreScreen(
             item {
                 ListItem(
                     headlineContent = { Text("Tasks") },
-                    supportingContent = { Text("Running downloads and library syncs") },
+                    supportingContent = { Text("Running downloads and syncs, plus their history") },
                     leadingContent = {
                         Icon(Icons.Default.PendingActions, contentDescription = null)
                     },
