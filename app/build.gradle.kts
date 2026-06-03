@@ -6,12 +6,17 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+fun gitOutput(vararg args: String): String =
+    providers.exec {
+        commandLine(*args)
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim()
+
 fun gitTag(): String {
     val env = System.getenv("APP_VERSION_TAG")
     if (!env.isNullOrBlank() && env.startsWith("v")) return env
     return runCatching {
-        Runtime.getRuntime().exec(arrayOf("git", "describe", "--tags", "--abbrev=0"))
-            .inputStream.bufferedReader().readText().trim()
+        gitOutput("git", "describe", "--tags", "--abbrev=0")
             .takeIf { it.startsWith("v") } ?: "v0.0.0"
     }.getOrDefault("v0.0.0")
 }
@@ -30,8 +35,7 @@ fun gitSha(): String {
     val env = System.getenv("APP_GIT_SHA")
     if (!env.isNullOrBlank()) return env
     return runCatching {
-        Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "HEAD"))
-            .inputStream.bufferedReader().readText().trim()
+        gitOutput("git", "rev-parse", "HEAD")
     }.getOrDefault("")
 }
 
