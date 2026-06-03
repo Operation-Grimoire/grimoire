@@ -119,4 +119,19 @@ object NovelUpdatesEndpoints {
         if (idx < 0) return url.trim('/')
         return url.substring(idx + marker.length).trim('/').substringBefore('/')
     }
+
+    /**
+     * Extracts the `{slug}` from a `.../group/{slug}/` group-profile URL, or null
+     * if [url] isn't a group link. The slug is NU's stable group identifier — it
+     * survives display-name renames — so it's the precise key for linking a
+     * source extension to a release group.
+     */
+    fun groupSlugFromUrl(url: String?): String? {
+        if (url.isNullOrBlank()) return null
+        val marker = "/group/"
+        val idx = url.indexOf(marker)
+        if (idx < 0) return null
+        return url.substring(idx + marker.length).trim('/').substringBefore('/')
+            .takeIf { it.isNotEmpty() }
+    }
 }

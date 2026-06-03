@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
 import io.grimoire.app.data.novelupdates.NuSeries
 import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import io.grimoire.app.extension.repo.ExtensionInstaller
@@ -78,7 +79,16 @@ class NovelUpdatesSeriesViewModel @Inject constructor(
     }
 
     private fun refreshSourceLinks(series: NuSeries) {
-        val groups = (series.releases.map { it.group } + series.englishPublishers).toSet()
+        // Match against each release's group by both its stable URL slug (the
+        // precise key) and its display name, plus the English publisher (a
+        // licensed title may have no fan-translation release row at all).
+        val groups = buildSet {
+            series.releases.forEach {
+                add(it.group)
+                NovelUpdatesEndpoints.groupSlugFromUrl(it.groupUrl)?.let(::add)
+            }
+            addAll(series.englishPublishers)
+        }
         viewModelScope.launch {
             runCatching { extensionRepository.extensionsForNovelUpdatesGroups(groups) }
                 .onSuccess { _sourceLinks.value = it }
