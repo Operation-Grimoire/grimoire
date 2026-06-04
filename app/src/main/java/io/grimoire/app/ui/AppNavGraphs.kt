@@ -24,6 +24,7 @@ import io.grimoire.app.ui.screen.library.LibraryScreen
 import io.grimoire.app.ui.screen.migrate.MigrateScreen
 import io.grimoire.app.ui.screen.more.MoreScreen
 import io.grimoire.app.ui.screen.more.statistics.StatisticsScreen
+import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesBookmarksScreen
 import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesBrowserScreen
 import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesSearchScreen
 import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesSeriesScreen
@@ -109,6 +110,9 @@ internal fun NavGraphBuilder.browseGraph(
                 onNavigateToNovelUpdatesLatest = {
                     navController.navigate("nu_browser?mode=LATEST")
                 },
+                onNavigateToNovelUpdatesBookmarks = {
+                    navController.navigate(ROUTE_NU_BOOKMARKS)
+                },
                 onOpenSourceSettings = { pkg ->
                     navController.navigate("settings/source/${Uri.encode(pkg)}")
                 },
@@ -168,6 +172,14 @@ internal fun NavGraphBuilder.browseGraph(
                 },
                 onOpenWebView = { url ->
                     navController.navigate("webview?url=${Uri.encode(url)}")
+                },
+            )
+        }
+        composable(route = ROUTE_NU_BOOKMARKS) {
+            NovelUpdatesBookmarksScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onSeriesClick = { slug ->
+                    navController.navigate("nu_series?slug=${Uri.encode(slug)}")
                 },
             )
         }

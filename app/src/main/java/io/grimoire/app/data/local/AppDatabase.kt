@@ -6,6 +6,7 @@ import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
 import io.grimoire.app.data.local.dao.NovelDao
+import io.grimoire.app.data.local.dao.NuBookmarkDao
 import io.grimoire.app.data.local.dao.RepoDao
 import io.grimoire.app.data.local.dao.TaskLogDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
@@ -13,6 +14,7 @@ import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.local.entity.NuBookmarkEntity
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.data.local.entity.TaskLogEntity
 import io.grimoire.app.data.local.entity.UpdateIssueEntity
@@ -26,8 +28,9 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
         LibraryUpdateEntity::class,
         UpdateIssueEntity::class,
         TaskLogEntity::class,
+        NuBookmarkEntity::class,
     ],
-    version = 23,
+    version = 24,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -38,4 +41,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun libraryUpdateDao(): LibraryUpdateDao
     abstract fun updateIssueDao(): UpdateIssueDao
     abstract fun taskLogDao(): TaskLogDao
+    abstract fun nuBookmarkDao(): NuBookmarkDao
 }

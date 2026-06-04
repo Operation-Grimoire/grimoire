@@ -21,9 +21,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -72,6 +74,7 @@ fun NovelUpdatesSeriesScreen(
     val state by viewModel.state.collectAsState()
     val sourceLinks by viewModel.sourceLinks.collectAsState()
     val installStates by viewModel.installStates.collectAsState()
+    val isBookmarked by viewModel.isBookmarked.collectAsState()
 
     // Mirror the Extensions screen's install handoff: the VM downloads + verifies
     // the APK, then surfaces a File the screen hands to the system installer.
@@ -105,6 +108,13 @@ fun NovelUpdatesSeriesScreen(
                 actions = {
                     val s = state
                     if (s is NuSeriesState.Loaded) {
+                        IconButton(onClick = viewModel::toggleBookmark) {
+                            Icon(
+                                if (isBookmarked) Icons.Filled.Inventory2
+                                else Icons.Outlined.Inventory2,
+                                contentDescription = if (isBookmarked) "Remove from saved" else "Save",
+                            )
+                        }
                         IconButton(onClick = { onOpenWebView(s.series.url) }) {
                             Icon(
                                 Icons.Default.Language,
@@ -189,6 +199,12 @@ fun NovelUpdatesSeriesScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    "NovelUpdates listing — add to a source to read",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
                             }
                         }
 

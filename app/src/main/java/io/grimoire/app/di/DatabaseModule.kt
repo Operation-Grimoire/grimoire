@@ -14,10 +14,27 @@ import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
 import io.grimoire.app.data.local.dao.NovelDao
+import io.grimoire.app.data.local.dao.NuBookmarkDao
 import io.grimoire.app.data.local.dao.RepoDao
 import io.grimoire.app.data.local.dao.TaskLogDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
 import javax.inject.Singleton
+
+private val MIGRATION_23_24 = object : Migration(23, 24) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS nu_bookmarks (
+                slug TEXT PRIMARY KEY NOT NULL,
+                url TEXT NOT NULL,
+                title TEXT NOT NULL,
+                coverUrl TEXT,
+                addedAt INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+}
 
 private val MIGRATION_22_23 = object : Migration(22, 23) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -240,7 +257,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "grimoire.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24)
             .build()
 
     @Provides fun provideNovelDao(db: AppDatabase): NovelDao = db.novelDao()
@@ -250,4 +267,5 @@ object DatabaseModule {
     @Provides fun provideLibraryUpdateDao(db: AppDatabase): LibraryUpdateDao = db.libraryUpdateDao()
     @Provides fun provideUpdateIssueDao(db: AppDatabase): UpdateIssueDao = db.updateIssueDao()
     @Provides fun provideTaskLogDao(db: AppDatabase): TaskLogDao = db.taskLogDao()
+    @Provides fun provideNuBookmarkDao(db: AppDatabase): NuBookmarkDao = db.nuBookmarkDao()
 }
