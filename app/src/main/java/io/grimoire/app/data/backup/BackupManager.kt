@@ -17,10 +17,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
+import io.grimoire.app.data.local.dao.NuBookmarkDao
 import io.grimoire.app.data.local.dao.RepoDao
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.local.entity.NuBookmarkEntity
 import io.grimoire.app.data.local.entity.RepoEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -60,6 +62,7 @@ class BackupManager @Inject constructor(
     private val chapterDao: ChapterDao,
     private val categoryDao: CategoryDao,
     private val repoDao: RepoDao,
+    private val nuBookmarkDao: NuBookmarkDao,
     private val dataStore: DataStore<Preferences>,
 ) {
 
@@ -84,6 +87,7 @@ class BackupManager @Inject constructor(
             val categories = categoryDao.getAllOnce()
             val categoryById = categories.associateBy { it.id }
             val repos = repoDao.getAllOnce()
+            val nuBookmarks = nuBookmarkDao.getAll().first()
             val preferences = dumpPreferences()
             val info = runCatching {
                 context.packageManager.getPackageInfo(context.packageName, 0)
@@ -102,6 +106,7 @@ class BackupManager @Inject constructor(
                         categories = categories,
                         categoryById = categoryById,
                         repos = repos,
+                        nuBookmarks = nuBookmarks,
                         preferences = preferences,
                         appVersionCode = appVersionCode,
                         appVersionName = appVersionName,
@@ -149,6 +154,7 @@ class BackupManager @Inject constructor(
         categories: List<CategoryEntity>,
         categoryById: Map<Long, CategoryEntity>,
         repos: List<RepoEntity>,
+        nuBookmarks: List<NuBookmarkEntity>,
         preferences: List<BackupPreference>,
         appVersionCode: Int,
         appVersionName: String,
@@ -170,6 +176,12 @@ class BackupManager @Inject constructor(
         json.encodeToStream(
             ListSerializer(BackupRepo.serializer()),
             repos.map { BackupRepo(it.name, it.indexUrl, it.enabled, it.addedAt) },
+            out,
+        )
+        out.writeUtf8(",\"nuBookmarks\":")
+        json.encodeToStream(
+            ListSerializer(BackupNuBookmark.serializer()),
+            nuBookmarks.map { BackupNuBookmark(it.slug, it.url, it.title, it.coverUrl, it.addedAt) },
             out,
         )
         out.writeUtf8(",\"preferences\":")
@@ -287,6 +299,18 @@ class BackupManager @Inject constructor(
                     )
                 )
             }
+        }
+
+        for (bookmark in backup.nuBookmarks) {
+            nuBookmarkDao.upsert(
+                NuBookmarkEntity(
+                    slug = bookmark.slug,
+                    url = bookmark.url,
+                    title = bookmark.title,
+                    coverUrl = bookmark.coverUrl,
+                    addedAt = bookmark.addedAt,
+                )
+            )
         }
 
         for (novel in backup.novels) {
