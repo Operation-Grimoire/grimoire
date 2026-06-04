@@ -1,18 +1,24 @@
 package io.grimoire.app.ui.screen.settings.about
 
 import android.app.Activity
-import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.content.Context
 import android.content.ContextWrapper
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -29,11 +35,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import io.grimoire.app.BuildConfig
+import io.grimoire.app.R
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import io.grimoire.app.data.preferences.UpdateChannel
 import io.grimoire.app.ui.update.AppUpdateViewModel
 import io.grimoire.app.ui.update.CheckState
@@ -57,6 +70,18 @@ fun AboutSettingsScreen(
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
         }.getOrDefault("–")
     }
+    val versionCode = remember {
+        runCatching {
+            @Suppress("DEPRECATION")
+            context.packageManager.getPackageInfo(context.packageName, 0).versionCode
+        }.getOrDefault(0)
+    }
+    val gitSha = remember { BuildConfig.GIT_SHA.take(7).ifBlank { "–" } }
+    val buildSummary = remember(version, versionCode, gitSha) {
+        "Grimoire $version (build $versionCode)\n" +
+            "Commit $gitSha · Extensions API ${BuildConfig.EXTENSIONS_API_VERSION}"
+    }
+    val clipboard = LocalClipboardManager.current
     val checkState by updateViewModel.checkState.collectAsState()
     val channel by viewModel.channel.collectAsState()
     val autoPopupEnabled by viewModel.autoPopupEnabled.collectAsState()
@@ -78,16 +103,49 @@ fun AboutSettingsScreen(
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
             item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    AsyncImage(
+                        model = R.mipmap.ic_launcher,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(16.dp)),
+                    )
+                    Spacer(Modifier.size(12.dp))
+                    Text("Grimoire", style = MaterialTheme.typography.headlineSmall)
+                }
+            }
+            item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
+            item {
                 ListItem(
                     headlineContent = { Text("Version") },
+                    supportingContent = { Text(version ?: "–") },
+                )
+            }
+
+            item {
+                val checking = checkState is CheckState.Checking
+                ListItem(
+                    headlineContent = { Text("Check for updates") },
                     supportingContent = {
-                        Text("${version ?: "–"}  ·  Extensions API ${BuildConfig.EXTENSIONS_API_VERSION}")
+                        Text(
+                            when (val s = checkState) {
+                                is CheckState.Idle -> "Tap to check for a new version"
+                                is CheckState.Checking -> "Checking…"
+                                is CheckState.UpToDate -> "You're on the latest version"
+                                is CheckState.Error -> s.message
+                            },
+                            color = if (checkState is CheckState.Error) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     },
                     trailingContent = {
                         when (checkState) {
-                            is CheckState.Idle -> TextButton(onClick = updateViewModel::checkForUpdates) {
-                                Text("Check for updates")
-                            }
                             is CheckState.Checking -> CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp,
@@ -97,23 +155,21 @@ fun AboutSettingsScreen(
                                 contentDescription = "Up to date",
                                 tint = MaterialTheme.colorScheme.primary,
                             )
-                            is CheckState.Error -> TextButton(onClick = updateViewModel::checkForUpdates) {
-                                Text("Retry")
-                            }
+                            is CheckState.Error -> Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = "Retry",
+                            )
+                            is CheckState.Idle -> Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     },
+                    modifier = Modifier.clickable(enabled = !checking) {
+                        updateViewModel.checkForUpdates()
+                    },
                 )
-            }
-
-            if (checkState is CheckState.Error) {
-                item {
-                    Text(
-                        text = (checkState as CheckState.Error).message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-                    )
-                }
             }
 
             item {
@@ -200,7 +256,7 @@ fun AboutSettingsScreen(
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
             item {
                 Text(
-                    text = "Grimoire",
+                    text = "Build",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -208,8 +264,20 @@ fun AboutSettingsScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Open Source Licenses") },
-                    supportingContent = { Text("Third-party libraries used in this app") },
+                    headlineContent = { Text("Build details") },
+                    supportingContent = {
+                        Text(
+                            "Build $versionCode · commit $gitSha · " +
+                                "Extensions API ${BuildConfig.EXTENSIONS_API_VERSION}",
+                        )
+                    },
+                    trailingContent = {
+                        Icon(Icons.Default.ContentCopy, contentDescription = null)
+                    },
+                    modifier = Modifier.clickable {
+                        clipboard.setText(AnnotatedString(buildSummary))
+                        Toast.makeText(context, "Build info copied", Toast.LENGTH_SHORT).show()
+                    },
                 )
             }
         }
