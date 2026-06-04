@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
@@ -65,6 +66,7 @@ fun BrowseScreen(
     onNavigateToNovelUpdatesSearch: () -> Unit = {},
     onNavigateToNovelUpdatesRankings: () -> Unit = {},
     onNavigateToNovelUpdatesLatest: () -> Unit = {},
+    onNavigateToNovelUpdatesBookmarks: () -> Unit = {},
     onOpenSourceSettings: (packageName: String) -> Unit = {},
     onSelectionActiveChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -173,6 +175,7 @@ fun BrowseScreen(
                         onSearch = onNavigateToNovelUpdatesSearch,
                         onRankings = onNavigateToNovelUpdatesRankings,
                         onLatest = onNavigateToNovelUpdatesLatest,
+                        onBookmarks = onNavigateToNovelUpdatesBookmarks,
                     )
                 }
             }
@@ -289,6 +292,7 @@ private fun NovelUpdatesCard(
     onSearch: () -> Unit,
     onRankings: () -> Unit,
     onLatest: () -> Unit,
+    onBookmarks: () -> Unit,
 ) {
     Column {
         SectionHeader("NovelUpdates")
@@ -301,6 +305,7 @@ private fun NovelUpdatesCard(
             NuEntry(Icons.Default.Search, "Search", onSearch, Modifier.weight(1f))
             NuEntry(Icons.Default.TrendingUp, "Rankings", onRankings, Modifier.weight(1f))
             NuEntry(Icons.Default.NewReleases, "Latest", onLatest, Modifier.weight(1f))
+            NuEntry(Icons.Default.Inventory2, "Saved", onBookmarks, Modifier.weight(1f))
         }
     }
 }

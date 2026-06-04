@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.grimoire.app.data.local.dao.NuBookmarkDao
+import io.grimoire.app.data.local.entity.NuBookmarkEntity
 import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
 import io.grimoire.app.data.novelupdates.NuSeries
 import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
@@ -14,8 +16,10 @@ import io.grimoire.app.extension.repo.GitHubRateLimitException
 import io.grimoire.app.extension.repo.HashMismatchException
 import io.grimoire.app.ui.screen.extensions.InstallState
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
@@ -33,9 +37,13 @@ class NovelUpdatesSeriesViewModel @Inject constructor(
     private val repository: NovelUpdatesInfoRepository,
     private val extensionRepository: ExtensionRepository,
     private val installer: ExtensionInstaller,
+    private val bookmarkDao: NuBookmarkDao,
 ) : ViewModel() {
 
     private val slug: String = checkNotNull(savedStateHandle["slug"])
+
+    val isBookmarked: StateFlow<Boolean> = bookmarkDao.isBookmarked(slug)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _state = MutableStateFlow<NuSeriesState>(NuSeriesState.Loading)
     val state: StateFlow<NuSeriesState> = _state.asStateFlow()
@@ -61,6 +69,26 @@ class NovelUpdatesSeriesViewModel @Inject constructor(
     }
 
     fun retry() = load()
+
+    /** Save or remove this series from NovelUpdates bookmarks. */
+    fun toggleBookmark() {
+        val series = (state.value as? NuSeriesState.Loaded)?.series ?: return
+        viewModelScope.launch {
+            if (isBookmarked.value) {
+                bookmarkDao.delete(slug)
+            } else {
+                bookmarkDao.upsert(
+                    NuBookmarkEntity(
+                        slug = slug,
+                        url = series.url,
+                        title = series.title,
+                        coverUrl = series.coverUrl,
+                        addedAt = System.currentTimeMillis(),
+                    )
+                )
+            }
+        }
+    }
 
     private fun load() {
         viewModelScope.launch {

@@ -12,11 +12,22 @@ data class BackupFile(
     val categories: List<BackupCategory> = emptyList(),
     val repos: List<BackupRepo> = emptyList(),
     val preferences: List<BackupPreference> = emptyList(),
+    val nuBookmarks: List<BackupNuBookmark> = emptyList(),
 ) {
     companion object {
         const val CURRENT_VERSION = 2
     }
 }
+
+/** A saved NovelUpdates series (the "Saved" list, distinct from the library). */
+@Serializable
+data class BackupNuBookmark(
+    val slug: String,
+    val url: String,
+    val title: String,
+    val coverUrl: String? = null,
+    val addedAt: Long,
+)
 
 /**
  * A single DataStore preference entry, dumped generically so every current and
