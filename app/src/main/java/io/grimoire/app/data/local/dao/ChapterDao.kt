@@ -19,6 +19,18 @@ interface ChapterDao {
     @Query("SELECT * FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
     suspend fun getChaptersOnce(novelId: Long): List<ChapterEntity>
 
+    /**
+     * Chapters that carry restorable user state — read flag, partial progress, or
+     * a first-read timestamp. Untouched chapters are pure scraped metadata that the
+     * source re-supplies on next open, so they're left out of backups.
+     */
+    @Query("""
+        SELECT * FROM chapters
+        WHERE novelId = :novelId AND (read = 1 OR readProgress > 0 OR firstReadAt IS NOT NULL)
+        ORDER BY chapterNumber ASC
+    """)
+    suspend fun getBackupChaptersOnce(novelId: Long): List<ChapterEntity>
+
     @Query("SELECT * FROM chapters WHERE novelId = :novelId AND url = :url")
     suspend fun getByUrl(novelId: Long, url: String): ChapterEntity?
 
@@ -258,7 +270,27 @@ interface ChapterDao {
           (SELECT COUNT(*) FROM chapters WHERE downloadStatus IN (3, 5, 6, 7)) AS downloadedChapters
     """)
     fun getLibraryStats(): Flow<LibraryStats>
+
+    /**
+     * One-shot chapter counts/bytes for the Data management screen. Downloaded text
+     * is sized by SUM(LENGTH(downloadedContent)) — char length, a close estimate of
+     * the on-disk byte cost for mostly-Latin prose.
+     */
+    @Query("""
+        SELECT
+          (SELECT COUNT(*) FROM chapters c
+             JOIN novels n ON n.id = c.novelId WHERE n.favorite = 1) AS libraryChapters,
+          (SELECT COUNT(*) FROM chapters WHERE downloadedContent IS NOT NULL) AS downloadedTextCount,
+          (SELECT COALESCE(SUM(LENGTH(downloadedContent)), 0) FROM chapters WHERE downloadedContent IS NOT NULL) AS downloadedTextBytes
+    """)
+    suspend fun getStorageChapterStats(): StorageChapterStats
 }
+
+data class StorageChapterStats(
+    val libraryChapters: Int,
+    val downloadedTextCount: Int,
+    val downloadedTextBytes: Long,
+)
 
 data class ChapterContent(val id: Long, val downloadedContent: String)
 

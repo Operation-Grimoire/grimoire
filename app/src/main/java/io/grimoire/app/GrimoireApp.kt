@@ -17,6 +17,7 @@ import dagger.hilt.android.HiltAndroidApp
 import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.cache.CoverPreloader
 import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
+import io.grimoire.app.data.local.TransientNovelPruner
 import io.grimoire.app.data.schedule.ScheduleMigrator
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.di.GitHubAuthorized
@@ -36,6 +37,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
     @Inject lateinit var scheduleMigrator: ScheduleMigrator
     @Inject lateinit var extensionRepository: ExtensionRepository
+    @Inject lateinit var transientNovelPruner: TransientNovelPruner
     @Inject @GitHubAuthorized lateinit var imageHttpClient: OkHttpClient
 
     override val workManagerConfiguration: Configuration
@@ -103,6 +105,10 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStop(owner: LifecycleOwner) {
                 hiddenAuthManager.lock()
+                // Drop stale browse rows that aged past the grace window this session.
+                ProcessLifecycleOwner.get().lifecycleScope.launch {
+                    runCatching { transientNovelPruner.prune() }
+                }
             }
         })
 
@@ -140,6 +146,8 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
             scheduleMigrator.migrateIfNeeded()
             backupScheduler.applyPreferredSchedule()
             libraryUpdateScheduler.applyPreferredSchedule()
+            // Clear browse rows left stale by previous sessions on cold start.
+            runCatching { transientNovelPruner.prune() }
         }
     }
 

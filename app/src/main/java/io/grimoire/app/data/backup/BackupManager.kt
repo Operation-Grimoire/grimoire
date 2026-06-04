@@ -2,6 +2,16 @@ package io.grimoire.app.data.backup
 
 import android.content.Context
 import android.net.Uri
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.app.data.local.dao.CategoryDao
@@ -13,6 +23,7 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.RepoEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
@@ -49,6 +60,7 @@ class BackupManager @Inject constructor(
     private val chapterDao: ChapterDao,
     private val categoryDao: CategoryDao,
     private val repoDao: RepoDao,
+    private val dataStore: DataStore<Preferences>,
 ) {
 
     private val json = Json {
@@ -68,10 +80,11 @@ class BackupManager @Inject constructor(
             ?: return@withContext BackupResult.Failure("Could not create backup file")
 
         runCatching {
-            val novels = novelDao.getAll()
+            val novels = novelDao.getForBackup()
             val categories = categoryDao.getAllOnce()
             val categoryById = categories.associateBy { it.id }
             val repos = repoDao.getAllOnce()
+            val preferences = dumpPreferences()
             val info = runCatching {
                 context.packageManager.getPackageInfo(context.packageName, 0)
             }.getOrNull()
@@ -89,6 +102,7 @@ class BackupManager @Inject constructor(
                         categories = categories,
                         categoryById = categoryById,
                         repos = repos,
+                        preferences = preferences,
                         appVersionCode = appVersionCode,
                         appVersionName = appVersionName,
                     )
@@ -135,6 +149,7 @@ class BackupManager @Inject constructor(
         categories: List<CategoryEntity>,
         categoryById: Map<Long, CategoryEntity>,
         repos: List<RepoEntity>,
+        preferences: List<BackupPreference>,
         appVersionCode: Int,
         appVersionName: String,
     ) {
@@ -157,12 +172,15 @@ class BackupManager @Inject constructor(
             repos.map { BackupRepo(it.name, it.indexUrl, it.enabled, it.addedAt) },
             out,
         )
+        out.writeUtf8(",\"preferences\":")
+        json.encodeToStream(ListSerializer(BackupPreference.serializer()), preferences, out)
         out.writeUtf8(",\"novels\":[")
         var first = true
         for (n in novels) {
             if (!first) out.writeUtf8(",")
             first = false
-            val chapters = chapterDao.getChaptersOnce(n.id)
+            // Only chapters with restorable state — untouched ones are re-scraped on open.
+            val chapters = chapterDao.getBackupChaptersOnce(n.id)
             // Build one novel at a time and stream it, then let the GC reclaim chapters.
             val backupNovel = BackupNovel(
                 sourceId = n.sourceId,
@@ -202,7 +220,42 @@ class BackupManager @Inject constructor(
         out.writeUtf8("]}")
     }
 
+    /** Snapshot every DataStore preference, tagged by runtime value type. */
+    private suspend fun dumpPreferences(): List<BackupPreference> =
+        dataStore.data.first().asMap().mapNotNull { (key, value) ->
+            when (value) {
+                is Boolean -> BackupPreference(key.name, "b", value.toString())
+                is Int -> BackupPreference(key.name, "i", value.toString())
+                is Long -> BackupPreference(key.name, "l", value.toString())
+                is Float -> BackupPreference(key.name, "f", value.toString())
+                is Double -> BackupPreference(key.name, "d", value.toString())
+                is String -> BackupPreference(key.name, "s", value)
+                is Set<*> -> BackupPreference(key.name, "ss", stringSet = value.map { it.toString() })
+                else -> null // e.g. ByteArray — not used by app prefs, skip
+            }
+        }
+
+    /** Overwrite stored preferences with the backed-up values (backup wins). */
+    private suspend fun restorePreferences(preferences: List<BackupPreference>) {
+        if (preferences.isEmpty()) return
+        dataStore.edit { prefs ->
+            for (p in preferences) {
+                when (p.type) {
+                    "b" -> p.value?.toBooleanStrictOrNull()?.let { prefs[booleanPreferencesKey(p.key)] = it }
+                    "i" -> p.value?.toIntOrNull()?.let { prefs[intPreferencesKey(p.key)] = it }
+                    "l" -> p.value?.toLongOrNull()?.let { prefs[longPreferencesKey(p.key)] = it }
+                    "f" -> p.value?.toFloatOrNull()?.let { prefs[floatPreferencesKey(p.key)] = it }
+                    "d" -> p.value?.toDoubleOrNull()?.let { prefs[doublePreferencesKey(p.key)] = it }
+                    "s" -> p.value?.let { prefs[stringPreferencesKey(p.key)] = it }
+                    "ss" -> p.stringSet?.let { prefs[stringSetPreferencesKey(p.key)] = it.toSet() }
+                }
+            }
+        }
+    }
+
     private suspend fun applyBackup(backup: BackupFile) {
+        restorePreferences(backup.preferences)
+
         val existingCategories = categoryDao.getAllOnce().associateBy { it.name }
         val categoryIdByName = mutableMapOf<String, Long>()
         for (cat in backup.categories) {

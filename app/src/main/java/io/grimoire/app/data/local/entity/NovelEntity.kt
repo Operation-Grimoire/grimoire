@@ -23,6 +23,12 @@ data class NovelEntity(
     val chapterSortOrder: Int = 0,
     val categoryId: Long? = null,
     val lastReadAt: Long = 0L,
+    /**
+     * Wall-clock millis the novel was last opened from browse. Used to age-out
+     * transient rows: a non-favorite with no fully-read chapter is pruned once
+     * this passes [io.grimoire.app.data.local.TransientNovelPruner.STALE_AFTER_MS].
+     */
+    val lastAccessedAt: Long = 0L,
     val rating: Float? = null,
     val ratingCount: Int? = null,
     val language: String? = null,

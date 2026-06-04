@@ -17,11 +17,59 @@ interface NovelDao {
     @Query("SELECT * FROM novels")
     suspend fun getAll(): List<NovelEntity>
 
+    /**
+     * Novels worth backing up: everything in the library, plus any non-favorite
+     * with at least one fully-read chapter (so browse-and-bail rows stay out of
+     * the backup while real read history is always preserved). A partial read
+     * percentage does not count — only `read = 1`.
+     */
+    @Query("""
+        SELECT * FROM novels
+        WHERE favorite = 1
+           OR id IN (SELECT DISTINCT novelId FROM chapters WHERE read = 1)
+    """)
+    suspend fun getForBackup(): List<NovelEntity>
+
+    /**
+     * Delete transient browse rows: not in the library, no fully-read chapter,
+     * no download state, and untouched since [cutoff]. A partial read percentage
+     * does not protect a row — only `read = 1`. Chapters cascade-delete.
+     * Returns the number of novels removed.
+     */
+    @Query("""
+        DELETE FROM novels
+        WHERE favorite = 0
+          AND lastAccessedAt < :cutoff
+          AND id NOT IN (
+              SELECT DISTINCT novelId FROM chapters
+              WHERE read = 1 OR downloadStatus != 0
+          )
+    """)
+    suspend fun pruneTransient(cutoff: Long): Int
+
     @Query("SELECT sourceId, url FROM novels WHERE favorite = 1")
     fun getFavoriteKeys(): Flow<List<FavoriteKey>>
 
     @Query("SELECT url FROM novels WHERE favorite = 1 AND sourceId = :sourceId")
     fun getFavoriteUrlsBySource(sourceId: Long): Flow<List<String>>
+
+    @Query("SELECT COUNT(*) FROM novels WHERE favorite = 1")
+    suspend fun countFavorites(): Int
+
+    /**
+     * Non-favorite browse rows that a "clear browse data" would remove right now:
+     * no fully-read chapter and no download (matches [pruneTransient]'s protection,
+     * minus the age filter, since a manual clear ignores the grace window).
+     */
+    @Query("""
+        SELECT COUNT(*) FROM novels
+        WHERE favorite = 0
+          AND id NOT IN (
+              SELECT DISTINCT novelId FROM chapters
+              WHERE read = 1 OR downloadStatus != 0
+          )
+    """)
+    suspend fun countClearableBrowse(): Int
 
     @Query("SELECT * FROM novels WHERE id = :id")
     suspend fun getById(id: Long): NovelEntity?
@@ -46,6 +94,10 @@ interface NovelDao {
 
     @Query("UPDATE novels SET lastReadAt = :timestamp WHERE id = :id")
     suspend fun updateLastReadAt(id: Long, timestamp: Long)
+
+    /** Bump the browse access time so re-opening a cached novel extends its prune TTL. */
+    @Query("UPDATE novels SET lastAccessedAt = :timestamp WHERE id = :id")
+    suspend fun touchAccessed(id: Long, timestamp: Long)
 
     @Query("UPDATE novels SET notifyOnNewChapters = :value WHERE id = :id")
     suspend fun updateNotifyOnNewChapters(id: Long, value: Boolean)

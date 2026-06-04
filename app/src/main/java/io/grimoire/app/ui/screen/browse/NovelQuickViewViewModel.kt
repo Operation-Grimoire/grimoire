@@ -136,6 +136,8 @@ class NovelQuickViewViewModel @AssistedInject constructor(
             val age = System.currentTimeMillis() - existing.lastUpdated
             val fresh = existing.favorite || age < BROWSE_TTL_MS
             if (fresh) {
+                // Re-opening a cached novel extends its prune grace window.
+                if (!existing.favorite) novelDao.touchAccessed(existing.id, System.currentTimeMillis())
                 cachedNovelId = existing.id
                 _liveNovelId.value = existing.id
                 _novel.value = existing.toNovel()
