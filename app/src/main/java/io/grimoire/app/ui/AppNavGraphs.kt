@@ -37,6 +37,7 @@ import io.grimoire.app.ui.screen.settings.behavior.BehaviorSettingsScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseLanguagesScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseSettingsScreen
 import io.grimoire.app.ui.screen.settings.connections.ConnectionsSettingsScreen
+import io.grimoire.app.ui.screen.settings.data.DataSettingsScreen
 import io.grimoire.app.ui.screen.settings.github.GitHubAuthScreen
 import io.grimoire.app.ui.screen.settings.hidden.HiddenCategoriesSettingsScreen
 import io.grimoire.app.ui.screen.settings.languages.LanguagesSettingsScreen
@@ -274,6 +275,7 @@ internal fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
                 onNavigateToTts = { navController.navigate(ROUTE_SETTINGS_TTS) },
                 onNavigateToLibraryUpdates = { navController.navigate(ROUTE_SETTINGS_LIBRARY_UPDATE) },
                 onNavigateToBackup = { navController.navigate(ROUTE_SETTINGS_BACKUP) },
+                onNavigateToData = { navController.navigate(ROUTE_SETTINGS_DATA) },
                 onNavigateToNovelUpdates = { navController.navigate(ROUTE_SETTINGS_NOVELUPDATES) },
                 onNavigateToConnections = { navController.navigate(ROUTE_SETTINGS_CONNECTIONS) },
             )
@@ -354,6 +356,9 @@ internal fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
         }
         composable(route = ROUTE_SETTINGS_BACKUP) {
             BackupSettingsScreen(onNavigateBack = { navController.popBackStack() })
+        }
+        composable(route = ROUTE_SETTINGS_DATA) {
+            DataSettingsScreen(onNavigateBack = { navController.popBackStack() })
         }
         composable(route = ROUTE_SETTINGS_LIBRARY_UPDATE) {
             LibraryUpdateSettingsScreen(onNavigateBack = { navController.popBackStack() })

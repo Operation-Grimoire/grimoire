@@ -11,11 +11,27 @@ data class BackupFile(
     val novels: List<BackupNovel> = emptyList(),
     val categories: List<BackupCategory> = emptyList(),
     val repos: List<BackupRepo> = emptyList(),
+    val preferences: List<BackupPreference> = emptyList(),
 ) {
     companion object {
-        const val CURRENT_VERSION = 1
+        const val CURRENT_VERSION = 2
     }
 }
+
+/**
+ * A single DataStore preference entry, dumped generically so every current and
+ * future preference is captured without per-field backup code. [type] is a short
+ * tag for the DataStore value type: b=Boolean, i=Int, l=Long, f=Float, d=Double,
+ * s=String, ss=Set<String>. Primitives store their value in [value]; string sets
+ * use [stringSet].
+ */
+@Serializable
+data class BackupPreference(
+    val key: String,
+    val type: String,
+    val value: String? = null,
+    val stringSet: List<String>? = null,
+)
 
 @Serializable
 data class BackupCategory(

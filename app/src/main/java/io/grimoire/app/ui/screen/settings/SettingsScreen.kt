@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalLibrary
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,6 +42,7 @@ fun SettingsScreen(
     onNavigateToTts: () -> Unit,
     onNavigateToLibraryUpdates: () -> Unit,
     onNavigateToBackup: () -> Unit,
+    onNavigateToData: () -> Unit,
     onNavigateToNovelUpdates: () -> Unit,
     onNavigateToConnections: () -> Unit,
     modifier: Modifier = Modifier,
@@ -129,6 +131,14 @@ fun SettingsScreen(
                     title = "Backup & restore",
                     subtitle = "Export, import, scheduled backups",
                     onClick = onNavigateToBackup,
+                )
+            }
+            item {
+                SettingsNavItem(
+                    icon = Icons.Default.Storage,
+                    title = "Data management",
+                    subtitle = "Storage usage, clear caches and browse data",
+                    onClick = onNavigateToData,
                 )
             }
             item {

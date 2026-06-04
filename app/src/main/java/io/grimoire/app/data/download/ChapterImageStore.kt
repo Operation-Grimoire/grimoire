@@ -102,7 +102,22 @@ class ChapterImageStore @Inject constructor(
     suspend fun deleteNovel(novelId: Long) {
         withContext(Dispatchers.IO) { File(rootDir, novelId.toString()).deleteRecursively() }
     }
+
+    /** Total bytes and file count of every saved illustration, for the Data screen. */
+    suspend fun usage(): ImageStoreUsage = withContext(Dispatchers.IO) {
+        var bytes = 0L
+        var count = 0
+        rootDir.walkTopDown().forEach { f ->
+            if (f.isFile) {
+                bytes += f.length()
+                count++
+            }
+        }
+        ImageStoreUsage(bytes, count)
+    }
 }
+
+data class ImageStoreUsage(val bytes: Long, val fileCount: Int)
 
 private fun String.sha256(): String =
     MessageDigest.getInstance("SHA-256")
