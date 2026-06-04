@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.browse
 
 import androidx.compose.foundation.clickable
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,7 +22,6 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
@@ -69,7 +69,7 @@ internal fun FilterSheet(
         ) {
             Text("Filters", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             if (canReload) {
-                IconButton(onClick = onLoad) {
+                PlainTooltipIconButton(onClick = onLoad, tooltip = "Reload filters") {
                     Icon(Icons.Default.Refresh, contentDescription = "Reload filters")
                 }
             }

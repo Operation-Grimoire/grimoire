@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.settings.library
 
 import androidx.compose.animation.AnimatedVisibility
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,7 +11,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -49,7 +49,7 @@ fun LibrarySettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },

@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.component
 
 import androidx.compose.foundation.background
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +26,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -268,7 +268,7 @@ private fun ActionRow(
                 contentDescription = if (isFavorite) "Remove from library" else "Add to library",
             )
         }
-        IconButton(onClick = onPickCategory, enabled = canToggleLibrary) {
+        PlainTooltipIconButton(onClick = onPickCategory, enabled = canToggleLibrary, tooltip = "Change category") {
             Icon(Icons.AutoMirrored.Filled.Label, contentDescription = "Change category")
         }
         Spacer(Modifier.weight(1f))

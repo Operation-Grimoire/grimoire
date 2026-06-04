@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.browse
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
@@ -29,7 +30,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -86,11 +86,11 @@ fun GlobalSearchScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = {
+                    PlainTooltipIconButton(onClick = {
                         keyboard?.hide()
                         viewModel.clearSearch()
                         onNavigateBack()
-                    }) {
+                    }, tooltip = "Back") {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },

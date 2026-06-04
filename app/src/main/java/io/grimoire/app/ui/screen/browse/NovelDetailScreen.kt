@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.browse
 
 import androidx.activity.compose.BackHandler
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -57,7 +58,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -475,7 +475,7 @@ fun NovelDetailScreen(
             } else {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -484,11 +484,11 @@ fun NovelDetailScreen(
                 },
                 actions = {
                     if (!viewModel.isLocal) {
-                        IconButton(onClick = { onOpenWebView(viewModel.novelWebUrl) }) {
+                        PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.novelWebUrl) }, tooltip = "Open in WebView") {
                             Icon(Icons.Default.Language, contentDescription = "Open in WebView")
                         }
                     }
-                    IconButton(onClick = viewModel::toggleFavorite) {
+                    PlainTooltipIconButton(onClick = viewModel::toggleFavorite, tooltip = if (isFavorite) "Remove from library" else "Add to library") {
                         Icon(
                             if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                             contentDescription = if (isFavorite) "Remove from library" else "Add to library",
@@ -499,7 +499,7 @@ fun NovelDetailScreen(
                     val canConfigureNewChapters = isFavorite && novelId > 0L && !viewModel.isLocal
                     if (hasBulkActions || canMigrate || canConfigureNewChapters) {
                         Box {
-                            IconButton(onClick = { overflowMenuExpanded = true }) {
+                            PlainTooltipIconButton(onClick = { overflowMenuExpanded = true }, tooltip = "More actions") {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More actions")
                             }
                             DropdownMenu(
@@ -855,17 +855,17 @@ fun NovelDetailScreen(
                                         .clickable(enabled = chapters.isNotEmpty()) { showJumpDialog = true },
                                 )
                                 if (chapters.isNotEmpty()) {
-                                    IconButton(onClick = {
+                                    PlainTooltipIconButton(onClick = {
                                         searchActive = !searchActive
                                         if (!searchActive) viewModel.setSearchQuery("")
-                                    }) {
+                                    }, tooltip = if (searchActive) "Close search" else "Search chapters") {
                                         Icon(
                                             if (searchActive) Icons.Default.Close else Icons.Default.Search,
                                             contentDescription = if (searchActive) "Close search" else "Search chapters",
                                         )
                                     }
                                     Box {
-                                        IconButton(onClick = { sortMenuExpanded = true }) {
+                                        PlainTooltipIconButton(onClick = { sortMenuExpanded = true }, tooltip = "Sort options") {
                                             Icon(Icons.Default.SwapVert, contentDescription = "Sort options")
                                         }
                                         DropdownMenu(

@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.reader
 
 import android.app.Activity
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
@@ -58,7 +59,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -531,7 +531,7 @@ fun ReaderScreen(
                     actionIconContentColor = colors.foreground,
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -546,12 +546,12 @@ fun ReaderScreen(
                     val chapterImageUrls = visiblePages.mapNotNull { it.imageUrl }
                     if (hideInlineImages && chapterImageUrls.isNotEmpty()) {
                         val allRevealed = chapterImageUrls.all { it in revealedImageUrls }
-                        IconButton(
+                        PlainTooltipIconButton(
                             onClick = {
                                 if (allRevealed) viewModel.hideAllImagesInCurrentChapter()
                                 else viewModel.revealAllImagesInCurrentChapter()
-                            },
-                        ) {
+                            }, tooltip = if (allRevealed) "Hide all images in this chapter"
+                                                     else "Reveal all images in this chapter") {
                             Icon(
                                 if (allRevealed) Icons.Outlined.HideImage else Icons.Outlined.Image,
                                 contentDescription = if (allRevealed) "Hide all images in this chapter"
@@ -560,14 +560,14 @@ fun ReaderScreen(
                             )
                         }
                     }
-                    IconButton(onClick = { onOpenWebView(viewModel.chapterWebUrl) }) {
+                    PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.chapterWebUrl) }, tooltip = "Open in WebView") {
                         Icon(
                             Icons.Default.Language,
                             contentDescription = "Open in WebView",
                             tint = colors.foreground,
                         )
                     }
-                    IconButton(onClick = viewModel::toggleRead) {
+                    PlainTooltipIconButton(onClick = viewModel::toggleRead, tooltip = if (currentChapter?.read == true) "Mark as unread" else "Mark as read") {
                         Icon(
                             if (currentChapter?.read == true) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
                             contentDescription = if (currentChapter?.read == true) "Mark as unread" else "Mark as read",

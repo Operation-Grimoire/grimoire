@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.component
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -20,7 +21,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -230,7 +230,7 @@ fun ChapterTrailingIcon(
     iconSize: Dp = 24.dp,
 ) {
     if (onClick != null) {
-        IconButton(onClick = onClick, modifier = Modifier.size(buttonSize)) {
+        PlainTooltipIconButton(onClick = onClick, modifier = Modifier.size(buttonSize), tooltip = description) {
             Icon(icon, contentDescription = description, tint = tint,
                 modifier = Modifier.size(iconSize))
         }

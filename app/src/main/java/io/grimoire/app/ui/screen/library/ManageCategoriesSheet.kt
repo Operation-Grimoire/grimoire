@@ -18,7 +18,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -70,21 +70,19 @@ internal fun ManageCategoriesSheet(
                 headlineContent = { Text(cat.name) },
                 leadingContent = {
                     Column {
-                        IconButton(
+                        PlainTooltipIconButton(
                             onClick = { onMove(index, index - 1) },
                             enabled = index > 0,
-                            modifier = Modifier.size(28.dp),
-                        ) {
+                            modifier = Modifier.size(28.dp), tooltip = "Move up") {
                             Icon(
                                 Icons.Default.KeyboardArrowUp,
                                 contentDescription = "Move up",
                             )
                         }
-                        IconButton(
+                        PlainTooltipIconButton(
                             onClick = { onMove(index, index + 1) },
                             enabled = index < categories.lastIndex,
-                            modifier = Modifier.size(28.dp),
-                        ) {
+                            modifier = Modifier.size(28.dp), tooltip = "Move down") {
                             Icon(
                                 Icons.Default.KeyboardArrowDown,
                                 contentDescription = "Move down",
@@ -95,18 +93,18 @@ internal fun ManageCategoriesSheet(
                 trailingContent = {
                     Row {
                         if (isUnlocked && !cat.isDefault) {
-                            IconButton(onClick = { onToggleHidden(cat, !cat.isHidden) }) {
+                            PlainTooltipIconButton(onClick = { onToggleHidden(cat, !cat.isHidden) }, tooltip = if (cat.isHidden) "Unhide" else "Hide") {
                                 Icon(
                                     if (cat.isHidden) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = if (cat.isHidden) "Unhide" else "Hide",
                                 )
                             }
                         }
-                        IconButton(onClick = { renamingCategory = cat }) {
+                        PlainTooltipIconButton(onClick = { renamingCategory = cat }, tooltip = "Rename") {
                             Icon(Icons.Default.Edit, contentDescription = "Rename")
                         }
                         if (!cat.isDefault) {
-                            IconButton(onClick = { onDelete(cat) }) {
+                            PlainTooltipIconButton(onClick = { onDelete(cat) }, tooltip = "Delete") {
                                 Icon(
                                     Icons.Default.Delete,
                                     contentDescription = "Delete",

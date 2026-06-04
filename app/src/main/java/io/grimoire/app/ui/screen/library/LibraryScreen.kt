@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.library
 
 import android.net.Uri
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -52,7 +53,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -296,7 +296,7 @@ fun LibraryScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
+                    PlainTooltipIconButton(onClick = {
                         if (searchActive) {
                             searchActive = false
                             viewModel.setSearchQuery("")
@@ -304,7 +304,7 @@ fun LibraryScreen(
                         } else {
                             searchActive = true
                         }
-                    }) {
+                    }, tooltip = if (searchActive) "Close search" else "Search library") {
                         Icon(
                             if (searchActive) Icons.Default.Close else Icons.Default.Search,
                             contentDescription = if (searchActive) "Close search" else "Search library",
@@ -312,20 +312,20 @@ fun LibraryScreen(
                     }
                     if (!searchActive) {
                         if (isUnlocked) {
-                            IconButton(onClick = { viewModel.lock() }) {
+                            PlainTooltipIconButton(onClick = { viewModel.lock() }, tooltip = "Lock hidden categories") {
                                 Icon(Icons.Default.Lock, contentDescription = "Lock hidden categories")
                             }
                         }
-                        IconButton(onClick = { showFilterSheet = true }) {
+                        PlainTooltipIconButton(onClick = { showFilterSheet = true }, tooltip = "Filter & sort") {
                             BadgedBox(badge = { if (isFilterActive) Badge() }) {
                                 Icon(Icons.Default.FilterList, contentDescription = "Filter & sort")
                             }
                         }
-                        IconButton(onClick = { showRefreshSheet = true }) {
+                        PlainTooltipIconButton(onClick = { showRefreshSheet = true }, tooltip = "Refresh library") {
                             Icon(Icons.Default.Refresh, contentDescription = "Refresh library")
                         }
                         Box {
-                            IconButton(onClick = { libraryMenuExpanded = true }) {
+                            PlainTooltipIconButton(onClick = { libraryMenuExpanded = true }, tooltip = "More actions") {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More actions")
                             }
                             DropdownMenu(

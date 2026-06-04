@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.settings.tts
 
 import androidx.compose.foundation.clickable
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +16,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -68,7 +68,7 @@ fun TtsSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -228,7 +228,7 @@ private fun ElevenLabsUsageCard(state: UsageState, onRefresh: () -> Unit) {
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = onRefresh) {
+            PlainTooltipIconButton(onClick = onRefresh, tooltip = "Refresh usage") {
                 Icon(Icons.Default.Refresh, contentDescription = "Refresh usage")
             }
         }

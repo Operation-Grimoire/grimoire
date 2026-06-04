@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.updates
 
 import androidx.activity.compose.BackHandler
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -33,7 +34,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
@@ -163,14 +163,14 @@ fun LibraryUpdatesScreen(
             } else {
                 TopAppBar(
                     navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
+                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
                     title = { Text("Updates") },
                     actions = {
                         Box {
-                            IconButton(onClick = { menuExpanded = true }) {
+                            PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = "More actions") {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More actions")
                             }
                             DropdownMenu(
@@ -594,7 +594,7 @@ private fun UpdateGroupHeader(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        IconButton(onClick = onToggleCollapse) {
+        PlainTooltipIconButton(onClick = onToggleCollapse, tooltip = if (collapsed) "Expand" else "Collapse") {
             Icon(
                 imageVector = if (collapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
                 contentDescription = if (collapsed) "Expand" else "Collapse",
