@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.settings.tts
 
 import android.content.Intent
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +17,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -140,7 +140,7 @@ fun TtsVoicePickerScreen(
 private fun TopAppBarWithTitle(title: String, onNavigateBack: () -> Unit) {
     androidx.compose.material3.TopAppBar(
         navigationIcon = {
-            IconButton(onClick = onNavigateBack) {
+            PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
         },

@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.tasks
 
 import android.text.format.DateUtils
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,7 +23,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -56,14 +56,14 @@ fun TasksScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text("Tasks") },
                 actions = {
                     if (history.isNotEmpty()) {
-                        IconButton(onClick = { confirmClear = true }) {
+                        PlainTooltipIconButton(onClick = { confirmClear = true }, tooltip = "Clear log") {
                             Icon(Icons.Default.DeleteSweep, contentDescription = "Clear log")
                         }
                     }
@@ -165,7 +165,7 @@ private fun TaskRow(task: TaskUiState, onCancel: () -> Unit) {
             }
         }
         Spacer(Modifier.width(8.dp))
-        IconButton(onClick = onCancel) {
+        PlainTooltipIconButton(onClick = onCancel, tooltip = "Cancel ${task.title}") {
             Icon(Icons.Default.Close, contentDescription = "Cancel ${task.title}")
         }
     }

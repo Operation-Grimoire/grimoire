@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.webview
 
 import android.annotation.SuppressLint
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -27,7 +28,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -78,26 +78,26 @@ fun WebViewScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text(currentUrl, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 actions = {
                     if (isLoading) {
-                        IconButton(onClick = {
+                        PlainTooltipIconButton(onClick = {
                             webView?.stopLoading()
                             isLoading = false
-                        }) {
+                        }, tooltip = "Stop loading") {
                             Icon(Icons.Default.Close, contentDescription = "Stop loading")
                         }
                     } else {
-                        IconButton(onClick = { webView?.reload() }) {
+                        PlainTooltipIconButton(onClick = { webView?.reload() }, tooltip = "Refresh") {
                             Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                         }
                     }
                     Box {
-                        IconButton(onClick = { menuExpanded = true }) {
+                        PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = "More actions") {
                             Icon(Icons.Default.MoreVert, contentDescription = "More actions")
                         }
                         DropdownMenu(

@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.extensions
 
 import android.content.Intent
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,7 +48,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -195,7 +195,7 @@ fun ExtensionsScreen(
             if (searchActive) {
                 TopAppBar(
                     navigationIcon = {
-                        IconButton(onClick = exitSearch) {
+                        PlainTooltipIconButton(onClick = exitSearch, tooltip = "Close search") {
                             Icon(Icons.Default.Close, contentDescription = "Close search")
                         }
                     },
@@ -213,21 +213,21 @@ fun ExtensionsScreen(
             } else {
                 TopAppBar(
                     navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
+                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
                     title = { Text("Extensions") },
                     actions = {
-                        IconButton(onClick = { searchActive = true }) {
+                        PlainTooltipIconButton(onClick = { searchActive = true }, tooltip = "Search") {
                             Icon(Icons.Default.Search, contentDescription = "Search")
                         }
                         if (ui.updateCount > 0) {
-                            IconButton(onClick = viewModel::updateAll) {
+                            PlainTooltipIconButton(onClick = viewModel::updateAll, tooltip = "Update all") {
                                 Icon(Icons.Default.SystemUpdateAlt, contentDescription = "Update all")
                             }
                         }
-                        IconButton(onClick = { showRepos = true }) {
+                        PlainTooltipIconButton(onClick = { showRepos = true }, tooltip = "Repositories") {
                             Icon(Icons.Default.Storage, contentDescription = "Repositories")
                         }
                     },
@@ -353,7 +353,7 @@ fun ExtensionsScreen(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = { showAddRepo = true }) {
+                PlainTooltipIconButton(onClick = { showAddRepo = true }, tooltip = "Add repository") {
                     Icon(Icons.Default.Add, contentDescription = "Add repository")
                 }
             }
@@ -392,7 +392,7 @@ fun ExtensionsScreen(
                                         onCheckedChange = { viewModel.toggleRepo(repo) },
                                     )
                                     Box {
-                                        IconButton(onClick = { menuExpanded = true }) {
+                                        PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = "Options") {
                                             Icon(Icons.Default.MoreVert, contentDescription = "Options")
                                         }
                                         DropdownMenu(
@@ -679,11 +679,11 @@ private fun ExtensionRow(
                         }) { Text("Update") }
                     }
                     if (hasSettings) {
-                        IconButton(onClick = { onSettings(item.packageName) }) {
+                        PlainTooltipIconButton(onClick = { onSettings(item.packageName) }, tooltip = "Settings") {
                             Icon(Icons.Default.Settings, contentDescription = "Settings")
                         }
                     }
-                    IconButton(onClick = { onRemove(item) }) {
+                    PlainTooltipIconButton(onClick = { onRemove(item) }, tooltip = "Remove") {
                         Icon(Icons.Default.Delete, contentDescription = "Remove")
                     }
                 } else {
@@ -695,9 +695,9 @@ private fun ExtensionRow(
                         is InstallState.Error -> OutlinedButton(onClick = {
                             (item as? ExtensionItem.Available)?.let(onInstall)
                         }) { Text("Retry") }
-                        null -> IconButton(onClick = {
+                        null -> PlainTooltipIconButton(onClick = {
                             (item as? ExtensionItem.Available)?.let(onInstall)
-                        }) { Icon(Icons.Default.Download, contentDescription = "Install") }
+                        }, tooltip = "Install") { Icon(Icons.Default.Download, contentDescription = "Install") }
                     }
                 }
             }

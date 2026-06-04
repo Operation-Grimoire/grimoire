@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
@@ -60,13 +60,13 @@ fun DataSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text("Data management") },
                 actions = {
-                    IconButton(onClick = viewModel::refresh, enabled = !state.busy) {
+                    PlainTooltipIconButton(onClick = viewModel::refresh, enabled = !state.busy, tooltip = "Refresh") {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
                 },

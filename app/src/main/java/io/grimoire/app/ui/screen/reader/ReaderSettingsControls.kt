@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.IconButton
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -202,9 +202,10 @@ internal fun StepperRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            IconButton(
+            PlainTooltipIconButton(
                 onClick = onDecrement,
                 enabled = decrementEnabled,
+                tooltip = "Decrease",
                 modifier = Modifier.size(36.dp),
             ) {
                 Text(
@@ -220,9 +221,10 @@ internal fun StepperRow(
                 modifier = Modifier.width(64.dp),
                 textAlign = TextAlign.Center,
             )
-            IconButton(
+            PlainTooltipIconButton(
                 onClick = onIncrement,
                 enabled = incrementEnabled,
+                tooltip = "Increase",
                 modifier = Modifier.size(36.dp),
             ) {
                 Text(

@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.novelupdates
 
 import androidx.compose.foundation.horizontalScroll
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +19,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -64,7 +64,7 @@ fun NovelUpdatesBrowserScreen(
     Column(modifier.fillMaxSize()) {
         TopAppBar(
             navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
+                PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             },
@@ -72,10 +72,10 @@ fun NovelUpdatesBrowserScreen(
                 Text(if (mode == NuBrowseMode.RANKINGS) "Rankings" else "Latest")
             },
             actions = {
-                IconButton(onClick = { onOpenWebView(viewModel.currentPageUrl()) }) {
+                PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.currentPageUrl()) }, tooltip = "Open in WebView") {
                     Icon(Icons.Default.Language, contentDescription = "Open in WebView")
                 }
-                IconButton(onClick = { showFilters = true }) {
+                PlainTooltipIconButton(onClick = { showFilters = true }, tooltip = "Filters") {
                     Icon(Icons.Default.FilterList, contentDescription = "Filters")
                 }
             },

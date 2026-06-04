@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.downloads
 
 import androidx.activity.compose.BackHandler
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -43,7 +44,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -153,10 +153,9 @@ fun DownloadsScreen(
                         )
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
+                        PlainTooltipIconButton(
                             onClick = { viewModel.setConcurrency(concurrency - 1) },
-                            enabled = concurrency > 1,
-                        ) {
+                            enabled = concurrency > 1, tooltip = "Decrease") {
                             Icon(Icons.Default.Remove, contentDescription = "Decrease")
                         }
                         Text(
@@ -165,10 +164,9 @@ fun DownloadsScreen(
                             modifier = Modifier.width(32.dp),
                             textAlign = TextAlign.Center,
                         )
-                        IconButton(
+                        PlainTooltipIconButton(
                             onClick = { viewModel.setConcurrency(concurrency + 1) },
-                            enabled = concurrency < 5,
-                        ) {
+                            enabled = concurrency < 5, tooltip = "Increase") {
                             Icon(Icons.Default.Add, contentDescription = "Increase")
                         }
                     }
@@ -204,20 +202,20 @@ fun DownloadsScreen(
                 TopAppBar(
                     title = { Text("Downloads") },
                     navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
+                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
                     actions = {
                         if (!currentDownloads.isNullOrEmpty()) {
-                            IconButton(onClick = viewModel::togglePause) {
+                            PlainTooltipIconButton(onClick = viewModel::togglePause, tooltip = if (isPaused) "Resume" else "Pause") {
                                 Icon(
                                     if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
                                     contentDescription = if (isPaused) "Resume" else "Pause",
                                 )
                             }
                         }
-                        IconButton(onClick = { showSettings = true }) {
+                        PlainTooltipIconButton(onClick = { showSettings = true }, tooltip = "Settings") {
                             Icon(Icons.Default.Settings, contentDescription = "Settings")
                         }
                     },
@@ -513,7 +511,7 @@ private fun NovelDownloadHeader(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        IconButton(onClick = onToggleCollapse) {
+        PlainTooltipIconButton(onClick = onToggleCollapse, tooltip = if (collapsed) "Expand" else "Collapse") {
             Icon(
                 if (collapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
                 contentDescription = if (collapsed) "Expand" else "Collapse",
@@ -584,17 +582,17 @@ private fun ChapterDownloadItem(
             {
                 when (status) {
                     ChapterDownloadStatus.QUEUED,
-                    ChapterDownloadStatus.REDOWNLOAD_QUEUED -> IconButton(onClick = onCancel) {
+                    ChapterDownloadStatus.REDOWNLOAD_QUEUED -> PlainTooltipIconButton(onClick = onCancel, tooltip = "Cancel") {
                         Icon(Icons.Default.Close, contentDescription = "Cancel")
                     }
                     ChapterDownloadStatus.ERROR,
-                    ChapterDownloadStatus.REDOWNLOAD_ERROR -> IconButton(onClick = onRetry) {
+                    ChapterDownloadStatus.REDOWNLOAD_ERROR -> PlainTooltipIconButton(onClick = onRetry, tooltip = "Retry") {
                         Icon(Icons.Default.Refresh, contentDescription = "Retry")
                     }
                     ChapterDownloadStatus.DOWNLOADED -> {
                         var menuExpanded by remember { mutableStateOf(false) }
                         Box {
-                            IconButton(onClick = { menuExpanded = true }) {
+                            PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = "Download options") {
                                 Icon(Icons.Default.MoreVert, contentDescription = "Download options")
                             }
                             DropdownMenu(

@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.novelupdates
 
 import android.content.Intent
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -32,7 +33,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -100,7 +100,7 @@ fun NovelUpdatesSeriesScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -108,14 +108,14 @@ fun NovelUpdatesSeriesScreen(
                 actions = {
                     val s = state
                     if (s is NuSeriesState.Loaded) {
-                        IconButton(onClick = viewModel::toggleBookmark) {
+                        PlainTooltipIconButton(onClick = viewModel::toggleBookmark, tooltip = if (isBookmarked) "Remove from saved" else "Save") {
                             Icon(
                                 if (isBookmarked) Icons.Filled.Inventory2
                                 else Icons.Outlined.Inventory2,
                                 contentDescription = if (isBookmarked) "Remove from saved" else "Save",
                             )
                         }
-                        IconButton(onClick = { onOpenWebView(s.series.url) }) {
+                        PlainTooltipIconButton(onClick = { onOpenWebView(s.series.url) }, tooltip = "Open in WebView") {
                             Icon(
                                 Icons.Default.Language,
                                 contentDescription = "Open in WebView",
