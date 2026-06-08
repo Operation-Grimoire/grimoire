@@ -102,17 +102,12 @@ class LibraryUpdateWorker @AssistedInject constructor(
             return Result.success()
         } finally {
             // The progress notification is this worker's foreground notification.
-            // Clear it on every exit (success, retry, or a thrown cancellation) so a
-            // finished or interrupted run never leaves a stuck "Updating library"
-            // notification behind — it is setOngoing, so the user can't swipe it away.
+            // Clear it on every exit so a finished or interrupted run never leaves a
+            // stuck "Updating library" notification behind — it is setOngoing, so the
+            // user can't swipe it away. A WorkManager stop cancels this coroutine,
+            // which surfaces here as a CancellationException and still runs this block.
             NotificationManagerCompat.from(applicationContext).cancel(PROGRESS_NOTIF_ID)
         }
-    }
-
-    override fun onStopped() {
-        // Worker cancelled mid-run (user "stop", constraint loss, or system stop):
-        // the foreground notification would otherwise outlive the run.
-        NotificationManagerCompat.from(applicationContext).cancel(PROGRESS_NOTIF_ID)
     }
 
     /** Appends one library-sync row to the Tasks history log. */
