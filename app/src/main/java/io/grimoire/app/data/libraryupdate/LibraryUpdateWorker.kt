@@ -58,47 +58,56 @@ class LibraryUpdateWorker @AssistedInject constructor(
 
         runCatching { setForeground(getForegroundInfo()) }
 
-        val summary = runCatching {
-            libraryUpdater.updateLibrary(
-                categoryId,
-                onProgress = { done, total, title ->
-                    setProgress(
-                        workDataOf(KEY_DONE to done, KEY_TOTAL to total, KEY_TITLE to title),
-                    )
-                    updateProgress(done, total, title)
-                },
-                onNovelComplete = { novel, newReadable, newLocked ->
-                    maybeNotifyNovel(novel, newReadable, newLocked)
-                },
-            )
-        }.getOrElse { e ->
-            val message = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
-            preferences.lastRunAt.set(System.currentTimeMillis().toString())
-            preferences.lastRunSuccess.set(false)
-            preferences.lastRunMessage.set(message)
-            recordHistory(success = false, summary = "Library sync failed · $message")
-            return Result.retry()
-        }
+        try {
+            val summary = runCatching {
+                libraryUpdater.updateLibrary(
+                    categoryId,
+                    onProgress = { done, total, title ->
+                        setProgress(
+                            workDataOf(KEY_DONE to done, KEY_TOTAL to total, KEY_TITLE to title),
+                        )
+                        updateProgress(done, total, title)
+                    },
+                    onNovelComplete = { novel, newReadable, newLocked ->
+                        maybeNotifyNovel(novel, newReadable, newLocked)
+                    },
+                )
+            }.getOrElse { e ->
+                val message = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
+                preferences.lastRunAt.set(System.currentTimeMillis().toString())
+                preferences.lastRunSuccess.set(false)
+                preferences.lastRunMessage.set(message)
+                recordHistory(success = false, summary = "Library sync failed · $message")
+                return Result.retry()
+            }
 
-        // Per-novel auto-download queues chapters via DownloadManager.enqueue, but
-        // the startForegroundService() call there is a no-op for background callers
-        // on Android 12+. Drain the queue inline from this foreground worker so the
-        // chapters actually download in the same run. processQueue is a no-op when
-        // nothing was enqueued (no subscribed novel had new chapters).
-        if (summary.newChapters > 0) {
-            runCatching {
-                downloadManager.processQueue { chapterName, remaining ->
-                    updateForegroundText(downloadingText(chapterName, remaining))
+            // Per-novel auto-download queues chapters via DownloadManager.enqueue, but
+            // the startForegroundService() call there is a no-op for background callers
+            // on Android 12+. Drain the queue inline from this foreground worker so the
+            // chapters actually download in the same run. processQueue is a no-op when
+            // nothing was enqueued (no subscribed novel had new chapters).
+            if (summary.newChapters > 0) {
+                runCatching {
+                    downloadManager.processQueue { chapterName, remaining ->
+                        updateForegroundText(downloadingText(chapterName, remaining))
+                    }
                 }
             }
-        }
 
-        val line = summaryLine(summary)
-        preferences.lastRunAt.set(System.currentTimeMillis().toString())
-        preferences.lastRunSuccess.set(true)
-        preferences.lastRunMessage.set(line)
-        recordHistory(success = true, summary = line)
-        return Result.success()
+            val line = summaryLine(summary)
+            preferences.lastRunAt.set(System.currentTimeMillis().toString())
+            preferences.lastRunSuccess.set(true)
+            preferences.lastRunMessage.set(line)
+            recordHistory(success = true, summary = line)
+            return Result.success()
+        } finally {
+            // The progress notification is this worker's foreground notification.
+            // Clear it on every exit so a finished or interrupted run never leaves a
+            // stuck "Updating library" notification behind — it is setOngoing, so the
+            // user can't swipe it away. A WorkManager stop cancels this coroutine,
+            // which surfaces here as a CancellationException and still runs this block.
+            NotificationManagerCompat.from(applicationContext).cancel(PROGRESS_NOTIF_ID)
+        }
     }
 
     /** Appends one library-sync row to the Tasks history log. */
@@ -154,14 +163,16 @@ class LibraryUpdateWorker @AssistedInject constructor(
             ForegroundInfo(PROGRESS_NOTIF_ID, notification)
         }
 
-    /** Updates the ongoing foreground notification by re-posting it under the same id. */
-    private fun updateProgress(done: Int, total: Int, title: String) {
+    /**
+     * Updates the ongoing foreground notification via [setForeground] (not a bare
+     * NotificationManager.notify) so the notification stays owned by WorkManager and
+     * the foreground service — that ownership is what lets WorkManager remove it when
+     * the run ends and lets the OS clear it if the process is killed mid-run.
+     */
+    private suspend fun updateProgress(done: Int, total: Int, title: String) {
         if (total <= 0 || done >= total) return
         val text = if (title.isBlank()) "${done + 1}/$total" else "${done + 1}/$total · $title"
-        NotificationManagerCompat.from(applicationContext).notify(
-            PROGRESS_NOTIF_ID,
-            buildProgressNotification(text, total, done),
-        )
+        runCatching { setForeground(foregroundInfo(buildProgressNotification(text, total, done))) }
     }
 
     private fun buildProgressNotification(
@@ -180,12 +191,20 @@ class LibraryUpdateWorker @AssistedInject constructor(
             .setSilent(true)
             .build()
 
-    /** Re-posts the ongoing notification with the download-phase title. */
+    /**
+     * Re-posts the ongoing notification with the download-phase title. Called from
+     * the non-suspend [DownloadManager.processQueue] callback, so it uses the
+     * fire-and-forget [setForegroundAsync] to keep the notification owned by the
+     * foreground service (see [updateProgress]).
+     */
     private fun updateForegroundText(text: String) {
-        NotificationManagerCompat.from(applicationContext).notify(
-            PROGRESS_NOTIF_ID,
-            buildProgressNotification(text, total = 0, done = 0, title = "Downloading new chapters"),
-        )
+        runCatching {
+            setForegroundAsync(
+                foregroundInfo(
+                    buildProgressNotification(text, total = 0, done = 0, title = "Downloading new chapters"),
+                ),
+            )
+        }
     }
 
     private suspend fun maybeNotifyNovel(novel: NovelEntity, newReadable: Int, newLocked: Int) {
