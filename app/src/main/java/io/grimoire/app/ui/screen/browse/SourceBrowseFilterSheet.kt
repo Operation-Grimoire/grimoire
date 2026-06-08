@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -87,26 +89,34 @@ internal fun FilterSheet(
         }
         HorizontalDivider()
 
-        FilterLoadHeader(loadState, onLoad)
+        // Header above stays pinned; the filter list scrolls so long filter sets
+        // (e.g. Royal Road's tags + advanced fields) stay reachable inside the sheet.
+        Column(
+            Modifier
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            FilterLoadHeader(loadState, onLoad)
 
-        if (loadState !is FilterLoadState.NeedsLoad && loadState !is FilterLoadState.Loading) {
-            if (showSearchField) {
-                OutlinedTextField(
-                    value = sheetQuery,
-                    onValueChange = { sheetQuery = it },
-                    label = { Text("Search") },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            }
-            filters.forEachIndexed { i, filter ->
-                FilterItem(
-                    filter = filter,
-                    state = edited[i],
-                    onStateChange = { edited[i] = it },
-                )
+            if (loadState !is FilterLoadState.NeedsLoad && loadState !is FilterLoadState.Loading) {
+                if (showSearchField) {
+                    OutlinedTextField(
+                        value = sheetQuery,
+                        onValueChange = { sheetQuery = it },
+                        label = { Text("Search") },
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+                filters.forEachIndexed { i, filter ->
+                    FilterItem(
+                        filter = filter,
+                        state = edited[i],
+                        onStateChange = { edited[i] = it },
+                    )
+                }
             }
         }
     }
