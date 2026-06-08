@@ -16,17 +16,11 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Switch
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,6 +31,8 @@ import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.tts.TtsEngineType
+import io.grimoire.app.ui.component.SwipeTabRow
+import io.grimoire.app.ui.component.SwipeTabStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,21 +84,13 @@ internal fun ReaderSettingsSheet(
         sheetState = sheetState,
         scrimColor = Color.Transparent,
     ) {
-        var selectedTab by remember { mutableStateOf(0) }
-        PrimaryTabRow(selectedTabIndex = selectedTab) {
-            Tab(
-                selected = selectedTab == 0,
-                onClick = { selectedTab = 0 },
-                text = { Text("Display") },
-            )
-            Tab(
-                selected = selectedTab == 1,
-                onClick = { selectedTab = 1 },
-                text = { Text("Read aloud") },
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        if (selectedTab == 0) {
+        SwipeTabRow(
+            tabs = listOf("Display", "Read aloud"),
+            style = SwipeTabStyle.Primary,
+            // Inside a sheet: wrap the page height instead of filling the screen.
+            fillHeight = false,
+        ) { page ->
+        if (page == 0) {
             ReaderDisplaySettings(
                 colors = colors,
                 textStyle = textStyle,
@@ -147,6 +135,7 @@ internal fun ReaderSettingsSheet(
                 onAutoAdvance = onTtsAutoAdvance,
                 onOpenFullSettings = onOpenTtsSettings,
             )
+        }
         }
     }
 }

@@ -18,19 +18,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Switch
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
+import io.grimoire.app.ui.component.SwipeTabRow
+import io.grimoire.app.ui.component.SwipeTabStyle
 
 internal val STATUS_OPTIONS = listOf(
     1 to "Ongoing",
@@ -68,36 +64,38 @@ internal fun FilterSortContent(
     onAutoDownloadEnabledChange: (Boolean) -> Unit,
     onToggleFilterSource: (Long?) -> Unit,
 ) {
-    var tab by remember { mutableIntStateOf(0) }
-    Column {
-        SecondaryTabRow(selectedTabIndex = tab) {
-            Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Filter") })
-            Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Sort") })
+    SwipeTabRow(
+        tabs = listOf("Filter", "Sort"),
+        style = SwipeTabStyle.Secondary,
+        // Inside a sheet: wrap the page height instead of filling the screen.
+        fillHeight = false,
+    ) { page ->
+        Column {
+            when (page) {
+                0 -> FilterTab(
+                    filterStatuses = filterStatuses,
+                    filterUnreadOnly = filterUnreadOnly,
+                    filterDownloadedOnly = filterDownloadedOnly,
+                    filterNotifyEnabled = filterNotifyEnabled,
+                    filterAutoDownloadEnabled = filterAutoDownloadEnabled,
+                    filterSourceIds = filterSourceIds,
+                    librarySources = librarySources,
+                    onToggleFilterStatus = onToggleFilterStatus,
+                    onUnreadOnlyChange = onUnreadOnlyChange,
+                    onDownloadedOnlyChange = onDownloadedOnlyChange,
+                    onNotifyEnabledChange = onNotifyEnabledChange,
+                    onAutoDownloadEnabledChange = onAutoDownloadEnabledChange,
+                    onToggleFilterSource = onToggleFilterSource,
+                )
+                1 -> SortTab(
+                    sortField = sortField,
+                    sortDirection = sortDirection,
+                    onSortFieldChange = onSortFieldChange,
+                    onToggleSortDirection = onToggleSortDirection,
+                )
+            }
+            Spacer(Modifier.height(32.dp))
         }
-        when (tab) {
-            0 -> FilterTab(
-                filterStatuses = filterStatuses,
-                filterUnreadOnly = filterUnreadOnly,
-                filterDownloadedOnly = filterDownloadedOnly,
-                filterNotifyEnabled = filterNotifyEnabled,
-                filterAutoDownloadEnabled = filterAutoDownloadEnabled,
-                filterSourceIds = filterSourceIds,
-                librarySources = librarySources,
-                onToggleFilterStatus = onToggleFilterStatus,
-                onUnreadOnlyChange = onUnreadOnlyChange,
-                onDownloadedOnlyChange = onDownloadedOnlyChange,
-                onNotifyEnabledChange = onNotifyEnabledChange,
-                onAutoDownloadEnabledChange = onAutoDownloadEnabledChange,
-                onToggleFilterSource = onToggleFilterSource,
-            )
-            1 -> SortTab(
-                sortField = sortField,
-                sortDirection = sortDirection,
-                onSortFieldChange = onSortFieldChange,
-                onToggleSortDirection = onToggleSortDirection,
-            )
-        }
-        Spacer(Modifier.height(32.dp))
     }
 }
 
