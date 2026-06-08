@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -70,7 +72,9 @@ internal fun FilterSortContent(
         // Inside a sheet: wrap the page height instead of filling the screen.
         fillHeight = false,
     ) { page ->
-        Column {
+        // Each page scrolls on its own so a long status/source list (or the
+        // sort list on a short screen) is always reachable inside the sheet.
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             when (page) {
                 0 -> FilterTab(
                     filterStatuses = filterStatuses,
