@@ -27,7 +27,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
@@ -56,11 +55,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -90,6 +87,8 @@ import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.MoveToCategorySheet
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
+import io.grimoire.app.ui.component.SwipeTabRow
+import io.grimoire.app.ui.component.SwipeTabStyle
 import io.grimoire.app.ui.component.TooltipIconButton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -418,32 +417,19 @@ fun LibraryScreen(
             }
         },
     ) { padding ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(padding),
-        ) {
-            if (tabs.size > 1) {
-                PrimaryScrollableTabRow(selectedTabIndex = currentTab) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = currentTab == index,
-                            onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                            text = { Text(title) },
-                        )
-                    }
-                }
-            }
-
             val onNovelClickWrapped: (NovelEntity) -> Unit = { novel ->
                 val pkg = viewModel.pkgForNovel(novel)
                 if (pkg.isNotEmpty()) onNovelClick(pkg, novel.url)
                 else scope.launch { snackbarHostState.showSnackbar("Extension not installed") }
             }
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize(),
+            SwipeTabRow(
+                tabs = tabs,
+                modifier = Modifier.padding(padding),
+                pagerState = pagerState,
+                style = SwipeTabStyle.PrimaryScrollable,
+                // A lone "All" category shows no tab strip, just its page.
+                hideTabRowForSingleTab = true,
             ) { page ->
                 val pageNovels = displayedTabs.getOrNull(page)?.novels
 
@@ -559,7 +545,6 @@ fun LibraryScreen(
                 }
             }
         }
-    }
 
     if (showFilterSheet) {
         ModalBottomSheet(

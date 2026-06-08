@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -35,18 +36,16 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +62,8 @@ import io.grimoire.app.ui.component.ChapterItem
 import io.grimoire.app.ui.component.ChapterStatusTrailing
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
+import io.grimoire.app.ui.component.SwipeTabRow
+import io.grimoire.app.ui.component.SwipeTabStyle
 import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.theme.premiumGold
 import java.text.DateFormat
@@ -114,15 +115,25 @@ fun LibraryUpdatesScreen(
     // groupings the way stacked sections did. With nothing subscribed there is
     // only one timeline and no tab row.
     val hasSubscribed = subscribedNovelIds.isNotEmpty()
-    // 0 = Subscribed, 1 = All.
-    var selectedTab by rememberSaveable { mutableStateOf(SUBSCRIBED_TAB) }
     val allDays = remember(entries) { bucketDays(entries) }
     val subscribedDays = remember(entries, subscribedNovelIds) {
         bucketDays(entries.filter { it.novelId in subscribedNovelIds })
     }
-    val days = if (hasSubscribed && selectedTab == SUBSCRIBED_TAB) subscribedDays else allDays
-    val visibleEntryIds = remember(days) {
-        days.flatMap { (_, groups) -> groups.flatMap { g -> g.entries.map { it.id } } }.toSet()
+    // 0 = Subscribed, 1 = All. With nothing subscribed there is a single page
+    // (and no tab row); the pager drives both tab selection and swipe.
+    val pagerState = rememberPagerState(pageCount = { if (hasSubscribed) 2 else 1 })
+    val currentPage = pagerState.currentPage.coerceIn(0, if (hasSubscribed) ALL_TAB else 0)
+    fun daysForPage(page: Int) =
+        if (hasSubscribed && page == SUBSCRIBED_TAB) subscribedDays else allDays
+    // If the user un-subscribes everything while the "All" page is showing, the
+    // page count drops to 1 — settle back onto the only remaining page.
+    LaunchedEffect(hasSubscribed) {
+        if (!hasSubscribed && pagerState.currentPage != 0) pagerState.scrollToPage(0)
+    }
+    val visibleEntryIds = remember(currentPage, subscribedDays, allDays) {
+        daysForPage(currentPage)
+            .flatMap { (_, groups) -> groups.flatMap { g -> g.entries.map { it.id } } }
+            .toSet()
     }
 
     var selectedEntryIds by remember { mutableStateOf(emptySet<Long>()) }
@@ -294,21 +305,14 @@ fun LibraryUpdatesScreen(
                 )
             }
         } else {
-            Column(modifier = Modifier.padding(padding)) {
-                if (hasSubscribed) {
-                    PrimaryTabRow(selectedTabIndex = selectedTab) {
-                        Tab(
-                            selected = selectedTab == SUBSCRIBED_TAB,
-                            onClick = { selectedTab = SUBSCRIBED_TAB },
-                            text = { Text("Subscribed") },
-                        )
-                        Tab(
-                            selected = selectedTab == ALL_TAB,
-                            onClick = { selectedTab = ALL_TAB },
-                            text = { Text("All") },
-                        )
-                    }
-                }
+            SwipeTabRow(
+                tabs = if (hasSubscribed) listOf("Subscribed", "All") else listOf("Updates"),
+                modifier = Modifier.padding(padding),
+                pagerState = pagerState,
+                style = SwipeTabStyle.Primary,
+                hideTabRowForSingleTab = true,
+            ) { page ->
+                val days = daysForPage(page)
                 if (days.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),

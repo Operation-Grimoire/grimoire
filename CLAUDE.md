@@ -51,6 +51,7 @@ util/                  ContentLanguages, LanguageLabels
 - **Filter / sort / search projections belong in the ViewModel.** Use a pure top-level function (`computeTabNovels` in `screen/library/LibraryFilter.kt`, `projectChapters` in `screen/browse/ChapterProjection.kt`) and back it with a derived `StateFlow` via `combine(...).flowOn(Dispatchers.Default).stateIn(...)`. Don't recompute the projection in the screen body on every recomposition.
 - **Search input is debounced 120 ms at the VM** (`MutableStateFlow<String>.debounce(120L)`) so each keystroke doesn't refire the projection.
 - **Pager pages read precomputed tabs** by index. Never run the per-page filter inside `HorizontalPager`'s page lambda — that triples the work on adjacent-page preload.
+- **Tabs are always swipeable.** Any tabbed surface (screens *and* bottom sheets) uses `ui/component/SwipeTabRow.kt` — a `TabRow` + `HorizontalPager` so tabs change on swipe as well as tap. Don't hand-roll a `TabRow` whose content switches via `when`/`if`; reach for `SwipeTabRow` with the matching `SwipeTabStyle` (`Primary` / `PrimaryScrollable` / `Secondary`) and pass `fillHeight = false` inside a sheet. Pass your own `PagerState` when the selection must persist/restore (the library remembers its category).
 - **Hidden categories / locked chapters**: the *locked* visibility state hides hidden-category novels from the All tab regardless of `includeHiddenInAll`; the *unlocked* state honours the pref. Tests in `LibraryFilterTest` cover both.
 - **EPUB intent**: the `pendingEpubUri: StateFlow<Uri?>` is plumbed through `AppNavigation` → `libraryDestination` → `LibraryScreen` so the import-preview dialog renders inside the Library tab.
 
@@ -113,6 +114,7 @@ CI lives in `.github/workflows/release.yml` and builds signed release APKs from 
 
 | Looking for | File |
 |-------------|------|
+| Swipeable tabs (any screen/sheet) | `ui/component/SwipeTabRow.kt` |
 | Top-level navigation | `ui/AppNavigation.kt`, `ui/AppNavGraphs.kt`, `ui/AppRoutes.kt` |
 | Library projection (pure) | `ui/screen/library/LibraryFilter.kt` + `LibraryFilterTest` |
 | Chapter projection (pure) | `ui/screen/browse/ChapterProjection.kt` + `ChapterProjectionTest` |
