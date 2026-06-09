@@ -9,7 +9,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NewReleases
-import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.PendingActions
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WarningAmber
@@ -84,15 +84,15 @@ fun MoreScreen(
                     },
                     leadingContent = {
                         when {
-                            // Subscribed updates fired a notification, so use the
-                            // active-bell icon and badge the count.
+                            // Subscribed updates are the ones the user cares about,
+                            // so they keep the prominent NewReleases icon plus a badge.
                             hasUpdates && subscribed > 0 -> BadgedBox(
                                 badge = { Badge { Text("$subscribed") } },
                             ) {
-                                Icon(Icons.Default.NotificationsActive, contentDescription = null)
+                                Icon(Icons.Default.NewReleases, contentDescription = null)
                             }
                             // New chapters exist, but none from a subscribed novel.
-                            hasUpdates -> Icon(Icons.Default.NewReleases, contentDescription = null)
+                            hasUpdates -> Icon(Icons.Default.NotificationsNone, contentDescription = null)
                             else -> Icon(
                                 Icons.Default.Inbox,
                                 contentDescription = null,
