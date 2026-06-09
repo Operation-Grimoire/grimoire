@@ -12,6 +12,8 @@ import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.PendingActions
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -40,6 +42,7 @@ fun MoreScreen(
 ) {
     val activeCount by viewModel.activeDownloadCount.collectAsState()
     val updateCount by viewModel.updateCount.collectAsState()
+    val subscribedUpdateCount by viewModel.subscribedUpdateCount.collectAsState()
     val issueCount by viewModel.updateIssueCount.collectAsState()
 
     Scaffold(
@@ -59,22 +62,34 @@ fun MoreScreen(
             }
             item {
                 val hasUpdates = updateCount > 0
+                // The subscribed count is the subset that actually fired a
+                // notification, so we surface it apart from the full total: a
+                // badge on the icon plus a breakdown in the supporting line.
+                val subscribed = subscribedUpdateCount.coerceAtMost(updateCount)
                 ListItem(
                     headlineContent = { Text("Updates") },
                     supportingContent = {
                         Text(
-                            if (hasUpdates) {
-                                "$updateCount new chapter${if (updateCount == 1) "" else "s"}"
-                            } else {
-                                "No new chapters"
+                            when {
+                                !hasUpdates -> "No new chapters"
+                                subscribed == 0 ->
+                                    "$updateCount new chapter${if (updateCount == 1) "" else "s"}"
+                                subscribed == updateCount ->
+                                    "$updateCount new, all from subscribed"
+                                else ->
+                                    "$updateCount new · $subscribed from subscribed"
                             }
                         )
                     },
                     leadingContent = {
-                        if (hasUpdates) {
-                            Icon(Icons.Default.NewReleases, contentDescription = null)
-                        } else {
-                            Icon(
+                        when {
+                            hasUpdates && subscribed > 0 -> BadgedBox(
+                                badge = { Badge { Text("$subscribed") } },
+                            ) {
+                                Icon(Icons.Default.NewReleases, contentDescription = null)
+                            }
+                            hasUpdates -> Icon(Icons.Default.NewReleases, contentDescription = null)
+                            else -> Icon(
                                 Icons.Default.Inbox,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
