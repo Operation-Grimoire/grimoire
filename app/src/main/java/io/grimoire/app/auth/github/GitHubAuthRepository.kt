@@ -47,7 +47,16 @@ class GitHubAuthRepository @Inject constructor(
                 account != null -> GitHubAuthState.Connected(account.login)
                 else -> GitHubAuthState.Disconnected
             }
-        }.stateIn(scope, kotlinx.coroutines.flow.SharingStarted.Eagerly, GitHubAuthState.Disconnected)
+        }.stateIn(
+            scope,
+            kotlinx.coroutines.flow.SharingStarted.Eagerly,
+            // Seed from the store (loaded synchronously at construction) so a screen
+            // composed before the combine's first emission doesn't flash
+            // "Disconnected" at a connected user.
+            store.account.value
+                ?.let { GitHubAuthState.Connected(it.login) }
+                ?: GitHubAuthState.Disconnected,
+        )
 
     fun isClientConfigured(): Boolean = BuildConfig.GITHUB_OAUTH_CLIENT_ID.isNotBlank()
 

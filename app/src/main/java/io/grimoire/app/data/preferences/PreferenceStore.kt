@@ -13,8 +13,13 @@ interface Preference<T> {
     suspend fun set(value: T)
 }
 
-// Eagerly: preferences pre-warm as soon as the ViewModel is created, so subpages
-// don't render the default value for a frame before the persisted value arrives.
+// Eagerly: collection starts as soon as the ViewModel is created, which narrows —
+// but does NOT close — the window where readers see defaultValue(). The persisted
+// value still arrives asynchronously from disk, so a screen composed in the same
+// frame the ViewModel is created can render the default first. Only screens whose
+// ViewModel predates them (e.g. settings subpages sharing SettingsViewModel) are
+// guaranteed warm values. Anything that must not act on a default needs an
+// explicit loading sentinel (see LibraryViewModel.persistedCategoryId).
 fun <T> Preference<T>.stateIn(
     scope: CoroutineScope,
     started: SharingStarted = SharingStarted.Eagerly,

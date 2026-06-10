@@ -23,6 +23,8 @@ import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.di.GitHubAuthorized
 import io.grimoire.app.extension.repo.ExtensionRepository
 import io.grimoire.api.network.NetworkContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import javax.inject.Inject
@@ -39,6 +41,8 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject lateinit var extensionRepository: ExtensionRepository
     @Inject lateinit var transientNovelPruner: TransientNovelPruner
     @Inject @GitHubAuthorized lateinit var imageHttpClient: OkHttpClient
+
+    private var relockJob: Job? = null
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -103,8 +107,23 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) {
+                relockJob?.cancel()
+                relockJob = null
+            }
+
             override fun onStop(owner: LifecycleOwner) {
-                hiddenAuthManager.lock()
+                // Relock after a grace window instead of immediately: onStop also fires
+                // for app-driven excursions (the SAF picker the EPUB import opens, share
+                // sheets, the in-app browser), and an instant lock would relock hidden
+                // categories in the middle of the user's own flow. A real exit longer
+                // than the window still locks. In-memory only on purpose — process death
+                // always restarts locked.
+                relockJob?.cancel()
+                relockJob = ProcessLifecycleOwner.get().lifecycleScope.launch {
+                    delay(RELOCK_GRACE_MS)
+                    hiddenAuthManager.lock()
+                }
                 // Drop stale browse rows that aged past the grace window this session.
                 ProcessLifecycleOwner.get().lifecycleScope.launch {
                     runCatching { transientNovelPruner.prune() }
@@ -152,6 +171,8 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     }
 
     companion object {
+        private const val RELOCK_GRACE_MS = 30_000L
+
         const val DOWNLOAD_CHANNEL_ID = "downloads"
         const val BACKUP_CHANNEL_ID = "backups"
         const val APP_UPDATE_CHANNEL_ID = "app_updates"

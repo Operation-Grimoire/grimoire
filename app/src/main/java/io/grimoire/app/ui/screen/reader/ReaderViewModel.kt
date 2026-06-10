@@ -45,7 +45,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
     private val novelDao: NovelDao,
@@ -57,6 +57,10 @@ class ReaderViewModel @Inject constructor(
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
+
+    // Written back on every chapter change (navigatePrev/Next, TTS auto-advance), so
+    // a process-death restore reopens the chapter the user is actually on rather than
+    // the one they entered the reader with.
     private val initialChapterUrl: String = checkNotNull(savedStateHandle["chapterUrl"])
 
     private val source get() = extensionManager.extensions.value
@@ -239,43 +243,63 @@ class ReaderViewModel @Inject constructor(
                 val index = _chapters.value.indexOfFirst { it.url == url }
                 if (index >= 0 && index != _currentIndex.value) {
                     _currentIndex.value = index
-                    _chapterChanged.tryEmit(url)
+                    onChapterChanged(url)
                     loadPages()
                 }
             }
         }
     }
 
+    /** Records a chapter switch: persists it for process-death restore and resets scroll. */
+    private fun onChapterChanged(url: String) {
+        savedStateHandle["chapterUrl"] = url
+        _chapterChanged.tryEmit(url)
+    }
+
     fun loadPages() {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
-        val cached = chapter.downloadedContent
-        if (cached != null) {
-            val pages = decodeChapterContent(cached)
-                .filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
-                .map { page ->
-                    if (page.imageUrl == null) return@map page
-                    val local = chapterImageStore.localImageUri(chapter.novelId, chapter.url, page.index)
-                    if (local != null) page.copy(imageUrl = local) else page
-                }
-            _pages.value = pages
-            _isLoading.value = false
-            _error.value = null
-            recordWordCount(chapter, pages)
-            return
-        }
-        val src = source ?: run {
-            _error.value = "Source not available"
-            _isLoading.value = false
-            return
-        }
         viewModelScope.launch {
+            // The in-memory chapter list is a snapshot from init; re-read this row so a
+            // download that completed since then is served from disk, not refetched.
+            val fresh = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
+            if (fresh.id == chapter.id && fresh.downloadedContent != chapter.downloadedContent) {
+                _chapters.update { list ->
+                    list.map {
+                        if (it.id == fresh.id) it.copy(downloadedContent = fresh.downloadedContent) else it
+                    }
+                }
+            }
+            val cached = fresh.downloadedContent
+            if (cached != null) {
+                val pages = decodeChapterContent(cached)
+                    .filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
+                    .map { page ->
+                        if (page.imageUrl == null) return@map page
+                        val local = chapterImageStore.localImageUri(fresh.novelId, fresh.url, page.index)
+                        if (local != null) page.copy(imageUrl = local) else page
+                    }
+                _pages.value = pages
+                _isLoading.value = false
+                _error.value = null
+                recordWordCount(fresh, pages)
+                return@launch
+            }
             _isLoading.value = true
             _error.value = null
             _pages.value = emptyList()
-            runCatching { src.getPageList(chapter.toChapter()) }
+            // Don't resolve the source from a possibly-still-empty extensions snapshot:
+            // a cold start straight into the reader races the package scan and used to
+            // surface "Source not available" for an installed extension.
+            extensionManager.awaitReady()
+            val src = source ?: run {
+                _error.value = "Source not available"
+                _isLoading.value = false
+                return@launch
+            }
+            runCatching { src.getPageList(fresh.toChapter()) }
                 .onSuccess {
                     _pages.value = it
-                    recordWordCount(chapter, it)
+                    recordWordCount(fresh, it)
                 }
                 .onFailure { _error.value = "${it::class.simpleName}: ${it.message ?: "(no message)"}" }
             _isLoading.value = false
@@ -294,7 +318,7 @@ class ReaderViewModel @Inject constructor(
     fun navigatePrev() {
         if (_currentIndex.value > 0) {
             _currentIndex.value--
-            _chapters.value.getOrNull(_currentIndex.value)?.url?.let { _chapterChanged.tryEmit(it) }
+            _chapters.value.getOrNull(_currentIndex.value)?.url?.let { onChapterChanged(it) }
             loadPages()
         }
     }
@@ -309,7 +333,7 @@ class ReaderViewModel @Inject constructor(
                 }
             }
             _currentIndex.value++
-            _chapters.value.getOrNull(_currentIndex.value)?.url?.let { _chapterChanged.tryEmit(it) }
+            _chapters.value.getOrNull(_currentIndex.value)?.url?.let { onChapterChanged(it) }
             loadPages()
         }
     }

@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.library
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,8 +38,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val KEY_SEARCH_QUERY = "library_search_query"
+
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     private val novelDao: NovelDao,
     private val categoryDao: CategoryDao,
     private val chapterDao: ChapterDao,
@@ -143,8 +147,14 @@ class LibraryViewModel @Inject constructor(
     val novels: StateFlow<List<NovelEntity>?> = novelDao.getFavorites()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val chapterStats: StateFlow<Map<Long, NovelChapterStats>> = chapterDao.getStatsForAll()
+    // null until the first database emission — the tab projection holds in its loading
+    // state until stats are real, so unread/downloaded badges don't pop in a frame late.
+    private val chapterStatsOrNull: StateFlow<Map<Long, NovelChapterStats>?> = chapterDao.getStatsForAll()
         .map { list -> list.associateBy { it.novelId } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val chapterStats: StateFlow<Map<Long, NovelChapterStats>> = chapterStatsOrNull
+        .map { it.orEmpty() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     val displayMode: StateFlow<LibraryDisplayMode> = libraryPreferences.displayMode.stateIn(viewModelScope)
@@ -190,11 +200,11 @@ class LibraryViewModel @Inject constructor(
     val persistedCategoryId: StateFlow<Long?> = libraryPreferences.selectedCategoryId.changes()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    // Backed by SavedStateHandle so the in-progress search survives process death.
+    val searchQuery: StateFlow<String> = savedStateHandle.getStateFlow(KEY_SEARCH_QUERY, "")
 
     fun setSearchQuery(value: String) {
-        _searchQuery.value = value
+        savedStateHandle[KEY_SEARCH_QUERY] = value
     }
 
     /**
@@ -214,7 +224,7 @@ class LibraryViewModel @Inject constructor(
         listOf<kotlinx.coroutines.flow.Flow<Any?>>(
             novels,
             categories,
-            chapterStats,
+            chapterStatsOrNull,
             showAllTab,
             sortField,
             sortDirection,
@@ -226,7 +236,7 @@ class LibraryViewModel @Inject constructor(
             hiddenCategoryIds,
             includeHiddenInAll,
             includeLockedInTotals,
-            _searchQuery.debounce(120L),
+            searchQuery.debounce(120L),
             // Appended after searchQuery so the existing positional indices below
             // stay put; read at [15]/[16].
             filterNotifyEnabled,
@@ -234,10 +244,14 @@ class LibraryViewModel @Inject constructor(
         ),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
+        val stats = values[2] as Map<Long, NovelChapterStats>?
+        @Suppress("UNCHECKED_CAST")
         LibraryFilterInputs(
-            novels = values[0] as List<NovelEntity>?,
+            // Stats still loading reads as "novels still loading": both must be real
+            // before the tabs render, or badge-dependent filters/badges flicker.
+            novels = if (stats == null) null else values[0] as List<NovelEntity>?,
             categories = values[1] as List<CategoryEntity>,
-            chapterStats = values[2] as Map<Long, NovelChapterStats>,
+            chapterStats = stats.orEmpty(),
             showAllTab = values[3] as Boolean,
             sortField = values[4] as SortField,
             sortDirection = values[5] as SortDirection,
@@ -266,7 +280,10 @@ class LibraryViewModel @Inject constructor(
             ?.info?.packageName ?: ""
 
     fun addCategory(name: String) = viewModelScope.launch {
-        categoryDao.upsert(CategoryEntity(name = name.trim(), order = categories.value.size))
+        // Order from the unfiltered table, not `categories` — that flow excludes
+        // hidden categories while locked, so its size collides with their orders.
+        val nextOrder = (categoryDao.getAllOnce().maxOfOrNull { it.order } ?: -1) + 1
+        categoryDao.upsert(CategoryEntity(name = name.trim(), order = nextOrder))
     }
 
     fun renameCategory(category: CategoryEntity, name: String) = viewModelScope.launch {
