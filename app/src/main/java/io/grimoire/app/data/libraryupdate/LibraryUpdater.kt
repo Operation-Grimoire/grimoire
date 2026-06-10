@@ -1,5 +1,6 @@
 package io.grimoire.app.data.libraryupdate
 
+import android.util.Log
 import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
@@ -193,14 +194,29 @@ class LibraryUpdater @Inject constructor(
             }
         }
 
-        val existingByUrl = existing.associateBy { it.url }
+        val merge = matchChapters(existing, fetchedChapters)
+        if (merge.matchedByName > 0 || merge.droppedRead > 0) {
+            // Field diagnostics for read-state-migration reports (#138): a
+            // name-pass rescue means the source rewrote chapter URLs; dropped
+            // read rows mean state was about to vanish with no match at all.
+            // Novel id only — titles can belong to hidden categories.
+            Log.w(
+                TAG,
+                "Chapter merge for novel ${novel.id}: byUrl=${merge.matchedByUrl}" +
+                    " byName=${merge.matchedByName}" +
+                    " new=${fetchedChapters.size - merge.matchedByUrl - merge.matchedByName}" +
+                    " readStateDropped=${merge.droppedRead}",
+            )
+        }
         chapterDao.replaceChapters(
             novel.id,
-            fetchedChapters.map { ch ->
-                val prev = existingByUrl[ch.url]
+            fetchedChapters.mapIndexed { i, ch ->
+                val prev = merge.priors[i]
                 ch.toEntity(novel.id).copy(
                     read = prev?.read ?: false,
                     readProgress = prev?.readProgress ?: 0f,
+                    readAnchorItemIndex = prev?.readAnchorItemIndex ?: 0,
+                    readAnchorItemOffset = prev?.readAnchorItemOffset ?: 0,
                     firstReadAt = prev?.firstReadAt,
                     downloadStatus = prev?.downloadStatus ?: 0,
                     downloadedContent = prev?.downloadedContent,
@@ -216,16 +232,19 @@ class LibraryUpdater @Inject constructor(
         val newChapters = if (existing.isEmpty()) {
             emptyList()
         } else {
-            fetchedChapters.filter { ch ->
-                val prev = existingByUrl[ch.url]
+            fetchedChapters.filterIndexed { i, ch ->
+                val prev = merge.priors[i]
                 prev == null || (prev.locked && !ch.locked)
             }
         }
         if (newChapters.isNotEmpty()) {
+            val priorByUrl = fetchedChapters.indices.asSequence()
+                .mapNotNull { i -> merge.priors[i]?.let { fetchedChapters[i].url to it } }
+                .toMap()
             val now = System.currentTimeMillis()
             libraryUpdateDao.insertAll(
                 newChapters.map { ch ->
-                    val prev = existingByUrl[ch.url]
+                    val prev = priorByUrl[ch.url]
                     LibraryUpdateEntity(
                         novelId = novel.id,
                         sourcePackage = pkg,
@@ -362,6 +381,8 @@ class LibraryUpdater @Inject constructor(
     }
 
     private companion object {
+        const val TAG = "LibraryUpdater"
+
         const val REGRESSION_MESSAGE =
             "Source returned incomplete data — kept the previous title/cover"
 

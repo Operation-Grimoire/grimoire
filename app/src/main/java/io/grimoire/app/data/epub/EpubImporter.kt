@@ -175,14 +175,16 @@ class EpubImporter @Inject constructor(
             ?: novelDao.getBySourceUrl(sourceId, url)?.id
             ?: error("Imported novel row not found after upsert")
 
-        // Preserve per-chapter reading state across a re-import: chapter
-        // URLs are deterministic ("$url/$index"), so carry read progress
-        // from any existing chapter with the same URL into its replacement.
-        val previous = chapterDao.getChaptersOnce(novelId).associateBy { it.url }
+        // Preserve per-chapter reading state across a re-import. Matching is
+        // title-first with a positional fallback (see matchPreviousEpubChapters):
+        // URLs are positional ("$url/$index"), so keying on them would hand a
+        // chapter the wrong state whenever a new edition shifts the offsets.
+        val previous = chapterDao.getChaptersOnce(novelId)
+        val priorByIndex = matchPreviousEpubChapters(previous, parsed.chapters.map { it.title })
 
         val entities = parsed.chapters.mapIndexed { index, ch ->
             val chapterUrl = "$url/$index"
-            val prior = previous[chapterUrl]
+            val prior = priorByIndex[index]
             val novelPages = ch.pages.mapIndexed { pageIndex, page ->
                 when (page) {
                     is EpubPage.Text -> NovelPage(index = pageIndex, text = page.text)
