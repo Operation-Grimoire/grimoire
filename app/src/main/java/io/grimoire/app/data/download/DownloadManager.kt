@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -195,7 +196,13 @@ class DownloadManager @Inject constructor(
 
     suspend fun processQueue(onProgress: (chapterName: String, remaining: Int) -> Unit): DownloadBatchResult {
         if (!isProcessing.compareAndSet(false, true)) return DownloadBatchResult.SKIPPED
-        val n = concurrency.value.coerceIn(1, 5)
+        // Wait for the extension scan: a drain kicked off right after process start
+        // (e.g. WorkManager re-running a queued batch) would otherwise see an empty
+        // extensions list and fail every chapter with "Source not available".
+        extensionManager.awaitReady()
+        // Read the preference directly rather than the eagerly-shared StateFlow,
+        // whose first value is the default until the DataStore read lands.
+        val n = downloadPreferences.concurrency.changes().first().coerceIn(1, 5)
         val downloaded = AtomicInteger(0)
         val failed = AtomicInteger(0)
         val mutex = Mutex()

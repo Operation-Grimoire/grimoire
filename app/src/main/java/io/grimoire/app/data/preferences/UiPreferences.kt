@@ -1,5 +1,7 @@
 package io.grimoire.app.data.preferences
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,10 +17,32 @@ enum class ColorTheme(val displayName: String) {
     MIDNIGHT("Midnight"),
 }
 
+/** Everything the activity needs before it can draw the first themed frame. */
+data class UiThemeState(
+    val themeMode: ThemeMode,
+    val useDynamicColor: Boolean,
+    val colorTheme: ColorTheme,
+    val hapticsEnabled: Boolean,
+)
+
 @Singleton
 class UiPreferences @Inject constructor(store: PreferenceStore) {
     val themeMode = store.getEnum("theme_mode", ThemeMode.SYSTEM)
     val useDynamicColor = store.getBoolean("use_dynamic_color", true)
     val colorTheme = store.getEnum("color_theme", ColorTheme.DEFAULT)
     val hapticsEnabled = store.getBoolean("haptics_enabled", true)
+
+    /**
+     * Single combined flow so the activity can await one first emission of the
+     * persisted values (no default-theme flash) and recompose once per change
+     * instead of once per preference.
+     */
+    fun themeState(): Flow<UiThemeState> = combine(
+        themeMode.changes(),
+        useDynamicColor.changes(),
+        colorTheme.changes(),
+        hapticsEnabled.changes(),
+    ) { mode, dynamic, color, haptics ->
+        UiThemeState(mode, dynamic, color, haptics)
+    }
 }

@@ -13,6 +13,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import io.grimoire.app.data.preferences.UiPreferences
 import io.grimoire.app.ui.AppNavigation
@@ -24,6 +25,8 @@ import io.grimoire.app.ui.theme.GrimoireTheme
 import io.grimoire.app.ui.update.AppUpdateUi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -55,30 +58,31 @@ class MainActivity : FragmentActivity() {
         pendingTarget.value = consumeNavTarget(intent)
         pendingAddRepo.value = consumeAddRepoLink(intent)
         pendingEpubUri.value = consumeEpubUri(intent)
-        setContent {
-            val themeMode by uiPreferences.themeMode.changes()
-                .collectAsState(initial = uiPreferences.themeMode.defaultValue())
-            val dynamicColor by uiPreferences.useDynamicColor.changes()
-                .collectAsState(initial = uiPreferences.useDynamicColor.defaultValue())
-            val colorTheme by uiPreferences.colorTheme.changes()
-                .collectAsState(initial = uiPreferences.colorTheme.defaultValue())
-            val hapticsEnabled by uiPreferences.hapticsEnabled.changes()
-                .collectAsState(initial = uiPreferences.hapticsEnabled.defaultValue())
-            GrimoireTheme(
-                themeMode = themeMode,
-                dynamicColor = dynamicColor,
-                colorTheme = colorTheme,
-            ) {
-                ProvideAppHaptics(enabled = hapticsEnabled) {
-                    AppNavigation(
-                        pendingTarget = pendingTarget.asStateFlow(),
-                        onTargetHandled = { pendingTarget.value = null },
-                        pendingEpubUri = pendingEpubUri.asStateFlow(),
-                        onEpubUriHandled = { pendingEpubUri.value = null },
-                        pendingAddRepo = pendingAddRepo.asStateFlow(),
-                        onAddRepoHandled = { pendingAddRepo.value = null },
-                    )
-                    AppUpdateUi()
+        // Await the persisted theme before composing anything: seeding collectAsState
+        // with defaults paints the first frame in the default theme and then snaps to
+        // the user's, a visible flash on every cold start for non-default themes. The
+        // window background covers the (few-ms) DataStore read, like a splash would.
+        val themeState = uiPreferences.themeState()
+        lifecycleScope.launch {
+            val initialTheme = themeState.first()
+            setContent {
+                val theme by themeState.collectAsState(initial = initialTheme)
+                GrimoireTheme(
+                    themeMode = theme.themeMode,
+                    dynamicColor = theme.useDynamicColor,
+                    colorTheme = theme.colorTheme,
+                ) {
+                    ProvideAppHaptics(enabled = theme.hapticsEnabled) {
+                        AppNavigation(
+                            pendingTarget = pendingTarget.asStateFlow(),
+                            onTargetHandled = { pendingTarget.value = null },
+                            pendingEpubUri = pendingEpubUri.asStateFlow(),
+                            onEpubUriHandled = { pendingEpubUri.value = null },
+                            pendingAddRepo = pendingAddRepo.asStateFlow(),
+                            onAddRepoHandled = { pendingAddRepo.value = null },
+                        )
+                        AppUpdateUi()
+                    }
                 }
             }
         }
