@@ -74,36 +74,20 @@ import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
 
-/**
- * Each chip in the downloads filter row represents a logical "category" of download
- * statuses (downloading, queued, …). Storing the selection as a Set<DownloadStatusFilter>
- * lets the user pick any combination — the actual ordinal predicate the list filters
- * on is the union of every selected category's [ordinals].
- */
-private enum class DownloadStatusFilter(val label: String, val ordinals: Set<Int>) {
-    DOWNLOADING("Downloading", ChapterDownloadStatus.DOWNLOADING_ORDINALS),
-    QUEUED("Queued", ChapterDownloadStatus.QUEUED_ORDINALS),
-    DONE("Done", setOf(ChapterDownloadStatus.DOWNLOADED.ordinal)),
-    FAILED("Failed", ChapterDownloadStatus.ERROR_ORDINALS),
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DownloadsScreen(
     viewModel: DownloadsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
 ) {
+    // `downloads` is already grouped, sorted, and narrowed to the active filter off the
+    // main thread by the ViewModel — the screen renders sections as-is, no per-frame work.
     val downloads by viewModel.downloads.collectAsState()
     val currentDownloads = downloads
+    val selectedStatusFilters by viewModel.activeStatusFilters.collectAsState()
     val isPaused by viewModel.isPaused.collectAsState()
     val concurrency by viewModel.concurrency.collectAsState()
     var expandedNovels by remember { mutableStateOf(setOf<Long>()) }
-    var selectedStatusFilters by remember { mutableStateOf(emptySet<DownloadStatusFilter>()) }
-    // Empty selection collapses to null (no restriction) so downstream code keeps the
-    // same null-vs-non-null shape it had before this was multi-select.
-    val statusFilter: Set<Int>? = selectedStatusFilters
-        .takeIf { it.isNotEmpty() }
-        ?.flatMapTo(mutableSetOf()) { it.ordinals }
     var showSettings by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
@@ -184,11 +168,7 @@ fun DownloadsScreen(
                     onClear = clearSelection,
                     onSelectAll = {
                         val visibleChapterIds = (currentDownloads ?: emptyList())
-                            .flatMap { nd ->
-                                val f = statusFilter
-                                if (f == null) nd.chapters
-                                else nd.chapters.filter { it.downloadStatus in f }
-                            }
+                            .flatMap { nd -> nd.chapters }
                             .map { it.id }
                             .toSet()
                         selectedChapterIds = if (selectedChapterIds.containsAll(visibleChapterIds)) {
@@ -336,19 +316,13 @@ fun DownloadsScreen(
                         // is always one tap away regardless of what else is on.
                         FilterChip(
                             selected = selectedStatusFilters.isEmpty(),
-                            onClick = { selectedStatusFilters = emptySet() },
+                            onClick = { viewModel.clearStatusFilters() },
                             label = { Text("All") },
                         )
                         DownloadStatusFilter.entries.forEach { chip ->
                             FilterChip(
                                 selected = chip in selectedStatusFilters,
-                                onClick = {
-                                    selectedStatusFilters = if (chip in selectedStatusFilters) {
-                                        selectedStatusFilters - chip
-                                    } else {
-                                        selectedStatusFilters + chip
-                                    }
-                                },
+                                onClick = { viewModel.toggleStatusFilter(chip) },
                                 label = { Text(chip.label) },
                             )
                         }
@@ -356,11 +330,9 @@ fun DownloadsScreen(
                 }
 
                 currentDownloads.forEach { novelDownloads ->
-                    val activeFilter = statusFilter
-                    val filtered = if (activeFilter == null) novelDownloads.chapters
-                        else novelDownloads.chapters.filter { it.downloadStatus in activeFilter }
-                    if (filtered.isEmpty()) return@forEach
-
+                    // Already filtered by the ViewModel — novels with no matching chapters
+                    // were dropped, so chapters is non-empty here.
+                    val visibleChapters = novelDownloads.chapters
                     val novelId = novelDownloads.novel.id
                     val isCollapsed = novelId !in expandedNovels
 
@@ -372,7 +344,7 @@ fun DownloadsScreen(
                                 expandedNovels - novelId
                             }
                         }
-                        val filteredIds = filtered.map { it.id }
+                        val filteredIds = visibleChapters.map { it.id }
                         NovelDownloadHeader(
                             novelDownloads = novelDownloads,
                             collapsed = isCollapsed,
@@ -390,7 +362,7 @@ fun DownloadsScreen(
                     }
 
                     if (!isCollapsed) {
-                        items(items = filtered, key = { it.id }) { chapter ->
+                        items(items = visibleChapters, key = { it.id }) { chapter ->
                             ChapterDownloadItem(
                                 chapter = chapter,
                                 selected = chapter.id in selectedChapterIds,
@@ -451,30 +423,15 @@ private fun NovelDownloadHeader(
     onLongClick: () -> Unit,
     onToggleCollapse: () -> Unit,
 ) {
-    val counts = remember(novelDownloads.chapters) {
-        var downloaded = 0; var queued = 0; var downloading = 0; var error = 0
-        for (c in novelDownloads.chapters) when (c.downloadStatus) {
-            ChapterDownloadStatus.DOWNLOADED.ordinal -> downloaded++
-            ChapterDownloadStatus.QUEUED.ordinal,
-            ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal -> queued++
-            ChapterDownloadStatus.DOWNLOADING.ordinal,
-            ChapterDownloadStatus.REDOWNLOADING.ordinal -> downloading++
-            ChapterDownloadStatus.ERROR.ordinal,
-            ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> error++
-        }
-        intArrayOf(downloaded, queued, downloading, error)
-    }
-    val downloaded = counts[0]
-    val queued = counts[1]
-    val downloading = counts[2]
-    val error = counts[3]
-
-    val stats = remember(downloaded, queued, downloading, error) {
+    // Counts are precomputed off the main thread in the ViewModel (over the full, unfiltered
+    // chapter set) so the header shows the complete tally even while a filter is active.
+    val counts = novelDownloads.counts
+    val stats = remember(counts) {
         buildList {
-            if (downloaded > 0) add("$downloaded downloaded")
-            if (queued > 0) add("$queued queued")
-            if (downloading > 0) add("$downloading downloading")
-            if (error > 0) add("$error failed")
+            if (counts.downloaded > 0) add("${counts.downloaded} downloaded")
+            if (counts.queued > 0) add("${counts.queued} queued")
+            if (counts.downloading > 0) add("${counts.downloading} downloading")
+            if (counts.error > 0) add("${counts.error} failed")
         }.joinToString(" • ")
     }
 

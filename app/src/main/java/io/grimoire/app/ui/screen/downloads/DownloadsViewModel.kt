@@ -3,34 +3,32 @@ package io.grimoire.app.ui.screen.downloads
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
-private val STATUS_ORDER = mapOf(
-    ChapterDownloadStatus.DOWNLOADING.ordinal to 0,
-    ChapterDownloadStatus.REDOWNLOADING.ordinal to 0,
-    ChapterDownloadStatus.QUEUED.ordinal to 1,
-    ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal to 1,
-    ChapterDownloadStatus.DOWNLOADED.ordinal to 2,
-    ChapterDownloadStatus.ERROR.ordinal to 3,
-    ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal to 3,
-)
-
-data class NovelDownloads(
+internal data class NovelDownloads(
     val novel: NovelEntity,
     val chapters: List<ChapterEntity>,
+    val counts: DownloadCounts = DownloadCounts(),
 )
 
 @HiltViewModel
@@ -41,29 +39,43 @@ class DownloadsViewModel @Inject constructor(
     authManager: HiddenCategoriesAuthManager,
 ) : ViewModel() {
 
-    val downloads = authManager.isUnlocked.map { !it }.distinctUntilChanged()
+    private val statusFilters = MutableStateFlow<Set<DownloadStatusFilter>>(emptySet())
+    internal val activeStatusFilters: StateFlow<Set<DownloadStatusFilter>> = statusFilters.asStateFlow()
+
+    // Grouped + sorted downloads with per-novel counts, before the status filter is applied.
+    // The novel lookup is a suspend batch query; mapLatest cancels a stale grouping if the
+    // chapter list re-emits (e.g. a progress tick) before the previous one finished.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val baseDownloads = authManager.isUnlocked.map { !it }.distinctUntilChanged()
         .flatMapLatest { excludeHidden -> chapterDao.getAllDownloads(excludeHidden) }
-        .flatMapLatest { chapters ->
-            flow {
-                val groups = chapters.groupBy { it.novelId }
-                val novelById = if (groups.isEmpty()) emptyMap()
-                else novelDao.getByIds(groups.keys.toList()).associateBy { it.id }
-                val result = groups.mapNotNull { (novelId, chs) ->
-                    val novel = novelById[novelId] ?: return@mapNotNull null
-                    val sorted = chs.sortedWith(
-                        compareBy({ STATUS_ORDER[it.downloadStatus] ?: 4 }, { it.chapterNumber })
-                    )
-                    NovelDownloads(novel, sorted)
-                }.sortedByDescending { nd ->
-                    nd.chapters.any { it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS }
-                }
-                emit(result)
-            }
+        .mapLatest { chapters ->
+            val novelIds = chapters.mapTo(mutableSetOf()) { it.novelId }
+            val novelById = if (novelIds.isEmpty()) emptyMap()
+            else novelDao.getByIds(novelIds.toList()).associateBy { it.id }
+            groupDownloads(chapters, novelById)
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    // The list the screen renders: grouped, sorted, and already narrowed to the active filter.
+    // All of it (grouping, sorting, counting, filtering) runs on Dispatchers.Default so the UI
+    // thread never does the projection — the screen just reads precomputed sections by index.
+    internal val downloads: StateFlow<List<NovelDownloads>?> =
+        combine(baseDownloads, statusFilters) { grouped, filters ->
+            applyStatusFilter(grouped, filters)
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val isPaused = downloadManager.isPaused
     val concurrency = downloadManager.concurrency
+
+    /** Toggle a status filter chip; the projection re-narrows off the main thread. */
+    internal fun toggleStatusFilter(filter: DownloadStatusFilter) =
+        statusFilters.update { if (filter in it) it - filter else it + filter }
+
+    /** Clear all status filters (the "All" chip). */
+    fun clearStatusFilters() {
+        statusFilters.value = emptySet()
+    }
 
     fun togglePause() {
         if (downloadManager.isPaused.value) downloadManager.resume() else downloadManager.pause()
