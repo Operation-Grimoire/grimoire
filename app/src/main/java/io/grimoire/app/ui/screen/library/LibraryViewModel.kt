@@ -11,6 +11,7 @@ import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.epub.StagedEpub
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
+import io.grimoire.app.data.local.LibraryFavorites
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -44,6 +45,7 @@ private const val KEY_SEARCH_QUERY = "library_search_query"
 class LibraryViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val novelDao: NovelDao,
+    private val libraryFavorites: LibraryFavorites,
     private val categoryDao: CategoryDao,
     private val chapterDao: ChapterDao,
     private val extensionManager: ExtensionManager,
@@ -144,12 +146,16 @@ class LibraryViewModel @Inject constructor(
     ) { unlocked, hasPin, hidden -> !unlocked && hasPin && hidden.isNotEmpty() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    val novels: StateFlow<List<NovelEntity>?> = novelDao.getFavorites()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    // Shared, app-scoped favorites flow (one Room observer for the whole process, also
+    // used by CoverPreloader) — already null-until-loaded, so no extra stateIn here.
+    val novels: StateFlow<List<NovelEntity>?> = libraryFavorites.favorites
 
-    // null until the first database emission — the tab projection holds in its loading
-    // state until stats are real, so unread/downloaded badges don't pop in a frame late.
-    private val chapterStatsOrNull: StateFlow<Map<Long, NovelChapterStats>?> = chapterDao.getStatsForAll()
+    // null until the first database emission. The list renders as soon as `novels` is
+    // ready; stat-derived badges (unread / downloaded / locked) and the unread/downloaded
+    // filters fill in a frame later when this emits, rather than gating the whole screen
+    // behind the chapter-stats aggregation. Scoped to favorites so the GROUP BY cost
+    // tracks the library, not every browsed chapter.
+    private val chapterStatsOrNull: StateFlow<Map<Long, NovelChapterStats>?> = chapterDao.getFavoriteStats()
         .map { list -> list.associateBy { it.novelId } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -176,9 +182,10 @@ class LibraryViewModel @Inject constructor(
      * chip row so it only lists sources the user actually has novels from.
      */
     val librarySources: StateFlow<List<Pair<Long, String>>> = combine(
-        novelDao.getFavorites(),
+        libraryFavorites.favorites,
         extensionManager.extensions,
-    ) { favorites, exts ->
+    ) { favoritesOrNull, exts ->
+        val favorites = favoritesOrNull.orEmpty()
         val sourceIds = favorites.map { it.sourceId }.toSortedSet()
         val nameBySourceId = exts.associate { it.source.id to it.source.name }
         sourceIds.map { id ->
@@ -247,9 +254,10 @@ class LibraryViewModel @Inject constructor(
         val stats = values[2] as Map<Long, NovelChapterStats>?
         @Suppress("UNCHECKED_CAST")
         LibraryFilterInputs(
-            // Stats still loading reads as "novels still loading": both must be real
-            // before the tabs render, or badge-dependent filters/badges flicker.
-            novels = if (stats == null) null else values[0] as List<NovelEntity>?,
+            // Render the list as soon as novels load — don't gate it on the chapter-stats
+            // aggregation. While stats are null, chapterStats is empty: badge counts read 0
+            // and the unread/downloaded filters match nothing until stats emit a frame later.
+            novels = values[0] as List<NovelEntity>?,
             categories = values[1] as List<CategoryEntity>,
             chapterStats = stats.orEmpty(),
             showAllTab = values[3] as Boolean,

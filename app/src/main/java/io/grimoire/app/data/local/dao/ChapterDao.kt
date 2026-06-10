@@ -233,6 +233,26 @@ interface ChapterDao {
     """)
     fun getStatsForAll(): Flow<List<NovelChapterStats>>
 
+    /**
+     * Per-novel chapter stats restricted to favorited (library) novels. The library
+     * only ever shows favorites, so joining on `novels.favorite = 1` keeps the GROUP BY
+     * from aggregating every chapter the user has ever browsed — its cost scales with
+     * the library, not the whole chapters table. The reader keeps [getStatsForAll]
+     * because it needs progress for non-favorite novels opened from browse too.
+     */
+    @Query("""
+        SELECT c.novelId AS novelId,
+               COUNT(*) AS total,
+               SUM(c.read) AS readCount,
+               SUM(CASE WHEN c.downloadStatus IN (3, 5, 6, 7) THEN 1 ELSE 0 END) AS downloadedCount,
+               SUM(CASE WHEN c.locked = 1 THEN 1 ELSE 0 END) AS lockedCount
+        FROM chapters c
+        INNER JOIN novels n ON n.id = c.novelId
+        WHERE n.favorite = 1
+        GROUP BY c.novelId
+    """)
+    fun getFavoriteStats(): Flow<List<NovelChapterStats>>
+
     @Query("""
         SELECT id, downloadedContent FROM chapters
         WHERE read = 1 AND wordCount = 0 AND downloadedContent IS NOT NULL
