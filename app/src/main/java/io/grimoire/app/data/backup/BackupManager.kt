@@ -232,9 +232,16 @@ class BackupManager @Inject constructor(
         out.writeUtf8("]}")
     }
 
-    /** Snapshot every DataStore preference, tagged by runtime value type. */
+    /**
+     * Snapshot every DataStore preference, tagged by runtime value type.
+     * Credential-bearing keys are excluded: a backup is plaintext JSON the
+     * user may park in shared storage or a cloud drive. Old backups that do
+     * contain such a key still restore it ([restorePreferences] stays
+     * permissive) — the exclusion only stops new exports from leaking.
+     */
     private suspend fun dumpPreferences(): List<BackupPreference> =
         dataStore.data.first().asMap().mapNotNull { (key, value) ->
+            if (key.name in SENSITIVE_PREF_KEYS) return@mapNotNull null
             when (value) {
                 is Boolean -> BackupPreference(key.name, "b", value.toString())
                 is Int -> BackupPreference(key.name, "i", value.toString())
@@ -374,5 +381,8 @@ class BackupManager @Inject constructor(
 
     companion object {
         const val BACKUP_MIME_TYPE = "application/gzip"
+
+        /** Preference keys holding credentials/secrets — never exported (see [dumpPreferences]). */
+        private val SENSITIVE_PREF_KEYS = setOf("tts_elevenlabs_api_key")
     }
 }
