@@ -30,7 +30,7 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
         TaskLogEntity::class,
         NuBookmarkEntity::class,
     ],
-    version = 24,
+    version = 25,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {

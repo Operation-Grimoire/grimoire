@@ -6,7 +6,12 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "novels",
-    indices = [Index(value = ["sourceId", "url"], unique = true)],
+    indices = [
+        Index(value = ["sourceId", "url"], unique = true),
+        // The library list and every favorites-scoped query filter on `favorite = 1`;
+        // without this the whole novels table is scanned on each app open / refresh.
+        Index(value = ["favorite"]),
+    ],
 )
 data class NovelEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
