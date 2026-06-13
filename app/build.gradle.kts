@@ -57,6 +57,12 @@ val githubOAuthClientId: String =
         ?: System.getenv("GITHUB_OAUTH_CLIENT_ID")
         ?: ""
 
+// Athenaeum API base — overridable per build (gradle property / env), default prod.
+val athenaeumApiBase: String =
+    (project.findProperty("ATHENAEUM_API_BASE") as? String)
+        ?: System.getenv("ATHENAEUM_API_BASE")
+        ?: "https://api.athenaeum.beer/api/v1"
+
 android {
     namespace = "io.grimoire.app"
     compileSdk {
@@ -75,6 +81,7 @@ android {
         buildConfigField("String", "GIT_SHA", "\"$appGitSha\"")
         buildConfigField("String", "EXTENSIONS_API_VERSION", "\"$extensionsApiVersion\"")
         buildConfigField("String", "GITHUB_OAUTH_CLIENT_ID", "\"$githubOAuthClientId\"")
+        buildConfigField("String", "ATHENAEUM_API_BASE", "\"$athenaeumApiBase\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
