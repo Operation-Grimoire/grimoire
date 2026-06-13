@@ -1,5 +1,8 @@
 package io.grimoire.app.ui.screen.settings.athenaeum
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -122,14 +126,20 @@ fun AthenaeumAuthScreen(
                         }
                     }
                     Button(
-                        onClick = {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(approveUrl)))
-                        },
+                        onClick = { openInBrowser(context, approveUrl) },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Icon(Icons.Default.OpenInBrowser, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Open approval page")
+                    }
+                    OutlinedButton(
+                        onClick = { copyToClipboard(context, s.challenge.userCode) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Copy code")
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -166,4 +176,15 @@ fun AthenaeumAuthScreen(
             }
         }
     }
+}
+
+private fun copyToClipboard(context: Context, text: String) {
+    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    cm.setPrimaryClip(ClipData.newPlainText("user_code", text))
+}
+
+private fun openInBrowser(context: Context, uri: String) {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    context.startActivity(intent)
 }

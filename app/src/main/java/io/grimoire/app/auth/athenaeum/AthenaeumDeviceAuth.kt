@@ -55,26 +55,42 @@ class AthenaeumDeviceAuth @Inject constructor(
             }
         }
 
-    /** Polls until the token is issued, denied, expired, or cancelled. */
+    /**
+     * Polls until the token is issued, denied, expired, or cancelled. Transient
+     * failures (a network blip, the app backgrounded while the user finishes in
+     * the browser, a 5xx) are swallowed so the next interval retries — only the
+     * server's terminal `error` field or the deadline tears the flow down. This
+     * mirrors [io.grimoire.app.auth.github.GitHubDeviceAuth.pollForToken].
+     */
     suspend fun pollForToken(challenge: DeviceCodeChallenge): Result<AthenaeumAccount> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val body = json.encodeToString(TokenRequest(challenge.deviceCode)).toRequestBody(jsonMedia)
+                val deadline = System.currentTimeMillis() + challenge.expiresInSeconds * 1000L
                 while (true) {
                     delay(challenge.interval * 1000L)
+                    if (System.currentTimeMillis() > deadline) throw DeviceAuthException(AuthFailure.Expired)
                     val req = Request.Builder().url("$base/device/token").post(body).build()
-                    client.newCall(req).execute().use { resp ->
-                        val text = resp.body?.string().orEmpty()
-                        if (resp.isSuccessful) {
-                            val r = json.decodeFromString<TokenResponse>(text)
-                            return@runCatching AthenaeumAccount(r.token, r.scopes.toSet(), System.currentTimeMillis())
+                    val text = try {
+                        client.newCall(req).execute().use { resp ->
+                            val t = resp.body?.string().orEmpty()
+                            if (resp.isSuccessful) {
+                                val r = json.decodeFromString<TokenResponse>(t)
+                                return@runCatching AthenaeumAccount(r.token, r.scopes.toSet(), System.currentTimeMillis())
+                            }
+                            t
                         }
-                        when (json.decodeFromString<ErrorResponse>(text).error) {
-                            "authorization_pending" -> {} // keep polling
-                            "access_denied" -> throw DeviceAuthException(AuthFailure.AccessDenied)
-                            "expired_token" -> throw DeviceAuthException(AuthFailure.Expired)
-                            else -> throw DeviceAuthException(AuthFailure.Unexpected("HTTP ${resp.code}"))
-                        }
+                    } catch (e: java.io.IOException) {
+                        // Network blip / app backgrounded — retry next interval.
+                        null
+                    } ?: continue
+                    when (runCatching { json.decodeFromString<ErrorResponse>(text).error }.getOrNull()) {
+                        "authorization_pending" -> {} // keep polling
+                        "access_denied" -> throw DeviceAuthException(AuthFailure.AccessDenied)
+                        "expired_token" -> throw DeviceAuthException(AuthFailure.Expired)
+                        // Unknown / unparseable non-2xx: transient, keep polling
+                        // (the deadline still bounds the loop).
+                        else -> {}
                     }
                 }
                 @Suppress("UNREACHABLE_CODE")
