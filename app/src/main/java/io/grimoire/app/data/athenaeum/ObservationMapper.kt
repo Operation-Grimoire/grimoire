@@ -3,6 +3,8 @@ package io.grimoire.app.data.athenaeum
 import io.grimoire.api.model.NovelStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.net.URI
 import java.time.Instant
 
@@ -37,7 +39,12 @@ object ObservationMapper {
             url = resolveUrl(baseUrl, chapter.url),
             seriesUrl = resolveUrl(baseUrl, novel.url),
             title = chapter.name.ifBlank { null },
-            number = chapter.chapterNumber.toDouble(),
+            // Round to 2 decimals: chapterNumber is a Float, so widening to Double
+            // leaks representation noise (12.34f -> 12.340000152…) and the backend
+            // rejects any number with more than 2 decimal places.
+            number = BigDecimal.valueOf(chapter.chapterNumber.toDouble())
+                .setScale(2, RoundingMode.HALF_UP)
+                .toDouble(),
             publishedAt = chapter.uploadDate.takeIf { it > 0L }?.let { Instant.ofEpochMilli(it).toString() },
         )
     }

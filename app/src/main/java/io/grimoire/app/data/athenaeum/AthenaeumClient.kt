@@ -14,10 +14,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Submits scraped observations to Athenaeum's public ingest endpoint. Uses the
- * [AthenaeumAuthorized] client so a paired device's token is attached (the
- * submission auto-promotes); unpaired, it still posts anonymously. Batches are
- * capped at [MAX_BATCH] to match the server.
+ * Submits scraped observations to Athenaeum's async batch ingest endpoint. Uses
+ * the [AthenaeumAuthorized] client so a paired device's token is attached (the
+ * submission auto-promotes); unpaired, it still posts anonymously. A whole novel
+ * (series + all chapters) goes in one POST /ingest/batch — the server splits it
+ * onto a queue and returns 202. Only novels above [MAX_BATCH] chapters are split
+ * client-side, to stay within the server's per-request limit.
  */
 @Singleton
 class AthenaeumClient @Inject constructor(
@@ -32,15 +34,16 @@ class AthenaeumClient @Inject constructor(
         runCatching {
             observations.chunked(MAX_BATCH).forEach { batch ->
                 val body = json.encodeToString(SubmitObservationsRequest(batch)).toRequestBody(jsonMedia)
-                val req = Request.Builder().url("$base/ingest/observations").post(body).build()
+                val req = Request.Builder().url("$base/ingest/batch").post(body).build()
                 client.newCall(req).execute().use { resp ->
-                    check(resp.isSuccessful) { "HTTP ${resp.code} from /ingest/observations" }
+                    check(resp.isSuccessful) { "HTTP ${resp.code} from /ingest/batch" }
                 }
             }
         }
     }
 
     private companion object {
-        const val MAX_BATCH = 100
+        // Server hard-caps a batch at 5000 items; only enormous novels split.
+        const val MAX_BATCH = 5000
     }
 }

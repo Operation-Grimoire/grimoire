@@ -55,6 +55,17 @@ class ObservationMapperTest {
     }
 
     @Test
+    fun chapter_decimalNumber_roundsToTwoPlaces() {
+        // 12.34f widened to Double leaks float noise; the mapper must round so the
+        // backend (max 2 decimals) accepts it. The serialized value must be 12.34.
+        val ch = ChapterEntity(
+            id = 9L, novelId = 1L, url = "/c", name = "x", chapterNumber = 12.34f,
+        )
+        val item = ObservationMapper.chapter("https://royalroad.com", "en", novel, ch)!!
+        assertEquals(12.34, item.number!!, 0.0)
+    }
+
+    @Test
     fun chapter_withoutNumber_isSkipped() {
         val ch = ChapterEntity(id = 9L, novelId = 1L, url = "/x", name = "x", chapterNumber = -1f)
         assertNull(ObservationMapper.chapter("https://royalroad.com", "en", novel, ch))
