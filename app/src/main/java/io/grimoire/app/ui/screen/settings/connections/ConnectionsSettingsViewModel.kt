@@ -55,7 +55,10 @@ class ConnectionsSettingsViewModel @Inject constructor(
     private fun toStatus(state: AthenaeumAuthState): ConnectionStatus = when (state) {
         AthenaeumAuthState.Disconnected -> ConnectionStatus("Not paired", false)
         is AthenaeumAuthState.AwaitingUser -> ConnectionStatus("Pairing…", false)
-        is AthenaeumAuthState.Connected -> ConnectionStatus("Paired", true)
+        is AthenaeumAuthState.Connected -> ConnectionStatus(
+            state.username?.let { "@$it" } ?: state.email ?: "Paired",
+            true,
+        )
         is AthenaeumAuthState.Failed -> ConnectionStatus("Pairing error", false)
     }
 }

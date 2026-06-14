@@ -41,6 +41,10 @@ class AthenaeumDeviceAuth @Inject constructor(
     @Serializable private data class TokenRequest(val deviceCode: String)
     @Serializable private data class TokenResponse(val token: String, val scopes: List<String> = emptyList())
     @Serializable private data class ErrorResponse(val error: String? = null)
+    @Serializable private data class IdentityResponse(
+        val email: String? = null,
+        val username: String? = null,
+    )
 
     suspend fun requestDeviceCode(scopes: Set<String>): Result<DeviceCodeChallenge> =
         withContext(Dispatchers.IO) {
@@ -95,6 +99,27 @@ class AthenaeumDeviceAuth @Inject constructor(
                 }
                 @Suppress("UNREACHABLE_CODE")
                 error("unreachable")
+            }
+        }
+
+    /**
+     * Fetch the paired account's identity (email + handle) with the device token.
+     * Uses GET /device/me — the edge-authorized /me can't serve opaque device
+     * tokens. Mirrors [io.grimoire.app.auth.github.GitHubDeviceAuth.fetchUserLogin];
+     * failure is non-fatal to pairing, so the caller treats it as best-effort.
+     */
+    suspend fun fetchIdentity(token: String): Result<AthenaeumIdentity> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val req = Request.Builder()
+                    .url("$base/device/me")
+                    .header("Authorization", "Bearer $token")
+                    .build()
+                client.newCall(req).execute().use { resp ->
+                    check(resp.isSuccessful) { "HTTP ${resp.code} from /device/me" }
+                    val r = json.decodeFromString<IdentityResponse>(resp.body!!.string())
+                    AthenaeumIdentity(r.email, r.username)
+                }
             }
         }
 }

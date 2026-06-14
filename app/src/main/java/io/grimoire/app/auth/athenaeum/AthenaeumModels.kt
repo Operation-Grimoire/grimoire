@@ -17,6 +17,15 @@ data class AthenaeumAccount(
     val token: String,
     val scopes: Set<String>,
     val connectedAtMillis: Long,
+    /** Account identity from GET /device/me; null until fetched (or if it fails). */
+    val email: String? = null,
+    val username: String? = null,
+)
+
+/** Identity shared by the backend over device auth (GET /device/me). */
+data class AthenaeumIdentity(
+    val email: String?,
+    val username: String?,
 )
 
 /** Surface state for the pairing screen. */
@@ -26,7 +35,11 @@ sealed class AthenaeumAuthState {
     /** Device-flow handshake in progress; UI shows [challenge.userCode] + verification URL. */
     data class AwaitingUser(val challenge: DeviceCodeChallenge) : AthenaeumAuthState()
 
-    data class Connected(val scopes: Set<String>) : AthenaeumAuthState()
+    data class Connected(
+        val scopes: Set<String>,
+        val email: String? = null,
+        val username: String? = null,
+    ) : AthenaeumAuthState()
 
     data class Failed(val reason: AuthFailure) : AthenaeumAuthState()
 }

@@ -29,6 +29,8 @@ class AthenaeumAuthStore @Inject constructor(
             .putString(KEY_TOKEN, account.token)
             .putString(KEY_SCOPES, account.scopes.joinToString(" "))
             .putLong(KEY_CONNECTED_AT, account.connectedAtMillis)
+            .putString(KEY_EMAIL, account.email)
+            .putString(KEY_USERNAME, account.username)
             .apply()
         _account.value = account
     }
@@ -44,7 +46,13 @@ class AthenaeumAuthStore @Inject constructor(
     private fun load(): AthenaeumAccount? {
         val token = prefs.getString(KEY_TOKEN, null) ?: return null
         val scopes = prefs.getString(KEY_SCOPES, "").orEmpty().split(' ').filter { it.isNotBlank() }.toSet()
-        return AthenaeumAccount(token, scopes, prefs.getLong(KEY_CONNECTED_AT, 0L))
+        return AthenaeumAccount(
+            token = token,
+            scopes = scopes,
+            connectedAtMillis = prefs.getLong(KEY_CONNECTED_AT, 0L),
+            email = prefs.getString(KEY_EMAIL, null),
+            username = prefs.getString(KEY_USERNAME, null),
+        )
     }
 
     private companion object {
@@ -52,6 +60,8 @@ class AthenaeumAuthStore @Inject constructor(
         const val KEY_TOKEN = "device_token"
         const val KEY_SCOPES = "scopes"
         const val KEY_CONNECTED_AT = "connected_at"
+        const val KEY_EMAIL = "email"
+        const val KEY_USERNAME = "username"
 
         fun openPrefs(context: Context): SharedPreferences {
             val masterKey = MasterKey.Builder(context)

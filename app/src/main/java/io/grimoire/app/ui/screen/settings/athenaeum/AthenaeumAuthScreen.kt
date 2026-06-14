@@ -156,6 +156,16 @@ fun AthenaeumAuthScreen(
 
                 is AthenaeumAuthState.Connected -> {
                     Text("Paired.", style = MaterialTheme.typography.titleMedium)
+                    s.username?.let {
+                        Text("@$it", style = MaterialTheme.typography.bodyLarge)
+                    }
+                    s.email?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Text(
                         "This device can: ${s.scopes.joinToString(", ").ifBlank { "—" }}",
                         style = MaterialTheme.typography.bodyMedium,
