@@ -37,13 +37,14 @@ class AthenaeumAuthRepository @Inject constructor(
             when {
                 t is Transient.Awaiting -> AthenaeumAuthState.AwaitingUser(t.challenge)
                 t is Transient.Failed -> AthenaeumAuthState.Failed(t.reason)
-                account != null -> AthenaeumAuthState.Connected(account.scopes)
+                account != null -> AthenaeumAuthState.Connected(account.scopes, account.email, account.username)
                 else -> AthenaeumAuthState.Disconnected
             }
         }.stateIn(
             scope,
             SharingStarted.Eagerly,
-            store.account.value?.let { AthenaeumAuthState.Connected(it.scopes) } ?: AthenaeumAuthState.Disconnected,
+            store.account.value?.let { AthenaeumAuthState.Connected(it.scopes, it.email, it.username) }
+                ?: AthenaeumAuthState.Disconnected,
         )
 
     /** Begin pairing, requesting [scopes]. Idempotent while already in flight. */
@@ -57,8 +58,10 @@ class AthenaeumAuthRepository @Inject constructor(
             }
             transient.value = Transient.Awaiting(challenge)
             deviceAuth.pollForToken(challenge)
-                .onSuccess {
-                    store.save(it)
+                .onSuccess { account ->
+                    // Best-effort identity fetch; pairing still succeeds if it fails.
+                    val identity = deviceAuth.fetchIdentity(account.token).getOrNull()
+                    store.save(account.copy(email = identity?.email, username = identity?.username))
                     transient.value = Transient.Idle
                 }
                 .onFailure {
