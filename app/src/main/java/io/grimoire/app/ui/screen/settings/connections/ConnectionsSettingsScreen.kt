@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -27,10 +28,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun ConnectionsSettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToGitHub: () -> Unit,
+    onNavigateToAthenaeum: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ConnectionsSettingsViewModel = hiltViewModel(),
 ) {
     val github by viewModel.github.collectAsState()
+    val athenaeum by viewModel.athenaeum.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -53,6 +56,15 @@ fun ConnectionsSettingsScreen(
                     statusLabel = github.statusLabel,
                     isConnected = github.isConnected,
                     onClick = onNavigateToGitHub,
+                )
+            }
+            item {
+                ConnectionRow(
+                    icon = Icons.Default.CloudUpload,
+                    title = "Athenaeum",
+                    statusLabel = athenaeum.statusLabel,
+                    isConnected = athenaeum.isConnected,
+                    onClick = onNavigateToAthenaeum,
                 )
             }
         }

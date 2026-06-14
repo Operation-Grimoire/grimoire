@@ -20,6 +20,15 @@ interface ChapterDao {
     suspend fun getChaptersOnce(novelId: Long): List<ChapterEntity>
 
     /**
+     * Chapters in source/reading order. replaceChapters re-inserts the freshly
+     * scraped list in order, so ascending id reflects scrape order — unlike
+     * [getChaptersOnce] (chapterNumber), which collapses when the source leaves
+     * numbers unset. Used to infer missing chapter numbers from neighbours.
+     */
+    @Query("SELECT * FROM chapters WHERE novelId = :novelId ORDER BY id ASC")
+    suspend fun getChaptersInReadingOrder(novelId: Long): List<ChapterEntity>
+
+    /**
      * Chapters that carry restorable user state — read flag, partial progress, or
      * a first-read timestamp. Untouched chapters are pure scraped metadata that the
      * source re-supplies on next open, so they're left out of backups.

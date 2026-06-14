@@ -11,6 +11,7 @@ import io.grimoire.api.source.EpubSource
 import io.grimoire.api.source.Source
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.api.source.WebViewLoginSource
+import io.grimoire.app.data.athenaeum.AthenaeumContributor
 import io.grimoire.app.data.source.fetchAllChapters
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
@@ -65,6 +66,7 @@ class NovelDetailViewModel @Inject constructor(
     private val categoryDao: CategoryDao,
     private val updateIssueDao: UpdateIssueDao,
     private val downloadManager: DownloadManager,
+    private val athenaeum: AthenaeumContributor,
     private val epubImporter: EpubImporter,
     private val novelUpdatesRepository: NovelUpdatesInfoRepository,
     private val migrator: NovelMigrator,
@@ -571,6 +573,11 @@ class NovelDetailViewModel @Inject constructor(
                 // A successful network fetch clears any stale library-update
                 // warning/failure recorded for this novel.
                 updateIssueDao.clearForNovel(cachedNovelId)
+                // Browsing a novel contributes its freshly-scraped catalogue data
+                // (opt-in, fire-and-forget, no-op when contribution is off).
+                novelDao.getById(cachedNovelId)?.let { entity ->
+                    athenaeum.submit(src, entity, chapterDao.getChaptersInReadingOrder(cachedNovelId))
+                }
             }
         }.onFailure { e ->
             _chaptersError.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
@@ -652,7 +659,12 @@ class NovelDetailViewModel @Inject constructor(
         _isFavorite.value = next
         viewModelScope.launch {
             val entity = novelDao.getBySourceUrl(sourceId, novelUrl) ?: return@launch
-            novelDao.upsert(entity.copy(favorite = next))
+            val updated = entity.copy(favorite = next)
+            novelDao.upsert(updated)
+            // Adding a novel to the library contributes it (opt-in, fire-and-forget).
+            if (next && !isLocal) {
+                source?.let { src -> athenaeum.submit(src, updated, chapterDao.getChaptersInReadingOrder(updated.id)) }
+            }
         }
     }
 
