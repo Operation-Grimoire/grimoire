@@ -24,8 +24,15 @@ interface ChapterDao {
      * scraped list in order, so ascending id reflects scrape order — unlike
      * [getChaptersOnce] (chapterNumber), which collapses when the source leaves
      * numbers unset. Used to infer missing chapter numbers from neighbours.
+     *
+     * Projects every column **except `downloadedContent`** (the full downloaded
+     * text of each chapter). The only caller — the Athenaeum contribution path,
+     * run for every novel on each library refresh — needs just url/name/number/
+     * date, so pulling the content of every downloaded chapter into memory across
+     * concurrent novels blew the heap (OOM during sync). `downloadedContent`
+     * defaults to null on the returned entities, matching [getChapters].
      */
-    @Query("SELECT * FROM chapters WHERE novelId = :novelId ORDER BY id ASC")
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId = :novelId ORDER BY id ASC")
     suspend fun getChaptersInReadingOrder(novelId: Long): List<ChapterEntity>
 
     /**
