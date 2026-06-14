@@ -66,8 +66,52 @@ class ObservationMapperTest {
     }
 
     @Test
-    fun chapter_withoutNumber_isSkipped() {
-        val ch = ChapterEntity(id = 9L, novelId = 1L, url = "/x", name = "x", chapterNumber = -1f)
+    fun chapter_derivesNumberFromUrlWhenSourceHasNone() {
+        // novelfull-style: extension leaves chapterNumber unset; number lives in the URL slug.
+        val ch = ChapterEntity(
+            id = 9L, novelId = 1L,
+            url = "/shadow-slave/chapter-37-getting-to-know-each-other.html",
+            name = "Getting to Know Each Other", chapterNumber = -1f,
+        )
+        val item = ObservationMapper.chapter("https://novelfull.com", "en", novel, ch)!!
+        assertEquals(37.0, item.number!!, 0.0)
+    }
+
+    @Test
+    fun chapter_derivesNumberFromName() {
+        val ch = ChapterEntity(id = 9L, novelId = 1L, url = "/x", name = "Chapter 12: The Fall", chapterNumber = -1f)
+        val item = ObservationMapper.chapter("https://novelfull.com", "en", novel, ch)!!
+        assertEquals(12.0, item.number!!, 0.0)
+    }
+
+    @Test
+    fun chapter_withoutAnyNumber_isSkipped() {
+        val ch = ChapterEntity(id = 9L, novelId = 1L, url = "/x", name = "Prologue", chapterNumber = -1f)
         assertNull(ObservationMapper.chapter("https://royalroad.com", "en", novel, ch))
+    }
+
+    private fun ch(id: Long, name: String, number: Float = -1f, url: String = "/x") =
+        ChapterEntity(id = id, novelId = 1L, url = url, name = name, chapterNumber = number)
+
+    @Test
+    fun chapters_infersMissingNumbersFromNeighbours() {
+        // Reading order: 101 (explicit), an unnumbered interlude, 102 (explicit).
+        val ordered = listOf(
+            ch(1, "Chapter 101", number = 101f),
+            ch(2, "Interlude: The Calm"),
+            ch(3, "Chapter 102", number = 102f),
+        )
+        val items = ObservationMapper.chapters("https://novelfull.com", "en", novel, ordered)
+        assertEquals(3, items.size)
+        assertEquals(101.0, items[0].number!!, 0.0)
+        assertEquals(101.5, items[1].number!!, 0.0) // interpolated between neighbours
+        assertEquals(102.0, items[2].number!!, 0.0)
+    }
+
+    @Test
+    fun chapters_noNumbersAnywhere_fallsBackToPosition() {
+        val ordered = listOf(ch(1, "Prologue"), ch(2, "The Beginning"), ch(3, "Onwards"))
+        val items = ObservationMapper.chapters("https://novelfull.com", "en", novel, ordered)
+        assertEquals(listOf(1.0, 2.0, 3.0), items.map { it.number })
     }
 }

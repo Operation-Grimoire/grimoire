@@ -228,7 +228,7 @@ class LibraryUpdater @Inject constructor(
 
         // Contribute the refreshed series + chapters to Athenaeum (opt-in,
         // fire-and-forget; no-op when the toggle is off or the source isn't HTTP).
-        athenaeum.submit(src, merged, chapterDao.getChaptersOnce(novel.id))
+        athenaeum.submit(src, merged, chapterDao.getChaptersInReadingOrder(novel.id))
 
         // Only log new chapters when the novel already had a chapter list, so the
         // first refresh of a never-opened novel does not flood the log. A chapter

@@ -576,7 +576,7 @@ class NovelDetailViewModel @Inject constructor(
                 // Browsing a novel contributes its freshly-scraped catalogue data
                 // (opt-in, fire-and-forget, no-op when contribution is off).
                 novelDao.getById(cachedNovelId)?.let { entity ->
-                    athenaeum.submit(src, entity, chapterDao.getChaptersOnce(cachedNovelId))
+                    athenaeum.submit(src, entity, chapterDao.getChaptersInReadingOrder(cachedNovelId))
                 }
             }
         }.onFailure { e ->
@@ -663,7 +663,7 @@ class NovelDetailViewModel @Inject constructor(
             novelDao.upsert(updated)
             // Adding a novel to the library contributes it (opt-in, fire-and-forget).
             if (next && !isLocal) {
-                source?.let { src -> athenaeum.submit(src, updated, chapterDao.getChaptersOnce(updated.id)) }
+                source?.let { src -> athenaeum.submit(src, updated, chapterDao.getChaptersInReadingOrder(updated.id)) }
             }
         }
     }

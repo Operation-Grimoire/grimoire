@@ -27,13 +27,14 @@ class AthenaeumContributor @Inject constructor(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    /** [chapters] must be in reading order so missing numbers can be inferred from neighbours. */
     fun submit(source: Source, novel: NovelEntity, chapters: List<ChapterEntity>) {
         val http = source as? HttpSource ?: return
         scope.launch {
             if (!prefs.contributeEnabled.changes().first()) return@launch
             val items = buildList {
                 add(ObservationMapper.series(http.baseUrl, source.lang, novel))
-                chapters.forEach { ch -> ObservationMapper.chapter(http.baseUrl, source.lang, novel, ch)?.let(::add) }
+                addAll(ObservationMapper.chapters(http.baseUrl, source.lang, novel, chapters))
             }
             client.submit(items)
         }
