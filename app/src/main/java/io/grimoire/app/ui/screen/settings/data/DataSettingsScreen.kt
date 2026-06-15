@@ -2,7 +2,10 @@ package io.grimoire.app.ui.screen.settings.data
 
 import android.text.format.Formatter
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -14,6 +17,7 @@ import androidx.compose.material3.Icon
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -28,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
 
@@ -79,6 +84,24 @@ fun DataSettingsScreen(
                 LinearProgressIndicator(Modifier.fillMaxWidth())
             }
             LazyColumn {
+                item { SettingsSectionHeader("Storage") }
+                item {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        if (b == null) {
+                            Text("…")
+                        } else {
+                            StorageUsageBar(b)
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                "Grimoire is using ${bytes(b.appTotalBytes)} · " +
+                                    "${bytes(b.deviceFreeBytes)} free of ${bytes(b.deviceTotalBytes)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+
                 item { SettingsSectionHeader("Your data") }
                 item {
                     ListItem(
