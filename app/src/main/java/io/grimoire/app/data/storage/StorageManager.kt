@@ -24,6 +24,8 @@ data class StorageBreakdown(
     val downloadedImageBytes: Long,
     val coverCacheBytes: Long,
     val databaseBytes: Long,
+    val installerCount: Int,
+    val installerBytes: Long,
 )
 
 /**
@@ -43,6 +45,7 @@ class StorageManager @Inject constructor(
     suspend fun measure(): StorageBreakdown = withContext(Dispatchers.IO) {
         val chapterStats = chapterDao.getStorageChapterStats()
         val imageUsage = chapterImageStore.usage()
+        val installers = installerApks()
         StorageBreakdown(
             libraryNovels = novelDao.countFavorites(),
             libraryChapters = chapterStats.libraryChapters,
@@ -53,6 +56,8 @@ class StorageManager @Inject constructor(
             downloadedImageBytes = imageUsage.bytes,
             coverCacheBytes = context.imageLoader.diskCache?.size ?: 0L,
             databaseBytes = databaseBytes(),
+            installerCount = installers.size,
+            installerBytes = installers.sumOf { it.length() },
         )
     }
 
@@ -66,6 +71,22 @@ class StorageManager @Inject constructor(
 
     /** Force-remove eligible browse rows now; returns how many novels were dropped. */
     suspend fun clearBrowseData(): Int = transientNovelPruner.clearAll()
+
+    /** Delete leftover installer APKs; returns how many files were removed. */
+    suspend fun clearInstallerFiles(): Int = withContext(Dispatchers.IO) {
+        installerApks().count { it.delete() }
+    }
+
+    /**
+     * Leftover `*.apk` files at the root of [Context.getCacheDir]: the app self-update
+     * download (`grimoire-update.apk`) and per-extension installers (`<package>.apk`).
+     * Both are handed to the system installer and never cleaned up afterwards.
+     */
+    private fun installerApks(): List<File> =
+        context.cacheDir
+            .listFiles { f -> f.isFile && f.name.endsWith(".apk", ignoreCase = true) }
+            ?.toList()
+            ?: emptyList()
 
     /** grimoire.db plus its write-ahead log and shared-memory sidecar files. */
     private fun databaseBytes(): Long {

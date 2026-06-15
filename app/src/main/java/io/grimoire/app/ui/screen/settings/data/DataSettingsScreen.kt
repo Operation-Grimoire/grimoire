@@ -31,7 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
 
-private enum class ConfirmTarget { COVER_CACHE, BROWSE_DATA }
+private enum class ConfirmTarget { COVER_CACHE, BROWSE_DATA, INSTALLERS }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,6 +156,23 @@ fun DataSettingsScreen(
                         },
                     )
                 }
+                item {
+                    ListItem(
+                        headlineContent = { Text("Installer files") },
+                        supportingContent = {
+                            Text(
+                                if (b == null) "…"
+                                else "${bytes(b.installerBytes)} · leftover app & extension update packages",
+                            )
+                        },
+                        trailingContent = {
+                            TextButton(
+                                onClick = { confirm = ConfirmTarget.INSTALLERS },
+                                enabled = b != null && b.installerCount > 0 && !state.busy,
+                            ) { Text("Clear") }
+                        },
+                    )
+                }
             }
         }
     }
@@ -173,6 +190,13 @@ fun DataSettingsScreen(
                     "They're re-fetched from the source when you open them again. " +
                     "Read history and downloads are kept.",
                 viewModel::clearBrowseData,
+            )
+            ConfirmTarget.INSTALLERS -> Triple(
+                "Clear installer files?",
+                "Deletes leftover .apk files from app and extension updates. " +
+                    "They're re-downloaded the next time you update. " +
+                    "Don't clear while an install is still in progress.",
+                viewModel::clearInstallerFiles,
             )
         }
         AlertDialog(
