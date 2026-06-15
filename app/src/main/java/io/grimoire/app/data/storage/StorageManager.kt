@@ -1,6 +1,7 @@
 package io.grimoire.app.data.storage
 
 import android.content.Context
+import android.os.StatFs
 import coil.imageLoader
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.app.data.download.ChapterImageStore
@@ -26,7 +27,14 @@ data class StorageBreakdown(
     val databaseBytes: Long,
     val installerCount: Int,
     val installerBytes: Long,
-)
+    val deviceFreeBytes: Long,
+    val deviceTotalBytes: Long,
+) {
+    /** Total on-disk bytes Grimoire accounts for here (the sum of the byte buckets). */
+    val appTotalBytes: Long
+        get() = downloadedTextBytes + downloadedImageBytes + coverCacheBytes +
+            databaseBytes + installerBytes
+}
 
 /**
  * Measures and clears the app's on-device storage for the Data management screen.
@@ -46,6 +54,7 @@ class StorageManager @Inject constructor(
         val chapterStats = chapterDao.getStorageChapterStats()
         val imageUsage = chapterImageStore.usage()
         val installers = installerApks()
+        val device = StatFs(context.dataDir.path)
         StorageBreakdown(
             libraryNovels = novelDao.countFavorites(),
             libraryChapters = chapterStats.libraryChapters,
@@ -58,6 +67,8 @@ class StorageManager @Inject constructor(
             databaseBytes = databaseBytes(),
             installerCount = installers.size,
             installerBytes = installers.sumOf { it.length() },
+            deviceFreeBytes = device.availableBytes,
+            deviceTotalBytes = device.totalBytes,
         )
     }
 
