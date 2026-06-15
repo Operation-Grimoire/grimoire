@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentActivity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
@@ -20,6 +21,7 @@ import io.grimoire.app.ui.AppNavigation
 import io.grimoire.app.ui.PendingAddRepo
 import io.grimoire.app.ui.isAddRepoLink
 import io.grimoire.app.ui.parseAddRepoLink
+import io.grimoire.app.ui.component.LocalSynopsisRenderLinks
 import io.grimoire.app.ui.component.ProvideAppHaptics
 import io.grimoire.app.ui.theme.GrimoireTheme
 import io.grimoire.app.ui.update.AppUpdateUi
@@ -72,16 +74,20 @@ class MainActivity : FragmentActivity() {
                     dynamicColor = theme.useDynamicColor,
                     colorTheme = theme.colorTheme,
                 ) {
-                    ProvideAppHaptics(enabled = theme.hapticsEnabled) {
-                        AppNavigation(
-                            pendingTarget = pendingTarget.asStateFlow(),
-                            onTargetHandled = { pendingTarget.value = null },
-                            pendingEpubUri = pendingEpubUri.asStateFlow(),
-                            onEpubUriHandled = { pendingEpubUri.value = null },
-                            pendingAddRepo = pendingAddRepo.asStateFlow(),
-                            onAddRepoHandled = { pendingAddRepo.value = null },
-                        )
-                        AppUpdateUi()
+                    CompositionLocalProvider(
+                        LocalSynopsisRenderLinks provides theme.renderSynopsisLinks,
+                    ) {
+                        ProvideAppHaptics(enabled = theme.hapticsEnabled) {
+                            AppNavigation(
+                                pendingTarget = pendingTarget.asStateFlow(),
+                                onTargetHandled = { pendingTarget.value = null },
+                                pendingEpubUri = pendingEpubUri.asStateFlow(),
+                                onEpubUriHandled = { pendingEpubUri.value = null },
+                                pendingAddRepo = pendingAddRepo.asStateFlow(),
+                                onAddRepoHandled = { pendingAddRepo.value = null },
+                            )
+                            AppUpdateUi()
+                        }
                     }
                 }
             }

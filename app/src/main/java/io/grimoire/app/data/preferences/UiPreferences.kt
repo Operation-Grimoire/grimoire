@@ -23,6 +23,7 @@ data class UiThemeState(
     val useDynamicColor: Boolean,
     val colorTheme: ColorTheme,
     val hapticsEnabled: Boolean,
+    val renderSynopsisLinks: Boolean,
 )
 
 @Singleton
@@ -31,6 +32,9 @@ class UiPreferences @Inject constructor(store: PreferenceStore) {
     val useDynamicColor = store.getBoolean("use_dynamic_color", true)
     val colorTheme = store.getEnum("color_theme", ColorTheme.DEFAULT)
     val hapticsEnabled = store.getBoolean("haptics_enabled", true)
+
+    /** Render embedded links in synopses/descriptions as tappable links. */
+    val renderSynopsisLinks = store.getBoolean("render_synopsis_links", true)
 
     /**
      * Single combined flow so the activity can await one first emission of the
@@ -42,7 +46,8 @@ class UiPreferences @Inject constructor(store: PreferenceStore) {
         useDynamicColor.changes(),
         colorTheme.changes(),
         hapticsEnabled.changes(),
-    ) { mode, dynamic, color, haptics ->
-        UiThemeState(mode, dynamic, color, haptics)
+        renderSynopsisLinks.changes(),
+    ) { mode, dynamic, color, haptics, synopsisLinks ->
+        UiThemeState(mode, dynamic, color, haptics, synopsisLinks)
     }
 }

@@ -115,6 +115,7 @@ CI lives in `.github/workflows/release.yml` and builds signed release APKs from 
 | Looking for | File |
 |-------------|------|
 | Swipeable tabs (any screen/sheet) | `ui/component/SwipeTabRow.kt` |
+| Rich synopsis rendering (HTML + auto-linked URLs) | `ui/component/RichSynopsis.kt` (+ `RichSynopsisTest`), consumed by `ExpandableText.kt`; link toggle via `LocalSynopsisRenderLinks` / `UiPreferences.renderSynopsisLinks` |
 | Top-level navigation | `ui/AppNavigation.kt`, `ui/AppNavGraphs.kt`, `ui/AppRoutes.kt` |
 | Library projection (pure) | `ui/screen/library/LibraryFilter.kt` + `LibraryFilterTest` |
 | Chapter projection (pure) | `ui/screen/browse/ChapterProjection.kt` + `ChapterProjectionTest` |

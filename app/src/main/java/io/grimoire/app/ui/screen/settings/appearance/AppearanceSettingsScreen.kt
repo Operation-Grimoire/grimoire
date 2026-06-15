@@ -70,6 +70,7 @@ fun AppearanceSettingsScreen(
     val themeMode by viewModel.themeMode.collectAsState()
     val useDynamicColor by viewModel.useDynamicColor.collectAsState()
     val colorTheme by viewModel.colorTheme.collectAsState()
+    val renderSynopsisLinks by viewModel.renderSynopsisLinks.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -132,6 +133,24 @@ fun AppearanceSettingsScreen(
                     enabled = !useDynamicColor || Build.VERSION.SDK_INT < Build.VERSION_CODES.S,
                     darkPreview = darkPreview,
                     onSelected = viewModel::setColorTheme,
+                )
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("Links in synopses") },
+                    supportingContent = {
+                        Text("Render web links in novel descriptions as tappable links")
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = renderSynopsisLinks,
+                            onCheckedChange = viewModel::setRenderSynopsisLinks,
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        viewModel.setRenderSynopsisLinks(!renderSynopsisLinks)
+                    },
                 )
             }
         }
