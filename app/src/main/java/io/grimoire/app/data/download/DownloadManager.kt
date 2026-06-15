@@ -241,7 +241,11 @@ class DownloadManager @Inject constructor(
                                 val src = extensionManager.extensions.value
                                     .firstOrNull { it.source.id == novel.sourceId }?.source
                                     ?: error("Source not available")
-                                val pages = src.getPageList(chapter.toChapter())
+                                // Retry transient empty responses (the Royal Road blank-chapter
+                                // bug) before giving up; throws EmptyChapterContentException when
+                                // every attempt comes back empty, so the chapter fails instead of
+                                // persisting a blank.
+                                val pages = fetchReadablePages { src.getPageList(chapter.toChapter()) }
                                 val content = encodeChapterContent(pages)
                                 chapterDao.setDownloadedContent(chapter.id, content, ChapterDownloadStatus.DOWNLOADED.ordinal)
                                 // Best-effort: text is already saved, so a failed image
