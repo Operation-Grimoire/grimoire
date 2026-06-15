@@ -37,6 +37,7 @@ class SettingsViewModel @Inject constructor(
     val useDynamicColor = uiPreferences.useDynamicColor.stateIn(viewModelScope)
     val colorTheme = uiPreferences.colorTheme.stateIn(viewModelScope)
     val hapticsEnabled = uiPreferences.hapticsEnabled.stateIn(viewModelScope)
+    val renderSynopsisLinks = uiPreferences.renderSynopsisLinks.stateIn(viewModelScope)
     val browseDisplayMode = browsePreferences.displayMode.stateIn(viewModelScope)
     val browseGridColumns = browsePreferences.gridColumns.stateIn(viewModelScope)
     val browseShowNovelUpdates = browsePreferences.showNovelUpdates.stateIn(viewModelScope)
@@ -53,6 +54,7 @@ class SettingsViewModel @Inject constructor(
     fun setDynamicColor(enabled: Boolean) = viewModelScope.launch { uiPreferences.useDynamicColor.set(enabled) }
     fun setColorTheme(theme: ColorTheme) = viewModelScope.launch { uiPreferences.colorTheme.set(theme) }
     fun setHapticsEnabled(enabled: Boolean) = viewModelScope.launch { uiPreferences.hapticsEnabled.set(enabled) }
+    fun setRenderSynopsisLinks(enabled: Boolean) = viewModelScope.launch { uiPreferences.renderSynopsisLinks.set(enabled) }
     fun setBrowseDisplayMode(mode: BrowseDisplayMode) = viewModelScope.launch { browsePreferences.displayMode.set(mode) }
     fun setBrowseGridColumns(columns: Int) = viewModelScope.launch { browsePreferences.gridColumns.set(columns.coerceIn(2, 4)) }
     fun setBrowseShowNovelUpdates(enabled: Boolean) = viewModelScope.launch { browsePreferences.showNovelUpdates.set(enabled) }

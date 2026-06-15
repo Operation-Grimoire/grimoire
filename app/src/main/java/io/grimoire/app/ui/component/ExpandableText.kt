@@ -26,6 +26,10 @@ import androidx.compose.ui.unit.dp
  * Body text that collapses to [collapsedMaxLines] with a "Show more / Show
  * less" toggle. The whole block is tappable so the ripple covers the full
  * description instead of a tiny region around the toggle.
+ *
+ * [text] is rendered as a synopsis: HTML formatting is parsed and bare URLs are
+ * auto-linked (see [rememberSynopsisAnnotatedString]). Taps on a link open it;
+ * taps anywhere else toggle the expand state.
  */
 @Composable
 fun ExpandableText(
@@ -35,11 +39,12 @@ fun ExpandableText(
     style: TextStyle = MaterialTheme.typography.bodyMedium,
 ) {
     var expanded by remember(text) { mutableStateOf(false) }
+    val rich = rememberSynopsisAnnotatedString(text)
     Column(
         modifier = modifier.clickable { expanded = !expanded },
     ) {
         Text(
-            text,
+            rich,
             style = style,
             maxLines = if (expanded) Int.MAX_VALUE else collapsedMaxLines,
             overflow = if (expanded) TextOverflow.Clip else TextOverflow.Ellipsis,
