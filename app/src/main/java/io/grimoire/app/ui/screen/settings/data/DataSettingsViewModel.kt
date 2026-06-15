@@ -44,6 +44,10 @@ class DataSettingsViewModel @Inject constructor(
         storageManager.clearBrowseData()
     }
 
+    fun clearInstallerFiles() = runAction({ removed -> "Cleared $removed installer ${if (removed == 1) "file" else "files"}" }) {
+        storageManager.clearInstallerFiles()
+    }
+
     fun consumeMessage() {
         _state.value = _state.value.copy(message = null)
     }
