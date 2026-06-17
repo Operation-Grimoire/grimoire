@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.settings.tts
 
 import android.content.Intent
+import android.widget.Toast
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.clickable
@@ -9,14 +10,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -24,6 +29,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -32,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.tts.TtsEngineType
+import io.grimoire.app.data.tts.TtsPreviewManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,7 +51,20 @@ fun TtsVoicePickerScreen(
     val state by viewModel.voiceState.collectAsState()
     val selectedId by viewModel.selectedVoiceId.collectAsState()
     val engine by viewModel.engine.collectAsState()
+    val preview by viewModel.previewState.collectAsState()
     val context = LocalContext.current
+
+    LaunchedEffect(preview.error) {
+        preview.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearPreviewError()
+        }
+    }
+
+    // Stop any audition when the picker leaves the composition.
+    DisposableEffect(Unit) {
+        onDispose { viewModel.stopPreview() }
+    }
 
     Scaffold(
         modifier = modifier,
@@ -98,7 +119,9 @@ fun TtsVoicePickerScreen(
                             title = "System default",
                             subtitle = "Let the engine pick a voice for this language",
                             selected = selectedId == null,
+                            previewState = previewStateFor(preview, viewModel.previewKey(null)),
                             onClick = { viewModel.selectVoice(null) },
+                            onPreview = { viewModel.previewVoice(null) },
                         )
                         HorizontalDivider()
                     }
@@ -107,7 +130,9 @@ fun TtsVoicePickerScreen(
                             title = voice.displayName,
                             subtitle = voice.detail,
                             selected = selectedId == voice.id,
+                            previewState = previewStateFor(preview, viewModel.previewKey(voice.id)),
                             onClick = { viewModel.selectVoice(voice.id) },
+                            onPreview = { viewModel.previewVoice(voice.id) },
                         )
                     }
                     if (engine == TtsEngineType.DEVICE) {
@@ -148,12 +173,26 @@ private fun TopAppBarWithTitle(title: String, onNavigateBack: () -> Unit) {
     )
 }
 
+/** Lifecycle of the per-row preview button. */
+private enum class PreviewButtonState { IDLE, LOADING, PLAYING }
+
+/** Maps the shared [TtsPreviewManager.State] onto a single row identified by [key]. */
+private fun previewStateFor(state: TtsPreviewManager.State, key: String): PreviewButtonState =
+    if (state.key != key) {
+        PreviewButtonState.IDLE
+    } else when (state.phase) {
+        TtsPreviewManager.Phase.LOADING -> PreviewButtonState.LOADING
+        TtsPreviewManager.Phase.PLAYING -> PreviewButtonState.PLAYING
+    }
+
 @Composable
 private fun VoiceRow(
     title: String,
     subtitle: String?,
     selected: Boolean,
+    previewState: PreviewButtonState,
     onClick: () -> Unit,
+    onPreview: () -> Unit,
 ) {
     ListItem(
         headlineContent = { Text(title) },
@@ -163,8 +202,26 @@ private fun VoiceRow(
             null
         },
         leadingContent = { RadioButton(selected = selected, onClick = null) },
+        trailingContent = { PreviewButton(previewState, onPreview) },
         modifier = Modifier.clickable(onClick = onClick),
     )
+}
+
+@Composable
+private fun PreviewButton(state: PreviewButtonState, onClick: () -> Unit) {
+    when (state) {
+        PreviewButtonState.LOADING -> IconButton(onClick = onClick) {
+            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+        }
+
+        PreviewButtonState.PLAYING -> IconButton(onClick = onClick) {
+            Icon(Icons.Filled.Stop, contentDescription = "Stop preview")
+        }
+
+        PreviewButtonState.IDLE -> IconButton(onClick = onClick) {
+            Icon(Icons.Filled.PlayArrow, contentDescription = "Preview voice")
+        }
+    }
 }
 
 @Composable
