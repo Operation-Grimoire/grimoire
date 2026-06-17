@@ -40,6 +40,7 @@ fun MoreScreen(
 ) {
     val activeCount by viewModel.activeDownloadCount.collectAsState()
     val updateCount by viewModel.updateCount.collectAsState()
+    val subscribedUpdateCount by viewModel.subscribedUpdateCount.collectAsState()
     val issueCount by viewModel.updateIssueCount.collectAsState()
 
     Scaffold(
@@ -59,19 +60,26 @@ fun MoreScreen(
             }
             item {
                 val hasUpdates = updateCount > 0
+                val hasSubscribedUpdates = subscribedUpdateCount > 0
                 ListItem(
                     headlineContent = { Text("Updates") },
                     supportingContent = {
                         Text(
-                            if (hasUpdates) {
-                                "$updateCount new chapter${if (updateCount == 1) "" else "s"}"
-                            } else {
-                                "No new chapters"
+                            when {
+                                hasSubscribedUpdates -> {
+                                    val chapters =
+                                        "$subscribedUpdateCount new chapter${if (subscribedUpdateCount == 1) "" else "s"}"
+                                    "$chapters from subscribed novels"
+                                }
+                                hasUpdates -> {
+                                    "$updateCount new chapter${if (updateCount == 1) "" else "s"} across your library"
+                                }
+                                else -> "No new chapters"
                             }
                         )
                     },
                     leadingContent = {
-                        if (hasUpdates) {
+                        if (hasSubscribedUpdates) {
                             Icon(Icons.Default.NewReleases, contentDescription = null)
                         } else {
                             Icon(
