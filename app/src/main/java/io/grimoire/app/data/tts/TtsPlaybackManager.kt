@@ -331,7 +331,6 @@ class TtsPlaybackManager @Inject constructor(
 
     private suspend fun configureEngine(locale: java.util.Locale) {
         val engine = activeEngine ?: return
-        val key = ContentLanguages.normalize(novelLanguage ?: "")
         val voiceMap = if (engine.type == TtsEngineType.ELEVENLABS) {
             ttsPreferences.cloudVoiceByLanguage.changes().first()
         } else {
@@ -339,7 +338,7 @@ class TtsPlaybackManager @Inject constructor(
         }
         engine.configure(
             TtsEngineConfig(
-                voiceId = voiceMap[key],
+                voiceId = selectVoiceId(voiceMap, locale),
                 localeTag = locale.toLanguageTag(),
                 rate = ttsPreferences.speechRate.changes().first() / 100f,
                 pitch = ttsPreferences.pitch.changes().first() / 100f,
@@ -347,6 +346,27 @@ class TtsPlaybackManager @Inject constructor(
                 elevenLabsModel = ttsPreferences.elevenLabsModel.changes().first(),
             ),
         )
+    }
+
+    /**
+     * The voice picked for this novel's language, or null for the engine default.
+     *
+     * The per-language map is keyed by the lowercased English language *name* the voice
+     * picker lists (e.g. "english"), but a novel's [novelLanguage] is frequently null or a
+     * BCP-47 tag ("en"). Try the novel's own value first, then fall back to the resolved
+     * [locale]'s English display name — so a tag-language or unlabelled novel (which
+     * [TtsLanguageResolver] maps to the device locale) still uses the chosen voice instead
+     * of silently reverting to the default.
+     */
+    private fun selectVoiceId(voiceMap: Map<String, String>, locale: java.util.Locale): String? {
+        novelLanguage?.trim()?.takeIf { it.isNotEmpty() }?.let { lang ->
+            voiceMap[ContentLanguages.normalize(lang)]?.let { return it }
+        }
+        val localeName = locale.getDisplayLanguage(java.util.Locale.ENGLISH)
+        if (localeName.isNotBlank()) {
+            voiceMap[ContentLanguages.normalize(localeName)]?.let { return it }
+        }
+        return null
     }
 
     private suspend fun autoAdvance(): Boolean = ttsPreferences.autoAdvance.changes().first()
