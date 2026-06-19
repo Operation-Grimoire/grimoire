@@ -28,7 +28,7 @@ class MoreViewModel @Inject constructor(
     libraryUpdateDao: LibraryUpdateDao,
     updateIssueDao: UpdateIssueDao,
     extensionRepository: ExtensionRepository,
-    authManager: HiddenCategoriesAuthManager,
+    private val authManager: HiddenCategoriesAuthManager,
     private val novelDao: NovelDao,
     private val extensionManager: ExtensionManager,
 ) : ViewModel() {
@@ -68,7 +68,10 @@ class MoreViewModel @Inject constructor(
      * read yet, or the novel has no openable chapter / installed source.
      */
     suspend fun resolveResumeReadingRoute(): String? {
-        val novel = novelDao.getMostRecentlyReadFavorite() ?: return null
+        // Locked → skip hidden-category novels, matching the library's own
+        // visibility rule so the shortcut can't leak a hidden novel.
+        val excludeHidden = !authManager.isUnlocked.value
+        val novel = novelDao.getMostRecentlyReadFavorite(excludeHidden) ?: return null
         // getChaptersOnce returns chapters ordered by chapterNumber ascending.
         val chapters = chapterDao.getChaptersOnce(novel.id)
         val target = chapters.firstOrNull { !it.read && !it.locked }
