@@ -18,6 +18,7 @@ import io.grimoire.app.ui.screen.browse.BrowseViewModel
 import io.grimoire.app.ui.screen.browse.GlobalSearchScreen
 import io.grimoire.app.ui.screen.browse.NovelDetailScreen
 import io.grimoire.app.ui.screen.browse.SourceBrowseScreen
+import io.grimoire.app.ui.screen.crash.CrashReportScreen
 import io.grimoire.app.ui.screen.downloads.DownloadsScreen
 import io.grimoire.app.ui.screen.extensions.ExtensionsScreen
 import io.grimoire.app.ui.screen.library.LibraryScreen
@@ -266,6 +267,9 @@ internal fun NavGraphBuilder.moreDestinations(navController: NavHostController) 
     }
     composable(route = ROUTE_ABOUT) {
         AboutSettingsScreen(onNavigateBack = { navController.popBackStack() })
+    }
+    composable(route = ROUTE_CRASH_REPORT) {
+        CrashReportScreen(onNavigateBack = { navController.popBackStack() })
     }
 }
 

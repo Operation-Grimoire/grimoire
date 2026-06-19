@@ -16,8 +16,10 @@ import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import io.grimoire.app.data.crash.CrashLogStore
 import io.grimoire.app.data.preferences.UiPreferences
 import io.grimoire.app.ui.AppNavigation
+import io.grimoire.app.ui.NAV_TARGET_CRASH
 import io.grimoire.app.ui.PendingAddRepo
 import io.grimoire.app.ui.isAddRepoLink
 import io.grimoire.app.ui.parseAddRepoLink
@@ -35,6 +37,8 @@ import javax.inject.Inject
 class MainActivity : FragmentActivity() {
 
     @Inject lateinit var uiPreferences: UiPreferences
+
+    @Inject lateinit var crashLogStore: CrashLogStore
 
     private val notifPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
@@ -60,6 +64,11 @@ class MainActivity : FragmentActivity() {
         pendingTarget.value = consumeNavTarget(intent)
         pendingAddRepo.value = consumeAddRepoLink(intent)
         pendingEpubUri.value = consumeEpubUri(intent)
+        // A crash recorded last session takes the user to the crash-report screen
+        // on launch, unless an inbound intent already asked for somewhere specific.
+        if (pendingTarget.value == null && crashLogStore.hasPendingCrash()) {
+            pendingTarget.value = NAV_TARGET_CRASH
+        }
         // Await the persisted theme before composing anything: seeding collectAsState
         // with defaults paints the first frame in the default theme and then snaps to
         // the user's, a visible flash on every cold start for non-default themes. The
