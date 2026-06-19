@@ -16,6 +16,7 @@ import coil.memory.MemoryCache
 import dagger.hilt.android.HiltAndroidApp
 import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.cache.CoverPreloader
+import io.grimoire.app.data.crash.CrashLogStore
 import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
 import io.grimoire.app.data.local.TransientNovelPruner
 import io.grimoire.app.data.schedule.ScheduleMigrator
@@ -40,6 +41,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject lateinit var scheduleMigrator: ScheduleMigrator
     @Inject lateinit var extensionRepository: ExtensionRepository
     @Inject lateinit var transientNovelPruner: TransientNovelPruner
+    @Inject lateinit var crashLogStore: CrashLogStore
     @Inject @GitHubAuthorized lateinit var imageHttpClient: OkHttpClient
 
     private var relockJob: Job? = null
@@ -96,6 +98,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        installCrashHandler()
         NetworkContext.init(this)
         coverPreloader.start()
         extensionRepository.checkForUpdatesOnLaunch()
@@ -167,6 +170,20 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
             libraryUpdateScheduler.applyPreferredSchedule()
             // Clear browse rows left stale by previous sessions on cold start.
             runCatching { transientNovelPruner.prune() }
+        }
+    }
+
+    /**
+     * Records uncaught exceptions to disk before the process dies, then hands
+     * off to whatever handler was installed before us (the system handler that
+     * shows the "app stopped" dialog and kills the process). The saved report is
+     * surfaced on the next launch via [CrashLogStore.hasPendingCrash].
+     */
+    private fun installCrashHandler() {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            runCatching { crashLogStore.save(throwable, thread) }
+            previous?.uncaughtException(thread, throwable)
         }
     }
 

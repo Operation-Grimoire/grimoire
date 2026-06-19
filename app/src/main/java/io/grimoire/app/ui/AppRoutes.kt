@@ -42,6 +42,7 @@ internal const val ROUTE_STATISTICS = "statistics"
 internal const val ROUTE_TASKS = "tasks"
 internal const val ROUTE_UPDATES = "updates"
 internal const val ROUTE_UPDATE_ISSUES = "update_issues"
+internal const val ROUTE_CRASH_REPORT = "crash_report"
 internal const val ROUTE_SETTINGS_ROOT = "settings"
 internal const val ROUTE_SETTINGS_LIBRARY_UPDATE = "settings/library_updates"
 internal const val ROUTE_SETTINGS_APPEARANCE = "settings/appearance"
@@ -68,5 +69,8 @@ internal const val POP_MS = 120
 
 /** Stable name for an externally-requested destination (e.g. from a notification tap). */
 const val NAV_TARGET_UPDATES = "updates"
+
+/** Stable name for the crash-report screen, surfaced on the first launch after a crash. */
+const val NAV_TARGET_CRASH = "crash"
 
 internal const val SETTINGS_GRAPH_ROUTE = "settings_graph"
