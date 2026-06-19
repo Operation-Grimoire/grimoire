@@ -74,6 +74,21 @@ interface NovelDao {
     @Query("SELECT * FROM novels WHERE id = :id")
     suspend fun getById(id: Long): NovelEntity?
 
+    /**
+     * The library novel the user read most recently, or null if nothing's been read yet.
+     * When [excludeHidden] is set (the library is locked) novels in a hidden category are
+     * skipped, so the "continue reading" shortcut never leaks a hidden novel while locked.
+     */
+    @Query("""
+        SELECT n.* FROM novels n
+        LEFT JOIN categories c ON c.id = n.categoryId
+        WHERE n.favorite = 1 AND n.lastReadAt > 0
+          AND (:excludeHidden = 0 OR IFNULL(c.isHidden, 0) = 0)
+        ORDER BY n.lastReadAt DESC
+        LIMIT 1
+    """)
+    suspend fun getMostRecentlyReadFavorite(excludeHidden: Boolean): NovelEntity?
+
     @Query("SELECT * FROM novels WHERE id IN (:ids)")
     suspend fun getByIds(ids: List<Long>): List<NovelEntity>
 

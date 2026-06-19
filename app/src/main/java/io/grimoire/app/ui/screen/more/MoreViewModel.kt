@@ -1,13 +1,18 @@
 package io.grimoire.app.ui.screen.more
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.data.download.ChapterDownloadStatus
+import io.grimoire.app.data.epub.LOCAL_PKG
+import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
+import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
+import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.extension.repo.ExtensionRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,11 +24,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MoreViewModel @Inject constructor(
-    chapterDao: ChapterDao,
+    private val chapterDao: ChapterDao,
     libraryUpdateDao: LibraryUpdateDao,
     updateIssueDao: UpdateIssueDao,
     extensionRepository: ExtensionRepository,
-    authManager: HiddenCategoriesAuthManager,
+    private val authManager: HiddenCategoriesAuthManager,
+    private val novelDao: NovelDao,
+    private val extensionManager: ExtensionManager,
 ) : ViewModel() {
 
     private val excludeHidden = authManager.isUnlocked.map { !it }.distinctUntilChanged()
@@ -52,4 +59,34 @@ class MoreViewModel @Inject constructor(
 
     /** Installed extensions with an update available — drives the Browse tab badge. */
     val extensionUpdateCount: StateFlow<Int> = extensionRepository.updateCount
+
+    /**
+     * Reader route for the most-recently-read library novel, used by the Library
+     * tab's re-tap "continue reading" shortcut. Picks the same chapter the novel
+     * detail "Continue" FAB would: the first unread, unlocked chapter, else the
+     * last unlocked, else the last chapter. Returns null when nothing has been
+     * read yet, or the novel has no openable chapter / installed source.
+     */
+    suspend fun resolveResumeReadingRoute(): String? {
+        // Locked → skip hidden-category novels, matching the library's own
+        // visibility rule so the shortcut can't leak a hidden novel.
+        val excludeHidden = !authManager.isUnlocked.value
+        val novel = novelDao.getMostRecentlyReadFavorite(excludeHidden) ?: return null
+        // getChaptersOnce returns chapters ordered by chapterNumber ascending.
+        val chapters = chapterDao.getChaptersOnce(novel.id)
+        val target = chapters.firstOrNull { !it.read && !it.locked }
+            ?: chapters.lastOrNull { !it.locked }
+            ?: chapters.lastOrNull()
+            ?: return null
+        val pkg = if (novel.sourceId == LOCAL_SOURCE_ID) {
+            LOCAL_PKG
+        } else {
+            extensionManager.extensions.value
+                .firstOrNull { it.source.id == novel.sourceId }
+                ?.info?.packageName ?: return null
+        }
+        return "reader?pkg=${Uri.encode(pkg)}" +
+            "&novelUrl=${Uri.encode(novel.url)}" +
+            "&chapterUrl=${Uri.encode(target.url)}"
+    }
 }
