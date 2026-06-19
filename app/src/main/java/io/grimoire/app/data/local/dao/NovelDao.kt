@@ -74,6 +74,10 @@ interface NovelDao {
     @Query("SELECT * FROM novels WHERE id = :id")
     suspend fun getById(id: Long): NovelEntity?
 
+    /** The library novel the user read most recently, or null if nothing's been read yet. */
+    @Query("SELECT * FROM novels WHERE favorite = 1 AND lastReadAt > 0 ORDER BY lastReadAt DESC LIMIT 1")
+    suspend fun getMostRecentlyReadFavorite(): NovelEntity?
+
     @Query("SELECT * FROM novels WHERE id IN (:ids)")
     suspend fun getByIds(ids: List<Long>): List<NovelEntity>
 

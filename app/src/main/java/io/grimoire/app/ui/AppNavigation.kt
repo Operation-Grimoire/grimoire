@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -37,6 +38,7 @@ import androidx.navigation.compose.rememberNavController
 import io.grimoire.app.ui.screen.more.MoreViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 private val EmptyNavTarget: StateFlow<String?> = MutableStateFlow(null)
 private val EmptyEpubUri: StateFlow<Uri?> = MutableStateFlow(null)
@@ -113,6 +115,7 @@ fun AppNavigation(
         (libraryInSelection && currentRoute == TopLevelDestination.Library.route) ||
             (browseInSelection && currentRoute == ROUTE_BROWSE_HOME)
 
+    val scope = rememberCoroutineScope()
     val moreVm: MoreViewModel = hiltViewModel()
     val activeDownloadCount by moreVm.activeDownloadCount.collectAsState()
     val subscribedUpdateCount by moreVm.subscribedUpdateCount.collectAsState()
@@ -140,18 +143,34 @@ fun AppNavigation(
                                 if (!alreadyOnTab) {
                                     haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                                 }
-                                if (alreadyOnTab && dest == TopLevelDestination.Browse) {
-                                    navController.navigate(ROUTE_GLOBAL_SEARCH) {
-                                        launchSingleTop = true
-                                    }
-                                } else {
-                                    navController.navigate(dest.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
+                                when {
+                                    // Re-tapping the active tab is a shortcut, not a no-op:
+                                    // Browse jumps to global search, More into settings, and
+                                    // Library resumes the most-recently-read novel's reader.
+                                    alreadyOnTab && dest == TopLevelDestination.Browse ->
+                                        navController.navigate(ROUTE_GLOBAL_SEARCH) {
+                                            launchSingleTop = true
                                         }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                    alreadyOnTab && dest == TopLevelDestination.More ->
+                                        navController.navigate(ROUTE_SETTINGS_ROOT) {
+                                            launchSingleTop = true
+                                        }
+                                    alreadyOnTab && dest == TopLevelDestination.Library ->
+                                        scope.launch {
+                                            moreVm.resolveResumeReadingRoute()?.let { route ->
+                                                navController.navigate(route) {
+                                                    launchSingleTop = true
+                                                }
+                                            }
+                                        }
+                                    else ->
+                                        navController.navigate(dest.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                 }
                             },
                             icon = {
