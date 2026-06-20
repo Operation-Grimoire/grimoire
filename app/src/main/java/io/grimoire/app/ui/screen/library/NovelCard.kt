@@ -49,8 +49,8 @@ internal fun NovelCard(
         ) {
             Box {
                 AsyncImage(
-                    model = novel.thumbnailUrl,
-                    contentDescription = novel.title,
+                    model = novel.effectiveCoverModel(),
+                    contentDescription = novel.effectiveTitle,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -126,7 +126,7 @@ internal fun NovelCard(
                 }
             }
             Text(
-                novel.title,
+                novel.effectiveTitle,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

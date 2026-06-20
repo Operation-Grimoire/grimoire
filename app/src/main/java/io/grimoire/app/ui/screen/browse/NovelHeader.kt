@@ -1,5 +1,9 @@
 package io.grimoire.app.ui.screen.browse
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,10 +18,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import io.grimoire.api.model.Novel
+import io.grimoire.app.ui.component.ImageAction
 import io.grimoire.app.ui.component.RatingLabel
 import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.StatusLabel
@@ -38,11 +49,18 @@ import io.grimoire.app.ui.component.ZoomableCoverImage
 @Composable
 internal fun NovelHeader(
     novel: Novel,
+    overrides: NovelOverrides,
+    coverModel: Any?,
     sourceName: String = "",
     isLocal: Boolean = false,
+    onEditMetadata: () -> Unit = {},
+    onSetCoverUri: (Uri) -> Unit = {},
+    onSetCoverUrl: (String) -> Unit = {},
+    onResetCover: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showRatingInfo by remember { mutableStateOf(false) }
+    var showCoverUrlDialog by remember { mutableStateOf(false) }
 
     if (showRatingInfo) {
         AlertDialog(
@@ -60,28 +78,89 @@ internal fun NovelHeader(
         )
     }
 
+    val coverPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia(),
+    ) { uri -> uri?.let(onSetCoverUri) }
+
+    if (showCoverUrlDialog) {
+        var url by remember { mutableStateOf(overrides.coverUrl.orEmpty()) }
+        AlertDialog(
+            onDismissRequest = { showCoverUrlDialog = false },
+            title = { Text("Cover image URL") },
+            text = {
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    singleLine = true,
+                    placeholder = { Text("https://…") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = url.isNotBlank(),
+                    onClick = { onSetCoverUrl(url); showCoverUrlDialog = false },
+                ) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCoverUrlDialog = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    val hasCoverOverride = overrides.coverPath != null || overrides.coverUrl != null
+    val coverActions = buildList {
+        add(ImageAction(Icons.Default.Image, "Replace with image") {
+            coverPicker.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+            )
+        })
+        add(ImageAction(Icons.Default.Link, "Replace with URL") { showCoverUrlDialog = true })
+        if (hasCoverOverride) {
+            add(ImageAction(Icons.Default.Restore, "Reset to source cover") { onResetCover() })
+        }
+    }
+
     Row(
         modifier = modifier.fillMaxWidth().padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         ZoomableCoverImage(
-            model = novel.thumbnailUrl,
+            model = coverModel,
             contentDescription = novel.title,
+            saveBaseName = novel.title,
+            extraActions = coverActions,
             modifier = Modifier
                 .width(120.dp)
                 .aspectRatio(2f / 3f)
                 .clip(RoundedCornerShape(8.dp)),
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(novel.title, style = MaterialTheme.typography.titleLarge)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    novel.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                OverrideIndicator(overrides.title != null, onEditMetadata)
+            }
             if (!novel.author.isNullOrBlank()) {
-                Text(novel.author!!, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        novel.author!!,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    OverrideIndicator(overrides.author != null, onEditMetadata)
+                }
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 StatusLabel(status = novel.status)
+                OverrideIndicator(overrides.status != null, onEditMetadata)
                 novel.rating?.let {
                     RatingLabel(
                         rating = it,
@@ -112,6 +191,23 @@ internal fun NovelHeader(
                 )
             }
         }
+    }
+}
+
+/**
+ * Small pencil shown next to a metadata field that the user has overridden (#152).
+ * Tapping it opens the edit sheet. Renders nothing when [overridden] is false.
+ */
+@Composable
+internal fun OverrideIndicator(overridden: Boolean, onClick: () -> Unit) {
+    if (!overridden) return
+    IconButton(onClick = onClick, modifier = Modifier.size(24.dp)) {
+        Icon(
+            Icons.Outlined.Edit,
+            contentDescription = "Edited — tap to change",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(14.dp),
+        )
     }
 }
 

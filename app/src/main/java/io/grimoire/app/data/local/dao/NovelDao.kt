@@ -127,6 +127,29 @@ interface NovelDao {
     @Query("UPDATE novels SET autoDownloadNewChapters = :value WHERE id = :id")
     suspend fun updateAutoDownloadNewChapters(id: Long, value: Boolean)
 
+    /** Write the per-field metadata overrides (#152). A null clears that field's override. */
+    @Query("""
+        UPDATE novels SET
+            overrideTitle = :title,
+            overrideAuthor = :author,
+            overrideDescription = :description,
+            overrideStatus = :status,
+            overrideGenres = :genres
+        WHERE id = :id
+    """)
+    suspend fun updateMetadataOverrides(
+        id: Long,
+        title: String?,
+        author: String?,
+        description: String?,
+        status: Int?,
+        genres: String?,
+    )
+
+    /** Write the cover override (#151). Pass both null to reset to the source cover. */
+    @Query("UPDATE novels SET customCoverPath = :path, customCoverUrl = :url WHERE id = :id")
+    suspend fun updateCustomCover(id: Long, path: String?, url: String?)
+
     @Query("""
         SELECT n.id FROM novels n
         LEFT JOIN categories c ON c.id = n.categoryId

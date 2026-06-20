@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,7 @@ import io.grimoire.api.source.SourceInfo
 import io.grimoire.api.source.WebViewLoginSource
 import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.athenaeum.AthenaeumContributor
+import io.grimoire.app.data.cover.CustomCoverStore
 import io.grimoire.app.data.source.fetchAllChapters
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
@@ -53,7 +55,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 internal const val BROWSE_TTL_MS = 30 * 60 * 1000L
@@ -71,6 +75,7 @@ class NovelDetailViewModel @Inject constructor(
     private val epubImporter: EpubImporter,
     private val novelUpdatesRepository: NovelUpdatesInfoRepository,
     private val migrator: NovelMigrator,
+    private val coverStore: CustomCoverStore,
     libraryPreferences: LibraryPreferences,
     private val authManager: HiddenCategoriesAuthManager,
 ) : ViewModel() {
@@ -120,8 +125,27 @@ class NovelDetailViewModel @Inject constructor(
         return "$baseUrl$url"
     }
 
+    /** The source-provided novel (pre-override). Internal flows below apply overrides. */
     private val _novel = MutableStateFlow(Novel(url = novelUrl, title = ""))
-    val novel: StateFlow<Novel> = _novel.asStateFlow()
+
+    /** Source values, exposed so the edit sheet can diff overrides against them. */
+    val sourceNovel: StateFlow<Novel> = _novel.asStateFlow()
+
+    /** User overrides for this novel's cover + metadata (#151 / #152). */
+    private val _overrides = MutableStateFlow(NovelOverrides())
+    val overrides: StateFlow<NovelOverrides> = _overrides.asStateFlow()
+
+    /** Effective novel shown in the UI: per-field overrides applied over the source values. */
+    val novel: StateFlow<Novel> = combine(_novel, _overrides) { src, ov -> ov.applyTo(src) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _novel.value)
+
+    /**
+     * What to render for the cover: a local custom file > a custom url > the source
+     * thumbnail. A [java.io.File] is used for the local path so Coil loads it directly.
+     */
+    val coverModel: StateFlow<Any?> = combine(_novel, _overrides) { src, ov ->
+        ov.coverPath?.let { File(it) } ?: ov.coverUrl ?: src.thumbnailUrl
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _liveNovelId = MutableStateFlow(-1L)
 
@@ -343,6 +367,7 @@ class NovelDetailViewModel @Inject constructor(
         cachedNovelId = existing.id
         _liveNovelId.value = existing.id
         _novel.value = existing.toNovel()
+        _overrides.value = existing.toOverrides()
         _isFavorite.value = existing.favorite
         _notifyOnNewChapters.value = existing.notifyOnNewChapters
         _notifyOnNewLockedChapters.value = existing.notifyOnNewLockedChapters
@@ -451,6 +476,67 @@ class NovelDetailViewModel @Inject constructor(
         }
     }
 
+    // --- Cover & metadata overrides (#151 / #152) ---
+
+    /** Persist edited metadata fields. A null field clears that override (source reappears). */
+    fun saveMetadataOverrides(o: NovelOverrides) {
+        val id = cachedNovelId
+        if (id <= 0L) return
+        viewModelScope.launch {
+            novelDao.updateMetadataOverrides(
+                id = id,
+                title = o.title,
+                author = o.author,
+                description = o.description,
+                status = o.status?.ordinal,
+                genres = o.genres?.joinToString(","),
+            )
+            _overrides.update {
+                it.copy(
+                    title = o.title,
+                    author = o.author,
+                    description = o.description,
+                    status = o.status,
+                    genres = o.genres,
+                )
+            }
+        }
+    }
+
+    /** Replace the cover with a picked local image. Wins over a custom url and the source. */
+    fun setCustomCoverFromUri(uri: Uri) {
+        val id = cachedNovelId
+        if (id <= 0L) return
+        viewModelScope.launch {
+            val path = runCatching { coverStore.saveFromUri(id, uri) }.getOrNull() ?: return@launch
+            novelDao.updateCustomCover(id, path, null)
+            _overrides.update { it.copy(coverPath = path, coverUrl = null) }
+        }
+    }
+
+    /** Replace the cover with an image url. */
+    fun setCustomCoverUrl(url: String) {
+        val id = cachedNovelId
+        val trimmed = url.trim()
+        if (id <= 0L || trimmed.isBlank()) return
+        viewModelScope.launch {
+            coverStore.delete(id)
+            novelDao.updateCustomCover(id, null, trimmed)
+            _overrides.update { it.copy(coverPath = null, coverUrl = trimmed) }
+        }
+    }
+
+    /** Clear both cover overrides; the source thumbnail reappears. */
+    fun resetCustomCover() {
+        val id = cachedNovelId
+        if (id <= 0L) return
+        viewModelScope.launch {
+            coverStore.delete(id)
+            novelDao.updateCustomCover(id, null, null)
+            _overrides.update { it.copy(coverPath = null, coverUrl = null) }
+        }
+    }
+
     fun retryNovel() {
         if (isLocal) return
         loadJob?.cancel()
@@ -486,6 +572,7 @@ class NovelDetailViewModel @Inject constructor(
                     cachedNovelId = existing.id
                     _liveNovelId.value = existing.id
                     _novel.value = existing.toNovel()
+                    _overrides.value = existing.toOverrides()
                     _isFavorite.value = existing.favorite
                     _notifyOnNewChapters.value = existing.notifyOnNewChapters
                     _notifyOnNewLockedChapters.value = existing.notifyOnNewLockedChapters
@@ -528,6 +615,9 @@ class NovelDetailViewModel @Inject constructor(
         }.onSuccess { novel ->
             _novel.value = novel
             val existing = novelDao.getBySourceUrl(canonicalSourceId, novelUrl)
+            // Carry the user's overrides across the refresh so the source can never
+            // clobber a custom cover or edited metadata field.
+            _overrides.value = existing?.toOverrides() ?: NovelOverrides()
             val upsertId = novelDao.upsert(novel.toEntity(
                 sourceId = canonicalSourceId,
                 existingId = existing?.id ?: 0L,
@@ -539,6 +629,13 @@ class NovelDetailViewModel @Inject constructor(
                 notifyOnNewChapters = existing?.notifyOnNewChapters ?: false,
                 notifyOnNewLockedChapters = existing?.notifyOnNewLockedChapters ?: false,
                 autoDownloadNewChapters = existing?.autoDownloadNewChapters ?: false,
+                customCoverPath = existing?.customCoverPath,
+                customCoverUrl = existing?.customCoverUrl,
+                overrideTitle = existing?.overrideTitle,
+                overrideAuthor = existing?.overrideAuthor,
+                overrideDescription = existing?.overrideDescription,
+                overrideStatus = existing?.overrideStatus,
+                overrideGenres = existing?.overrideGenres,
             ))
             cachedNovelId = existing?.id ?: upsertId
             _liveNovelId.value = cachedNovelId
@@ -774,6 +871,13 @@ internal fun Novel.toEntity(
     notifyOnNewChapters: Boolean = false,
     notifyOnNewLockedChapters: Boolean = false,
     autoDownloadNewChapters: Boolean = false,
+    customCoverPath: String? = null,
+    customCoverUrl: String? = null,
+    overrideTitle: String? = null,
+    overrideAuthor: String? = null,
+    overrideDescription: String? = null,
+    overrideStatus: Int? = null,
+    overrideGenres: String? = null,
 ) = NovelEntity(
     id = existingId,
     sourceId = sourceId,
@@ -796,6 +900,46 @@ internal fun Novel.toEntity(
     notifyOnNewChapters = notifyOnNewChapters,
     notifyOnNewLockedChapters = notifyOnNewLockedChapters,
     autoDownloadNewChapters = autoDownloadNewChapters,
+    customCoverPath = customCoverPath,
+    customCoverUrl = customCoverUrl,
+    overrideTitle = overrideTitle,
+    overrideAuthor = overrideAuthor,
+    overrideDescription = overrideDescription,
+    overrideStatus = overrideStatus,
+    overrideGenres = overrideGenres,
+)
+
+/**
+ * User cover + metadata overrides for the open novel. A null field means "no override"
+ * (fall back to the source value). [genres] of an empty list means "override to no genres".
+ */
+data class NovelOverrides(
+    val title: String? = null,
+    val author: String? = null,
+    val description: String? = null,
+    val status: NovelStatus? = null,
+    val genres: List<String>? = null,
+    val coverPath: String? = null,
+    val coverUrl: String? = null,
+) {
+    /** Apply the per-field metadata overrides over a source [novel]. */
+    fun applyTo(novel: Novel): Novel = novel.copy(
+        title = title ?: novel.title,
+        author = author ?: novel.author,
+        description = description ?: novel.description,
+        status = status ?: novel.status,
+        genres = genres ?: novel.genres,
+    )
+}
+
+internal fun NovelEntity.toOverrides() = NovelOverrides(
+    title = overrideTitle,
+    author = overrideAuthor,
+    description = overrideDescription,
+    status = overrideStatus?.let { NovelStatus.entries.getOrElse(it) { NovelStatus.UNKNOWN } },
+    genres = overrideGenres?.let { if (it.isBlank()) emptyList() else it.split(",") },
+    coverPath = customCoverPath,
+    coverUrl = customCoverUrl,
 )
 
 private fun ChapterEntity.toChapter() = Chapter(
