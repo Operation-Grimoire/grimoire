@@ -49,6 +49,7 @@ import io.grimoire.app.ui.tour.tourById
 import io.grimoire.app.ui.tour.tourTarget
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 private val EmptyNavTarget: StateFlow<String?> = MutableStateFlow(null)
@@ -79,7 +80,17 @@ fun AppNavigation(
             t.startsWith("novel?") -> t
             else -> null
         }
-        if (route != null) navController.navigate(route) { launchSingleTop = true }
+        if (route != null) {
+            // On a cold start the pending target is already set before the
+            // NavHost composes its graph, so navigating now throws "graph has
+            // not been set". For the saved-crash target that turns a single
+            // crash into a relaunch loop: navigate fails → crash handler saves
+            // again → relaunch → repeat. Wait for the graph to be ready, and
+            // clear the pending target no matter what so a bad target can never
+            // re-loop.
+            navController.currentBackStackEntryFlow.first()
+            runCatching { navController.navigate(route) { launchSingleTop = true } }
+        }
         onTargetHandled()
     }
 
@@ -89,6 +100,9 @@ fun AppNavigation(
     val epubUri by pendingEpubUri.collectAsState()
     LaunchedEffect(epubUri) {
         if (epubUri == null) return@LaunchedEffect
+        // Same cold-start hazard as the pending target above: an "Open with"
+        // EPUB can arrive before the graph is set. Wait for it before navigating.
+        navController.currentBackStackEntryFlow.first()
         navController.navigate(TopLevelDestination.Library.route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
