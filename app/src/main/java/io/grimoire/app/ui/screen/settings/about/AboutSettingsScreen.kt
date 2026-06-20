@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +49,7 @@ import io.grimoire.app.BuildConfig
 import io.grimoire.app.R
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import io.grimoire.app.data.preferences.UpdateChannel
+import io.grimoire.app.ui.tour.TourViewModel
 import io.grimoire.app.ui.update.AppUpdateViewModel
 import io.grimoire.app.ui.update.CheckState
 
@@ -64,6 +66,7 @@ fun AboutSettingsScreen(
             ?: error("AboutSettingsScreen must be hosted in a ComponentActivity")
     }
     val updateViewModel: AppUpdateViewModel = hiltViewModel(viewModelStoreOwner = activity)
+    val tourController = hiltViewModel<TourViewModel>().controller
 
     val version = remember {
         runCatching {
@@ -187,6 +190,17 @@ fun AboutSettingsScreen(
                     modifier = Modifier.clickable(enabled = !isLoadingChangelog) {
                         updateViewModel.showCurrentChangelog()
                     },
+                )
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("Replay tour") },
+                    supportingContent = { Text("Walk through the app's basics again") },
+                    trailingContent = {
+                        Icon(Icons.Default.Explore, contentDescription = null)
+                    },
+                    modifier = Modifier.clickable { tourController.start() },
                 )
             }
 

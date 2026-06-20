@@ -12,4 +12,9 @@ class AppPreferences @Inject constructor(store: PreferenceStore) {
     // one-time insert so a user who removes the default repo doesn't get it
     // re-added on the next launch.
     val defaultReposSeeded = store.getBoolean("default_repos_seeded", false)
+
+    // Highest onboarding-tour version the user has completed/skipped. The tour
+    // auto-runs while this is below CURRENT_TOUR_VERSION; bumping that constant
+    // re-shows an updated tour. 0 = never seen.
+    val tourCompletedVersion = store.getInt("tour_completed_version", 0)
 }

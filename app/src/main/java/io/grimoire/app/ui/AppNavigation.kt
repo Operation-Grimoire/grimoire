@@ -9,7 +9,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -19,6 +21,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,6 +39,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import io.grimoire.app.ui.screen.more.MoreViewModel
+import io.grimoire.app.ui.tour.LocalTourRegistry
+import io.grimoire.app.ui.tour.TourActionId
+import io.grimoire.app.ui.tour.TourKey
+import io.grimoire.app.ui.tour.TourOverlay
+import io.grimoire.app.ui.tour.TourRegistry
+import io.grimoire.app.ui.tour.TourViewModel
+import io.grimoire.app.ui.tour.tourTarget
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -122,8 +132,40 @@ fun AppNavigation(
     val subscribedUpdateCount by moreVm.subscribedUpdateCount.collectAsState()
     val extensionUpdateCount by moreVm.extensionUpdateCount.collectAsState()
 
-    Scaffold(
-        modifier = modifier,
+    // Onboarding tour. The registry collects target bounds; the controller owns
+    // the step list + position. AppNavigation is the one place that can both see
+    // the current route and drive navigation, so it bridges the two.
+    val tourController = hiltViewModel<TourViewModel>().controller
+    val tourState by tourController.state.collectAsState()
+    val tourRegistry = remember { TourRegistry() }
+
+    LaunchedEffect(Unit) { tourController.maybeStartOnLaunch() }
+    LaunchedEffect(currentRoute) { tourController.onRouteChanged(currentRoute) }
+    // Drive navigation to each non-interactive step's screen as it's entered.
+    LaunchedEffect(tourState.running, tourState.index) {
+        if (!tourState.running) return@LaunchedEffect
+        val step = tourController.steps.getOrNull(tourState.index) ?: return@LaunchedEffect
+        val route = step.route ?: return@LaunchedEffect
+        if (step.advanceOnReach) return@LaunchedEffect // user navigates here themselves
+        val onThisTab = backStack?.destination?.hierarchy?.any { it.route == route } == true
+        if (!onThisTab) {
+            navController.navigate(route) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+    val onTourAction: (TourActionId) -> Unit = { action ->
+        when (action) {
+            TourActionId.OpenExtensions ->
+                navController.navigate(ROUTE_EXTENSION_MANAGE) { launchSingleTop = true }
+        }
+    }
+
+    CompositionLocalProvider(LocalTourRegistry provides tourRegistry) {
+        Box(modifier.fillMaxSize()) {
+            Scaffold(
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
             if (isTopLevel) {
@@ -137,7 +179,13 @@ fun AppNavigation(
                     TopLevelDestination.entries.forEach { dest ->
                         val isSelected = backStack?.destination?.hierarchy
                             ?.any { it.route == dest.route } == true
+                        val tourKey = when (dest) {
+                            TopLevelDestination.Library -> TourKey.LibraryTab
+                            TopLevelDestination.Browse -> TourKey.BrowseTab
+                            TopLevelDestination.More -> TourKey.MoreTab
+                        }
                         NavigationBarItem(
+                            modifier = Modifier.tourTarget(tourKey),
                             selected = isSelected,
                             onClick = {
                                 val alreadyOnTab = isSelected
@@ -232,6 +280,18 @@ fun AppNavigation(
             )
             novelDetailDestinations(navController)
             readerDestinations(navController)
+            }
+            }
+
+            TourOverlay(
+                state = tourState,
+                steps = tourController.steps,
+                registry = tourRegistry,
+                onBack = tourController::back,
+                onNext = tourController::next,
+                onSkip = tourController::skip,
+                onAction = onTourAction,
+            )
         }
     }
 }
