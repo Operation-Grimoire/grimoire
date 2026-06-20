@@ -4,6 +4,12 @@ Open-source Android novel reader with an APK-based extension system. Built with 
 
 ![status](https://img.shields.io/badge/status-alpha-orange) ![min%20sdk](https://img.shields.io/badge/minSdk-26-blue) ![target%20sdk](https://img.shields.io/badge/targetSdk-36-blue) ![kotlin](https://img.shields.io/badge/kotlin-2.2.10-7F52FF)
 
+## Screenshots
+
+| Library | Browse a source | Novel detail | Reader |
+|:---:|:---:|:---:|:---:|
+| ![Library](docs/screenshots/library.png) | ![Browse](docs/screenshots/browse.png) | ![Novel detail](docs/screenshots/novel-detail.png) | ![Reader](docs/screenshots/reader.png) |
+
 ## Features
 
 - **Library** with categories (incl. PIN-locked hidden categories), per-category refresh, custom sort + filter + search, EPUB import
