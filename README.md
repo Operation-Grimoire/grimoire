@@ -6,9 +6,9 @@ Open-source Android novel reader with an APK-based extension system. Built with 
 
 ## Screenshots
 
-| Library | Browse a source | Novel detail | Reader |
-|:---:|:---:|:---:|:---:|
-| ![Library](docs/screenshots/library.png) | ![Browse](docs/screenshots/browse.png) | ![Novel detail](docs/screenshots/novel-detail.png) | ![Reader](docs/screenshots/reader.png) |
+| Library | Browse a source | Novel detail | Locked chapters | Reader |
+|:---:|:---:|:---:|:---:|:---:|
+| ![Library](docs/screenshots/library.png) | ![Browse](docs/screenshots/browse.png) | ![Novel detail](docs/screenshots/novel-detail.png) | ![Locked chapters](docs/screenshots/webnovel-locked-chapters.png) | ![Reader](docs/screenshots/reader.png) |
 
 ## Features
 
