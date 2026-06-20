@@ -45,6 +45,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.grimoire.app.ui.tour.TourKey
+import io.grimoire.app.ui.tour.tourTarget
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -124,7 +126,11 @@ fun BrowseScreen(
                     title = { Text("Browse") },
                     actions = {
                         PlainTooltipIconButton(onClick = onNavigateToManage, tooltip = "Manage extensions") {
-                            Icon(Icons.Default.Extension, contentDescription = "Manage extensions")
+                            Icon(
+                                Icons.Default.Extension,
+                                contentDescription = "Manage extensions",
+                                modifier = Modifier.tourTarget(TourKey.ExtensionManager),
+                            )
                         }
                     },
                 )

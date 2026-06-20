@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.PendingActions
@@ -36,6 +37,7 @@ fun MoreScreen(
     onNavigateToDownloads: () -> Unit,
     onNavigateToStatistics: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToTours: () -> Unit,
     onNavigateToAbout: () -> Unit,
 ) {
     val activeCount by viewModel.activeDownloadCount.collectAsState()
@@ -151,6 +153,15 @@ fun MoreScreen(
                     supportingContent = { Text("Appearance, library, reader, backups") },
                     leadingContent = { Icon(Icons.Default.Settings, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToSettings),
+                )
+                HorizontalDivider()
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text("Tours") },
+                    supportingContent = { Text("Replay the in-app guided tours") },
+                    leadingContent = { Icon(Icons.Default.Explore, contentDescription = null) },
+                    modifier = Modifier.clickable(onClick = onNavigateToTours),
                 )
                 HorizontalDivider()
             }
