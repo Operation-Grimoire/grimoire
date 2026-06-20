@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.model.Novel
 import io.grimoire.api.source.CatalogueSource
+import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.preferences.BrowsePreferences
 import io.grimoire.app.data.preferences.stateIn
@@ -169,7 +170,7 @@ class BrowseViewModel @Inject constructor(
         searchJob = viewModelScope.launch {
             _isSearching.value = true
             _searchResults.value = kept + toQuery.map { (name, pkg, src) ->
-                GlobalSearchResult(sourceName = name, packageName = pkg, sourceId = src.id, isLoading = true)
+                GlobalSearchResult(sourceName = name, packageName = pkg, sourceId = sourceIdFor(pkg), isLoading = true)
             }
             runQueries(q, toQuery)
             _isSearching.value = false
@@ -208,7 +209,7 @@ class BrowseViewModel @Inject constructor(
                 GlobalSearchResult(
                     sourceName = name,
                     packageName = pkg,
-                    sourceId = src.id,
+                    sourceId = sourceIdFor(pkg),
                     isLoading = true,
                 )
             }

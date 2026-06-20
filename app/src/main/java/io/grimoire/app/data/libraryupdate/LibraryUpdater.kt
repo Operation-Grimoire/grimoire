@@ -139,7 +139,7 @@ class LibraryUpdater @Inject constructor(
         novel: NovelEntity,
         extensions: List<LoadedExtension>,
     ): NovelRefreshResult {
-        val loaded = extensions.firstOrNull { it.source.id == novel.sourceId }
+        val loaded = extensions.firstOrNull { it.id == novel.sourceId }
         if (loaded == null) {
             setIssue(novel, "", UpdateIssueSeverity.WARNING, "Source not installed — skipped")
             return NovelRefreshResult.Warned(0)

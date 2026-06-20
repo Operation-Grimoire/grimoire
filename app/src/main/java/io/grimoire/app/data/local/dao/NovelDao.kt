@@ -98,6 +98,10 @@ interface NovelDao {
     @Upsert
     suspend fun upsert(novel: NovelEntity): Long
 
+    /** Re-keys a novel's source identity. Used by the one-time source-id migration. */
+    @Query("UPDATE novels SET sourceId = :sourceId WHERE id = :id")
+    suspend fun updateSourceId(id: Long, sourceId: Long)
+
     @Query("UPDATE novels SET chapterSortOrder = :order WHERE id = :id")
     suspend fun updateChapterSort(id: Long, order: Int)
 

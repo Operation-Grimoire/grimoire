@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.source.CatalogueSource
+import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.ui.screen.browse.GlobalSearchResult
@@ -79,7 +80,7 @@ class MigrateViewModel @Inject constructor(
                 GlobalSearchResult(
                     sourceName = name,
                     packageName = pkg,
-                    sourceId = src.id,
+                    sourceId = sourceIdFor(pkg),
                     isLoading = true,
                 )
             }

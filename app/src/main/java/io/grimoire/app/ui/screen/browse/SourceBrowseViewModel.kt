@@ -61,7 +61,7 @@ class SourceBrowseViewModel @Inject constructor(
     val packageName: String = checkNotNull(savedStateHandle["pkg"])
 
     val libraryUrls: StateFlow<Set<String>> = extensionManager.extensions
-        .map { list -> list.firstOrNull { it.info.packageName == packageName }?.source?.id }
+        .map { list -> list.firstOrNull { it.info.packageName == packageName }?.id }
         .distinctUntilChanged()
         .flatMapLatest { sourceId ->
             if (sourceId == null) flowOf(emptySet())

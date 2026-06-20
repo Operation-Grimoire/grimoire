@@ -82,7 +82,7 @@ class MoreViewModel @Inject constructor(
             LOCAL_PKG
         } else {
             extensionManager.extensions.value
-                .firstOrNull { it.source.id == novel.sourceId }
+                .firstOrNull { it.id == novel.sourceId }
                 ?.info?.packageName ?: return null
         }
         return "reader?pkg=${Uri.encode(pkg)}" +

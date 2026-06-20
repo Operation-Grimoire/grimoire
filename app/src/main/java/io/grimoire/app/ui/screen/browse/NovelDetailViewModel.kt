@@ -11,6 +11,7 @@ import io.grimoire.api.source.EpubSource
 import io.grimoire.api.source.Source
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.api.source.WebViewLoginSource
+import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.athenaeum.AthenaeumContributor
 import io.grimoire.app.data.source.fetchAllChapters
 import io.grimoire.app.data.local.dao.CategoryDao
@@ -90,6 +91,10 @@ class NovelDetailViewModel @Inject constructor(
 
     /** A locally-imported EPUB novel: fully stored in the DB, no backing extension. */
     val isLocal: Boolean = pkg == LOCAL_PKG
+
+    /** Canonical id this novel is keyed by — derived from [pkg], or [LOCAL_SOURCE_ID] for a local book. */
+    private val canonicalSourceId: Long
+        get() = if (isLocal) LOCAL_SOURCE_ID else sourceIdFor(pkg)
 
     private val loaded get() = extensionManager.extensions.value.firstOrNull { it.info.packageName == pkg }
     private val source get() = loaded?.source
@@ -469,7 +474,7 @@ class NovelDetailViewModel @Inject constructor(
         }
 
         if (!forceRefresh) {
-            val existing = novelDao.getBySourceUrl(src.id, novelUrl)
+            val existing = novelDao.getBySourceUrl(canonicalSourceId, novelUrl)
             if (existing != null && existing.lastUpdated > 0L) {
                 val age = System.currentTimeMillis() - existing.lastUpdated
                 val fresh = existing.favorite || age < BROWSE_TTL_MS
@@ -520,9 +525,9 @@ class NovelDetailViewModel @Inject constructor(
             src.getNovelDetails(Novel(url = novelUrl, title = ""))
         }.onSuccess { novel ->
             _novel.value = novel
-            val existing = novelDao.getBySourceUrl(src.id, novelUrl)
+            val existing = novelDao.getBySourceUrl(canonicalSourceId, novelUrl)
             val upsertId = novelDao.upsert(novel.toEntity(
-                sourceId = src.id,
+                sourceId = canonicalSourceId,
                 existingId = existing?.id ?: 0L,
                 favorite = existing?.favorite ?: false,
                 chapterSortOrder = existing?.chapterSortOrder ?: 0,
@@ -632,7 +637,7 @@ class NovelDetailViewModel @Inject constructor(
         _bookDownload.value = BookDownloadState.Downloading
         viewModelScope.launch {
             runCatching { src.getEpub(_novel.value) }
-                .mapCatching { bytes -> epubImporter.importBytes(bytes, src.id, novelUrl).getOrThrow() }
+                .mapCatching { bytes -> epubImporter.importBytes(bytes, canonicalSourceId, novelUrl).getOrThrow() }
                 .onSuccess { result ->
                     cachedNovelId = result.novelId
                     _liveNovelId.value = result.novelId
@@ -654,7 +659,8 @@ class NovelDetailViewModel @Inject constructor(
     }
 
     fun toggleFavorite() {
-        val sourceId = if (isLocal) LOCAL_SOURCE_ID else (source ?: return).id
+        if (!isLocal && source == null) return
+        val sourceId = canonicalSourceId
         val next = !_isFavorite.value
         _isFavorite.value = next
         viewModelScope.launch {

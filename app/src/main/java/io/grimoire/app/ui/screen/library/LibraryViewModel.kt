@@ -187,7 +187,7 @@ class LibraryViewModel @Inject constructor(
     ) { favoritesOrNull, exts ->
         val favorites = favoritesOrNull.orEmpty()
         val sourceIds = favorites.map { it.sourceId }.toSortedSet()
-        val nameBySourceId = exts.associate { it.source.id to it.source.name }
+        val nameBySourceId = exts.associate { it.id to it.source.name }
         sourceIds.map { id ->
             val name = when {
                 id == LOCAL_SOURCE_ID -> "Local"
@@ -284,7 +284,7 @@ class LibraryViewModel @Inject constructor(
     fun pkgForNovel(novel: NovelEntity): String =
         if (novel.sourceId == LOCAL_SOURCE_ID) LOCAL_PKG
         else extensionManager.extensions.value
-            .firstOrNull { it.source.id == novel.sourceId }
+            .firstOrNull { it.id == novel.sourceId }
             ?.info?.packageName ?: ""
 
     fun addCategory(name: String) = viewModelScope.launch {

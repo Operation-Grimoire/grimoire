@@ -18,6 +18,7 @@ import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.cache.CoverPreloader
 import io.grimoire.app.data.crash.CrashLogStore
 import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
+import io.grimoire.app.data.local.SourceIdMigrator
 import io.grimoire.app.data.local.TransientNovelPruner
 import io.grimoire.app.data.schedule.ScheduleMigrator
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
@@ -39,6 +40,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject lateinit var backupScheduler: BackupScheduler
     @Inject lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
     @Inject lateinit var scheduleMigrator: ScheduleMigrator
+    @Inject lateinit var sourceIdMigrator: SourceIdMigrator
     @Inject lateinit var extensionRepository: ExtensionRepository
     @Inject lateinit var transientNovelPruner: TransientNovelPruner
     @Inject lateinit var crashLogStore: CrashLogStore
@@ -166,6 +168,8 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         // the schedulers read them, so an upgraded install keeps its schedule.
         ProcessLifecycleOwner.get().lifecycleScope.launch {
             scheduleMigrator.migrateIfNeeded()
+            // Re-key pre-existing libraries onto the package-derived source ids.
+            runCatching { sourceIdMigrator.migrateIfNeeded() }
             backupScheduler.applyPreferredSchedule()
             libraryUpdateScheduler.applyPreferredSchedule()
             // Clear browse rows left stale by previous sessions on cold start.
