@@ -233,7 +233,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
         }
 
         val pkg = extensionManager.extensions.value
-            .firstOrNull { it.source.id == novel.sourceId }
+            .firstOrNull { it.id == novel.sourceId }
             ?.info?.packageName
         val target = if (pkg != null) {
             "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novel.url)}"

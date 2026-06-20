@@ -239,7 +239,7 @@ class DownloadManager @Inject constructor(
                             runCatching {
                                 if (novel == null) error("Novel not found")
                                 val src = extensionManager.extensions.value
-                                    .firstOrNull { it.source.id == novel.sourceId }?.source
+                                    .firstOrNull { it.id == novel.sourceId }?.source
                                     ?: error("Source not available")
                                 // Retry transient empty responses (the Royal Road blank-chapter
                                 // bug) before giving up; throws EmptyChapterContentException when

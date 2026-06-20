@@ -126,3 +126,4 @@ CI lives in `.github/workflows/release.yml` and builds signed release APKs from 
 | TTS playback | `data/tts/TtsPlaybackManager.kt` + `TtsPlaybackService.kt` |
 | GitHub OAuth | `auth/github/*` and `di/GitHubAuthModule.kt` |
 | Extension discovery | `extension/ExtensionLoader.kt`, `extension/ExtensionManager.kt` |
+| Source identity (derived from package, not declared) | `LoadedExtension.id` (← `sourceIdFor()` in the API); legacy ids re-keyed by `data/local/SourceIdMigrator.kt` |

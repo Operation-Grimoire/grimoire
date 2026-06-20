@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.model.Novel
 import io.grimoire.api.source.EpubSource
 import io.grimoire.api.source.Source
+import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
@@ -54,6 +55,9 @@ class NovelQuickViewViewModel @AssistedInject constructor(
 
     private val loaded get() = extensionManager.extensions.value.firstOrNull { it.info.packageName == pkg }
     private val source get() = loaded?.source
+
+    /** Canonical id this novel is keyed by — derived from [pkg], not [Source.id]. */
+    private val canonicalSourceId: Long get() = sourceIdFor(pkg)
 
     val sourceName: String get() = loaded?.info?.label ?: ""
 
@@ -131,7 +135,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
             return
         }
 
-        val existing = novelDao.getBySourceUrl(src.id, novelUrl)
+        val existing = novelDao.getBySourceUrl(canonicalSourceId, novelUrl)
         if (existing != null && existing.lastUpdated > 0L) {
             val age = System.currentTimeMillis() - existing.lastUpdated
             val fresh = existing.favorite || age < BROWSE_TTL_MS
@@ -153,10 +157,10 @@ class NovelQuickViewViewModel @AssistedInject constructor(
         runCatching { src.getNovelDetails(Novel(url = novelUrl, title = "")) }
             .onSuccess { novel ->
                 _novel.value = novel
-                val current = novelDao.getBySourceUrl(src.id, novelUrl)
+                val current = novelDao.getBySourceUrl(canonicalSourceId, novelUrl)
                 val upsertId = novelDao.upsert(
                     novel.toEntity(
-                        sourceId = src.id,
+                        sourceId = canonicalSourceId,
                         existingId = current?.id ?: 0L,
                         favorite = current?.favorite ?: false,
                         chapterSortOrder = current?.chapterSortOrder ?: 0,
@@ -207,7 +211,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
         val next = !_isFavorite.value
         _isFavorite.value = next
         viewModelScope.launch {
-            val entity = novelDao.getBySourceUrl(src.id, novelUrl) ?: return@launch
+            val entity = novelDao.getBySourceUrl(canonicalSourceId, novelUrl) ?: return@launch
             novelDao.upsert(entity.copy(favorite = next))
         }
     }
@@ -217,7 +221,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
         _categoryId.value = target
         if (!_isFavorite.value) _isFavorite.value = true
         viewModelScope.launch {
-            val entity = novelDao.getBySourceUrl(src.id, novelUrl) ?: return@launch
+            val entity = novelDao.getBySourceUrl(canonicalSourceId, novelUrl) ?: return@launch
             novelDao.upsert(entity.copy(categoryId = target, favorite = true))
         }
     }

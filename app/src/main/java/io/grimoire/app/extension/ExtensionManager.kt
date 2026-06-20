@@ -109,6 +109,14 @@ class ExtensionManager @Inject constructor(
             val source = loader.load(info) ?: return@mapNotNull null
             LoadedExtension(info, source)
         }
+        // Ids are package-derived so a collision should be impossible; log loudly
+        // if two ever hash alike rather than mis-attribute novels silently.
+        loaded.groupBy { it.id }
+            .filterValues { it.size > 1 }
+            .forEach { (id, dupes) ->
+                Log.e(TAG, "Source id collision $id: ${dupes.joinToString { it.info.packageName }}")
+            }
+
         // Configure before publishing: consumers must never observe a source that
         // hasn't had its persisted login/host/language settings pushed in yet.
         loaded.forEach { applyPreferences(it) }
