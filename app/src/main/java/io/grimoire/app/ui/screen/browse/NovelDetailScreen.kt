@@ -371,6 +371,10 @@ fun NovelDetailScreen(
     }
 
     lockedDialogChapter?.let { locked ->
+        // When already signed in, a still-locked chapter is one the account hasn't
+        // unlocked/purchased — telling the user to "Log in" is wrong. Only nudge to
+        // log in when actually signed out.
+        val signedIn = loginState == LoginState.SIGNED_IN
         AlertDialog(
             onDismissRequest = { lockedDialogChapter = null },
             icon = {
@@ -383,16 +387,25 @@ fun NovelDetailScreen(
             title = { Text("Chapter locked") },
             text = {
                 Text(
-                    "\"${locked.name}\" is locked. Reading it requires a " +
-                        "${viewModel.sourceName} account that has purchased these " +
-                        "chapters. Log in to read the chapters your account has unlocked.",
+                    if (signedIn) {
+                        "\"${locked.name}\" is a premium chapter your " +
+                            "${viewModel.sourceName} account hasn't unlocked. Unlock it " +
+                            "on ${viewModel.sourceName}, then refresh to read it here."
+                    } else {
+                        "\"${locked.name}\" is locked. Reading it requires a " +
+                            "${viewModel.sourceName} account that has purchased these " +
+                            "chapters. Log in to read the chapters your account has unlocked."
+                    },
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
+                    val chapterUrl = viewModel.absoluteWebUrl(locked.url)
                     lockedDialogChapter = null
-                    onNavigateToLogin(viewModel.pkg)
-                }) { Text("Log in") }
+                    // Signed in: open the chapter page itself so they can unlock/buy it.
+                    // Signed out: send them through the source login flow first.
+                    if (signedIn) onOpenWebView(chapterUrl) else onNavigateToLogin(viewModel.pkg)
+                }) { Text(if (signedIn) "Open ${viewModel.sourceName}" else "Log in") }
             },
             dismissButton = {
                 TextButton(onClick = { lockedDialogChapter = null }) { Text("Close") }
