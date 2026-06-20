@@ -1,8 +1,20 @@
-# Grimoire
+<p align="center">
+  <img src="docs/logo.png" width="120" alt="Grimoire logo" />
+</p>
 
-Open-source Android novel reader with an APK-based extension system. Built with Kotlin and Jetpack Compose.
+<h1 align="center">Grimoire</h1>
 
-![status](https://img.shields.io/badge/status-alpha-orange) ![min%20sdk](https://img.shields.io/badge/minSdk-26-blue) ![target%20sdk](https://img.shields.io/badge/targetSdk-36-blue) ![kotlin](https://img.shields.io/badge/kotlin-2.2.10-7F52FF)
+<p align="center">
+  Open-source Android novel reader with an APK-based extension system.<br/>
+  Built with Kotlin and Jetpack Compose.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/status-alpha-orange" alt="status" />
+  <img src="https://img.shields.io/badge/minSdk-26-blue" alt="min sdk" />
+  <img src="https://img.shields.io/badge/targetSdk-36-blue" alt="target sdk" />
+  <img src="https://img.shields.io/badge/kotlin-2.2.10-7F52FF" alt="kotlin" />
+</p>
 
 ## Screenshots
 
@@ -12,12 +24,16 @@ Open-source Android novel reader with an APK-based extension system. Built with 
 
 ## Features
 
-- **Library** with categories (incl. PIN-locked hidden categories), per-category refresh, custom sort + filter + search, EPUB import
-- **Reader** with adjustable font / spacing / colour theme / orientation, in-line image privacy mode, optional Text-to-Speech (on-device + ElevenLabs)
-- **Extensions** ship as separate APKs so the catalogue can grow without re-shipping the app. The app discovers them at runtime via `PackageManager`
-- **NovelUpdates integration** for cross-source metadata, rankings, latest releases
-- **Library updates** in the background via `WorkManager`, with per-novel notification rules and an issues log
-- **Backup / restore**, app updater that pulls signed APKs from GitHub releases, GitHub OAuth for private extension repos
+- **Library** — categories (incl. PIN-locked hidden categories), per-category background refresh, custom sort + filter + search, EPUB import, swipeable tabs throughout
+- **Reader** — adjustable font, spacing, line height, colour theme and orientation; in-line image privacy mode; optional Text-to-Speech (on-device + ElevenLabs voices)
+- **Sources via extensions** — every source is a separate APK the app discovers at runtime via `PackageManager`, so the catalogue grows without re-shipping the app. Ships with the official extension repository enabled out of the box; add your own repos too (including private GitHub repos via OAuth)
+- **Downloads** — foreground download service with a per-chapter image store for offline reading
+- **NovelUpdates integration** — cross-source metadata, rankings, latest releases, saved series, and "read this with one of your sources" matching
+- **Library updates** — background refresh via `WorkManager`, per-novel notification rules, and an update-issues log
+- **Source migration** — move a novel from one source to another, keeping its history
+- **Backup & restore** — manual and scheduled local backups
+- **Statistics & tasks** — reading statistics and a background-task log
+- **Self-updating** — in-app updater pulls signed APKs from GitHub releases with changelogs; uncaught crashes are captured on the next launch and pre-fill a GitHub issue
 
 ## Architecture overview
 
