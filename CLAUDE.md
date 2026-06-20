@@ -2,6 +2,8 @@
 
 This file is the orientation a Claude agent should read before editing the Grimoire app. It complements [`README.md`](./README.md) (public-facing intro) with the gotchas, conventions, and "where do I find X" that aren't obvious from the source tree.
 
+**Also read [`CONTRIBUTING.md`](./CONTRIBUTING.md)** — it covers environment setup, the build/test commands, and the contribution conventions (branching, PRs, the "don'ts") for both humans and agents. This file layers the deeper architecture map and per-screen gotchas on top; it does not repeat the basics there.
+
 If something here drifts from the code, **trust the code and update this file**.
 
 ## Tech baseline
