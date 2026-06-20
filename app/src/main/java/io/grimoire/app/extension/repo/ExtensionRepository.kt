@@ -2,6 +2,7 @@ package io.grimoire.app.extension.repo
 
 import io.grimoire.app.data.local.dao.RepoDao
 import io.grimoire.app.data.local.entity.RepoEntity
+import io.grimoire.app.data.preferences.AppPreferences
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.extension.LoadedExtension
 import kotlinx.coroutines.CoroutineScope
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -23,6 +25,7 @@ class ExtensionRepository @Inject constructor(
     private val repoDao: RepoDao,
     private val fetcher: ExtensionIndexFetcher,
     private val extensionManager: ExtensionManager,
+    private val appPreferences: AppPreferences,
 ) {
     // Process-lifetime scope: this @Singleton lives for the whole app session.
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -112,9 +115,27 @@ class ExtensionRepository @Inject constructor(
     /**
      * Refreshes the index off the main thread so installed-extension updates are
      * detected on app launch, without the user opening the extension manager.
+     * Seeds the bundled default repo first (one-time) so a fresh install has the
+     * official extension catalogue available without any manual setup.
      */
     fun checkForUpdatesOnLaunch() {
-        scope.launch { runCatching { refresh() } }
+        scope.launch {
+            runCatching { seedDefaultReposIfNeeded() }
+            runCatching { refresh() }
+        }
+    }
+
+    /**
+     * Inserts the official Grimoire extension repo on first run. Guarded by a
+     * persisted flag (not by "is the table empty") so removing the default repo
+     * is respected — it won't reappear on the next launch. The insert itself is
+     * a no-op if a repo with the same index URL already exists (unique index +
+     * IGNORE), so a user who added it manually won't get a duplicate.
+     */
+    private suspend fun seedDefaultReposIfNeeded() {
+        if (appPreferences.defaultReposSeeded.changes().first()) return
+        repoDao.insert(RepoEntity(name = DEFAULT_REPO_NAME, indexUrl = DEFAULT_REPO_INDEX_URL))
+        appPreferences.defaultReposSeeded.set(true)
     }
 
     private fun merge(
@@ -178,4 +199,14 @@ class ExtensionRepository @Inject constructor(
     suspend fun updateRepo(repo: RepoEntity) = repoDao.update(repo)
 
     suspend fun deleteRepo(repo: RepoEntity) = repoDao.delete(repo)
+
+    companion object {
+        // The official first-party extension catalogue, shipped enabled by
+        // default. The index is the `index.json` asset on the repo's rolling
+        // `latest` release.
+        private const val DEFAULT_REPO_NAME = "Grimoire Extensions"
+        private const val DEFAULT_REPO_INDEX_URL =
+            "https://github.com/Operation-Grimoire/grimoire-extensions/" +
+                "releases/download/latest/index.json"
+    }
 }
