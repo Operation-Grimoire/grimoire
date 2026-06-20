@@ -45,6 +45,7 @@ import io.grimoire.app.ui.tour.TourKey
 import io.grimoire.app.ui.tour.TourOverlay
 import io.grimoire.app.ui.tour.TourRegistry
 import io.grimoire.app.ui.tour.TourViewModel
+import io.grimoire.app.ui.tour.tourById
 import io.grimoire.app.ui.tour.tourTarget
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -132,27 +133,33 @@ fun AppNavigation(
     val subscribedUpdateCount by moreVm.subscribedUpdateCount.collectAsState()
     val extensionUpdateCount by moreVm.extensionUpdateCount.collectAsState()
 
-    // Onboarding tour. The registry collects target bounds; the controller owns
-    // the step list + position. AppNavigation is the one place that can both see
+    // Tours. The registry collects target bounds; the controller owns which tour
+    // is running + the position. AppNavigation is the one place that can both see
     // the current route and drive navigation, so it bridges the two.
     val tourController = hiltViewModel<TourViewModel>().controller
     val tourState by tourController.state.collectAsState()
     val tourRegistry = remember { TourRegistry() }
+    val tourSteps = tourState.tourId?.let { tourById(it).steps }.orEmpty()
 
     LaunchedEffect(Unit) { tourController.maybeStartOnLaunch() }
     LaunchedEffect(currentRoute) { tourController.onRouteChanged(currentRoute) }
     // Drive navigation to each non-interactive step's screen as it's entered.
     LaunchedEffect(tourState.running, tourState.index) {
         if (!tourState.running) return@LaunchedEffect
-        val step = tourController.steps.getOrNull(tourState.index) ?: return@LaunchedEffect
+        val step = tourSteps.getOrNull(tourState.index) ?: return@LaunchedEffect
         val route = step.route ?: return@LaunchedEffect
         if (step.advanceOnReach) return@LaunchedEffect // user navigates here themselves
-        val onThisTab = backStack?.destination?.hierarchy?.any { it.route == route } == true
-        if (!onThisTab) {
+        val onRoute = backStack?.destination?.hierarchy?.any { it.route == route } == true
+        if (!onRoute) {
+            val isTab = TopLevelDestination.entries.any { it.route == route }
             navController.navigate(route) {
-                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                // Tabs restore their saved back-stack; a detail route (e.g. the
+                // extensions screen) is just pushed.
+                if (isTab) {
+                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                    restoreState = true
+                }
                 launchSingleTop = true
-                restoreState = true
             }
         }
     }
@@ -285,7 +292,7 @@ fun AppNavigation(
 
             TourOverlay(
                 state = tourState,
-                steps = tourController.steps,
+                steps = tourSteps,
                 registry = tourRegistry,
                 onBack = tourController::back,
                 onNext = tourController::next,

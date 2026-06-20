@@ -69,6 +69,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.grimoire.app.ui.tour.TourKey
+import io.grimoire.app.ui.tour.tourTarget
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
@@ -228,7 +230,11 @@ fun ExtensionsScreen(
                             }
                         }
                         PlainTooltipIconButton(onClick = { showRepos = true }, tooltip = "Repositories") {
-                            Icon(Icons.Default.Storage, contentDescription = "Repositories")
+                            Icon(
+                                Icons.Default.Storage,
+                                contentDescription = "Repositories",
+                                modifier = Modifier.tourTarget(TourKey.RepoManager),
+                            )
                         }
                     },
                 )

@@ -10,6 +10,7 @@ enum class TourKey {
     BrowseTab,
     MoreTab,
     ExtensionManager,
+    RepoManager,
 }
 
 /**
@@ -48,8 +49,32 @@ data class TourStep(
     val actions: List<TourActionId> = emptyList(),
 )
 
-/** Running state of the tour. [index] is meaningless unless [running]. */
+/**
+ * A self-contained tour: an ordered list of steps plus the metadata the Tours
+ * page and the launch logic need. Add a new tour by appending one to
+ * [grimoireTours] — the engine, overlay and Tours page are all tour-agnostic.
+ *
+ * @param id     stable key; also the persistence key for its completion marker.
+ * @param version bump to re-show an updated tour to users who finished an old one.
+ * @param autoRun whether it runs unprompted on first launch.
+ */
+data class Tour(
+    val id: TourId,
+    val title: String,
+    val description: String,
+    val version: Int,
+    val autoRun: Boolean,
+    val steps: List<TourStep>,
+)
+
+/** Stable identifier + persistence key for a [Tour]. */
+enum class TourId(val key: String) {
+    Welcome("welcome"),
+}
+
+/** Running state of the engine. [tourId]/[index] are meaningless unless [running]. */
 data class TourState(
     val running: Boolean = false,
+    val tourId: TourId? = null,
     val index: Int = 0,
 )

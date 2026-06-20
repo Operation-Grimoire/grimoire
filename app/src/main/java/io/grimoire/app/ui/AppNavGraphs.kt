@@ -24,6 +24,7 @@ import io.grimoire.app.ui.screen.extensions.ExtensionsScreen
 import io.grimoire.app.ui.screen.library.LibraryScreen
 import io.grimoire.app.ui.screen.migrate.MigrateScreen
 import io.grimoire.app.ui.screen.more.MoreScreen
+import io.grimoire.app.ui.screen.tours.ToursScreen
 import io.grimoire.app.ui.screen.more.statistics.StatisticsScreen
 import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesBookmarksScreen
 import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesBrowserScreen
@@ -228,8 +229,12 @@ internal fun NavGraphBuilder.moreDestinations(navController: NavHostController) 
             onNavigateToDownloads = { navController.navigate(ROUTE_DOWNLOADS) },
             onNavigateToStatistics = { navController.navigate(ROUTE_STATISTICS) },
             onNavigateToSettings = { navController.navigate(ROUTE_SETTINGS_ROOT) },
+            onNavigateToTours = { navController.navigate(ROUTE_TOURS) },
             onNavigateToAbout = { navController.navigate(ROUTE_ABOUT) },
         )
+    }
+    composable(route = ROUTE_TOURS) {
+        ToursScreen(onNavigateBack = { navController.popBackStack() })
     }
     composable(route = ROUTE_DOWNLOADS) {
         DownloadsScreen(onNavigateBack = { navController.popBackStack() })
