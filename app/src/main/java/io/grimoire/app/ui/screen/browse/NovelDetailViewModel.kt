@@ -111,8 +111,10 @@ class NovelDetailViewModel @Inject constructor(
     private val _refreshSummary = MutableStateFlow<RefreshSummary?>(null)
     val refreshSummary: StateFlow<RefreshSummary?> = _refreshSummary.asStateFlow()
 
-    val novelWebUrl: String get() {
-        val url = _novel.value.url
+    val novelWebUrl: String get() = absoluteWebUrl(_novel.value.url)
+
+    /** Resolve a (possibly source-relative) chapter/novel url to an absolute web url. */
+    fun absoluteWebUrl(url: String): String {
         if (url.startsWith("http")) return url
         val baseUrl = loaded?.source?.javaClass?.getAnnotation(SourceInfo::class.java)?.baseUrl ?: return url
         return "$baseUrl$url"
