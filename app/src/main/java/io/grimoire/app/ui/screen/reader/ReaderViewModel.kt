@@ -230,7 +230,10 @@ class ReaderViewModel @Inject constructor(
                 return@launch
             }
             novelDao.updateLastReadAt(chapter.novelId, System.currentTimeMillis())
-            val allChapters = chapterDao.getChaptersOnce(chapter.novelId)
+            // Metadata only — the per-chapter content is read on demand in loadPages
+            // (via getByUrl). Pulling every chapter's downloadedContent here made
+            // opening a heavily-downloaded novel slow.
+            val allChapters = chapterDao.getChapterMetadataOnce(chapter.novelId)
             _chapters.value = allChapters
             _currentIndex.value = allChapters.indexOfFirst { it.url == initialChapterUrl }.coerceAtLeast(0)
             loadPages()

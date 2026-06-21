@@ -22,10 +22,14 @@ class TtsChapterLoader @Inject constructor(
 ) {
 
     suspend fun loadChapterList(novelId: Long): List<ChapterEntity> =
-        chapterDao.getChaptersOnce(novelId)
+        chapterDao.getChapterMetadataOnce(novelId)
 
     suspend fun loadPages(pkg: String, chapter: ChapterEntity): List<NovelPage> {
-        val cached = chapter.downloadedContent
+        // The passed entity comes from a metadata-only list (no downloadedContent),
+        // so re-read the row to serve a downloaded chapter from disk instead of the
+        // network.
+        val full = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
+        val cached = full.downloadedContent
         if (cached != null) {
             // Image pages carry no prose; drop them so read-aloud only speaks text.
             return decodeChapterContent(cached).filter { it.text.isNotBlank() }
@@ -34,7 +38,7 @@ class TtsChapterLoader @Inject constructor(
             .firstOrNull { it.info.packageName == pkg }
             ?.source
             ?: throw IllegalStateException("Source unavailable — download the chapter to listen offline")
-        return source.getPageList(chapter.toChapter()).filter { it.text.isNotBlank() }
+        return source.getPageList(full.toChapter()).filter { it.text.isNotBlank() }
     }
 }
 
