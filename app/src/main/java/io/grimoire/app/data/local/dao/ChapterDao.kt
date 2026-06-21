@@ -20,6 +20,16 @@ interface ChapterDao {
     suspend fun getChaptersOnce(novelId: Long): List<ChapterEntity>
 
     /**
+     * Chapter metadata in reading order, **excluding `downloadedContent`** — the
+     * reader and TTS only need the list for navigation and re-read the chosen
+     * chapter's content on demand (via [getByUrl]). Selecting the full content of
+     * every chapter here made opening a heavily-downloaded novel slow (and memory-
+     * heavy), scaling with how much was downloaded. Mirrors [getChapters].
+     */
+    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
+    suspend fun getChapterMetadataOnce(novelId: Long): List<ChapterEntity>
+
+    /**
      * Chapters in source/reading order. replaceChapters re-inserts the freshly
      * scraped list in order, so ascending id reflects scrape order — unlike
      * [getChaptersOnce] (chapterNumber), which collapses when the source leaves
