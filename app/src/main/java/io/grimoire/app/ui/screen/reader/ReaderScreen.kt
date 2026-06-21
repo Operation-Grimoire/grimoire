@@ -52,9 +52,13 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material.icons.outlined.Bookmarks
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.HideImage
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -146,6 +150,9 @@ fun ReaderScreen(
     val currentChapter by viewModel.currentChapter.collectAsState()
     val hasPrev by viewModel.hasPrev.collectAsState()
     val hasNext by viewModel.hasNext.collectAsState()
+    val bookmarks by viewModel.bookmarks.collectAsState()
+    val bookmarkCount by viewModel.currentChapterBookmarkCount.collectAsState()
+    val pendingJump by viewModel.pendingJump.collectAsState()
 
     val fontSize by viewModel.fontSize.collectAsState()
     val lineHeightTimes10 by viewModel.lineHeightTimes10.collectAsState()
@@ -227,6 +234,7 @@ fun ReaderScreen(
     var showSettings by remember { mutableStateOf(false) }
     var showGrimoirePopup by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    var showBookmarks by remember { mutableStateOf(false) }
     var restoredScrollUrl by remember { mutableStateOf<String?>(null) }
 
     // Pause the easter-egg colour animation when the reader leaves the foreground —
@@ -284,6 +292,23 @@ fun ReaderScreen(
         val total = listState.layoutInfo.totalItemsCount
         val targetIndex = anchorIndex.coerceIn(0, total - 1)
         listState.scrollToItem(targetIndex, anchorOffset.coerceAtLeast(0))
+    }
+
+    // Bookmark jump: once the target chapter's pages are present, scroll to the
+    // bookmark (re-anchoring by stored text). Suppress the readAnchor restore for
+    // this chapter so the two don't fight.
+    LaunchedEffect(pendingJump, pages, isLoading) {
+        val bookmark = pendingJump ?: return@LaunchedEffect
+        if (isLoading || pages.isEmpty()) return@LaunchedEffect
+        val chapter = currentChapter ?: return@LaunchedEffect
+        if (chapter.url != bookmark.chapterUrl) return@LaunchedEffect
+        restoredScrollUrl = chapter.url
+        snapshotFlow { listState.layoutInfo.totalItemsCount }.first { it > 0 }
+        val total = listState.layoutInfo.totalItemsCount
+        val target = viewModel.resolveBookmarkItemIndex(bookmark, visiblePages)
+            .coerceIn(0, total - 1)
+        listState.scrollToItem(target, bookmark.anchorOffset.coerceAtLeast(0))
+        viewModel.consumePendingJump()
     }
 
     LaunchedEffect(listState) {
@@ -560,6 +585,27 @@ fun ReaderScreen(
                             )
                         }
                     }
+                    PlainTooltipIconButton(
+                        onClick = {
+                            viewModel.addBookmark()
+                            Toast.makeText(context, "Bookmark added", Toast.LENGTH_SHORT).show()
+                        },
+                        tooltip = "Add bookmark",
+                    ) {
+                        Icon(Icons.Outlined.BookmarkAdd, contentDescription = "Add bookmark", tint = colors.foreground)
+                    }
+                    PlainTooltipIconButton(
+                        onClick = { showBookmarks = true },
+                        tooltip = "Bookmarks",
+                    ) {
+                        BadgedBox(
+                            badge = {
+                                if (bookmarkCount > 0) Badge { Text(bookmarkCount.toString()) }
+                            },
+                        ) {
+                            Icon(Icons.Outlined.Bookmarks, contentDescription = "Bookmarks", tint = colors.foreground)
+                        }
+                    }
                     PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.chapterWebUrl) }, tooltip = "Open in WebView") {
                         Icon(
                             Icons.Default.Language,
@@ -697,6 +743,20 @@ fun ReaderScreen(
                 showSettings = false
                 onOpenTtsSettings()
             },
+        )
+    }
+
+    if (showBookmarks) {
+        ReaderBookmarksSheet(
+            bookmarks = bookmarks,
+            currentChapterUrl = currentChapter?.url,
+            onJump = { bookmark ->
+                showBookmarks = false
+                viewModel.jumpToBookmark(bookmark)
+            },
+            onEditNote = viewModel::updateBookmarkNote,
+            onDelete = viewModel::deleteBookmark,
+            onDismiss = { showBookmarks = false },
         )
     }
 }

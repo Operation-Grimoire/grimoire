@@ -2,6 +2,7 @@ package io.grimoire.app.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import io.grimoire.app.data.local.dao.BookmarkDao
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
@@ -10,6 +11,7 @@ import io.grimoire.app.data.local.dao.NuBookmarkDao
 import io.grimoire.app.data.local.dao.RepoDao
 import io.grimoire.app.data.local.dao.TaskLogDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
+import io.grimoire.app.data.local.entity.BookmarkEntity
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
@@ -29,8 +31,9 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
         UpdateIssueEntity::class,
         TaskLogEntity::class,
         NuBookmarkEntity::class,
+        BookmarkEntity::class,
     ],
-    version = 26,
+    version = 27,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -42,4 +45,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun updateIssueDao(): UpdateIssueDao
     abstract fun taskLogDao(): TaskLogDao
     abstract fun nuBookmarkDao(): NuBookmarkDao
+    abstract fun bookmarkDao(): BookmarkDao
 }

@@ -7,8 +7,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.NovelPage
 import io.grimoire.app.data.download.ChapterImageStore
+import io.grimoire.app.data.local.dao.BookmarkDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
+import io.grimoire.app.data.local.entity.BookmarkEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
 import io.grimoire.app.data.local.entity.effectiveTotal
@@ -34,9 +36,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -48,6 +52,7 @@ class ReaderViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
+    private val bookmarkDao: BookmarkDao,
     private val novelDao: NovelDao,
     private val readerPreferences: ReaderPreferences,
     private val libraryPreferences: LibraryPreferences,
@@ -92,6 +97,25 @@ class ReaderViewModel @Inject constructor(
 
     private val _pages = MutableStateFlow<List<NovelPage>>(emptyList())
     val pages: StateFlow<List<NovelPage>> = _pages.asStateFlow()
+
+    /** In-chapter bookmarks for the current novel, newest first (issue #132). */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val bookmarks: StateFlow<List<BookmarkEntity>> = currentChapter
+        .map { it?.novelId }
+        .distinctUntilChanged()
+        .flatMapLatest { id -> if (id != null) bookmarkDao.getForNovel(id) else flowOf(emptyList()) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Number of bookmarks in the chapter currently open. */
+    val currentChapterBookmarkCount: StateFlow<Int> = combine(bookmarks, currentChapter) { marks, ch ->
+        if (ch == null) 0 else marks.count { it.chapterUrl == ch.url }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    /** Set when a bookmark jump needs the screen to scroll to its position. */
+    private val _pendingJump = MutableStateFlow<BookmarkEntity?>(null)
+    val pendingJump: StateFlow<BookmarkEntity?> = _pendingJump.asStateFlow()
+
+    fun consumePendingJump() { _pendingJump.value = null }
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -378,6 +402,83 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
+    /** Bookmark the current scroll position in the current chapter. */
+    fun addBookmark() {
+        val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
+        val anchorIndex = chapter.readAnchorItemIndex
+        val anchorOffset = chapter.readAnchorItemOffset
+        val pages = _pages.value
+        // anchorIndex 0 is the chapter-title item; content paragraph N is page N-1.
+        val contentIndex = (anchorIndex - 1).coerceAtLeast(0)
+        // Snapshot prose on each side of the anchor so a redownload that shifts
+        // paragraph indices can still be re-located by text (never shown to the user).
+        val after = pages.getOrNull(contentIndex)?.text?.trim()?.take(ANCHOR_TEXT_LEN).orEmpty()
+        val before = pages.getOrNull(contentIndex - 1)?.text?.trim()
+            ?.takeLast(ANCHOR_TEXT_LEN).orEmpty()
+        viewModelScope.launch {
+            bookmarkDao.insert(
+                BookmarkEntity(
+                    novelId = chapter.novelId,
+                    chapterUrl = chapter.url,
+                    chapterName = chapter.name,
+                    anchorIndex = anchorIndex,
+                    anchorOffset = anchorOffset,
+                    progress = chapter.readProgress,
+                    anchorTextBefore = before,
+                    anchorTextAfter = after,
+                    createdAt = System.currentTimeMillis(),
+                ),
+            )
+        }
+    }
+
+    fun deleteBookmark(id: Long) = viewModelScope.launch { bookmarkDao.delete(id) }
+
+    fun updateBookmarkNote(id: Long, note: String?) = viewModelScope.launch {
+        bookmarkDao.updateNote(id, note?.trim()?.takeIf { it.isNotEmpty() })
+    }
+
+    /** Open the bookmarked chapter (switching if needed); the screen scrolls to it. */
+    fun jumpToBookmark(bookmark: BookmarkEntity) {
+        val index = _chapters.value.indexOfFirst { it.url == bookmark.chapterUrl }
+        if (index < 0) return
+        if (index != _currentIndex.value) {
+            _currentIndex.value = index
+            onChapterChanged(bookmark.chapterUrl)
+            loadPages()
+        }
+        _pendingJump.value = bookmark
+    }
+
+    /**
+     * Resolve a bookmark to a LazyColumn item index against the given [pages],
+     * re-anchoring by stored text when the paragraph at the saved index no longer
+     * matches (content shifted since the bookmark was made). Falls back to the saved
+     * index. Returned index includes the chapter-title item at 0.
+     */
+    fun resolveBookmarkItemIndex(bookmark: BookmarkEntity, pages: List<NovelPage>): Int {
+        val savedContentIndex = bookmark.anchorIndex - 1
+        val after = bookmark.anchorTextAfter
+        // Saved index still points at the same paragraph → trust it.
+        if (after.isNotBlank() &&
+            pages.getOrNull(savedContentIndex)?.text?.trim()?.startsWith(after.take(24)) == true
+        ) {
+            return bookmark.anchorIndex
+        }
+        if (after.isNotBlank()) {
+            val needle = after.take(40)
+            val byAfter = pages.indexOfFirst { it.text.contains(needle) }
+            if (byAfter >= 0) return byAfter + 1
+        }
+        val before = bookmark.anchorTextBefore
+        if (before.isNotBlank()) {
+            val needle = before.takeLast(40)
+            val byBefore = pages.indexOfLast { it.text.contains(needle) }
+            if (byBefore >= 0) return (byBefore + 1) + 1
+        }
+        return bookmark.anchorIndex
+    }
+
     fun toggleRead() {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
         val next = !chapter.read
@@ -468,6 +569,9 @@ private fun ChapterEntity.toChapter() = Chapter(
     chapterNumber = chapterNumber,
     translator = translator,
 )
+
+/** Chars of prose snapshotted on each side of a bookmark anchor for re-anchoring. */
+private const val ANCHOR_TEXT_LEN = 80
 
 private fun String.countWords(): Int {
     var count = 0
