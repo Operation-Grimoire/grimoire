@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material3.AlertDialog
@@ -117,6 +118,7 @@ fun NovelDetailScreen(
     onOpenWebView: (url: String) -> Unit = {},
     onOpenNuSeries: (slug: String) -> Unit = {},
     onNavigateToLogin: (pkg: String) -> Unit = {},
+    onOpenSourceSettings: (pkg: String) -> Unit = {},
     onMigrate: (novelId: Long) -> Unit = {},
     onMigrationComplete: (pkg: String, url: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
@@ -524,7 +526,8 @@ fun NovelDetailScreen(
                     val hasBulkActions = chapters.isNotEmpty()
                     val canMigrate = isFavorite && novelId > 0L
                     val canConfigureNewChapters = isFavorite && novelId > 0L && !viewModel.isLocal
-                    if (hasBulkActions || canMigrate || canConfigureNewChapters) {
+                    val canOpenSourceSettings = viewModel.hasSourceSettings
+                    if (hasBulkActions || canMigrate || canConfigureNewChapters || canOpenSourceSettings) {
                         Box {
                             PlainTooltipIconButton(onClick = { overflowMenuExpanded = true }, tooltip = "More actions") {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More actions")
@@ -582,6 +585,17 @@ fun NovelDetailScreen(
                                             showNotifSheet = true
                                         },
                                         leadingIcon = { Icon(Icons.Default.Notifications, contentDescription = null) },
+                                    )
+                                }
+                                if (canOpenSourceSettings) {
+                                    if (hasBulkActions || canMigrate || canConfigureNewChapters) HorizontalDivider()
+                                    DropdownMenuItem(
+                                        text = { Text("Source settings") },
+                                        onClick = {
+                                            overflowMenuExpanded = false
+                                            onOpenSourceSettings(viewModel.pkg)
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null) },
                                     )
                                 }
                             }

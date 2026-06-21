@@ -497,6 +497,9 @@ internal fun NavGraphBuilder.novelDetailDestinations(navController: NavHostContr
             onNavigateToLogin = { pkg ->
                 navController.navigate("login/${Uri.encode(pkg)}")
             },
+            onOpenSourceSettings = { pkg ->
+                navController.navigate("settings/source/${Uri.encode(pkg)}")
+            },
             onMigrate = { novelId ->
                 navController.navigate("migrate?novelId=$novelId")
             },
