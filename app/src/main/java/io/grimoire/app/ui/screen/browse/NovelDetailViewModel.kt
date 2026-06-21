@@ -8,7 +8,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.api.model.Chapter
 import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
+import io.grimoire.api.source.ConfigurableSource
 import io.grimoire.api.source.EpubSource
+import io.grimoire.api.source.MultiHostSource
+import io.grimoire.api.source.MultiLanguageSource
 import io.grimoire.api.source.Source
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.api.source.WebViewLoginSource
@@ -434,6 +437,20 @@ class NovelDetailViewModel @Inject constructor(
      */
     /** Whether this source signs in through a WebView (locked-chapter access). */
     val supportsWebViewLogin: Boolean get() = source is WebViewLoginSource
+
+    /**
+     * Whether opening this source's settings would show anything (configurable
+     * prefs, multi-language picker, WebView login, or mirror hosts). Mirrors
+     * ExtensionsScreen.hasSettings so we never offer a menu item that leads to an
+     * empty page. Always false for the local EPUB pseudo-source.
+     */
+    val hasSourceSettings: Boolean
+        get() = !isLocal && source.let {
+            it is ConfigurableSource ||
+                it is MultiLanguageSource ||
+                it is WebViewLoginSource ||
+                it is MultiHostSource
+        }
 
     /**
      * Re-checks sign-in, polling with backoff so a just-completed login is
