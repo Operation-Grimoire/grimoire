@@ -5,21 +5,22 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * A user bookmark at a specific position *within* a chapter (issue #132) — distinct
- * from [NuBookmarkEntity], which bookmarks NovelUpdates series.
+ * A user bookmark placed *inside* a chapter's text (issue #132) — either a point
+ * between two words or a highlighted range. Distinct from [NuBookmarkEntity]
+ * (NovelUpdates series bookmarks).
  *
- * Position reuses the reader's scroll anchor ([ChapterEntity.readAnchorItemIndex] /
- * [readAnchorItemOffset]): [anchorIndex] is the LazyColumn item index (0 = the
- * chapter title, content paragraphs follow) and [anchorOffset] the pixel offset.
+ * Position is character-level: [startPage]/[endPage] index the chapter's paragraph
+ * list (the reader's `pages`), [startChar]/[endChar] are character offsets within
+ * those paragraphs. A point bookmark has start == end ([isHighlight] = false); a
+ * highlight spans start..end.
  *
- * [anchorTextBefore] / [anchorTextAfter] snapshot a little prose on each side of the
- * anchor. They are never shown; they let a jump re-find the position by text when the
- * paragraph indices have shifted (e.g. after a chapter redownload), so a bookmark
- * survives reflow instead of landing on a stale index.
+ * [text] snapshots the highlighted (or surrounding) prose. It is shown in the
+ * novel-detail bookmark list and used to re-find the position by text when
+ * paragraph indices/offsets shift after a chapter redownload.
  *
- * Keyed by [novelId] + [chapterUrl] (not chapterId): `replaceChapters` re-inserts
- * chapters with fresh ids on every refresh/redownload, so a chapterId reference would
- * dangle — the url is stable.
+ * [colorIndex] selects a palette colour; each bookmark in a chapter gets a distinct
+ * one (see ui/screen/reader/BookmarkColors.kt). Keyed by [novelId] + [chapterUrl]
+ * (not chapterId, which a redownload re-keys).
  */
 @Entity(
     tableName = "bookmarks",
@@ -30,11 +31,13 @@ data class BookmarkEntity(
     val novelId: Long,
     val chapterUrl: String,
     val chapterName: String,
-    val anchorIndex: Int,
-    val anchorOffset: Int,
-    val progress: Float,
-    val anchorTextBefore: String,
-    val anchorTextAfter: String,
+    val startPage: Int,
+    val startChar: Int,
+    val endPage: Int,
+    val endChar: Int,
+    val isHighlight: Boolean,
+    val text: String,
+    val colorIndex: Int,
     val note: String? = null,
     val createdAt: Long,
 )

@@ -19,8 +19,10 @@ import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.athenaeum.AthenaeumContributor
 import io.grimoire.app.data.cover.CustomCoverStore
 import io.grimoire.app.data.source.fetchAllChapters
+import io.grimoire.app.data.local.dao.BookmarkDao
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
+import io.grimoire.app.data.local.entity.BookmarkEntity
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
 import io.grimoire.app.data.local.entity.CategoryEntity
@@ -41,6 +43,7 @@ import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -71,6 +74,7 @@ class NovelDetailViewModel @Inject constructor(
     private val extensionManager: ExtensionManager,
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
+    private val bookmarkDao: BookmarkDao,
     private val categoryDao: CategoryDao,
     private val updateIssueDao: UpdateIssueDao,
     private val downloadManager: DownloadManager,
@@ -160,6 +164,14 @@ class NovelDetailViewModel @Inject constructor(
         .flatMapLatest { id -> if (id > 0L) chapterDao.getChapters(id) else flowOf(emptyList()) }
         .debounce(50)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** In-chapter bookmarks for this novel, surfaced in the detail screen (#132). */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val bookmarks: StateFlow<List<BookmarkEntity>> = _liveNovelId
+        .flatMapLatest { id -> if (id > 0L) bookmarkDao.getForNovel(id) else flowOf(emptyList()) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun deleteBookmark(id: Long) = viewModelScope.launch { bookmarkDao.delete(id) }
 
     /** True once the chapter list contains at least one account-locked chapter. */
     val hasLockedChapters: StateFlow<Boolean> = chapters

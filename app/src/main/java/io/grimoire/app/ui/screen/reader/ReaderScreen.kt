@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.screen.reader
 
 import android.app.Activity
+import io.grimoire.app.data.local.entity.BookmarkEntity
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.content.Context
 import android.content.ContextWrapper
@@ -20,6 +21,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,12 +55,10 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.BookmarkAdd
-import androidx.compose.material.icons.outlined.Bookmarks
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.HideImage
 import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -83,6 +83,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -150,9 +152,7 @@ fun ReaderScreen(
     val currentChapter by viewModel.currentChapter.collectAsState()
     val hasPrev by viewModel.hasPrev.collectAsState()
     val hasNext by viewModel.hasNext.collectAsState()
-    val bookmarks by viewModel.bookmarks.collectAsState()
-    val bookmarkCount by viewModel.currentChapterBookmarkCount.collectAsState()
-    val pendingJump by viewModel.pendingJump.collectAsState()
+    val chapterBookmarks by viewModel.chapterBookmarks.collectAsState()
 
     val fontSize by viewModel.fontSize.collectAsState()
     val lineHeightTimes10 by viewModel.lineHeightTimes10.collectAsState()
@@ -234,7 +234,8 @@ fun ReaderScreen(
     var showSettings by remember { mutableStateOf(false) }
     var showGrimoirePopup by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-    var showBookmarks by remember { mutableStateOf(false) }
+    var bookmarkAddMode by remember { mutableStateOf(false) }
+    var selectedBookmark by remember { mutableStateOf<BookmarkEntity?>(null) }
     var restoredScrollUrl by remember { mutableStateOf<String?>(null) }
 
     // Pause the easter-egg colour animation when the reader leaves the foreground —
@@ -294,21 +295,21 @@ fun ReaderScreen(
         listState.scrollToItem(targetIndex, anchorOffset.coerceAtLeast(0))
     }
 
-    // Bookmark jump: once the target chapter's pages are present, scroll to the
-    // bookmark (re-anchoring by stored text). Suppress the readAnchor restore for
-    // this chapter so the two don't fight.
-    LaunchedEffect(pendingJump, pages, isLoading) {
-        val bookmark = pendingJump ?: return@LaunchedEffect
-        if (isLoading || pages.isEmpty()) return@LaunchedEffect
+    // Opened from a novel-detail bookmark: scroll to its paragraph once, overriding
+    // the readAnchor restore for this chapter.
+    var bookmarkJumpDone by remember { mutableStateOf(false) }
+    LaunchedEffect(pages, isLoading) {
+        if (bookmarkJumpDone || viewModel.initialBookmarkPage < 0) return@LaunchedEffect
+        if (isLoading || visiblePages.isEmpty()) return@LaunchedEffect
         val chapter = currentChapter ?: return@LaunchedEffect
-        if (chapter.url != bookmark.chapterUrl) return@LaunchedEffect
         restoredScrollUrl = chapter.url
         snapshotFlow { listState.layoutInfo.totalItemsCount }.first { it > 0 }
-        val total = listState.layoutInfo.totalItemsCount
-        val target = viewModel.resolveBookmarkItemIndex(bookmark, visiblePages)
-            .coerceIn(0, total - 1)
-        listState.scrollToItem(target, bookmark.anchorOffset.coerceAtLeast(0))
-        viewModel.consumePendingJump()
+        val pos = visiblePages.indexOfFirst { it.index == viewModel.initialBookmarkPage }
+        if (pos >= 0) {
+            val total = listState.layoutInfo.totalItemsCount
+            listState.scrollToItem((pos + 1).coerceIn(0, total - 1))
+        }
+        bookmarkJumpDone = true
     }
 
     LaunchedEffect(listState) {
@@ -453,7 +454,7 @@ fun ReaderScreen(
                                     GRIMOIRE_REGEX.findAll(rendered.text).map { it.range }.toList()
                                 }
                                 val hasMatches = grimoireMatches.isNotEmpty()
-                                val displayText = if (grimoireEffectActive && hasMatches) {
+                                val base = if (grimoireEffectActive && hasMatches) {
                                     buildAnnotatedString {
                                         append(rendered)
                                         grimoireMatches.forEach { r ->
@@ -481,20 +482,76 @@ fun ReaderScreen(
                                         }
                                     }
                                 } else rendered
+
+                                // Bookmarks anchored in this paragraph (#132). Char offsets
+                                // are relative to the rendered text (`base`), matching what
+                                // getOffsetForPosition returns when placing them.
+                                val pageBookmarks = chapterBookmarks.filter { it.startPage == page.index }
+                                val highlightMarks = pageBookmarks.filter { it.isHighlight }
+                                val pointMarks = pageBookmarks.filter { !it.isHighlight }
+                                val displayText = if (highlightMarks.isEmpty()) base else buildAnnotatedString {
+                                    append(base)
+                                    highlightMarks.forEach { bm ->
+                                        val s = bm.startChar.coerceIn(0, base.length)
+                                        val e = bm.endChar.coerceIn(s, base.length)
+                                        if (e > s) addStyle(
+                                            SpanStyle(background = BookmarkColors.color(bm.colorIndex).copy(alpha = 0.35f)),
+                                            s, e,
+                                        )
+                                    }
+                                }
                                 var layoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-                                val tapModifier = if (grimoireEffectActive && hasMatches) {
-                                    Modifier.pointerInput(grimoireMatches) {
+
+                                val gestureModifier = if (bookmarkAddMode) {
+                                    Modifier
+                                        .pointerInput(page.index, base.text) {
+                                            detectTapGestures { pos ->
+                                                val lr = layoutResult ?: return@detectTapGestures
+                                                val off = lr.getOffsetForPosition(pos).coerceIn(0, base.length)
+                                                val from = (off - 30).coerceAtLeast(0)
+                                                val to = (off + 30).coerceAtMost(base.length)
+                                                viewModel.addPointBookmark(page.index, off, base.text.substring(from, to).trim())
+                                            }
+                                        }
+                                        .pointerInput(page.index, base.text) {
+                                            var startOff = 0
+                                            var endOff = 0
+                                            detectDragGestures(
+                                                onDragStart = { pos ->
+                                                    startOff = layoutResult?.getOffsetForPosition(pos)?.coerceIn(0, base.length) ?: 0
+                                                    endOff = startOff
+                                                },
+                                                onDrag = { change, _ ->
+                                                    change.consume()
+                                                    endOff = layoutResult?.getOffsetForPosition(change.position)?.coerceIn(0, base.length) ?: endOff
+                                                },
+                                                onDragEnd = {
+                                                    val a = minOf(startOff, endOff)
+                                                    val b = maxOf(startOff, endOff)
+                                                    if (b > a) viewModel.addHighlightBookmark(page.index, a, b, base.text.substring(a, b))
+                                                },
+                                            )
+                                        }
+                                } else {
+                                    Modifier.pointerInput(grimoireMatches, pageBookmarks) {
                                         detectTapGestures { pos ->
                                             val lr = layoutResult
-                                            val onWord = lr != null && grimoireMatches.any { range ->
-                                                val offset = lr.getOffsetForPosition(pos)
-                                                offset in range.first..range.last
+                                            val off = lr?.getOffsetForPosition(pos)
+                                            val hit = if (off != null) pageBookmarks.firstOrNull { bm ->
+                                                if (bm.isHighlight) off in bm.startChar until bm.endChar
+                                                else kotlin.math.abs(off - bm.startChar) <= 1
+                                            } else null
+                                            val onWord = lr != null && grimoireEffectActive && hasMatches &&
+                                                grimoireMatches.any { off != null && off in it.first..it.last }
+                                            when {
+                                                hit != null -> selectedBookmark = hit
+                                                onWord -> showGrimoirePopup = true
+                                                else -> barsVisible = !barsVisible
                                             }
-                                            if (onWord) showGrimoirePopup = true
-                                            else barsVisible = !barsVisible
                                         }
                                     }
-                                } else Modifier
+                                }
+
                                 Text(
                                     text = displayText,
                                     style = textStyle,
@@ -508,7 +565,21 @@ fun ReaderScreen(
                                                 Modifier
                                             },
                                         )
-                                        .then(tapModifier)
+                                        .drawWithContent {
+                                            drawContent()
+                                            val lr = layoutResult
+                                            if (lr != null) pointMarks.forEach { bm ->
+                                                val c = bm.startChar.coerceIn(0, base.length)
+                                                val rect = lr.getCursorRect(c)
+                                                drawLine(
+                                                    color = BookmarkColors.color(bm.colorIndex),
+                                                    start = Offset(rect.left, rect.top),
+                                                    end = Offset(rect.left, rect.bottom),
+                                                    strokeWidth = 3.dp.toPx(),
+                                                )
+                                            }
+                                        }
+                                        .then(gestureModifier)
                                         .padding(bottom = paragraphSpacing.dp),
                                 )
                             }
@@ -536,6 +607,24 @@ fun ReaderScreen(
                     }
                 }
                 }
+            }
+        }
+
+        if (bookmarkAddMode) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .windowInsetsPadding(WindowInsets.systemBarsIgnoringVisibility)
+                    .padding(top = 8.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+            ) {
+                Text(
+                    "Tap = marker · drag = highlight · tap ⊕ to finish",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
             }
         }
 
@@ -586,25 +675,14 @@ fun ReaderScreen(
                         }
                     }
                     PlainTooltipIconButton(
-                        onClick = {
-                            viewModel.addBookmark()
-                            Toast.makeText(context, "Bookmark added", Toast.LENGTH_SHORT).show()
-                        },
-                        tooltip = "Add bookmark",
+                        onClick = { bookmarkAddMode = !bookmarkAddMode },
+                        tooltip = if (bookmarkAddMode) "Done placing bookmark" else "Add bookmark",
                     ) {
-                        Icon(Icons.Outlined.BookmarkAdd, contentDescription = "Add bookmark", tint = colors.foreground)
-                    }
-                    PlainTooltipIconButton(
-                        onClick = { showBookmarks = true },
-                        tooltip = "Bookmarks",
-                    ) {
-                        BadgedBox(
-                            badge = {
-                                if (bookmarkCount > 0) Badge { Text(bookmarkCount.toString()) }
-                            },
-                        ) {
-                            Icon(Icons.Outlined.Bookmarks, contentDescription = "Bookmarks", tint = colors.foreground)
-                        }
+                        Icon(
+                            Icons.Outlined.BookmarkAdd,
+                            contentDescription = "Add bookmark",
+                            tint = if (bookmarkAddMode) MaterialTheme.colorScheme.primary else colors.foreground,
+                        )
                     }
                     PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.chapterWebUrl) }, tooltip = "Open in WebView") {
                         Icon(
@@ -746,17 +824,18 @@ fun ReaderScreen(
         )
     }
 
-    if (showBookmarks) {
-        ReaderBookmarksSheet(
-            bookmarks = bookmarks,
-            currentChapterUrl = currentChapter?.url,
-            onJump = { bookmark ->
-                showBookmarks = false
-                viewModel.jumpToBookmark(bookmark)
+    selectedBookmark?.let { bookmark ->
+        AlertDialog(
+            onDismissRequest = { selectedBookmark = null },
+            title = { Text(if (bookmark.isHighlight) "Highlight" else "Bookmark") },
+            text = { Text(bookmark.text.ifBlank { "Saved position" }) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteBookmark(bookmark.id)
+                    selectedBookmark = null
+                }) { Text("Delete") }
             },
-            onEditNote = viewModel::updateBookmarkNote,
-            onDelete = viewModel::deleteBookmark,
-            onDismiss = { showBookmarks = false },
+            dismissButton = { TextButton(onClick = { selectedBookmark = null }) { Text("Close") } },
         )
     }
 }

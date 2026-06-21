@@ -500,6 +500,11 @@ internal fun NavGraphBuilder.novelDetailDestinations(navController: NavHostContr
             onOpenSourceSettings = { pkg ->
                 navController.navigate("settings/source/${Uri.encode(pkg)}")
             },
+            onOpenBookmark = { pkg, novelUrl, chapterUrl, page ->
+                navController.navigate(
+                    "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}&bookmarkPage=$page"
+                )
+            },
             onMigrate = { novelId ->
                 navController.navigate("migrate?novelId=$novelId")
             },
@@ -535,6 +540,7 @@ internal fun NavGraphBuilder.readerDestinations(navController: NavHostController
             navArgument("pkg") { type = NavType.StringType },
             navArgument("novelUrl") { type = NavType.StringType },
             navArgument("chapterUrl") { type = NavType.StringType },
+            navArgument("bookmarkPage") { type = NavType.IntType; defaultValue = -1 },
         ),
     ) {
         ReaderScreen(

@@ -32,11 +32,13 @@ private val MIGRATION_26_27 = object : Migration(26, 27) {
                 novelId INTEGER NOT NULL,
                 chapterUrl TEXT NOT NULL,
                 chapterName TEXT NOT NULL,
-                anchorIndex INTEGER NOT NULL,
-                anchorOffset INTEGER NOT NULL,
-                progress REAL NOT NULL,
-                anchorTextBefore TEXT NOT NULL,
-                anchorTextAfter TEXT NOT NULL,
+                startPage INTEGER NOT NULL,
+                startChar INTEGER NOT NULL,
+                endPage INTEGER NOT NULL,
+                endChar INTEGER NOT NULL,
+                isHighlight INTEGER NOT NULL,
+                text TEXT NOT NULL,
+                colorIndex INTEGER NOT NULL,
                 note TEXT,
                 createdAt INTEGER NOT NULL
             )

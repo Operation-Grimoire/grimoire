@@ -8,9 +8,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BookmarkDao {
-    /** All bookmarks for a novel, newest first. */
-    @Query("SELECT * FROM bookmarks WHERE novelId = :novelId ORDER BY createdAt DESC")
+    /** All bookmarks for a novel, oldest first (for the novel-detail list). */
+    @Query("SELECT * FROM bookmarks WHERE novelId = :novelId ORDER BY createdAt ASC")
     fun getForNovel(novelId: Long): Flow<List<BookmarkEntity>>
+
+    /** Bookmarks within one chapter, oldest first (drives in-text rendering + colour assignment). */
+    @Query("SELECT * FROM bookmarks WHERE novelId = :novelId AND chapterUrl = :chapterUrl ORDER BY createdAt ASC")
+    fun getForChapter(novelId: Long, chapterUrl: String): Flow<List<BookmarkEntity>>
 
     @Insert
     suspend fun insert(bookmark: BookmarkEntity): Long

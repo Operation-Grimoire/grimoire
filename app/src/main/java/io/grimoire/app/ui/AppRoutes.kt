@@ -63,7 +63,7 @@ internal const val ROUTE_SETTINGS_NOVELUPDATES = "settings/novelupdates"
 internal const val ROUTE_SETTINGS_CONNECTIONS = "settings/connections"
 internal const val ROUTE_SETTINGS_GITHUB = "settings/connections/github"
 internal const val ROUTE_SETTINGS_ATHENAEUM = "settings/connections/athenaeum"
-internal const val ROUTE_READER = "reader?pkg={pkg}&novelUrl={novelUrl}&chapterUrl={chapterUrl}"
+internal const val ROUTE_READER = "reader?pkg={pkg}&novelUrl={novelUrl}&chapterUrl={chapterUrl}&bookmarkPage={bookmarkPage}"
 internal const val ROUTE_WEBVIEW = "webview?url={url}"
 
 internal const val POP_MS = 120

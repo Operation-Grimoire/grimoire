@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material.icons.filled.VerticalAlignTop
@@ -119,6 +120,7 @@ fun NovelDetailScreen(
     onOpenNuSeries: (slug: String) -> Unit = {},
     onNavigateToLogin: (pkg: String) -> Unit = {},
     onOpenSourceSettings: (pkg: String) -> Unit = {},
+    onOpenBookmark: (pkg: String, novelUrl: String, chapterUrl: String, page: Int) -> Unit = { _, _, _, _ -> },
     onMigrate: (novelId: Long) -> Unit = {},
     onMigrationComplete: (pkg: String, url: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
@@ -142,6 +144,7 @@ fun NovelDetailScreen(
     val overrides by viewModel.overrides.collectAsState()
     val coverModel by viewModel.coverModel.collectAsState()
     val sourceNovel by viewModel.sourceNovel.collectAsState()
+    val bookmarks by viewModel.bookmarks.collectAsState()
     val hasLockedChapters by viewModel.hasLockedChapters.collectAsState()
     val includeLockedInTotals by viewModel.includeLockedInTotals.collectAsState()
     val notifyOnNewChapters by viewModel.notifyOnNewChapters.collectAsState()
@@ -176,6 +179,7 @@ fun NovelDetailScreen(
     var showNotifSheet by remember { mutableStateOf(false) }
     var lockedDialogChapter by remember { mutableStateOf<ChapterEntity?>(null) }
     var editingField by remember { mutableStateOf<EditableField?>(null) }
+    var showBookmarks by remember { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -426,6 +430,18 @@ fun NovelDetailScreen(
         )
     }
 
+    if (showBookmarks) {
+        NovelBookmarksSheet(
+            bookmarks = bookmarks,
+            onOpen = { bm ->
+                showBookmarks = false
+                onOpenBookmark(viewModel.pkg, novel.url, bm.chapterUrl, bm.startPage)
+            },
+            onDelete = viewModel::deleteBookmark,
+            onDismiss = { showBookmarks = false },
+        )
+    }
+
     editingField?.let { field ->
         MetadataFieldEditSheet(
             field = field,
@@ -527,7 +543,8 @@ fun NovelDetailScreen(
                     val canMigrate = isFavorite && novelId > 0L
                     val canConfigureNewChapters = isFavorite && novelId > 0L && !viewModel.isLocal
                     val canOpenSourceSettings = viewModel.hasSourceSettings
-                    if (hasBulkActions || canMigrate || canConfigureNewChapters || canOpenSourceSettings) {
+                    val hasBookmarks = bookmarks.isNotEmpty()
+                    if (hasBulkActions || canMigrate || canConfigureNewChapters || canOpenSourceSettings || hasBookmarks) {
                         Box {
                             PlainTooltipIconButton(onClick = { overflowMenuExpanded = true }, tooltip = "More actions") {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More actions")
@@ -596,6 +613,17 @@ fun NovelDetailScreen(
                                             onOpenSourceSettings(viewModel.pkg)
                                         },
                                         leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null) },
+                                    )
+                                }
+                                if (hasBookmarks) {
+                                    if (hasBulkActions || canMigrate || canConfigureNewChapters || canOpenSourceSettings) HorizontalDivider()
+                                    DropdownMenuItem(
+                                        text = { Text("Bookmarks (${bookmarks.size})") },
+                                        onClick = {
+                                            overflowMenuExpanded = false
+                                            showBookmarks = true
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Bookmarks, contentDescription = null) },
                                     )
                                 }
                             }
