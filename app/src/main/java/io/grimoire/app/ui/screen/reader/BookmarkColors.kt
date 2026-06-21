@@ -1,28 +1,32 @@
 package io.grimoire.app.ui.screen.reader
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
 /**
- * Palette for in-chapter bookmarks (#132). Each bookmark in a chapter is assigned a
- * distinct colour by index; colours cycle once the palette is exhausted.
+ * Colours for in-chapter bookmarks (#132), derived from the active Material theme so
+ * they match the app's palette. Each bookmark in a chapter is assigned a distinct
+ * index; colours cycle once exhausted.
  */
 object BookmarkColors {
-    val palette: List<Color> = listOf(
-        Color(0xFFFFCA28), // amber
-        Color(0xFF66BB6A), // green
-        Color(0xFF42A5F5), // blue
-        Color(0xFFEF5350), // red
-        Color(0xFFAB47BC), // purple
-        Color(0xFFFF7043), // deep orange
-        Color(0xFF26C6DA), // cyan
-        Color(0xFFEC407A), // pink
-    )
-
-    fun color(index: Int): Color = palette[index.mod(palette.size)]
-
-    /** First palette index not already used in the chapter, else cycles. */
-    fun nextIndex(used: Collection<Int>): Int {
-        for (i in palette.indices) if (i !in used) return i
-        return used.size.mod(palette.size)
+    /** First palette slot not already used in the chapter, else cycles. */
+    fun nextIndex(used: Collection<Int>, paletteSize: Int = DEFAULT_PALETTE_SIZE): Int {
+        for (i in 0 until paletteSize) if (i !in used) return i
+        return used.size.mod(paletteSize)
     }
+
+    const val DEFAULT_PALETTE_SIZE = 6
 }
+
+@Composable
+@ReadOnlyComposable
+fun bookmarkPalette(): List<Color> {
+    val cs = MaterialTheme.colorScheme
+    return listOf(cs.primary, cs.tertiary, cs.secondary, cs.error, cs.inversePrimary, cs.tertiaryContainer)
+}
+
+@Composable
+@ReadOnlyComposable
+fun bookmarkColor(index: Int): Color = bookmarkPalette().let { it[index.mod(it.size)] }

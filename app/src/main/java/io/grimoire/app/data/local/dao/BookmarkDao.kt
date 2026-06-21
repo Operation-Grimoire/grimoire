@@ -22,6 +22,22 @@ interface BookmarkDao {
     @Query("UPDATE bookmarks SET note = :note WHERE id = :id")
     suspend fun updateNote(id: Long, note: String?)
 
+    /** Move/resize a bookmark after a handle drag. */
+    @Query("""
+        UPDATE bookmarks SET
+            startPage = :startPage, startChar = :startChar,
+            endPage = :endPage, endChar = :endChar, text = :text
+        WHERE id = :id
+    """)
+    suspend fun updatePosition(
+        id: Long,
+        startPage: Int,
+        startChar: Int,
+        endPage: Int,
+        endChar: Int,
+        text: String,
+    )
+
     @Query("DELETE FROM bookmarks WHERE id = :id")
     suspend fun delete(id: Long)
 }

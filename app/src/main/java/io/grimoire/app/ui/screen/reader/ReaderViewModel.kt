@@ -397,13 +397,16 @@ class ReaderViewModel @Inject constructor(
     }
 
     /**
-     * Add a point bookmark between words at [page]/[char]. [surroundingText] is the
-     * displayed prose around the point (offsets are relative to the rendered
-     * paragraph, supplied by the screen) — used for re-anchoring + list display.
+     * Add a point bookmark between words at [page]/[char]. Snapshots the surrounding
+     * prose (for re-anchoring + the novel-detail list) from the paragraph text.
      */
-    fun addPointBookmark(page: Int, char: Int, surroundingText: String) {
+    fun addPointBookmark(page: Int, char: Int) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
-        insertBookmark(chapter, page, char, page, char, isHighlight = false, text = surroundingText)
+        val paragraph = _pages.value.getOrNull(page)?.text?.trim().orEmpty()
+        val c = char.coerceIn(0, paragraph.length)
+        val from = (c - 40).coerceAtLeast(0)
+        val to = (c + 40).coerceAtMost(paragraph.length)
+        insertBookmark(chapter, page, c, page, c, isHighlight = false, text = paragraph.substring(from, to).trim())
     }
 
     /** Add a highlight bookmark over [startChar]..[endChar] of paragraph [page]. */
@@ -443,6 +446,13 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun deleteBookmark(id: Long) = viewModelScope.launch { bookmarkDao.delete(id) }
+
+    /** Persist a moved/resized bookmark (single paragraph: startPage == endPage == [page]). */
+    fun updateBookmarkPosition(id: Long, page: Int, startChar: Int, endChar: Int, text: String) {
+        viewModelScope.launch {
+            bookmarkDao.updatePosition(id, page, startChar, page, endChar, text.take(MAX_BOOKMARK_TEXT))
+        }
+    }
 
     fun toggleRead() {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return

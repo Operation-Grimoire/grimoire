@@ -30,7 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.local.entity.BookmarkEntity
-import io.grimoire.app.ui.screen.reader.BookmarkColors
+import io.grimoire.app.ui.screen.reader.bookmarkColor
 
 /**
  * Per-novel list of in-chapter bookmarks (#132), surfaced from the novel-detail
@@ -76,7 +76,7 @@ internal fun NovelBookmarksSheet(
                                 modifier = Modifier
                                     .size(12.dp)
                                     .clip(CircleShape)
-                                    .background(BookmarkColors.color(bookmark.colorIndex)),
+                                    .background(bookmarkColor(bookmark.colorIndex)),
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
