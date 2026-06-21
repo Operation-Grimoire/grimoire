@@ -24,6 +24,9 @@ class LibraryFilterTest {
         notifyOnNewChapters: Boolean = false,
         notifyOnNewLockedChapters: Boolean = false,
         autoDownloadNewChapters: Boolean = false,
+        overrideTitle: String? = null,
+        overrideAuthor: String? = null,
+        overrideStatus: Int? = null,
     ) = NovelEntity(
         id = id,
         sourceId = sourceId,
@@ -38,6 +41,9 @@ class LibraryFilterTest {
         notifyOnNewChapters = notifyOnNewChapters,
         notifyOnNewLockedChapters = notifyOnNewLockedChapters,
         autoDownloadNewChapters = autoDownloadNewChapters,
+        overrideTitle = overrideTitle,
+        overrideAuthor = overrideAuthor,
+        overrideStatus = overrideStatus,
     )
 
     private fun category(id: Long, name: String, isDefault: Boolean = false, isHidden: Boolean = false) =
@@ -213,6 +219,35 @@ class LibraryFilterTest {
             baseInputs(novels = novels, filterStatuses = setOf(1)),
         )
         assertEquals(listOf("A", "C"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `status filter uses overridden status, not source status`() {
+        val novels = listOf(
+            // Source status 2, but user overrode to 1 — must match a filter for 1.
+            novel(1, title = "A", status = 2, overrideStatus = 1),
+            // Source status 1, but user overrode to 2 — must be excluded by a filter for 1.
+            novel(2, title = "B", status = 1, overrideStatus = 2),
+            novel(3, title = "C", status = 1),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterStatuses = setOf(1)),
+        )
+        assertEquals(listOf("A", "C"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `title sort and search use overridden title and author`() {
+        val novels = listOf(
+            novel(1, title = "Zeta", overrideTitle = "Alpha"),
+            novel(2, title = "Yankee", author = "Nobody", overrideAuthor = "Brandon"),
+        )
+        // Sorted by effective title: "Alpha" before "Yankee".
+        val sorted = buildLibraryTabs(baseInputs(novels = novels))
+        assertEquals(listOf("Alpha", "Yankee"), sorted[0].novels!!.map { it.effectiveTitle })
+        // Search hits the overridden author.
+        val searched = buildLibraryTabs(baseInputs(novels = novels, searchQuery = "brand"))
+        assertEquals(listOf(2L), searched[0].novels!!.map { it.id })
     }
 
     @Test

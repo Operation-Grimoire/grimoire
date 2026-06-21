@@ -63,6 +63,12 @@ data class NovelEntity(
     /** Title shown in the UI: the user override if set, otherwise the source title. */
     val effectiveTitle: String get() = overrideTitle ?: title
 
+    /** Author shown in the UI: override if set, otherwise the source author. */
+    val effectiveAuthor: String? get() = overrideAuthor ?: author
+
+    /** [io.grimoire.api.model.NovelStatus] ordinal: override if set, otherwise source. */
+    val effectiveStatus: Int get() = overrideStatus ?: status
+
     /**
      * Cover to render: a local custom file > a custom url > the source thumbnail.
      * A [File] is returned for the local path so Coil loads it directly.

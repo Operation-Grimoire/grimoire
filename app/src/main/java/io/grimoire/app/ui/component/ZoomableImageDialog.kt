@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -196,7 +196,7 @@ fun ZoomableImageDialog(
                 if (extraActions.isNotEmpty()) {
                     Box {
                         IconButton(onClick = { overflowOpen = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White)
+                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.White)
                         }
                         DropdownMenu(expanded = overflowOpen, onDismissRequest = { overflowOpen = false }) {
                             extraActions.forEach { action ->
