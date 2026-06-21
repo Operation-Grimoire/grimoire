@@ -35,8 +35,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import io.grimoire.api.model.Novel
@@ -53,7 +56,7 @@ internal fun NovelHeader(
     coverModel: Any?,
     sourceName: String = "",
     isLocal: Boolean = false,
-    onEditMetadata: () -> Unit = {},
+    onEditField: (EditableField) -> Unit = {},
     onSetCoverUri: (Uri) -> Unit = {},
     onSetCoverUrl: (String) -> Unit = {},
     onResetCover: () -> Unit = {},
@@ -140,9 +143,11 @@ internal fun NovelHeader(
                 Text(
                     novel.title,
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f, fill = false),
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .longPressToEdit(EditableField.TITLE, onEditField),
                 )
-                OverrideIndicator(overrides.title != null, onEditMetadata)
+                OverrideIndicator(overrides.title != null) { onEditField(EditableField.TITLE) }
             }
             if (!novel.author.isNullOrBlank()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -150,17 +155,22 @@ internal fun NovelHeader(
                         novel.author!!,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f, fill = false),
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .longPressToEdit(EditableField.AUTHOR, onEditField),
                     )
-                    OverrideIndicator(overrides.author != null, onEditMetadata)
+                    OverrideIndicator(overrides.author != null) { onEditField(EditableField.AUTHOR) }
                 }
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                StatusLabel(status = novel.status)
-                OverrideIndicator(overrides.status != null, onEditMetadata)
+                StatusLabel(
+                    status = novel.status,
+                    modifier = Modifier.longPressToEdit(EditableField.STATUS, onEditField),
+                )
+                OverrideIndicator(overrides.status != null) { onEditField(EditableField.STATUS) }
                 novel.rating?.let {
                     RatingLabel(
                         rating = it,
@@ -195,8 +205,24 @@ internal fun NovelHeader(
 }
 
 /**
+ * Long-press a metadata field to open its single-field edit sheet (#152).
+ * Uses [combinedClickable] so the press shows the standard ripple/darken feedback;
+ * a plain tap is a no-op (editing is intentionally long-press only).
+ */
+@OptIn(ExperimentalFoundationApi::class)
+internal fun Modifier.longPressToEdit(
+    field: EditableField,
+    onEdit: (EditableField) -> Unit,
+): Modifier = composed {
+    combinedClickable(
+        onClick = {},
+        onLongClick = { onEdit(field) },
+    )
+}
+
+/**
  * Small pencil shown next to a metadata field that the user has overridden (#152).
- * Tapping it opens the edit sheet. Renders nothing when [overridden] is false.
+ * Tapping it opens that field's edit sheet. Renders nothing when [overridden] is false.
  */
 @Composable
 internal fun OverrideIndicator(overridden: Boolean, onClick: () -> Unit) {

@@ -44,7 +44,6 @@ import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.VerticalAlignBottom
@@ -174,7 +173,7 @@ fun NovelDetailScreen(
     var overflowMenuExpanded by remember { mutableStateOf(false) }
     var showNotifSheet by remember { mutableStateOf(false) }
     var lockedDialogChapter by remember { mutableStateOf<ChapterEntity?>(null) }
-    var showEditMetadata by remember { mutableStateOf(false) }
+    var editingField by remember { mutableStateOf<EditableField?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -425,12 +424,13 @@ fun NovelDetailScreen(
         )
     }
 
-    if (showEditMetadata) {
-        EditMetadataSheet(
+    editingField?.let { field ->
+        MetadataFieldEditSheet(
+            field = field,
             source = sourceNovel,
             overrides = overrides,
             onSave = viewModel::saveMetadataOverrides,
-            onDismiss = { showEditMetadata = false },
+            onDismiss = { editingField = null },
         )
     }
 
@@ -524,8 +524,7 @@ fun NovelDetailScreen(
                     val hasBulkActions = chapters.isNotEmpty()
                     val canMigrate = isFavorite && novelId > 0L
                     val canConfigureNewChapters = isFavorite && novelId > 0L && !viewModel.isLocal
-                    val canEditMetadata = !isLoadingNovel && novelError == null && novelId > 0L
-                    if (hasBulkActions || canMigrate || canConfigureNewChapters || canEditMetadata) {
+                    if (hasBulkActions || canMigrate || canConfigureNewChapters) {
                         Box {
                             PlainTooltipIconButton(onClick = { overflowMenuExpanded = true }, tooltip = "More actions") {
                                 Icon(Icons.Default.MoreVert, contentDescription = "More actions")
@@ -534,15 +533,7 @@ fun NovelDetailScreen(
                                 expanded = overflowMenuExpanded,
                                 onDismissRequest = { overflowMenuExpanded = false },
                             ) {
-                                if (canEditMetadata) {
-                                    DropdownMenuItem(
-                                        text = { Text("Edit metadata") },
-                                        onClick = { overflowMenuExpanded = false; showEditMetadata = true },
-                                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
-                                    )
-                                }
                                 if (hasBulkActions) {
-                                    if (canEditMetadata) HorizontalDivider()
                                     DropdownMenuItem(
                                         text = { Text("Mark all as read") },
                                         onClick = { viewModel.markAllRead(true); overflowMenuExpanded = false },
@@ -762,7 +753,7 @@ fun NovelDetailScreen(
                                 coverModel = coverModel,
                                 sourceName = viewModel.sourceName,
                                 isLocal = viewModel.isLocal,
-                                onEditMetadata = { showEditMetadata = true },
+                                onEditField = { editingField = it },
                                 onSetCoverUri = viewModel::setCustomCoverFromUri,
                                 onSetCoverUrl = viewModel::setCustomCoverUrl,
                                 onResetCover = viewModel::resetCustomCover,
@@ -802,7 +793,10 @@ fun NovelDetailScreen(
                     if (!isLoadingNovel && novelError == null && (novel.genres.isNotEmpty() || overrides.genres != null)) {
                         item(key = "genres") {
                             Row(
-                                modifier = Modifier.animateItem().fillMaxWidth(),
+                                modifier = Modifier
+                                    .animateItem()
+                                    .fillMaxWidth()
+                                    .longPressToEdit(EditableField.GENRES) { editingField = it },
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 GenreChips(
@@ -811,7 +805,7 @@ fun NovelDetailScreen(
                                         .weight(1f)
                                         .padding(horizontal = 16.dp, vertical = 4.dp),
                                 )
-                                OverrideIndicator(overrides.genres != null) { showEditMetadata = true }
+                                OverrideIndicator(overrides.genres != null) { editingField = EditableField.GENRES }
                             }
                         }
                     }
@@ -820,7 +814,10 @@ fun NovelDetailScreen(
                     if (!isLoadingNovel && novelError == null && !novel.description.isNullOrBlank()) {
                         item(key = "description") {
                             Row(
-                                modifier = Modifier.animateItem().fillMaxWidth(),
+                                modifier = Modifier
+                                    .animateItem()
+                                    .fillMaxWidth()
+                                    .longPressToEdit(EditableField.DESCRIPTION) { editingField = it },
                                 verticalAlignment = Alignment.Top,
                             ) {
                                 ExpandableText(
@@ -829,7 +826,7 @@ fun NovelDetailScreen(
                                         .weight(1f)
                                         .padding(horizontal = 16.dp, vertical = 4.dp),
                                 )
-                                OverrideIndicator(overrides.description != null) { showEditMetadata = true }
+                                OverrideIndicator(overrides.description != null) { editingField = EditableField.DESCRIPTION }
                             }
                         }
                     }
