@@ -9,10 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -35,7 +33,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,16 +41,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
-import kotlin.math.roundToInt
 import io.grimoire.api.model.Novel
 import io.grimoire.api.model.NovelStatus
 import io.grimoire.app.ui.component.displayName
+import sh.calvin.reorderable.ReorderableColumn
 
 /** A single novel-metadata field that can be overridden (#152). */
 internal enum class EditableField(val label: String) {
@@ -173,17 +167,13 @@ private fun parseGenres(raw: String): List<String> =
 
 /**
  * Editable genre list: add via the text field (comma-separated input is split),
- * remove with the trailing X, and drag-reorder via the handle (long-press to grab).
+ * remove with the trailing X, and drag-reorder via the handle (sh.calvin.reorderable
+ * [ReorderableColumn], suited to this short non-lazy list inside a scrolling sheet).
  * Operates directly on the [genres] snapshot list owned by the sheet.
  */
 @Composable
 private fun GenreListEditor(genres: SnapshotStateList<String>) {
     var newGenre by remember { mutableStateOf("") }
-    val density = LocalDensity.current
-    val rowHeight = 48.dp
-    val rowPx = with(density) { rowHeight.toPx() }
-    var draggingIndex by remember { mutableStateOf<Int?>(null) }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
 
     fun addGenres() {
         parseGenres(newGenre).forEach { g ->
@@ -200,46 +190,33 @@ private fun GenreListEditor(genres: SnapshotStateList<String>) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        genres.forEachIndexed { index, genre ->
-            val dragging = draggingIndex == index
-            Surface(
-                tonalElevation = if (dragging) 4.dp else 0.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(rowHeight)
-                    .zIndex(if (dragging) 1f else 0f)
-                    .graphicsLayer { translationY = if (dragging) dragOffset else 0f },
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.DragHandle,
-                        contentDescription = "Drag to reorder",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .padding(8.dp)
-                            .pointerInput(genres.size) {
-                                detectDragGesturesAfterLongPress(
-                                    onDragStart = { draggingIndex = index; dragOffset = 0f },
-                                    onDragEnd = { draggingIndex = null; dragOffset = 0f },
-                                    onDragCancel = { draggingIndex = null; dragOffset = 0f },
-                                    onDrag = { change, drag ->
-                                        change.consume()
-                                        dragOffset += drag.y
-                                        val from = draggingIndex ?: return@detectDragGesturesAfterLongPress
-                                        val target = from + (dragOffset / rowPx).roundToInt()
-                                        if (target in genres.indices && target != from) {
-                                            genres.add(target, genres.removeAt(from))
-                                            draggingIndex = target
-                                            dragOffset -= (target - from) * rowPx
-                                        }
-                                    },
-                                )
-                            },
-                    )
-                    Text(genre, modifier = Modifier.weight(1f))
-                    IconButton(onClick = { genres.removeAt(index) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove $genre")
+        ReorderableColumn(
+            list = genres.toList(),
+            onSettle = { from, to -> genres.add(to, genres.removeAt(from)) },
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) { _, genre, isDragging ->
+            key(genre) {
+                ReorderableItem {
+                    Surface(
+                        tonalElevation = if (isDragging) 4.dp else 0.dp,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.DragHandle,
+                                contentDescription = "Drag to reorder",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .draggableHandle()
+                                    .size(40.dp)
+                                    .padding(8.dp),
+                            )
+                            Text(genre, modifier = Modifier.weight(1f))
+                            IconButton(onClick = { genres.remove(genre) }) {
+                                Icon(Icons.Default.Close, contentDescription = "Remove $genre")
+                            }
+                        }
                     }
                 }
             }
