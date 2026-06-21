@@ -793,14 +793,12 @@ fun NovelDetailScreen(
                     if (!isLoadingNovel && novelError == null && (novel.genres.isNotEmpty() || overrides.genres != null)) {
                         item(key = "genres") {
                             Row(
-                                modifier = Modifier
-                                    .animateItem()
-                                    .fillMaxWidth()
-                                    .longPressToEdit(EditableField.GENRES) { editingField = it },
+                                modifier = Modifier.animateItem().fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 GenreChips(
                                     genres = novel.genres,
+                                    onLongPress = { editingField = EditableField.GENRES },
                                     modifier = Modifier
                                         .weight(1f)
                                         .padding(horizontal = 16.dp, vertical = 4.dp),
@@ -814,14 +812,12 @@ fun NovelDetailScreen(
                     if (!isLoadingNovel && novelError == null && !novel.description.isNullOrBlank()) {
                         item(key = "description") {
                             Row(
-                                modifier = Modifier
-                                    .animateItem()
-                                    .fillMaxWidth()
-                                    .longPressToEdit(EditableField.DESCRIPTION) { editingField = it },
+                                modifier = Modifier.animateItem().fillMaxWidth(),
                                 verticalAlignment = Alignment.Top,
                             ) {
                                 ExpandableText(
                                     text = novel.description!!,
+                                    onLongClick = { editingField = EditableField.DESCRIPTION },
                                     modifier = Modifier
                                         .weight(1f)
                                         .padding(horizontal = 16.dp, vertical = 4.dp),
