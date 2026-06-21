@@ -20,6 +20,20 @@ import io.grimoire.app.data.local.dao.TaskLogDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
 import javax.inject.Singleton
 
+private val MIGRATION_25_26 = object : Migration(25, 26) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // User cover + per-field metadata overrides (issues #151 / #152). All nullable,
+        // so existing rows default to "no override" and keep updating from the source.
+        db.execSQL("ALTER TABLE novels ADD COLUMN customCoverPath TEXT")
+        db.execSQL("ALTER TABLE novels ADD COLUMN customCoverUrl TEXT")
+        db.execSQL("ALTER TABLE novels ADD COLUMN overrideTitle TEXT")
+        db.execSQL("ALTER TABLE novels ADD COLUMN overrideAuthor TEXT")
+        db.execSQL("ALTER TABLE novels ADD COLUMN overrideDescription TEXT")
+        db.execSQL("ALTER TABLE novels ADD COLUMN overrideStatus INTEGER")
+        db.execSQL("ALTER TABLE novels ADD COLUMN overrideGenres TEXT")
+    }
+}
+
 private val MIGRATION_24_25 = object : Migration(24, 25) {
     override fun migrate(db: SupportSQLiteDatabase) {
         // Index the favorite flag: the library list (WHERE favorite = 1) and the
@@ -266,7 +280,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "grimoire.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26)
             .build()
 
     @Provides fun provideNovelDao(db: AppDatabase): NovelDao = db.novelDao()

@@ -14,6 +14,9 @@ import coil.compose.AsyncImage
  * A cover image that opens [ZoomableImageDialog] when tapped. Bundles the
  * "show zoom" state, the clickable affordance, and the dialog so screens
  * don't each re-implement it. Sizing/clipping is supplied via [modifier].
+ *
+ * Every caller gets generic Download / Share for free; [extraActions] adds
+ * context-specific entries (e.g. cover replace/reset) to the viewer's overflow.
  */
 @Composable
 fun ZoomableCoverImage(
@@ -21,6 +24,8 @@ fun ZoomableCoverImage(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
+    saveBaseName: String = "image",
+    extraActions: List<ImageAction> = emptyList(),
 ) {
     var zoomed by remember(model) { mutableStateOf(false) }
     val hasImage = (model as? String)?.isNotBlank() ?: (model != null)
@@ -37,6 +42,8 @@ fun ZoomableCoverImage(
             model = model,
             contentDescription = contentDescription,
             onDismiss = { zoomed = false },
+            saveBaseName = saveBaseName,
+            extraActions = extraActions,
         )
     }
 }

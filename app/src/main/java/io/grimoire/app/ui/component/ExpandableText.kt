@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.component
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -29,19 +30,25 @@ import androidx.compose.ui.unit.dp
  *
  * [text] is rendered as a synopsis: HTML formatting is parsed and bare URLs are
  * auto-linked (see [rememberSynopsisAnnotatedString]). Taps on a link open it;
- * taps anywhere else toggle the expand state.
+ * taps anywhere else toggle the expand state. [onLongClick], when set, fires on a
+ * long press (e.g. to edit the synopsis) — combinedClickable keeps the press ripple.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ExpandableText(
     text: String,
     modifier: Modifier = Modifier,
     collapsedMaxLines: Int = 3,
     style: TextStyle = MaterialTheme.typography.bodyMedium,
+    onLongClick: (() -> Unit)? = null,
 ) {
     var expanded by remember(text) { mutableStateOf(false) }
     val rich = rememberSynopsisAnnotatedString(text)
     Column(
-        modifier = modifier.clickable { expanded = !expanded },
+        modifier = modifier.combinedClickable(
+            onClick = { expanded = !expanded },
+            onLongClick = onLongClick,
+        ),
     ) {
         Text(
             rich,

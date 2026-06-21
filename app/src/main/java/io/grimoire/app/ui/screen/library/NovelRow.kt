@@ -54,7 +54,7 @@ internal fun NovelRow(
             colors = ListItemDefaults.colors(
                 containerColor = Color.Transparent,
             ),
-            headlineContent = { Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            headlineContent = { Text(novel.effectiveTitle, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             supportingContent = run {
                 val visibility = resolveBadgeVisibility(
                     stats = stats,
@@ -82,8 +82,8 @@ internal fun NovelRow(
             leadingContent = {
                 Box {
                     AsyncImage(
-                        model = novel.thumbnailUrl,
-                        contentDescription = novel.title,
+                        model = novel.effectiveCoverModel(),
+                        contentDescription = novel.effectiveTitle,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .width(48.dp)

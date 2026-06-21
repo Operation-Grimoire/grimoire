@@ -169,6 +169,14 @@ class NovelQuickViewViewModel @AssistedInject constructor(
                         lastReadAt = current?.lastReadAt ?: 0L,
                         notifyOnNewChapters = current?.notifyOnNewChapters ?: false,
                         notifyOnNewLockedChapters = current?.notifyOnNewLockedChapters ?: false,
+                        autoDownloadNewChapters = current?.autoDownloadNewChapters ?: false,
+                        customCoverPath = current?.customCoverPath,
+                        customCoverUrl = current?.customCoverUrl,
+                        overrideTitle = current?.overrideTitle,
+                        overrideAuthor = current?.overrideAuthor,
+                        overrideDescription = current?.overrideDescription,
+                        overrideStatus = current?.overrideStatus,
+                        overrideGenres = current?.overrideGenres,
                     )
                 )
                 cachedNovelId = current?.id ?: upsertId

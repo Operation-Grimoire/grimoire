@@ -118,7 +118,7 @@ internal fun computeTabNovels(
     // both directions and guarantees every field supports both ASC and DESC.
     val ascComparator: Comparator<NovelEntity> = when (sortField) {
         SortField.TITLE -> Comparator { a, b ->
-            String.CASE_INSENSITIVE_ORDER.compare(a.title, b.title)
+            String.CASE_INSENSITIVE_ORDER.compare(a.effectiveTitle, b.effectiveTitle)
         }
         SortField.LAST_UPDATED -> compareBy { it.lastUpdated }
         SortField.UNREAD -> compareBy {
@@ -133,15 +133,15 @@ internal fun computeTabNovels(
     val trimmedQuery = searchQuery.trim()
     return tabFiltered
         .filter { novel ->
-            (filterStatuses.isEmpty() || novel.status in filterStatuses) &&
+            (filterStatuses.isEmpty() || novel.effectiveStatus in filterStatuses) &&
             (!filterUnreadOnly || (chapterStats[novel.id]?.let { it.effectiveTotal(includeLockedInTotals) - it.readCount > 0 } == true)) &&
             (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
             (!filterNotifyEnabled || novel.notifyOnNewChapters || novel.notifyOnNewLockedChapters) &&
             (!filterAutoDownloadEnabled || novel.autoDownloadNewChapters) &&
             (filterSourceIds.isEmpty() || novel.sourceId in filterSourceIds) &&
             (trimmedQuery.isEmpty() ||
-                novel.title.contains(trimmedQuery, ignoreCase = true) ||
-                (novel.author?.contains(trimmedQuery, ignoreCase = true) == true))
+                novel.effectiveTitle.contains(trimmedQuery, ignoreCase = true) ||
+                (novel.effectiveAuthor?.contains(trimmedQuery, ignoreCase = true) == true))
         }
         .sortedWith(comparator)
 }

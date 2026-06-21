@@ -137,6 +137,9 @@ fun NovelDetailScreen(
     val bookDownload by viewModel.bookDownload.collectAsState()
     val nuState by viewModel.nuState.collectAsState()
     val loginState by viewModel.loginState.collectAsState()
+    val overrides by viewModel.overrides.collectAsState()
+    val coverModel by viewModel.coverModel.collectAsState()
+    val sourceNovel by viewModel.sourceNovel.collectAsState()
     val hasLockedChapters by viewModel.hasLockedChapters.collectAsState()
     val includeLockedInTotals by viewModel.includeLockedInTotals.collectAsState()
     val notifyOnNewChapters by viewModel.notifyOnNewChapters.collectAsState()
@@ -170,6 +173,7 @@ fun NovelDetailScreen(
     var overflowMenuExpanded by remember { mutableStateOf(false) }
     var showNotifSheet by remember { mutableStateOf(false) }
     var lockedDialogChapter by remember { mutableStateOf<ChapterEntity?>(null) }
+    var editingField by remember { mutableStateOf<EditableField?>(null) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -417,6 +421,16 @@ fun NovelDetailScreen(
         RefreshSummaryDialog(
             summary = summary,
             onDismiss = viewModel::acknowledgeRefreshSummary,
+        )
+    }
+
+    editingField?.let { field ->
+        MetadataFieldEditSheet(
+            field = field,
+            source = sourceNovel,
+            overrides = overrides,
+            onSave = viewModel::saveMetadataOverrides,
+            onDismiss = { editingField = null },
         )
     }
 
@@ -733,7 +747,17 @@ fun NovelDetailScreen(
                                 Text(novelError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                                 TextButton(onClick = viewModel::retryNovel) { Text("Retry") }
                             }
-                            else -> NovelHeader(novel = novel, sourceName = viewModel.sourceName, isLocal = viewModel.isLocal)
+                            else -> NovelHeader(
+                                novel = novel,
+                                overrides = overrides,
+                                coverModel = coverModel,
+                                sourceName = viewModel.sourceName,
+                                isLocal = viewModel.isLocal,
+                                onEditField = { editingField = it },
+                                onSetCoverUri = viewModel::setCustomCoverFromUri,
+                                onSetCoverUrl = viewModel::setCustomCoverUrl,
+                                onResetCover = viewModel::resetCustomCover,
+                            )
                         }
                     }
 
@@ -766,26 +790,40 @@ fun NovelDetailScreen(
                     }
 
                     // Genres
-                    if (!isLoadingNovel && novelError == null && novel.genres.isNotEmpty()) {
+                    if (!isLoadingNovel && novelError == null && (novel.genres.isNotEmpty() || overrides.genres != null)) {
                         item(key = "genres") {
-                            GenreChips(
-                                genres = novel.genres,
-                                modifier = Modifier
-                                    .animateItem()
-                                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                            )
+                            Row(
+                                modifier = Modifier.animateItem().fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                GenreChips(
+                                    genres = novel.genres,
+                                    onLongPress = { editingField = EditableField.GENRES },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                                )
+                                OverrideIndicator(overrides.genres != null) { editingField = EditableField.GENRES }
+                            }
                         }
                     }
 
                     // Description
                     if (!isLoadingNovel && novelError == null && !novel.description.isNullOrBlank()) {
                         item(key = "description") {
-                            ExpandableText(
-                                text = novel.description!!,
-                                modifier = Modifier
-                                    .animateItem()
-                                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                            )
+                            Row(
+                                modifier = Modifier.animateItem().fillMaxWidth(),
+                                verticalAlignment = Alignment.Top,
+                            ) {
+                                ExpandableText(
+                                    text = novel.description!!,
+                                    onLongClick = { editingField = EditableField.DESCRIPTION },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                                )
+                                OverrideIndicator(overrides.description != null) { editingField = EditableField.DESCRIPTION }
+                            }
                         }
                     }
 

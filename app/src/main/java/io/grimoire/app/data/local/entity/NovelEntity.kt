@@ -3,6 +3,7 @@ package io.grimoire.app.data.local.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.io.File
 
 @Entity(
     tableName = "novels",
@@ -40,4 +41,38 @@ data class NovelEntity(
     val notifyOnNewChapters: Boolean = false,
     val notifyOnNewLockedChapters: Boolean = false,
     val autoDownloadNewChapters: Boolean = false,
-)
+    /**
+     * User cover override. Precedence when rendering: [customCoverPath] (a local
+     * file in filesDir/covers/{id}) > [customCoverUrl] > [thumbnailUrl] (source).
+     * Both survive a source refresh — see LibraryUpdater.mergeNovel / Novel.toEntity.
+     */
+    val customCoverPath: String? = null,
+    val customCoverUrl: String? = null,
+    /**
+     * Per-field metadata overrides. A non-null value wins over the source-provided
+     * column and is never touched by a refresh. Effective value = override ?: source.
+     * [overrideStatus] is a [io.grimoire.api.model.NovelStatus] ordinal; [overrideGenres]
+     * is comma-joined ("" = override to an empty genre list, null = no override).
+     */
+    val overrideTitle: String? = null,
+    val overrideAuthor: String? = null,
+    val overrideDescription: String? = null,
+    val overrideStatus: Int? = null,
+    val overrideGenres: String? = null,
+) {
+    /** Title shown in the UI: the user override if set, otherwise the source title. */
+    val effectiveTitle: String get() = overrideTitle ?: title
+
+    /** Author shown in the UI: override if set, otherwise the source author. */
+    val effectiveAuthor: String? get() = overrideAuthor ?: author
+
+    /** [io.grimoire.api.model.NovelStatus] ordinal: override if set, otherwise source. */
+    val effectiveStatus: Int get() = overrideStatus ?: status
+
+    /**
+     * Cover to render: a local custom file > a custom url > the source thumbnail.
+     * A [File] is returned for the local path so Coil loads it directly.
+     */
+    fun effectiveCoverModel(): Any? =
+        customCoverPath?.let { File(it) } ?: customCoverUrl ?: thumbnailUrl
+}
