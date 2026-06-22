@@ -58,6 +58,21 @@ class ChapterListFetcherTest {
     }
 
     @Test
+    fun fetchAllChapters_paginatedSource_stopsAtMaxPages() = runBlocking {
+        // A source that never returns an empty page and never repeats a URL (e.g.
+        // pagination broken by a site change) would loop forever and OOM. The
+        // maxPages safety net must bound the walk.
+        val src = FakePaginatedSource(totalNonEmptyPages = Int.MAX_VALUE, perPageDelayMs = 0)
+        val novel = Novel(url = "n", title = "")
+
+        val result = fetchAllChapters(src, novel, window = 4, maxPages = 10)
+
+        // 10 pages walked, 3 chapters each, then the cap stops the walk.
+        assertEquals(10 * 3, result.size)
+        assertTrue("walk should stop near the cap", src.calls.get() <= 12)
+    }
+
+    @Test
     fun fetchAllChapters_nonPaginatedSource_callsSimpleApi() = runBlocking {
         val chapters = listOf(chapter("a"), chapter("b"))
         val src = FakeSimpleSource(chapters)
