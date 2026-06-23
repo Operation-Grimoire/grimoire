@@ -18,6 +18,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.grimoire.app.GrimoireApp
 import io.grimoire.app.MainActivity
+import io.grimoire.app.data.crash.CrashContext
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.TaskLogDao
@@ -58,6 +59,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
 
         runCatching { setForeground(getForegroundInfo()) }
 
+        CrashContext.drop("library sync started (category=${categoryId ?: "all"})")
         try {
             val summary = runCatching {
                 libraryUpdater.updateLibrary(
@@ -78,6 +80,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 preferences.lastRunSuccess.set(false)
                 preferences.lastRunMessage.set(message)
                 recordHistory(success = false, summary = "Library sync failed · $message")
+                CrashContext.drop("library sync failed · $message")
                 return Result.retry()
             }
 
@@ -99,6 +102,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
             preferences.lastRunSuccess.set(true)
             preferences.lastRunMessage.set(line)
             recordHistory(success = true, summary = line)
+            CrashContext.drop("library sync done · $line")
             return Result.success()
         } finally {
             // The progress notification is this worker's foreground notification.

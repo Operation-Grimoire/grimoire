@@ -38,6 +38,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import io.grimoire.app.data.crash.CrashContext
 import io.grimoire.app.ui.screen.more.MoreViewModel
 import io.grimoire.app.ui.tour.LocalTourRegistry
 import io.grimoire.app.ui.tour.TourActionId
@@ -156,7 +157,12 @@ fun AppNavigation(
     val tourSteps = tourState.tourId?.let { tourById(it).steps }.orEmpty()
 
     LaunchedEffect(Unit) { tourController.maybeStartOnLaunch() }
-    LaunchedEffect(currentRoute) { tourController.onRouteChanged(currentRoute) }
+    LaunchedEffect(currentRoute) {
+        // Record the active screen so a crash report can show where the user was,
+        // not just the (often misleading) allocation site of an OOM.
+        CrashContext.setRoute(currentRoute)
+        tourController.onRouteChanged(currentRoute)
+    }
     // Drive navigation to each non-interactive step's screen as it's entered.
     LaunchedEffect(tourState.running, tourState.index) {
         if (!tourState.running) return@LaunchedEffect

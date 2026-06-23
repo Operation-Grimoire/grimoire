@@ -75,6 +75,18 @@ class CrashLogStore @Inject constructor(
             appendLine("Android: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
             appendLine("Device:  ${Build.MANUFACTURER} ${Build.MODEL}")
             appendLine("Thread:  ${thread.name}")
+            // What the app was doing, not just where it allocated last. For an
+            // OutOfMemoryError the stack is whoever happened to allocate when the
+            // heap was already full — these two lines are what actually localize
+            // the cause (the active screen + a near-full Java heap).
+            appendLine("Screen:  ${CrashContext.currentRoute ?: "(unknown)"}")
+            appendLine("Memory:  ${runCatching { CrashContext.memorySummary() }.getOrDefault("?")}")
+            val breadcrumbs = runCatching { CrashContext.breadcrumbs() }.getOrDefault(emptyList())
+            if (breadcrumbs.isNotEmpty()) {
+                appendLine()
+                appendLine("Recent activity (oldest first):")
+                breadcrumbs.forEach { appendLine("  $it") }
+            }
             appendLine()
             append(stack)
         }
