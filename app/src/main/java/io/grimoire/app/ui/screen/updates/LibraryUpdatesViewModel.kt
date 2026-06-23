@@ -48,7 +48,12 @@ class LibraryUpdatesViewModel @Inject constructor(
     val chaptersByEntryId: StateFlow<Map<Long, ChapterEntity>> = entries
         .flatMapLatest { rows ->
             if (rows.isEmpty()) flowOf(emptyMap())
-            else chapterDao.getChaptersForNovels(rows.map { it.novelId }.distinct())
+            // Resolve live chapter state against only the chapters the log
+            // references (join in getChaptersForLogEntries), not every chapter of
+            // every logged novel — the latter loaded most of the library's chapter
+            // metadata into memory and OOM'd the app on the Updates page during a
+            // sync (the chapters table churns as each novel is refreshed).
+            else chapterDao.getChaptersForLogEntries()
                 .map { chapters ->
                     val byKey = chapters.associateBy { it.novelId to it.url }
                     rows.mapNotNull { row ->
