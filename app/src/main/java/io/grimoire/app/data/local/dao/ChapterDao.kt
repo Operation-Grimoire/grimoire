@@ -245,8 +245,31 @@ interface ChapterDao {
     """)
     fun getAllDownloads(excludeHidden: Boolean): Flow<List<ChapterEntity>>
 
-    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId IN (:novelIds)")
-    fun getChaptersForNovels(novelIds: List<Long>): Flow<List<ChapterEntity>>
+    /**
+     * Live chapter rows (metadata only, no `downloadedContent`) for exactly the
+     * chapters referenced by a library-update log entry, matched on
+     * (novelId, url) via a join against `library_updates`.
+     *
+     * The Updates screen previously resolved live chapter state by loading every
+     * chapter of every novel that appears in the log (`WHERE novelId IN (...)`)
+     * and filtering down to the handful actually logged. For a large library that
+     * pulled most of the library's chapter metadata into a `List` plus an
+     * equally-large lookup map; during a sync the chapters table is rewritten
+     * constantly (`replaceChapters`), so this Flow re-emitted repeatedly and the
+     * old generation was still held while the next was built — double-allocating
+     * enough to OOM the app while the Updates page was open. Joining against the
+     * log bounds the result to the log size instead. (Mirrors [getChapters] in
+     * excluding `downloadedContent`.)
+     */
+    @Query("""
+        SELECT DISTINCT ch.id, ch.novelId, ch.url, ch.name, ch.uploadDate, ch.chapterNumber,
+               ch.translator, ch.read, ch.readProgress, ch.readAnchorItemIndex,
+               ch.readAnchorItemOffset, ch.downloadStatus, ch.queueOrder,
+               ch.firstReadAt, ch.wordCount, ch.locked
+        FROM chapters ch
+        INNER JOIN library_updates lu ON lu.novelId = ch.novelId AND lu.chapterUrl = ch.url
+    """)
+    fun getChaptersForLogEntries(): Flow<List<ChapterEntity>>
 
     @Query("""
         SELECT novelId,
