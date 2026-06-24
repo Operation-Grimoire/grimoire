@@ -174,6 +174,39 @@ internal fun NovelCountBadgeOverlay(
 }
 
 /**
+ * Cover overlay that flags an imported-EPUB (local) novel so it reads as distinct
+ * from extension-backed novels at a glance. Rendered top-left; callers gate it on
+ * the novel being local and on the user's "Show EPUB badge" preference.
+ */
+@Composable
+internal fun NovelEpubBadgeOverlay(
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .background(
+                MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f),
+                MaterialTheme.shapes.extraSmall,
+            )
+            .padding(horizontal = 4.dp, vertical = 1.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Icon(
+            AppIcons.MenuBook,
+            contentDescription = "EPUB",
+            tint = Color.White,
+            modifier = Modifier.size(11.dp),
+        )
+        Text(
+            text = "EPUB",
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White,
+        )
+    }
+}
+
+/**
  * Cover overlay that flags the per-novel "new chapter" settings — a bell when
  * notifications are on, an auto-download glyph when auto-download is on. Distinct
  * from [NovelCountBadgeOverlay] (which counts chapters) so the static download

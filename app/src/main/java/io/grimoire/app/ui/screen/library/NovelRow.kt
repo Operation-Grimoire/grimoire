@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +26,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 
@@ -37,6 +39,7 @@ internal fun NovelRow(
     showReadBadge: Boolean,
     showDownloadedBadge: Boolean,
     showLockedBadge: Boolean,
+    showEpubBadge: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -94,6 +97,13 @@ internal fun NovelRow(
                                 .matchParentSize()
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+                        )
+                    }
+                    if (showEpubBadge && novel.sourceId == LOCAL_SOURCE_ID) {
+                        NovelEpubBadgeOverlay(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(2.dp),
                         )
                     }
                 }

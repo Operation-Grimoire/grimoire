@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.ui.theme.premiumGold
@@ -36,6 +37,7 @@ internal fun NovelCard(
     showReadBadge: Boolean,
     showDownloadedBadge: Boolean,
     showLockedBadge: Boolean,
+    showEpubBadge: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -83,6 +85,15 @@ internal fun NovelCard(
                         includeLockedInTotals = includeLockedInTotals,
                         modifier = Modifier
                             .align(Alignment.BottomStart)
+                            .padding(4.dp),
+                    )
+                }
+                // Local EPUB novels can't have notification / auto-download flags, so the
+                // EPUB badge and the status badge never compete for the top-left corner.
+                if (showEpubBadge && novel.sourceId == LOCAL_SOURCE_ID) {
+                    NovelEpubBadgeOverlay(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
                             .padding(4.dp),
                     )
                 }

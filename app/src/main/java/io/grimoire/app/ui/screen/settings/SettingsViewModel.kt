@@ -49,6 +49,7 @@ class SettingsViewModel @Inject constructor(
     val libraryShowReadBadge = libraryPreferences.showReadBadge.stateIn(viewModelScope)
     val libraryShowDownloadedBadge = libraryPreferences.showDownloadedBadge.stateIn(viewModelScope)
     val libraryShowLockedBadge = libraryPreferences.showLockedBadge.stateIn(viewModelScope)
+    val libraryShowEpubBadge = libraryPreferences.showEpubBadge.stateIn(viewModelScope)
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { uiPreferences.themeMode.set(mode) }
     fun setDynamicColor(enabled: Boolean) = viewModelScope.launch { uiPreferences.useDynamicColor.set(enabled) }
@@ -66,6 +67,7 @@ class SettingsViewModel @Inject constructor(
     fun setLibraryShowReadBadge(value: Boolean) = viewModelScope.launch { libraryPreferences.showReadBadge.set(value) }
     fun setLibraryShowDownloadedBadge(value: Boolean) = viewModelScope.launch { libraryPreferences.showDownloadedBadge.set(value) }
     fun setLibraryShowLockedBadge(value: Boolean) = viewModelScope.launch { libraryPreferences.showLockedBadge.set(value) }
+    fun setLibraryShowEpubBadge(value: Boolean) = viewModelScope.launch { libraryPreferences.showEpubBadge.set(value) }
 
     val readerMarkAsReadStrategy = readerPreferences.markAsReadStrategy.stateIn(viewModelScope)
     fun setReaderMarkAsReadStrategy(value: MarkAsReadStrategy) =
