@@ -18,9 +18,9 @@ import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
-import io.grimoire.app.data.preferences.EpubFilter
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
+import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
 import io.grimoire.app.data.preferences.stateIn
@@ -174,7 +174,7 @@ class LibraryViewModel @Inject constructor(
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
     val filterNotifyEnabled: StateFlow<Boolean> = libraryPreferences.filterNotifyEnabled.stateIn(viewModelScope)
     val filterAutoDownloadEnabled: StateFlow<Boolean> = libraryPreferences.filterAutoDownloadEnabled.stateIn(viewModelScope)
-    val filterEpub: StateFlow<EpubFilter> = libraryPreferences.filterEpub.stateIn(viewModelScope)
+    val filterType: StateFlow<NovelTypeFilter> = libraryPreferences.filterType.stateIn(viewModelScope)
     val filterSourceIds: StateFlow<Set<Long>> = libraryPreferences.filterSourceIds.stateIn(viewModelScope)
 
     /**
@@ -251,7 +251,7 @@ class LibraryViewModel @Inject constructor(
             // stay put; read at [15]/[16]/[17].
             filterNotifyEnabled,
             filterAutoDownloadEnabled,
-            filterEpub,
+            filterType,
         ),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
@@ -278,7 +278,7 @@ class LibraryViewModel @Inject constructor(
             searchQuery = values[14] as String,
             filterNotifyEnabled = values[15] as Boolean,
             filterAutoDownloadEnabled = values[16] as Boolean,
-            filterEpub = values[17] as EpubFilter,
+            filterType = values[17] as NovelTypeFilter,
         )
     }
 
@@ -394,8 +394,8 @@ class LibraryViewModel @Inject constructor(
         libraryPreferences.filterAutoDownloadEnabled.set(value)
     }
 
-    fun setFilterEpub(value: EpubFilter) = viewModelScope.launch {
-        libraryPreferences.filterEpub.set(value)
+    fun setFilterType(value: NovelTypeFilter) = viewModelScope.launch {
+        libraryPreferences.filterType.set(value)
     }
 
     /** Toggles [sourceId] in the active source filter set, or clears it entirely when null. */

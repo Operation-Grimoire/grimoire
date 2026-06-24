@@ -68,8 +68,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
-import io.grimoire.app.data.preferences.EpubFilter
 import io.grimoire.app.data.preferences.LibraryDisplayMode
+import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.MoveToCategorySheet
 import io.grimoire.app.ui.component.TooltipBottomBar
@@ -114,7 +114,7 @@ fun LibraryScreen(
     val filterDownloadedOnly by viewModel.filterDownloadedOnly.collectAsState()
     val filterNotifyEnabled by viewModel.filterNotifyEnabled.collectAsState()
     val filterAutoDownloadEnabled by viewModel.filterAutoDownloadEnabled.collectAsState()
-    val filterEpub by viewModel.filterEpub.collectAsState()
+    val filterType by viewModel.filterType.collectAsState()
     val filterSourceIds by viewModel.filterSourceIds.collectAsState()
     val librarySources by viewModel.librarySources.collectAsState()
     val isUnlocked by viewModel.isUnlocked.collectAsState()
@@ -186,7 +186,7 @@ fun LibraryScreen(
     }
 
     val isFilterActive = filterStatuses.isNotEmpty() || filterUnreadOnly || filterDownloadedOnly ||
-        filterNotifyEnabled || filterAutoDownloadEnabled || filterEpub != EpubFilter.ALL ||
+        filterNotifyEnabled || filterAutoDownloadEnabled || filterType != NovelTypeFilter.ALL ||
         filterSourceIds.isNotEmpty()
 
     val tabs = displayedTabs.map { it.label }
@@ -556,7 +556,7 @@ fun LibraryScreen(
                 filterDownloadedOnly = filterDownloadedOnly,
                 filterNotifyEnabled = filterNotifyEnabled,
                 filterAutoDownloadEnabled = filterAutoDownloadEnabled,
-                filterEpub = filterEpub,
+                filterType = filterType,
                 filterSourceIds = filterSourceIds,
                 librarySources = librarySources,
                 onSortFieldChange = viewModel::setSortField,
@@ -566,7 +566,7 @@ fun LibraryScreen(
                 onDownloadedOnlyChange = viewModel::setFilterDownloadedOnly,
                 onNotifyEnabledChange = viewModel::setFilterNotifyEnabled,
                 onAutoDownloadEnabledChange = viewModel::setFilterAutoDownloadEnabled,
-                onFilterEpubChange = viewModel::setFilterEpub,
+                onFilterTypeChange = viewModel::setFilterType,
                 onToggleFilterSource = viewModel::toggleFilterSource,
             )
         }
