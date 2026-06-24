@@ -275,14 +275,28 @@ class BackupManager @Inject constructor(
     private suspend fun applyBackup(backup: BackupFile) {
         restorePreferences(backup.preferences)
 
-        val existingCategories = categoryDao.getAllOnce().associateBy { it.name }
+        val existingCategories = categoryDao.getAllOnce()
+        val existingByName = existingCategories.associateBy { it.name }
+        val existingDefault = existingCategories.firstOrNull { it.isDefault }
         val categoryIdByName = mutableMapOf<String, Long>()
         for (cat in backup.categories) {
-            val existing = existingCategories[cat.name]
-            val id = if (existing != null) {
-                existing.id
-            } else {
-                categoryDao.upsert(
+            val existing = existingByName[cat.name]
+            val id = when {
+                existing != null -> existing.id
+                // The app always has exactly one default category. Fold the backup's
+                // default into the one already present (carrying over its name/order)
+                // instead of inserting a second default row.
+                cat.isDefault && existingDefault != null -> {
+                    categoryDao.upsert(
+                        existingDefault.copy(
+                            name = cat.name,
+                            order = cat.order,
+                            isHidden = cat.isHidden,
+                        )
+                    )
+                    existingDefault.id
+                }
+                else -> categoryDao.upsert(
                     CategoryEntity(
                         name = cat.name,
                         order = cat.order,
