@@ -26,6 +26,7 @@ import io.grimoire.app.data.local.dao.UpdateIssueDao
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.epub.EpubImporter
 import io.grimoire.app.data.epub.LOCAL_PKG
@@ -730,6 +731,22 @@ class NovelDetailViewModel @Inject constructor(
     fun downloadChapter(chapter: ChapterEntity) = downloadManager.enqueue(listOf(chapter))
     fun downloadAll() = downloadManager.enqueue(chapters.value.filter { !it.locked })
     fun downloadUnread() = downloadManager.enqueue(chapters.value.filter { !it.read && !it.locked })
+
+    /** Queue the next [count] unread, undownloaded chapters in reading order. */
+    fun downloadNext(count: Int) = downloadManager.enqueue(
+        chapters.value
+            .filter {
+                !it.locked && !it.read &&
+                    (it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
+                        it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
+            }
+            .sortedBy { it.chapterNumber }
+            .take(count),
+    )
+
+    fun deleteAllDownloads() = downloadManager.deleteDownloads(
+        chapters.value.filter { it.downloadStatus in ChapterDownloadStatus.HAS_CONTENT_ORDINALS },
+    )
     fun cancelDownload(chapter: ChapterEntity) = downloadManager.cancel(chapter)
     fun cancelAllDownloads() { if (cachedNovelId > 0L) downloadManager.cancelAll(cachedNovelId) }
     fun deleteDownload(chapter: ChapterEntity) = downloadManager.deleteDownload(chapter)
