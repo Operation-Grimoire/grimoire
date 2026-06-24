@@ -259,7 +259,7 @@ fun AppNavigation(
                                 val hasUpdates = dest == TopLevelDestination.More &&
                                     subscribedUpdateCount > 0
                                 val tabIcon = when {
-                                    hasUpdates -> dest.activeIcon
+                                    hasUpdates -> if (isSelected) dest.activeSelectedIcon else dest.activeIcon
                                     isSelected -> dest.selectedIcon
                                     else -> dest.icon
                                 }
