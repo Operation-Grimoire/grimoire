@@ -23,6 +23,7 @@ internal data class LibraryFilterInputs(
     val filterNotifyEnabled: Boolean,
     val filterAutoDownloadEnabled: Boolean,
     val filterType: NovelTypeFilter,
+    val epubSourceIds: Set<Long>,
     val filterSourceIds: Set<Long>,
     val isUnlocked: Boolean,
     val hiddenCategoryIds: Set<Long>,
@@ -143,8 +144,8 @@ internal fun computeTabNovels(
             (!filterAutoDownloadEnabled || novel.autoDownloadNewChapters) &&
             (when (filterType) {
                 NovelTypeFilter.ALL -> true
-                NovelTypeFilter.EPUB -> novel.sourceId == LOCAL_SOURCE_ID
-                NovelTypeFilter.WEB -> novel.sourceId != LOCAL_SOURCE_ID
+                NovelTypeFilter.EPUB -> novel.isEpubType(epubSourceIds)
+                NovelTypeFilter.WEB -> !novel.isEpubType(epubSourceIds)
             }) &&
             (filterSourceIds.isEmpty() || novel.sourceId in filterSourceIds) &&
             (trimmedQuery.isEmpty() ||
@@ -153,3 +154,12 @@ internal fun computeTabNovels(
         }
         .sortedWith(comparator)
 }
+
+/**
+ * True when this novel is EPUB-typed: a local file import ([LOCAL_SOURCE_ID]) or a
+ * novel from an installed EPUB-source extension (its id is in [epubSourceIds], which
+ * the ViewModel derives from the loaded extensions). Used by the EPUB badge and the
+ * Type filter so both kinds of EPUB read the same way.
+ */
+internal fun NovelEntity.isEpubType(epubSourceIds: Set<Long>): Boolean =
+    sourceId == LOCAL_SOURCE_ID || sourceId in epubSourceIds

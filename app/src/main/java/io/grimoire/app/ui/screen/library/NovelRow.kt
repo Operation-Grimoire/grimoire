@@ -26,7 +26,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 
@@ -40,6 +39,7 @@ internal fun NovelRow(
     showDownloadedBadge: Boolean,
     showLockedBadge: Boolean,
     showEpubBadge: Boolean,
+    isEpub: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -99,7 +99,7 @@ internal fun NovelRow(
                                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
                         )
                     }
-                    if (showEpubBadge && novel.sourceId == LOCAL_SOURCE_ID) {
+                    if (showEpubBadge && isEpub) {
                         NovelEpubBadgeOverlay(
                             modifier = Modifier
                                 .align(Alignment.TopStart)

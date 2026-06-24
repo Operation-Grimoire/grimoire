@@ -78,6 +78,7 @@ class LibraryFilterTest {
         filterNotifyEnabled: Boolean = false,
         filterAutoDownloadEnabled: Boolean = false,
         filterType: NovelTypeFilter = NovelTypeFilter.ALL,
+        epubSourceIds: Set<Long> = emptySet(),
         filterSourceIds: Set<Long> = emptySet(),
         isUnlocked: Boolean = true,
         hiddenCategoryIds: Set<Long> = emptySet(),
@@ -97,6 +98,7 @@ class LibraryFilterTest {
         filterNotifyEnabled = filterNotifyEnabled,
         filterAutoDownloadEnabled = filterAutoDownloadEnabled,
         filterType = filterType,
+        epubSourceIds = epubSourceIds,
         filterSourceIds = filterSourceIds,
         isUnlocked = isUnlocked,
         hiddenCategoryIds = hiddenCategoryIds,
@@ -357,6 +359,24 @@ class LibraryFilterTest {
             baseInputs(novels = novels, filterType = NovelTypeFilter.WEB),
         )
         assertEquals(listOf("Web"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `type filter treats EPUB-source extensions as EPUB`() {
+        // sourceId 50 is an installed EPUB-source extension (e.g. Z-Library); 100 is web.
+        val novels = listOf(
+            novel(1, title = "Local", sourceId = LOCAL_SOURCE_ID),
+            novel(2, title = "ZLib", sourceId = 50L),
+            novel(3, title = "Web", sourceId = 100L),
+        )
+        val epubTabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterType = NovelTypeFilter.EPUB, epubSourceIds = setOf(50L)),
+        )
+        assertEquals(listOf("Local", "ZLib"), epubTabs[0].novels!!.map { it.title })
+        val webTabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterType = NovelTypeFilter.WEB, epubSourceIds = setOf(50L)),
+        )
+        assertEquals(listOf("Web"), webTabs[0].novels!!.map { it.title })
     }
 
     @Test

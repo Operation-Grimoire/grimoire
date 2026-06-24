@@ -125,6 +125,7 @@ fun LibraryScreen(
     val showDownloadedBadge by viewModel.showDownloadedBadge.collectAsState()
     val showLockedBadge by viewModel.showLockedBadge.collectAsState()
     val showEpubBadge by viewModel.showEpubBadge.collectAsState()
+    val epubSourceIds by viewModel.epubSourceIds.collectAsState()
     val staging by viewModel.staging.collectAsState()
     val importing by viewModel.importing.collectAsState()
     val pendingImport by viewModel.pendingImport.collectAsState()
@@ -508,6 +509,7 @@ fun LibraryScreen(
                                         showDownloadedBadge = showDownloadedBadge,
                                         showLockedBadge = showLockedBadge,
                                         showEpubBadge = showEpubBadge,
+                                        isEpub = novel.isEpubType(epubSourceIds),
                                         selected = novel.id in selectedIds,
                                         onClick = {
                                             if (selectionMode) toggleSelect(novel.id)
@@ -528,6 +530,7 @@ fun LibraryScreen(
                                         showDownloadedBadge = showDownloadedBadge,
                                         showLockedBadge = showLockedBadge,
                                         showEpubBadge = showEpubBadge,
+                                        isEpub = novel.isEpubType(epubSourceIds),
                                         selected = novel.id in selectedIds,
                                         onClick = {
                                             if (selectionMode) toggleSelect(novel.id)

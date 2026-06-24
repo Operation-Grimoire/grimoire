@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.net.Uri
+import io.grimoire.api.source.epub.EpubSource
 import io.grimoire.app.data.epub.EpubImporter
 import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
@@ -198,6 +199,16 @@ class LibraryViewModel @Inject constructor(
             id to name
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /**
+     * Source ids whose installed extension delivers whole-book EPUBs (e.g.
+     * Z-Library, libgen). Combined with [LOCAL_SOURCE_ID] in [NovelEntity.isEpubType],
+     * this lets the EPUB badge and the Type filter treat extension-backed EPUBs the
+     * same as local file imports. Empty until the extension scan completes.
+     */
+    val epubSourceIds: StateFlow<Set<Long>> = extensionManager.extensions
+        .map { exts -> exts.filter { it.source is EpubSource }.map { it.id }.toSet() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
     val includeHiddenInAll: StateFlow<Boolean> = libraryPreferences.includeHiddenInAll.stateIn(viewModelScope)
     val includeLockedInTotals: StateFlow<Boolean> = libraryPreferences.includeLockedInTotals.stateIn(viewModelScope)
     val showReadBadge: StateFlow<Boolean> = libraryPreferences.showReadBadge.stateIn(viewModelScope)
@@ -252,6 +263,7 @@ class LibraryViewModel @Inject constructor(
             filterNotifyEnabled,
             filterAutoDownloadEnabled,
             filterType,
+            epubSourceIds,
         ),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
@@ -279,6 +291,7 @@ class LibraryViewModel @Inject constructor(
             filterNotifyEnabled = values[15] as Boolean,
             filterAutoDownloadEnabled = values[16] as Boolean,
             filterType = values[17] as NovelTypeFilter,
+            epubSourceIds = values[18] as Set<Long>,
         )
     }
 

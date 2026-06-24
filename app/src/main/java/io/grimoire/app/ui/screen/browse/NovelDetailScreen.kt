@@ -534,7 +534,11 @@ fun NovelDetailScreen(
                 actions = {
                     val hasBulkActions = chapters.isNotEmpty()
                     val canMigrate = isFavorite && novelId > 0L
-                    val canConfigureNewChapters = isFavorite && novelId > 0L && !viewModel.isLocal
+                    // EPUB novels (local imports and EPUB-source extensions like
+                    // Z-Library) have no scraped chapter list, so "notify / auto-download
+                    // new chapters" can never fire — hide it for both.
+                    val canConfigureNewChapters = isFavorite && novelId > 0L &&
+                        !viewModel.isLocal && !viewModel.isEpubSource
                     val canOpenSourceSettings = viewModel.hasSourceSettings
                     if (canConfigureNewChapters) {
                         val notificationsOn = notifyOnNewChapters || notifyOnNewLockedChapters
