@@ -1,13 +1,10 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -61,7 +58,7 @@ fun MoveToCategorySheet(
                     headlineContent = { Text(cat.name) },
                     leadingContent = {
                         Icon(
-                            Icons.AutoMirrored.Filled.Label,
+                            AppIcons.Label,
                             contentDescription = null,
                             tint = if (isCurrent) {
                                 MaterialTheme.colorScheme.primary
@@ -73,7 +70,7 @@ fun MoveToCategorySheet(
                     trailingContent = if (isCurrent) {
                         {
                             Icon(
-                                Icons.Default.Check,
+                                AppIcons.Check,
                                 contentDescription = "Current category",
                                 tint = MaterialTheme.colorScheme.primary,
                             )
@@ -88,7 +85,7 @@ fun MoveToCategorySheet(
                     headlineContent = { Text("Unlock hidden categories") },
                     leadingContent = {
                         Icon(
-                            Icons.Default.LockOpen,
+                            AppIcons.LockOpen,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                         )

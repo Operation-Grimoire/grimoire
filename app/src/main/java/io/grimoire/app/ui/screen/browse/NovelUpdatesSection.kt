@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,11 +20,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.AutoStories
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -76,7 +72,7 @@ fun NovelUpdatesSection(
         HorizontalDivider(Modifier.padding(bottom = 12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.Default.AutoStories,
+                AppIcons.AutoStories,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp),
@@ -90,7 +86,7 @@ fun NovelUpdatesSection(
             if (state is NuInfoState.Matched) {
                 TextButton(onClick = { onOpenWebView(state.series.url) }) {
                     Icon(
-                        Icons.AutoMirrored.Filled.OpenInNew,
+                        AppIcons.OpenInNew,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                     )
@@ -289,7 +285,7 @@ private fun SearchResultRow(result: NuSearchResult, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 result.rating?.let { r ->
                     Icon(
-                        Icons.Default.Star,
+                        AppIcons.Star,
                         contentDescription = "Rating",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp),
@@ -303,7 +299,7 @@ private fun SearchResultRow(result: NuSearchResult, onClick: () -> Unit) {
                 result.language?.let { lang ->
                     if (result.rating != null) Spacer(Modifier.width(14.dp))
                     Icon(
-                        Icons.Default.Translate,
+                        AppIcons.Translate,
                         contentDescription = "Language",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp),

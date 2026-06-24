@@ -1,12 +1,10 @@
 package io.grimoire.app.ui.screen.settings.languages
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -30,7 +28,7 @@ fun LanguagesSettingsScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text("Languages") },
@@ -59,7 +57,7 @@ fun LanguagesSettingsScreen(
                     },
                     trailingContent = {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowForwardIos,
+                            AppIcons.ArrowForwardIos,
                             contentDescription = null,
                         )
                     },

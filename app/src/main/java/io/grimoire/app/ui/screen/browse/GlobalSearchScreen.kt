@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.background
@@ -21,9 +22,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -91,7 +89,7 @@ fun GlobalSearchScreen(
                         viewModel.clearSearch()
                         onNavigateBack()
                     }, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = {
@@ -321,7 +319,7 @@ internal fun NovelCoverCard(
                         .padding(4.dp),
                 ) {
                     Icon(
-                        Icons.Default.Bookmark,
+                        AppIcons.Bookmark,
                         contentDescription = "In library",
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(14.dp),

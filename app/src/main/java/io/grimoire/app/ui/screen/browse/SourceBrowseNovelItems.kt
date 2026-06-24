@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -12,8 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -72,7 +71,7 @@ internal fun NovelCard(
                             .padding(4.dp),
                     ) {
                         Icon(
-                            Icons.Default.Bookmark,
+                            AppIcons.Bookmark,
                             contentDescription = "In library",
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(14.dp),
@@ -132,7 +131,7 @@ internal fun NovelListItem(
                         .padding(4.dp),
                 ) {
                     Icon(
-                        Icons.Default.Bookmark,
+                        AppIcons.Bookmark,
                         contentDescription = "In library",
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(12.dp),

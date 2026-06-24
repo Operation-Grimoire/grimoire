@@ -1,11 +1,10 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
@@ -46,7 +45,7 @@ internal fun JumpDialog(
                             )
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                            Icon(AppIcons.PlayArrow, contentDescription = null)
                         },
                     )
                 }

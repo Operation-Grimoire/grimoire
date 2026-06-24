@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.settings.appearance
 
+import io.grimoire.app.ui.icon.*
 import android.os.Build
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.BorderStroke
@@ -19,9 +20,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -78,7 +76,7 @@ fun AppearanceSettingsScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text("Appearance") },
@@ -251,7 +249,7 @@ private fun ColorThemeChip(
             }
             if (isSelected) {
                 Icon(
-                    imageVector = Icons.Filled.Check,
+                    imageVector = AppIcons.Check,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier

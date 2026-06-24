@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.settings.data
 
+import io.grimoire.app.ui.icon.*
 import android.text.format.Formatter
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,9 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -66,13 +64,13 @@ fun DataSettingsScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text("Data management") },
                 actions = {
                     PlainTooltipIconButton(onClick = viewModel::refresh, enabled = !state.busy, tooltip = "Refresh") {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        Icon(AppIcons.Refresh, contentDescription = "Refresh")
                     }
                 },
             )

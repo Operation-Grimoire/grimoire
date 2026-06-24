@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.app.ui.icon.*
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -16,11 +17,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -188,15 +184,15 @@ fun ZoomableImageDialog(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = ::onDownload) {
-                    Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White)
+                    Icon(AppIcons.Download, contentDescription = "Download", tint = Color.White)
                 }
                 IconButton(onClick = ::onShare) {
-                    Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White)
+                    Icon(AppIcons.Share, contentDescription = "Share", tint = Color.White)
                 }
                 if (extraActions.isNotEmpty()) {
                     Box {
                         IconButton(onClick = { overflowOpen = true }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.White)
+                            Icon(AppIcons.Edit, contentDescription = "Edit", tint = Color.White)
                         }
                         DropdownMenu(expanded = overflowOpen, onDismissRequest = { overflowOpen = false }) {
                             extraActions.forEach { action ->
@@ -213,7 +209,7 @@ fun ZoomableImageDialog(
                     }
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                    Icon(AppIcons.Close, contentDescription = "Close", tint = Color.White)
                 }
             }
         }

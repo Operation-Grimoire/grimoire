@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.novelupdates
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Arrangement
@@ -14,11 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -84,7 +80,7 @@ fun NovelUpdatesSearchScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = {
@@ -98,10 +94,10 @@ fun NovelUpdatesSearchScreen(
                 },
                 actions = {
                     PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.currentPageUrl()) }, tooltip = "Open in WebView") {
-                        Icon(Icons.Default.Language, contentDescription = "Open in WebView")
+                        Icon(AppIcons.Language, contentDescription = "Open in WebView")
                     }
                     PlainTooltipIconButton(onClick = { showFilters = true }, tooltip = "Filters") {
-                        Icon(Icons.Default.FilterList, contentDescription = "Filters")
+                        Icon(AppIcons.FilterList, contentDescription = "Filters")
                     }
                 },
             )
@@ -354,7 +350,7 @@ private fun TagPickerDialog(
                             trailingContent = {
                                 if (checked) {
                                     Icon(
-                                        Icons.Default.Check,
+                                        AppIcons.Check,
                                         contentDescription = "Selected",
                                         tint = MaterialTheme.colorScheme.primary,
                                     )

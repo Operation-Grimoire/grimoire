@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.settings.about
 
+import io.grimoire.app.ui.icon.*
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -14,11 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -94,7 +90,7 @@ fun AboutSettingsScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text("About") },
@@ -151,16 +147,16 @@ fun AboutSettingsScreen(
                                 strokeWidth = 2.dp,
                             )
                             is CheckState.UpToDate -> Icon(
-                                Icons.Default.CheckCircle,
+                                AppIcons.CheckCircle,
                                 contentDescription = "Up to date",
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                             is CheckState.Error -> Icon(
-                                Icons.Default.Refresh,
+                                AppIcons.Refresh,
                                 contentDescription = "Retry",
                             )
                             is CheckState.Idle -> Icon(
-                                Icons.Default.Refresh,
+                                AppIcons.Refresh,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -272,7 +268,7 @@ fun AboutSettingsScreen(
                         )
                     },
                     trailingContent = {
-                        Icon(Icons.Default.ContentCopy, contentDescription = null)
+                        Icon(AppIcons.ContentCopy, contentDescription = null)
                     },
                     modifier = Modifier.clickable {
                         clipboard.setText(AnnotatedString(buildSummary))

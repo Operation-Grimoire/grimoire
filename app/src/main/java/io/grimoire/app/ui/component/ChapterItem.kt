@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.background
@@ -11,12 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.DownloadDone
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -150,19 +145,19 @@ fun ChapterStatusTrailing(
     val dlStatus = ChapterDownloadStatus.entries.getOrElse(chapter.downloadStatus) { ChapterDownloadStatus.NONE }
     when {
         chapter.locked -> ChapterTrailingIcon(
-            icon = Icons.Default.Lock,
+            icon = AppIcons.Lock,
             description = "Locked",
             tint = MaterialTheme.colorScheme.premiumGold,
             onClick = if (selectionMode) null else onLockedClick,
         )
         dlStatus == ChapterDownloadStatus.NONE -> ChapterTrailingIcon(
-            icon = Icons.Default.Download,
+            icon = AppIcons.Download,
             description = "Download",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = if (selectionMode) null else onDownload,
         )
         dlStatus == ChapterDownloadStatus.QUEUED -> ChapterTrailingIcon(
-            icon = Icons.Default.Close,
+            icon = AppIcons.Close,
             description = "Cancel download",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = if (selectionMode) null else onCancelDownload,
@@ -200,7 +195,7 @@ fun ChapterStatusTrailing(
         )
         else -> Row(verticalAlignment = Alignment.CenterVertically) {
             ChapterTrailingIcon(
-                icon = Icons.Default.Close,
+                icon = AppIcons.Close,
                 description = "Cancel",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 onClick = if (selectionMode) null else onDeleteDownload,
@@ -208,7 +203,7 @@ fun ChapterStatusTrailing(
                 iconSize = 20.dp,
             )
             ChapterTrailingIcon(
-                icon = Icons.Default.Refresh,
+                icon = AppIcons.Refresh,
                 description = "Retry",
                 tint = MaterialTheme.colorScheme.error,
                 onClick = if (selectionMode) null else onDownload,
@@ -270,7 +265,7 @@ private fun DownloadedRowAction(
     }
     Box {
         ChapterTrailingIcon(
-            icon = Icons.Default.DownloadDone,
+            icon = AppIcons.DownloadDone,
             description = description,
             tint = MaterialTheme.colorScheme.primary,
             onClick = tapHandler,

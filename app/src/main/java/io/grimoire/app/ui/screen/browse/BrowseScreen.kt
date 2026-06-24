@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.app.ui.icon.*
 import android.content.Intent
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.net.Uri
@@ -15,15 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Extension
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.NewReleases
-import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -127,7 +119,7 @@ fun BrowseScreen(
                     actions = {
                         PlainTooltipIconButton(onClick = onNavigateToManage, tooltip = "Manage extensions") {
                             Icon(
-                                Icons.Default.Extension,
+                                AppIcons.Extension,
                                 contentDescription = "Manage extensions",
                                 modifier = Modifier.tourTarget(TourKey.ExtensionManager),
                             )
@@ -140,7 +132,7 @@ fun BrowseScreen(
             if (!selectionMode) {
                 ExtendedFloatingActionButton(
                     onClick = onNavigateToGlobalSearch,
-                    icon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    icon = { Icon(AppIcons.Search, contentDescription = null) },
                     text = { Text("Search") },
                     expanded = fabExpanded,
                 )
@@ -149,7 +141,7 @@ fun BrowseScreen(
         bottomBar = {
             TooltipBottomBar(visible = selectionMode) {
                 TooltipIconButton(
-                    icon = Icons.Default.Settings,
+                    icon = AppIcons.Settings,
                     label = "Settings",
                     visible = selected.size == 1,
                     onClick = {
@@ -158,7 +150,7 @@ fun BrowseScreen(
                     },
                 )
                 TooltipIconButton(
-                    icon = Icons.Default.PushPin,
+                    icon = AppIcons.PushPin,
                     label = if (allSelectedPinned) "Unpin" else "Pin",
                     onClick = {
                         viewModel.setPinned(selected, !allSelectedPinned)
@@ -166,7 +158,7 @@ fun BrowseScreen(
                     },
                 )
                 TooltipIconButton(
-                    icon = Icons.Default.Delete,
+                    icon = AppIcons.Delete,
                     label = "Uninstall",
                     tint = MaterialTheme.colorScheme.error,
                     onClick = { showUninstallConfirm = true },
@@ -308,10 +300,10 @@ private fun NovelUpdatesCard(
                 .padding(horizontal = 16.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            NuEntry(Icons.Default.Search, "Search", onSearch, Modifier.weight(1f))
-            NuEntry(Icons.Default.TrendingUp, "Rankings", onRankings, Modifier.weight(1f))
-            NuEntry(Icons.Default.NewReleases, "Latest", onLatest, Modifier.weight(1f))
-            NuEntry(Icons.Default.Inventory2, "Saved", onBookmarks, Modifier.weight(1f))
+            NuEntry(AppIcons.Search, "Search", onSearch, Modifier.weight(1f))
+            NuEntry(AppIcons.TrendingUp, "Rankings", onRankings, Modifier.weight(1f))
+            NuEntry(AppIcons.NewReleases, "Latest", onLatest, Modifier.weight(1f))
+            NuEntry(AppIcons.Inventory2, "Saved", onBookmarks, Modifier.weight(1f))
         }
     }
 }

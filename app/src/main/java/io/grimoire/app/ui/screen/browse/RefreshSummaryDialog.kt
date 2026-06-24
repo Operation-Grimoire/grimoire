@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,9 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,7 +34,7 @@ internal fun RefreshSummaryDialog(
         onDismissRequest = onDismiss,
         icon = {
             Icon(
-                Icons.Default.NewReleases,
+                AppIcons.NewReleases,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
             )
@@ -69,7 +67,7 @@ private fun RefreshSummaryRow(chapter: RefreshedChapter) {
     ) {
         if (chapter.locked) {
             Icon(
-                Icons.Default.Lock,
+                AppIcons.Lock,
                 contentDescription = "Locked",
                 modifier = Modifier.size(14.dp),
                 tint = MaterialTheme.colorScheme.premiumGold,

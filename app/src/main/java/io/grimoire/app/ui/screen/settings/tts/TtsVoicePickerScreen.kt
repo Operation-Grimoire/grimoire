@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.settings.tts
 
+import io.grimoire.app.ui.icon.*
 import android.content.Intent
 import android.widget.Toast
 import io.grimoire.app.ui.component.PlainTooltipIconButton
@@ -13,10 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -166,7 +163,7 @@ private fun TopAppBarWithTitle(title: String, onNavigateBack: () -> Unit) {
     androidx.compose.material3.TopAppBar(
         navigationIcon = {
             PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(AppIcons.ArrowBack, contentDescription = "Back")
             }
         },
         title = { Text(title) },
@@ -215,11 +212,11 @@ private fun PreviewButton(state: PreviewButtonState, onClick: () -> Unit) {
         }
 
         PreviewButtonState.PLAYING -> IconButton(onClick = onClick) {
-            Icon(Icons.Filled.Stop, contentDescription = "Stop preview")
+            Icon(AppIcons.Stop, contentDescription = "Stop preview")
         }
 
         PreviewButtonState.IDLE -> IconButton(onClick = onClick) {
-            Icon(Icons.Filled.PlayArrow, contentDescription = "Preview voice")
+            Icon(AppIcons.PlayArrow, contentDescription = "Preview voice")
         }
     }
 }

@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.update
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -15,16 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Extension
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.SystemUpdateAlt
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -150,7 +141,7 @@ private fun ChangelogSectionCard(section: ChangelogSection) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Icon(
-                imageVector = Icons.Filled.KeyboardArrowDown,
+                imageVector = AppIcons.KeyboardArrowDown,
                 contentDescription = if (expanded) "Collapse" else "Expand",
                 modifier = Modifier
                     .size(20.dp)
@@ -205,12 +196,12 @@ private fun ChangelogItemRow(item: ChangelogItem) {
 }
 
 private fun ChangelogCategory.icon(): ImageVector = when (this) {
-    ChangelogCategory.FEATURES -> Icons.Filled.AutoAwesome
-    ChangelogCategory.BUG_FIXES -> Icons.Filled.BugReport
-    ChangelogCategory.SOURCES -> Icons.Filled.Extension
-    ChangelogCategory.DOCUMENTATION -> Icons.Filled.Description
-    ChangelogCategory.OTHER -> Icons.Filled.Tune
-    ChangelogCategory.CHANGES -> Icons.Filled.List
+    ChangelogCategory.FEATURES -> AppIcons.AutoAwesome
+    ChangelogCategory.BUG_FIXES -> AppIcons.BugReport
+    ChangelogCategory.SOURCES -> AppIcons.Extension
+    ChangelogCategory.DOCUMENTATION -> AppIcons.Description
+    ChangelogCategory.OTHER -> AppIcons.Tune
+    ChangelogCategory.CHANGES -> AppIcons.List
 }
 
 @Composable
@@ -226,7 +217,7 @@ private fun UpdateDialog(
         onDismissRequest = onDismiss,
         icon = {
             Icon(
-                imageVector = Icons.Filled.SystemUpdateAlt,
+                imageVector = AppIcons.SystemUpdateAlt,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
             )
@@ -319,7 +310,7 @@ private fun VersionTransitionRow(current: String, target: String) {
             modifier = Modifier.weight(1f),
         )
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+            imageVector = AppIcons.ArrowForward,
             contentDescription = null,
             modifier = Modifier
                 .padding(horizontal = 8.dp)

@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.settings.athenaeum
 
+import io.grimoire.app.ui.icon.*
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -14,10 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -64,7 +61,7 @@ fun AthenaeumAuthScreen(
                 title = { Text("Athenaeum") },
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
             )
@@ -129,7 +126,7 @@ fun AthenaeumAuthScreen(
                         onClick = { openInBrowser(context, approveUrl) },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Icon(Icons.Default.OpenInBrowser, contentDescription = null)
+                        Icon(AppIcons.OpenInBrowser, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Open approval page")
                     }
@@ -137,7 +134,7 @@ fun AthenaeumAuthScreen(
                         onClick = { copyToClipboard(context, s.challenge.userCode) },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = null)
+                        Icon(AppIcons.ContentCopy, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Copy code")
                     }

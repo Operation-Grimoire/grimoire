@@ -1,13 +1,10 @@
 package io.grimoire.app.ui.screen.tours
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -37,7 +34,7 @@ fun ToursScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text("Tours") },
@@ -53,12 +50,12 @@ fun ToursScreen(
                     trailingContent = {
                         if (done) {
                             Icon(
-                                Icons.Default.CheckCircle,
+                                AppIcons.CheckCircle,
                                 contentDescription = "Completed",
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                         } else {
-                            Icon(Icons.Default.PlayArrow, contentDescription = "Start")
+                            Icon(AppIcons.PlayArrow, contentDescription = "Start")
                         }
                     },
                     modifier = Modifier.clickable { viewModel.replay(tour.id) },

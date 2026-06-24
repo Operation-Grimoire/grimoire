@@ -1,18 +1,8 @@
 package io.grimoire.app.ui.screen.more
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Inbox
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.NewReleases
-import androidx.compose.material.icons.filled.PendingActions
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -54,7 +44,7 @@ fun MoreScreen(
                     headlineContent = { Text("Tasks") },
                     supportingContent = { Text("Running downloads and syncs, plus their history") },
                     leadingContent = {
-                        Icon(Icons.Default.PendingActions, contentDescription = null)
+                        Icon(AppIcons.PendingActions, contentDescription = null)
                     },
                     modifier = Modifier.clickable(onClick = onNavigateToTasks),
                 )
@@ -82,10 +72,10 @@ fun MoreScreen(
                     },
                     leadingContent = {
                         if (hasSubscribedUpdates) {
-                            Icon(Icons.Default.NewReleases, contentDescription = null)
+                            Icon(AppIcons.NewReleases, contentDescription = null)
                         } else {
                             Icon(
-                                Icons.Default.Inbox,
+                                AppIcons.Inbox,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -112,12 +102,12 @@ fun MoreScreen(
                     leadingContent = {
                         if (hasIssues) {
                             Icon(
-                                Icons.Default.WarningAmber,
+                                AppIcons.WarningAmber,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.error,
                             )
                         } else {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null)
+                            Icon(AppIcons.CheckCircle, contentDescription = null)
                         }
                     },
                     modifier = Modifier.clickable(onClick = onNavigateToWarnings),
@@ -133,7 +123,7 @@ fun MoreScreen(
                             else "Downloaded chapters and queue"
                         )
                     },
-                    leadingContent = { Icon(Icons.Default.Download, contentDescription = null) },
+                    leadingContent = { Icon(AppIcons.Download, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToDownloads),
                 )
                 HorizontalDivider()
@@ -142,7 +132,7 @@ fun MoreScreen(
                 ListItem(
                     headlineContent = { Text("Statistics") },
                     supportingContent = { Text("Your reading activity") },
-                    leadingContent = { Icon(Icons.Default.BarChart, contentDescription = null) },
+                    leadingContent = { Icon(AppIcons.BarChart, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToStatistics),
                 )
                 HorizontalDivider()
@@ -151,7 +141,7 @@ fun MoreScreen(
                 ListItem(
                     headlineContent = { Text("Settings") },
                     supportingContent = { Text("Appearance, library, reader, backups") },
-                    leadingContent = { Icon(Icons.Default.Settings, contentDescription = null) },
+                    leadingContent = { Icon(AppIcons.Settings, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToSettings),
                 )
                 HorizontalDivider()
@@ -160,7 +150,7 @@ fun MoreScreen(
                 ListItem(
                     headlineContent = { Text("Tours") },
                     supportingContent = { Text("Replay the in-app guided tours") },
-                    leadingContent = { Icon(Icons.Default.Explore, contentDescription = null) },
+                    leadingContent = { Icon(AppIcons.Explore, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToTours),
                 )
                 HorizontalDivider()
@@ -169,7 +159,7 @@ fun MoreScreen(
                 ListItem(
                     headlineContent = { Text("About") },
                     supportingContent = { Text("Version, update channel, licenses") },
-                    leadingContent = { Icon(Icons.Default.Info, contentDescription = null) },
+                    leadingContent = { Icon(AppIcons.Info, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToAbout),
                 )
             }
