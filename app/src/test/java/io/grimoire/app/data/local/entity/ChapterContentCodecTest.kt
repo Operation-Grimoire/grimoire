@@ -1,6 +1,11 @@
 package io.grimoire.app.data.local.entity
 
-import io.grimoire.api.model.NovelPage
+import io.grimoire.api.model.novel.NovelPage
+import io.grimoire.api.model.novel.PageContent
+import io.grimoire.app.util.formattedText
+import io.grimoire.app.util.imageUrl
+import io.grimoire.app.util.isSeparator
+import io.grimoire.app.util.text
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -15,11 +20,18 @@ import org.junit.Test
  */
 class ChapterContentCodecTest {
 
+    private fun textPage(index: Int, text: String, html: String? = null) =
+        NovelPage(index, PageContent.Text(text, html))
+
+    private fun imagePage(index: Int, url: String) = NovelPage(index, PageContent.Image(url))
+
+    private fun separatorPage(index: Int) = NovelPage(index, PageContent.Separator())
+
     @Test
     fun plainTextPagesRoundTrip() {
         val pages = listOf(
-            NovelPage(index = 0, text = "Hello world."),
-            NovelPage(index = 1, text = "Second paragraph."),
+            textPage(0, "Hello world."),
+            textPage(1, "Second paragraph."),
         )
         val decoded = decodeChapterContent(encodeChapterContent(pages))
         assertEquals(2, decoded.size)
@@ -33,9 +45,9 @@ class ChapterContentCodecTest {
     @Test
     fun imagePagesRoundTrip() {
         val pages = listOf(
-            NovelPage(index = 0, text = "Before."),
-            NovelPage(index = 1, text = "", imageUrl = "https://example.com/img.jpg"),
-            NovelPage(index = 2, text = "After."),
+            textPage(0, "Before."),
+            imagePage(1, "https://example.com/img.jpg"),
+            textPage(2, "After."),
         )
         val decoded = decodeChapterContent(encodeChapterContent(pages))
         assertEquals(3, decoded.size)
@@ -46,9 +58,9 @@ class ChapterContentCodecTest {
     @Test
     fun separatorPagesRoundTrip() {
         val pages = listOf(
-            NovelPage(index = 0, text = "Scene one ends."),
-            NovelPage(index = 1, text = "", isSeparator = true),
-            NovelPage(index = 2, text = "Scene two begins."),
+            textPage(0, "Scene one ends."),
+            separatorPage(1),
+            textPage(2, "Scene two begins."),
         )
         val decoded = decodeChapterContent(encodeChapterContent(pages))
         assertEquals(3, decoded.size)
@@ -63,11 +75,7 @@ class ChapterContentCodecTest {
     @Test
     fun formattedTextRoundTrips() {
         val pages = listOf(
-            NovelPage(
-                index = 0,
-                text = "I need more information.",
-                formattedText = "<i>I need more information.</i>",
-            ),
+            textPage(0, "I need more information.", "<i>I need more information.</i>"),
         )
         val decoded = decodeChapterContent(encodeChapterContent(pages))
         assertEquals(1, decoded.size)
@@ -78,11 +86,11 @@ class ChapterContentCodecTest {
     @Test
     fun mixedPagesRoundTrip() {
         val pages = listOf(
-            NovelPage(index = 0, text = "Opening."),
-            NovelPage(index = 1, text = "Inner thought.", formattedText = "<i>Inner thought.</i>"),
-            NovelPage(index = 2, text = "", isSeparator = true),
-            NovelPage(index = 3, text = "", imageUrl = "https://example.com/illustration.jpg"),
-            NovelPage(index = 4, text = "Closing."),
+            textPage(0, "Opening."),
+            textPage(1, "Inner thought.", "<i>Inner thought.</i>"),
+            separatorPage(2),
+            imagePage(3, "https://example.com/illustration.jpg"),
+            textPage(4, "Closing."),
         )
         val decoded = decodeChapterContent(encodeChapterContent(pages))
         assertEquals(5, decoded.size)

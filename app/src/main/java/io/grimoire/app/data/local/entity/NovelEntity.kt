@@ -51,7 +51,7 @@ data class NovelEntity(
     /**
      * Per-field metadata overrides. A non-null value wins over the source-provided
      * column and is never touched by a refresh. Effective value = override ?: source.
-     * [overrideStatus] is a [io.grimoire.api.model.NovelStatus] ordinal; [overrideGenres]
+     * [overrideStatus] is a [io.grimoire.api.model.novel.NovelStatus] ordinal; [overrideGenres]
      * is comma-joined ("" = override to an empty genre list, null = no override).
      */
     val overrideTitle: String? = null,
@@ -66,7 +66,7 @@ data class NovelEntity(
     /** Author shown in the UI: override if set, otherwise the source author. */
     val effectiveAuthor: String? get() = overrideAuthor ?: author
 
-    /** [io.grimoire.api.model.NovelStatus] ordinal: override if set, otherwise source. */
+    /** [io.grimoire.api.model.novel.NovelStatus] ordinal: override if set, otherwise source. */
     val effectiveStatus: Int get() = overrideStatus ?: status
 
     /**

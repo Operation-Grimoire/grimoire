@@ -1,11 +1,13 @@
 package io.grimoire.app.data.tts
 
-import io.grimoire.api.model.Chapter
-import io.grimoire.api.model.NovelPage
+import io.grimoire.api.model.novel.Chapter
+import io.grimoire.api.model.novel.NovelPage
+import io.grimoire.api.source.web.PageListSource
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.app.util.text
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -38,7 +40,9 @@ class TtsChapterLoader @Inject constructor(
             .firstOrNull { it.info.packageName == pkg }
             ?.source
             ?: throw IllegalStateException("Source unavailable — download the chapter to listen offline")
-        return source.getPageList(full.toChapter()).filter { it.text.isNotBlank() }
+        val pageSource = source as? PageListSource
+            ?: throw IllegalStateException("This source can't read chapter text — download to listen offline")
+        return pageSource.getPageList(full.toChapter()).filter { it.text.isNotBlank() }
     }
 }
 

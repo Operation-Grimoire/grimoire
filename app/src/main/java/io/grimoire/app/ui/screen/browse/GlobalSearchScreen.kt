@@ -52,7 +52,7 @@ import io.grimoire.app.ui.component.NovelQuickViewSheet
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import io.grimoire.api.model.Novel
+import io.grimoire.api.model.novel.Novel
 import androidx.compose.material3.MaterialTheme
 
 @OptIn(ExperimentalMaterial3Api::class)

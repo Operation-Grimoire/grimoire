@@ -5,16 +5,18 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.grimoire.api.model.Chapter
-import io.grimoire.api.model.Novel
-import io.grimoire.api.model.NovelStatus
-import io.grimoire.api.source.ConfigurableSource
-import io.grimoire.api.source.EpubSource
-import io.grimoire.api.source.MultiHostSource
-import io.grimoire.api.source.MultiLanguageSource
+import io.grimoire.api.model.lang.Language
+import io.grimoire.api.model.novel.Chapter
+import io.grimoire.api.model.novel.Novel
+import io.grimoire.api.model.novel.NovelStatus
+import io.grimoire.app.util.ContentLanguages
+import io.grimoire.api.source.feature.ConfigurableSource
+import io.grimoire.api.source.epub.EpubSource
+import io.grimoire.api.source.feature.MultiHostSource
+import io.grimoire.api.source.feature.MultiLanguageSource
 import io.grimoire.api.source.Source
 import io.grimoire.api.source.SourceInfo
-import io.grimoire.api.source.WebViewLoginSource
+import io.grimoire.api.source.feature.WebViewLoginSource
 import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.cover.CustomCoverStore
 import io.grimoire.app.data.source.fetchAllChapters
@@ -128,7 +130,7 @@ class NovelDetailViewModel @Inject constructor(
     }
 
     /** The source-provided novel (pre-override). Internal flows below apply overrides. */
-    private val _novel = MutableStateFlow(Novel(url = novelUrl, title = ""))
+    private val _novel = MutableStateFlow(Novel(url = novelUrl, title = "", language = Language.UNKNOWN))
 
     /** Source values, exposed so the edit sheet can diff overrides against them. */
     val sourceNovel: StateFlow<Novel> = _novel.asStateFlow()
@@ -627,7 +629,7 @@ class NovelDetailViewModel @Inject constructor(
         _novelError.value = null
 
         val full = runCatching {
-            src.getNovelDetails(Novel(url = novelUrl, title = ""))
+            src.getNovelDetails(Novel(url = novelUrl, title = "", language = Language.UNKNOWN))
         }.onSuccess { novel ->
             _novel.value = novel
             val existing = novelDao.getBySourceUrl(canonicalSourceId, novelUrl)
@@ -879,7 +881,7 @@ internal fun NovelEntity.toNovel() = Novel(
     status = NovelStatus.entries.getOrElse(status) { NovelStatus.UNKNOWN },
     rating = rating,
     ratingCount = ratingCount,
-    language = language,
+    language = language?.let { ContentLanguages.fromName(it) } ?: Language.UNKNOWN,
     initialized = true,
 )
 
@@ -919,7 +921,7 @@ internal fun Novel.toEntity(
     lastAccessedAt = System.currentTimeMillis(),
     rating = rating,
     ratingCount = ratingCount,
-    language = language,
+    language = language.takeIf { it != Language.UNKNOWN && it != Language.MULTI }?.displayName,
     notifyOnNewChapters = notifyOnNewChapters,
     notifyOnNewLockedChapters = notifyOnNewLockedChapters,
     autoDownloadNewChapters = autoDownloadNewChapters,

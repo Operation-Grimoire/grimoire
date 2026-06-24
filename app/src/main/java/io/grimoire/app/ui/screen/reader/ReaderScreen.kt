@@ -93,6 +93,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.preferences.ReaderOrientation
+import io.grimoire.app.util.formattedText
+import io.grimoire.app.util.imageUrl
+import io.grimoire.app.util.isSeparator
+import io.grimoire.app.util.text
 import io.grimoire.app.data.tts.TtsPlaybackState
 import io.grimoire.app.ui.component.PrivacyImage
 import io.grimoire.app.ui.component.TooltipBottomBar

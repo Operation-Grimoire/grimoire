@@ -1,8 +1,9 @@
 package io.grimoire.app.data.source
 
-import io.grimoire.api.model.Chapter
-import io.grimoire.api.model.Novel
-import io.grimoire.api.source.PaginatedSource
+import io.grimoire.api.model.novel.Chapter
+import io.grimoire.api.model.novel.Novel
+import io.grimoire.api.source.web.ChapterListSource
+import io.grimoire.api.source.web.PaginatedSource
 import io.grimoire.api.source.Source
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -44,7 +45,9 @@ suspend fun fetchAllChapters(
     maxPages: Int = MAX_CHAPTER_PAGES,
     onPageProgress: (page: Int) -> Unit = {},
 ): List<Chapter> {
-    if (src !is PaginatedSource) return src.getChapterList(novel)
+    if (src !is PaginatedSource) {
+        return (src as? ChapterListSource)?.getChapterList(novel) ?: emptyList()
+    }
 
     val all = mutableListOf<Chapter>()
     val seen = mutableSetOf<String>()

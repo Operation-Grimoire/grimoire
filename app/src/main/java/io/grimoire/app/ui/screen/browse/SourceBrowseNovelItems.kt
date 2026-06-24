@@ -27,7 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import io.grimoire.api.model.Novel
+import io.grimoire.api.model.novel.Novel
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

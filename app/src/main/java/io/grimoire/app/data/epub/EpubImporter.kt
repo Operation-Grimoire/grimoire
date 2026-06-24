@@ -3,8 +3,9 @@ package io.grimoire.app.data.epub
 import android.content.Context
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.api.model.NovelPage
-import io.grimoire.api.model.NovelStatus
+import io.grimoire.api.model.novel.NovelPage
+import io.grimoire.api.model.novel.NovelStatus
+import io.grimoire.api.model.novel.PageContent
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.ChapterImageStore
 import io.grimoire.app.data.local.dao.ChapterDao
@@ -187,12 +188,8 @@ class EpubImporter @Inject constructor(
             val prior = priorByIndex[index]
             val novelPages = ch.pages.mapIndexed { pageIndex, page ->
                 when (page) {
-                    is EpubPage.Text -> NovelPage(index = pageIndex, text = page.text)
-                    is EpubPage.Image -> NovelPage(
-                        index = pageIndex,
-                        text = "",
-                        imageUrl = EPUB_EMBEDDED_IMAGE_URL,
-                    )
+                    is EpubPage.Text -> NovelPage(pageIndex, PageContent.Text(page.text))
+                    is EpubPage.Image -> NovelPage(pageIndex, PageContent.Image(EPUB_EMBEDDED_IMAGE_URL))
                 }
             }
             val encoded = encodeChapterContent(novelPages)

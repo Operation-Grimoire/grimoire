@@ -1,6 +1,8 @@
 package io.grimoire.app.data.download
 
-import io.grimoire.api.model.NovelPage
+import io.grimoire.api.model.novel.NovelPage
+import io.grimoire.api.model.novel.PageContent
+import io.grimoire.app.util.text
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -18,9 +20,9 @@ class ChapterContentValidationTest {
     @Test
     fun hasReadableContent_blankAndSeparatorOnly_isFalse() {
         val pages = listOf(
-            NovelPage(index = 0, text = "   "),
-            NovelPage(index = 1, text = "", isSeparator = true),
-            NovelPage(index = 2, text = "\n\t"),
+            NovelPage(0, PageContent.Text("   ")),
+            NovelPage(1, PageContent.Separator()),
+            NovelPage(2, PageContent.Text("\n\t")),
         )
         assertFalse(hasReadableContent(pages))
     }
@@ -28,21 +30,21 @@ class ChapterContentValidationTest {
     @Test
     fun hasReadableContent_anyProse_isTrue() {
         val pages = listOf(
-            NovelPage(index = 0, text = "  "),
-            NovelPage(index = 1, text = "Real prose here."),
+            NovelPage(0, PageContent.Text("  ")),
+            NovelPage(1, PageContent.Text("Real prose here.")),
         )
         assertTrue(hasReadableContent(pages))
     }
 
     @Test
     fun hasReadableContent_imageOnly_isTrue() {
-        val pages = listOf(NovelPage(index = 0, text = "", imageUrl = "https://x/i.png"))
+        val pages = listOf(NovelPage(0, PageContent.Image("https://x/i.png")))
         assertTrue(hasReadableContent(pages))
     }
 
     @Test
     fun hasReadableContent_formattedOnly_isTrue() {
-        val pages = listOf(NovelPage(index = 0, text = "", formattedText = "<b>hi</b>"))
+        val pages = listOf(NovelPage(0, PageContent.Text("", "<b>hi</b>")))
         assertTrue(hasReadableContent(pages))
     }
 
@@ -51,7 +53,7 @@ class ChapterContentValidationTest {
         val attempts = AtomicInteger(0)
         val pages = fetchReadablePages(sleep = {}) {
             attempts.incrementAndGet()
-            listOf(NovelPage(index = 0, text = "content"))
+            listOf(NovelPage(0, PageContent.Text("content")))
         }
         assertEquals(1, attempts.get())
         assertEquals("content", pages.single().text)
@@ -63,7 +65,7 @@ class ChapterContentValidationTest {
         val slept = mutableListOf<Long>()
         val pages = fetchReadablePages(sleep = { slept += it }) {
             if (attempts.incrementAndGet() < 3) emptyList()
-            else listOf(NovelPage(index = 0, text = "finally"))
+            else listOf(NovelPage(0, PageContent.Text("finally")))
         }
         assertEquals(3, attempts.get())
         // Backed off between the two empty attempts.

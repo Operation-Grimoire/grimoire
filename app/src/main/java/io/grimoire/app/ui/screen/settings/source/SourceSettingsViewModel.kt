@@ -4,11 +4,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.grimoire.api.source.ConfigurableSource
-import io.grimoire.api.source.MultiHostSource
-import io.grimoire.api.source.MultiLanguageSource
-import io.grimoire.api.source.SourcePreference
-import io.grimoire.api.source.WebViewLoginSource
+import io.grimoire.api.source.feature.ConfigurableSource
+import io.grimoire.api.source.feature.MultiHostSource
+import io.grimoire.api.source.feature.MultiLanguageSource
+import io.grimoire.api.model.lang.Language
+import io.grimoire.api.model.pref.PrefValue
+import io.grimoire.api.model.pref.SourcePreference
+import io.grimoire.api.source.feature.WebViewLoginSource
 import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -67,7 +69,7 @@ class SourceSettingsViewModel @Inject constructor(
 
     /** Multi-language sources get the dedicated content-language picker row. */
     val isMultiLanguage: Boolean =
-        loaded?.source is MultiLanguageSource || loaded?.source?.lang == "all"
+        loaded?.source is MultiLanguageSource || loaded?.source?.lang == Language.MULTI
 
     /** Mirror hosts for a multi-host source, most-preferred first (empty otherwise). */
     val hosts: List<String> = (loaded?.source as? MultiHostSource)?.hosts.orEmpty()
@@ -204,6 +206,18 @@ class SourceSettingsViewModel @Inject constructor(
      * validate them, so the user can confirm e.g. their login works before
      * relying on it.
      */
+    /** Convert the editing form's string values into the typed [PrefValue]s the
+     *  source's [SourcePreference] declarations call for (absent keys → default). */
+    private fun typedValues(): Map<String, PrefValue> =
+        preferences.mapNotNull { pref ->
+            val raw = _values.value[pref.key] ?: return@mapNotNull null
+            pref.key to when (pref) {
+                is SourcePreference.Switch -> PrefValue.Bool(raw.toBooleanStrictOrNull() ?: pref.default)
+                is SourcePreference.EditText ->
+                    if (pref.isPassword) PrefValue.Sensitive(raw) else PrefValue.Str(raw)
+            }
+        }.toMap()
+
     fun validate() {
         val configurable = loaded?.source as? ConfigurableSource ?: return
         if (_validation.value is ValidationState.Running) return
@@ -211,7 +225,7 @@ class SourceSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    configurable.setPreferences(_values.value)
+                    configurable.setPreferences(typedValues())
                     configurable.validateConfiguration()
                 }
             }

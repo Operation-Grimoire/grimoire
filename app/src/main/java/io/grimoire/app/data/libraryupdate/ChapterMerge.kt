@@ -1,6 +1,6 @@
 package io.grimoire.app.data.libraryupdate
 
-import io.grimoire.api.model.Chapter
+import io.grimoire.api.model.novel.Chapter
 import io.grimoire.app.data.local.entity.ChapterEntity
 
 /**

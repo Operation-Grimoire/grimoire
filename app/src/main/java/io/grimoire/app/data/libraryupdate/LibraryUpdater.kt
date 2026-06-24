@@ -1,10 +1,12 @@
 package io.grimoire.app.data.libraryupdate
 
 import android.util.Log
-import io.grimoire.api.model.Chapter
-import io.grimoire.api.model.Novel
-import io.grimoire.api.model.NovelStatus
-import io.grimoire.api.source.EpubSource
+import io.grimoire.api.model.lang.Language
+import io.grimoire.api.model.novel.Chapter
+import io.grimoire.api.model.novel.Novel
+import io.grimoire.api.model.novel.NovelStatus
+import io.grimoire.app.util.ContentLanguages
+import io.grimoire.api.source.epub.EpubSource
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.dao.CategoryDao
@@ -155,7 +157,7 @@ class LibraryUpdater @Inject constructor(
         }
 
         val fetched = runCatching {
-            withRetry { src.getNovelDetails(Novel(url = novel.url, title = "")) }
+            withRetry { src.getNovelDetails(Novel(url = novel.url, title = "", language = Language.UNKNOWN)) }
         }.getOrElse { e ->
             setIssue(novel, pkg, UpdateIssueSeverity.ERROR, describeError(e))
             return NovelRefreshResult.Failed
@@ -302,7 +304,8 @@ class LibraryUpdater @Inject constructor(
         status = if (fetched.status != NovelStatus.UNKNOWN) fetched.status.ordinal else old.status,
         rating = fetched.rating ?: old.rating,
         ratingCount = fetched.ratingCount ?: old.ratingCount,
-        language = fetched.language?.takeIf { it.isNotBlank() } ?: old.language,
+        language = fetched.language.takeIf { it != Language.UNKNOWN && it != Language.MULTI }
+            ?.displayName ?: old.language,
         lastUpdated = System.currentTimeMillis(),
     )
 

@@ -37,7 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.grimoire.api.model.Filter
+import io.grimoire.api.model.filter.Filter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

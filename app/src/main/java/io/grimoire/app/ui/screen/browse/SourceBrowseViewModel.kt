@@ -5,13 +5,16 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.grimoire.api.model.Filter
-import io.grimoire.api.model.Novel
+import io.grimoire.api.model.filter.Filter
+import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.network.CloudflareException
-import io.grimoire.api.source.CatalogueSource
-import io.grimoire.api.source.ConfigurableSource
-import io.grimoire.api.source.MultiHostSource
-import io.grimoire.api.source.MultiLanguageSource
+import io.grimoire.api.source.feature.ConfigurableSource
+import io.grimoire.api.source.feature.FilterSource
+import io.grimoire.api.source.feature.LatestSource
+import io.grimoire.api.source.feature.MultiHostSource
+import io.grimoire.api.source.feature.MultiLanguageSource
+import io.grimoire.api.source.feature.PopularSource
+import io.grimoire.api.source.feature.SearchSource
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.preferences.BrowseDisplayMode
@@ -75,7 +78,17 @@ class SourceBrowseViewModel @Inject constructor(
     private val loaded get() = extensionManager.extensions.value
         .firstOrNull { it.info.packageName == packageName }
 
-    private val source: CatalogueSource? get() = loaded?.source as? CatalogueSource
+    // Per-capability views of the loaded source — a source opts into each by
+    // declaring the matching interface.
+    private val popularSource: PopularSource? get() = loaded?.source as? PopularSource
+    private val latestSource: LatestSource? get() = loaded?.source as? LatestSource
+    private val searchSource: SearchSource? get() = loaded?.source as? SearchSource
+    private val filterSource: FilterSource? get() = loaded?.source as? FilterSource
+
+    val supportsPopular: Boolean get() = loaded?.source is PopularSource
+    val supportsLatest: Boolean get() = loaded?.source is LatestSource
+    val supportsSearch: Boolean get() = loaded?.source is SearchSource
+    val supportsFilters: Boolean get() = loaded?.source is FilterSource
 
     val isConfigurable: Boolean
         get() = loaded?.source is ConfigurableSource ||
@@ -88,7 +101,7 @@ class SourceBrowseViewModel @Inject constructor(
     val sourceBaseUrl: String get() = loaded?.source?.javaClass
         ?.getAnnotation(SourceInfo::class.java)?.baseUrl ?: ""
 
-    val supportsSearchWithFilters: Boolean get() = source?.supportsSearchWithFilters ?: false
+    val supportsSearchWithFilters: Boolean get() = searchSource?.supportsSearchWithFilters ?: false
 
     private val _filters = MutableStateFlow<List<Filter<*>>>(emptyList())
     val filters: StateFlow<List<Filter<*>>> = _filters.asStateFlow()
@@ -166,6 +179,11 @@ class SourceBrowseViewModel @Inject constructor(
                 .filter { list -> list.any { it.info.packageName == packageName } }
                 .take(1)
                 .collect {
+                    // Default to the first capability the source actually offers
+                    // (a search-only source opens on Search, not an empty Popular).
+                    if (savedStateHandle.get<String>("q").isNullOrBlank()) {
+                        _mode.value = defaultMode()
+                    }
                     initFilters()
                     load(reset = true)
                 }
@@ -173,7 +191,7 @@ class SourceBrowseViewModel @Inject constructor(
     }
 
     private fun initFilters() {
-        val src = source ?: return
+        val src = filterSource ?: return
         val list = src.getFilterList()
         _filters.value = list
         _filterLoadState.value = when {
@@ -184,7 +202,7 @@ class SourceBrowseViewModel @Inject constructor(
     }
 
     fun loadFilterOptions() {
-        val src = source ?: return
+        val src = filterSource ?: return
         if (!src.hasDynamicFilters) return
         if (_filterLoadState.value is FilterLoadState.Loading) return
         viewModelScope.launch {
@@ -259,8 +277,14 @@ class SourceBrowseViewModel @Inject constructor(
         load(reset = false)
     }
 
+    private fun defaultMode(): BrowseMode = when {
+        supportsPopular -> BrowseMode.POPULAR
+        supportsLatest -> BrowseMode.LATEST
+        else -> BrowseMode.SEARCH
+    }
+
     private fun load(reset: Boolean) {
-        val src = source ?: run { _error.value = "Source not available"; return }
+        if (loaded?.source == null) { _error.value = "Source not available"; return }
         viewModelScope.launch {
             if (reset) {
                 _isLoading.value = true
@@ -276,9 +300,10 @@ class SourceBrowseViewModel @Inject constructor(
 
             runCatching {
                 val result = when (_mode.value) {
-                    BrowseMode.POPULAR -> src.getPopularNovels(page)
-                    BrowseMode.LATEST -> src.getLatestUpdates(page)
-                    BrowseMode.SEARCH -> src.searchNovels(_query.value, page, _activeFilters.value)
+                    BrowseMode.POPULAR -> popularSource?.getPopularNovels(page).orEmpty()
+                    BrowseMode.LATEST -> latestSource?.getLatestUpdates(page).orEmpty()
+                    BrowseMode.SEARCH ->
+                        searchSource?.searchNovels(_query.value, page, _activeFilters.value).orEmpty()
                 }
                 // Always de-duplicate by URL: a source can legitimately return
                 // the same item twice (on one page or across pages), and the

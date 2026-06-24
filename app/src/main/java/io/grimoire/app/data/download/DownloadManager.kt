@@ -3,7 +3,8 @@ package io.grimoire.app.data.download
 import android.content.Context
 import android.content.Intent
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.api.model.Chapter
+import io.grimoire.api.model.novel.Chapter
+import io.grimoire.api.source.web.PageListSource
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -245,7 +246,10 @@ class DownloadManager @Inject constructor(
                                 // bug) before giving up; throws EmptyChapterContentException when
                                 // every attempt comes back empty, so the chapter fails instead of
                                 // persisting a blank.
-                                val pages = fetchReadablePages { src.getPageList(chapter.toChapter()) }
+                                val pages = fetchReadablePages {
+                                    (src as? PageListSource)?.getPageList(chapter.toChapter())
+                                        ?: error("Source does not provide chapter pages")
+                                }
                                 val content = encodeChapterContent(pages)
                                 chapterDao.setDownloadedContent(chapter.id, content, ChapterDownloadStatus.DOWNLOADED.ordinal)
                                 // Best-effort: text is already saved, so a failed image

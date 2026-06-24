@@ -6,8 +6,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.grimoire.api.model.Novel
-import io.grimoire.api.source.EpubSource
+import io.grimoire.api.model.lang.Language
+import io.grimoire.api.model.novel.Novel
+import io.grimoire.api.source.epub.EpubSource
 import io.grimoire.api.source.Source
 import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.download.DownloadManager
@@ -61,7 +62,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
 
     val sourceName: String get() = loaded?.info?.label ?: ""
 
-    private val _novel = MutableStateFlow(Novel(url = novelUrl, title = ""))
+    private val _novel = MutableStateFlow(Novel(url = novelUrl, title = "", language = Language.UNKNOWN))
     val novel: StateFlow<Novel> = _novel.asStateFlow()
 
     private val _isLoading = MutableStateFlow(true)
@@ -154,7 +155,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
 
         _isLoading.value = true
         _error.value = null
-        runCatching { src.getNovelDetails(Novel(url = novelUrl, title = "")) }
+        runCatching { src.getNovelDetails(Novel(url = novelUrl, title = "", language = Language.UNKNOWN)) }
             .onSuccess { novel ->
                 _novel.value = novel
                 val current = novelDao.getBySourceUrl(canonicalSourceId, novelUrl)

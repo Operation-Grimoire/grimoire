@@ -4,8 +4,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.grimoire.api.model.Chapter
-import io.grimoire.api.model.NovelPage
+import io.grimoire.api.model.novel.Chapter
+import io.grimoire.api.model.novel.NovelPage
+import io.grimoire.api.model.novel.PageContent
+import io.grimoire.api.source.web.PageListSource
+import io.grimoire.app.util.imageUrl
+import io.grimoire.app.util.isSeparator
+import io.grimoire.app.util.text
 import io.grimoire.app.data.download.ChapterImageStore
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -279,7 +284,7 @@ class ReaderViewModel @Inject constructor(
                     .map { page ->
                         if (page.imageUrl == null) return@map page
                         val local = chapterImageStore.localImageUri(fresh.novelId, fresh.url, page.index)
-                        if (local != null) page.copy(imageUrl = local) else page
+                        if (local != null) page.copy(content = PageContent.Image(local)) else page
                     }
                 _pages.value = pages
                 _isLoading.value = false
@@ -299,7 +304,10 @@ class ReaderViewModel @Inject constructor(
                 _isLoading.value = false
                 return@launch
             }
-            runCatching { src.getPageList(fresh.toChapter()) }
+            runCatching {
+                (src as? PageListSource)?.getPageList(fresh.toChapter())
+                    ?: error("This source does not provide readable chapter pages")
+            }
                 .onSuccess {
                     _pages.value = it
                     recordWordCount(fresh, it)

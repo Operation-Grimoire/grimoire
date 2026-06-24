@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.grimoire.api.source.CatalogueSource
+import io.grimoire.api.source.feature.SearchSource
 import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.extension.ExtensionManager
@@ -64,7 +64,7 @@ class MigrateViewModel @Inject constructor(
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             val sources = extensionManager.extensions.value.mapNotNull { loaded ->
-                val src = loaded.source as? CatalogueSource ?: return@mapNotNull null
+                val src = loaded.source as? SearchSource ?: return@mapNotNull null
                 val name = loaded.info.label.substringAfter(": ", loaded.info.label)
                 Triple(name, loaded.info.packageName, src)
             }

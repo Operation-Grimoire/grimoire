@@ -1,6 +1,9 @@
 package io.grimoire.app.data.download
 
-import io.grimoire.api.model.NovelPage
+import io.grimoire.api.model.novel.NovelPage
+import io.grimoire.app.util.formattedText
+import io.grimoire.app.util.imageUrl
+import io.grimoire.app.util.text
 import kotlinx.coroutines.delay
 
 /**

@@ -37,7 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import io.grimoire.api.model.NovelStatus
+import io.grimoire.api.model.novel.NovelStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.ui.screen.browse.NovelQuickViewViewModel
 import io.grimoire.app.ui.screen.library.HiddenCategoriesUnlockDialog

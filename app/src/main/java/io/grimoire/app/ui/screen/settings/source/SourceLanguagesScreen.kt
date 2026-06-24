@@ -19,6 +19,7 @@ fun SourceLanguagesScreen(
     val enabled by viewModel.enabled.collectAsState()
     val globalSet by viewModel.globalSet.collectAsState()
     val saved by viewModel.saved.collectAsState()
+    val available by viewModel.available.collectAsState()
 
     // When override is off, render the global selection on the rows so the
     // user sees exactly which languages are currently active for this source.
@@ -28,7 +29,7 @@ fun SourceLanguagesScreen(
 
     LanguagePickerScreen(
         title = "${viewModel.sourceName} languages",
-        available = viewModel.available,
+        available = available,
         enabled = rowSelection,
         onToggle = viewModel::toggle,
         onSave = viewModel::save,
