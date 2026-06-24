@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.animation.AnimatedVisibility
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.animation.EnterTransition
@@ -11,9 +12,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,12 +37,12 @@ fun SelectionTopBar(
         title = { Text("$count selected") },
         navigationIcon = {
             PlainTooltipIconButton(onClick = onClear, tooltip = "Clear selection") {
-                Icon(Icons.Default.Close, contentDescription = "Clear selection")
+                Icon(AppIcons.Close, contentDescription = "Clear selection")
             }
         },
         actions = {
             PlainTooltipIconButton(onClick = onSelectAll, tooltip = "Select all") {
-                Icon(Icons.Default.SelectAll, contentDescription = "Select all")
+                Icon(AppIcons.SelectAll, contentDescription = "Select all")
             }
         },
     )

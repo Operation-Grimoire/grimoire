@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.library
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,9 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -238,8 +236,8 @@ private fun SortTab(
                     if (selected) {
                         Icon(
                             imageVector = if (sortDirection == SortDirection.ASC) {
-                                Icons.Default.ArrowUpward
-                            } else Icons.Default.ArrowDownward,
+                                AppIcons.ArrowUpward
+                            } else AppIcons.ArrowDownward,
                             contentDescription = if (sortDirection == SortDirection.ASC) {
                                 "Ascending, tap to flip"
                             } else "Descending, tap to flip",

@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.novelupdates
 
+import io.grimoire.app.ui.icon.*
 import android.content.Intent
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,15 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -101,7 +93,7 @@ fun NovelUpdatesSeriesScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text("NovelUpdates") },
@@ -110,14 +102,14 @@ fun NovelUpdatesSeriesScreen(
                     if (s is NuSeriesState.Loaded) {
                         PlainTooltipIconButton(onClick = viewModel::toggleBookmark, tooltip = if (isBookmarked) "Remove from saved" else "Save") {
                             Icon(
-                                if (isBookmarked) Icons.Filled.Inventory2
-                                else Icons.Outlined.Inventory2,
+                                if (isBookmarked) AppIcons.Inventory2
+                                else AppIcons.Inventory2,
                                 contentDescription = if (isBookmarked) "Remove from saved" else "Save",
                             )
                         }
                         PlainTooltipIconButton(onClick = { onOpenWebView(s.series.url) }, tooltip = "Open in WebView") {
                             Icon(
-                                Icons.Default.Language,
+                                AppIcons.Language,
                                 contentDescription = "Open in WebView",
                             )
                         }
@@ -222,7 +214,7 @@ fun NovelUpdatesSeriesScreen(
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Icon(
-                                Icons.Default.Search,
+                                AppIcons.Search,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
                             )
@@ -317,7 +309,7 @@ private fun NuSourceLinks(
 
                         item is ExtensionItem.Available -> Button(onClick = { onInstall(item) }) {
                             Icon(
-                                Icons.Default.Download,
+                                AppIcons.Download,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
                             )
@@ -327,7 +319,7 @@ private fun NuSourceLinks(
 
                         else -> Button(onClick = { onOpen(item.packageName) }) {
                             Icon(
-                                Icons.AutoMirrored.Filled.MenuBook,
+                                AppIcons.MenuBook,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
                             )
@@ -440,7 +432,7 @@ private fun NuReviews(
                     )
                     review.rating?.let { stars ->
                         Icon(
-                            Icons.Default.Star,
+                            AppIcons.Star,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp),

@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.settings.github
 
+import io.grimoire.app.ui.icon.*
 import android.content.ClipData
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.content.ClipboardManager
@@ -15,10 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -63,7 +60,7 @@ fun GitHubAuthScreen(
                 title = { Text("GitHub account") },
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
             )
@@ -154,12 +151,12 @@ private fun AwaitingBody(
     }
 
     Button(onClick = onOpenBrowser, modifier = Modifier.fillMaxWidth()) {
-        Icon(Icons.Default.OpenInBrowser, contentDescription = null)
+        Icon(AppIcons.OpenInBrowser, contentDescription = null)
         Spacer(Modifier.width(8.dp))
         Text("Open github.com/login/device")
     }
     OutlinedButton(onClick = onCopy, modifier = Modifier.fillMaxWidth()) {
-        Icon(Icons.Default.ContentCopy, contentDescription = null)
+        Icon(AppIcons.ContentCopy, contentDescription = null)
         Spacer(Modifier.width(8.dp))
         Text("Copy code")
     }

@@ -1,12 +1,10 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.layout.fillMaxWidth
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -56,12 +54,12 @@ fun AppSearchField(
         singleLine = true,
         modifier = modifier,
         leadingIcon = {
-            Icon(Icons.Default.Search, contentDescription = null)
+            Icon(AppIcons.Search, contentDescription = null)
         },
         trailingIcon = {
             if (value.isNotEmpty()) {
                 PlainTooltipIconButton(onClick = { onValueChange("") }, tooltip = "Clear search") {
-                    Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                    Icon(AppIcons.Clear, contentDescription = "Clear search")
                 }
             }
         },

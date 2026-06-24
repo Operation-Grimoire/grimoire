@@ -1,14 +1,12 @@
 package io.grimoire.app.ui.screen.settings
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.layout.Arrangement
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -52,7 +50,7 @@ internal fun IntervalSelector(
             PlainTooltipIconButton(
                 onClick = { onCountChange(count - 1) },
                 enabled = count > SCHEDULE_MIN_COUNT, tooltip = "Decrease") {
-                Icon(Icons.Filled.Remove, contentDescription = "Decrease")
+                Icon(AppIcons.Remove, contentDescription = "Decrease")
             }
             Text(
                 count.toString(),
@@ -62,7 +60,7 @@ internal fun IntervalSelector(
             PlainTooltipIconButton(
                 onClick = { onCountChange(count + 1) },
                 enabled = count < SCHEDULE_MAX_COUNT, tooltip = "Increase") {
-                Icon(Icons.Filled.Add, contentDescription = "Increase")
+                Icon(AppIcons.Add, contentDescription = "Increase")
             }
         }
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {

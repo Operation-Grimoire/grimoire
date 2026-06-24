@@ -1,18 +1,12 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.PauseCircle
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -63,7 +57,7 @@ fun RatingLabel(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Icon(
-            imageVector = Icons.Default.Star,
+            imageVector = AppIcons.Star,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(16.dp),
@@ -90,9 +84,9 @@ val NovelStatus.displayName: String
 
 val NovelStatus.icon: ImageVector
     get() = when (this) {
-        NovelStatus.UNKNOWN -> Icons.Default.HelpOutline
-        NovelStatus.ONGOING -> Icons.Default.Schedule
-        NovelStatus.COMPLETED -> Icons.Default.CheckCircle
-        NovelStatus.HIATUS -> Icons.Default.PauseCircle
-        NovelStatus.CANCELLED -> Icons.Default.Block
+        NovelStatus.UNKNOWN -> AppIcons.HelpOutline
+        NovelStatus.ONGOING -> AppIcons.Schedule
+        NovelStatus.COMPLETED -> AppIcons.CheckCircle
+        NovelStatus.HIATUS -> AppIcons.PauseCircle
+        NovelStatus.CANCELLED -> AppIcons.Block
     }

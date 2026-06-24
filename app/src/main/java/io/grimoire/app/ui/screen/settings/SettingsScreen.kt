@@ -1,24 +1,10 @@
 package io.grimoire.app.ui.screen.settings
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.AutoStories
-import androidx.compose.material.icons.filled.Backup
-import androidx.compose.material.icons.filled.ColorLens
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Hub
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.LocalLibrary
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.RecordVoiceOver
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -54,7 +40,7 @@ fun SettingsScreen(
                 title = { Text("Settings") },
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
             )
@@ -63,7 +49,7 @@ fun SettingsScreen(
         LazyColumn(Modifier.padding(padding)) {
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.ColorLens,
+                    icon = AppIcons.ColorLens,
                     title = "Appearance",
                     subtitle = "Theme, dynamic color",
                     onClick = onNavigateToAppearance,
@@ -71,7 +57,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.TouchApp,
+                    icon = AppIcons.TouchApp,
                     title = "Behavior",
                     subtitle = "Haptic feedback",
                     onClick = onNavigateToBehavior,
@@ -79,7 +65,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.LocalLibrary,
+                    icon = AppIcons.LocalLibrary,
                     title = "Library",
                     subtitle = "Display mode, grid columns",
                     onClick = onNavigateToLibrary,
@@ -87,7 +73,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.Explore,
+                    icon = AppIcons.Explore,
                     title = "Browse",
                     subtitle = "Display mode, grid columns",
                     onClick = onNavigateToBrowse,
@@ -95,7 +81,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.Language,
+                    icon = AppIcons.Language,
                     title = "Languages",
                     subtitle = "App language, source language",
                     onClick = onNavigateToLanguages,
@@ -103,7 +89,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.MenuBook,
+                    icon = AppIcons.MenuBook,
                     title = "Reader",
                     subtitle = "Font size, reading direction",
                     onClick = onNavigateToReader,
@@ -111,7 +97,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.RecordVoiceOver,
+                    icon = AppIcons.RecordVoiceOver,
                     title = "Text-to-speech",
                     subtitle = "Engine, voices, speech rate",
                     onClick = onNavigateToTts,
@@ -119,7 +105,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.Sync,
+                    icon = AppIcons.Sync,
                     title = "Library updates",
                     subtitle = "Scheduled refresh of your library",
                     onClick = onNavigateToLibraryUpdates,
@@ -127,7 +113,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.Backup,
+                    icon = AppIcons.Backup,
                     title = "Backup & restore",
                     subtitle = "Export, import, scheduled backups",
                     onClick = onNavigateToBackup,
@@ -135,7 +121,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.Storage,
+                    icon = AppIcons.Storage,
                     title = "Data management",
                     subtitle = "Storage usage, clear caches and browse data",
                     onClick = onNavigateToData,
@@ -143,7 +129,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.AutoStories,
+                    icon = AppIcons.AutoStories,
                     title = "NovelUpdates",
                     subtitle = "Show the NovelUpdates info panel",
                     onClick = onNavigateToNovelUpdates,
@@ -151,7 +137,7 @@ fun SettingsScreen(
             }
             item {
                 SettingsNavItem(
-                    icon = Icons.Default.Hub,
+                    icon = AppIcons.Hub,
                     title = "Connections",
                     subtitle = "External accounts and services",
                     onClick = onNavigateToConnections,
@@ -175,7 +161,7 @@ internal fun SettingsNavItem(
         supportingContent = { Text(subtitle) },
         trailingContent = {
             Icon(
-                Icons.AutoMirrored.Filled.ArrowForwardIos,
+                AppIcons.ArrowForwardIos,
                 contentDescription = null,
             )
         },

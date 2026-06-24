@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.settings.tts
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Arrangement
@@ -9,10 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -69,7 +66,7 @@ fun TtsSettingsScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text("Text-to-speech") },
@@ -205,7 +202,7 @@ fun TtsSettingsScreen(
                     headlineContent = { Text(language) },
                     supportingContent = { Text(viewModel.voiceSummary(language, voices)) },
                     trailingContent = {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null)
+                        Icon(AppIcons.ArrowForwardIos, contentDescription = null)
                     },
                     modifier = Modifier.clickable { onNavigateToVoice(language) },
                 )
@@ -229,7 +226,7 @@ private fun ElevenLabsUsageCard(state: UsageState, onRefresh: () -> Unit) {
                 modifier = Modifier.weight(1f),
             )
             PlainTooltipIconButton(onClick = onRefresh, tooltip = "Refresh usage") {
-                Icon(Icons.Default.Refresh, contentDescription = "Refresh usage")
+                Icon(AppIcons.Refresh, contentDescription = "Refresh usage")
             }
         }
         when (state) {

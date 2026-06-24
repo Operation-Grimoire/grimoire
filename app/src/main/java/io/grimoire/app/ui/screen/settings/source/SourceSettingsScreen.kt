@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.settings.source
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Arrangement
@@ -14,11 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -88,7 +84,7 @@ fun SourceSettingsScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text(viewModel.sourceName) },
@@ -127,11 +123,11 @@ fun SourceSettingsScreen(
                     headlineContent = { Text("Content languages") },
                     supportingContent = { Text(languageSummary) },
                     leadingContent = {
-                        Icon(Icons.Default.Translate, contentDescription = null)
+                        Icon(AppIcons.Translate, contentDescription = null)
                     },
                     trailingContent = {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowForwardIos,
+                            AppIcons.ArrowForwardIos,
                             contentDescription = null,
                         )
                     },
@@ -195,7 +191,7 @@ fun SourceSettingsScreen(
                         )
                     },
                     leadingContent = {
-                        Icon(Icons.Default.AccountCircle, contentDescription = null)
+                        Icon(AppIcons.AccountCircle, contentDescription = null)
                     },
                 )
                 Row(

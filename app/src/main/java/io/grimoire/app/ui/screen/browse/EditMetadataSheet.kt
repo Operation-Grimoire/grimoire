@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,11 +13,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -127,7 +123,7 @@ internal fun MetadataFieldEditSheet(
                 EditableField.STATUS -> Box {
                     OutlinedButton(onClick = { statusMenu = true }, modifier = Modifier.fillMaxWidth()) {
                         Text(status.displayName, modifier = Modifier.weight(1f))
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        Icon(AppIcons.ArrowDropDown, contentDescription = null)
                     }
                     DropdownMenu(expanded = statusMenu, onDismissRequest = { statusMenu = false }) {
                         NovelStatus.entries.forEach { option ->
@@ -204,7 +200,7 @@ private fun GenreListEditor(genres: SnapshotStateList<String>) {
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                Icons.Default.DragHandle,
+                                AppIcons.DragHandle,
                                 contentDescription = "Drag to reorder",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier
@@ -214,7 +210,7 @@ private fun GenreListEditor(genres: SnapshotStateList<String>) {
                             )
                             Text(genre, modifier = Modifier.weight(1f))
                             IconButton(onClick = { genres.remove(genre) }) {
-                                Icon(Icons.Default.Close, contentDescription = "Remove $genre")
+                                Icon(AppIcons.Close, contentDescription = "Remove $genre")
                             }
                         }
                     }
@@ -233,7 +229,7 @@ private fun GenreListEditor(genres: SnapshotStateList<String>) {
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = { addGenres() }) {
-                Icon(Icons.Default.Add, contentDescription = "Add genre")
+                Icon(AppIcons.Add, contentDescription = "Add genre")
             }
         }
     }

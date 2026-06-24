@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.library
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,9 +12,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -109,7 +107,7 @@ internal fun NovelCard(
                         if (visibility.showDownloaded) {
                             NovelCountBadgeOverlay(
                                 count = stats.downloadedCount,
-                                icon = Icons.Default.Download,
+                                icon = AppIcons.Download,
                                 iconContentDescription = null,
                                 iconTint = Color.White,
                             )
@@ -117,7 +115,7 @@ internal fun NovelCard(
                         if (visibility.showLocked) {
                             NovelCountBadgeOverlay(
                                 count = stats.lockedCount,
-                                icon = Icons.Default.Lock,
+                                icon = AppIcons.Lock,
                                 iconContentDescription = "Locked chapters",
                                 iconTint = MaterialTheme.colorScheme.premiumGold,
                             )

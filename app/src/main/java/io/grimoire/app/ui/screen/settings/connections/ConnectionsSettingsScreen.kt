@@ -1,14 +1,10 @@
 package io.grimoire.app.ui.screen.settings.connections
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -42,7 +38,7 @@ fun ConnectionsSettingsScreen(
                 title = { Text("Connections") },
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
             )
@@ -51,7 +47,7 @@ fun ConnectionsSettingsScreen(
         LazyColumn(Modifier.padding(padding)) {
             item {
                 ConnectionRow(
-                    icon = Icons.Default.AccountCircle,
+                    icon = AppIcons.AccountCircle,
                     title = "GitHub",
                     statusLabel = github.statusLabel,
                     isConnected = github.isConnected,
@@ -60,7 +56,7 @@ fun ConnectionsSettingsScreen(
             }
             item {
                 ConnectionRow(
-                    icon = Icons.Default.CloudUpload,
+                    icon = AppIcons.CloudUpload,
                     title = "Athenaeum",
                     statusLabel = athenaeum.statusLabel,
                     isConnected = athenaeum.isConnected,
@@ -95,7 +91,7 @@ private fun ConnectionRow(
         },
         trailingContent = {
             Icon(
-                Icons.AutoMirrored.Filled.ArrowForwardIos,
+                AppIcons.ArrowForwardIos,
                 contentDescription = null,
             )
         },

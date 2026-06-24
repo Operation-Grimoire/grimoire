@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.tour
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.animateIntOffsetAsState
@@ -17,9 +18,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoStories
-import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -161,8 +159,8 @@ private fun BalloonContent(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         when (step.art) {
-            TourArt.Welcome -> Icon(Icons.Default.AutoStories, contentDescription = null)
-            TourArt.Done -> Icon(Icons.Default.Celebration, contentDescription = null)
+            TourArt.Welcome -> Icon(AppIcons.AutoStories, contentDescription = null)
+            TourArt.Done -> Icon(AppIcons.Celebration, contentDescription = null)
             TourArt.None -> Unit
         }
         Text(step.title, style = MaterialTheme.typography.titleMedium)

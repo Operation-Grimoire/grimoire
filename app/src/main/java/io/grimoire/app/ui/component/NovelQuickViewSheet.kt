@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.background
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.clickable
@@ -15,12 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -264,12 +259,12 @@ private fun ActionRow(
             enabled = canToggleLibrary,
         ) {
             Icon(
-                if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                if (isFavorite) AppIcons.Bookmark else AppIcons.BookmarkBorder,
                 contentDescription = if (isFavorite) "Remove from library" else "Add to library",
             )
         }
         PlainTooltipIconButton(onClick = onPickCategory, enabled = canToggleLibrary, tooltip = "Change category") {
-            Icon(Icons.AutoMirrored.Filled.Label, contentDescription = "Change category")
+            Icon(AppIcons.Label, contentDescription = "Change category")
         }
         Spacer(Modifier.weight(1f))
         Button(onClick = onOpen) { Text("Open") }
@@ -311,7 +306,7 @@ private fun ChapterSection(
                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
             } else if (chapterCount > 0) {
                 Icon(
-                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    if (expanded) AppIcons.ExpandLess else AppIcons.ExpandMore,
                     contentDescription = if (expanded) "Collapse" else "Expand",
                 )
             }

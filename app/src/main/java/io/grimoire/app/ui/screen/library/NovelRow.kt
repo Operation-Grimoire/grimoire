@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.library
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -10,9 +11,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -110,7 +108,7 @@ internal fun NovelRow(
                         ) {
                             if (showNotify) {
                                 Icon(
-                                    Icons.Default.Notifications,
+                                    AppIcons.Notifications,
                                     contentDescription = "Notifications enabled",
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp),
@@ -118,7 +116,7 @@ internal fun NovelRow(
                             }
                             if (novel.autoDownloadNewChapters) {
                                 Icon(
-                                    Icons.Default.CloudDownload,
+                                    AppIcons.CloudDownload,
                                     contentDescription = "Auto-download enabled",
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp),

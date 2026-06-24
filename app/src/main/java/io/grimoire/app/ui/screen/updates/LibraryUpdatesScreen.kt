@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.updates
 
+import io.grimoire.app.ui.icon.*
 import androidx.activity.compose.BackHandler
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -14,19 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -174,14 +162,14 @@ fun LibraryUpdatesScreen(
                 TopAppBar(
                     navigationIcon = {
                         PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(AppIcons.ArrowBack, contentDescription = "Back")
                         }
                     },
                     title = { Text("Updates") },
                     actions = {
                         Box {
                             PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = "More actions") {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                                Icon(AppIcons.MoreVert, contentDescription = "More actions")
                             }
                             DropdownMenu(
                                 expanded = menuExpanded,
@@ -224,7 +212,7 @@ fun LibraryUpdatesScreen(
                 } else null
                 TooltipIconButton(
                     visible = openNovelSample != null,
-                    icon = Icons.Default.OpenInNew,
+                    icon = AppIcons.OpenInNew,
                     label = "Open novel",
                     onClick = {
                         openNovelSample?.let {
@@ -235,7 +223,7 @@ fun LibraryUpdatesScreen(
                 )
                 TooltipIconButton(
                     visible = showMarkRead,
-                    icon = Icons.Default.DoneAll,
+                    icon = AppIcons.DoneAll,
                     label = "Mark read",
                     onClick = {
                         viewModel.setEntriesRead(selectedEntryIds, true)
@@ -244,7 +232,7 @@ fun LibraryUpdatesScreen(
                 )
                 TooltipIconButton(
                     visible = showMarkUnread,
-                    icon = Icons.Default.RemoveDone,
+                    icon = AppIcons.RemoveDone,
                     label = "Mark unread",
                     onClick = {
                         viewModel.setEntriesRead(selectedEntryIds, false)
@@ -253,7 +241,7 @@ fun LibraryUpdatesScreen(
                 )
                 TooltipIconButton(
                     visible = showDownload,
-                    icon = Icons.Default.Download,
+                    icon = AppIcons.Download,
                     label = "Download",
                     onClick = {
                         viewModel.downloadEntries(selectedEntryIds)
@@ -262,7 +250,7 @@ fun LibraryUpdatesScreen(
                 )
                 TooltipIconButton(
                     visible = showCancel,
-                    icon = Icons.Default.Close,
+                    icon = AppIcons.Close,
                     label = "Cancel",
                     onClick = {
                         viewModel.cancelDownloadEntries(selectedEntryIds)
@@ -271,7 +259,7 @@ fun LibraryUpdatesScreen(
                 )
                 TooltipIconButton(
                     visible = showDeleteDownload,
-                    icon = Icons.Default.DeleteSweep,
+                    icon = AppIcons.DeleteSweep,
                     label = "Delete download",
                     onClick = {
                         viewModel.deleteDownloadEntries(selectedEntryIds)
@@ -279,7 +267,7 @@ fun LibraryUpdatesScreen(
                     },
                 )
                 TooltipIconButton(
-                    icon = Icons.Default.Delete,
+                    icon = AppIcons.Delete,
                     label = "Delete from log",
                     onClick = {
                         viewModel.deleteEntries(selectedEntryIds)
@@ -579,7 +567,7 @@ private fun UpdateGroupHeader(
                 )
                 if (allDownloaded) {
                     Icon(
-                        imageVector = Icons.Default.CheckCircle,
+                        imageVector = AppIcons.CheckCircle,
                         contentDescription = "All downloaded",
                         modifier = Modifier.size(14.dp),
                         tint = MaterialTheme.colorScheme.primary,
@@ -602,7 +590,7 @@ private fun UpdateGroupHeader(
                 )
                 PlainTooltipIconButton(onClick = onToggleCollapse, tooltip = if (collapsed) "Expand" else "Collapse") {
                     Icon(
-                        imageVector = if (collapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+                        imageVector = if (collapsed) AppIcons.ExpandMore else AppIcons.ExpandLess,
                         contentDescription = if (collapsed) "Expand" else "Collapse",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

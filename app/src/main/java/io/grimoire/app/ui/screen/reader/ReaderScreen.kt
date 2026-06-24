@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.reader
 
+import io.grimoire.app.ui.icon.*
 import android.app.Activity
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.content.Context
@@ -42,19 +43,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.NavigateBefore
-import androidx.compose.material.icons.automirrored.filled.NavigateNext
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.HideImage
-import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -532,7 +520,7 @@ fun ReaderScreen(
                 ),
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = {
@@ -553,7 +541,7 @@ fun ReaderScreen(
                             }, tooltip = if (allRevealed) "Hide all images in this chapter"
                                                      else "Reveal all images in this chapter") {
                             Icon(
-                                if (allRevealed) Icons.Outlined.HideImage else Icons.Outlined.Image,
+                                if (allRevealed) AppIcons.HideImage else AppIcons.ImageOutlined,
                                 contentDescription = if (allRevealed) "Hide all images in this chapter"
                                                      else "Reveal all images in this chapter",
                                 tint = colors.foreground,
@@ -562,14 +550,14 @@ fun ReaderScreen(
                     }
                     PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.chapterWebUrl) }, tooltip = "Open in WebView") {
                         Icon(
-                            Icons.Default.Language,
+                            AppIcons.Language,
                             contentDescription = "Open in WebView",
                             tint = colors.foreground,
                         )
                     }
                     PlainTooltipIconButton(onClick = viewModel::toggleRead, tooltip = if (currentChapter?.read == true) "Mark as unread" else "Mark as read") {
                         Icon(
-                            if (currentChapter?.read == true) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
+                            if (currentChapter?.read == true) AppIcons.CheckCircle else AppIcons.CheckCircleOutlined,
                             contentDescription = if (currentChapter?.read == true) "Mark as unread" else "Mark as read",
                             tint = if (currentChapter?.read == true) MaterialTheme.colorScheme.primary
                                    else colors.foreground.copy(alpha = 0.6f),
@@ -612,30 +600,30 @@ fun ReaderScreen(
             contentColor = colors.foreground,
         ) {
             TooltipIconButton(
-                icon = Icons.AutoMirrored.Filled.NavigateBefore,
+                icon = AppIcons.NavigateBefore,
                 label = "Previous",
                 onClick = viewModel::navigatePrev,
                 enabled = hasPrev,
             )
             TooltipIconButton(
                 visible = ttsEnabled,
-                icon = if (ttsPlayingThisChapter) Icons.Default.Pause else Icons.Default.PlayArrow,
+                icon = if (ttsPlayingThisChapter) AppIcons.Pause else AppIcons.PlayArrow,
                 label = if (ttsPlayingThisChapter) "Pause" else "Read aloud",
                 onClick = viewModel::toggleTts,
             )
             TooltipIconButton(
                 visible = ttsEnabled && ttsActiveForChapter,
-                icon = Icons.Default.Stop,
+                icon = AppIcons.Stop,
                 label = "Stop",
                 onClick = viewModel::stopTts,
             )
             TooltipIconButton(
-                icon = Icons.Default.Settings,
+                icon = AppIcons.Settings,
                 label = "Settings",
                 onClick = { showSettings = true },
             )
             TooltipIconButton(
-                icon = Icons.AutoMirrored.Filled.NavigateNext,
+                icon = AppIcons.NavigateNext,
                 label = "Next",
                 onClick = viewModel::navigateNext,
                 enabled = hasNext,

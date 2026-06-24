@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.app.ui.icon.*
 import androidx.activity.compose.BackHandler
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.animation.AnimatedVisibility
@@ -26,29 +27,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.RemoveDone
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.DownloadDone
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VerticalAlignBottom
-import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -60,6 +38,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
@@ -385,7 +364,7 @@ fun NovelDetailScreen(
             onDismissRequest = { lockedDialogChapter = null },
             icon = {
                 Icon(
-                    Icons.Default.Lock,
+                    AppIcons.Lock,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.premiumGold,
                 )
@@ -485,7 +464,7 @@ fun NovelDetailScreen(
                     onClick = {
                         onChapterClick(viewModel.pkg, novel.url, continueChapter!!.url)
                     },
-                    icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
+                    icon = { Icon(AppIcons.PlayArrow, contentDescription = null) },
                     text = { Text(if (chapters.none { it.read }) "Start" else "Continue") },
                     expanded = fabExpanded,
                 )
@@ -505,32 +484,38 @@ fun NovelDetailScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = {
                     Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 actions = {
-                    if (!viewModel.isLocal) {
-                        PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.novelWebUrl) }, tooltip = "Open in WebView") {
-                            Icon(Icons.Default.Language, contentDescription = "Open in WebView")
-                        }
-                    }
-                    PlainTooltipIconButton(onClick = viewModel::toggleFavorite, tooltip = if (isFavorite) "Remove from library" else "Add to library") {
-                        Icon(
-                            if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                            contentDescription = if (isFavorite) "Remove from library" else "Add to library",
-                        )
-                    }
                     val hasBulkActions = chapters.isNotEmpty()
                     val canMigrate = isFavorite && novelId > 0L
                     val canConfigureNewChapters = isFavorite && novelId > 0L && !viewModel.isLocal
                     val canOpenSourceSettings = viewModel.hasSourceSettings
+                    if (canConfigureNewChapters) {
+                        val notificationsOn = notifyOnNewChapters || notifyOnNewLockedChapters
+                        val active = notificationsOn || autoDownloadNewChapters
+                        val tooltip = when {
+                            notificationsOn && autoDownloadNewChapters -> "Notifications + auto-download on"
+                            notificationsOn -> "Notifications on"
+                            autoDownloadNewChapters -> "Auto-download on"
+                            else -> "Notifications & download"
+                        }
+                        PlainTooltipIconButton(onClick = { showNotifSheet = true }, tooltip = tooltip) {
+                            Icon(
+                                if (active) AppIcons.Notifications else AppIcons.NotificationsNone,
+                                contentDescription = tooltip,
+                                tint = if (active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                            )
+                        }
+                    }
                     if (hasBulkActions || canMigrate || canConfigureNewChapters || canOpenSourceSettings) {
                         Box {
                             PlainTooltipIconButton(onClick = { overflowMenuExpanded = true }, tooltip = "More actions") {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                                Icon(AppIcons.MoreVert, contentDescription = "More actions")
                             }
                             DropdownMenu(
                                 expanded = overflowMenuExpanded,
@@ -549,19 +534,19 @@ fun NovelDetailScreen(
                                         DropdownMenuItem(
                                             text = { Text("Download all") },
                                             onClick = { viewModel.downloadAll(); overflowMenuExpanded = false },
-                                            leadingIcon = { Icon(Icons.Default.Download, null) },
+                                            leadingIcon = { Icon(AppIcons.Download, null) },
                                         )
                                         DropdownMenuItem(
                                             text = { Text("Download unread") },
                                             onClick = { viewModel.downloadUnread(); overflowMenuExpanded = false },
-                                            leadingIcon = { Icon(Icons.Default.Download, null) },
+                                            leadingIcon = { Icon(AppIcons.Download, null) },
                                         )
                                     }
                                     if (chapters.any { it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }) {
                                         DropdownMenuItem(
                                             text = { Text("Cancel all downloads") },
                                             onClick = { viewModel.cancelAllDownloads(); overflowMenuExpanded = false },
-                                            leadingIcon = { Icon(Icons.Default.Close, null) },
+                                            leadingIcon = { Icon(AppIcons.Close, null) },
                                         )
                                     }
                                 }
@@ -573,29 +558,18 @@ fun NovelDetailScreen(
                                             overflowMenuExpanded = false
                                             onMigrate(novelId)
                                         },
-                                        leadingIcon = { Icon(Icons.Default.SwapVert, contentDescription = null) },
-                                    )
-                                }
-                                if (canConfigureNewChapters) {
-                                    if (hasBulkActions || canMigrate) HorizontalDivider()
-                                    DropdownMenuItem(
-                                        text = { Text("Notifications & download") },
-                                        onClick = {
-                                            overflowMenuExpanded = false
-                                            showNotifSheet = true
-                                        },
-                                        leadingIcon = { Icon(Icons.Default.Notifications, contentDescription = null) },
+                                        leadingIcon = { Icon(AppIcons.SwapVert, contentDescription = null) },
                                     )
                                 }
                                 if (canOpenSourceSettings) {
-                                    if (hasBulkActions || canMigrate || canConfigureNewChapters) HorizontalDivider()
+                                    if (hasBulkActions || canMigrate) HorizontalDivider()
                                     DropdownMenuItem(
                                         text = { Text("Source settings") },
                                         onClick = {
                                             overflowMenuExpanded = false
                                             onOpenSourceSettings(viewModel.pkg)
                                         },
-                                        leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null) },
+                                        leadingIcon = { Icon(AppIcons.Tune, contentDescription = null) },
                                     )
                                 }
                             }
@@ -653,7 +627,7 @@ fun NovelDetailScreen(
                     val singleSelection = selectedIds.size == 1
                     TooltipIconButton(
                         visible = showMarkRead,
-                        icon = Icons.Default.DoneAll,
+                        icon = AppIcons.DoneAll,
                         label = "Mark read",
                         onClick = {
                             viewModel.markChaptersRead(selectedIds.toList(), true)
@@ -662,7 +636,7 @@ fun NovelDetailScreen(
                     )
                     TooltipIconButton(
                         visible = showMarkUnread,
-                        icon = Icons.Default.RemoveDone,
+                        icon = AppIcons.RemoveDone,
                         label = "Mark unread",
                         onClick = {
                             viewModel.markChaptersRead(selectedIds.toList(), false)
@@ -671,7 +645,7 @@ fun NovelDetailScreen(
                     )
                     TooltipIconButton(
                         visible = showDownload,
-                        icon = Icons.Default.Download,
+                        icon = AppIcons.Download,
                         label = "Download",
                         onClick = {
                             viewModel.downloadChapters(selectedChapters)
@@ -680,7 +654,7 @@ fun NovelDetailScreen(
                     )
                     TooltipIconButton(
                         visible = showDelete,
-                        icon = Icons.Default.Delete,
+                        icon = AppIcons.Delete,
                         label = "Delete",
                         onClick = {
                             viewModel.deleteDownloads(selectedChapters)
@@ -689,7 +663,7 @@ fun NovelDetailScreen(
                     )
                     TooltipIconButton(
                         visible = showRedownload,
-                        icon = Icons.Default.Refresh,
+                        icon = AppIcons.Refresh,
                         label = "Redownload",
                         onClick = {
                             viewModel.redownloadChapters(selectedChapters)
@@ -698,7 +672,7 @@ fun NovelDetailScreen(
                     )
                     TooltipIconButton(
                         visible = showCancel,
-                        icon = Icons.Default.Close,
+                        icon = AppIcons.Close,
                         label = "Cancel",
                         onClick = {
                             viewModel.cancelDownloads(selectedChapters)
@@ -707,7 +681,7 @@ fun NovelDetailScreen(
                     )
                     TooltipIconButton(
                         visible = singleSelection,
-                        icon = Icons.Default.VerticalAlignTop,
+                        icon = AppIcons.VerticalAlignTop,
                         label = "Select above",
                         onClick = {
                             val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
@@ -719,7 +693,7 @@ fun NovelDetailScreen(
                     )
                     TooltipIconButton(
                         visible = singleSelection,
-                        icon = Icons.Default.VerticalAlignBottom,
+                        icon = AppIcons.VerticalAlignBottom,
                         label = "Select below",
                         onClick = {
                             val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
@@ -775,31 +749,24 @@ fun NovelDetailScreen(
                         }
                     }
 
-                    // Category (when in library)
-                    if (!isLoadingNovel && novelError == null && isFavorite && categories.isNotEmpty()) {
-                        item(key = "category") {
-                            val currentCat = categories.firstOrNull { cat ->
-                                if (cat.isDefault) categoryId == null else cat.id == categoryId
+                    // Action row (library + WebView + category) below the header
+                    if (!isLoadingNovel && novelError == null) {
+                        item(key = "novel_actions") {
+                            val currentCategoryName = if (isFavorite && categories.isNotEmpty()) {
+                                categories.firstOrNull { cat ->
+                                    if (cat.isDefault) categoryId == null else cat.id == categoryId
+                                }?.name ?: "—"
+                            } else {
+                                null
                             }
-                            Row(
-                                modifier = Modifier
-                                    .animateItem()
-                                    .fillMaxWidth()
-                                    .clickable { showCategoryDialog = true }
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    "Category: ",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Text(
-                                    currentCat?.name ?: "—",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
+                            NovelActionRow(
+                                inLibrary = isFavorite,
+                                onToggleLibrary = viewModel::toggleFavorite,
+                                showWebView = !viewModel.isLocal,
+                                onOpenWebView = { onOpenWebView(viewModel.novelWebUrl) },
+                                categoryName = currentCategoryName,
+                                onEditCategory = { showCategoryDialog = true },
+                            )
                         }
                     }
 
@@ -879,7 +846,7 @@ fun NovelDetailScreen(
                                         Spacer(Modifier.width(8.dp))
                                         Text("Downloading…")
                                     } else {
-                                        Icon(Icons.Default.Download, contentDescription = null)
+                                        Icon(AppIcons.Download, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))
                                         Text(if (chapters.isEmpty()) "Download EPUB" else "Re-download EPUB")
                                     }
@@ -925,13 +892,13 @@ fun NovelDetailScreen(
                                         if (!searchActive) viewModel.setSearchQuery("")
                                     }, tooltip = if (searchActive) "Close search" else "Search chapters") {
                                         Icon(
-                                            if (searchActive) Icons.Default.Close else Icons.Default.Search,
+                                            if (searchActive) AppIcons.Close else AppIcons.Search,
                                             contentDescription = if (searchActive) "Close search" else "Search chapters",
                                         )
                                     }
                                     Box {
                                         PlainTooltipIconButton(onClick = { sortMenuExpanded = true }, tooltip = "Sort options") {
-                                            Icon(Icons.Default.SwapVert, contentDescription = "Sort options")
+                                            Icon(AppIcons.SwapVert, contentDescription = "Sort options")
                                         }
                                         DropdownMenu(
                                             expanded = sortMenuExpanded,
@@ -944,7 +911,7 @@ fun NovelDetailScreen(
                                                     onClick = { viewModel.setSort(sort); sortMenuExpanded = false },
                                                     enabled = !dateSort || hasUploadDates,
                                                     trailingIcon = if (chapterSort == sort) {
-                                                        { Icon(Icons.Default.Check, contentDescription = null) }
+                                                        { Icon(AppIcons.Check, contentDescription = null) }
                                                     } else null,
                                                 )
                                             }
@@ -983,7 +950,7 @@ fun NovelDetailScreen(
                                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     ) {
                                         Icon(
-                                            Icons.Default.CheckCircle,
+                                            AppIcons.CheckCircle,
                                             contentDescription = null,
                                             modifier = Modifier.size(18.dp),
                                             tint = MaterialTheme.colorScheme.primary,
@@ -1000,7 +967,7 @@ fun NovelDetailScreen(
                                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                                         ) {
                                             Icon(
-                                                Icons.Default.DownloadDone,
+                                                AppIcons.DownloadDone,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(18.dp),
                                                 tint = MaterialTheme.colorScheme.primary,
@@ -1018,7 +985,7 @@ fun NovelDetailScreen(
                                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                                         ) {
                                             Icon(
-                                                Icons.Default.Lock,
+                                                AppIcons.Lock,
                                                 contentDescription = "Locked chapters",
                                                 modifier = Modifier.size(18.dp),
                                                 tint = MaterialTheme.colorScheme.premiumGold,
@@ -1078,7 +1045,7 @@ fun NovelDetailScreen(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
                                 Icon(
-                                    Icons.Default.Lock,
+                                    AppIcons.Lock,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )

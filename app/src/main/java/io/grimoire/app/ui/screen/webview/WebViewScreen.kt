@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.webview
 
+import io.grimoire.app.ui.icon.*
 import android.annotation.SuppressLint
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.content.ClipData
@@ -15,15 +16,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.OpenInBrowser
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -79,7 +71,7 @@ fun WebViewScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text(currentUrl, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -89,16 +81,16 @@ fun WebViewScreen(
                             webView?.stopLoading()
                             isLoading = false
                         }, tooltip = "Stop loading") {
-                            Icon(Icons.Default.Close, contentDescription = "Stop loading")
+                            Icon(AppIcons.Close, contentDescription = "Stop loading")
                         }
                     } else {
                         PlainTooltipIconButton(onClick = { webView?.reload() }, tooltip = "Refresh") {
-                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                            Icon(AppIcons.Refresh, contentDescription = "Refresh")
                         }
                     }
                     Box {
                         PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = "More actions") {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                            Icon(AppIcons.MoreVert, contentDescription = "More actions")
                         }
                         DropdownMenu(
                             expanded = menuExpanded,
@@ -107,18 +99,18 @@ fun WebViewScreen(
                             DropdownMenuItem(
                                 text = { Text("Back") },
                                 enabled = canGoBack,
-                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) },
+                                leadingIcon = { Icon(AppIcons.ArrowBack, null) },
                                 onClick = { menuExpanded = false; webView?.goBack() },
                             )
                             DropdownMenuItem(
                                 text = { Text("Forward") },
                                 enabled = canGoForward,
-                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowForward, null) },
+                                leadingIcon = { Icon(AppIcons.ArrowForward, null) },
                                 onClick = { menuExpanded = false; webView?.goForward() },
                             )
                             DropdownMenuItem(
                                 text = { Text("Copy URL") },
-                                leadingIcon = { Icon(Icons.Default.ContentCopy, null) },
+                                leadingIcon = { Icon(AppIcons.ContentCopy, null) },
                                 onClick = {
                                     menuExpanded = false
                                     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -128,7 +120,7 @@ fun WebViewScreen(
                             )
                             DropdownMenuItem(
                                 text = { Text("Share") },
-                                leadingIcon = { Icon(Icons.Default.Share, null) },
+                                leadingIcon = { Icon(AppIcons.Share, null) },
                                 onClick = {
                                     menuExpanded = false
                                     val send = Intent(Intent.ACTION_SEND).apply {
@@ -140,7 +132,7 @@ fun WebViewScreen(
                             )
                             DropdownMenuItem(
                                 text = { Text("Open in browser") },
-                                leadingIcon = { Icon(Icons.Default.OpenInBrowser, null) },
+                                leadingIcon = { Icon(AppIcons.OpenInBrowser, null) },
                                 onClick = {
                                     menuExpanded = false
                                     val view = Intent(Intent.ACTION_VIEW, currentUrl.toUri()).apply {

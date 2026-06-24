@@ -1,20 +1,12 @@
 package io.grimoire.app.ui.screen.library
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -60,7 +52,7 @@ internal fun ManageCategoriesSheet(
                 onClick = onUnlockRequest,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             ) {
-                Icon(Icons.Default.Lock, contentDescription = null)
+                Icon(AppIcons.Lock, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Unlock to manage hidden categories")
             }
@@ -75,7 +67,7 @@ internal fun ManageCategoriesSheet(
                             enabled = index > 0,
                             modifier = Modifier.size(28.dp), tooltip = "Move up") {
                             Icon(
-                                Icons.Default.KeyboardArrowUp,
+                                AppIcons.KeyboardArrowUp,
                                 contentDescription = "Move up",
                             )
                         }
@@ -84,7 +76,7 @@ internal fun ManageCategoriesSheet(
                             enabled = index < categories.lastIndex,
                             modifier = Modifier.size(28.dp), tooltip = "Move down") {
                             Icon(
-                                Icons.Default.KeyboardArrowDown,
+                                AppIcons.KeyboardArrowDown,
                                 contentDescription = "Move down",
                             )
                         }
@@ -95,18 +87,18 @@ internal fun ManageCategoriesSheet(
                         if (isUnlocked && !cat.isDefault) {
                             PlainTooltipIconButton(onClick = { onToggleHidden(cat, !cat.isHidden) }, tooltip = if (cat.isHidden) "Unhide" else "Hide") {
                                 Icon(
-                                    if (cat.isHidden) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    if (cat.isHidden) AppIcons.VisibilityOff else AppIcons.Visibility,
                                     contentDescription = if (cat.isHidden) "Unhide" else "Hide",
                                 )
                             }
                         }
                         PlainTooltipIconButton(onClick = { renamingCategory = cat }, tooltip = "Rename") {
-                            Icon(Icons.Default.Edit, contentDescription = "Rename")
+                            Icon(AppIcons.Edit, contentDescription = "Rename")
                         }
                         if (!cat.isDefault) {
                             PlainTooltipIconButton(onClick = { onDelete(cat) }, tooltip = "Delete") {
                                 Icon(
-                                    Icons.Default.Delete,
+                                    AppIcons.Delete,
                                     contentDescription = "Delete",
                                     tint = MaterialTheme.colorScheme.error,
                                 )
@@ -121,7 +113,7 @@ internal fun ManageCategoriesSheet(
             onClick = { showAddDialog = true },
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
-            Icon(Icons.Default.Add, contentDescription = null)
+            Icon(AppIcons.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text("Add category")
         }

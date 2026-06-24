@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.tasks
 
+import io.grimoire.app.ui.icon.*
 import android.text.format.DateUtils
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Box
@@ -12,13 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -57,14 +51,14 @@ fun TasksScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text("Tasks") },
                 actions = {
                     if (history.isNotEmpty()) {
                         PlainTooltipIconButton(onClick = { confirmClear = true }, tooltip = "Clear log") {
-                            Icon(Icons.Default.DeleteSweep, contentDescription = "Clear log")
+                            Icon(AppIcons.DeleteSweep, contentDescription = "Clear log")
                         }
                     }
                 },
@@ -166,7 +160,7 @@ private fun TaskRow(task: TaskUiState, onCancel: () -> Unit) {
         }
         Spacer(Modifier.width(8.dp))
         PlainTooltipIconButton(onClick = onCancel, tooltip = "Cancel ${task.title}") {
-            Icon(Icons.Default.Close, contentDescription = "Cancel ${task.title}")
+            Icon(AppIcons.Close, contentDescription = "Cancel ${task.title}")
         }
     }
 }
@@ -174,7 +168,7 @@ private fun TaskRow(task: TaskUiState, onCancel: () -> Unit) {
 @Composable
 private fun HistoryRow(entry: TaskLogUiState) {
     val kindIcon: ImageVector =
-        if (entry.kind == TaskId.DOWNLOADS) Icons.Default.Download else Icons.Default.Sync
+        if (entry.kind == TaskId.DOWNLOADS) AppIcons.Download else AppIcons.Sync
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -215,7 +209,7 @@ private fun HistoryRow(entry: TaskLogUiState) {
         if (!entry.success) {
             Spacer(Modifier.width(8.dp))
             Icon(
-                imageVector = Icons.Default.ErrorOutline,
+                imageVector = AppIcons.ErrorOutline,
                 contentDescription = "Finished with errors",
                 tint = MaterialTheme.colorScheme.error,
             )

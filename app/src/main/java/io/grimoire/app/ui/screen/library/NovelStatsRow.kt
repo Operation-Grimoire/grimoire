@@ -1,16 +1,11 @@
 package io.grimoire.app.ui.screen.library
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -64,7 +59,7 @@ internal fun NovelStatsRowInline(
             val displayedTotal = stats.effectiveTotal(includeLockedInTotals)
             val percent = stats.readPercent(includeLockedInTotals)
             InlineBadge(
-                icon = Icons.Default.CheckCircle,
+                icon = AppIcons.CheckCircle,
                 contentDescription = null,
                 text = "${stats.readCount}/$displayedTotal ($percent%)",
                 tint = MaterialTheme.colorScheme.primary,
@@ -72,7 +67,7 @@ internal fun NovelStatsRowInline(
         }
         if (visibility.showDownloaded) {
             InlineBadge(
-                icon = Icons.Default.Download,
+                icon = AppIcons.Download,
                 contentDescription = null,
                 text = "${stats.downloadedCount}",
                 tint = MaterialTheme.colorScheme.primary,
@@ -80,7 +75,7 @@ internal fun NovelStatsRowInline(
         }
         if (visibility.showLocked) {
             InlineBadge(
-                icon = Icons.Default.Lock,
+                icon = AppIcons.Lock,
                 contentDescription = "Locked chapters",
                 text = "${stats.lockedCount}",
                 tint = MaterialTheme.colorScheme.premiumGold,
@@ -203,7 +198,7 @@ internal fun NovelStatusBadgeOverlay(
     ) {
         if (showNotify) {
             Icon(
-                Icons.Default.Notifications,
+                AppIcons.Notifications,
                 contentDescription = "Notifications enabled",
                 tint = Color.White,
                 modifier = Modifier.size(11.dp),
@@ -211,7 +206,7 @@ internal fun NovelStatusBadgeOverlay(
         }
         if (showAutoDownload) {
             Icon(
-                Icons.Default.CloudDownload,
+                AppIcons.CloudDownload,
                 contentDescription = "Auto-download enabled",
                 tint = Color.White,
                 modifier = Modifier.size(11.dp),

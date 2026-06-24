@@ -1,15 +1,12 @@
 package io.grimoire.app.ui.screen.updates
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -44,7 +41,7 @@ fun UpdateIssuesScreen(
             TopAppBar(
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = { Text("Update warnings") },
@@ -88,13 +85,13 @@ private fun IssueRow(issue: UpdateIssueEntity, onClick: () -> Unit) {
         leadingContent = {
             if (isError) {
                 Icon(
-                    Icons.Default.ErrorOutline,
+                    AppIcons.ErrorOutline,
                     contentDescription = "Error",
                     tint = MaterialTheme.colorScheme.error,
                 )
             } else {
                 Icon(
-                    Icons.Default.WarningAmber,
+                    AppIcons.WarningAmber,
                     contentDescription = "Warning",
                     tint = MaterialTheme.colorScheme.tertiary,
                 )

@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.library
 
+import io.grimoire.app.ui.icon.*
 import android.net.Uri
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.activity.compose.BackHandler
@@ -28,21 +29,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.automirrored.filled.DriveFileMove
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.LibraryAdd
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.RemoveDone
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -305,27 +291,27 @@ fun LibraryScreen(
                         }
                     }, tooltip = if (searchActive) "Close search" else "Search library") {
                         Icon(
-                            if (searchActive) Icons.Default.Close else Icons.Default.Search,
+                            if (searchActive) AppIcons.Close else AppIcons.Search,
                             contentDescription = if (searchActive) "Close search" else "Search library",
                         )
                     }
                     if (!searchActive) {
                         if (isUnlocked) {
                             PlainTooltipIconButton(onClick = { viewModel.lock() }, tooltip = "Lock hidden categories") {
-                                Icon(Icons.Default.Lock, contentDescription = "Lock hidden categories")
+                                Icon(AppIcons.Lock, contentDescription = "Lock hidden categories")
                             }
                         }
                         PlainTooltipIconButton(onClick = { showFilterSheet = true }, tooltip = "Filter & sort") {
                             BadgedBox(badge = { if (isFilterActive) Badge() }) {
-                                Icon(Icons.Default.FilterList, contentDescription = "Filter & sort")
+                                Icon(AppIcons.FilterList, contentDescription = "Filter & sort")
                             }
                         }
                         PlainTooltipIconButton(onClick = { showRefreshSheet = true }, tooltip = "Refresh library") {
-                            Icon(Icons.Default.Refresh, contentDescription = "Refresh library")
+                            Icon(AppIcons.Refresh, contentDescription = "Refresh library")
                         }
                         Box {
                             PlainTooltipIconButton(onClick = { libraryMenuExpanded = true }, tooltip = "More actions") {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                                Icon(AppIcons.MoreVert, contentDescription = "More actions")
                             }
                             DropdownMenu(
                                 expanded = libraryMenuExpanded,
@@ -347,7 +333,7 @@ fun LibraryScreen(
                                                 strokeWidth = 2.dp,
                                             )
                                         } else {
-                                            Icon(Icons.Default.LibraryAdd, null)
+                                            Icon(AppIcons.LibraryAdd, null)
                                         }
                                     },
                                 )
@@ -357,7 +343,7 @@ fun LibraryScreen(
                                         libraryMenuExpanded = false
                                         showManage = true
                                     },
-                                    leadingIcon = { Icon(Icons.Default.Edit, null) },
+                                    leadingIcon = { Icon(AppIcons.Label, null) },
                                 )
                             }
                         }
@@ -374,12 +360,12 @@ fun LibraryScreen(
                 exit = shrinkVertically(shrinkTowards = Alignment.Bottom),
             ) {
                 TooltipIconButton(
-                    icon = Icons.AutoMirrored.Filled.DriveFileMove,
+                    icon = AppIcons.Label,
                     label = "Move",
                     onClick = { showBulkMove = true },
                 )
                 TooltipIconButton(
-                    icon = Icons.Default.DoneAll,
+                    icon = AppIcons.DoneAll,
                     label = "Mark read",
                     onClick = {
                         viewModel.setNovelsRead(selectedIds, true)
@@ -387,7 +373,7 @@ fun LibraryScreen(
                     },
                 )
                 TooltipIconButton(
-                    icon = Icons.Default.RemoveDone,
+                    icon = AppIcons.RemoveDone,
                     label = "Mark unread",
                     onClick = {
                         viewModel.setNovelsRead(selectedIds, false)
@@ -395,7 +381,7 @@ fun LibraryScreen(
                     },
                 )
                 TooltipIconButton(
-                    icon = Icons.Default.Download,
+                    icon = AppIcons.Download,
                     label = "Download",
                     onClick = {
                         val count = selectedIds.size
@@ -409,7 +395,7 @@ fun LibraryScreen(
                     },
                 )
                 TooltipIconButton(
-                    icon = Icons.Default.Delete,
+                    icon = AppIcons.Delete,
                     label = "Remove",
                     onClick = { showBulkRemoveConfirm = true },
                     tint = MaterialTheme.colorScheme.error,
@@ -454,7 +440,7 @@ fun LibraryScreen(
                                 modifier = Modifier.padding(32.dp),
                             ) {
                                 Icon(
-                                    Icons.Default.LibraryAdd,
+                                    AppIcons.LibraryAdd,
                                     contentDescription = null,
                                     modifier = Modifier.size(48.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -472,7 +458,7 @@ fun LibraryScreen(
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Button(onClick = onBrowse) {
                                         Icon(
-                                            Icons.Default.Search,
+                                            AppIcons.Search,
                                             contentDescription = null,
                                             modifier = Modifier.size(18.dp),
                                         )
@@ -484,7 +470,7 @@ fun LibraryScreen(
                                         enabled = !importing && !staging,
                                     ) {
                                         Icon(
-                                            Icons.Default.LibraryAdd,
+                                            AppIcons.LibraryAdd,
                                             contentDescription = null,
                                             modifier = Modifier.size(18.dp),
                                         )
@@ -590,7 +576,7 @@ fun LibraryScreen(
                 ListItem(
                     headlineContent = { Text("Update library") },
                     supportingContent = { Text("Fetch new chapters across all categories") },
-                    leadingContent = { Icon(Icons.Default.Refresh, contentDescription = null) },
+                    leadingContent = { Icon(AppIcons.Refresh, contentDescription = null) },
                     modifier = Modifier.clickable {
                         viewModel.updateLibrary()
                         scope.launch { snackbarHostState.showSnackbar("Library update queued") }
@@ -604,7 +590,7 @@ fun LibraryScreen(
                             Text("Fetch new chapters for novels in this category")
                         },
                         leadingContent = {
-                            Icon(Icons.AutoMirrored.Filled.Label, contentDescription = null)
+                            Icon(AppIcons.Label, contentDescription = null)
                         },
                         modifier = Modifier.clickable {
                             viewModel.updateCategory(currentCategoryId)
@@ -618,7 +604,7 @@ fun LibraryScreen(
                 ListItem(
                     headlineContent = { Text("Cancel") },
                     leadingContent = {
-                        Icon(Icons.Default.Close, contentDescription = null)
+                        Icon(AppIcons.Close, contentDescription = null)
                     },
                     modifier = Modifier.clickable { showRefreshSheet = false },
                 )

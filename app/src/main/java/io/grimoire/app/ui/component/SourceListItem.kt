@@ -1,13 +1,12 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -64,7 +63,7 @@ internal fun SourceListItem(
                 )
                 if (pinned) {
                     Icon(
-                        Icons.Filled.PushPin,
+                        AppIcons.PushPin,
                         contentDescription = "Pinned",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(14.dp),

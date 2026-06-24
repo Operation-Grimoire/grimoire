@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.layout.Arrangement
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Box
@@ -17,15 +18,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -128,7 +120,7 @@ fun SourceBrowseScreen(
                         }
                     }, tooltip = if (searchActive) "Close search" else "Back") {
                         Icon(
-                            if (searchActive) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack,
+                            if (searchActive) AppIcons.Close else AppIcons.ArrowBack,
                             contentDescription = if (searchActive) "Close search" else "Back",
                         )
                     }
@@ -151,20 +143,20 @@ fun SourceBrowseScreen(
                 actions = {
                     if (!searchActive) {
                         PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.sourceBaseUrl) }, tooltip = "Open in WebView") {
-                            Icon(Icons.Default.Language, contentDescription = "Open in WebView")
+                            Icon(AppIcons.Language, contentDescription = "Open in WebView")
                         }
                         PlainTooltipIconButton(onClick = { searchActive = true }, tooltip = "Search") {
-                            Icon(Icons.Default.Search, contentDescription = "Search")
+                            Icon(AppIcons.Search, contentDescription = "Search")
                         }
                         if (viewModel.isConfigurable) {
                             PlainTooltipIconButton(onClick = onOpenSourceSettings, tooltip = "Source settings") {
-                                Icon(Icons.Default.Settings, contentDescription = "Source settings")
+                                Icon(AppIcons.Settings, contentDescription = "Source settings")
                             }
                         }
                     }
                     if (filterLoadState != FilterLoadState.None) {
                         PlainTooltipIconButton(onClick = { showFilters = true }, tooltip = "Filters") {
-                            Icon(Icons.Default.FilterList, contentDescription = "Filters")
+                            Icon(AppIcons.FilterList, contentDescription = "Filters")
                         }
                     }
                 },
@@ -204,7 +196,7 @@ fun SourceBrowseScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            Icons.Default.Shield,
+                            AppIcons.Shield,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(48.dp),
@@ -224,7 +216,7 @@ fun SourceBrowseScreen(
                         )
                         Spacer(Modifier.height(16.dp))
                         Button(onClick = { onOpenWebView(viewModel.sourceBaseUrl) }) {
-                            Icon(Icons.Default.Language, contentDescription = null)
+                            Icon(AppIcons.Language, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text("Open in WebView")
                         }
