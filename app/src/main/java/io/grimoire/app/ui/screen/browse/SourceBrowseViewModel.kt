@@ -212,7 +212,12 @@ class SourceBrowseViewModel @Inject constructor(
     fun setMode(newMode: BrowseMode) {
         if (_mode.value == newMode) return
         _mode.value = newMode
-        if (newMode != BrowseMode.SEARCH) _query.value = ""
+        // Popular/Latest are unfiltered browses — drop any applied filters so the
+        // Filters chip doesn't stay highlighted alongside the active mode.
+        if (newMode != BrowseMode.SEARCH) {
+            _query.value = ""
+            _activeFilters.value = emptyList()
+        }
         load(reset = true)
     }
 

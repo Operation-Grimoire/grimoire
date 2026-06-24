@@ -36,6 +36,7 @@ fun AppSearchField(
     modifier: Modifier = Modifier.fillMaxWidth(),
     placeholder: String = "Search…",
     onSearch: () -> Unit = {},
+    showLeadingIcon: Boolean = true,
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     // On (re)composition cursor starts at end of existing text; not saveable so it doesn't survive nav restores.
@@ -53,9 +54,9 @@ fun AppSearchField(
         placeholder = { Text(placeholder) },
         singleLine = true,
         modifier = modifier,
-        leadingIcon = {
-            Icon(AppIcons.Search, contentDescription = null)
-        },
+        leadingIcon = if (showLeadingIcon) {
+            { Icon(AppIcons.Search, contentDescription = null) }
+        } else null,
         trailingIcon = {
             if (value.isNotEmpty()) {
                 PlainTooltipIconButton(onClick = { onValueChange("") }, tooltip = "Clear search") {
