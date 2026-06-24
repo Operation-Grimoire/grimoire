@@ -2,6 +2,8 @@ package io.grimoire.app.ui.screen.browse
 
 import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Box
 import androidx.compose.animation.AnimatedVisibility
@@ -181,6 +183,7 @@ fun SourceBrowseScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
                     .padding(horizontal = 12.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -224,7 +227,7 @@ fun SourceBrowseScreen(
                     FilterChip(
                         selected = mode == BrowseMode.SEARCH && activeFilters.isNotEmpty(),
                         onClick = { showFilters = true },
-                        label = { Text("Filters") },
+                        label = { Text("Filters", maxLines = 1, softWrap = false) },
                         leadingIcon = {
                             Icon(
                                 AppIcons.FilterList,
