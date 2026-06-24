@@ -76,6 +76,7 @@ import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.SwipeTabRow
 import io.grimoire.app.ui.component.SwipeTabStyle
 import io.grimoire.app.ui.component.TooltipIconButton
+import io.grimoire.app.ui.component.rememberDelayedVisibility
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -418,10 +419,14 @@ fun LibraryScreen(
                 hideTabRowForSingleTab = true,
             ) { page ->
                 val pageNovels = displayedTabs.getOrNull(page)?.novels
+                // Delay the loader so a fast Room read doesn't flash a spinner.
+                val showLoader = rememberDelayedVisibility(pageNovels == null)
 
                 when {
-                    pageNovels == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                    pageNovels == null -> if (showLoader) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
                     }
                     pageNovels.isEmpty() -> Box(
                         Modifier.fillMaxSize(),
