@@ -3,7 +3,11 @@ package io.grimoire.app.ui.screen.browse
 import io.grimoire.app.ui.icon.*
 import androidx.activity.compose.BackHandler
 import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.app.ui.component.rememberDelayedVisibility
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,6 +53,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -64,6 +69,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -159,6 +165,7 @@ fun NovelDetailScreen(
     var searchActive by remember { mutableStateOf(false) }
     val searchQuery by viewModel.searchQuery.collectAsState()
     var showJumpDialog by remember { mutableStateOf(false) }
+    var showDownloadsSheet by remember { mutableStateOf(false) }
 
     var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
     val selectionMode = selectedIds.isNotEmpty()
@@ -190,6 +197,17 @@ fun NovelDetailScreen(
     val displayedChapters by viewModel.displayedChapters.collectAsState()
 
     val listState = rememberLazyListState()
+    // Show the title in the bar (and make the bar prominent) once the header title scrolls under it.
+    val density = LocalDensity.current
+    val showBarTitle by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > with(density) { 48.dp.toPx() }
+        }
+    }
+    // Delay chapter loaders so a fast Room read doesn't flash a loader.
+    val showChapterSkeleton = rememberDelayedVisibility(isLoadingChapters && chapters.isEmpty())
+    val showChapterLoadingBar = rememberDelayedVisibility(isLoadingChapters)
     val coroutineScope = rememberCoroutineScope()
     val keyboard = LocalSoftwareKeyboardController.current
 
@@ -317,6 +335,18 @@ fun NovelDetailScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
+    }
+
+    if (showDownloadsSheet) {
+        DownloadsSheet(
+            chapters = chapters,
+            onDownloadAll = viewModel::downloadAll,
+            onDownloadUnread = viewModel::downloadUnread,
+            onDownloadNext = { viewModel.downloadNext(10) },
+            onCancelQueued = viewModel::cancelAllDownloads,
+            onDeleteAll = viewModel::deleteAllDownloads,
+            onDismiss = { showDownloadsSheet = false },
+        )
     }
 
     if (showJumpDialog) {
@@ -481,14 +511,25 @@ fun NovelDetailScreen(
                     },
                 )
             } else {
+            val barColor by animateColorAsState(
+                targetValue = if (showBarTitle) {
+                    MaterialTheme.colorScheme.surfaceContainer
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
+                label = "barColor",
+            )
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = barColor),
                 navigationIcon = {
                     PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
                         Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
                 title = {
-                    Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    AnimatedVisibility(visible = showBarTitle, enter = fadeIn(), exit = fadeOut()) {
+                        Text(novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
                 },
                 actions = {
                     val hasBulkActions = chapters.isNotEmpty()
@@ -497,19 +538,48 @@ fun NovelDetailScreen(
                     val canOpenSourceSettings = viewModel.hasSourceSettings
                     if (canConfigureNewChapters) {
                         val notificationsOn = notifyOnNewChapters || notifyOnNewLockedChapters
-                        val active = notificationsOn || autoDownloadNewChapters
+                        val autoOn = autoDownloadNewChapters
+                        val active = notificationsOn || autoOn
                         val tooltip = when {
-                            notificationsOn && autoDownloadNewChapters -> "Notifications + auto-download on"
+                            notificationsOn && autoOn -> "Notifications + auto-download on"
                             notificationsOn -> "Notifications on"
-                            autoDownloadNewChapters -> "Auto-download on"
+                            autoOn -> "Auto-download on"
                             else -> "Notifications & download"
+                        }
+                        // wifi_notification icon for auto-download; fill when a notify toggle is on.
+                        val icon = when {
+                            autoOn && notificationsOn -> AppIcons.WifiNotificationFilled
+                            autoOn -> AppIcons.WifiNotification
+                            notificationsOn -> AppIcons.Notifications
+                            else -> AppIcons.NotificationsNone
                         }
                         PlainTooltipIconButton(onClick = { showNotifSheet = true }, tooltip = tooltip) {
                             Icon(
-                                if (active) AppIcons.Notifications else AppIcons.NotificationsNone,
+                                icon,
                                 contentDescription = tooltip,
                                 tint = if (active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                             )
+                        }
+                    }
+                    if (!viewModel.isLocal) {
+                        val downloading = chapters.any { it.downloadStatus in ChapterDownloadStatus.DOWNLOADING_ORDINALS }
+                        PlainTooltipIconButton(
+                            onClick = { showDownloadsSheet = true },
+                            tooltip = if (downloading) "Downloading…" else "Downloads",
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                if (downloading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        strokeWidth = 2.dp,
+                                    )
+                                }
+                                Icon(
+                                    AppIcons.Download,
+                                    contentDescription = "Downloads",
+                                    modifier = Modifier.size(if (downloading) 14.dp else 24.dp),
+                                )
+                            }
                         }
                     }
                     if (hasBulkActions || canMigrate || canConfigureNewChapters || canOpenSourceSettings) {
@@ -530,25 +600,6 @@ fun NovelDetailScreen(
                                         text = { Text("Mark all as unread") },
                                         onClick = { viewModel.markAllRead(false); overflowMenuExpanded = false },
                                     )
-                                    if (!viewModel.isLocal) {
-                                        DropdownMenuItem(
-                                            text = { Text("Download all") },
-                                            onClick = { viewModel.downloadAll(); overflowMenuExpanded = false },
-                                            leadingIcon = { Icon(AppIcons.Download, null) },
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text("Download unread") },
-                                            onClick = { viewModel.downloadUnread(); overflowMenuExpanded = false },
-                                            leadingIcon = { Icon(AppIcons.Download, null) },
-                                        )
-                                    }
-                                    if (chapters.any { it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }) {
-                                        DropdownMenuItem(
-                                            text = { Text("Cancel all downloads") },
-                                            onClick = { viewModel.cancelAllDownloads(); overflowMenuExpanded = false },
-                                            leadingIcon = { Icon(AppIcons.Close, null) },
-                                        )
-                                    }
                                 }
                                 if (canMigrate) {
                                     if (hasBulkActions) HorizontalDivider()
@@ -919,7 +970,7 @@ fun NovelDetailScreen(
                                     }
                                 }
                             }
-                            if (isLoadingChapters) {
+                            if (showChapterLoadingBar) {
                                 LinearProgressIndicator(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1064,7 +1115,7 @@ fun NovelDetailScreen(
                     }
 
                     // Chapter list or skeleton
-                    if (isLoadingChapters && chapters.isEmpty()) {
+                    if (showChapterSkeleton) {
                         item(key = "skeletons") {
                             val alpha = rememberShimmerAlpha()
                             Column {

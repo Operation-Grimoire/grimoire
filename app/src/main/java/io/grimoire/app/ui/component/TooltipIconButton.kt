@@ -59,16 +59,21 @@ fun RowScope.TooltipIconButton(
     val currentOnClick by rememberUpdatedState(onClick)
     val currentEnabled by rememberUpdatedState(enabled)
     val haptics = LocalHapticFeedback.current
+    // Freeze visibility (and weight) while the bar animates out; reflow normally otherwise.
+    val barVisible = LocalActionBarVisible.current
+    var lastVisible by remember { mutableStateOf(visible) }
+    if (barVisible) lastVisible = visible
+    val effectiveVisible = if (barVisible) visible else lastVisible
     // Combine press-grow (1f → 2f) with show/hide (×1f or ×0f). RowScope.weight
     // requires a strictly positive value, so the hidden state floors to a
     // sub-pixel weight that effectively removes the button from the row.
     val weight by animateFloatAsState(
-        targetValue = (if (visible) 1f else 0f) * (if (pressed) 2f else 1f),
+        targetValue = (if (effectiveVisible) 1f else 0f) * (if (pressed) 2f else 1f),
         label = "tooltipWeight",
     )
     val alpha by animateFloatAsState(
         targetValue = when {
-            !visible -> 0f
+            !effectiveVisible -> 0f
             !enabled -> 0.38f
             else -> 1f
         },
@@ -79,7 +84,7 @@ fun RowScope.TooltipIconButton(
         label = "tooltipIconShift",
     )
     val labelProgress by animateFloatAsState(
-        targetValue = if (pressed && visible) 1f else 0f,
+        targetValue = if (pressed && effectiveVisible) 1f else 0f,
         label = "tooltipLabelProgress",
     )
 
@@ -89,7 +94,7 @@ fun RowScope.TooltipIconButton(
             .height(56.dp)
             .graphicsLayer { this.alpha = alpha }
             .then(
-                if (visible) {
+                if (effectiveVisible) {
                     Modifier
                         .semantics(mergeDescendants = true) {
                             role = Role.Button

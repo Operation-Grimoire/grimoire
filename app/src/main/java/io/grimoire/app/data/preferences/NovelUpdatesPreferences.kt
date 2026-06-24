@@ -7,7 +7,7 @@ import javax.inject.Singleton
 class NovelUpdatesPreferences @Inject constructor(store: PreferenceStore) {
 
     /** Master toggle for the NovelUpdates metadata/recommendations section. */
-    val enabled = store.getBoolean("novelupdates_enabled", true)
+    val enabled = store.getBoolean("novelupdates_enabled", false)
 
     /**
      * Manual novel -> NovelUpdates slug overrides. Keyed by "pkg|url" so a link

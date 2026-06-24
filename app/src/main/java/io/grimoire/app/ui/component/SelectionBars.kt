@@ -20,9 +20,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+
+/** True while the hosting [TooltipBottomBar] is visible; lets buttons freeze weight during exit. */
+internal val LocalActionBarVisible = staticCompositionLocalOf { true }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,11 +81,13 @@ fun TooltipBottomBar(
             containerColor = containerColor,
             contentColor = contentColor,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                content = content,
-            )
+            CompositionLocalProvider(LocalActionBarVisible provides visible) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = content,
+                )
+            }
         }
     }
 }
