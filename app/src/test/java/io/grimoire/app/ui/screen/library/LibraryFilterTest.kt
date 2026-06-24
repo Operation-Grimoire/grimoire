@@ -3,6 +3,8 @@ package io.grimoire.app.ui.screen.library
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
 import org.junit.Assert.assertEquals
@@ -75,6 +77,8 @@ class LibraryFilterTest {
         filterDownloadedOnly: Boolean = false,
         filterNotifyEnabled: Boolean = false,
         filterAutoDownloadEnabled: Boolean = false,
+        filterType: NovelTypeFilter = NovelTypeFilter.ALL,
+        epubSourceIds: Set<Long> = emptySet(),
         filterSourceIds: Set<Long> = emptySet(),
         isUnlocked: Boolean = true,
         hiddenCategoryIds: Set<Long> = emptySet(),
@@ -93,6 +97,8 @@ class LibraryFilterTest {
         filterDownloadedOnly = filterDownloadedOnly,
         filterNotifyEnabled = filterNotifyEnabled,
         filterAutoDownloadEnabled = filterAutoDownloadEnabled,
+        filterType = filterType,
+        epubSourceIds = epubSourceIds,
         filterSourceIds = filterSourceIds,
         isUnlocked = isUnlocked,
         hiddenCategoryIds = hiddenCategoryIds,
@@ -317,6 +323,60 @@ class LibraryFilterTest {
             baseInputs(novels = novels, filterAutoDownloadEnabled = true),
         )
         assertEquals(listOf("On"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `type filter ALL keeps both epub and web novels`() {
+        val novels = listOf(
+            novel(1, title = "Epub", sourceId = LOCAL_SOURCE_ID),
+            novel(2, title = "Web", sourceId = 100L),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterType = NovelTypeFilter.ALL),
+        )
+        assertEquals(listOf("Epub", "Web"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `type filter EPUB keeps only local novels`() {
+        val novels = listOf(
+            novel(1, title = "Epub", sourceId = LOCAL_SOURCE_ID),
+            novel(2, title = "Web", sourceId = 100L),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterType = NovelTypeFilter.EPUB),
+        )
+        assertEquals(listOf("Epub"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `type filter WEB hides local novels`() {
+        val novels = listOf(
+            novel(1, title = "Epub", sourceId = LOCAL_SOURCE_ID),
+            novel(2, title = "Web", sourceId = 100L),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterType = NovelTypeFilter.WEB),
+        )
+        assertEquals(listOf("Web"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `type filter treats EPUB-source extensions as EPUB`() {
+        // sourceId 50 is an installed EPUB-source extension (e.g. Z-Library); 100 is web.
+        val novels = listOf(
+            novel(1, title = "Local", sourceId = LOCAL_SOURCE_ID),
+            novel(2, title = "ZLib", sourceId = 50L),
+            novel(3, title = "Web", sourceId = 100L),
+        )
+        val epubTabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterType = NovelTypeFilter.EPUB, epubSourceIds = setOf(50L)),
+        )
+        assertEquals(listOf("Local", "ZLib"), epubTabs[0].novels!!.map { it.title })
+        val webTabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterType = NovelTypeFilter.WEB, epubSourceIds = setOf(50L)),
+        )
+        assertEquals(listOf("Web"), webTabs[0].novels!!.map { it.title })
     }
 
     @Test

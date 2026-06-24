@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.net.Uri
+import io.grimoire.api.source.epub.EpubSource
 import io.grimoire.app.data.epub.EpubImporter
 import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
@@ -20,6 +21,7 @@ import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
+import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
 import io.grimoire.app.data.preferences.stateIn
@@ -173,6 +175,7 @@ class LibraryViewModel @Inject constructor(
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
     val filterNotifyEnabled: StateFlow<Boolean> = libraryPreferences.filterNotifyEnabled.stateIn(viewModelScope)
     val filterAutoDownloadEnabled: StateFlow<Boolean> = libraryPreferences.filterAutoDownloadEnabled.stateIn(viewModelScope)
+    val filterType: StateFlow<NovelTypeFilter> = libraryPreferences.filterType.stateIn(viewModelScope)
     val filterSourceIds: StateFlow<Set<Long>> = libraryPreferences.filterSourceIds.stateIn(viewModelScope)
 
     /**
@@ -196,11 +199,22 @@ class LibraryViewModel @Inject constructor(
             id to name
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /**
+     * Source ids whose installed extension delivers whole-book EPUBs (e.g.
+     * Z-Library, libgen). Combined with [LOCAL_SOURCE_ID] in [NovelEntity.isEpubType],
+     * this lets the EPUB badge and the Type filter treat extension-backed EPUBs the
+     * same as local file imports. Empty until the extension scan completes.
+     */
+    val epubSourceIds: StateFlow<Set<Long>> = extensionManager.extensions
+        .map { exts -> exts.filter { it.source is EpubSource }.map { it.id }.toSet() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
     val includeHiddenInAll: StateFlow<Boolean> = libraryPreferences.includeHiddenInAll.stateIn(viewModelScope)
     val includeLockedInTotals: StateFlow<Boolean> = libraryPreferences.includeLockedInTotals.stateIn(viewModelScope)
     val showReadBadge: StateFlow<Boolean> = libraryPreferences.showReadBadge.stateIn(viewModelScope)
     val showDownloadedBadge: StateFlow<Boolean> = libraryPreferences.showDownloadedBadge.stateIn(viewModelScope)
     val showLockedBadge: StateFlow<Boolean> = libraryPreferences.showLockedBadge.stateIn(viewModelScope)
+    val showEpubBadge: StateFlow<Boolean> = libraryPreferences.showEpubBadge.stateIn(viewModelScope)
 
     // null until the persisted value is read from disk, so the restore can wait for
     // the real id instead of acting on the default and locking in the wrong tab.
@@ -245,9 +259,11 @@ class LibraryViewModel @Inject constructor(
             includeLockedInTotals,
             searchQuery.debounce(120L),
             // Appended after searchQuery so the existing positional indices below
-            // stay put; read at [15]/[16].
+            // stay put; read at [15]/[16]/[17].
             filterNotifyEnabled,
             filterAutoDownloadEnabled,
+            filterType,
+            epubSourceIds,
         ),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
@@ -274,6 +290,8 @@ class LibraryViewModel @Inject constructor(
             searchQuery = values[14] as String,
             filterNotifyEnabled = values[15] as Boolean,
             filterAutoDownloadEnabled = values[16] as Boolean,
+            filterType = values[17] as NovelTypeFilter,
+            epubSourceIds = values[18] as Set<Long>,
         )
     }
 
@@ -387,6 +405,10 @@ class LibraryViewModel @Inject constructor(
 
     fun setFilterAutoDownloadEnabled(value: Boolean) = viewModelScope.launch {
         libraryPreferences.filterAutoDownloadEnabled.set(value)
+    }
+
+    fun setFilterType(value: NovelTypeFilter) = viewModelScope.launch {
+        libraryPreferences.filterType.set(value)
     }
 
     /** Toggles [sourceId] in the active source filter set, or clears it entirely when null. */

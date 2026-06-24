@@ -15,6 +15,14 @@ enum class SortField { TITLE, LAST_UPDATED, UNREAD, TOTAL, LAST_READ }
 enum class SortDirection { ASC, DESC }
 
 /**
+ * Tri-state library filter on novel type:
+ * [ALL] shows everything, [EPUB] keeps only imported-EPUB (local) novels, [WEB]
+ * keeps only extension/source-backed (web) novels. A novel is EPUB when its
+ * `sourceId` is the reserved local id; everything else is a web novel.
+ */
+enum class NovelTypeFilter { ALL, EPUB, WEB }
+
+/**
  * Translates a legacy `library_sort_order` enum name (e.g. "LAST_READ_DESC") into the
  * new (field, direction) split. Returns null for unrecognized values so reads fall back
  * to the new defaults instead of silently picking the wrong sort.
@@ -72,6 +80,7 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
     val filterDownloadedOnly = store.getBoolean("library_filter_downloaded_only", false)
     val filterNotifyEnabled = store.getBoolean("library_filter_notify_enabled", false)
     val filterAutoDownloadEnabled = store.getBoolean("library_filter_auto_download_enabled", false)
+    val filterType = store.getEnum("library_filter_type", NovelTypeFilter.ALL)
 
     // Status and source filters are multi-select sets. An empty set means "no
     // restriction" (show all), so users can either tap "All" to clear or tap any
@@ -108,6 +117,10 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
     val showReadBadge = store.getBoolean("library_show_read_badge", true)
     val showDownloadedBadge = store.getBoolean("library_show_downloaded_badge", true)
     val showLockedBadge = store.getBoolean("library_show_locked_badge", true)
+
+    // Flags imported-EPUB (local) novels with a badge so they're distinguishable
+    // from extension-backed novels at a glance. Only renders on local novels.
+    val showEpubBadge = store.getBoolean("library_show_epub_badge", true)
 
     // Persists the library category the user last viewed. Stores a category id, or
     // ALL_TAB_CATEGORY_ID for the "All" tab, so the restore survives reordering and

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +38,8 @@ internal fun NovelRow(
     showReadBadge: Boolean,
     showDownloadedBadge: Boolean,
     showLockedBadge: Boolean,
+    showEpubBadge: Boolean,
+    isEpub: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -94,6 +97,13 @@ internal fun NovelRow(
                                 .matchParentSize()
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+                        )
+                    }
+                    if (showEpubBadge && isEpub) {
+                        NovelEpubBadgeOverlay(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(2.dp),
                         )
                     }
                 }

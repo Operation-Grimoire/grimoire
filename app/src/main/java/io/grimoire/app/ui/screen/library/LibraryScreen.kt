@@ -69,6 +69,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
 import io.grimoire.app.data.preferences.LibraryDisplayMode
+import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.MoveToCategorySheet
 import io.grimoire.app.ui.component.TooltipBottomBar
@@ -113,6 +114,7 @@ fun LibraryScreen(
     val filterDownloadedOnly by viewModel.filterDownloadedOnly.collectAsState()
     val filterNotifyEnabled by viewModel.filterNotifyEnabled.collectAsState()
     val filterAutoDownloadEnabled by viewModel.filterAutoDownloadEnabled.collectAsState()
+    val filterType by viewModel.filterType.collectAsState()
     val filterSourceIds by viewModel.filterSourceIds.collectAsState()
     val librarySources by viewModel.librarySources.collectAsState()
     val isUnlocked by viewModel.isUnlocked.collectAsState()
@@ -122,6 +124,8 @@ fun LibraryScreen(
     val showReadBadge by viewModel.showReadBadge.collectAsState()
     val showDownloadedBadge by viewModel.showDownloadedBadge.collectAsState()
     val showLockedBadge by viewModel.showLockedBadge.collectAsState()
+    val showEpubBadge by viewModel.showEpubBadge.collectAsState()
+    val epubSourceIds by viewModel.epubSourceIds.collectAsState()
     val staging by viewModel.staging.collectAsState()
     val importing by viewModel.importing.collectAsState()
     val pendingImport by viewModel.pendingImport.collectAsState()
@@ -183,7 +187,8 @@ fun LibraryScreen(
     }
 
     val isFilterActive = filterStatuses.isNotEmpty() || filterUnreadOnly || filterDownloadedOnly ||
-        filterNotifyEnabled || filterAutoDownloadEnabled || filterSourceIds.isNotEmpty()
+        filterNotifyEnabled || filterAutoDownloadEnabled || filterType != NovelTypeFilter.ALL ||
+        filterSourceIds.isNotEmpty()
 
     val tabs = displayedTabs.map { it.label }
     // Parallel to `tabs`: the category id behind each tab, or ALL_TAB_CATEGORY_ID for "All".
@@ -503,6 +508,8 @@ fun LibraryScreen(
                                         showReadBadge = showReadBadge,
                                         showDownloadedBadge = showDownloadedBadge,
                                         showLockedBadge = showLockedBadge,
+                                        showEpubBadge = showEpubBadge,
+                                        isEpub = novel.isEpubType(epubSourceIds),
                                         selected = novel.id in selectedIds,
                                         onClick = {
                                             if (selectionMode) toggleSelect(novel.id)
@@ -522,6 +529,8 @@ fun LibraryScreen(
                                         showReadBadge = showReadBadge,
                                         showDownloadedBadge = showDownloadedBadge,
                                         showLockedBadge = showLockedBadge,
+                                        showEpubBadge = showEpubBadge,
+                                        isEpub = novel.isEpubType(epubSourceIds),
                                         selected = novel.id in selectedIds,
                                         onClick = {
                                             if (selectionMode) toggleSelect(novel.id)
@@ -550,6 +559,7 @@ fun LibraryScreen(
                 filterDownloadedOnly = filterDownloadedOnly,
                 filterNotifyEnabled = filterNotifyEnabled,
                 filterAutoDownloadEnabled = filterAutoDownloadEnabled,
+                filterType = filterType,
                 filterSourceIds = filterSourceIds,
                 librarySources = librarySources,
                 onSortFieldChange = viewModel::setSortField,
@@ -559,6 +569,7 @@ fun LibraryScreen(
                 onDownloadedOnlyChange = viewModel::setFilterDownloadedOnly,
                 onNotifyEnabledChange = viewModel::setFilterNotifyEnabled,
                 onAutoDownloadEnabledChange = viewModel::setFilterAutoDownloadEnabled,
+                onFilterTypeChange = viewModel::setFilterType,
                 onToggleFilterSource = viewModel::toggleFilterSource,
             )
         }

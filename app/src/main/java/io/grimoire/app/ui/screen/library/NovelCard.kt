@@ -36,6 +36,8 @@ internal fun NovelCard(
     showReadBadge: Boolean,
     showDownloadedBadge: Boolean,
     showLockedBadge: Boolean,
+    showEpubBadge: Boolean,
+    isEpub: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -83,6 +85,15 @@ internal fun NovelCard(
                         includeLockedInTotals = includeLockedInTotals,
                         modifier = Modifier
                             .align(Alignment.BottomStart)
+                            .padding(4.dp),
+                    )
+                }
+                // EPUB novels can't have notification / auto-download flags, so the
+                // EPUB badge and the status badge never compete for the top-left corner.
+                if (showEpubBadge && isEpub) {
+                    NovelEpubBadgeOverlay(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
                             .padding(4.dp),
                     )
                 }

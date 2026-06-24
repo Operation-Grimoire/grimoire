@@ -41,6 +41,7 @@ fun LibrarySettingsScreen(
     val showReadBadge by viewModel.libraryShowReadBadge.collectAsState()
     val showDownloadedBadge by viewModel.libraryShowDownloadedBadge.collectAsState()
     val showLockedBadge by viewModel.libraryShowLockedBadge.collectAsState()
+    val showEpubBadge by viewModel.libraryShowEpubBadge.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -186,6 +187,19 @@ fun LibrarySettingsScreen(
                         )
                     },
                     modifier = Modifier.clickable { viewModel.setLibraryShowLockedBadge(!showLockedBadge) },
+                )
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text("Show EPUB badge") },
+                    supportingContent = { Text("Flag imported EPUB novels with a badge on library covers") },
+                    trailingContent = {
+                        Switch(
+                            checked = showEpubBadge,
+                            onCheckedChange = { viewModel.setLibraryShowEpubBadge(it) },
+                        )
+                    },
+                    modifier = Modifier.clickable { viewModel.setLibraryShowEpubBadge(!showEpubBadge) },
                 )
             }
         }

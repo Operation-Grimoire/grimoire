@@ -4,7 +4,9 @@ import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.effectiveTotal
+import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
+import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
 
@@ -20,6 +22,8 @@ internal data class LibraryFilterInputs(
     val filterDownloadedOnly: Boolean,
     val filterNotifyEnabled: Boolean,
     val filterAutoDownloadEnabled: Boolean,
+    val filterType: NovelTypeFilter,
+    val epubSourceIds: Set<Long>,
     val filterSourceIds: Set<Long>,
     val isUnlocked: Boolean,
     val hiddenCategoryIds: Set<Long>,
@@ -138,6 +142,11 @@ internal fun computeTabNovels(
             (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
             (!filterNotifyEnabled || novel.notifyOnNewChapters || novel.notifyOnNewLockedChapters) &&
             (!filterAutoDownloadEnabled || novel.autoDownloadNewChapters) &&
+            (when (filterType) {
+                NovelTypeFilter.ALL -> true
+                NovelTypeFilter.EPUB -> novel.isEpubType(epubSourceIds)
+                NovelTypeFilter.WEB -> !novel.isEpubType(epubSourceIds)
+            }) &&
             (filterSourceIds.isEmpty() || novel.sourceId in filterSourceIds) &&
             (trimmedQuery.isEmpty() ||
                 novel.effectiveTitle.contains(trimmedQuery, ignoreCase = true) ||
@@ -145,3 +154,12 @@ internal fun computeTabNovels(
         }
         .sortedWith(comparator)
 }
+
+/**
+ * True when this novel is EPUB-typed: a local file import ([LOCAL_SOURCE_ID]) or a
+ * novel from an installed EPUB-source extension (its id is in [epubSourceIds], which
+ * the ViewModel derives from the loaded extensions). Used by the EPUB badge and the
+ * Type filter so both kinds of EPUB read the same way.
+ */
+internal fun NovelEntity.isEpubType(epubSourceIds: Set<Long>): Boolean =
+    sourceId == LOCAL_SOURCE_ID || sourceId in epubSourceIds
