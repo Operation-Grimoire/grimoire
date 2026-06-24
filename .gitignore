@@ -16,3 +16,6 @@ local.properties
 .playwright-mcp/
 .claude/
 .idea/
+
+# local screenshot scratch
+nd.png
