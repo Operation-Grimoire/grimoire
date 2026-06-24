@@ -4,6 +4,11 @@ import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.layout.Arrangement
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,10 +27,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -104,85 +112,130 @@ fun SourceBrowseScreen(
 
     val filters by viewModel.filters.collectAsState()
     val filterLoadState by viewModel.filterLoadState.collectAsState()
+    val activeFilters by viewModel.activeFilters.collectAsState()
+
+    // Closing the bar only hides it; the applied state (mode / filters) is untouched.
+    // Drop a pending, unsubmitted query so reopening doesn't show stale text.
+    val closeSearch = {
+        searchActive = false
+        if (mode != BrowseMode.SEARCH) viewModel.setQuery("")
+    }
 
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    PlainTooltipIconButton(onClick = {
-                        if (searchActive) {
-                            searchActive = false
-                            viewModel.setQuery("")
-                            if (mode == BrowseMode.SEARCH) viewModel.setMode(BrowseMode.POPULAR)
-                        } else {
-                            onNavigateBack()
+            Box {
+                TopAppBar(
+                    navigationIcon = {
+                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
+                            Icon(AppIcons.ArrowBack, contentDescription = "Back")
                         }
-                    }, tooltip = if (searchActive) "Close search" else "Back") {
-                        Icon(
-                            if (searchActive) AppIcons.Close else AppIcons.ArrowBack,
-                            contentDescription = if (searchActive) "Close search" else "Back",
-                        )
-                    }
-                },
-                title = {
-                    if (searchActive) {
-                        AppSearchField(
-                            value = query,
-                            onValueChange = viewModel::setQuery,
-                            placeholder = "Search ${viewModel.sourceName}…",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .focusRequester(focusRequester),
-                            onSearch = { viewModel.submitSearch() },
-                        )
-                    } else {
+                    },
+                    title = {
                         Text(viewModel.sourceName, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                },
-                actions = {
-                    if (!searchActive) {
+                    },
+                    actions = {
                         PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.sourceBaseUrl) }, tooltip = "Open in WebView") {
                             Icon(AppIcons.Language, contentDescription = "Open in WebView")
-                        }
-                        PlainTooltipIconButton(onClick = { searchActive = true }, tooltip = "Search") {
-                            Icon(AppIcons.Search, contentDescription = "Search")
                         }
                         if (viewModel.isConfigurable) {
                             PlainTooltipIconButton(onClick = onOpenSourceSettings, tooltip = "Source settings") {
                                 Icon(AppIcons.Settings, contentDescription = "Source settings")
                             }
                         }
-                    }
-                    if (filterLoadState != FilterLoadState.None) {
-                        PlainTooltipIconButton(onClick = { showFilters = true }, tooltip = "Filters") {
-                            Icon(AppIcons.FilterList, contentDescription = "Filters")
-                        }
-                    }
-                },
-            )
-        },
-    ) { padding ->
-        Column(Modifier.padding(padding)) {
-            if (!searchActive) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    },
+                )
+                // A second search toolbar slides in over the main one when Search is tapped.
+                AnimatedVisibility(
+                    visible = searchActive,
+                    enter = slideInVertically { -it } + fadeIn(),
+                    exit = slideOutVertically { -it } + fadeOut(),
                 ) {
-                    FilterChip(
-                        selected = mode == BrowseMode.POPULAR,
-                        onClick = { viewModel.setMode(BrowseMode.POPULAR) },
-                        label = { Text("Popular") },
-                    )
-                    FilterChip(
-                        selected = mode == BrowseMode.LATEST,
-                        onClick = { viewModel.setMode(BrowseMode.LATEST) },
-                        label = { Text("Latest") },
+                    TopAppBar(
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        ),
+                        navigationIcon = {
+                            PlainTooltipIconButton(onClick = closeSearch, tooltip = "Close search") {
+                                Icon(AppIcons.ArrowUpward, contentDescription = "Close search")
+                            }
+                        },
+                        title = {
+                            AppSearchField(
+                                value = query,
+                                onValueChange = viewModel::setQuery,
+                                placeholder = "Search ${viewModel.sourceName}…",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(focusRequester),
+                                onSearch = { viewModel.submitSearch() },
+                                showLeadingIcon = false,
+                            )
+                        },
                     )
                 }
             }
+        },
+    ) { padding ->
+        Column(Modifier.padding(padding)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = mode == BrowseMode.POPULAR,
+                    onClick = { searchActive = false; viewModel.setMode(BrowseMode.POPULAR) },
+                    label = { Text("Popular") },
+                    leadingIcon = {
+                        Icon(
+                            AppIcons.Explosion,
+                            contentDescription = null,
+                            modifier = Modifier.size(FilterChipDefaults.IconSize),
+                        )
+                    },
+                )
+                FilterChip(
+                    selected = mode == BrowseMode.LATEST,
+                    onClick = { searchActive = false; viewModel.setMode(BrowseMode.LATEST) },
+                    label = { Text("Latest") },
+                    leadingIcon = {
+                        Icon(
+                            AppIcons.AvgTime,
+                            contentDescription = null,
+                            modifier = Modifier.size(FilterChipDefaults.IconSize),
+                        )
+                    },
+                )
+                FilterChip(
+                    selected = mode == BrowseMode.SEARCH && activeFilters.isEmpty(),
+                    onClick = { if (searchActive) closeSearch() else searchActive = true },
+                    label = { Text("Search") },
+                    leadingIcon = {
+                        Icon(
+                            AppIcons.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(FilterChipDefaults.IconSize),
+                        )
+                    },
+                )
+                if (filterLoadState != FilterLoadState.None) {
+                    FilterChip(
+                        selected = mode == BrowseMode.SEARCH && activeFilters.isNotEmpty(),
+                        onClick = { showFilters = true },
+                        label = { Text("Filters") },
+                        leadingIcon = {
+                            Icon(
+                                AppIcons.FilterList,
+                                contentDescription = null,
+                                modifier = Modifier.size(FilterChipDefaults.IconSize),
+                            )
+                        },
+                    )
+                }
+            }
+            HorizontalDivider()
 
             when {
                 isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -304,6 +357,7 @@ fun SourceBrowseScreen(
                 onLoad = { viewModel.loadFilterOptions() },
                 onApply = { applied, sheetQuery ->
                     viewModel.applyFilters(applied, sheetQuery)
+                    searchActive = false
                     showFilters = false
                 },
                 onDismiss = { showFilters = false },

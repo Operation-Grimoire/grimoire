@@ -191,7 +191,7 @@ internal fun NovelHeader(
                 if (isLocal) {
                     MetaChip(text = "EPUB", icon = AppIcons.Book)
                 } else if (sourceName.isNotBlank()) {
-                    MetaChip(text = sourceName)
+                    MetaChip(text = sourceName, icon = AppIcons.ExtensionFilled)
                     val lang = novel.language?.trim().orEmpty()
                     if (lang.isNotEmpty()) MetaChip(text = lang)
                 }

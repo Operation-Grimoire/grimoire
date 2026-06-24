@@ -186,7 +186,7 @@ fun ExtensionsScreen(
                 TopAppBar(
                     navigationIcon = {
                         PlainTooltipIconButton(onClick = exitSearch, tooltip = "Close search") {
-                            Icon(AppIcons.Close, contentDescription = "Close search")
+                            Icon(AppIcons.ArrowUpward, contentDescription = "Close search")
                         }
                     },
                     title = {

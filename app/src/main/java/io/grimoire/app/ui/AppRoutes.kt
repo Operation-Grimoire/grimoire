@@ -11,10 +11,12 @@ internal enum class TopLevelDestination(
     val activeIcon: ImageVector = icon,
     /** Filled variant shown while the tab is selected. */
     val selectedIcon: ImageVector = icon,
+    /** Filled [activeIcon] shown while the tab is selected and has something to surface. */
+    val activeSelectedIcon: ImageVector = activeIcon,
 ) {
     Library("library", AppIcons.LocalLibrary, "Library", selectedIcon = AppIcons.LocalLibraryFilled),
     Browse("browse", AppIcons.Explore, "Browse", selectedIcon = AppIcons.ExploreFilled),
-    More("more", AppIcons.MoreHoriz, "More", activeIcon = AppIcons.NewReleases),
+    More("more", AppIcons.MoreHoriz, "More", activeIcon = AppIcons.NewReleases, activeSelectedIcon = AppIcons.NewReleasesFilled),
 }
 
 // Subpages nested under a top-level graph that should still hide the bottom navbar.

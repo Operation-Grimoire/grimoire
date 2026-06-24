@@ -292,7 +292,7 @@ fun LibraryScreen(
                         }
                     }, tooltip = if (searchActive) "Close search" else "Search library") {
                         Icon(
-                            if (searchActive) AppIcons.Close else AppIcons.Search,
+                            if (searchActive) AppIcons.ArrowUpward else AppIcons.Search,
                             contentDescription = if (searchActive) "Close search" else "Search library",
                         )
                     }

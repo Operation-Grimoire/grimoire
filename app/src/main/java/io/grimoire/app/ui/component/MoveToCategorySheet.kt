@@ -58,7 +58,7 @@ fun MoveToCategorySheet(
                     headlineContent = { Text(cat.name) },
                     leadingContent = {
                         Icon(
-                            AppIcons.Label,
+                            if (isCurrent) AppIcons.LabelFilled else AppIcons.Label,
                             contentDescription = null,
                             tint = if (isCurrent) {
                                 MaterialTheme.colorScheme.primary
