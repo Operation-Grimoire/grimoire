@@ -9,9 +9,11 @@ internal enum class TopLevelDestination(
     val label: String,
     /** Shown instead of [icon] when the tab has something to surface. */
     val activeIcon: ImageVector = icon,
+    /** Filled variant shown while the tab is selected. */
+    val selectedIcon: ImageVector = icon,
 ) {
-    Library("library", AppIcons.LocalLibrary, "Library"),
-    Browse("browse", AppIcons.Explore, "Browse"),
+    Library("library", AppIcons.LocalLibrary, "Library", selectedIcon = AppIcons.LocalLibraryFilled),
+    Browse("browse", AppIcons.Explore, "Browse", selectedIcon = AppIcons.ExploreFilled),
     More("more", AppIcons.MoreHoriz, "More", activeIcon = AppIcons.NewReleases),
 }
 
