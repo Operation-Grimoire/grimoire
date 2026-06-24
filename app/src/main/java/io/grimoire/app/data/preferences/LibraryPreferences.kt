@@ -15,6 +15,13 @@ enum class SortField { TITLE, LAST_UPDATED, UNREAD, TOTAL, LAST_READ }
 enum class SortDirection { ASC, DESC }
 
 /**
+ * Tri-state library filter for imported-EPUB (local) novels:
+ * [ALL] shows everything, [EPUB_ONLY] keeps only local novels, [NON_EPUB_ONLY]
+ * hides them. A local novel is one whose `sourceId` is the reserved local id.
+ */
+enum class EpubFilter { ALL, EPUB_ONLY, NON_EPUB_ONLY }
+
+/**
  * Translates a legacy `library_sort_order` enum name (e.g. "LAST_READ_DESC") into the
  * new (field, direction) split. Returns null for unrecognized values so reads fall back
  * to the new defaults instead of silently picking the wrong sort.
@@ -72,6 +79,7 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
     val filterDownloadedOnly = store.getBoolean("library_filter_downloaded_only", false)
     val filterNotifyEnabled = store.getBoolean("library_filter_notify_enabled", false)
     val filterAutoDownloadEnabled = store.getBoolean("library_filter_auto_download_enabled", false)
+    val filterEpub = store.getEnum("library_filter_epub", EpubFilter.ALL)
 
     // Status and source filters are multi-select sets. An empty set means "no
     // restriction" (show all), so users can either tap "All" to clear or tap any

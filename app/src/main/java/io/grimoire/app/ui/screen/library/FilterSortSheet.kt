@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.data.preferences.EpubFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
 import io.grimoire.app.ui.component.SwipeTabRow
@@ -34,6 +35,12 @@ internal val STATUS_OPTIONS = listOf(
     3 to "Hiatus",
     4 to "Cancelled",
     0 to "Unknown",
+)
+
+internal val EPUB_FILTER_OPTIONS = listOf(
+    EpubFilter.ALL to "All",
+    EpubFilter.EPUB_ONLY to "EPUB",
+    EpubFilter.NON_EPUB_ONLY to "Non-EPUB",
 )
 
 internal val SORT_FIELD_OPTIONS = listOf(
@@ -53,6 +60,7 @@ internal fun FilterSortContent(
     filterDownloadedOnly: Boolean,
     filterNotifyEnabled: Boolean,
     filterAutoDownloadEnabled: Boolean,
+    filterEpub: EpubFilter,
     filterSourceIds: Set<Long>,
     librarySources: List<Pair<Long, String>>,
     onSortFieldChange: (SortField) -> Unit,
@@ -62,6 +70,7 @@ internal fun FilterSortContent(
     onDownloadedOnlyChange: (Boolean) -> Unit,
     onNotifyEnabledChange: (Boolean) -> Unit,
     onAutoDownloadEnabledChange: (Boolean) -> Unit,
+    onFilterEpubChange: (EpubFilter) -> Unit,
     onToggleFilterSource: (Long?) -> Unit,
 ) {
     SwipeTabRow(
@@ -80,6 +89,7 @@ internal fun FilterSortContent(
                     filterDownloadedOnly = filterDownloadedOnly,
                     filterNotifyEnabled = filterNotifyEnabled,
                     filterAutoDownloadEnabled = filterAutoDownloadEnabled,
+                    filterEpub = filterEpub,
                     filterSourceIds = filterSourceIds,
                     librarySources = librarySources,
                     onToggleFilterStatus = onToggleFilterStatus,
@@ -87,6 +97,7 @@ internal fun FilterSortContent(
                     onDownloadedOnlyChange = onDownloadedOnlyChange,
                     onNotifyEnabledChange = onNotifyEnabledChange,
                     onAutoDownloadEnabledChange = onAutoDownloadEnabledChange,
+                    onFilterEpubChange = onFilterEpubChange,
                     onToggleFilterSource = onToggleFilterSource,
                 )
                 1 -> SortTab(
@@ -109,6 +120,7 @@ private fun FilterTab(
     filterDownloadedOnly: Boolean,
     filterNotifyEnabled: Boolean,
     filterAutoDownloadEnabled: Boolean,
+    filterEpub: EpubFilter,
     filterSourceIds: Set<Long>,
     librarySources: List<Pair<Long, String>>,
     onToggleFilterStatus: (Int?) -> Unit,
@@ -116,6 +128,7 @@ private fun FilterTab(
     onDownloadedOnlyChange: (Boolean) -> Unit,
     onNotifyEnabledChange: (Boolean) -> Unit,
     onAutoDownloadEnabledChange: (Boolean) -> Unit,
+    onFilterEpubChange: (EpubFilter) -> Unit,
     onToggleFilterSource: (Long?) -> Unit,
 ) {
     Column {
@@ -178,6 +191,27 @@ private fun FilterTab(
                         label = { Text(label) },
                     )
                 }
+            }
+        }
+        Text(
+            "Format",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+        )
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            EPUB_FILTER_OPTIONS.forEach { (option, label) ->
+                FilterChip(
+                    selected = filterEpub == option,
+                    onClick = { onFilterEpubChange(option) },
+                    label = { Text(label) },
+                )
             }
         }
         HorizontalDivider(Modifier.padding(vertical = 8.dp))

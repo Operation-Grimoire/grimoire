@@ -4,7 +4,9 @@ import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.effectiveTotal
+import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
+import io.grimoire.app.data.preferences.EpubFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
 
@@ -20,6 +22,7 @@ internal data class LibraryFilterInputs(
     val filterDownloadedOnly: Boolean,
     val filterNotifyEnabled: Boolean,
     val filterAutoDownloadEnabled: Boolean,
+    val filterEpub: EpubFilter,
     val filterSourceIds: Set<Long>,
     val isUnlocked: Boolean,
     val hiddenCategoryIds: Set<Long>,
@@ -138,6 +141,11 @@ internal fun computeTabNovels(
             (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
             (!filterNotifyEnabled || novel.notifyOnNewChapters || novel.notifyOnNewLockedChapters) &&
             (!filterAutoDownloadEnabled || novel.autoDownloadNewChapters) &&
+            (when (filterEpub) {
+                EpubFilter.ALL -> true
+                EpubFilter.EPUB_ONLY -> novel.sourceId == LOCAL_SOURCE_ID
+                EpubFilter.NON_EPUB_ONLY -> novel.sourceId != LOCAL_SOURCE_ID
+            }) &&
             (filterSourceIds.isEmpty() || novel.sourceId in filterSourceIds) &&
             (trimmedQuery.isEmpty() ||
                 novel.effectiveTitle.contains(trimmedQuery, ignoreCase = true) ||
