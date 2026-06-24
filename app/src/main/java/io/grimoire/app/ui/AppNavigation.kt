@@ -258,7 +258,11 @@ fun AppNavigation(
                                 // updates log has entries to surface.
                                 val hasUpdates = dest == TopLevelDestination.More &&
                                     subscribedUpdateCount > 0
-                                val tabIcon = if (hasUpdates) dest.activeIcon else dest.icon
+                                val tabIcon = when {
+                                    hasUpdates -> dest.activeIcon
+                                    isSelected -> dest.selectedIcon
+                                    else -> dest.icon
+                                }
                                 when {
                                     updateBadge -> BadgedBox(
                                         badge = { Badge { Text("$extensionUpdateCount") } },
