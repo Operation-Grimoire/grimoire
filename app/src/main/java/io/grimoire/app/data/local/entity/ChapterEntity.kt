@@ -4,7 +4,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import io.grimoire.api.model.NovelPage
+import io.grimoire.api.model.novel.NovelPage
+import io.grimoire.api.model.novel.PageContent
 
 /**
  * Boundary written between pages when [ChapterEntity.downloadedContent] is persisted, so the
@@ -37,11 +38,11 @@ val CHAPTER_FORMATTED_MARKER: String = 28.toChar().toString()
 /** Serialises chapter [pages] into the single string stored in [ChapterEntity.downloadedContent]. */
 fun encodeChapterContent(pages: List<NovelPage>): String =
     pages.joinToString(CHAPTER_PAGE_SEPARATOR) { page ->
-        when {
-            page.isSeparator -> CHAPTER_SEPARATOR_MARKER
-            page.imageUrl != null -> CHAPTER_IMAGE_MARKER + page.imageUrl
-            page.formattedText != null -> page.text + CHAPTER_FORMATTED_MARKER + page.formattedText
-            else -> page.text
+        when (val c = page.content) {
+            is PageContent.Separator -> CHAPTER_SEPARATOR_MARKER
+            is PageContent.Image -> CHAPTER_IMAGE_MARKER + c.url
+            is PageContent.Text ->
+                if (c.html != null) c.text + CHAPTER_FORMATTED_MARKER + c.html else c.text
         }
     }
 
@@ -50,14 +51,14 @@ fun decodeChapterContent(content: String): List<NovelPage> =
     content.split(CHAPTER_PAGE_SEPARATOR).mapIndexed { index, token ->
         when {
             token == CHAPTER_SEPARATOR_MARKER ->
-                NovelPage(index = index, text = "", isSeparator = true)
+                NovelPage(index, PageContent.Separator())
             token.startsWith(CHAPTER_IMAGE_MARKER) ->
-                NovelPage(index = index, text = "", imageUrl = token.removePrefix(CHAPTER_IMAGE_MARKER))
+                NovelPage(index, PageContent.Image(token.removePrefix(CHAPTER_IMAGE_MARKER)))
             token.contains(CHAPTER_FORMATTED_MARKER) -> {
                 val parts = token.split(CHAPTER_FORMATTED_MARKER, limit = 2)
-                NovelPage(index = index, text = parts[0], formattedText = parts[1])
+                NovelPage(index, PageContent.Text(parts[0], parts[1]))
             }
-            else -> NovelPage(index = index, text = token)
+            else -> NovelPage(index, PageContent.Text(token))
         }
     }
 

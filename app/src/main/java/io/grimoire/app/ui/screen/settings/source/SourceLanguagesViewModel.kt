@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.grimoire.api.source.MultiLanguageSource
+import io.grimoire.api.source.feature.MultiLanguageSource
 import io.grimoire.app.data.preferences.AppLanguagePreferences
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
 import io.grimoire.app.extension.ExtensionManager
@@ -45,18 +45,10 @@ class SourceLanguagesViewModel @Inject constructor(
      * Languages this source advertises, restricted to the common app list.
      * If the source advertises none (or isn't multi-language but `lang == "all"`),
      * fall back to the full common list so the user still has something to pick.
+     * Loaded asynchronously since `availableLanguages()` may scrape the site.
      */
-    val available: List<String> = run {
-        val ml = loaded?.source as? MultiLanguageSource
-        val advertised = ml?.availableLanguages().orEmpty()
-        if (advertised.isEmpty()) {
-            ContentLanguages.ALL
-        } else {
-            val advertisedKeys = advertised.mapTo(mutableSetOf()) { ContentLanguages.normalize(it) }
-            ContentLanguages.ALL.filter { ContentLanguages.normalize(it) in advertisedKeys }
-                .ifEmpty { advertised }
-        }
-    }
+    private val _available = MutableStateFlow(ContentLanguages.ALL)
+    val available: StateFlow<List<String>> = _available.asStateFlow()
 
     private val _override = MutableStateFlow(false)
     val override: StateFlow<Boolean> = _override.asStateFlow()
@@ -71,6 +63,17 @@ class SourceLanguagesViewModel @Inject constructor(
     val saved: StateFlow<Boolean> = _saved.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            val advertised = runCatching {
+                (loaded?.source as? MultiLanguageSource)?.availableLanguages().orEmpty()
+            }.getOrDefault(emptyList()).let { ContentLanguages.displayNames(it) }
+            _available.value = if (advertised.isEmpty()) {
+                ContentLanguages.ALL
+            } else {
+                val keys = advertised.mapTo(mutableSetOf()) { ContentLanguages.normalize(it) }
+                ContentLanguages.ALL.filter { ContentLanguages.normalize(it) in keys }.ifEmpty { advertised }
+            }
+        }
         viewModelScope.launch {
             _override.value = sourceSettings.contentLanguagesOverride(pkg).changes().first()
             _enabled.value = sourceSettings.contentLanguages(pkg).changes().first()

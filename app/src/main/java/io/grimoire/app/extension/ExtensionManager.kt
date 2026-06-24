@@ -7,10 +7,13 @@ import android.os.Build
 import android.util.Log
 import androidx.core.content.pm.PackageInfoCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.api.source.ConfigurableSource
-import io.grimoire.api.source.MultiHostSource
-import io.grimoire.api.source.MultiLanguageSource
+import io.grimoire.api.model.pref.PrefValue
+import io.grimoire.api.model.pref.SourcePreference
+import io.grimoire.api.source.feature.ConfigurableSource
+import io.grimoire.api.source.feature.MultiHostSource
+import io.grimoire.api.source.feature.MultiLanguageSource
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
+import io.grimoire.app.util.ContentLanguages
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -82,11 +85,21 @@ class ExtensionManager @Inject constructor(
     private suspend fun applyPreferences(loaded: LoadedExtension) {
         val pkg = loaded.info.packageName
         (loaded.source as? ConfigurableSource)?.let { configurable ->
-            val keys = configurable.getPreferences().map { it.key }
-            configurable.setPreferences(sourceSettings.snapshot(pkg, keys))
+            val prefs = configurable.getPreferences()
+            val stored = sourceSettings.snapshot(pkg, prefs.map { it.key })
+            // Type each stored string per its declaration (absent keys → default).
+            val typed = prefs.mapNotNull { pref ->
+                val raw = stored[pref.key] ?: return@mapNotNull null
+                pref.key to when (pref) {
+                    is SourcePreference.Switch -> PrefValue.Bool(raw.toBooleanStrictOrNull() ?: pref.default)
+                    is SourcePreference.EditText ->
+                        if (pref.isPassword) PrefValue.Sensitive(raw) else PrefValue.Str(raw)
+                }
+            }.toMap()
+            configurable.setPreferences(typed)
         }
         (loaded.source as? MultiLanguageSource)?.setEnabledLanguages(
-            sourceSettings.effectiveLanguages(pkg),
+            ContentLanguages.toLanguages(sourceSettings.effectiveLanguages(pkg)),
         )
         (loaded.source as? MultiHostSource)?.setActiveHost(sourceSettings.activeHostNow(pkg))
     }

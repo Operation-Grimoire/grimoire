@@ -39,8 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import io.grimoire.api.model.Novel
-import io.grimoire.api.model.NovelStatus
+import io.grimoire.api.model.novel.Novel
+import io.grimoire.api.model.novel.NovelStatus
 import io.grimoire.app.ui.component.displayName
 import sh.calvin.reorderable.ReorderableColumn
 

@@ -28,7 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import io.grimoire.api.model.Filter
+import io.grimoire.api.model.filter.Filter
 
 /**
  * A searchable picker for the children of a [Filter.Group]. Each row's

@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.api.model.NovelPage
+import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.app.data.local.entity.ChapterEntity
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject

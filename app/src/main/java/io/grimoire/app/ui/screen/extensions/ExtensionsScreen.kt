@@ -53,6 +53,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -64,10 +65,10 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import io.grimoire.api.source.ConfigurableSource
-import io.grimoire.api.source.MultiHostSource
-import io.grimoire.api.source.MultiLanguageSource
-import io.grimoire.api.source.WebViewLoginSource
+import io.grimoire.api.source.feature.ConfigurableSource
+import io.grimoire.api.source.feature.MultiHostSource
+import io.grimoire.api.source.feature.MultiLanguageSource
+import io.grimoire.api.source.feature.WebViewLoginSource
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.PendingAddRepo
@@ -75,6 +76,7 @@ import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.LanguageFilterChips
 import io.grimoire.app.ui.component.LinkText
 import io.grimoire.app.ui.component.SourceListItem
+import io.grimoire.app.util.ContentLanguages
 import io.grimoire.app.util.languageLabel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -623,7 +625,8 @@ private fun ExtensionRow(
     val isInstalled = item is ExtensionItem.Installed || item is ExtensionItem.InstalledOnly
     val hasUpdate = item is ExtensionItem.Installed && item.hasUpdate
     val hasSettings = item.hasSettings()
-    val languages = item.multiLanguageOptions()
+    // availableLanguages() is suspend (a source may scrape its language menu).
+    val languages by produceState<List<String>?>(null, item) { value = item.multiLanguageOptions() }
     SourceListItem(
         name = item.name,
         lang = item.lang,
@@ -636,9 +639,10 @@ private fun ExtensionRow(
         supporting = {
             Column {
                 Text("${languageLabel(item.lang)} · v${item.versionName}")
-                if (!languages.isNullOrEmpty()) {
+                val langs = languages
+                if (!langs.isNullOrEmpty()) {
                     Text(
-                        multiLanguageSummary(languages),
+                        multiLanguageSummary(langs),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -803,10 +807,14 @@ private fun AuthRequiredBanner(
     }
 }
 
-private fun ExtensionItem.multiLanguageOptions(): List<String>? = when (this) {
-    is ExtensionItem.Installed -> (loaded.source as? MultiLanguageSource)?.availableLanguages()
-    is ExtensionItem.InstalledOnly -> (loaded.source as? MultiLanguageSource)?.availableLanguages()
-    is ExtensionItem.Available -> null
+private suspend fun ExtensionItem.multiLanguageOptions(): List<String>? {
+    val source = when (this) {
+        is ExtensionItem.Installed -> loaded.source
+        is ExtensionItem.InstalledOnly -> loaded.source
+        is ExtensionItem.Available -> null
+    }
+    return (source as? MultiLanguageSource)?.availableLanguages()
+        ?.let { ContentLanguages.displayNames(it) }
 }
 
 /**

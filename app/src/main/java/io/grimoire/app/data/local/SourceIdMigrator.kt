@@ -35,9 +35,9 @@ class SourceIdMigrator @Inject constructor(
         extensionManager.awaitReady()
         val loaded = extensionManager.extensions.value
 
-        // The declared id is the bridge from old DB rows to their extension.
-        @Suppress("DEPRECATION")
-        val ownersByLegacyId: Map<Long, List<LoadedExtension>> = loaded.groupBy { it.source.id }
+        // The legacy declared `Source.id` was removed from the API; old DB rows
+        // are now bridged to their extension purely by URL host (see ownerFor).
+        val ownersByLegacyId: Map<Long, List<LoadedExtension>> = emptyMap()
 
         var remapped = 0
         var unresolved = 0

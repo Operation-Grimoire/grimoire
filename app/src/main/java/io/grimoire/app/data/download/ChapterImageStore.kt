@@ -3,8 +3,9 @@ package io.grimoire.app.data.download
 import android.content.Context
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.api.model.NovelPage
+import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.network.defaultOkHttpClient
+import io.grimoire.app.util.imageUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Request

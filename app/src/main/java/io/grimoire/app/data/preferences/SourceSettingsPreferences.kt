@@ -6,7 +6,7 @@ import javax.inject.Singleton
 
 /**
  * Persists per-source settings (e.g. login credentials, a mirror domain) for
- * [io.grimoire.api.source.ConfigurableSource] extensions. Values are stored as
+ * [io.grimoire.api.source.feature.ConfigurableSource] extensions. Values are stored as
  * strings keyed by `source.<packageName>.<prefKey>` and pushed back into the
  * source instance via [io.grimoire.app.extension.ExtensionManager].
  */
@@ -19,7 +19,7 @@ class SourceSettingsPreferences @Inject constructor(
         store.getString("source.$pkg.$key", default)
 
     /**
-     * Pinned mirror host for a [io.grimoire.api.source.MultiHostSource], as a
+     * Pinned mirror host for a [io.grimoire.api.source.feature.MultiHostSource], as a
      * scheme-qualified origin. Empty means "no override" — the source falls back
      * to its first/default host.
      */

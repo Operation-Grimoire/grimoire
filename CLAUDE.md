@@ -12,7 +12,7 @@ If something here drifts from the code, **trust the code and update this file**.
 - **Compose BOM 2026.02.01**, Material 3
 - **minSdk 26**, **targetSdk 36** (compileSdk API 36.1), Java 11 / jvmTarget 11
 - Hilt 2.59.2, Room 2.7.1, Navigation-Compose 2.8.9, Coil 2.7, OkHttp 4.12, DataStore 1.1, WorkManager 2.10
-- **Icons are Material Symbols (Outlined)**, not `material-icons-extended` (that dependency is removed). Every icon is an `AppIcons.<Name>` extension `val` in `ui/icon/`, generated from Google's render endpoint by `tools/icongen/`. Reference `AppIcons.Search` etc.; never `Icons.Default.*`.
+- **Icons are Material Symbols (Outlined)**, not `material-icons-extended` (that dependency is removed). Every icon is an `AppIcons.<Name>` extension `val` in `ui/icon/`, fetched from Google's Material Symbols render endpoint. Reference `AppIcons.Search` etc.; never `Icons.Default.*`.
 - `androidx.media` 1.7 is the legacy `MediaSessionCompat` — TTS still uses it; do **not** introduce media3 in a single screen without migrating the whole TTS playback service at once
 - `biometric:1.2.0-alpha05` + `security-crypto:1.1.0-beta01` are intentionally alpha/beta; watch for breakage on bumps
 - Release builds run **without R8** (`isMinifyEnabled = false`). Don't enable minify in a one-off PR without adding the Hilt / Room / serialization keep rules
@@ -112,13 +112,13 @@ CI lives in `.github/workflows/release.yml` and builds signed release APKs from 
 - **Don't keep dead composables**. If a `private fun` is never called, delete it as part of whatever PR notices.
 - **Don't enable R8** in a refactor PR without adding the keep rules in the same commit.
 - **Don't bypass the extension API**. App-side code should depend on `io.grimoire:extensions-api` interfaces, not concrete extension classes (the app never loads extension code into its own classloader).
-- **Don't use `Icons.*` or re-add `material-icons-extended`**. Add an icon by fetching its Material Symbol into `ui/icon/AppIcons.<Name>.kt` (mirror an existing file or use `tools/icongen/gen.sh`), then reference `AppIcons.<Name>`.
+- **Don't use `Icons.*` or re-add `material-icons-extended`**. Add an icon by fetching its Material Symbol into `ui/icon/AppIcons.<Name>.kt` (mirror an existing file), then reference `AppIcons.<Name>`.
 
 ## Quick file map
 
 | Looking for | File |
 |-------------|------|
-| Icons (Material Symbols registry) | `ui/icon/AppIcons.<Name>.kt` (one per icon) + `tools/icongen/` generator |
+| Icons (Material Symbols registry) | `ui/icon/AppIcons.<Name>.kt` (one per icon) |
 | Swipeable tabs (any screen/sheet) | `ui/component/SwipeTabRow.kt` |
 | Rich synopsis rendering (HTML + auto-linked URLs) | `ui/component/RichSynopsis.kt` (+ `RichSynopsisTest`), consumed by `ExpandableText.kt`; link toggle via `LocalSynopsisRenderLinks` / `UiPreferences.renderSynopsisLinks` |
 | Top-level navigation | `ui/AppNavigation.kt`, `ui/AppNavGraphs.kt`, `ui/AppRoutes.kt` |

@@ -47,7 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import io.grimoire.api.source.SourcePreference
+import io.grimoire.api.model.pref.SourcePreference
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -14,7 +14,7 @@ import androidx.media.AudioAttributesCompat
 import androidx.media.AudioFocusRequestCompat
 import androidx.media.AudioManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.api.model.NovelPage
+import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity

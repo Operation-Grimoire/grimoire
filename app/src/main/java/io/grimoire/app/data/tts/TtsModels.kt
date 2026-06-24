@@ -19,7 +19,7 @@ data class TtsNowPlaying(
 data class TtsProgress(
     val currentUtteranceIndex: Int = 0,
     val totalUtterances: Int = 0,
-    /** [io.grimoire.api.model.NovelPage.index] of the paragraph being spoken, or -1. */
+    /** [io.grimoire.api.model.novel.NovelPage.index] of the paragraph being spoken, or -1. */
     val currentPageIndex: Int = -1,
 )
 

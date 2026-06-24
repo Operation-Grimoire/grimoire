@@ -56,8 +56,8 @@ import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.NovelQuickViewSheet
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import io.grimoire.api.model.Filter
-import io.grimoire.api.model.Novel
+import io.grimoire.api.model.filter.Filter
+import io.grimoire.api.model.novel.Novel
 import io.grimoire.app.data.preferences.BrowseDisplayMode
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -1,10 +1,10 @@
 package io.grimoire.app.data.source
 
-import io.grimoire.api.model.Chapter
-import io.grimoire.api.model.Novel
-import io.grimoire.api.model.NovelPage
-import io.grimoire.api.source.PaginatedSource
-import io.grimoire.api.source.Source
+import io.grimoire.api.model.lang.Language
+import io.grimoire.api.model.novel.Chapter
+import io.grimoire.api.model.novel.Novel
+import io.grimoire.api.source.web.ChapterListSource
+import io.grimoire.api.source.web.PaginatedSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -17,7 +17,7 @@ class ChapterListFetcherTest {
     @Test
     fun fetchAllChapters_paginatedSource_returnsAllPagesInOrder() = runBlocking {
         val src = FakePaginatedSource(totalNonEmptyPages = 7, perPageDelayMs = 0)
-        val novel = Novel(url = "n", title = "")
+        val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
 
         val result = fetchAllChapters(src, novel, window = 4)
 
@@ -32,7 +32,7 @@ class ChapterListFetcherTest {
     @Test
     fun fetchAllChapters_paginatedSource_dedupesByUrl() = runBlocking {
         val src = FakePaginatedSource(totalNonEmptyPages = 3, perPageDelayMs = 0, duplicateAcross = true)
-        val novel = Novel(url = "n", title = "")
+        val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
 
         val result = fetchAllChapters(src, novel, window = 4)
 
@@ -44,7 +44,7 @@ class ChapterListFetcherTest {
     @Test
     fun fetchAllChapters_paginatedSource_runsPagesInParallel() = runBlocking {
         val src = FakePaginatedSource(totalNonEmptyPages = 8, perPageDelayMs = 100)
-        val novel = Novel(url = "n", title = "")
+        val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
 
         val start = System.currentTimeMillis()
         val result = fetchAllChapters(src, novel, window = 4)
@@ -63,7 +63,7 @@ class ChapterListFetcherTest {
         // pagination broken by a site change) would loop forever and OOM. The
         // maxPages safety net must bound the walk.
         val src = FakePaginatedSource(totalNonEmptyPages = Int.MAX_VALUE, perPageDelayMs = 0)
-        val novel = Novel(url = "n", title = "")
+        val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
 
         val result = fetchAllChapters(src, novel, window = 4, maxPages = 10)
 
@@ -77,7 +77,7 @@ class ChapterListFetcherTest {
         val chapters = listOf(chapter("a"), chapter("b"))
         val src = FakeSimpleSource(chapters)
 
-        val result = fetchAllChapters(src, Novel(url = "n", title = ""))
+        val result = fetchAllChapters(src, Novel(url = "n", title = "", language = Language.UNKNOWN))
 
         assertEquals(chapters, result)
     }
@@ -87,7 +87,7 @@ class ChapterListFetcherTest {
         val src = FakePaginatedSource(totalNonEmptyPages = 5, perPageDelayMs = 0)
         val seen = mutableListOf<Int>()
 
-        fetchAllChapters(src, Novel(url = "n", title = ""), window = 4) { seen += it }
+        fetchAllChapters(src, Novel(url = "n", title = "", language = Language.UNKNOWN), window = 4) { seen += it }
 
         // First window reports page 4 (highest in [1,4]); second window reports page 8.
         assertEquals(listOf(4, 8), seen)
@@ -101,14 +101,11 @@ class ChapterListFetcherTest {
         private val perPageDelayMs: Long,
         private val duplicateAcross: Boolean = false,
     ) : PaginatedSource {
-        override val id: Long = 1L
         override val name: String = "fake"
-        override val lang: String = "en"
+        override val lang: Language = Language.EN
         val calls = AtomicInteger(0)
 
         override suspend fun getNovelDetails(novel: Novel): Novel = novel
-        override suspend fun getChapterList(novel: Novel): List<Chapter> = emptyList()
-        override suspend fun getPageList(chapter: Chapter): List<NovelPage> = emptyList()
 
         override suspend fun getChapterList(novel: Novel, page: Int): List<Chapter> {
             calls.incrementAndGet()
@@ -123,12 +120,10 @@ class ChapterListFetcherTest {
         }
     }
 
-    private class FakeSimpleSource(private val chapters: List<Chapter>) : Source {
-        override val id: Long = 2L
+    private class FakeSimpleSource(private val chapters: List<Chapter>) : ChapterListSource {
         override val name: String = "simple"
-        override val lang: String = "en"
+        override val lang: Language = Language.EN
         override suspend fun getNovelDetails(novel: Novel): Novel = novel
         override suspend fun getChapterList(novel: Novel): List<Chapter> = chapters
-        override suspend fun getPageList(chapter: Chapter): List<NovelPage> = emptyList()
     }
 }

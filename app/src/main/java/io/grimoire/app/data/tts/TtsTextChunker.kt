@@ -1,6 +1,7 @@
 package io.grimoire.app.data.tts
 
-import io.grimoire.api.model.NovelPage
+import io.grimoire.api.model.novel.NovelPage
+import io.grimoire.app.util.text
 import java.text.BreakIterator
 import java.util.Locale
 

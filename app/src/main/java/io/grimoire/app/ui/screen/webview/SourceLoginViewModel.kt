@@ -3,7 +3,7 @@ package io.grimoire.app.ui.screen.webview
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.grimoire.api.source.WebViewLoginSource
+import io.grimoire.api.source.feature.WebViewLoginSource
 import io.grimoire.app.extension.ExtensionManager
 import javax.inject.Inject
 

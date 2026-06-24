@@ -42,7 +42,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import io.grimoire.api.model.Novel
+import io.grimoire.api.model.lang.Language
+import io.grimoire.api.model.novel.Novel
 import io.grimoire.app.ui.component.ImageAction
 import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ZoomableCoverImage
@@ -192,7 +193,8 @@ internal fun NovelHeader(
                     MetaChip(text = "EPUB", icon = AppIcons.Book)
                 } else if (sourceName.isNotBlank()) {
                     MetaChip(text = sourceName, icon = AppIcons.ExtensionFilled)
-                    val lang = novel.language?.trim().orEmpty()
+                    val lang = novel.language
+                        .takeIf { it != Language.UNKNOWN && it != Language.MULTI }?.displayName.orEmpty()
                     if (lang.isNotEmpty()) MetaChip(text = lang)
                 }
             }
