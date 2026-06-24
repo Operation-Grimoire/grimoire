@@ -58,7 +58,6 @@ class LibraryUpdater @Inject constructor(
     private val preferences: LibraryUpdatePreferences,
     private val downloadManager: DownloadManager,
     private val authManager: HiddenCategoriesAuthManager,
-    private val athenaeum: io.grimoire.app.data.athenaeum.AthenaeumContributor,
 ) {
 
     /**
@@ -225,10 +224,6 @@ class LibraryUpdater @Inject constructor(
                 )
             },
         )
-
-        // Contribute the refreshed series + chapters to Athenaeum (opt-in,
-        // fire-and-forget; no-op when the toggle is off or the source isn't HTTP).
-        athenaeum.submit(src, merged, chapterDao.getChaptersInReadingOrder(novel.id))
 
         // Only log new chapters when the novel already had a chapter list, so the
         // first refresh of a never-opened novel does not flood the log. A chapter

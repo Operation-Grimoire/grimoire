@@ -24,12 +24,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun ConnectionsSettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToGitHub: () -> Unit,
-    onNavigateToAthenaeum: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ConnectionsSettingsViewModel = hiltViewModel(),
 ) {
     val github by viewModel.github.collectAsState()
-    val athenaeum by viewModel.athenaeum.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -52,15 +50,6 @@ fun ConnectionsSettingsScreen(
                     statusLabel = github.statusLabel,
                     isConnected = github.isConnected,
                     onClick = onNavigateToGitHub,
-                )
-            }
-            item {
-                ConnectionRow(
-                    icon = AppIcons.CloudUpload,
-                    title = "Athenaeum",
-                    statusLabel = athenaeum.statusLabel,
-                    isConnected = athenaeum.isConnected,
-                    onClick = onNavigateToAthenaeum,
                 )
             }
         }

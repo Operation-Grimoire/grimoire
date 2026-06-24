@@ -41,7 +41,6 @@ import io.grimoire.app.ui.screen.settings.browse.BrowseLanguagesScreen
 import io.grimoire.app.ui.screen.settings.browse.BrowseSettingsScreen
 import io.grimoire.app.ui.screen.settings.connections.ConnectionsSettingsScreen
 import io.grimoire.app.ui.screen.settings.data.DataSettingsScreen
-import io.grimoire.app.ui.screen.settings.athenaeum.AthenaeumAuthScreen
 import io.grimoire.app.ui.screen.settings.github.GitHubAuthScreen
 import io.grimoire.app.ui.screen.settings.hidden.HiddenCategoriesSettingsScreen
 import io.grimoire.app.ui.screen.settings.languages.LanguagesSettingsScreen
@@ -306,14 +305,10 @@ internal fun NavGraphBuilder.settingsGraph(navController: NavHostController) {
             ConnectionsSettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToGitHub = { navController.navigate(ROUTE_SETTINGS_GITHUB) },
-                onNavigateToAthenaeum = { navController.navigate(ROUTE_SETTINGS_ATHENAEUM) },
             )
         }
         composable(route = ROUTE_SETTINGS_GITHUB) {
             GitHubAuthScreen(onNavigateBack = { navController.popBackStack() })
-        }
-        composable(route = ROUTE_SETTINGS_ATHENAEUM) {
-            AthenaeumAuthScreen(onNavigateBack = { navController.popBackStack() })
         }
         composable(route = ROUTE_SETTINGS_APPEARANCE) { entry ->
             val graphEntry = remember(entry) { navController.getBackStackEntry(SETTINGS_GRAPH_ROUTE) }
