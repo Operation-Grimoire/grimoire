@@ -72,16 +72,24 @@ class LibraryUpdater @Inject constructor(
         onProgress: suspend (done: Int, total: Int, title: String) -> Unit = { _, _, _ -> },
         onNovelComplete: suspend (novel: NovelEntity, newReadable: Int, newLocked: Int) -> Unit = { _, _, _ -> },
     ): UpdateSummary {
-        val targets = resolveTargets(categoryId)
-        val total = targets.size
         // Background runs can wake the process before ExtensionManager's eager
         // scan completes; without this every novel would be flagged "Source not
-        // installed".
+        // installed". Awaited before resolving targets so the EPUB-source check
+        // below can read each novel's loaded source type.
         extensionManager.awaitReady()
         // Hoisted out of the per-novel loop: the extension list doesn't change
         // mid-sync, so reading it once avoids repeating the lookup N times.
         // Auto-download is now a per-novel flag, read off each NovelEntity below.
         val extensions = extensionManager.extensions.value
+        // EPUB-typed novels (local file imports + EPUB-source extensions like
+        // Z-Library / libgen) have no scraped chapter list to refresh, so they're
+        // dropped from the run by default — they'd only no-op or warn. The user can
+        // opt them back in.
+        val includeEpubs = preferences.includeEpubsInSync.changes().first()
+        val targets = resolveTargets(categoryId).let { list ->
+            if (includeEpubs) list else list.filterNot { isEpubNovel(it, extensions) }
+        }
+        val total = targets.size
         val n = preferences.concurrency.changes().first().coerceIn(1, MAX_CONCURRENCY)
         // Snapshot hidden categories once per run; per-call read of authManager.isUnlocked.value
         // lets a mid-sync unlock/lock toggle take effect on subsequent progress emissions.
@@ -125,7 +133,20 @@ class LibraryUpdater @Inject constructor(
         return UpdateSummary(total, newChapters.get(), warnings.get(), errors.get())
     }
 
+    /**
+     * True when [novel]'s content is EPUB-based — either a local file import or an
+     * [EpubSource]-backed extension (e.g. Z-Library, libgen). Such novels have no
+     * scraped chapter list, so a sync run can't fetch anything new for them. An
+     * uninstalled source can't be classified and is treated as non-EPUB.
+     */
+    private fun isEpubNovel(novel: NovelEntity, extensions: List<LoadedExtension>): Boolean =
+        novel.sourceId == LOCAL_SOURCE_ID ||
+            extensions.firstOrNull { it.id == novel.sourceId }?.source is EpubSource
+
     private suspend fun resolveTargets(categoryId: Long?): List<NovelEntity> {
+        // Local file imports (LOCAL_SOURCE_ID) have no backing source at all, so
+        // they can never be synced and are dropped here regardless of the
+        // include-EPUBs preference; that toggle only governs EPUB-source extensions.
         val favorites = novelDao.getAll()
             .filter { it.favorite && it.sourceId != LOCAL_SOURCE_ID }
         if (categoryId == null) return favorites

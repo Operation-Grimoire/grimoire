@@ -50,6 +50,7 @@ fun LibraryUpdateSettingsScreen(
     val onlyOnWifi by viewModel.onlyOnWifi.collectAsState()
     val requiresCharging by viewModel.requiresCharging.collectAsState()
     val concurrency by viewModel.concurrency.collectAsState()
+    val includeEpubsInSync by viewModel.includeEpubsInSync.collectAsState()
     val preferredMinutes by viewModel.preferredTimeOfDayMinutes.collectAsState()
     val lastRunAt by viewModel.lastRunAt.collectAsState()
     val lastRunSuccess by viewModel.lastRunSuccess.collectAsState()
@@ -157,6 +158,25 @@ fun LibraryUpdateSettingsScreen(
                         )
                     },
                     modifier = Modifier.clickable { viewModel.setRequiresCharging(!requiresCharging) },
+                )
+            }
+
+            item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
+            item { SectionHeader("Sync scope") }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("Include EPUBs") },
+                    supportingContent = {
+                        Text("Refresh EPUB novels (local imports and EPUB sources like Z-Library) during library updates. They have no new chapters to fetch, so this is off by default.")
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = includeEpubsInSync,
+                            onCheckedChange = viewModel::setIncludeEpubsInSync,
+                        )
+                    },
+                    modifier = Modifier.clickable { viewModel.setIncludeEpubsInSync(!includeEpubsInSync) },
                 )
             }
 

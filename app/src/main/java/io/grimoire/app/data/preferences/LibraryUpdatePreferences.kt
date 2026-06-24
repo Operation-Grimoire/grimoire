@@ -14,6 +14,13 @@ class LibraryUpdatePreferences @Inject constructor(store: PreferenceStore) {
     val onlyOnWifi = store.getBoolean("library_update_only_on_wifi", false)
     val requiresCharging = store.getBoolean("library_update_requires_charging", false)
     val concurrency = store.getInt("library_update_concurrency", 4)
+    /**
+     * When false (default), EPUB-typed novels are skipped by library sync: local
+     * file imports and EPUB-source extensions (e.g. Z-Library, libgen) have no
+     * scraped chapter list to refresh, so there's nothing to fetch. Enable to pull
+     * them into the run anyway.
+     */
+    val includeEpubsInSync = store.getBoolean("library_update_include_epubs", false)
     /** Preferred minutes-since-midnight for the scheduled run; default 03:00. */
     val preferredTimeOfDayMinutes = store.getInt("library_update_preferred_time_minutes", 180)
     val lastRunAt = store.getString("library_update_last_run_at", "0")
