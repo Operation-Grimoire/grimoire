@@ -4,6 +4,7 @@ import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -12,18 +13,24 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.local.entity.CategoryEntity
+import sh.calvin.reorderable.ReorderableColumn
+import sh.calvin.reorderable.ReorderableItem
 
 @Composable
 internal fun ManageCategoriesSheet(
@@ -57,57 +64,56 @@ internal fun ManageCategoriesSheet(
                 Text("Unlock to manage hidden categories")
             }
         }
-        categories.forEachIndexed { index, cat ->
-            ListItem(
-                headlineContent = { Text(cat.name) },
-                leadingContent = {
-                    Column {
-                        PlainTooltipIconButton(
-                            onClick = { onMove(index, index - 1) },
-                            enabled = index > 0,
-                            modifier = Modifier.size(28.dp), tooltip = "Move up") {
-                            Icon(
-                                AppIcons.KeyboardArrowUp,
-                                contentDescription = "Move up",
-                            )
-                        }
-                        PlainTooltipIconButton(
-                            onClick = { onMove(index, index + 1) },
-                            enabled = index < categories.lastIndex,
-                            modifier = Modifier.size(28.dp), tooltip = "Move down") {
-                            Icon(
-                                AppIcons.KeyboardArrowDown,
-                                contentDescription = "Move down",
-                            )
-                        }
-                    }
-                },
-                trailingContent = {
-                    Row {
-                        if (isUnlocked && !cat.isDefault) {
-                            PlainTooltipIconButton(onClick = { onToggleHidden(cat, !cat.isHidden) }, tooltip = if (cat.isHidden) "Unhide" else "Hide") {
+        ReorderableColumn(
+            list = categories,
+            onSettle = { from, to -> onMove(from, to) },
+            modifier = Modifier.fillMaxWidth(),
+        ) { _, cat, isDragging ->
+            key(cat.id) {
+                ReorderableItem {
+                    Surface(tonalElevation = if (isDragging) 4.dp else 0.dp) {
+                        ListItem(
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            headlineContent = { Text(cat.name) },
+                            leadingContent = {
                                 Icon(
-                                    if (cat.isHidden) AppIcons.VisibilityOff else AppIcons.Visibility,
-                                    contentDescription = if (cat.isHidden) "Unhide" else "Hide",
+                                    AppIcons.DragHandle,
+                                    contentDescription = "Drag to reorder",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .draggableHandle()
+                                        .size(40.dp)
+                                        .padding(8.dp),
                                 )
-                            }
-                        }
-                        PlainTooltipIconButton(onClick = { renamingCategory = cat }, tooltip = "Rename") {
-                            Icon(AppIcons.Edit, contentDescription = "Rename")
-                        }
-                        if (!cat.isDefault) {
-                            PlainTooltipIconButton(onClick = { onDelete(cat) }, tooltip = "Delete") {
-                                Icon(
-                                    AppIcons.Delete,
-                                    contentDescription = "Delete",
-                                    tint = MaterialTheme.colorScheme.error,
-                                )
-                            }
-                        }
+                            },
+                            trailingContent = {
+                                Row {
+                                    if (isUnlocked && !cat.isDefault) {
+                                        PlainTooltipIconButton(onClick = { onToggleHidden(cat, !cat.isHidden) }, tooltip = if (cat.isHidden) "Unhide" else "Hide") {
+                                            Icon(
+                                                if (cat.isHidden) AppIcons.VisibilityOff else AppIcons.Visibility,
+                                                contentDescription = if (cat.isHidden) "Unhide" else "Hide",
+                                            )
+                                        }
+                                    }
+                                    PlainTooltipIconButton(onClick = { renamingCategory = cat }, tooltip = "Rename") {
+                                        Icon(AppIcons.Edit, contentDescription = "Rename")
+                                    }
+                                    if (!cat.isDefault) {
+                                        PlainTooltipIconButton(onClick = { onDelete(cat) }, tooltip = "Delete") {
+                                            Icon(
+                                                AppIcons.Delete,
+                                                contentDescription = "Delete",
+                                                tint = MaterialTheme.colorScheme.error,
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                        )
                     }
-                },
-            )
-            HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+                }
+            }
         }
         TextButton(
             onClick = { showAddDialog = true },
