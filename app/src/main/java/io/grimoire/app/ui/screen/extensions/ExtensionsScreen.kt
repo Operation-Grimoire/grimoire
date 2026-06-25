@@ -101,6 +101,7 @@ fun ExtensionsScreen(
     val rateLimitPrompt by viewModel.rateLimitPrompt.collectAsState()
     val nameFilter by viewModel.nameFilter.collectAsState()
     val languageFilter by viewModel.languageFilter.collectAsState()
+    val adultFilter by viewModel.adultFilter.collectAsState()
     val section by viewModel.section.collectAsState()
 
     val context = LocalContext.current
@@ -146,7 +147,8 @@ fun ExtensionsScreen(
     val searchFocusRequester = remember { FocusRequester() }
     val repoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val filterSheetState = rememberModalBottomSheetState()
-    val filtersActive = section != ExtensionSection.ALL || languageFilter != null
+    val filtersActive = section != ExtensionSection.ALL || languageFilter != null ||
+        adultFilter != AdultFilter.ALL
 
     val exitSearch = {
         searchActive = false
@@ -285,10 +287,19 @@ fun ExtensionsScreen(
                     }
 
                     if (section == ExtensionSection.ALL) {
-                        // "All" splits into labelled Installed / Available groups.
-                        if (ui.installed.isNotEmpty()) {
+                        // "All" surfaces pending updates at the top, then the
+                        // labelled Installed (sans-updates) / Available groups.
+                        if (ui.updates.isNotEmpty()) {
+                            item(key = "__updates_header__") {
+                                ExtensionSectionHeader("Updates (${ui.updates.size})")
+                            }
+                            items(ui.updates, key = { it.packageName }) { extensionRow(it) }
+                        }
+                        val installedNoUpdates = ui.installed
+                            .filterNot { it is ExtensionItem.Installed && it.hasUpdate }
+                        if (installedNoUpdates.isNotEmpty()) {
                             item(key = "__installed_header__") { ExtensionSectionHeader("Installed") }
-                            items(ui.installed, key = { it.packageName }) { extensionRow(it) }
+                            items(installedNoUpdates, key = { it.packageName }) { extensionRow(it) }
                         }
                         if (ui.available.isNotEmpty()) {
                             item(key = "__available_header__") { ExtensionSectionHeader("Available") }
@@ -329,6 +340,12 @@ fun ExtensionsScreen(
                         modifier = Modifier.padding(vertical = 4.dp),
                     )
                 }
+                FilterSheetLabel("Adult content")
+                AdultFilterChips(
+                    selected = adultFilter,
+                    onSelect = viewModel::setAdultFilter,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
             }
         }
     }
@@ -613,6 +630,36 @@ private fun SectionFilterChips(
 }
 
 @Composable
+private fun AdultFilterChips(
+    selected: AdultFilter,
+    onSelect: (AdultFilter) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        FilterChip(
+            selected = selected == AdultFilter.ALL,
+            onClick = { onSelect(AdultFilter.ALL) },
+            label = { Text("All") },
+        )
+        FilterChip(
+            selected = selected == AdultFilter.HIDE,
+            onClick = { onSelect(AdultFilter.HIDE) },
+            label = { Text("Hide 18+") },
+        )
+        FilterChip(
+            selected = selected == AdultFilter.ONLY,
+            onClick = { onSelect(AdultFilter.ONLY) },
+            label = { Text("Only 18+") },
+        )
+    }
+}
+
+@Composable
 private fun ExtensionRow(
     item: ExtensionItem,
     state: InstallState?,
@@ -632,6 +679,7 @@ private fun ExtensionRow(
         lang = item.lang,
         packageName = item.packageName,
         iconUrl = item.iconUrl,
+        adult = item.isAdult,
         onClick = {
             if (isInstalled) { if (hasSettings) onSettings(item.packageName) }
             else if (item is ExtensionItem.Available) onInstall(item)

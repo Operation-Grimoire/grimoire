@@ -34,6 +34,9 @@ sealed class InstallState {
 /** Which extensions section the user is viewing on the Extensions screen. */
 enum class ExtensionSection { ALL, INSTALLED, AVAILABLE, UPDATES }
 
+/** Adult-content (18+) filter on the Extensions screen. */
+enum class AdultFilter { ALL, HIDE, ONLY }
+
 /**
  * Name/language-filtered, partitioned extension lists plus the available
  * language codes (for the chips) and the count of installed extensions with a
@@ -92,11 +95,15 @@ class ExtensionsViewModel @Inject constructor(
     private val _languageFilter = MutableStateFlow<String?>(null)
     val languageFilter: StateFlow<String?> = _languageFilter.asStateFlow()
 
+    private val _adultFilter = MutableStateFlow(AdultFilter.ALL)
+    val adultFilter: StateFlow<AdultFilter> = _adultFilter.asStateFlow()
+
     private val _section = MutableStateFlow(ExtensionSection.ALL)
     val section: StateFlow<ExtensionSection> = _section.asStateFlow()
 
     fun setNameFilter(query: String) { _nameFilter.value = query }
     fun setLanguageFilter(lang: String?) { _languageFilter.value = lang }
+    fun setAdultFilter(value: AdultFilter) { _adultFilter.value = value }
     fun setSection(value: ExtensionSection) { _section.value = value }
 
     @OptIn(FlowPreview::class)
@@ -104,11 +111,17 @@ class ExtensionsViewModel @Inject constructor(
         items,
         _nameFilter.debounce(120L),
         _languageFilter,
-    ) { all, query, langFilter ->
+        _adultFilter,
+    ) { all, query, langFilter, adultFilter ->
         val q = query.trim()
         fun matches(item: ExtensionItem): Boolean =
             (q.isBlank() || item.name.contains(q, ignoreCase = true)) &&
-                (langFilter == null || item.lang.uppercase() == langFilter)
+                (langFilter == null || item.lang.uppercase() == langFilter) &&
+                when (adultFilter) {
+                    AdultFilter.ALL -> true
+                    AdultFilter.HIDE -> !item.isAdult
+                    AdultFilter.ONLY -> item.isAdult
+                }
 
         val languages = all.map { it.lang.uppercase() }.distinct().sorted()
         val updateCount = all.filterIsInstance<ExtensionItem.Installed>().count { it.hasUpdate }
