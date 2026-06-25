@@ -87,7 +87,9 @@ fun SourceBrowseScreen(
 
     // Start in active-search mode when opened with a preset query (deep link),
     // so the query bar is shown instead of the Popular tab.
-    var searchActive by remember { mutableStateOf(viewModel.openedWithSearch) }
+    var searchActive by remember {
+        mutableStateOf(viewModel.openedWithSearch || viewModel.defaultsToSearch)
+    }
     var showFilters by remember { mutableStateOf(false) }
     var quickView by remember { mutableStateOf<Novel?>(null) }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -187,42 +189,51 @@ fun SourceBrowseScreen(
                     .padding(horizontal = 12.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                FilterChip(
-                    selected = mode == BrowseMode.POPULAR,
-                    onClick = { searchActive = false; viewModel.setMode(BrowseMode.POPULAR) },
-                    label = { Text("Popular") },
-                    leadingIcon = {
-                        Icon(
-                            AppIcons.Explosion,
-                            contentDescription = null,
-                            modifier = Modifier.size(FilterChipDefaults.IconSize),
-                        )
-                    },
-                )
-                FilterChip(
-                    selected = mode == BrowseMode.LATEST,
-                    onClick = { searchActive = false; viewModel.setMode(BrowseMode.LATEST) },
-                    label = { Text("Latest") },
-                    leadingIcon = {
-                        Icon(
-                            AppIcons.AvgTime,
-                            contentDescription = null,
-                            modifier = Modifier.size(FilterChipDefaults.IconSize),
-                        )
-                    },
-                )
-                FilterChip(
-                    selected = mode == BrowseMode.SEARCH && activeFilters.isEmpty(),
-                    onClick = { if (searchActive) closeSearch() else searchActive = true },
-                    label = { Text("Search") },
-                    leadingIcon = {
-                        Icon(
-                            AppIcons.Search,
-                            contentDescription = null,
-                            modifier = Modifier.size(FilterChipDefaults.IconSize),
-                        )
-                    },
-                )
+                // Only show a mode chip the source actually supports — a source
+                // that doesn't implement PopularSource / LatestSource / SearchSource
+                // shouldn't offer a tab that returns nothing.
+                if (viewModel.supportsPopular) {
+                    FilterChip(
+                        selected = mode == BrowseMode.POPULAR,
+                        onClick = { searchActive = false; viewModel.setMode(BrowseMode.POPULAR) },
+                        label = { Text("Popular") },
+                        leadingIcon = {
+                            Icon(
+                                AppIcons.Explosion,
+                                contentDescription = null,
+                                modifier = Modifier.size(FilterChipDefaults.IconSize),
+                            )
+                        },
+                    )
+                }
+                if (viewModel.supportsLatest) {
+                    FilterChip(
+                        selected = mode == BrowseMode.LATEST,
+                        onClick = { searchActive = false; viewModel.setMode(BrowseMode.LATEST) },
+                        label = { Text("Latest") },
+                        leadingIcon = {
+                            Icon(
+                                AppIcons.AvgTime,
+                                contentDescription = null,
+                                modifier = Modifier.size(FilterChipDefaults.IconSize),
+                            )
+                        },
+                    )
+                }
+                if (viewModel.supportsSearch) {
+                    FilterChip(
+                        selected = mode == BrowseMode.SEARCH && activeFilters.isEmpty(),
+                        onClick = { if (searchActive) closeSearch() else searchActive = true },
+                        label = { Text("Search") },
+                        leadingIcon = {
+                            Icon(
+                                AppIcons.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(FilterChipDefaults.IconSize),
+                            )
+                        },
+                    )
+                }
                 if (filterLoadState != FilterLoadState.None) {
                     FilterChip(
                         selected = mode == BrowseMode.SEARCH && activeFilters.isNotEmpty(),
@@ -293,6 +304,19 @@ fun SourceBrowseScreen(
                         Spacer(Modifier.height(8.dp))
                         TextButton(onClick = { viewModel.retry() }) { Text("Retry") }
                     }
+                }
+                mode == BrowseMode.SEARCH && query.isBlank() &&
+                    activeFilters.isEmpty() && novels.isEmpty() -> Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "Type to search ${viewModel.sourceName}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 else -> LazyVerticalGrid(
                     columns = if (displayMode == BrowseDisplayMode.GRID) GridCells.Fixed(gridColumns) else GridCells.Fixed(1),
