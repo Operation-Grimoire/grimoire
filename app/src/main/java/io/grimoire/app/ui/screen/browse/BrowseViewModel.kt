@@ -115,11 +115,13 @@ class BrowseViewModel @Inject constructor(
         val languages = sources.map { it.lang.uppercase() }.distinct().sorted()
         val nameMatched =
             if (q.isBlank()) sources else sources.filter { it.name.contains(q, ignoreCase = true) }
-        val pinnedList = nameMatched
-            .filter { it.packageName in pinned }
-            .sortedBy { it.name.lowercase() }
         val langMatched =
             if (langFilter == null) nameMatched else nameMatched.filter { it.lang.uppercase() == langFilter }
+        // Pinned honours the active language filter too — derive it from the
+        // language-matched set, not just the name-matched one.
+        val pinnedList = langMatched
+            .filter { it.packageName in pinned }
+            .sortedBy { it.name.lowercase() }
         // Pinned sources show in the Pinned section; only repeat them under their
         // language group when the user opts into duplicates.
         val langPool = if (duplicate) langMatched else langMatched.filter { it.packageName !in pinned }
