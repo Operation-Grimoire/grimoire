@@ -283,8 +283,25 @@ class SourceBrowseViewModel @Inject constructor(
         else -> BrowseMode.SEARCH
     }
 
+    /** Source offers only Search — the screen opens straight into the input. */
+    val defaultsToSearch: Boolean
+        get() = supportsSearch && !supportsPopular && !supportsLatest
+
     private fun load(reset: Boolean) {
         if (loaded?.source == null) { _error.value = "Source not available"; return }
+        // A blank, unfiltered search has nothing to browse: wait for the user to
+        // type instead of auto-firing an empty query (which some sources answer
+        // with a seeded browse). Clears any prior results and stops loading.
+        if (_mode.value == BrowseMode.SEARCH && _query.value.isBlank() && _activeFilters.value.isEmpty()) {
+            page = 1
+            _novels.value = emptyList()
+            _hasMore.value = false
+            _isLoading.value = false
+            _isLoadingMore.value = false
+            _error.value = null
+            _cloudflareBlocked.value = false
+            return
+        }
         viewModelScope.launch {
             if (reset) {
                 _isLoading.value = true
