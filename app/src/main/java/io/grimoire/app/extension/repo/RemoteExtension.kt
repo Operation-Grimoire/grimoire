@@ -15,6 +15,13 @@ data class RemoteExtension(
     val iconUrl: String? = null,
     val sha256: String? = null,
     /**
+     * Adult-content rating from `@SourceInfo(adultContent = …)`, emitted into
+     * `index.json` by the extensions-ci index generator. One of the
+     * [io.grimoire.api.source.AdultContent] names (`NONE` / `PARTIAL` / `FULL`);
+     * defaults to `NONE` for entries that don't declare it.
+     */
+    val adultContent: String = "NONE",
+    /**
      * NovelUpdates release-group identifiers this source corresponds to, declared
      * via `@SourceInfo(novelUpdatesGroups = …)` and emitted into `index.json` by
      * the extensions-ci index generator. Each entry is a group URL slug or display
