@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,18 +20,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,7 +88,9 @@ fun BrowseScreen(
     var showUninstallConfirm by remember { mutableStateOf(false) }
 
     val listState = viewModel.listState
-    val fabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex < 1 } }
+    var showFilterSheet by remember { mutableStateOf(false) }
+    val filterSheetState = rememberModalBottomSheetState()
+    val filterActive = languageFilter != null || nameFilter.isNotBlank()
 
     // Every visible source package (each source appears once per language group),
     // for the select-all toggle.
@@ -128,16 +135,6 @@ fun BrowseScreen(
                 )
             }
         },
-        floatingActionButton = {
-            if (!selectionMode) {
-                ExtendedFloatingActionButton(
-                    onClick = onNavigateToGlobalSearch,
-                    icon = { Icon(AppIcons.Search, contentDescription = null) },
-                    text = { Text("Search") },
-                    expanded = fabExpanded,
-                )
-            }
-        },
         bottomBar = {
             TooltipBottomBar(visible = selectionMode) {
                 TooltipIconButton(
@@ -166,7 +163,13 @@ fun BrowseScreen(
             }
         },
     ) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding), state = listState) {
+        Box(Modifier.fillMaxSize().padding(padding)) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            state = listState,
+            // Clear the floating toolbar so the last row isn't blocked at the bottom.
+            contentPadding = PaddingValues(bottom = 96.dp),
+        ) {
             if (showNovelUpdates) {
                 item(key = "__nu__") {
                     NovelUpdatesCard(
@@ -174,30 +177,6 @@ fun BrowseScreen(
                         onRankings = onNavigateToNovelUpdatesRankings,
                         onLatest = onNavigateToNovelUpdatesLatest,
                         onBookmarks = onNavigateToNovelUpdatesBookmarks,
-                    )
-                }
-            }
-
-            if (installed.isNotEmpty()) {
-                item(key = "__filter__") {
-                    AppSearchField(
-                        value = nameFilter,
-                        onValueChange = viewModel::setNameFilter,
-                        placeholder = "Filter sources…",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                    )
-                }
-            }
-
-            if (ui.languages.size > 1) {
-                item(key = "__lang_chips__") {
-                    LanguageFilterChips(
-                        languages = ui.languages,
-                        selected = languageFilter,
-                        onSelect = viewModel::setLanguageFilter,
-                        modifier = Modifier.padding(vertical = 4.dp),
                     )
                 }
             }
@@ -251,7 +230,56 @@ fun BrowseScreen(
                     }
                 }
             }
+
+            if (!selectionMode) {
+                BrowseBottomToolbar(
+                    onSearch = onNavigateToGlobalSearch,
+                    onFilter = { showFilterSheet = true },
+                    filterActive = filterActive,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp),
+                )
+            }
         }
+        }
+
+    if (showFilterSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showFilterSheet = false },
+            sheetState = filterSheetState,
+        ) {
+            Column(Modifier.padding(bottom = 24.dp)) {
+                Text(
+                    "Filter sources",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+                AppSearchField(
+                    value = nameFilter,
+                    onValueChange = viewModel::setNameFilter,
+                    placeholder = "Filter sources…",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                )
+                if (ui.languages.size > 1) {
+                    Text(
+                        "Language",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 2.dp),
+                    )
+                    LanguageFilterChips(
+                        languages = ui.languages,
+                        selected = languageFilter,
+                        onSelect = viewModel::setLanguageFilter,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
+            }
+        }
+    }
 
     if (showUninstallConfirm) {
         val count = selected.size
@@ -346,4 +374,46 @@ private fun SectionHeader(text: String) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
     )
+}
+
+/**
+ * Material3-styled floating toolbar pill anchored bottom-centre on Browse: a
+ * Filter button (opens the source filter sheet; tinted when a filter is active)
+ * and a Search button (global search). Replaces the old search FAB and the
+ * inline filter row.
+ */
+@Composable
+private fun BrowseBottomToolbar(
+    onSearch: () -> Unit,
+    onFilter: () -> Unit,
+    filterActive: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shadowElevation = 3.dp,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+            IconButton(onClick = onFilter) {
+                Icon(
+                    AppIcons.FilterList,
+                    contentDescription = "Filter",
+                    tint = if (filterActive) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        LocalContentColor.current
+                    },
+                )
+            }
+            IconButton(onClick = onSearch) {
+                Icon(AppIcons.Search, contentDescription = "Search")
+            }
+        }
+    }
 }
