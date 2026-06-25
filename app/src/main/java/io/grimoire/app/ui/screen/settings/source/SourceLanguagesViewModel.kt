@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.grimoire.api.model.lang.Language
 import io.grimoire.api.source.feature.MultiLanguageSource
 import io.grimoire.app.data.preferences.AppLanguagePreferences
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
@@ -21,7 +22,7 @@ import javax.inject.Inject
  * Drives the per-source content-language picker. Lets the user opt this source
  * out of the global preference (via the override toggle) and pick a different
  * subset for it. The list of languages shown is the intersection of
- * [ContentLanguages.ALL] and the source's `availableLanguages()` — only
+ * [ContentLanguages.SELECTABLE] and the source's `availableLanguages()` — only
  * languages this source actually serves.
  */
 @HiltViewModel
@@ -47,17 +48,17 @@ class SourceLanguagesViewModel @Inject constructor(
      * fall back to the full common list so the user still has something to pick.
      * Loaded asynchronously since `availableLanguages()` may scrape the site.
      */
-    private val _available = MutableStateFlow(ContentLanguages.ALL)
-    val available: StateFlow<List<String>> = _available.asStateFlow()
+    private val _available = MutableStateFlow(ContentLanguages.SELECTABLE)
+    val available: StateFlow<List<Language>> = _available.asStateFlow()
 
     private val _override = MutableStateFlow(false)
     val override: StateFlow<Boolean> = _override.asStateFlow()
 
-    private val _enabled = MutableStateFlow<Set<String>>(emptySet())
-    val enabled: StateFlow<Set<String>> = _enabled.asStateFlow()
+    private val _enabled = MutableStateFlow<Set<Language>>(emptySet())
+    val enabled: StateFlow<Set<Language>> = _enabled.asStateFlow()
 
-    private val _globalSet = MutableStateFlow<Set<String>>(emptySet())
-    val globalSet: StateFlow<Set<String>> = _globalSet.asStateFlow()
+    private val _globalSet = MutableStateFlow<Set<Language>>(emptySet())
+    val globalSet: StateFlow<Set<Language>> = _globalSet.asStateFlow()
 
     private val _saved = MutableStateFlow(false)
     val saved: StateFlow<Boolean> = _saved.asStateFlow()
@@ -66,12 +67,12 @@ class SourceLanguagesViewModel @Inject constructor(
         viewModelScope.launch {
             val advertised = runCatching {
                 (loaded?.source as? MultiLanguageSource)?.availableLanguages().orEmpty()
-            }.getOrDefault(emptyList()).let { ContentLanguages.displayNames(it) }
+            }.getOrDefault(emptyList()).toSet()
             _available.value = if (advertised.isEmpty()) {
-                ContentLanguages.ALL
+                ContentLanguages.SELECTABLE
             } else {
-                val keys = advertised.mapTo(mutableSetOf()) { ContentLanguages.normalize(it) }
-                ContentLanguages.ALL.filter { ContentLanguages.normalize(it) in keys }.ifEmpty { advertised }
+                ContentLanguages.SELECTABLE.filter { it in advertised }
+                    .ifEmpty { advertised.toList() }
             }
         }
         viewModelScope.launch {
@@ -97,16 +98,15 @@ class SourceLanguagesViewModel @Inject constructor(
         _saved.value = false
     }
 
-    fun toggle(name: String) {
+    fun toggle(language: Language) {
         if (!_override.value) return
-        val key = ContentLanguages.normalize(name)
-        _enabled.update { if (key in it) it - key else it + key }
+        _enabled.update { if (language in it) it - language else it + language }
         _saved.value = false
     }
 
     fun save() {
         val overrideOn = _override.value
-        val snapshot = ContentLanguages.normalize(_enabled.value)
+        val snapshot = _enabled.value
         viewModelScope.launch {
             sourceSettings.contentLanguagesOverride(pkg).set(overrideOn)
             if (overrideOn) {

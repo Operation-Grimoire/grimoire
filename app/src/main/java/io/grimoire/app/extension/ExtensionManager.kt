@@ -13,7 +13,6 @@ import io.grimoire.api.source.feature.ConfigurableSource
 import io.grimoire.api.source.feature.MultiHostSource
 import io.grimoire.api.source.feature.MultiLanguageSource
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
-import io.grimoire.app.util.ContentLanguages
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -99,7 +98,7 @@ class ExtensionManager @Inject constructor(
             configurable.setPreferences(typed)
         }
         (loaded.source as? MultiLanguageSource)?.setEnabledLanguages(
-            ContentLanguages.toLanguages(sourceSettings.effectiveLanguages(pkg)),
+            sourceSettings.effectiveLanguages(pkg),
         )
         (loaded.source as? MultiHostSource)?.setActiveHost(sourceSettings.activeHostNow(pkg))
     }

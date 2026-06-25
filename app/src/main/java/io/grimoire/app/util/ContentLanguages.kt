@@ -3,23 +3,23 @@ package io.grimoire.app.util
 import io.grimoire.api.model.lang.Language
 
 /**
- * Built-in list of content languages offered by the per-source "Content
- * languages" filter for multi-language sources (`lang == "all"`).
- *
- * Sources populate [io.grimoire.api.model.novel.Novel.language] with a plain English
- * language name; the filter compares case-insensitively, so the enabled set is
- * stored lowercased. The list is intentionally a broad common set rather than a
- * full ISO table — unknown/other languages still pass when nothing matches.
+ * Bridges the app to the extensions-API [Language] enum, the single source of
+ * truth for content languages. The per-source and global "Content languages"
+ * pickers offer exactly [SELECTABLE] and persist each pick by its stable ISO
+ * [Language.code]; [parse] also accepts the legacy lowercase English names that
+ * earlier builds stored, so existing selections heal to codes on next save.
  */
 object ContentLanguages {
-    val ALL: List<String> = listOf(
-        "English", "Spanish", "Portuguese", "French", "German", "Italian",
-        "Dutch", "Russian", "Ukrainian", "Polish", "Czech", "Romanian",
-        "Greek", "Turkish", "Arabic", "Hebrew", "Hindi", "Bengali",
-        "Chinese", "Japanese", "Korean", "Vietnamese", "Thai", "Indonesian",
-        "Malay", "Filipino", "Swedish", "Norwegian", "Danish", "Finnish",
-        "Hungarian", "Persian", "Urdu",
-    )
+    /** Every real language — all of [Language] except the MULTI / UNKNOWN sentinels. */
+    val SELECTABLE: List<Language> =
+        Language.entries.filter { it != Language.MULTI && it != Language.UNKNOWN }
+
+    /**
+     * Display names of [SELECTABLE], kept for the name-keyed callers that still
+     * map by English name (the TTS voice map). Derived from the enum so the
+     * language set stays in lock-step with the API.
+     */
+    val ALL: List<String> = SELECTABLE.map { it.displayName }
 
     fun normalize(name: String): String = name.trim().lowercase()
 
@@ -28,11 +28,29 @@ object ContentLanguages {
             normalize(n).takeIf { it.isNotEmpty() }
         }
 
-    /** Resolve a stored English language name (any case) to a [Language], or null. */
-    fun fromName(name: String): Language? {
-        val key = normalize(name)
+    /**
+     * Resolve a stored token — an ISO 639-1 [Language.code] or a legacy English
+     * [Language.displayName] (any case) — to a [Language], or null when neither
+     * matches.
+     */
+    fun parse(token: String): Language? {
+        val t = token.trim()
+        if (t.isEmpty()) return null
+        Language.fromCode(t).let { if (it != Language.UNKNOWN) return it }
+        val key = t.lowercase()
         return Language.entries.firstOrNull { it.displayName.lowercase() == key }
     }
+
+    /** Serialize a language selection to a comma-joined list of [Language.code]s. */
+    fun serialize(languages: Set<Language>): String = languages.joinToString(",") { it.code }
+
+    /** Inverse of [serialize]; tolerant of legacy English-name tokens (see [parse]). */
+    fun deserialize(raw: String): Set<Language> =
+        if (raw.isBlank()) emptySet()
+        else raw.split(",").mapNotNullTo(mutableSetOf()) { parse(it) }
+
+    /** Resolve a stored English language name (any case) to a [Language], or null. */
+    fun fromName(name: String): Language? = parse(name)
 
     /** Map stored language names to the [Language] set a MultiLanguageSource expects. */
     fun toLanguages(names: Set<String>): Set<Language> =

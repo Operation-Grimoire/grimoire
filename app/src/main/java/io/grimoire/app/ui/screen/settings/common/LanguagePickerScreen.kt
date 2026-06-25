@@ -33,7 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.grimoire.app.util.ContentLanguages
+import io.grimoire.api.model.lang.Language
 
 /**
  * State holder for the optional "Override global" toggle shown at the top of
@@ -73,8 +73,8 @@ sealed interface LanguageDiff {
  * just declare `availableLanguages()` (data) and the host shows this.
  *
  * @param available languages to render as rows (already in the order to show).
- * @param enabled current selection (compared case-insensitively, lowercase).
- * @param onToggle invoked with the language name when a row is tapped.
+ * @param enabled current selection.
+ * @param onToggle invoked with the language when a row is tapped.
  * @param onSave invoked when the user taps "Save".
  * @param overrideToggle if non-null, an extra toggle is shown above the list.
  *   When the toggle is off, the list rows are disabled.
@@ -86,14 +86,14 @@ sealed interface LanguageDiff {
 @Composable
 fun LanguagePickerScreen(
     title: String,
-    available: List<String>,
-    enabled: Set<String>,
-    onToggle: (String) -> Unit,
+    available: List<Language>,
+    enabled: Set<Language>,
+    onToggle: (Language) -> Unit,
     onSave: () -> Unit,
     saved: Boolean,
     onNavigateBack: () -> Unit,
     overrideToggle: OverrideToggle? = null,
-    globalSet: Set<String>? = null,
+    globalSet: Set<Language>? = null,
     helper: String? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -161,10 +161,9 @@ fun LanguagePickerScreen(
                     contentPadding = PaddingValues(bottom = 96.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    items(available, key = { it }) { lang ->
-                        val key = ContentLanguages.normalize(lang)
-                        val checkedHere = key in enabled
-                        val inGlobal = globalSet?.let { key in it } ?: false
+                    items(available, key = { it.code }) { lang ->
+                        val checkedHere = lang in enabled
+                        val inGlobal = globalSet?.contains(lang) ?: false
                         val diff = when {
                             !showDiff -> LanguageDiff.None
                             checkedHere && inGlobal -> LanguageDiff.MatchesGlobal
@@ -173,7 +172,7 @@ fun LanguagePickerScreen(
                             else -> LanguageDiff.None
                         }
                         LanguageRow(
-                            name = lang,
+                            language = lang,
                             checked = checkedHere,
                             enabled = rowsEnabled,
                             diff = diff,
@@ -198,7 +197,7 @@ fun LanguagePickerScreen(
 
 @Composable
 private fun LanguageRow(
-    name: String,
+    language: Language,
     checked: Boolean,
     enabled: Boolean,
     diff: LanguageDiff,
@@ -211,7 +210,10 @@ private fun LanguageRow(
         MaterialTheme.colorScheme.onSurface
     }
     ListItem(
-        headlineContent = { Text(name, color = headlineColor) },
+        headlineContent = { Text(language.displayName, color = headlineColor) },
+        supportingContent = language.nativeName
+            .takeIf { it != language.displayName }
+            ?.let { native -> { Text(native) } },
         leadingContent = {
             Checkbox(checked = checked, onCheckedChange = null, enabled = enabled)
         },

@@ -3,6 +3,7 @@ package io.grimoire.app.ui.screen.settings.browse
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.grimoire.api.model.lang.Language
 import io.grimoire.app.data.preferences.AppLanguagePreferences
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.util.ContentLanguages
@@ -20,10 +21,10 @@ class BrowseLanguagesViewModel @Inject constructor(
     private val extensionManager: ExtensionManager,
 ) : ViewModel() {
 
-    val available: List<String> = ContentLanguages.ALL
+    val available: List<Language> = ContentLanguages.SELECTABLE
 
-    private val _enabled = MutableStateFlow<Set<String>>(emptySet())
-    val enabled: StateFlow<Set<String>> = _enabled.asStateFlow()
+    private val _enabled = MutableStateFlow<Set<Language>>(emptySet())
+    val enabled: StateFlow<Set<Language>> = _enabled.asStateFlow()
 
     private val _saved = MutableStateFlow(false)
     val saved: StateFlow<Boolean> = _saved.asStateFlow()
@@ -34,14 +35,13 @@ class BrowseLanguagesViewModel @Inject constructor(
         }
     }
 
-    fun toggle(name: String) {
-        val key = ContentLanguages.normalize(name)
-        _enabled.update { if (key in it) it - key else it + key }
+    fun toggle(language: Language) {
+        _enabled.update { if (language in it) it - language else it + language }
         _saved.value = false
     }
 
     fun save() {
-        val snapshot = ContentLanguages.normalize(_enabled.value)
+        val snapshot = _enabled.value
         viewModelScope.launch {
             appLanguages.enabled.set(snapshot)
             extensionManager.reapplyAllPreferences()
