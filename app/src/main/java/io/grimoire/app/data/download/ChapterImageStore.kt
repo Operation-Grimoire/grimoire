@@ -89,10 +89,12 @@ class ChapterImageStore @Inject constructor(
     }
 
     /** A `file://` URI for a saved illustration, or null when it was not downloaded. */
-    fun localImageUri(novelId: Long, chapterUrl: String, index: Int): String? {
-        val file = File(chapterDir(novelId, chapterUrl), index.toString())
-        return if (file.isFile) Uri.fromFile(file).toString() else null
-    }
+    fun localImageUri(novelId: Long, chapterUrl: String, index: Int): String? =
+        localImageFile(novelId, chapterUrl, index)?.let { Uri.fromFile(it).toString() }
+
+    /** The on-disk [File] for a saved illustration, or null when it was not downloaded. */
+    fun localImageFile(novelId: Long, chapterUrl: String, index: Int): File? =
+        File(chapterDir(novelId, chapterUrl), index.toString()).takeIf { it.isFile }
 
     /** Removes the saved illustrations for a single chapter. */
     suspend fun deleteChapter(novelId: Long, chapterUrl: String) {

@@ -29,6 +29,7 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.DownloadManager
+import io.grimoire.app.data.epub.EpubExporter
 import io.grimoire.app.data.epub.EpubImporter
 import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
@@ -77,6 +78,7 @@ class NovelDetailViewModel @Inject constructor(
     private val updateIssueDao: UpdateIssueDao,
     private val downloadManager: DownloadManager,
     private val epubImporter: EpubImporter,
+    private val epubExporter: EpubExporter,
     private val novelUpdatesRepository: NovelUpdatesInfoRepository,
     private val migrator: NovelMigrator,
     private val coverStore: CustomCoverStore,
@@ -779,6 +781,54 @@ class NovelDetailViewModel @Inject constructor(
         }
     }
 
+    /** One-shot result of an [exportEpub] run; the screen shows it as a snackbar then consumes it. */
+    private val _exportEvent = MutableStateFlow<ExportEvent?>(null)
+    val exportEvent: StateFlow<ExportEvent?> = _exportEvent.asStateFlow()
+
+    private val _isExporting = MutableStateFlow(false)
+    val isExporting: StateFlow<Boolean> = _isExporting.asStateFlow()
+
+    /** Suggested file name for the EPUB save dialog: the novel title, filesystem-safe, plus `.epub`. */
+    fun suggestedExportFileName(): String {
+        val base = novel.value.title.ifBlank { "novel" }
+            .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+            .trim()
+            .take(120)
+            .ifBlank { "novel" }
+        return "$base.epub"
+    }
+
+    /** Writes this novel's downloaded chapters out as an EPUB to the user-chosen [dest]. */
+    fun exportEpub(dest: Uri) {
+        val id = _liveNovelId.value
+        if (id <= 0L) {
+            _exportEvent.value = ExportEvent.Error("Save this novel to your library first")
+            return
+        }
+        if (_isExporting.value) return
+        _isExporting.value = true
+        viewModelScope.launch {
+            epubExporter.export(id, dest).fold(
+                onSuccess = { result ->
+                    _exportEvent.value = ExportEvent.Success(
+                        "Exported ${result.chapterCount} " +
+                            (if (result.chapterCount == 1) "chapter" else "chapters"),
+                    )
+                },
+                onFailure = { e ->
+                    _exportEvent.value = ExportEvent.Error(
+                        e.message ?: e::class.simpleName ?: "Export failed",
+                    )
+                },
+            )
+            _isExporting.value = false
+        }
+    }
+
+    fun consumeExportEvent() {
+        _exportEvent.value = null
+    }
+
     fun setSort(sort: ChapterSort) {
         _chapterSort.value = sort
         if (cachedNovelId > 0L) viewModelScope.launch {
@@ -848,6 +898,13 @@ class NovelDetailViewModel @Inject constructor(
             _migrationState.value = MigrationState.Idle
         }
     }
+}
+
+/** Outcome of an EPUB export, surfaced to the screen as a one-shot snackbar message. */
+sealed interface ExportEvent {
+    val message: String
+    data class Success(override val message: String) : ExportEvent
+    data class Error(override val message: String) : ExportEvent
 }
 
 sealed interface BookDownloadState {

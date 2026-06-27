@@ -2,6 +2,8 @@ package io.grimoire.app.ui.screen.browse
 
 import io.grimoire.app.ui.icon.*
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import io.grimoire.app.ui.component.rememberDelayedVisibility
 import androidx.compose.animation.AnimatedVisibility
@@ -49,6 +51,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -166,6 +170,19 @@ fun NovelDetailScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     var showJumpDialog by remember { mutableStateOf(false) }
     var showDownloadsSheet by remember { mutableStateOf(false) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val isExporting by viewModel.isExporting.collectAsState()
+    val exportEvent by viewModel.exportEvent.collectAsState()
+    LaunchedEffect(exportEvent) {
+        exportEvent?.let {
+            snackbarHostState.showSnackbar(it.message)
+            viewModel.consumeExportEvent()
+        }
+    }
+    val epubExportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/epub+zip"),
+    ) { uri -> if (uri != null) viewModel.exportEpub(uri) }
 
     var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
     val selectionMode = selectedIds.isNotEmpty()
@@ -488,6 +505,7 @@ fun NovelDetailScreen(
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             if (continueChapter != null && !viewModel.isMigrationTarget && !selectionMode) {
                 ExtendedFloatingActionButton(
@@ -540,6 +558,12 @@ fun NovelDetailScreen(
                     val canConfigureNewChapters = isFavorite && novelId > 0L &&
                         !viewModel.isLocal && !viewModel.isEpubSource
                     val canOpenSourceSettings = viewModel.hasSourceSettings
+                    // Exporting reads chapter text straight from the local download
+                    // store, so it's offered whenever at least one chapter is saved
+                    // on-device — including books that were themselves imported.
+                    val canExport = novelId > 0L && chapters.any {
+                        it.downloadStatus in ChapterDownloadStatus.HAS_CONTENT_ORDINALS
+                    }
                     if (canConfigureNewChapters) {
                         val notificationsOn = notifyOnNewChapters || notifyOnNewLockedChapters
                         val autoOn = autoDownloadNewChapters
@@ -586,7 +610,7 @@ fun NovelDetailScreen(
                             }
                         }
                     }
-                    if (hasBulkActions || canMigrate || canConfigureNewChapters || canOpenSourceSettings) {
+                    if (hasBulkActions || canMigrate || canConfigureNewChapters || canOpenSourceSettings || canExport) {
                         Box {
                             PlainTooltipIconButton(onClick = { overflowMenuExpanded = true }, tooltip = "More actions") {
                                 Icon(AppIcons.MoreVert, contentDescription = "More actions")
@@ -625,6 +649,18 @@ fun NovelDetailScreen(
                                             onOpenSourceSettings(viewModel.pkg)
                                         },
                                         leadingIcon = { Icon(AppIcons.Tune, contentDescription = null) },
+                                    )
+                                }
+                                if (canExport) {
+                                    if (hasBulkActions || canMigrate || canOpenSourceSettings) HorizontalDivider()
+                                    DropdownMenuItem(
+                                        text = { Text("Export as EPUB") },
+                                        enabled = !isExporting,
+                                        onClick = {
+                                            overflowMenuExpanded = false
+                                            epubExportLauncher.launch(viewModel.suggestedExportFileName())
+                                        },
+                                        leadingIcon = { Icon(AppIcons.SaveAlt, contentDescription = null) },
                                     )
                                 }
                             }
