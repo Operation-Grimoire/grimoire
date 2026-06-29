@@ -267,7 +267,7 @@ fun LibraryUpdatesScreen(
                 )
                 TooltipIconButton(
                     visible = showDeleteDownload,
-                    icon = AppIcons.DeleteSweep,
+                    icon = AppIcons.FileDownloadOff,
                     label = "Delete download",
                     onClick = {
                         viewModel.deleteDownloadEntries(selectedEntryIds)
@@ -275,7 +275,7 @@ fun LibraryUpdatesScreen(
                     },
                 )
                 TooltipIconButton(
-                    icon = AppIcons.Delete,
+                    icon = AppIcons.DeleteHistory,
                     label = "Delete from log",
                     onClick = {
                         viewModel.deleteEntries(selectedEntryIds)
