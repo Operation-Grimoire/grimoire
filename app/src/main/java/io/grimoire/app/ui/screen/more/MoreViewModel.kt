@@ -11,6 +11,7 @@ import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
+import io.grimoire.app.data.preferences.IncognitoManager
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.extension.repo.ExtensionRepository
@@ -31,9 +32,15 @@ class MoreViewModel @Inject constructor(
     private val authManager: HiddenCategoriesAuthManager,
     private val novelDao: NovelDao,
     private val extensionManager: ExtensionManager,
+    private val incognitoManager: IncognitoManager,
 ) : ViewModel() {
 
     private val excludeHidden = authManager.isUnlocked.map { !it }.distinctUntilChanged()
+
+    /** Session-scoped incognito state; while on, no reading/browsing history is recorded. */
+    val incognito: StateFlow<Boolean> = incognitoManager.enabled
+
+    fun toggleIncognito() = incognitoManager.toggle()
 
     val activeDownloadCount = excludeHidden
         .flatMapLatest { chapterDao.getAllDownloads(it) }

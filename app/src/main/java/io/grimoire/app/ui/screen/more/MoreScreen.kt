@@ -9,6 +9,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -23,6 +24,7 @@ fun MoreScreen(
     viewModel: MoreViewModel = hiltViewModel(),
     onNavigateToTasks: () -> Unit,
     onNavigateToUpdates: () -> Unit,
+    onNavigateToHistory: () -> Unit,
     onNavigateToWarnings: () -> Unit,
     onNavigateToDownloads: () -> Unit,
     onNavigateToStatistics: () -> Unit,
@@ -34,6 +36,7 @@ fun MoreScreen(
     val updateCount by viewModel.updateCount.collectAsState()
     val subscribedUpdateCount by viewModel.subscribedUpdateCount.collectAsState()
     val issueCount by viewModel.updateIssueCount.collectAsState()
+    val incognito by viewModel.incognito.collectAsState()
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("More") }) },
@@ -41,12 +44,25 @@ fun MoreScreen(
         androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.padding(padding)) {
             item {
                 ListItem(
-                    headlineContent = { Text("Tasks") },
-                    supportingContent = { Text("Running downloads and syncs, plus their history") },
-                    leadingContent = {
-                        Icon(AppIcons.PendingActions, contentDescription = null)
+                    headlineContent = { Text("Incognito") },
+                    supportingContent = {
+                        Text(
+                            if (incognito) "Not recording history this session"
+                            else "Pause reading & browsing history"
+                        )
                     },
-                    modifier = Modifier.clickable(onClick = onNavigateToTasks),
+                    leadingContent = {
+                        Icon(
+                            AppIcons.VisibilityOff,
+                            contentDescription = null,
+                            tint = if (incognito) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    trailingContent = {
+                        Switch(checked = incognito, onCheckedChange = { viewModel.toggleIncognito() })
+                    },
+                    modifier = Modifier.clickable(onClick = viewModel::toggleIncognito),
                 )
                 HorizontalDivider()
             }
@@ -86,6 +102,40 @@ fun MoreScreen(
                 HorizontalDivider()
             }
             item {
+                ListItem(
+                    headlineContent = { Text("History") },
+                    supportingContent = { Text("Recently read chapters and browsed novels") },
+                    leadingContent = { Icon(AppIcons.History, contentDescription = null) },
+                    modifier = Modifier.clickable(onClick = onNavigateToHistory),
+                )
+                HorizontalDivider()
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text("Downloads") },
+                    supportingContent = {
+                        Text(
+                            if (activeCount > 0) "$activeCount in progress"
+                            else "Downloaded chapters and queue"
+                        )
+                    },
+                    leadingContent = { Icon(AppIcons.Download, contentDescription = null) },
+                    modifier = Modifier.clickable(onClick = onNavigateToDownloads),
+                )
+                HorizontalDivider()
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text("Tasks") },
+                    supportingContent = { Text("Running downloads and syncs, plus their history") },
+                    leadingContent = {
+                        Icon(AppIcons.PendingActions, contentDescription = null)
+                    },
+                    modifier = Modifier.clickable(onClick = onNavigateToTasks),
+                )
+                HorizontalDivider()
+            }
+            item {
                 val hasIssues = issueCount > 0
                 ListItem(
                     headlineContent = { Text("Update warnings") },
@@ -111,20 +161,6 @@ fun MoreScreen(
                         }
                     },
                     modifier = Modifier.clickable(onClick = onNavigateToWarnings),
-                )
-                HorizontalDivider()
-            }
-            item {
-                ListItem(
-                    headlineContent = { Text("Downloads") },
-                    supportingContent = {
-                        Text(
-                            if (activeCount > 0) "$activeCount in progress"
-                            else "Downloaded chapters and queue"
-                        )
-                    },
-                    leadingContent = { Icon(AppIcons.Download, contentDescription = null) },
-                    modifier = Modifier.clickable(onClick = onNavigateToDownloads),
                 )
                 HorizontalDivider()
             }

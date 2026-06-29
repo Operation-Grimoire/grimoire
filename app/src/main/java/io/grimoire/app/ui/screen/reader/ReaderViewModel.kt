@@ -14,7 +14,9 @@ import io.grimoire.app.util.text
 import io.grimoire.app.data.download.ChapterImageStore
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
+import io.grimoire.app.data.local.dao.ReadingHistoryDao
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.local.entity.ReadingHistoryEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
 import io.grimoire.app.data.local.entity.effectiveTotal
 import io.grimoire.api.source.SourceInfo
@@ -54,6 +56,8 @@ class ReaderViewModel @Inject constructor(
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
     private val novelDao: NovelDao,
+    private val readingHistoryDao: ReadingHistoryDao,
+    private val incognitoManager: io.grimoire.app.data.preferences.IncognitoManager,
     private val readerPreferences: ReaderPreferences,
     private val libraryPreferences: LibraryPreferences,
     private val ttsController: TtsController,
@@ -235,6 +239,7 @@ class ReaderViewModel @Inject constructor(
                 return@launch
             }
             novelDao.updateLastReadAt(chapter.novelId, System.currentTimeMillis())
+            recordHistory(chapter)
             // Metadata only — the per-chapter content is read on demand in loadPages
             // (via getByUrl). Pulling every chapter's downloadedContent here made
             // opening a heavily-downloaded novel slow.
@@ -262,6 +267,32 @@ class ReaderViewModel @Inject constructor(
     private fun onChapterChanged(url: String) {
         savedStateHandle["chapterUrl"] = url
         _chapterChanged.tryEmit(url)
+        _chapters.value.firstOrNull { it.url == url }?.let { recordHistory(it) }
+    }
+
+    /**
+     * Logs an opened chapter to the reading history (newest-first), unless incognito is on.
+     * The novel row supplies the denormalized title/cover/url snapshot so the entry renders
+     * even after the chapter is pruned. Best-effort: never blocks or fails chapter loading.
+     */
+    private fun recordHistory(chapter: ChapterEntity) {
+        if (incognitoManager.enabled.value) return
+        viewModelScope.launch {
+            val novel = novelDao.getById(chapter.novelId) ?: return@launch
+            readingHistoryDao.upsert(
+                ReadingHistoryEntity(
+                    sourcePackage = pkg,
+                    novelId = novel.id,
+                    novelUrl = novel.url,
+                    novelTitle = novel.title,
+                    novelThumbnailUrl = novel.thumbnailUrl,
+                    chapterUrl = chapter.url,
+                    chapterName = chapter.name,
+                    chapterNumber = chapter.chapterNumber,
+                    openedAt = System.currentTimeMillis(),
+                )
+            )
+        }
     }
 
     fun loadPages() {
