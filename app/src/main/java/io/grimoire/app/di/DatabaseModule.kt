@@ -11,15 +11,62 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.grimoire.app.data.local.AppDatabase
+import io.grimoire.app.data.local.dao.BrowsingHistoryDao
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.NuBookmarkDao
+import io.grimoire.app.data.local.dao.ReadingHistoryDao
 import io.grimoire.app.data.local.dao.RepoDao
 import io.grimoire.app.data.local.dao.TaskLogDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
 import javax.inject.Singleton
+
+private val MIGRATION_27_28 = object : Migration(27, 28) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Reading + browsing history. No foreign keys — entries are denormalized snapshots
+        // that must outlive chapter/novel pruning and cover non-library novels. The unique
+        // indices back the REPLACE upsert (refresh openedAt on re-open).
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS reading_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                sourcePackage TEXT NOT NULL,
+                novelId INTEGER,
+                novelUrl TEXT NOT NULL,
+                novelTitle TEXT NOT NULL,
+                novelThumbnailUrl TEXT,
+                chapterUrl TEXT NOT NULL,
+                chapterName TEXT NOT NULL,
+                chapterNumber REAL NOT NULL,
+                openedAt INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS index_reading_history_sourcePackage_novelUrl_chapterUrl " +
+                "ON reading_history (sourcePackage, novelUrl, chapterUrl)"
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS browsing_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                sourcePackage TEXT NOT NULL,
+                novelId INTEGER,
+                novelUrl TEXT NOT NULL,
+                novelTitle TEXT NOT NULL,
+                novelThumbnailUrl TEXT,
+                openedAt INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS index_browsing_history_sourcePackage_novelUrl " +
+                "ON browsing_history (sourcePackage, novelUrl)"
+        )
+    }
+}
 
 private val MIGRATION_26_27 = object : Migration(26, 27) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -309,7 +356,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "grimoire.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28)
             .addCallback(SEED_DEFAULT_CATEGORY)
             .build()
 
@@ -321,4 +368,6 @@ object DatabaseModule {
     @Provides fun provideUpdateIssueDao(db: AppDatabase): UpdateIssueDao = db.updateIssueDao()
     @Provides fun provideTaskLogDao(db: AppDatabase): TaskLogDao = db.taskLogDao()
     @Provides fun provideNuBookmarkDao(db: AppDatabase): NuBookmarkDao = db.nuBookmarkDao()
+    @Provides fun provideReadingHistoryDao(db: AppDatabase): ReadingHistoryDao = db.readingHistoryDao()
+    @Provides fun provideBrowsingHistoryDao(db: AppDatabase): BrowsingHistoryDao = db.browsingHistoryDao()
 }

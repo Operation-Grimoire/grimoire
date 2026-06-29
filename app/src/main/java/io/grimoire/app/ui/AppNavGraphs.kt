@@ -53,6 +53,7 @@ import io.grimoire.app.ui.screen.settings.source.SourceSettingsScreen
 import io.grimoire.app.ui.screen.settings.tts.TtsSettingsScreen
 import io.grimoire.app.ui.screen.settings.tts.TtsVoicePickerScreen
 import io.grimoire.app.ui.screen.tasks.TasksScreen
+import io.grimoire.app.ui.screen.history.HistoryScreen
 import io.grimoire.app.ui.screen.updates.LibraryUpdatesScreen
 import io.grimoire.app.ui.screen.updates.UpdateIssuesScreen
 import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
@@ -224,6 +225,7 @@ internal fun NavGraphBuilder.moreDestinations(navController: NavHostController) 
         MoreScreen(
             onNavigateToTasks = { navController.navigate(ROUTE_TASKS) },
             onNavigateToUpdates = { navController.navigate(ROUTE_UPDATES) },
+            onNavigateToHistory = { navController.navigate(ROUTE_HISTORY) },
             onNavigateToWarnings = { navController.navigate(ROUTE_UPDATE_ISSUES) },
             onNavigateToDownloads = { navController.navigate(ROUTE_DOWNLOADS) },
             onNavigateToStatistics = { navController.navigate(ROUTE_STATISTICS) },
@@ -246,6 +248,21 @@ internal fun NavGraphBuilder.moreDestinations(navController: NavHostController) 
     }
     composable(route = ROUTE_UPDATES) {
         LibraryUpdatesScreen(
+            onNavigateBack = { navController.popBackStack() },
+            onOpenReader = { pkg, novelUrl, chapterUrl ->
+                navController.navigate(
+                    "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}"
+                )
+            },
+            onOpenNovel = { pkg, novelUrl ->
+                navController.navigate(
+                    "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novelUrl)}"
+                )
+            },
+        )
+    }
+    composable(route = ROUTE_HISTORY) {
+        HistoryScreen(
             onNavigateBack = { navController.popBackStack() },
             onOpenReader = { pkg, novelUrl, chapterUrl ->
                 navController.navigate(

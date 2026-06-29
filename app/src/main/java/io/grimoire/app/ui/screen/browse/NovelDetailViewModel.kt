@@ -74,6 +74,8 @@ class NovelDetailViewModel @Inject constructor(
     private val extensionManager: ExtensionManager,
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
+    private val browsingHistoryDao: io.grimoire.app.data.local.dao.BrowsingHistoryDao,
+    private val incognitoManager: io.grimoire.app.data.preferences.IncognitoManager,
     private val categoryDao: CategoryDao,
     private val updateIssueDao: UpdateIssueDao,
     private val downloadManager: DownloadManager,
@@ -588,7 +590,10 @@ class NovelDetailViewModel @Inject constructor(
                 val fresh = existing.favorite || age < BROWSE_TTL_MS
                 if (fresh) {
                     // Re-opening a cached novel extends its prune grace window.
-                    if (!existing.favorite) novelDao.touchAccessed(existing.id, System.currentTimeMillis())
+                    if (!existing.favorite) {
+                        novelDao.touchAccessed(existing.id, System.currentTimeMillis())
+                        recordBrowseHistory(existing.id, existing.url, existing.title, existing.thumbnailUrl)
+                    }
                     cachedNovelId = existing.id
                     _liveNovelId.value = existing.id
                     _novel.value = existing.toNovel()
@@ -660,6 +665,9 @@ class NovelDetailViewModel @Inject constructor(
             cachedNovelId = existing?.id ?: upsertId
             _liveNovelId.value = cachedNovelId
             _isFavorite.value = existing?.favorite ?: false
+            if (existing?.favorite != true) {
+                recordBrowseHistory(cachedNovelId, novel.url, novel.title, novel.thumbnailUrl)
+            }
             _notifyOnNewChapters.value = existing?.notifyOnNewChapters ?: false
             _notifyOnNewLockedChapters.value = existing?.notifyOnNewLockedChapters ?: false
             _autoDownloadNewChapters.value = existing?.autoDownloadNewChapters ?: false
@@ -845,6 +853,28 @@ class NovelDetailViewModel @Inject constructor(
             val entity = novelDao.getBySourceUrl(sourceId, novelUrl) ?: return@launch
             val updated = entity.copy(favorite = next)
             novelDao.upsert(updated)
+            // Browsing history is only for non-library novels: drop the row once added.
+            if (next) browsingHistoryDao.deleteByNovel(pkg, novelUrl)
+        }
+    }
+
+    /**
+     * Logs a non-library novel opened in Browse to the browsing history (newest-first),
+     * unless incognito is on. Best-effort and fire-and-forget.
+     */
+    private fun recordBrowseHistory(novelId: Long, url: String, title: String, thumbnailUrl: String?) {
+        if (incognitoManager.enabled.value) return
+        viewModelScope.launch {
+            browsingHistoryDao.upsert(
+                io.grimoire.app.data.local.entity.BrowsingHistoryEntity(
+                    sourcePackage = pkg,
+                    novelId = novelId.takeIf { it > 0L },
+                    novelUrl = url,
+                    novelTitle = title,
+                    novelThumbnailUrl = thumbnailUrl,
+                    openedAt = System.currentTimeMillis(),
+                )
+            )
         }
     }
 

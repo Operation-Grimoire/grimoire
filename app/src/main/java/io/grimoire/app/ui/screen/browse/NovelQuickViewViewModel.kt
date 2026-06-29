@@ -41,6 +41,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
     private val extensionManager: ExtensionManager,
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
+    private val browsingHistoryDao: io.grimoire.app.data.local.dao.BrowsingHistoryDao,
     private val categoryDao: CategoryDao,
     private val downloadManager: DownloadManager,
     private val authManager: HiddenCategoriesAuthManager,
@@ -222,6 +223,8 @@ class NovelQuickViewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val entity = novelDao.getBySourceUrl(canonicalSourceId, novelUrl) ?: return@launch
             novelDao.upsert(entity.copy(favorite = next))
+            // Browsing history is only for non-library novels: drop the row once added.
+            if (next) browsingHistoryDao.deleteByNovel(pkg, novelUrl)
         }
     }
 
@@ -232,6 +235,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val entity = novelDao.getBySourceUrl(canonicalSourceId, novelUrl) ?: return@launch
             novelDao.upsert(entity.copy(categoryId = target, favorite = true))
+            browsingHistoryDao.deleteByNovel(pkg, novelUrl)
         }
     }
 

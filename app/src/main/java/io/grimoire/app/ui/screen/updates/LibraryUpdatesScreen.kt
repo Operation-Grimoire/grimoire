@@ -58,10 +58,10 @@ import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.SwipeTabRow
 import io.grimoire.app.ui.component.SwipeTabStyle
 import io.grimoire.app.ui.component.TooltipIconButton
+import io.grimoire.app.ui.component.dayKey
+import io.grimoire.app.ui.component.dayLabel
+import io.grimoire.app.ui.component.timeLabel
 import io.grimoire.app.ui.theme.premiumGold
-import java.text.DateFormat
-import java.util.Calendar
-import java.util.Date
 
 /** New chapters from one novel found in a single library refresh, identified by [key]. */
 private data class UpdateGroup(
@@ -680,26 +680,3 @@ private fun NovelCover(thumbnailUrl: String?) {
     )
 }
 
-private fun dayKey(timestamp: Long): Long {
-    val cal = Calendar.getInstance().apply {
-        timeInMillis = timestamp
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }
-    return cal.timeInMillis
-}
-
-private fun dayLabel(timestamp: Long): String {
-    val today = dayKey(System.currentTimeMillis())
-    val day = dayKey(timestamp)
-    return when (day) {
-        today -> "Today"
-        today - 24 * 60 * 60 * 1000L -> "Yesterday"
-        else -> DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(timestamp))
-    }
-}
-
-private fun timeLabel(timestamp: Long): String =
-    DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(timestamp))
