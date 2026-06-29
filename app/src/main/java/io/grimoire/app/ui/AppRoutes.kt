@@ -68,6 +68,29 @@ internal const val ROUTE_WEBVIEW = "webview?url={url}"
 
 internal const val POP_MS = 120
 
+/** Incognito banner open/close duration. */
+internal const val BANNER_MS = 220
+
+/**
+ * Routes where the incognito banner is shown: the top-level tabs plus the discovery surfaces
+ * where history is actually being recorded (Library, Browse + its sub-screens, More, and
+ * Novel detail). Deep pages like the reader, settings, and the More sub-tools deliberately
+ * don't carry it.
+ */
+internal val routesWithIncognitoBanner = setOf(
+    TopLevelDestination.Library.route,
+    TopLevelDestination.More.route,
+    ROUTE_BROWSE_HOME,
+    ROUTE_GLOBAL_SEARCH,
+    ROUTE_GLOBAL_SEARCH_ARG,
+    ROUTE_NU_BROWSER,
+    ROUTE_NU_SEARCH,
+    ROUTE_NU_SERIES,
+    ROUTE_NU_BOOKMARKS,
+    ROUTE_SOURCE_BROWSE,
+    ROUTE_NOVEL_DETAIL,
+)
+
 /** Stable name for an externally-requested destination (e.g. from a notification tap). */
 const val NAV_TARGET_UPDATES = "updates"
 

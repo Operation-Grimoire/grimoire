@@ -2,6 +2,7 @@ package io.grimoire.app.ui
 
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -9,13 +10,23 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -39,6 +50,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import io.grimoire.app.data.crash.CrashContext
+import io.grimoire.app.ui.component.IncognitoBanner
 import io.grimoire.app.ui.screen.more.MoreViewModel
 import io.grimoire.app.ui.tour.LocalTourRegistry
 import io.grimoire.app.ui.tour.TourActionId
@@ -147,6 +159,7 @@ fun AppNavigation(
     val activeDownloadCount by moreVm.activeDownloadCount.collectAsState()
     val subscribedUpdateCount by moreVm.subscribedUpdateCount.collectAsState()
     val extensionUpdateCount by moreVm.extensionUpdateCount.collectAsState()
+    val incognito by moreVm.incognito.collectAsState()
 
     // Tours. The registry collects target bounds; the controller owns which tour
     // is running + the position. AppNavigation is the one place that can both see
@@ -283,10 +296,46 @@ fun AppNavigation(
             }
         },
     ) { padding ->
+        Column(Modifier.padding(padding).fillMaxSize()) {
+        // App-wide reminder that history recording is paused. Everything is driven off one
+        // animated fraction `p` so the open/close reads as a single smooth slide: the
+        // status-bar background block grows by `statusBar * p` while the NavHost gives back
+        // exactly that much status-bar inset (`consumeWindowInsets`), and the colored strip
+        // expands its own height in sync. Net effect: the whole app pushes down by the strip
+        // height with no jump.
+        // Only the discovery surfaces (Library / Browse / Novel detail) carry the banner;
+        // deep pages like the reader keep their full height.
+        val bannerVisible = incognito && currentRoute in routesWithIncognitoBanner
+        val bannerP by animateFloatAsState(
+            targetValue = if (bannerVisible) 1f else 0f,
+            animationSpec = tween(BANNER_MS),
+            label = "incognitoBanner",
+        )
+        val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        if (bannerP > 0f) {
+            Spacer(
+                Modifier
+                    .fillMaxWidth()
+                    .height(statusBarTop * bannerP)
+                    .background(MaterialTheme.colorScheme.tertiaryContainer),
+            )
+        }
+        AnimatedVisibility(
+            visible = bannerVisible,
+            enter = expandVertically(tween(BANNER_MS)) + fadeIn(tween(BANNER_MS)),
+            exit = shrinkVertically(tween(BANNER_MS)) + fadeOut(tween(BANNER_MS)),
+        ) {
+            IncognitoBanner()
+        }
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .consumeWindowInsets(PaddingValues(top = statusBarTop * bannerP)),
+        ) {
         NavHost(
             navController = navController,
             startDestination = TopLevelDestination.Library.route,
-            modifier = Modifier.padding(padding),
+            modifier = Modifier.fillMaxSize(),
             enterTransition = { scaleIn(tween(POP_MS), initialScale = 0.92f) + fadeIn(tween(POP_MS)) },
             exitTransition = { scaleOut(tween(POP_MS), targetScale = 1.08f) + fadeOut(tween(POP_MS)) },
             popEnterTransition = { scaleIn(tween(POP_MS), initialScale = 0.92f) + fadeIn(tween(POP_MS)) },
@@ -311,6 +360,8 @@ fun AppNavigation(
             )
             novelDetailDestinations(navController)
             readerDestinations(navController)
+            }
+            }
             }
             }
 
