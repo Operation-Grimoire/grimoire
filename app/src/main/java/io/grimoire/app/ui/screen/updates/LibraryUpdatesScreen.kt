@@ -9,9 +9,13 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +42,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -94,7 +100,9 @@ fun LibraryUpdatesScreen(
     val subscribedNovelIds by viewModel.subscribedNovelIds.collectAsState()
     var menuExpanded by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
-    var expandedGroups by remember { mutableStateOf(setOf<Pair<Long, Long>>()) }
+    // Groups start expanded; this tracks the ones the user has collapsed, so a
+    // fresh log shows every novel's chapters open by default.
+    var collapsedGroups by remember { mutableStateOf(setOf<Pair<Long, Long>>()) }
 
     // When the user has subscribed any novel to notifications, split the log into
     // a "Subscribed" and an "All" tab. Each tab is its own day-grouped timeline,
@@ -351,13 +359,13 @@ fun LibraryUpdatesScreen(
                                         )
                                     }
                                 } else {
-                                    val collapsed = group.key !in expandedGroups
+                                    val collapsed = group.key in collapsedGroups
                                     item(key = "group-${group.first.id}") {
                                         val toggleCollapse = {
-                                            expandedGroups = if (collapsed) {
-                                                expandedGroups + group.key
+                                            collapsedGroups = if (collapsed) {
+                                                collapsedGroups - group.key
                                             } else {
-                                                expandedGroups - group.key
+                                                collapsedGroups + group.key
                                             }
                                         }
                                         val groupEntryIds = group.entries.map { it.id }
@@ -385,26 +393,28 @@ fun LibraryUpdatesScreen(
                                             val entry = group.entries[index]
                                             val chapter = chaptersByEntryId[entry.id]
                                                 ?: stubChapterFromEntry(entry)
-                                            ChapterItem(
-                                                chapter = chapter,
-                                                selected = entry.id in selectedEntryIds,
-                                                selectionMode = selectionMode,
-                                                onClick = {
-                                                    onOpenReader(
-                                                        entry.sourcePackage,
-                                                        entry.novelUrl,
-                                                        entry.chapterUrl,
-                                                    )
-                                                },
-                                                onLockedClick = {
-                                                    onOpenNovel(entry.sourcePackage, entry.novelUrl)
-                                                },
-                                                onToggleSelection = { toggleEntry(entry.id) },
-                                                onDownload = { chaptersByEntryId[entry.id]?.let(viewModel::downloadChapter) },
-                                                onCancelDownload = { chaptersByEntryId[entry.id]?.let(viewModel::cancelDownload) },
-                                                onDeleteDownload = { chaptersByEntryId[entry.id]?.let(viewModel::deleteDownload) },
-                                                onRedownload = { chaptersByEntryId[entry.id]?.let(viewModel::redownloadChapter) },
-                                            )
+                                            ChildRail {
+                                                ChapterItem(
+                                                    chapter = chapter,
+                                                    selected = entry.id in selectedEntryIds,
+                                                    selectionMode = selectionMode,
+                                                    onClick = {
+                                                        onOpenReader(
+                                                            entry.sourcePackage,
+                                                            entry.novelUrl,
+                                                            entry.chapterUrl,
+                                                        )
+                                                    },
+                                                    onLockedClick = {
+                                                        onOpenNovel(entry.sourcePackage, entry.novelUrl)
+                                                    },
+                                                    onToggleSelection = { toggleEntry(entry.id) },
+                                                    onDownload = { chaptersByEntryId[entry.id]?.let(viewModel::downloadChapter) },
+                                                    onCancelDownload = { chaptersByEntryId[entry.id]?.let(viewModel::cancelDownload) },
+                                                    onDeleteDownload = { chaptersByEntryId[entry.id]?.let(viewModel::deleteDownload) },
+                                                    onRedownload = { chaptersByEntryId[entry.id]?.let(viewModel::redownloadChapter) },
+                                                )
+                                            }
                                         }
                                         item(key = "group-end-${group.first.id}") {
                                             HorizontalDivider()
@@ -628,6 +638,35 @@ private fun UnlockedTag(label: String = "Unlocked") {
             .background(MaterialTheme.colorScheme.premiumGold.copy(alpha = 0.15f))
             .padding(horizontal = 6.dp, vertical = 2.dp),
     )
+}
+
+/**
+ * Wraps a chapter row belonging to an expanded novel group, drawing a vertical
+ * rail down its left edge so the nesting under the group header reads at a
+ * glance. The rail sits under the header's cover; the chapter content fills the
+ * rest of the row.
+ */
+@Composable
+private fun ChildRail(content: @Composable () -> Unit) {
+    val railColor = MaterialTheme.colorScheme.outlineVariant
+    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+        Box(
+            modifier = Modifier
+                .width(48.dp)
+                .fillMaxHeight()
+                .drawBehind {
+                    // Center the rail under the header cover: 16dp ListItem pad + 20dp (half of the 40dp cover).
+                    val x = 36.dp.toPx()
+                    drawLine(
+                        color = railColor,
+                        start = Offset(x, 0f),
+                        end = Offset(x, size.height),
+                        strokeWidth = 2.dp.toPx(),
+                    )
+                },
+        )
+        Box(modifier = Modifier.weight(1f)) { content() }
+    }
 }
 
 @Composable
