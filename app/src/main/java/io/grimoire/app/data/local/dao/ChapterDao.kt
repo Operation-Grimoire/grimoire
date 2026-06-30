@@ -59,6 +59,53 @@ interface ChapterDao {
         insertAll(chapters)
     }
 
+    @Query("DELETE FROM chapters WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Long>)
+
+    @Query(
+        "UPDATE chapters SET url = :url, name = :name, uploadDate = :uploadDate, " +
+            "chapterNumber = :chapterNumber, translator = :translator, locked = :locked " +
+            "WHERE id = :id"
+    )
+    suspend fun updateChapterMeta(
+        id: Long,
+        url: String,
+        name: String,
+        uploadDate: Long,
+        chapterNumber: Float,
+        translator: String?,
+        locked: Boolean,
+    )
+
+    /**
+     * Reconciles a novel's stored chapters against a freshly fetched list **in
+     * place**, so each chapter's `downloadedContent` is never read into — and
+     * written back out of — app memory.
+     *
+     * Unlike [replaceChapters] (delete-all + insert-all, which forces the caller to
+     * re-supply every chapter's `downloadedContent` so the saved download survives
+     * the rewrite), matched rows stay where they are: [updates] rewrites only the
+     * scraped metadata, leaving read state and downloaded text in the row untouched;
+     * [deleteIds] drops rows the source no longer lists; [inserts] adds genuinely new
+     * chapters. Matched chapters also keep their row id (downloads/images key off it).
+     *
+     * A library sync reconciles many novels concurrently; pulling every chapter's
+     * downloaded text into a `List` just to write it straight back is what exhausted
+     * the heap on a heavily-downloaded library.
+     */
+    @Transaction
+    suspend fun reconcileChapters(
+        deleteIds: List<Long>,
+        updates: List<ChapterMetaUpdate>,
+        inserts: List<ChapterEntity>,
+    ) {
+        if (deleteIds.isNotEmpty()) deleteByIds(deleteIds)
+        for (u in updates) {
+            updateChapterMeta(u.id, u.url, u.name, u.uploadDate, u.chapterNumber, u.translator, u.locked)
+        }
+        if (inserts.isNotEmpty()) insertAll(inserts)
+    }
+
     @Upsert
     suspend fun upsertAll(chapters: List<ChapterEntity>)
 
@@ -346,6 +393,17 @@ data class StorageChapterStats(
 )
 
 data class ChapterContent(val id: Long, val downloadedContent: String)
+
+/** A single in-place chapter-metadata update applied by [ChapterDao.reconcileChapters]. */
+data class ChapterMetaUpdate(
+    val id: Long,
+    val url: String,
+    val name: String,
+    val uploadDate: Long,
+    val chapterNumber: Float,
+    val translator: String?,
+    val locked: Boolean,
+)
 
 private fun countWordsIn(s: String): Int {
     var count = 0
