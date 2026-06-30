@@ -163,4 +163,59 @@ class ChapterMergeTest {
         assertEquals(0, merge.matchedByUrl)
         assertEquals(0, merge.droppedRead)
     }
+
+    @Test
+    fun reconcilePlan_appendedChapterInsertsOnly_existingRowsUpdatedInPlace() {
+        val existing = listOf(
+            entity(1, "u/1", "One", read = true),
+            entity(2, "u/2", "Two"),
+        )
+        val fetched = listOf(
+            chapter("u/1", "One"),
+            chapter("u/2", "Two"),
+            chapter("u/3", "Three"),
+        )
+        val plan = buildReconcilePlan(1L, existing, fetched, matchChapters(existing, fetched))
+
+        // Both existing rows matched by url → updated in place, keeping their ids.
+        assertEquals(listOf(1L, 2L), plan.updates.map { it.id })
+        // Nothing dropped.
+        assertEquals(emptyList<Long>(), plan.deleteIds)
+        // Only the genuinely new chapter is inserted, with a fresh (id == 0) row.
+        assertEquals(1, plan.inserts.size)
+        assertEquals("u/3", plan.inserts.single().url)
+        assertEquals(0L, plan.inserts.single().id)
+    }
+
+    @Test
+    fun reconcilePlan_urlDrift_updatesRowUrlInPlace_noDelete() {
+        // Url changed but the name is unique, so the name pass rescues the row:
+        // it must be updated in place (keeping id 1 and its downloaded content),
+        // not deleted-and-reinserted.
+        val existing = listOf(entity(1, "u/old", "One", read = true))
+        val fetched = listOf(chapter("u/new", "One"))
+        val plan = buildReconcilePlan(1L, existing, fetched, matchChapters(existing, fetched))
+
+        assertEquals(emptyList<Long>(), plan.deleteIds)
+        assertEquals(emptyList<ChapterEntity>(), plan.inserts)
+        assertEquals(1, plan.updates.size)
+        val update = plan.updates.single()
+        assertEquals(1L, update.id)
+        assertEquals("u/new", update.url)
+    }
+
+    @Test
+    fun reconcilePlan_vanishedChapterIsDeleted() {
+        val existing = listOf(
+            entity(1, "u/1", "One", read = true),
+            entity(2, "u/2", "Two"),
+        )
+        // "Two" disappeared from the source and its name doesn't match anything.
+        val fetched = listOf(chapter("u/1", "One"))
+        val plan = buildReconcilePlan(1L, existing, fetched, matchChapters(existing, fetched))
+
+        assertEquals(listOf(2L), plan.deleteIds)
+        assertEquals(listOf(1L), plan.updates.map { it.id })
+        assertEquals(emptyList<ChapterEntity>(), plan.inserts)
+    }
 }

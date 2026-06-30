@@ -1,6 +1,7 @@
 package io.grimoire.app.data.libraryupdate
 
 import io.grimoire.api.model.novel.Chapter
+import io.grimoire.app.data.local.dao.ChapterMetaUpdate
 import io.grimoire.app.data.local.entity.ChapterEntity
 
 /**
@@ -75,4 +76,65 @@ internal fun matchChapters(
 
     val droppedRead = existing.indices.count { !claimed[it] && existing[it].read }
     return ChapterMergeResult(priors.toList(), byUrl, byName, droppedRead)
+}
+
+/**
+ * The in-place reconciliation [ChapterDao.reconcileChapters][io.grimoire.app.data.local.dao.ChapterDao.reconcileChapters]
+ * applies to bring a novel's stored chapters in line with a freshly fetched list
+ * without round-tripping any chapter's `downloadedContent` through memory.
+ */
+internal class ChapterReconcilePlan(
+    /** Ids of existing rows the source no longer lists. */
+    val deleteIds: List<Long>,
+    /** Metadata-only rewrites of rows whose state (read flag, download) is kept. */
+    val updates: List<ChapterMetaUpdate>,
+    /** Genuinely new chapters, inserted with fresh (unread, undownloaded) state. */
+    val inserts: List<ChapterEntity>,
+)
+
+/**
+ * Turns a [matchChapters] result into the delete / update / insert sets a refresh
+ * applies. Each fetched chapter with a prior becomes an in-place metadata [update]
+ * of that row (its read state and downloaded content stay put); each fetched
+ * chapter with no prior is a fresh [insert]; every existing row that matched
+ * nothing is [delete]d. Pure — no `downloadedContent` is touched.
+ */
+internal fun buildReconcilePlan(
+    novelId: Long,
+    existing: List<ChapterEntity>,
+    fetched: List<Chapter>,
+    merge: ChapterMergeResult,
+): ChapterReconcilePlan {
+    val claimedIds = merge.priors.mapNotNullTo(HashSet()) { it?.id }
+    val deleteIds = existing.asSequence()
+        .filterNot { it.id in claimedIds }
+        .map { it.id }
+        .toList()
+    val updates = ArrayList<ChapterMetaUpdate>(fetched.size)
+    val inserts = ArrayList<ChapterEntity>()
+    fetched.forEachIndexed { i, ch ->
+        val prev = merge.priors[i]
+        if (prev != null) {
+            updates += ChapterMetaUpdate(
+                id = prev.id,
+                url = ch.url,
+                name = ch.name,
+                uploadDate = ch.uploadDate,
+                chapterNumber = ch.chapterNumber,
+                translator = ch.translator,
+                locked = ch.locked,
+            )
+        } else {
+            inserts += ChapterEntity(
+                novelId = novelId,
+                url = ch.url,
+                name = ch.name,
+                uploadDate = ch.uploadDate,
+                chapterNumber = ch.chapterNumber,
+                translator = ch.translator,
+                locked = ch.locked,
+            )
+        }
+    }
+    return ChapterReconcilePlan(deleteIds, updates, inserts)
 }

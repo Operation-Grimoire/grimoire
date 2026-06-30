@@ -2,7 +2,6 @@ package io.grimoire.app.data.libraryupdate
 
 import android.util.Log
 import io.grimoire.api.model.lang.Language
-import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelStatus
 import io.grimoire.app.util.ContentLanguages
@@ -14,7 +13,6 @@ import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
-import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.UpdateIssueEntity
@@ -196,7 +194,12 @@ class LibraryUpdater @Inject constructor(
             return NovelRefreshResult.Failed
         }
 
-        val existing = chapterDao.getChaptersOnce(novel.id)
+        // Metadata only — never the per-chapter downloadedContent blob. The merge
+        // matches on url/name/read state, and the reconcile below preserves any
+        // downloaded text in the DB without it ever passing through app memory.
+        // Loading full content for every chapter of every novel syncing in parallel
+        // is what exhausted the heap on a heavily-downloaded library.
+        val existing = chapterDao.getChapterMetadataOnce(novel.id)
         if (fetchedChapters.isEmpty()) {
             return when {
                 existing.isNotEmpty() -> {
@@ -231,22 +234,11 @@ class LibraryUpdater @Inject constructor(
                     " readStateDropped=${merge.droppedRead}",
             )
         }
-        chapterDao.replaceChapters(
-            novel.id,
-            fetchedChapters.mapIndexed { i, ch ->
-                val prev = merge.priors[i]
-                ch.toEntity(novel.id).copy(
-                    read = prev?.read ?: false,
-                    readProgress = prev?.readProgress ?: 0f,
-                    readAnchorItemIndex = prev?.readAnchorItemIndex ?: 0,
-                    readAnchorItemOffset = prev?.readAnchorItemOffset ?: 0,
-                    firstReadAt = prev?.firstReadAt,
-                    downloadStatus = prev?.downloadStatus ?: 0,
-                    downloadedContent = prev?.downloadedContent,
-                    wordCount = prev?.wordCount ?: 0,
-                )
-            },
-        )
+        // Reconcile in place: matched rows keep their id, read state, and downloaded
+        // content; only metadata is rewritten. New chapters are inserted, vanished
+        // ones deleted. No downloadedContent is read or written here.
+        val plan = buildReconcilePlan(novel.id, existing, fetchedChapters, merge)
+        chapterDao.reconcileChapters(plan.deleteIds, plan.updates, plan.inserts)
 
         // Only log new chapters when the novel already had a chapter list, so the
         // first refresh of a never-opened novel does not flood the log. A chapter
@@ -291,7 +283,7 @@ class LibraryUpdater @Inject constructor(
                     .map { it.url }
                     .toSet()
                 if (downloadableUrls.isNotEmpty()) {
-                    val freshChapters = chapterDao.getChaptersOnce(novel.id)
+                    val freshChapters = chapterDao.getChapterMetadataOnce(novel.id)
                         .filter { it.url in downloadableUrls }
                     // startService = false: the worker drains this queue inline
                     // after the sync, so we must not spawn DownloadService and its
@@ -375,16 +367,6 @@ class LibraryUpdater @Inject constructor(
 
     private fun describeError(e: Throwable): String =
         "${e::class.simpleName}: ${e.message ?: "(no message)"}"
-
-    private fun Chapter.toEntity(novelId: Long) = ChapterEntity(
-        novelId = novelId,
-        url = url,
-        name = name,
-        uploadDate = uploadDate,
-        chapterNumber = chapterNumber,
-        translator = translator,
-        locked = locked,
-    )
 
     private sealed interface NovelRefreshResult {
         val newChapters: Int get() = 0
