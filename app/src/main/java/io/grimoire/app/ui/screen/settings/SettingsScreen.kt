@@ -14,6 +14,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,10 +39,16 @@ fun SettingsScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(
+                        onClick = onNavigateBack,
+                        tooltip = stringResource(R.string.action_back),
+                    ) {
+                        Icon(
+                            AppIcons.ArrowBack,
+                            contentDescription = stringResource(R.string.action_back),
+                        )
                     }
                 },
             )
@@ -50,96 +58,96 @@ fun SettingsScreen(
             item {
                 SettingsNavItem(
                     icon = AppIcons.ColorLens,
-                    title = "Appearance",
-                    subtitle = "Theme, dynamic color",
+                    title = stringResource(R.string.settings_appearance_title),
+                    subtitle = stringResource(R.string.settings_appearance_subtitle),
                     onClick = onNavigateToAppearance,
                 )
             }
             item {
                 SettingsNavItem(
                     icon = AppIcons.TouchApp,
-                    title = "Behavior",
-                    subtitle = "Haptic feedback",
+                    title = stringResource(R.string.settings_behavior_title),
+                    subtitle = stringResource(R.string.settings_behavior_subtitle),
                     onClick = onNavigateToBehavior,
                 )
             }
             item {
                 SettingsNavItem(
                     icon = AppIcons.LocalLibrary,
-                    title = "Library",
-                    subtitle = "Display mode, grid columns",
+                    title = stringResource(R.string.settings_library_title),
+                    subtitle = stringResource(R.string.settings_library_subtitle),
                     onClick = onNavigateToLibrary,
                 )
             }
             item {
                 SettingsNavItem(
                     icon = AppIcons.Explore,
-                    title = "Browse",
-                    subtitle = "Display mode, grid columns",
+                    title = stringResource(R.string.settings_browse_title),
+                    subtitle = stringResource(R.string.settings_browse_subtitle),
                     onClick = onNavigateToBrowse,
                 )
             }
             item {
                 SettingsNavItem(
                     icon = AppIcons.Language,
-                    title = "Languages",
-                    subtitle = "App language, source language",
+                    title = stringResource(R.string.settings_languages_title),
+                    subtitle = stringResource(R.string.settings_languages_subtitle),
                     onClick = onNavigateToLanguages,
                 )
             }
             item {
                 SettingsNavItem(
                     icon = AppIcons.MenuBook,
-                    title = "Reader",
-                    subtitle = "Font size, reading direction",
+                    title = stringResource(R.string.settings_reader_title),
+                    subtitle = stringResource(R.string.settings_reader_subtitle),
                     onClick = onNavigateToReader,
                 )
             }
             item {
                 SettingsNavItem(
                     icon = AppIcons.RecordVoiceOver,
-                    title = "Text-to-speech",
-                    subtitle = "Engine, voices, speech rate",
+                    title = stringResource(R.string.settings_tts_title),
+                    subtitle = stringResource(R.string.settings_tts_subtitle),
                     onClick = onNavigateToTts,
                 )
             }
             item {
                 SettingsNavItem(
                     icon = AppIcons.Sync,
-                    title = "Library updates",
-                    subtitle = "Scheduled refresh of your library",
+                    title = stringResource(R.string.settings_library_updates_title),
+                    subtitle = stringResource(R.string.settings_library_updates_subtitle),
                     onClick = onNavigateToLibraryUpdates,
                 )
             }
             item {
                 SettingsNavItem(
                     icon = AppIcons.Backup,
-                    title = "Backup & restore",
-                    subtitle = "Export, import, scheduled backups",
+                    title = stringResource(R.string.settings_backup_title),
+                    subtitle = stringResource(R.string.settings_backup_subtitle),
                     onClick = onNavigateToBackup,
                 )
             }
             item {
                 SettingsNavItem(
                     icon = AppIcons.Storage,
-                    title = "Data management",
-                    subtitle = "Storage usage, clear caches and browse data",
+                    title = stringResource(R.string.settings_data_title),
+                    subtitle = stringResource(R.string.settings_data_subtitle),
                     onClick = onNavigateToData,
                 )
             }
             item {
                 SettingsNavItem(
                     icon = AppIcons.AutoStories,
-                    title = "NovelUpdates",
-                    subtitle = "Show the NovelUpdates info panel",
+                    title = stringResource(R.string.settings_novelupdates_title),
+                    subtitle = stringResource(R.string.settings_novelupdates_subtitle),
                     onClick = onNavigateToNovelUpdates,
                 )
             }
             item {
                 SettingsNavItem(
                     icon = AppIcons.Hub,
-                    title = "Connections",
-                    subtitle = "External accounts and services",
+                    title = stringResource(R.string.settings_connections_title),
+                    subtitle = stringResource(R.string.settings_connections_subtitle),
                     onClick = onNavigateToConnections,
                 )
             }

@@ -41,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -217,6 +218,7 @@ fun AppNavigation(
                 NavigationBar {
                     val haptics = LocalHapticFeedback.current
                     TopLevelDestination.entries.forEach { dest ->
+                        val label = stringResource(dest.labelRes)
                         val isSelected = backStack?.destination?.hierarchy
                             ?.any { it.route == dest.route } == true
                         val tourKey = when (dest) {
@@ -280,15 +282,15 @@ fun AppNavigation(
                                     updateBadge -> BadgedBox(
                                         badge = { Badge { Text("$extensionUpdateCount") } },
                                     ) {
-                                        Icon(tabIcon, contentDescription = dest.label)
+                                        Icon(tabIcon, contentDescription = label)
                                     }
                                     downloadBadge -> BadgedBox(badge = { Badge() }) {
-                                        Icon(tabIcon, contentDescription = dest.label)
+                                        Icon(tabIcon, contentDescription = label)
                                     }
-                                    else -> Icon(tabIcon, contentDescription = dest.label)
+                                    else -> Icon(tabIcon, contentDescription = label)
                                 }
                             },
-                            label = { Text(dest.label) },
+                            label = { Text(label) },
                         )
                     }
                 }

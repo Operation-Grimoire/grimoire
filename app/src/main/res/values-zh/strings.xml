@@ -1,0 +1,50 @@
+<resources>
+    <!-- app_name intentionally not translated (brand name) -->
+
+    <!-- Common actions -->
+    <string name="action_back">返回</string>
+    <string name="action_cancel">取消</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_library">书库</string>
+    <string name="nav_browse">浏览</string>
+    <string name="nav_more">更多</string>
+
+    <!-- Settings menu -->
+    <string name="settings_title">设置</string>
+    <string name="settings_appearance_title">外观</string>
+    <string name="settings_appearance_subtitle">主题、动态取色</string>
+    <string name="settings_behavior_title">行为</string>
+    <string name="settings_behavior_subtitle">触感反馈</string>
+    <string name="settings_library_title">书库</string>
+    <string name="settings_library_subtitle">显示方式、网格列数</string>
+    <string name="settings_browse_title">浏览</string>
+    <string name="settings_browse_subtitle">显示方式、网格列数</string>
+    <string name="settings_languages_title">语言</string>
+    <string name="settings_languages_subtitle">界面语言、书源语言</string>
+    <string name="settings_reader_title">阅读器</string>
+    <string name="settings_reader_subtitle">字号、阅读方向</string>
+    <string name="settings_tts_title">语音朗读</string>
+    <string name="settings_tts_subtitle">引擎、语音、语速</string>
+    <string name="settings_library_updates_title">书库更新</string>
+    <string name="settings_library_updates_subtitle">定时刷新你的书库</string>
+    <string name="settings_backup_title">备份与恢复</string>
+    <string name="settings_backup_subtitle">导出、导入、定时备份</string>
+    <string name="settings_data_title">数据管理</string>
+    <string name="settings_data_subtitle">存储占用、清除缓存与浏览数据</string>
+    <string name="settings_novelupdates_title">NovelUpdates</string>
+    <string name="settings_novelupdates_subtitle">显示 NovelUpdates 信息面板</string>
+    <string name="settings_connections_title">连接</string>
+    <string name="settings_connections_subtitle">外部账户与服务</string>
+
+    <!-- Languages screen -->
+    <string name="languages_title">语言</string>
+    <string name="languages_app_language_title">界面语言</string>
+    <string name="languages_app_language_subtitle">选择应用界面的显示语言</string>
+    <string name="languages_source_language_title">书源语言</string>
+    <string name="languages_source_language_subtitle">选择多语言书源默认显示哪些语言</string>
+    <string name="language_picker_title">界面语言</string>
+    <string name="language_option_system">跟随系统</string>
+    <string name="language_option_english">English</string>
+    <string name="language_option_chinese_simplified">简体中文</string>
+</resources>

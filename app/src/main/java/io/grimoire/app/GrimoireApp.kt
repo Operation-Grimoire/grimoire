@@ -3,6 +3,7 @@ package io.grimoire.app
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -25,6 +26,7 @@ import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.di.GitHubAuthorized
 import io.grimoire.app.extension.repo.ExtensionRepository
 import io.grimoire.api.network.NetworkContext
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -47,6 +49,12 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject @GitHubAuthorized lateinit var imageHttpClient: OkHttpClient
 
     private var relockJob: Job? = null
+
+    override fun attachBaseContext(base: Context) {
+        // Wrap the application context too so strings resolved off the app context
+        // (notifications, foreground services) follow the chosen UI language.
+        super.attachBaseContext(AppLocale.wrap(base))
+    }
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
