@@ -1,5 +1,7 @@
 package io.grimoire.app.ui.tour
 
+import androidx.annotation.StringRes
+import io.grimoire.app.R
 /**
  * An anchorable spot in the UI a tour step can point its balloon at. A screen
  * tags the element with [Modifier.tourTarget] and the overlay looks the bounds
@@ -25,8 +27,8 @@ enum class TourArt { None, Welcome, Done }
  * the overlay (which has the NavController in scope), so the step list stays
  * free of captured lambdas.
  */
-enum class TourActionId(val label: String) {
-    OpenExtensions("Open extensions"),
+enum class TourActionId(@StringRes val labelRes: Int) {
+    OpenExtensions(R.string.tour_open_extensions),
 }
 
 /**
@@ -41,8 +43,8 @@ enum class TourActionId(val label: String) {
  */
 data class TourStep(
     val target: TourKey?,
-    val title: String,
-    val body: String,
+    @StringRes val titleRes: Int,
+    @StringRes val bodyRes: Int,
     val route: String? = null,
     val advanceOnReach: Boolean = false,
     val art: TourArt = TourArt.None,
@@ -60,8 +62,8 @@ data class TourStep(
  */
 data class Tour(
     val id: TourId,
-    val title: String,
-    val description: String,
+    @StringRes val titleRes: Int,
+    @StringRes val descriptionRes: Int,
     val version: Int,
     val autoRun: Boolean,
     val steps: List<TourStep>,

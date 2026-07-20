@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.auth.github.AuthFailure
 import io.grimoire.app.auth.github.GitHubAuthState
 import io.grimoire.app.ui.component.LinkText
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,10 +59,10 @@ fun GitHubAuthScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("GitHub account") },
+                title = { Text(stringResource(R.string.github_account_title)) },
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
             )
@@ -74,9 +76,7 @@ fun GitHubAuthScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             LinkText(
-                text = "Connect a GitHub account to install extensions from your own private repositories. " +
-                    "Your access token is stored only on this device and is sent only to github.com. " +
-                    "Revoke any time at github.com/settings/applications.",
+                text = stringResource(R.string.github_privacy_note),
                 "github.com/settings/applications" to "https://github.com/settings/applications",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -112,8 +112,8 @@ fun GitHubAuthScreen(
 
 @Composable
 private fun DisconnectedBody(onConnect: () -> Unit) {
-    Text("Not connected.", style = MaterialTheme.typography.titleMedium)
-    Button(onClick = onConnect) { Text("Connect GitHub") }
+    Text(stringResource(R.string.github_not_connected), style = MaterialTheme.typography.titleMedium)
+    Button(onClick = onConnect) { Text(stringResource(R.string.github_connect)) }
 }
 
 @Composable
@@ -134,7 +134,7 @@ private fun AwaitingBody(
             Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Enter this code on github.com", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.github_enter_code), style = MaterialTheme.typography.titleMedium)
             Text(
                 userCode,
                 fontSize = 32.sp,
@@ -153,12 +153,12 @@ private fun AwaitingBody(
     Button(onClick = onOpenBrowser, modifier = Modifier.fillMaxWidth()) {
         Icon(AppIcons.OpenInBrowser, contentDescription = null)
         Spacer(Modifier.width(8.dp))
-        Text("Open github.com/login/device")
+        Text(stringResource(R.string.github_open_device_page))
     }
     OutlinedButton(onClick = onCopy, modifier = Modifier.fillMaxWidth()) {
         Icon(AppIcons.ContentCopy, contentDescription = null)
         Spacer(Modifier.width(8.dp))
-        Text("Copy code")
+        Text(stringResource(R.string.github_copy_code))
     }
 
     Row(
@@ -173,13 +173,13 @@ private fun AwaitingBody(
             strokeWidth = 2.dp,
         )
         Text(
-            "Waiting for you to finish in the browser…",
+            stringResource(R.string.github_waiting),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 
-    TextButton(onClick = onCancel) { Text("Cancel") }
+    TextButton(onClick = onCancel) { Text(stringResource(R.string.action_cancel)) }
 }
 
 @Composable
@@ -189,23 +189,23 @@ private fun ConnectedBody(login: String, onDisconnect: () -> Unit) {
             Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text("Connected", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.github_connected), style = MaterialTheme.typography.titleMedium)
             Text("@$login", style = MaterialTheme.typography.bodyLarge)
         }
     }
-    OutlinedButton(onClick = onDisconnect) { Text("Disconnect") }
+    OutlinedButton(onClick = onDisconnect) { Text(stringResource(R.string.action_disconnect)) }
 }
 
 @Composable
 private fun FailedBody(failure: AuthFailure, onDismiss: () -> Unit, onRetry: () -> Unit) {
-    Text("Authorization failed", style = MaterialTheme.typography.titleMedium)
+    Text(stringResource(R.string.github_authorization_failed), style = MaterialTheme.typography.titleMedium)
     Text(
         failure.message,
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.error,
     )
-    Button(onClick = onRetry) { Text("Try again") }
-    TextButton(onClick = onDismiss) { Text("Dismiss") }
+    Button(onClick = onRetry) { Text(stringResource(R.string.action_try_again)) }
+    TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_dismiss)) }
 }
 
 @Composable
@@ -221,11 +221,11 @@ private fun MissingClientIdCard() {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                "This build has no OAuth client ID",
+                stringResource(R.string.github_no_client_id),
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                "Set GITHUB_OAUTH_CLIENT_ID in gradle.properties (or as an environment variable) and rebuild.",
+                stringResource(R.string.github_no_client_id_summary),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }

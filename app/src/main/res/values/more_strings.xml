@@ -1,0 +1,198 @@
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">Today</string>
+    <string name="common_yesterday">Yesterday</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_resume">Resume</string>
+    <string name="action_expand">Expand</string>
+    <string name="action_collapse">Collapse</string>
+    <string name="action_clear_log">Clear log</string>
+    <string name="action_set">Set</string>
+    <string name="action_choose">Choose</string>
+    <string name="action_restore">Restore</string>
+    <string name="action_disconnect">Disconnect</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="action_try_again">Try again</string>
+    <string name="action_skip">Skip</string>
+    <string name="action_next">Next</string>
+    <string name="status_error">Error</string>
+    <string name="status_warning">Warning</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_queued">Queued</string>
+    <string name="status_downloaded">Downloaded</string>
+    <string name="chapter_cancel_download">Cancel download</string>
+    <string name="chapter_downloaded_refresh_queued">Downloaded · refresh queued</string>
+    <string name="chapter_cancel_refresh">Cancel refresh</string>
+    <string name="chapter_downloaded_refreshing">Downloaded · refreshing</string>
+    <string name="chapter_downloaded_refresh_failed">Downloaded · refresh failed</string>
+
+    <!-- More -->
+    <string name="more_title">More</string>
+    <string name="more_incognito">Incognito</string>
+    <string name="more_incognito_enabled">Not recording history this session</string>
+    <string name="more_incognito_disabled">Pause reading &amp; browsing history</string>
+    <string name="incognito_banner">Incognito · history paused</string>
+    <string name="more_updates">Updates</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="one">%1$d new chapter from subscribed novels</item>
+        <item quantity="other">%1$d new chapters from subscribed novels</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="one">%1$d new chapter across your library</item>
+        <item quantity="other">%1$d new chapters across your library</item>
+    </plurals>
+    <string name="more_no_new_chapters">No new chapters</string>
+    <string name="more_history">History</string>
+    <string name="more_history_summary">Recently read chapters and browsed novels</string>
+    <string name="more_downloads">Downloads</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="one">%1$d in progress</item>
+        <item quantity="other">%1$d in progress</item>
+    </plurals>
+    <string name="more_downloads_summary">Downloaded chapters and queue</string>
+    <string name="more_tasks">Tasks</string>
+    <string name="more_tasks_summary">Running downloads and syncs, plus their history</string>
+    <string name="more_update_warnings">Update warnings</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="one">%1$d novel needs attention</item>
+        <item quantity="other">%1$d novels need attention</item>
+    </plurals>
+    <string name="more_no_refresh_problems">No refresh problems</string>
+    <string name="more_statistics">Statistics</string>
+    <string name="more_statistics_summary">Your reading activity</string>
+    <string name="more_settings_summary">Appearance, library, reader, backups</string>
+    <string name="more_tours">Tours</string>
+    <string name="more_tours_summary">Replay the in-app guided tours</string>
+    <string name="more_about">About</string>
+    <string name="more_about_summary">Version, update channel, licenses</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">Start</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">Welcome tour</string>
+    <string name="tour_welcome_description">The essentials: library, browsing, sources and settings.</string>
+    <string name="tour_step_welcome_title">Welcome to Grimoire</string>
+    <string name="tour_step_welcome_body">A quick tour of the essentials — takes about 20 seconds.</string>
+    <string name="tour_step_library_title">Your library</string>
+    <string name="tour_step_library_body">Novels you add live here, organised into categories.</string>
+    <string name="tour_step_browse_title">Browse</string>
+    <string name="tour_step_browse_body">Tap Browse to find novels across your sources.</string>
+    <string name="tour_step_extensions_title">Sources &amp; extensions</string>
+    <string name="tour_step_extensions_body">Sources install from here. Open it to see what’s available.</string>
+    <string name="tour_open_extensions">Open extensions</string>
+    <string name="tour_step_repositories_title">Repositories</string>
+    <string name="tour_step_repositories_body">Sources come from repositories. The official one is already added — tap here to manage them or add your own.</string>
+    <string name="tour_step_more_title">Everything else</string>
+    <string name="tour_step_more_body">Downloads, statistics, backups and settings are under More.</string>
+    <string name="tour_step_done_title">You’re all set</string>
+    <string name="tour_step_done_body">Replay any tour from More → Tours.</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">Downloads</string>
+    <string name="downloads_settings">Download settings</string>
+    <string name="downloads_parallel">Parallel downloads</string>
+    <string name="downloads_parallel_summary">Number of chapters downloaded at once</string>
+    <string name="downloads_move_to_top">Move to top</string>
+    <string name="downloads_cancel_failed">Cancel failed</string>
+    <string name="downloads_redownload">Redownload</string>
+    <string name="downloads_delete_download">Delete download</string>
+    <string name="downloads_delete_options">Download options</string>
+    <string name="downloads_empty">No downloads</string>
+    <string name="downloads_filter_downloading">Downloading</string>
+    <string name="downloads_filter_queued">Queued</string>
+    <string name="downloads_filter_done">Done</string>
+    <string name="downloads_filter_failed">Failed</string>
+    <plurals name="downloads_count_downloaded"><item quantity="one">%1$d downloaded</item><item quantity="other">%1$d downloaded</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="one">%1$d queued</item><item quantity="other">%1$d queued</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="one">%1$d downloading</item><item quantity="other">%1$d downloading</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="one">%1$d failed</item><item quantity="other">%1$d failed</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">Statistics</string>
+    <string name="statistics_reading">Reading</string>
+    <string name="statistics_chapters_read">Chapters read</string>
+    <string name="statistics_words_read">Words read</string>
+    <string name="statistics_novels_completed">Novels completed</string>
+    <string name="statistics_novels_started">Novels started</string>
+    <string name="statistics_average_words">Avg words / chapter</string>
+    <string name="statistics_last_read">Last read</string>
+    <string name="statistics_library">Library</string>
+    <string name="statistics_library_novels">Novels in library</string>
+    <string name="statistics_library_chapters">Library chapters</string>
+    <string name="statistics_library_unread">Unread in library</string>
+    <string name="statistics_downloaded">Downloaded</string>
+    <string name="statistics_empty_hint">Read some chapters to start tracking statistics.</string>
+    <string name="statistics_counting_hint">Stats count each chapter once — marking unread doesn’t subtract.</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Tasks</string>
+    <string name="tasks_empty">No tasks yet.\nDownloads and library syncs appear here while they run,\nand their results are kept below.</string>
+    <string name="tasks_running">Running</string>
+    <string name="tasks_history">History</string>
+    <string name="tasks_clear_title">Clear task log?</string>
+    <string name="tasks_clear_message">Removes the history of completed library syncs and downloads. Running tasks are not affected.</string>
+    <string name="tasks_cancel_named">Cancel %1$s</string>
+    <string name="tasks_finished_with_errors">Finished with errors</string>
+    <string name="tasks_updating_library">Updating library</string>
+    <string name="tasks_starting">Starting…</string>
+    <plurals name="tasks_novels_progress"><item quantity="one">%1$d / %2$d novel</item><item quantity="other">%1$d / %2$d novels</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">Downloading chapters</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="one">%1$d chapter remaining</item><item quantity="other">%1$d chapters remaining</item></plurals>
+    <string name="tasks_downloads">Downloads</string>
+    <string name="tasks_library_sync">Library sync</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="one">%1$d chapter downloaded</item><item quantity="other">%1$d chapters downloaded</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="one">%1$d failed</item><item quantity="other">%1$d failed</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="one">Checked %1$d novel</item><item quantity="other">Checked %1$d novels</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="one">%1$d new chapter</item><item quantity="other">%1$d new chapters</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="one">%1$d warning</item><item quantity="other">%1$d warnings</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="one">%1$d error</item><item quantity="other">%1$d errors</item></plurals>
+    <string name="tasks_sync_failed">Library sync failed · %1$s</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">Updates</string>
+    <string name="updates_open_novel">Open novel</string>
+    <string name="updates_delete_from_log">Delete from log</string>
+    <string name="updates_empty">No updates yet.\nNew chapters found by a library refresh appear here.</string>
+    <string name="updates_tab_subscribed">Subscribed</string>
+    <string name="updates_tab_all">All</string>
+    <string name="updates_subscribed_empty">No updates from subscribed novels yet.</string>
+    <string name="updates_clear_title">Clear updates log?</string>
+    <string name="updates_clear_message">This permanently removes every entry from the updates log. Your library and chapters are not affected.</string>
+    <plurals name="updates_count_new"><item quantity="one">%1$d new</item><item quantity="other">%1$d new</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="one">%1$d locked</item><item quantity="other">%1$d locked</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="one">%1$d downloaded</item><item quantity="other">%1$d downloaded</item></plurals>
+    <string name="updates_all_downloaded">All downloaded</string>
+    <string name="updates_unlocked">Unlocked</string>
+    <plurals name="updates_count_unlocked"><item quantity="one">%1$d unlocked</item><item quantity="other">%1$d unlocked</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">History</string>
+    <string name="history_reading">Reading</string>
+    <string name="history_browsing">Browsing</string>
+    <string name="history_clear_reading">Clear reading history</string>
+    <string name="history_clear_browsing">Clear browsing history</string>
+    <string name="history_reading_empty">No reading history yet.\nChapters you open in the reader appear here.</string>
+    <string name="history_browsing_empty">No browsing history yet.\nNovels you open in Browse (and haven’t added to your library) appear here.</string>
+    <string name="history_clear_reading_title">Clear reading history?</string>
+    <string name="history_clear_browsing_title">Clear browsing history?</string>
+    <string name="history_clear_reading_message">This permanently removes every entry from your reading history. Your library and chapters are not affected.</string>
+    <string name="history_clear_browsing_message">This permanently removes every entry from your browsing history. Your library is not affected.</string>
+    <plurals name="history_chapter_count"><item quantity="one">%1$d chapter</item><item quantity="other">%1$d chapters</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">Update warnings</string>
+    <string name="update_issues_empty">No problems.\nNovels that fail to refresh show up here.</string>
+    <string name="update_issue_source_missing">Source not installed — skipped</string>
+    <string name="update_issue_no_chapters">Source returned no chapters — kept the existing list</string>
+    <string name="update_issue_incomplete_data">Source returned incomplete data — kept the previous title/cover</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">App crashed</string>
+    <string name="crash_empty">No crash report available.</string>
+    <string name="crash_description">The app closed unexpectedly last time it ran. Filing a report helps get it fixed — the crash details below are filled in for you. You can also copy them to share elsewhere.</string>
+    <string name="crash_no_browser">No browser available to open GitHub.</string>
+    <string name="crash_report_github">Report on GitHub</string>
+    <string name="crash_details_copied">Crash details copied.</string>
+    <string name="crash_copy_details">Copy details</string>
+</resources>

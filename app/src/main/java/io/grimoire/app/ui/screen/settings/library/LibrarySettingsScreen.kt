@@ -21,10 +21,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,20 +50,20 @@ fun LibrarySettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Library") },
+                title = { Text(stringResource(R.string.settings_library_title)) },
             )
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
 
-            item { SettingsSectionHeader("Display") }
+            item { SettingsSectionHeader(stringResource(R.string.settings_section_display)) }
             item {
                 ListItem(
-                    headlineContent = { Text("Display") },
+                    headlineContent = { Text(stringResource(R.string.settings_display_mode)) },
                     supportingContent = {
                         SingleChoiceSegmentedButtonRow(
                             modifier = Modifier
@@ -73,7 +75,7 @@ fun LibrarySettingsScreen(
                                     selected = displayMode == mode,
                                     onClick = { viewModel.setLibraryDisplayMode(mode) },
                                     shape = SegmentedButtonDefaults.itemShape(index, LibraryDisplayMode.entries.size),
-                                    label = { Text(mode.displayName) },
+                                    label = { Text(mode.localizedDisplayName()) },
                                 )
                             }
                         }
@@ -84,7 +86,7 @@ fun LibrarySettingsScreen(
             item {
                 AnimatedVisibility(visible = displayMode == LibraryDisplayMode.GRID) {
                     ListItem(
-                        headlineContent = { Text("Columns") },
+                        headlineContent = { Text(stringResource(R.string.settings_columns)) },
                         supportingContent = {
                             SingleChoiceSegmentedButtonRow(
                                 modifier = Modifier
@@ -105,11 +107,11 @@ fun LibrarySettingsScreen(
                 }
             }
 
-            item { SettingsSectionHeader("Organization") }
+            item { SettingsSectionHeader(stringResource(R.string.settings_section_organization)) }
             item {
                 ListItem(
-                    headlineContent = { Text("Show \"All\" tab") },
-                    supportingContent = { Text("Show a tab combining all categories") },
+                    headlineContent = { Text(stringResource(R.string.library_settings_show_all)) },
+                    supportingContent = { Text(stringResource(R.string.library_settings_show_all_summary)) },
                     trailingContent = {
                         Switch(
                             checked = showAllTab,
@@ -122,8 +124,8 @@ fun LibrarySettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Hidden categories") },
-                    supportingContent = { Text("Set a PIN and manage which categories are hidden") },
+                    headlineContent = { Text(stringResource(R.string.library_settings_hidden)) },
+                    supportingContent = { Text(stringResource(R.string.library_settings_hidden_summary)) },
                     trailingContent = {
                         Icon(
                             AppIcons.KeyboardArrowRight,
@@ -134,11 +136,11 @@ fun LibrarySettingsScreen(
                 )
             }
 
-            item { SettingsSectionHeader("Chapter counts") }
+            item { SettingsSectionHeader(stringResource(R.string.library_settings_section_counts)) }
             item {
                 ListItem(
-                    headlineContent = { Text("Include locked chapters in totals") },
-                    supportingContent = { Text("Count locked chapters in the total and read percentage shown on library badges and the novel details page") },
+                    headlineContent = { Text(stringResource(R.string.library_settings_locked_totals)) },
+                    supportingContent = { Text(stringResource(R.string.library_settings_locked_totals_summary)) },
                     trailingContent = {
                         Switch(
                             checked = includeLockedInTotals,
@@ -149,11 +151,11 @@ fun LibrarySettingsScreen(
                 )
             }
 
-            item { SettingsSectionHeader("Cover badges") }
+            item { SettingsSectionHeader(stringResource(R.string.library_settings_section_badges)) }
             item {
                 ListItem(
-                    headlineContent = { Text("Show read progress badge") },
-                    supportingContent = { Text("Show read count and percentage on library covers") },
+                    headlineContent = { Text(stringResource(R.string.library_settings_read_badge)) },
+                    supportingContent = { Text(stringResource(R.string.library_settings_read_badge_summary)) },
                     trailingContent = {
                         Switch(
                             checked = showReadBadge,
@@ -165,8 +167,8 @@ fun LibrarySettingsScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Show downloaded badge") },
-                    supportingContent = { Text("Show the downloaded-chapter count on library covers") },
+                    headlineContent = { Text(stringResource(R.string.library_settings_downloaded_badge)) },
+                    supportingContent = { Text(stringResource(R.string.library_settings_downloaded_badge_summary)) },
                     trailingContent = {
                         Switch(
                             checked = showDownloadedBadge,
@@ -178,8 +180,8 @@ fun LibrarySettingsScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Show locked chapters badge") },
-                    supportingContent = { Text("Show a gold lock badge with the locked-chapter count on library covers") },
+                    headlineContent = { Text(stringResource(R.string.library_settings_locked_badge)) },
+                    supportingContent = { Text(stringResource(R.string.library_settings_locked_badge_summary)) },
                     trailingContent = {
                         Switch(
                             checked = showLockedBadge,
@@ -191,8 +193,8 @@ fun LibrarySettingsScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Show EPUB badge") },
-                    supportingContent = { Text("Flag imported EPUB novels with a badge on library covers") },
+                    headlineContent = { Text(stringResource(R.string.library_settings_epub_badge)) },
+                    supportingContent = { Text(stringResource(R.string.library_settings_epub_badge_summary)) },
                     trailingContent = {
                         Switch(
                             checked = showEpubBadge,
@@ -206,8 +208,10 @@ fun LibrarySettingsScreen(
     }
 }
 
-private val LibraryDisplayMode.displayName: String
-    get() = when (this) {
-        LibraryDisplayMode.GRID -> "Grid"
-        LibraryDisplayMode.LIST -> "List"
-    }
+@Composable
+private fun LibraryDisplayMode.localizedDisplayName(): String = stringResource(
+    when (this) {
+        LibraryDisplayMode.GRID -> R.string.settings_display_grid
+        LibraryDisplayMode.LIST -> R.string.settings_display_list
+    },
+)

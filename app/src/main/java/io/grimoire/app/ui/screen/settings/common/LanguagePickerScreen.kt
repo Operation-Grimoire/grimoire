@@ -32,8 +32,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.api.model.lang.Language
+import io.grimoire.app.R
 
 /**
  * State holder for the optional "Override global" toggle shown at the top of
@@ -42,11 +45,6 @@ import io.grimoire.api.model.lang.Language
 data class OverrideToggle(
     val enabled: Boolean,
     val onToggle: (Boolean) -> Unit,
-    val label: String = "Override global content languages",
-    val helperWhenOn: String = "Pick the languages you want for this source only.",
-    val helperWhenOff: String =
-        "This source uses the global content-language selection. " +
-            "Turn this on to pick a different mix just for this source.",
 )
 
 /**
@@ -105,8 +103,8 @@ fun LanguagePickerScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 title = { Text(title) },
@@ -125,11 +123,13 @@ fun LanguagePickerScreen(
 
             if (overrideToggle != null) {
                 ListItem(
-                    headlineContent = { Text(overrideToggle.label) },
+                    headlineContent = { Text(stringResource(R.string.language_override_global)) },
                     supportingContent = {
                         Text(
-                            if (overrideToggle.enabled) overrideToggle.helperWhenOn
-                            else overrideToggle.helperWhenOff,
+                            stringResource(
+                                if (overrideToggle.enabled) R.string.language_override_on_helper
+                                else R.string.language_override_off_helper,
+                            ),
                         )
                     },
                     trailingContent = {
@@ -144,9 +144,12 @@ fun LanguagePickerScreen(
 
             if (!rowsEnabled && globalSet != null) {
                 val summary = when {
-                    globalSet.isEmpty() -> "Global: no filter (all languages shown)"
-                    else -> "Global: ${globalSet.size} language" +
-                        (if (globalSet.size == 1) "" else "s") + " selected"
+                    globalSet.isEmpty() -> stringResource(R.string.language_global_all)
+                    else -> pluralStringResource(
+                        R.plurals.language_global_selected,
+                        globalSet.size,
+                        globalSet.size,
+                    )
                 }
                 Text(
                     summary,
@@ -188,7 +191,7 @@ fun LanguagePickerScreen(
                         .fillMaxWidth()
                         .padding(16.dp),
                 ) {
-                    Text(if (saved) "Saved" else "Save")
+                    Text(stringResource(if (saved) R.string.language_saved else R.string.action_save))
                 }
             }
         }
@@ -239,7 +242,7 @@ private fun DiffChip(diff: LanguageDiff) {
         LanguageDiff.MatchesGlobal -> AssistChip(
             onClick = {},
             enabled = false,
-            label = { Text("Global") },
+            label = { Text(stringResource(R.string.language_global)) },
             colors = AssistChipDefaults.assistChipColors(
                 disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
@@ -247,7 +250,7 @@ private fun DiffChip(diff: LanguageDiff) {
         LanguageDiff.AddedHere -> AssistChip(
             onClick = {},
             enabled = false,
-            label = { Text("Added here") },
+            label = { Text(stringResource(R.string.language_added_here)) },
             colors = AssistChipDefaults.assistChipColors(
                 disabledContainerColor = MaterialTheme.colorScheme.primaryContainer,
                 disabledLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -256,7 +259,7 @@ private fun DiffChip(diff: LanguageDiff) {
         LanguageDiff.HiddenHere -> AssistChip(
             onClick = {},
             enabled = false,
-            label = { Text("Hidden here") },
+            label = { Text(stringResource(R.string.language_hidden_here)) },
             colors = AssistChipDefaults.assistChipColors(
                 disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),

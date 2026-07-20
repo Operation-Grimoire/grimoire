@@ -1,5 +1,8 @@
 package io.grimoire.app.ui.component
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import io.grimoire.app.R
 import java.text.DateFormat
 import java.util.Calendar
 import java.util.Date
@@ -17,12 +20,13 @@ internal fun dayKey(timestamp: Long): Long {
 }
 
 /** "Today" / "Yesterday" / a medium date for a day header. */
+@Composable
 internal fun dayLabel(timestamp: Long): String {
     val today = dayKey(System.currentTimeMillis())
     val day = dayKey(timestamp)
     return when (day) {
-        today -> "Today"
-        today - 24 * 60 * 60 * 1000L -> "Yesterday"
+        today -> stringResource(R.string.common_today)
+        today - 24 * 60 * 60 * 1000L -> stringResource(R.string.common_yesterday)
         else -> DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(timestamp))
     }
 }

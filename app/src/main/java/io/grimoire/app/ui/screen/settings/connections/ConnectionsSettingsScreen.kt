@@ -17,7 +17,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,10 +35,10 @@ fun ConnectionsSettingsScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Connections") },
+                title = { Text(stringResource(R.string.settings_connections_title)) },
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
             )
@@ -46,8 +48,13 @@ fun ConnectionsSettingsScreen(
             item {
                 ConnectionRow(
                     icon = AppIcons.AccountCircle,
-                    title = "GitHub",
-                    statusLabel = github.statusLabel,
+                    title = stringResource(R.string.connections_github),
+                    statusLabel = when (github.status) {
+                        ConnectionStatusType.DISCONNECTED -> stringResource(R.string.connections_not_connected)
+                        ConnectionStatusType.SIGNING_IN -> stringResource(R.string.connections_signing_in)
+                        ConnectionStatusType.CONNECTED -> "@${github.login.orEmpty()}"
+                        ConnectionStatusType.ERROR -> stringResource(R.string.connections_error)
+                    },
                     isConnected = github.isConnected,
                     onClick = onNavigateToGitHub,
                 )

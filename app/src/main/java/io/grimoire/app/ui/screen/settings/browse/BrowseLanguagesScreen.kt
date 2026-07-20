@@ -4,8 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.screen.settings.common.LanguagePickerScreen
+import io.grimoire.app.R
 
 @Composable
 fun BrowseLanguagesScreen(
@@ -17,7 +19,7 @@ fun BrowseLanguagesScreen(
     val saved by viewModel.saved.collectAsState()
 
     LanguagePickerScreen(
-        title = "Content languages",
+        title = stringResource(R.string.content_languages_title),
         available = viewModel.available,
         enabled = enabled,
         onToggle = viewModel::toggle,
@@ -26,9 +28,7 @@ fun BrowseLanguagesScreen(
         onNavigateBack = onNavigateBack,
         overrideToggle = null,
         globalSet = null,
-        helper = "Languages selected here apply to every multi-language source " +
-            "unless overridden in that source's settings. Leave all unchecked " +
-            "to show every language.",
+        helper = stringResource(R.string.content_languages_helper),
         modifier = modifier,
     )
 }

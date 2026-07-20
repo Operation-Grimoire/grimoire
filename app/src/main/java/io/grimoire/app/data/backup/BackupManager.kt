@@ -42,6 +42,8 @@ import java.util.Locale
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import javax.inject.Inject
+import io.grimoire.app.R
+import io.grimoire.app.util.AppLocale
 import javax.inject.Singleton
 
 sealed class BackupResult {
@@ -66,6 +68,8 @@ class BackupManager @Inject constructor(
     private val dataStore: DataStore<Preferences>,
 ) {
 
+    private val localizedContext = AppLocale.wrap(context)
+
     private val json = Json {
         prettyPrint = false
         ignoreUnknownKeys = true
@@ -74,13 +78,13 @@ class BackupManager @Inject constructor(
 
     suspend fun backupTo(folderUri: Uri): BackupResult = withContext(Dispatchers.IO) {
         val folder = DocumentFile.fromTreeUri(context, folderUri)
-            ?: return@withContext BackupResult.Failure("Backup folder is not accessible")
+            ?: return@withContext BackupResult.Failure(localizedContext.getString(R.string.backup_folder_inaccessible))
         if (!folder.exists() || !folder.canWrite()) {
-            return@withContext BackupResult.Failure("Backup folder is not writable")
+            return@withContext BackupResult.Failure(localizedContext.getString(R.string.backup_folder_not_writable))
         }
         val fileName = generateFileName()
         val target = folder.createFile(BACKUP_MIME_TYPE, fileName)
-            ?: return@withContext BackupResult.Failure("Could not create backup file")
+            ?: return@withContext BackupResult.Failure(localizedContext.getString(R.string.backup_create_file_failed))
 
         runCatching {
             val novels = novelDao.getForBackup()
@@ -112,11 +116,11 @@ class BackupManager @Inject constructor(
                         appVersionName = appVersionName,
                     )
                 }
-            } ?: return@runCatching BackupResult.Failure("Could not open output stream")
+            } ?: return@runCatching BackupResult.Failure(localizedContext.getString(R.string.backup_open_output_failed))
             BackupResult.Success(fileName, target.uri.toString(), novels.size)
         }.getOrElse { e ->
             runCatching { target.delete() }
-            BackupResult.Failure(e.message ?: "Backup failed")
+            BackupResult.Failure(e.message ?: localizedContext.getString(R.string.backup_failed))
         }
     }
 
@@ -134,17 +138,17 @@ class BackupManager @Inject constructor(
                 } else {
                     json.decodeFromStream(BackupFile.serializer(), buffered)
                 }
-            } ?: return@withContext RestoreResult.Failure("Could not read backup file")
+            } ?: return@withContext RestoreResult.Failure(localizedContext.getString(R.string.backup_read_file_failed))
 
             if (backup.version > BackupFile.CURRENT_VERSION) {
                 return@withContext RestoreResult.Failure(
-                    "Backup file is from a newer app version (v${backup.version})"
+                    localizedContext.getString(R.string.backup_newer_version, backup.version)
                 )
             }
             applyBackup(backup)
             RestoreResult.Success(backup.novels.size, backup.novels.sumOf { it.chapters.size })
         }.getOrElse { e ->
-            RestoreResult.Failure(e.message ?: "Restore failed")
+            RestoreResult.Failure(e.message ?: localizedContext.getString(R.string.restore_failed))
         }
     }
 

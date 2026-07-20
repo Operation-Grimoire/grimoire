@@ -18,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.ui.screen.reader.ColorThemePicker
@@ -27,6 +29,7 @@ import io.grimoire.app.ui.screen.reader.OrientationPicker
 import io.grimoire.app.ui.screen.reader.StepperRow
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,19 +55,19 @@ fun ReaderSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Reader") },
+                title = { Text(stringResource(R.string.settings_reader_title)) },
             )
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
-            item { SettingsSectionHeader("Appearance") }
+            item { SettingsSectionHeader(stringResource(R.string.settings_section_appearance)) }
             item {
                 ListItem(
-                    headlineContent = { Text("Color theme") },
+                    headlineContent = { Text(stringResource(R.string.reader_settings_color_theme)) },
                     supportingContent = {
                         Column(modifier = Modifier.padding(top = 4.dp)) {
                             ColorThemePicker(
@@ -77,7 +80,7 @@ fun ReaderSettingsScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Font") },
+                    headlineContent = { Text(stringResource(R.string.reader_font)) },
                     supportingContent = {
                         Column(modifier = Modifier.padding(top = 4.dp)) {
                             FontPicker(
@@ -93,7 +96,7 @@ fun ReaderSettingsScreen(
                     headlineContent = {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             StepperRow(
-                                label = "Font size",
+                                label = stringResource(R.string.reader_settings_font_size),
                                 value = "${fontSize}sp",
                                 onDecrement = { viewModel.setReaderFontSize(fontSize - 1) },
                                 onIncrement = { viewModel.setReaderFontSize(fontSize + 1) },
@@ -101,7 +104,7 @@ fun ReaderSettingsScreen(
                                 incrementEnabled = fontSize < 32,
                             )
                             StepperRow(
-                                label = "Line height",
+                                label = stringResource(R.string.reader_settings_line_height),
                                 value = "%.1f×".format(lineHeightTimes10 / 10f),
                                 onDecrement = { viewModel.setReaderLineHeight(lineHeightTimes10 - 1) },
                                 onIncrement = { viewModel.setReaderLineHeight(lineHeightTimes10 + 1) },
@@ -109,7 +112,7 @@ fun ReaderSettingsScreen(
                                 incrementEnabled = lineHeightTimes10 < 30,
                             )
                             StepperRow(
-                                label = "Paragraph spacing",
+                                label = stringResource(R.string.reader_settings_paragraph_spacing),
                                 value = "${paragraphSpacing}dp",
                                 onDecrement = { viewModel.setReaderParagraphSpacing(paragraphSpacing - 4) },
                                 onIncrement = { viewModel.setReaderParagraphSpacing(paragraphSpacing + 4) },
@@ -120,10 +123,10 @@ fun ReaderSettingsScreen(
                     },
                 )
             }
-            item { SettingsSectionHeader("Reading") }
+            item { SettingsSectionHeader(stringResource(R.string.settings_section_reading)) }
             item {
                 ListItem(
-                    headlineContent = { Text("Auto-mark as read") },
+                    headlineContent = { Text(stringResource(R.string.reader_settings_auto_mark)) },
                     supportingContent = {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -135,7 +138,7 @@ fun ReaderSettingsScreen(
                             )
                             when (markAsReadStrategy) {
                                 MarkAsReadStrategy.PERCENT -> StepperRow(
-                                    label = "Mark at",
+                                    label = stringResource(R.string.reader_mark_at),
                                     value = "$threshold%",
                                     onDecrement = { viewModel.setReaderMarkAsReadThreshold(threshold - 5) },
                                     onIncrement = { viewModel.setReaderMarkAsReadThreshold(threshold + 5) },
@@ -143,9 +146,12 @@ fun ReaderSettingsScreen(
                                     incrementEnabled = threshold < 100,
                                 )
                                 MarkAsReadStrategy.PARAGRAPHS_FROM_END -> StepperRow(
-                                    label = "Within last",
-                                    value = if (paragraphsFromEnd == 1) "1 paragraph"
-                                            else "$paragraphsFromEnd paragraphs",
+                                    label = stringResource(R.string.reader_settings_within_last),
+                                    value = pluralStringResource(
+                                        R.plurals.reader_settings_paragraph_count,
+                                        paragraphsFromEnd,
+                                        paragraphsFromEnd,
+                                    ),
                                     onDecrement = { viewModel.setReaderMarkAsReadParagraphsFromEnd(paragraphsFromEnd - 1) },
                                     onIncrement = { viewModel.setReaderMarkAsReadParagraphsFromEnd(paragraphsFromEnd + 1) },
                                     decrementEnabled = paragraphsFromEnd > 0,
@@ -157,10 +163,10 @@ fun ReaderSettingsScreen(
                     },
                 )
             }
-            item { SettingsSectionHeader("Display") }
+            item { SettingsSectionHeader(stringResource(R.string.settings_section_display)) }
             item {
                 ListItem(
-                    headlineContent = { Text("Screen rotation") },
+                    headlineContent = { Text(stringResource(R.string.reader_settings_rotation)) },
                     supportingContent = {
                         Column(modifier = Modifier.padding(top = 4.dp)) {
                             OrientationPicker(
@@ -173,8 +179,8 @@ fun ReaderSettingsScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Hide notification bar") },
-                    supportingContent = { Text("Hide the status bar at the top of the screen while reading") },
+                    headlineContent = { Text(stringResource(R.string.reader_settings_hide_status_bar)) },
+                    supportingContent = { Text(stringResource(R.string.reader_settings_hide_status_bar_summary)) },
                     trailingContent = {
                         Switch(
                             checked = hideNotificationBar,
@@ -186,11 +192,11 @@ fun ReaderSettingsScreen(
                     },
                 )
             }
-            item { SettingsSectionHeader("Privacy") }
+            item { SettingsSectionHeader(stringResource(R.string.settings_section_privacy)) }
             item {
                 ListItem(
-                    headlineContent = { Text("Hide images") },
-                    supportingContent = { Text("Hide inline images until you tap to reveal or hold to peek") },
+                    headlineContent = { Text(stringResource(R.string.reader_settings_hide_images)) },
+                    supportingContent = { Text(stringResource(R.string.reader_settings_hide_images_summary)) },
                     trailingContent = {
                         Switch(
                             checked = hideInlineImages,

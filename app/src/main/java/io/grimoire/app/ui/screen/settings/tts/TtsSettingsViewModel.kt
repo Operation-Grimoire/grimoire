@@ -86,10 +86,8 @@ class TtsSettingsViewModel @Inject constructor(
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** Subtitle text for a language row on the main screen (the chosen voice name). */
-    fun voiceSummary(language: String, voices: Map<String, String>): String {
-        val id = voices[ContentLanguages.normalize(language)]
-        return id?.let { "Custom voice selected" } ?: "System default"
-    }
+    fun hasCustomVoice(language: String, voices: Map<String, String>): Boolean =
+        voices[ContentLanguages.normalize(language)] != null
 
     val deviceVoiceMap: StateFlow<Map<String, String>> get() = deviceVoices
     val cloudVoiceMap: StateFlow<Map<String, String>> get() = cloudVoices
@@ -145,7 +143,7 @@ class TtsSettingsViewModel @Inject constructor(
             _usageState.value = UsageState.Loading
             _usageState.value = runCatching {
                 UsageState.Loaded(elevenLabsApi.getUsage(key))
-            }.getOrElse { UsageState.Error(it.message ?: "Could not load usage") }
+            }.getOrElse { UsageState.Error(it.message.orEmpty()) }
         }
     }
 
@@ -163,7 +161,7 @@ class TtsSettingsViewModel @Inject constructor(
                     val localeTag = languageResolver.resolveLocale(lang).toLanguageTag()
                     VoiceListState.Loaded(deviceEngine.availableVoices(localeTag))
                 }
-            }.getOrElse { VoiceListState.Error(it.message ?: "Could not load voices") }
+            }.getOrElse { VoiceListState.Error(it.message.orEmpty()) }
         }
     }
 

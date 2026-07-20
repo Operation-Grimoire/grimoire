@@ -15,8 +15,14 @@ data class DataSettingsState(
     val breakdown: StorageBreakdown? = null,
     val loading: Boolean = true,
     val busy: Boolean = false,
-    val message: String? = null,
+    val message: DataSettingsMessage? = null,
 )
+
+sealed interface DataSettingsMessage {
+    data object CoverCacheCleared : DataSettingsMessage
+    data class BrowseDataCleared(val count: Int) : DataSettingsMessage
+    data class InstallerFilesCleared(val count: Int) : DataSettingsMessage
+}
 
 @HiltViewModel
 class DataSettingsViewModel @Inject constructor(
@@ -36,15 +42,15 @@ class DataSettingsViewModel @Inject constructor(
         _state.value = _state.value.copy(breakdown = breakdown, loading = false)
     }
 
-    fun clearCoverCache() = runAction("Cover cache cleared") {
+    fun clearCoverCache() = runAction(DataSettingsMessage.CoverCacheCleared) {
         storageManager.clearCoverCache()
     }
 
-    fun clearBrowseData() = runAction({ removed -> "Cleared $removed browse ${if (removed == 1) "novel" else "novels"}" }) {
+    fun clearBrowseData() = runAction({ removed -> DataSettingsMessage.BrowseDataCleared(removed) }) {
         storageManager.clearBrowseData()
     }
 
-    fun clearInstallerFiles() = runAction({ removed -> "Cleared $removed installer ${if (removed == 1) "file" else "files"}" }) {
+    fun clearInstallerFiles() = runAction({ removed -> DataSettingsMessage.InstallerFilesCleared(removed) }) {
         storageManager.clearInstallerFiles()
     }
 
@@ -52,10 +58,10 @@ class DataSettingsViewModel @Inject constructor(
         _state.value = _state.value.copy(message = null)
     }
 
-    private fun runAction(message: String, action: suspend () -> Unit) =
+    private fun runAction(message: DataSettingsMessage, action: suspend () -> Unit) =
         runAction({ message }, action)
 
-    private fun <T> runAction(message: (T) -> String, action: suspend () -> T) = viewModelScope.launch {
+    private fun <T> runAction(message: (T) -> DataSettingsMessage, action: suspend () -> T) = viewModelScope.launch {
         _state.value = _state.value.copy(busy = true)
         val result = action()
         val fresh = storageManager.measure()

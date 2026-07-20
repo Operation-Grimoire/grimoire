@@ -20,8 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.storage.StorageBreakdown
+import io.grimoire.app.R
 
 private data class StorageSlice(val label: String, val bytes: Long, val color: Color)
 
@@ -37,11 +39,11 @@ internal fun StorageUsageBar(
 ) {
     val scheme = MaterialTheme.colorScheme
     val slices = listOf(
-        StorageSlice("Chapter text", breakdown.downloadedTextBytes, scheme.primary),
-        StorageSlice("Chapter images", breakdown.downloadedImageBytes, scheme.tertiary),
-        StorageSlice("Cover cache", breakdown.coverCacheBytes, scheme.secondary),
-        StorageSlice("Database", breakdown.databaseBytes, scheme.error),
-        StorageSlice("Installer files", breakdown.installerBytes, scheme.outline),
+        StorageSlice(stringResource(R.string.data_chapter_text), breakdown.downloadedTextBytes, scheme.primary),
+        StorageSlice(stringResource(R.string.data_chapter_images), breakdown.downloadedImageBytes, scheme.tertiary),
+        StorageSlice(stringResource(R.string.data_cover_cache), breakdown.coverCacheBytes, scheme.secondary),
+        StorageSlice(stringResource(R.string.data_database), breakdown.databaseBytes, scheme.error),
+        StorageSlice(stringResource(R.string.data_installer_files), breakdown.installerBytes, scheme.outline),
     ).filter { it.bytes > 0L }
     val total = slices.sumOf { it.bytes }
     if (total <= 0L) return

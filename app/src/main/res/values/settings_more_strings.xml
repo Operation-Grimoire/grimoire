@@ -1,0 +1,306 @@
+<resources>
+    <!-- Appearance -->
+    <string name="appearance_theme">Theme</string>
+    <string name="appearance_theme_system">System</string>
+    <string name="appearance_theme_light">Light</string>
+    <string name="appearance_theme_dark">Dark</string>
+    <string name="appearance_dynamic_color">Dynamic Color</string>
+    <string name="appearance_dynamic_color_summary">Adapt colors to your wallpaper</string>
+    <string name="appearance_synopsis_links">Links in synopses</string>
+    <string name="appearance_synopsis_links_summary">Render web links in novel descriptions as tappable links</string>
+    <string name="appearance_color_palette">Color palette</string>
+    <string name="appearance_color_palette_summary">Pick the accent palette used across the app.</string>
+    <string name="appearance_color_palette_disabled">Turn off Dynamic Color to choose a custom palette.</string>
+    <string name="color_theme_default">Default</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">Ocean</string>
+    <string name="color_theme_sunset">Sunset</string>
+    <string name="color_theme_forest">Forest</string>
+    <string name="color_theme_rose">Rose</string>
+    <string name="color_theme_midnight">Midnight</string>
+
+    <!-- Behavior -->
+    <string name="behavior_haptics">Haptic feedback</string>
+    <string name="behavior_haptics_summary">Vibrate on long-press, tab switches, and selection actions.</string>
+
+    <!-- Library settings -->
+    <string name="settings_section_display">Display</string>
+    <string name="settings_display_mode">Display</string>
+    <string name="settings_display_grid">Grid</string>
+    <string name="settings_display_list">List</string>
+    <string name="settings_columns">Columns</string>
+    <string name="settings_section_organization">Organization</string>
+    <string name="library_settings_show_all">Show "All" tab</string>
+    <string name="library_settings_show_all_summary">Show a tab combining all categories</string>
+    <string name="library_settings_hidden">Hidden categories</string>
+    <string name="library_settings_hidden_summary">Set a PIN and manage which categories are hidden</string>
+    <string name="library_settings_section_counts">Chapter counts</string>
+    <string name="library_settings_locked_totals">Include locked chapters in totals</string>
+    <string name="library_settings_locked_totals_summary">Count locked chapters in the total and read percentage shown on library badges and the novel details page</string>
+    <string name="library_settings_section_badges">Cover badges</string>
+    <string name="library_settings_read_badge">Show read progress badge</string>
+    <string name="library_settings_read_badge_summary">Show read count and percentage on library covers</string>
+    <string name="library_settings_downloaded_badge">Show downloaded badge</string>
+    <string name="library_settings_downloaded_badge_summary">Show the downloaded-chapter count on library covers</string>
+    <string name="library_settings_locked_badge">Show locked chapters badge</string>
+    <string name="library_settings_locked_badge_summary">Show a gold lock badge with the locked-chapter count on library covers</string>
+    <string name="library_settings_epub_badge">Show EPUB badge</string>
+    <string name="library_settings_epub_badge_summary">Flag imported EPUB novels with a badge on library covers</string>
+
+    <!-- Browse settings and content languages -->
+    <string name="browse_settings_nu_shortcuts">NovelUpdates shortcuts</string>
+    <string name="browse_settings_nu_shortcuts_summary">Show the NovelUpdates search, rankings, and latest links on Browse.</string>
+    <string name="browse_settings_pinned_groups">Show pinned in language groups</string>
+    <string name="browse_settings_pinned_groups_summary">Also list pinned sources under their language, not just in Pinned.</string>
+    <string name="content_languages_title">Content languages</string>
+    <string name="content_languages_helper">Languages selected here apply to every multi-language source unless overridden in that source’s settings. Leave all unchecked to show every language.</string>
+
+    <!-- Reader settings -->
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="reader_settings_color_theme">Color theme</string>
+    <string name="reader_settings_font_size">Font size</string>
+    <string name="reader_settings_line_height">Line height</string>
+    <string name="reader_settings_paragraph_spacing">Paragraph spacing</string>
+    <string name="settings_section_reading">Reading</string>
+    <string name="reader_settings_auto_mark">Auto-mark as read</string>
+    <string name="reader_settings_within_last">Within last</string>
+    <plurals name="reader_settings_paragraph_count"><item quantity="one">%1$d paragraph</item><item quantity="other">%1$d paragraphs</item></plurals>
+    <string name="reader_settings_rotation">Screen rotation</string>
+    <string name="reader_settings_hide_status_bar">Hide notification bar</string>
+    <string name="reader_settings_hide_status_bar_summary">Hide the status bar at the top of the screen while reading</string>
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="reader_settings_hide_images">Hide images</string>
+    <string name="reader_settings_hide_images_summary">Hide inline images until you tap to reveal or hold to peek</string>
+
+    <!-- NovelUpdates and connections -->
+    <string name="nu_settings_show_section">Show NovelUpdates section</string>
+    <string name="nu_settings_show_section_summary">Adds a NovelUpdates panel to a novel’s details with alternative titles, rating, and recommendations.</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">Not connected</string>
+    <string name="connections_signing_in">Signing in…</string>
+    <string name="connections_error">Connection error</string>
+
+    <!-- Shared schedule controls -->
+    <string name="schedule_every">Every</string>
+    <plurals name="schedule_hours"><item quantity="one">%1$d hour</item><item quantity="other">%1$d hours</item></plurals>
+    <plurals name="schedule_days"><item quantity="one">%1$d day</item><item quantity="other">%1$d days</item></plurals>
+    <plurals name="schedule_weeks"><item quantity="one">%1$d week</item><item quantity="other">%1$d weeks</item></plurals>
+    <string name="schedule_unit_hour">hour</string>
+    <string name="schedule_unit_day">day</string>
+    <string name="schedule_unit_week">week</string>
+    <string name="schedule_time_of_day">Time of day</string>
+    <string name="schedule_off">Off</string>
+    <string name="schedule_runs_every">Runs every %1$s</string>
+    <string name="schedule_runs_around">Runs around %1$s</string>
+    <string name="schedule_run_around">Run around %1$s</string>
+    <string name="schedule_runs_around_when_scheduled">Runs around %1$s when scheduled</string>
+    <string name="schedule_never">Never</string>
+    <string name="schedule_completed_at">%1$s — completed</string>
+    <string name="schedule_failed_at">%1$s — failed</string>
+
+    <!-- Hidden categories -->
+    <string name="hidden_title">Hidden categories</string>
+    <string name="hidden_setup_pin">Set up a PIN</string>
+    <string name="hidden_setup_pin_summary">A PIN is required to hide categories and unlock them later.</string>
+    <string name="hidden_setup_pin_action">Set up PIN</string>
+    <string name="hidden_locked">Locked</string>
+    <string name="hidden_locked_summary">Unlock to manage hidden categories.</string>
+    <string name="hidden_change_pin">Change PIN</string>
+    <string name="hidden_change">Change</string>
+    <string name="hidden_biometric">Use biometric unlock</string>
+    <string name="hidden_biometric_available">Fingerprint or face unlock instead of PIN</string>
+    <string name="hidden_biometric_unavailable">Not available — no biometrics enrolled</string>
+    <string name="hidden_show_in_all">Show hidden in "All" tab</string>
+    <string name="hidden_show_in_all_summary">When unlocked, also list hidden novels under the All tab</string>
+    <string name="hidden_categories_section">Categories</string>
+    <string name="hidden_default_category">Default — cannot be hidden</string>
+    <string name="hidden_remove_pin_action">Remove PIN and unhide all</string>
+    <string name="hidden_remove_pin_title">Remove PIN?</string>
+    <string name="hidden_remove_pin_message">All hidden categories will become visible to anyone using the app.</string>
+    <string name="hidden_pin_label">PIN (4–8 digits)</string>
+    <string name="hidden_confirm_pin">Confirm PIN</string>
+    <string name="hidden_pin_mismatch">PINs don’t match</string>
+
+    <!-- Backup and restore -->
+    <string name="backup_section_backup">Backup</string>
+    <string name="backup_description">Backups are saved as a gzipped JSON file to a folder you pick on this device. Choose a folder you can find later (such as Downloads or Documents).</string>
+    <string name="backup_folder">Backup folder</string>
+    <string name="backup_folder_not_selected">Not selected</string>
+    <string name="backup_no_folder_selected">No backup folder selected</string>
+    <plurals name="backup_novels_backed_up"><item quantity="one">Backed up %1$d novel</item><item quantity="other">Backed up %1$d novels</item></plurals>
+    <string name="backup_now">Backup now</string>
+    <string name="backup_restore_ellipsis">Restore…</string>
+    <string name="backup_scheduled">Scheduled backup</string>
+    <string name="backup_scheduled_description">Runs in the background on this device. The app does not need to be open.</string>
+    <string name="backup_automatic">Back up automatically</string>
+    <string name="backup_wifi_only">Only on Wi-Fi</string>
+    <string name="backup_wifi_only_summary">Skip auto backup on cellular</string>
+    <string name="backup_charging_only">Only while charging</string>
+    <string name="backup_run_scheduled">Run scheduled backup now</string>
+    <string name="backup_run_scheduled_summary">Uses the selected folder and schedule constraints</string>
+    <string name="backup_last_automatic">Last automatic backup</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">succeeded</string>
+    <string name="backup_restore_title">Restore backup?</string>
+    <string name="backup_restore_message">This will merge the backup into your current library. Existing entries are kept; new ones are added and reading progress is merged.</string>
+    <string name="backup_created">Backup created: %1$s</string>
+    <plurals name="backup_saved"><item quantity="one">Saved %1$s (%2$d novel)</item><item quantity="other">Saved %1$s (%2$d novels)</item></plurals>
+    <plurals name="backup_restored"><item quantity="one">Restored %1$d novel, %2$d chapters</item><item quantity="other">Restored %1$d novels, %2$d chapters</item></plurals>
+    <string name="backup_queued">Backup queued</string>
+    <string name="backup_folder_inaccessible">Backup folder is not accessible</string>
+    <string name="backup_folder_not_writable">Backup folder is not writable</string>
+    <string name="backup_create_file_failed">Could not create backup file</string>
+    <string name="backup_open_output_failed">Could not open output stream</string>
+    <string name="backup_read_file_failed">Could not read backup file</string>
+    <string name="backup_failed">Backup failed</string>
+    <string name="backup_newer_version">Backup file is from a newer app version (v%1$d)</string>
+    <string name="restore_failed">Restore failed</string>
+
+    <!-- Data management -->
+    <string name="data_storage">Storage</string>
+    <string name="data_storage_summary">Grimoire is using %1$s · %2$s free of %3$s</string>
+    <string name="data_your_data">Your data</string>
+    <plurals name="data_library_novels"><item quantity="one">%1$d novel · %2$d chapters</item><item quantity="other">%1$d novels · %2$d chapters</item></plurals>
+    <string name="data_browse">Browse data</string>
+    <plurals name="data_browse_count"><item quantity="one">%1$d cached novel you haven’t saved or read</item><item quantity="other">%1$d cached novels you haven’t saved or read</item></plurals>
+    <string name="data_downloads">Downloads</string>
+    <string name="data_chapter_text">Chapter text</string>
+    <plurals name="data_chapter_text_summary"><item quantity="one">%1$s · %2$d chapter</item><item quantity="other">%1$s · %2$d chapters</item></plurals>
+    <string name="data_chapter_images">Chapter images</string>
+    <plurals name="data_chapter_images_summary"><item quantity="one">%1$s · %2$d image</item><item quantity="other">%1$s · %2$d images</item></plurals>
+    <string name="data_caches">Caches</string>
+    <string name="data_cover_cache">Cover cache</string>
+    <string name="data_database">Database</string>
+    <string name="data_installer_files">Installer files</string>
+    <string name="data_installer_summary">%1$s · leftover app &amp; extension update packages</string>
+    <string name="data_clear_cover_title">Clear cover cache?</string>
+    <string name="data_clear_cover_message">Cover images will be re-downloaded the next time they’re shown.</string>
+    <string name="data_clear_browse_title">Clear browse data?</string>
+    <string name="data_clear_browse_message">Removes cached novels you haven’t saved to your library or read. They’re re-fetched from the source when you open them again. Read history and downloads are kept.</string>
+    <string name="data_clear_installer_title">Clear installer files?</string>
+    <string name="data_clear_installer_message">Deletes leftover .apk files from app and extension updates. They’re re-downloaded the next time you update. Don’t clear while an install is still in progress.</string>
+    <string name="data_cover_cache_cleared">Cover cache cleared</string>
+    <plurals name="data_browse_cleared"><item quantity="one">Cleared %1$d browse novel</item><item quantity="other">Cleared %1$d browse novels</item></plurals>
+    <plurals name="data_installers_cleared"><item quantity="one">Cleared %1$d installer file</item><item quantity="other">Cleared %1$d installer files</item></plurals>
+
+    <!-- Library update settings -->
+    <string name="library_update_scheduled">Scheduled update</string>
+    <string name="library_update_scheduled_description">Refreshes your library in the background, fetching new chapters. The app does not need to be open.</string>
+    <string name="library_update_automatic">Update automatically</string>
+    <string name="library_update_wifi_only">Only on Wi-Fi</string>
+    <string name="library_update_wifi_only_summary">Skip the scheduled update on cellular</string>
+    <string name="library_update_charging_only">Only while charging</string>
+    <string name="library_update_sync_scope">Sync scope</string>
+    <string name="library_update_include_epubs">Include EPUBs</string>
+    <string name="library_update_include_epubs_summary">Refresh EPUB novels (local imports and EPUB sources like Z-Library) during library updates. They have no new chapters to fetch, so this is off by default.</string>
+    <string name="library_update_performance">Performance</string>
+    <string name="library_update_concurrency">Sync concurrency: %1$d</string>
+    <string name="library_update_concurrency_summary">How many novels to refresh in parallel. Higher is faster but may trigger rate-limiting from some sources.</string>
+    <string name="library_update_now">Update library now</string>
+    <string name="library_update_now_summary">Refresh every novel in your library in the background</string>
+    <string name="library_update_last">Last update</string>
+
+    <!-- Text-to-speech -->
+    <string name="tts_enable">Enable text-to-speech</string>
+    <string name="tts_enable_summary">Show read-aloud controls in the reader</string>
+    <string name="tts_speech_engine">Speech engine</string>
+    <string name="tts_on_device">On-device</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">Reads aloud with the device’s built-in voices. Works offline.</string>
+    <string name="tts_elevenlabs_summary">Streams natural cloud voices from ElevenLabs. Needs a network connection and is billed per character on your account.</string>
+    <string name="tts_elevenlabs_account">ElevenLabs account</string>
+    <string name="tts_api_key">API key</string>
+    <string name="tts_playback">Playback</string>
+    <string name="tts_speech_rate">Speech rate</string>
+    <string name="tts_pitch">Pitch (on-device only)</string>
+    <string name="tts_auto_advance">Auto-advance to next chapter</string>
+    <string name="tts_auto_advance_summary">Keep reading into the next chapter when one finishes</string>
+    <string name="tts_voices">Voices</string>
+    <string name="tts_voices_summary">Pick which voice reads each language. Novels are matched by their content language.</string>
+    <string name="tts_custom_voice">Custom voice selected</string>
+    <string name="tts_system_default">System default</string>
+    <string name="tts_credit_usage">Credit usage</string>
+    <string name="tts_refresh_usage">Refresh usage</string>
+    <string name="tts_usage_api_key_hint">Enter an API key above to see your remaining characters.</string>
+    <string name="tts_loading">Loading…</string>
+    <string name="tts_usage_summary">%1$,d / %2$,d characters used</string>
+    <string name="tts_quota_reset">Quota resets %1$s</string>
+    <string name="tts_voice_title">Voice</string>
+    <string name="tts_voice_needs_key">Add an ElevenLabs API key in Text-to-speech settings to choose a cloud voice.</string>
+    <string name="tts_elevenlabs_plan_note">The ElevenLabs free plan is limited (~10,000 characters/month) and many voices — even some Default ones — require a paid plan. If a voice won’t play, try another, or use the On-device engine for unlimited offline reading.</string>
+    <string name="tts_system_default_summary">Let the engine pick a voice for this language</string>
+    <string name="tts_install_voices">Install more voices…</string>
+    <string name="tts_install_voices_summary">Download additional voice data for the device engine</string>
+    <string name="tts_stop_preview">Stop preview</string>
+    <string name="tts_preview_voice">Preview voice</string>
+    <string name="tts_load_usage_failed">Could not load usage</string>
+    <string name="tts_load_voices_failed">Could not load voices</string>
+
+    <!-- GitHub connection -->
+    <string name="github_account_title">GitHub account</string>
+    <string name="github_privacy_note">Connect a GitHub account to install extensions from your own private repositories. Your access token is stored only on this device and is sent only to github.com. Revoke any time at github.com/settings/applications.</string>
+    <string name="github_not_connected">Not connected.</string>
+    <string name="github_connect">Connect GitHub</string>
+    <string name="github_enter_code">Enter this code on github.com</string>
+    <string name="github_open_device_page">Open github.com/login/device</string>
+    <string name="github_copy_code">Copy code</string>
+    <string name="github_waiting">Waiting for you to finish in the browser…</string>
+    <string name="github_connected">Connected</string>
+    <string name="github_authorization_failed">Authorization failed</string>
+    <string name="github_no_client_id">This build has no OAuth client ID</string>
+    <string name="github_no_client_id_summary">Set GITHUB_OAUTH_CLIENT_ID in gradle.properties (or as an environment variable) and rebuild.</string>
+
+    <!-- About and updater -->
+    <string name="about_title">About</string>
+    <string name="about_version">Version</string>
+    <string name="about_version_summary">Grimoire %1$s (build %2$d)\nCommit %3$s · Extensions API %4$s</string>
+    <string name="about_check_updates">Check for updates</string>
+    <string name="about_check_updates_idle">Tap to check for a new version</string>
+    <string name="about_checking">Checking…</string>
+    <string name="about_latest_version">You’re on the latest version</string>
+    <string name="about_up_to_date">Up to date</string>
+    <string name="about_show_changelog">Show changelog</string>
+    <string name="about_show_changelog_summary">Open the release notes for %1$s</string>
+    <string name="about_updates_section">Updates</string>
+    <string name="about_update_popups">Automatic update popups</string>
+    <string name="about_update_popups_summary">Show a dialog on launch when an update is available</string>
+    <string name="about_changelog_after_update">Changelog after updates</string>
+    <string name="about_changelog_after_update_summary">Show release notes the first time you launch a new version</string>
+    <string name="about_build_section">Build</string>
+    <string name="about_build_details">Build details</string>
+    <string name="about_build_details_summary">Build %1$d · commit %2$s · Extensions API %3$s</string>
+    <string name="about_build_copied">Build info copied</string>
+    <string name="about_channel_stable">Stable</string>
+    <string name="about_channel_beta">Beta</string>
+    <string name="about_channel_stable_summary">Tagged releases only. Recommended.</string>
+    <string name="about_channel_beta_summary">Fresh builds from main on every commit. May be unstable.</string>
+    <string name="update_whats_new">What’s new in %1$s</string>
+    <string name="update_got_it">Got it</string>
+    <string name="update_ready">Update ready</string>
+    <string name="update_available">Update available</string>
+    <string name="update_unknown_error">Unknown error</string>
+    <string name="update_no_changelog">No changelog available for %1$s.</string>
+    <string name="action_update">Update</string>
+    <string name="update_download_complete">Download complete — tap Install to finish updating.</string>
+    <string name="update_skip_version">Skip this version</string>
+    <string name="update_downloading_background">Downloading in the background — you can close the app.</string>
+    <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
+    <string name="update_download_size">%1$s MB</string>
+    <string name="changelog_features">Features</string>
+    <string name="changelog_bug_fixes">Bug fixes</string>
+    <string name="changelog_sources">Sources</string>
+    <string name="changelog_documentation">Documentation</string>
+    <string name="changelog_other">Other changes</string>
+    <string name="changelog_changes">Changes</string>
+
+    <!-- Shared language picker -->
+    <string name="language_override_global">Override global content languages</string>
+    <string name="language_override_on_helper">Pick the languages you want for this source only.</string>
+    <string name="language_override_off_helper">This source uses the global content-language selection. Turn this on to pick a different mix just for this source.</string>
+    <string name="language_global_all">Global: no filter (all languages shown)</string>
+    <plurals name="language_global_selected"><item quantity="one">Global: %1$d language selected</item><item quantity="other">Global: %1$d languages selected</item></plurals>
+    <string name="language_saved">Saved</string>
+    <string name="language_global">Global</string>
+    <string name="language_added_here">Added here</string>
+    <string name="language_hidden_here">Hidden here</string>
+</resources>

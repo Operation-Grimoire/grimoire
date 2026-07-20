@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.preferences.ColorTheme
@@ -57,6 +58,7 @@ import io.grimoire.app.ui.theme.SunsetDark
 import io.grimoire.app.ui.theme.SunsetLight
 import io.grimoire.app.ui.theme.DefaultDark
 import io.grimoire.app.ui.theme.DefaultLight
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,18 +77,18 @@ fun AppearanceSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Appearance") },
+                title = { Text(stringResource(R.string.settings_appearance_title)) },
             )
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
             item {
                 ListItem(
-                    headlineContent = { Text("Theme") },
+                    headlineContent = { Text(stringResource(R.string.appearance_theme)) },
                     supportingContent = {
                         SingleChoiceSegmentedButtonRow(
                             modifier = Modifier
@@ -98,7 +100,7 @@ fun AppearanceSettingsScreen(
                                     selected = themeMode == mode,
                                     onClick = { viewModel.setThemeMode(mode) },
                                     shape = SegmentedButtonDefaults.itemShape(index, ThemeMode.entries.size),
-                                    label = { Text(mode.displayName) },
+                                    label = { Text(mode.localizedDisplayName()) },
                                 )
                             }
                         }
@@ -109,8 +111,8 @@ fun AppearanceSettingsScreen(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 item {
                     ListItem(
-                        headlineContent = { Text("Dynamic Color") },
-                        supportingContent = { Text("Adapt colors to your wallpaper") },
+                        headlineContent = { Text(stringResource(R.string.appearance_dynamic_color)) },
+                        supportingContent = { Text(stringResource(R.string.appearance_dynamic_color_summary)) },
                         trailingContent = {
                             Switch(
                                 checked = useDynamicColor,
@@ -136,9 +138,9 @@ fun AppearanceSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Links in synopses") },
+                    headlineContent = { Text(stringResource(R.string.appearance_synopsis_links)) },
                     supportingContent = {
-                        Text("Render web links in novel descriptions as tappable links")
+                        Text(stringResource(R.string.appearance_synopsis_links_summary))
                     },
                     trailingContent = {
                         Switch(
@@ -164,14 +166,14 @@ private fun ColorThemePicker(
 ) {
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(
-            text = "Color palette",
+            text = stringResource(R.string.appearance_color_palette),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
         val supporting = if (enabled) {
-            "Pick the accent palette used across the app."
+            stringResource(R.string.appearance_color_palette_summary)
         } else {
-            "Turn off Dynamic Color to choose a custom palette."
+            stringResource(R.string.appearance_color_palette_disabled)
         }
         Text(
             text = supporting,
@@ -188,7 +190,7 @@ private fun ColorThemePicker(
             items(ColorTheme.entries) { theme ->
                 val (primary, secondary, tertiary) = previewSwatches(theme, darkPreview)
                 ColorThemeChip(
-                    name = theme.displayName,
+                    name = theme.localizedDisplayName(),
                     primary = primary,
                     secondary = secondary,
                     tertiary = tertiary,
@@ -280,9 +282,24 @@ private fun SwatchDot(color: Color, alpha: Float) {
     )
 }
 
-internal val ThemeMode.displayName: String
-    get() = when (this) {
-        ThemeMode.SYSTEM -> "System"
-        ThemeMode.LIGHT -> "Light"
-        ThemeMode.DARK -> "Dark"
-    }
+@Composable
+private fun ThemeMode.localizedDisplayName(): String = stringResource(
+    when (this) {
+        ThemeMode.SYSTEM -> R.string.appearance_theme_system
+        ThemeMode.LIGHT -> R.string.appearance_theme_light
+        ThemeMode.DARK -> R.string.appearance_theme_dark
+    },
+)
+
+@Composable
+private fun ColorTheme.localizedDisplayName(): String = stringResource(
+    when (this) {
+        ColorTheme.DEFAULT -> R.string.color_theme_default
+        ColorTheme.GRIMOIRE -> R.string.color_theme_grimoire
+        ColorTheme.OCEAN -> R.string.color_theme_ocean
+        ColorTheme.SUNSET -> R.string.color_theme_sunset
+        ColorTheme.FOREST -> R.string.color_theme_forest
+        ColorTheme.ROSE -> R.string.color_theme_rose
+        ColorTheme.MIDNIGHT -> R.string.color_theme_midnight
+    },
+)

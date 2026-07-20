@@ -30,9 +30,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
+import io.grimoire.app.R
 
 private enum class ConfirmTarget { COVER_CACHE, BROWSE_DATA, INSTALLERS }
 
@@ -50,7 +53,20 @@ fun DataSettingsScreen(
 
     fun bytes(value: Long) = Formatter.formatShortFileSize(context, value)
 
-    state.message?.let { msg ->
+    state.message?.let { message ->
+        val msg = when (message) {
+            DataSettingsMessage.CoverCacheCleared -> stringResource(R.string.data_cover_cache_cleared)
+            is DataSettingsMessage.BrowseDataCleared -> pluralStringResource(
+                R.plurals.data_browse_cleared,
+                message.count,
+                message.count,
+            )
+            is DataSettingsMessage.InstallerFilesCleared -> pluralStringResource(
+                R.plurals.data_installers_cleared,
+                message.count,
+                message.count,
+            )
+        }
         androidx.compose.runtime.LaunchedEffect(msg) {
             snackbarHost.showSnackbar(msg)
             viewModel.consumeMessage()
@@ -63,14 +79,14 @@ fun DataSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Data management") },
+                title = { Text(stringResource(R.string.settings_data_title)) },
                 actions = {
-                    PlainTooltipIconButton(onClick = viewModel::refresh, enabled = !state.busy, tooltip = "Refresh") {
-                        Icon(AppIcons.Refresh, contentDescription = "Refresh")
+                    PlainTooltipIconButton(onClick = viewModel::refresh, enabled = !state.busy, tooltip = stringResource(R.string.action_refresh)) {
+                        Icon(AppIcons.Refresh, contentDescription = stringResource(R.string.action_refresh))
                     }
                 },
             )
@@ -82,7 +98,7 @@ fun DataSettingsScreen(
                 LinearProgressIndicator(Modifier.fillMaxWidth())
             }
             LazyColumn {
-                item { SettingsSectionHeader("Storage") }
+                item { SettingsSectionHeader(stringResource(R.string.data_storage)) }
                 item {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                         if (b == null) {
@@ -91,8 +107,12 @@ fun DataSettingsScreen(
                             StorageUsageBar(b)
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                "Grimoire is using ${bytes(b.appTotalBytes)} · " +
-                                    "${bytes(b.deviceFreeBytes)} free of ${bytes(b.deviceTotalBytes)}",
+                                stringResource(
+                                    R.string.data_storage_summary,
+                                    bytes(b.appTotalBytes),
+                                    bytes(b.deviceFreeBytes),
+                                    bytes(b.deviceTotalBytes),
+                                ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -100,64 +120,83 @@ fun DataSettingsScreen(
                     }
                 }
 
-                item { SettingsSectionHeader("Your data") }
+                item { SettingsSectionHeader(stringResource(R.string.data_your_data)) }
                 item {
                     ListItem(
-                        headlineContent = { Text("Library") },
+                        headlineContent = { Text(stringResource(R.string.settings_library_title)) },
                         supportingContent = {
                             Text(
                                 if (b == null) "…"
-                                else "${b.libraryNovels} novels · ${b.libraryChapters} chapters",
+                                else pluralStringResource(
+                                    R.plurals.data_library_novels,
+                                    b.libraryNovels,
+                                    b.libraryNovels,
+                                    b.libraryChapters,
+                                ),
                             )
                         },
                     )
                 }
                 item {
                     ListItem(
-                        headlineContent = { Text("Browse data") },
+                        headlineContent = { Text(stringResource(R.string.data_browse)) },
                         supportingContent = {
                             Text(
                                 if (b == null) "…"
-                                else "${b.browseNovels} cached novels you haven't saved or read",
+                                else pluralStringResource(
+                                    R.plurals.data_browse_count,
+                                    b.browseNovels,
+                                    b.browseNovels,
+                                ),
                             )
                         },
                         trailingContent = {
                             TextButton(
                                 onClick = { confirm = ConfirmTarget.BROWSE_DATA },
                                 enabled = b != null && b.browseNovels > 0 && !state.busy,
-                            ) { Text("Clear") }
+                            ) { Text(stringResource(R.string.action_clear)) }
                         },
                     )
                 }
 
-                item { SettingsSectionHeader("Downloads") }
+                item { SettingsSectionHeader(stringResource(R.string.data_downloads)) }
                 item {
                     ListItem(
-                        headlineContent = { Text("Chapter text") },
+                        headlineContent = { Text(stringResource(R.string.data_chapter_text)) },
                         supportingContent = {
                             Text(
                                 if (b == null) "…"
-                                else "${bytes(b.downloadedTextBytes)} · ${b.downloadedTextCount} chapters",
+                                else pluralStringResource(
+                                    R.plurals.data_chapter_text_summary,
+                                    b.downloadedTextCount,
+                                    bytes(b.downloadedTextBytes),
+                                    b.downloadedTextCount,
+                                ),
                             )
                         },
                     )
                 }
                 item {
                     ListItem(
-                        headlineContent = { Text("Chapter images") },
+                        headlineContent = { Text(stringResource(R.string.data_chapter_images)) },
                         supportingContent = {
                             Text(
                                 if (b == null) "…"
-                                else "${bytes(b.downloadedImageBytes)} · ${b.downloadedImageCount} images",
+                                else pluralStringResource(
+                                    R.plurals.data_chapter_images_summary,
+                                    b.downloadedImageCount,
+                                    bytes(b.downloadedImageBytes),
+                                    b.downloadedImageCount,
+                                ),
                             )
                         },
                     )
                 }
 
-                item { SettingsSectionHeader("Caches") }
+                item { SettingsSectionHeader(stringResource(R.string.data_caches)) }
                 item {
                     ListItem(
-                        headlineContent = { Text("Cover cache") },
+                        headlineContent = { Text(stringResource(R.string.data_cover_cache)) },
                         supportingContent = {
                             Text(if (b == null) "…" else bytes(b.coverCacheBytes))
                         },
@@ -165,13 +204,13 @@ fun DataSettingsScreen(
                             TextButton(
                                 onClick = { confirm = ConfirmTarget.COVER_CACHE },
                                 enabled = b != null && b.coverCacheBytes > 0 && !state.busy,
-                            ) { Text("Clear") }
+                            ) { Text(stringResource(R.string.action_clear)) }
                         },
                     )
                 }
                 item {
                     ListItem(
-                        headlineContent = { Text("Database") },
+                        headlineContent = { Text(stringResource(R.string.data_database)) },
                         supportingContent = {
                             Text(if (b == null) "…" else bytes(b.databaseBytes))
                         },
@@ -179,18 +218,18 @@ fun DataSettingsScreen(
                 }
                 item {
                     ListItem(
-                        headlineContent = { Text("Installer files") },
+                        headlineContent = { Text(stringResource(R.string.data_installer_files)) },
                         supportingContent = {
                             Text(
                                 if (b == null) "…"
-                                else "${bytes(b.installerBytes)} · leftover app & extension update packages",
+                                else stringResource(R.string.data_installer_summary, bytes(b.installerBytes)),
                             )
                         },
                         trailingContent = {
                             TextButton(
                                 onClick = { confirm = ConfirmTarget.INSTALLERS },
                                 enabled = b != null && b.installerCount > 0 && !state.busy,
-                            ) { Text("Clear") }
+                            ) { Text(stringResource(R.string.action_clear)) }
                         },
                     )
                 }
@@ -201,22 +240,18 @@ fun DataSettingsScreen(
     confirm?.let { target ->
         val (title, body, onConfirm) = when (target) {
             ConfirmTarget.COVER_CACHE -> Triple(
-                "Clear cover cache?",
-                "Cover images will be re-downloaded the next time they're shown.",
+                stringResource(R.string.data_clear_cover_title),
+                stringResource(R.string.data_clear_cover_message),
                 viewModel::clearCoverCache,
             )
             ConfirmTarget.BROWSE_DATA -> Triple(
-                "Clear browse data?",
-                "Removes cached novels you haven't saved to your library or read. " +
-                    "They're re-fetched from the source when you open them again. " +
-                    "Read history and downloads are kept.",
+                stringResource(R.string.data_clear_browse_title),
+                stringResource(R.string.data_clear_browse_message),
                 viewModel::clearBrowseData,
             )
             ConfirmTarget.INSTALLERS -> Triple(
-                "Clear installer files?",
-                "Deletes leftover .apk files from app and extension updates. " +
-                    "They're re-downloaded the next time you update. " +
-                    "Don't clear while an install is still in progress.",
+                stringResource(R.string.data_clear_installer_title),
+                stringResource(R.string.data_clear_installer_message),
                 viewModel::clearInstallerFiles,
             )
         }
@@ -228,10 +263,10 @@ fun DataSettingsScreen(
                 TextButton(onClick = {
                     onConfirm()
                     confirm = null
-                }) { Text("Clear") }
+                }) { Text(stringResource(R.string.action_clear)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirm = null }) { Text("Cancel") }
+                TextButton(onClick = { confirm = null }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }

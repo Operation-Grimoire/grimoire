@@ -16,8 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,11 +35,11 @@ fun ToursScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Tours") },
+                title = { Text(stringResource(R.string.more_tours)) },
             )
         },
     ) { padding ->
@@ -45,17 +47,17 @@ fun ToursScreen(
             items(viewModel.tours, key = { it.id }) { tour ->
                 val done = tour.id in completed
                 ListItem(
-                    headlineContent = { Text(tour.title) },
-                    supportingContent = { Text(tour.description) },
+                    headlineContent = { Text(stringResource(tour.titleRes)) },
+                    supportingContent = { Text(stringResource(tour.descriptionRes)) },
                     trailingContent = {
                         if (done) {
                             Icon(
                                 AppIcons.CheckCircle,
-                                contentDescription = "Completed",
+                                contentDescription = stringResource(R.string.status_completed),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                         } else {
-                            Icon(AppIcons.PlayArrow, contentDescription = "Start")
+                            Icon(AppIcons.PlayArrow, contentDescription = stringResource(R.string.tour_start))
                         }
                     },
                     modifier = Modifier.clickable { viewModel.replay(tour.id) },
