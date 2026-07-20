@@ -9,7 +9,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.R
 import io.grimoire.app.util.languageLabel
 
 /**
@@ -35,7 +37,7 @@ internal fun LanguageFilterChips(
         FilterChip(
             selected = selected == null,
             onClick = { onSelect(null) },
-            label = { Text("All") },
+            label = { Text(stringResource(R.string.filter_all)) },
         )
         languages.forEach { lang ->
             FilterChip(

@@ -46,6 +46,8 @@ import io.grimoire.app.ui.tour.TourKey
 import io.grimoire.app.ui.tour.tourTarget
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.component.AppSearchField
@@ -55,6 +57,7 @@ import io.grimoire.app.ui.component.SourceListItem
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.util.languageLabel
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,12 +125,17 @@ fun BrowseScreen(
                 )
             } else {
                 TopAppBar(
-                    title = { Text("Browse") },
+                    title = { Text(stringResource(R.string.nav_browse)) },
                     actions = {
-                        PlainTooltipIconButton(onClick = onNavigateToManage, tooltip = "Manage extensions") {
+                        PlainTooltipIconButton(
+                            onClick = onNavigateToManage,
+                            tooltip = stringResource(R.string.browse_manage_extensions),
+                        ) {
                             Icon(
                                 AppIcons.Extension,
-                                contentDescription = "Manage extensions",
+                                contentDescription = stringResource(
+                                    R.string.browse_manage_extensions,
+                                ),
                                 modifier = Modifier.tourTarget(TourKey.ExtensionManager),
                             )
                         }
@@ -139,7 +147,7 @@ fun BrowseScreen(
             TooltipBottomBar(visible = selectionMode) {
                 TooltipIconButton(
                     icon = AppIcons.Settings,
-                    label = "Settings",
+                    label = stringResource(R.string.browse_source_settings),
                     visible = selected.size == 1,
                     onClick = {
                         selected.firstOrNull()?.let(onOpenSourceSettings)
@@ -148,7 +156,11 @@ fun BrowseScreen(
                 )
                 TooltipIconButton(
                     icon = AppIcons.PushPin,
-                    label = if (allSelectedPinned) "Unpin" else "Pin",
+                    label = if (allSelectedPinned) {
+                        stringResource(R.string.browse_unpin)
+                    } else {
+                        stringResource(R.string.browse_pin)
+                    },
                     onClick = {
                         viewModel.setPinned(selected, !allSelectedPinned)
                         clearSelection()
@@ -156,7 +168,7 @@ fun BrowseScreen(
                 )
                 TooltipIconButton(
                     icon = AppIcons.Delete,
-                    label = "Uninstall",
+                    label = stringResource(R.string.browse_uninstall),
                     tint = MaterialTheme.colorScheme.error,
                     onClick = { showUninstallConfirm = true },
                 )
@@ -188,7 +200,7 @@ fun BrowseScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            "No extensions installed\nTap the extension icon to add one",
+                            stringResource(R.string.browse_no_extensions),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -196,7 +208,9 @@ fun BrowseScreen(
                 }
             } else {
                 if (ui.pinned.isNotEmpty()) {
-                    item(key = "__pinned_header__") { SectionHeader("Pinned") }
+                    item(key = "__pinned_header__") {
+                        SectionHeader(stringResource(R.string.browse_pinned))
+                    }
                     items(ui.pinned, key = { "pin_${it.packageName}" }) { item ->
                         SourceListItem(
                             name = item.name,
@@ -251,21 +265,21 @@ fun BrowseScreen(
         ) {
             Column(Modifier.padding(bottom = 24.dp)) {
                 Text(
-                    "Filter sources",
+                    stringResource(R.string.browse_filter_sources),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
                 AppSearchField(
                     value = nameFilter,
                     onValueChange = viewModel::setNameFilter,
-                    placeholder = "Filter sources…",
+                    placeholder = stringResource(R.string.browse_filter_sources_placeholder),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
                 )
                 if (ui.languages.size > 1) {
                     Text(
-                        "Language",
+                        stringResource(R.string.browse_language),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 2.dp),
@@ -285,11 +299,18 @@ fun BrowseScreen(
         val count = selected.size
         AlertDialog(
             onDismissRequest = { showUninstallConfirm = false },
-            title = { Text(if (count == 1) "Uninstall extension?" else "Uninstall $count extensions?") },
+            title = {
+                Text(
+                    pluralStringResource(
+                        R.plurals.browse_uninstall_title,
+                        count,
+                        count,
+                    ),
+                )
+            },
             text = {
                 Text(
-                    if (count == 1) "Android will ask you to confirm the removal."
-                    else "Android will ask you to confirm each removal in turn."
+                    pluralStringResource(R.plurals.browse_uninstall_description, count),
                 )
             },
             confirmButton = {
@@ -305,10 +326,12 @@ fun BrowseScreen(
                     }
                     showUninstallConfirm = false
                     clearSelection()
-                }) { Text("Uninstall") }
+                }) { Text(stringResource(R.string.browse_uninstall)) }
             },
             dismissButton = {
-                TextButton(onClick = { showUninstallConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showUninstallConfirm = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             },
         )
     }
@@ -323,17 +346,37 @@ private fun NovelUpdatesCard(
     onBookmarks: () -> Unit,
 ) {
     Column {
-        SectionHeader("NovelUpdates")
+        SectionHeader(stringResource(R.string.browse_novelupdates_title))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            NuEntry(AppIcons.Search, "Search", onSearch, Modifier.weight(1f))
-            NuEntry(AppIcons.TrendingUp, "Rankings", onRankings, Modifier.weight(1f))
-            NuEntry(AppIcons.NewReleases, "Latest", onLatest, Modifier.weight(1f))
-            NuEntry(AppIcons.Inventory2, "Saved", onBookmarks, Modifier.weight(1f))
+            NuEntry(
+                AppIcons.Search,
+                stringResource(R.string.browse_novelupdates_search),
+                onSearch,
+                Modifier.weight(1f),
+            )
+            NuEntry(
+                AppIcons.TrendingUp,
+                stringResource(R.string.browse_novelupdates_rankings),
+                onRankings,
+                Modifier.weight(1f),
+            )
+            NuEntry(
+                AppIcons.NewReleases,
+                stringResource(R.string.browse_novelupdates_latest),
+                onLatest,
+                Modifier.weight(1f),
+            )
+            NuEntry(
+                AppIcons.Inventory2,
+                stringResource(R.string.browse_novelupdates_saved),
+                onBookmarks,
+                Modifier.weight(1f),
+            )
         }
     }
 }
@@ -403,7 +446,7 @@ private fun BrowseBottomToolbar(
             IconButton(onClick = onFilter) {
                 Icon(
                     AppIcons.FilterList,
-                    contentDescription = "Filter",
+                    contentDescription = stringResource(R.string.browse_filter),
                     tint = if (filterActive) {
                         MaterialTheme.colorScheme.primary
                     } else {
@@ -412,7 +455,10 @@ private fun BrowseBottomToolbar(
                 )
             }
             IconButton(onClick = onSearch) {
-                Icon(AppIcons.Search, contentDescription = "Search")
+                Icon(
+                    AppIcons.Search,
+                    contentDescription = stringResource(R.string.browse_search),
+                )
             }
         }
     }

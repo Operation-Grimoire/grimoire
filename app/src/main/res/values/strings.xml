@@ -166,4 +166,35 @@
     <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">Notifications enabled</string>
     <string name="library_auto_download_enabled">Auto-download enabled</string>
+
+    <!-- Shared source components -->
+    <string name="filter_all">All</string>
+    <string name="source_pinned">Pinned</string>
+
+    <!-- Browse -->
+    <string name="browse_manage_extensions">Manage extensions</string>
+    <string name="browse_source_settings">Settings</string>
+    <string name="browse_pin">Pin</string>
+    <string name="browse_unpin">Unpin</string>
+    <string name="browse_uninstall">Uninstall</string>
+    <string name="browse_no_extensions">No extensions installed\nTap the extension icon to add one</string>
+    <string name="browse_pinned">Pinned</string>
+    <string name="browse_filter_sources">Filter sources</string>
+    <string name="browse_filter_sources_placeholder">Filter sources…</string>
+    <string name="browse_language">Language</string>
+    <plurals name="browse_uninstall_title">
+        <item quantity="one">Uninstall extension?</item>
+        <item quantity="other">Uninstall %1$d extensions?</item>
+    </plurals>
+    <plurals name="browse_uninstall_description">
+        <item quantity="one">Android will ask you to confirm the removal.</item>
+        <item quantity="other">Android will ask you to confirm each removal in turn.</item>
+    </plurals>
+    <string name="browse_novelupdates_search">Search</string>
+    <string name="browse_novelupdates_title">NovelUpdates</string>
+    <string name="browse_novelupdates_rankings">Rankings</string>
+    <string name="browse_novelupdates_latest">Latest</string>
+    <string name="browse_novelupdates_saved">Saved</string>
+    <string name="browse_filter">Filter</string>
+    <string name="browse_search">Search</string>
 </resources>

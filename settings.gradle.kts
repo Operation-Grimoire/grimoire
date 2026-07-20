@@ -11,9 +11,6 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-}
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -21,6 +18,9 @@ dependencyResolutionManagement {
         maven {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/Operation-Grimoire/grimoire-extensions-api")
+            content {
+                includeModule("io.grimoire", "extensions-api")
+            }
             credentials {
                 username = System.getenv("GITHUB_ACTOR") ?: ""
                 password = System.getenv("GITHUB_TOKEN") ?: ""

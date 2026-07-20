@@ -161,4 +161,33 @@
     <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">已开启通知</string>
     <string name="library_auto_download_enabled">已开启自动下载</string>
+
+    <!-- 共享书源组件 -->
+    <string name="filter_all">全部</string>
+    <string name="source_pinned">已固定</string>
+
+    <!-- 浏览 -->
+    <string name="browse_manage_extensions">管理扩展</string>
+    <string name="browse_source_settings">设置</string>
+    <string name="browse_pin">固定</string>
+    <string name="browse_unpin">取消固定</string>
+    <string name="browse_uninstall">卸载</string>
+    <string name="browse_no_extensions">未安装扩展\n点按扩展图标添加</string>
+    <string name="browse_pinned">已固定</string>
+    <string name="browse_filter_sources">筛选书源</string>
+    <string name="browse_filter_sources_placeholder">筛选书源…</string>
+    <string name="browse_language">语言</string>
+    <plurals name="browse_uninstall_title">
+        <item quantity="other">卸载 %1$d 个扩展？</item>
+    </plurals>
+    <plurals name="browse_uninstall_description">
+        <item quantity="other">Android 会要求你依次确认卸载。</item>
+    </plurals>
+    <string name="browse_novelupdates_search">搜索</string>
+    <string name="browse_novelupdates_title">NovelUpdates</string>
+    <string name="browse_novelupdates_rankings">排行榜</string>
+    <string name="browse_novelupdates_latest">最新</string>
+    <string name="browse_novelupdates_saved">收藏</string>
+    <string name="browse_filter">筛选</string>
+    <string name="browse_search">搜索</string>
 </resources>

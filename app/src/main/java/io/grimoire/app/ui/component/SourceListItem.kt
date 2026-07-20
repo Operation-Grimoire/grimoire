@@ -17,9 +17,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.util.languageLabel
+import io.grimoire.app.R
 
 /**
  * Shared source / extension row used by Browse home and Extensions. Renders the
@@ -67,7 +69,7 @@ internal fun SourceListItem(
                 if (pinned) {
                     Icon(
                         AppIcons.PushPin,
-                        contentDescription = "Pinned",
+                        contentDescription = stringResource(R.string.source_pinned),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(14.dp),
                     )
