@@ -19,9 +19,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.screen.browse.GlobalSearchResults
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,15 +46,15 @@ fun MigrateScreen(
                     PlainTooltipIconButton(onClick = {
                         keyboard?.hide()
                         onNavigateBack()
-                    }, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    }, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 title = {
                     AppSearchField(
                         value = searchQuery,
                         onValueChange = viewModel::setQuery,
-                        placeholder = "Search all sources…",
+                        placeholder = stringResource(R.string.global_search_all_placeholder),
                         modifier = Modifier.fillMaxWidth(),
                         onSearch = { viewModel.submitSearch() },
                     )
@@ -80,7 +82,7 @@ fun MigrateScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "No results found",
+                    stringResource(R.string.global_search_no_results_found),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -90,7 +92,7 @@ fun MigrateScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "Type to search all sources",
+                    stringResource(R.string.global_search_type_all),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

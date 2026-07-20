@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import io.grimoire.app.R
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -46,17 +48,17 @@ internal fun GrimoireEasterEggDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Grimoire highlight") },
+        title = { Text(stringResource(R.string.reader_grimoire_highlight)) },
         text = {
             Column {
                 Text(
-                    text = "Animates every occurrence of \"grimoire\" in chapter text. Toggle it off here or from reader settings.",
+                    text = stringResource(R.string.reader_grimoire_highlight_description),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "Enabled",
+                        text = stringResource(R.string.reader_enabled),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f),
                     )
@@ -65,7 +67,7 @@ internal fun GrimoireEasterEggDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
         },
     )
 }

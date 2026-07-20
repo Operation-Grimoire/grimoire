@@ -20,6 +20,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import io.grimoire.app.R
 
 @Composable
 internal fun JumpDialog(
@@ -31,7 +33,7 @@ internal fun JumpDialog(
     var input by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Jump to chapter") },
+        title = { Text(stringResource(R.string.novel_jump_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (nextUnreadLabel != null) {
@@ -39,7 +41,7 @@ internal fun JumpDialog(
                         onClick = onJumpToNextUnread,
                         label = {
                             Text(
-                                "Next unread: $nextUnreadLabel",
+                                stringResource(R.string.novel_jump_next_unread, nextUnreadLabel),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -52,7 +54,7 @@ internal fun JumpDialog(
                 OutlinedTextField(
                     value = input,
                     onValueChange = { input = it.filter { c -> c.isDigit() } },
-                    label = { Text("Chapter number") },
+                    label = { Text(stringResource(R.string.novel_jump_chapter_number)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
@@ -66,8 +68,8 @@ internal fun JumpDialog(
             TextButton(
                 onClick = { input.toIntOrNull()?.let(onJump) },
                 enabled = input.isNotBlank(),
-            ) { Text("Go") }
+            ) { Text(stringResource(R.string.action_go)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }

@@ -47,6 +47,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.NovelQuickViewSheet
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.grimoire.api.model.novel.Novel
 import androidx.compose.material3.MaterialTheme
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,15 +91,18 @@ fun GlobalSearchScreen(
                         keyboard?.hide()
                         viewModel.clearSearch()
                         onNavigateBack()
-                    }, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    }, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 title = {
                     AppSearchField(
                         value = searchQuery,
                         onValueChange = viewModel::setQuery,
-                        placeholder = if (pinnedOnly) "Search pinned sources…" else "Search all sources…",
+                        placeholder = stringResource(
+                            if (pinnedOnly) R.string.global_search_pinned_placeholder
+                            else R.string.global_search_all_placeholder,
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .focusRequester(focusRequester),
@@ -129,14 +135,17 @@ fun GlobalSearchScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            "No results found",
+                            stringResource(R.string.global_search_no_results_found),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            if (pinnedOnly) "Type to search your pinned sources" else "Type to search all sources",
+                            stringResource(
+                                if (pinnedOnly) R.string.global_search_type_pinned
+                                else R.string.global_search_type_all,
+                            ),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -179,17 +188,17 @@ private fun SearchScopeBar(
             FilterChip(
                 selected = !includeAll,
                 onClick = { onSelectScope(false) },
-                label = { Text("Pinned ($pinnedCount)") },
+                label = { Text(pluralStringResource(R.plurals.global_search_pinned_count, pinnedCount, pinnedCount)) },
             )
             FilterChip(
                 selected = includeAll,
                 onClick = { onSelectScope(true) },
-                label = { Text("All sources") },
+                label = { Text(stringResource(R.string.global_search_all_sources)) },
             )
         }
     } else {
         Text(
-            "Searching all sources. Tip: long-press a source on Browse and tap Pin to search just your favorites.",
+            stringResource(R.string.global_search_scope_tip),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -225,7 +234,7 @@ internal fun GlobalSearchResults(
                     )
                     if (showSeeAll && !group.isLoading && group.novels.isNotEmpty()) {
                         TextButton(onClick = { onSeeAll(group.packageName) }) {
-                            Text("See all")
+                            Text(stringResource(R.string.global_search_see_all))
                         }
                     }
                 }
@@ -250,7 +259,7 @@ internal fun GlobalSearchResults(
                 }
                 group.novels.isEmpty() -> item(key = "empty_${group.packageName}") {
                     Text(
-                        text = "No results",
+                        text = stringResource(R.string.global_search_no_results),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -320,7 +329,7 @@ internal fun NovelCoverCard(
                 ) {
                     Icon(
                         AppIcons.Bookmark,
-                        contentDescription = "In library",
+                        contentDescription = stringResource(R.string.content_description_in_library),
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(14.dp),
                     )

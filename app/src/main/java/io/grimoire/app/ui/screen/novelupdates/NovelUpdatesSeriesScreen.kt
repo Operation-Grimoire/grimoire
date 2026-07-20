@@ -42,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
@@ -51,6 +53,7 @@ import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.screen.extensions.InstallState
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,25 +95,28 @@ fun NovelUpdatesSeriesScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("NovelUpdates") },
+                title = { Text(stringResource(R.string.nu_title)) },
                 actions = {
                     val s = state
                     if (s is NuSeriesState.Loaded) {
-                        PlainTooltipIconButton(onClick = viewModel::toggleBookmark, tooltip = if (isBookmarked) "Remove from saved" else "Save") {
+                        val bookmarkLabel = stringResource(
+                            if (isBookmarked) R.string.nu_remove_from_saved else R.string.nu_save,
+                        )
+                        PlainTooltipIconButton(onClick = viewModel::toggleBookmark, tooltip = bookmarkLabel) {
                             Icon(
                                 if (isBookmarked) AppIcons.Inventory2
                                 else AppIcons.Inventory2,
-                                contentDescription = if (isBookmarked) "Remove from saved" else "Save",
+                                contentDescription = bookmarkLabel,
                             )
                         }
-                        PlainTooltipIconButton(onClick = { onOpenWebView(s.series.url) }, tooltip = "Open in WebView") {
+                        PlainTooltipIconButton(onClick = { onOpenWebView(s.series.url) }, tooltip = stringResource(R.string.action_open_in_webview)) {
                             Icon(
                                 AppIcons.Language,
-                                contentDescription = "Open in WebView",
+                                contentDescription = stringResource(R.string.action_open_in_webview),
                             )
                         }
                     }
@@ -135,7 +141,7 @@ fun NovelUpdatesSeriesScreen(
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    TextButton(onClick = { viewModel.retry() }) { Text("Retry") }
+                    TextButton(onClick = { viewModel.retry() }) { Text(stringResource(R.string.action_retry)) }
                 }
 
                 is NuSeriesState.Loaded -> {
@@ -173,7 +179,7 @@ fun NovelUpdatesSeriesScreen(
                                 if (series.artists.isNotEmpty()) {
                                     Spacer(Modifier.height(2.dp))
                                     Text(
-                                        "Art: " + series.artists.joinToString(" · "),
+                                        stringResource(R.string.nu_artists, series.artists.joinToString(" · ")),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -193,7 +199,7 @@ fun NovelUpdatesSeriesScreen(
                                 }
                                 Spacer(Modifier.height(6.dp))
                                 Text(
-                                    "NovelUpdates listing — add to a source to read",
+                                    stringResource(R.string.nu_listing_hint),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                 )
@@ -201,11 +207,11 @@ fun NovelUpdatesSeriesScreen(
                         }
 
                         if (series.genres.isNotEmpty()) {
-                            GenreChips(genres = series.genres)
+                            GenreChips(genres = series.genres.map { localizedNuGenre(it) })
                         }
 
                         series.description?.let { desc ->
-                            Text("Description", style = MaterialTheme.typography.titleSmall)
+                            Text(stringResource(R.string.nu_description), style = MaterialTheme.typography.titleSmall)
                             ExpandableText(text = desc)
                         }
 
@@ -219,7 +225,7 @@ fun NovelUpdatesSeriesScreen(
                                 modifier = Modifier.size(18.dp),
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text("Find in my sources")
+                            Text(stringResource(R.string.nu_find_sources))
                         }
 
                         if (sourceLinks.isNotEmpty()) {
@@ -276,7 +282,7 @@ private fun NuSourceLinks(
     onInstall: (ExtensionItem.Available) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Read with", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.nu_read_with), style = MaterialTheme.typography.titleSmall)
         links.forEach { item ->
             val install = installStates[item.packageName]
             Card(Modifier.fillMaxWidth()) {
@@ -290,8 +296,8 @@ private fun NuSourceLinks(
                         val isError = install is InstallState.Error
                         val sub = when {
                             isError -> (install as InstallState.Error).message
-                            item is ExtensionItem.Available -> "Tap to install this source"
-                            else -> "Installed · open to read"
+                            item is ExtensionItem.Available -> stringResource(R.string.nu_tap_to_install)
+                            else -> stringResource(R.string.nu_installed_open)
                         }
                         Text(
                             sub,
@@ -314,7 +320,7 @@ private fun NuSourceLinks(
                                 modifier = Modifier.size(18.dp),
                             )
                             Spacer(Modifier.width(6.dp))
-                            Text(if (install is InstallState.Error) "Retry" else "Install")
+                            Text(stringResource(if (install is InstallState.Error) R.string.action_retry else R.string.action_install))
                         }
 
                         else -> Button(onClick = { onOpen(item.packageName) }) {
@@ -324,7 +330,7 @@ private fun NuSourceLinks(
                                 modifier = Modifier.size(18.dp),
                             )
                             Spacer(Modifier.width(6.dp))
-                            Text("Open")
+                            Text(stringResource(R.string.action_open))
                         }
                     }
                 }
@@ -336,25 +342,30 @@ private fun NuSourceLinks(
 @Composable
 private fun NuDetails(series: io.grimoire.app.data.novelupdates.NuSeries) {
     val rows = buildList {
-        series.year?.let { add("Year" to it) }
-        series.releaseFrequency?.let { add("Release frequency" to it) }
-        series.licensed?.let { add("Licensed" to if (it) "Yes" else "No") }
+        series.year?.let { add(stringResource(R.string.nu_year) to it) }
+        series.releaseFrequency?.let { add(stringResource(R.string.nu_release_frequency) to it) }
+        series.licensed?.let {
+            add(stringResource(R.string.nu_licensed) to stringResource(if (it) R.string.nu_yes else R.string.nu_no))
+        }
         series.completelyTranslated?.let {
-            add("Completely translated" to if (it) "Yes" else "No")
+            add(
+                stringResource(R.string.nu_completely_translated) to
+                    stringResource(if (it) R.string.nu_yes else R.string.nu_no),
+            )
         }
         if (series.originalPublishers.isNotEmpty()) {
-            add("Original publisher" to series.originalPublishers.joinToString(" · "))
+            add(stringResource(R.string.nu_original_publisher) to series.originalPublishers.joinToString(" · "))
         }
         if (series.englishPublishers.isNotEmpty()) {
-            add("English publisher" to series.englishPublishers.joinToString(" · "))
+            add(stringResource(R.string.nu_english_publisher) to series.englishPublishers.joinToString(" · "))
         }
         series.readingListCount?.let {
-            add("Reading lists" to "%,d".format(it))
+            add(stringResource(R.string.nu_reading_lists) to "%,d".format(it))
         }
     }
     if (rows.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("Details", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.nu_details), style = MaterialTheme.typography.titleSmall)
         rows.forEach { (label, value) ->
             Row {
                 Text(
@@ -377,7 +388,7 @@ private fun NuReleases(
     var expanded by remember { mutableStateOf(false) }
     val shown = if (expanded) releases else releases.take(5)
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("Latest releases", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.nu_latest_releases), style = MaterialTheme.typography.titleSmall)
         shown.forEach { rel ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -400,11 +411,14 @@ private fun NuReleases(
         }
         if (releases.size > 5) {
             TextButton(onClick = { expanded = !expanded }) {
-                Text(if (expanded) "Show less" else "Show all ${releases.size}")
+                Text(
+                    if (expanded) stringResource(R.string.nu_show_less)
+                    else stringResource(R.string.nu_show_all, releases.size),
+                )
             }
         }
         TextButton(onClick = onMore) {
-            Text("View all on NovelUpdates")
+            Text(stringResource(R.string.nu_view_all))
         }
     }
 }
@@ -418,7 +432,8 @@ private fun NuReviews(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            reviewCount?.let { "Reviews ($it)" } ?: "Reviews",
+            reviewCount?.let { stringResource(R.string.nu_reviews_count, it) }
+                ?: stringResource(R.string.nu_reviews),
             style = MaterialTheme.typography.titleSmall,
         )
         reviews.forEach { review ->
@@ -443,8 +458,8 @@ private fun NuReviews(
                 }
                 val meta = listOfNotNull(
                     review.date,
-                    review.progress?.let { "Progress $it" },
-                    review.likes?.let { "$it likes" },
+                    review.progress?.let { stringResource(R.string.nu_review_progress, it) },
+                    review.likes?.let { pluralStringResource(R.plurals.nu_review_likes, it, it) },
                 ).joinToString(" · ")
                 if (meta.isNotEmpty()) {
                     Text(
@@ -459,7 +474,7 @@ private fun NuReviews(
         }
         if (pageCount > 1) {
             TextButton(onClick = onMore) {
-                Text("More reviews on NovelUpdates")
+                Text(stringResource(R.string.nu_more_reviews))
             }
         }
     }

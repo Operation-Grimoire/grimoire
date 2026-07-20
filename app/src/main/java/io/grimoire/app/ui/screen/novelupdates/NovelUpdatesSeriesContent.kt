@@ -24,8 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
 import io.grimoire.app.data.novelupdates.NuSeries
+import io.grimoire.app.R
 
 /**
  * Shared presentation of a NovelUpdates series (rating, status, associated
@@ -47,7 +49,7 @@ fun NovelUpdatesSeriesContent(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     AppIcons.Star,
-                    contentDescription = "Rating",
+                    contentDescription = stringResource(R.string.content_description_rating),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp),
                 )
@@ -66,7 +68,7 @@ fun NovelUpdatesSeriesContent(
             if (segments.isNotEmpty()) {
                 Column {
                     Text(
-                        "Status",
+                        stringResource(R.string.nu_status),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -83,7 +85,7 @@ fun NovelUpdatesSeriesContent(
         if (series.associatedNames.isNotEmpty()) {
             Column {
                 Text(
-                    "Also known as",
+                    stringResource(R.string.nu_also_known_as),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -99,7 +101,7 @@ fun NovelUpdatesSeriesContent(
         if (series.recommendations.isNotEmpty()) {
             Column {
                 Text(
-                    "Recommended",
+                    stringResource(R.string.nu_recommended),
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(bottom = 6.dp),
                 )
@@ -135,7 +137,7 @@ fun NovelUpdatesSeriesContent(
             TextButton(
                 onClick = onRelink,
                 contentPadding = PaddingValues(0.dp),
-            ) { Text("Not the right series?") }
+            ) { Text(stringResource(R.string.nu_wrong_series)) }
         }
     }
 }

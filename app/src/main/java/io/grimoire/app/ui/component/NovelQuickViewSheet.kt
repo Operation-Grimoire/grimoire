@@ -36,12 +36,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.model.novel.NovelStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.ui.screen.browse.NovelQuickViewViewModel
 import io.grimoire.app.ui.screen.library.HiddenCategoriesUnlockDialog
 import kotlinx.coroutines.launch
+import io.grimoire.app.R
 
 /**
  * Long-press preview that reuses the detail screen's load path, so opening
@@ -96,7 +99,7 @@ fun NovelQuickViewSheet(
                 ) { CircularProgressIndicator() }
             } else {
                 NovelQuickHero(
-                    title = novel.title.ifBlank { "Loading…" },
+                    title = novel.title.ifBlank { stringResource(R.string.novel_loading) },
                     author = novel.author,
                     sourceName = vm.sourceName,
                     thumbnailUrl = novel.thumbnailUrl,
@@ -260,14 +263,17 @@ private fun ActionRow(
         ) {
             Icon(
                 if (isFavorite) AppIcons.Bookmark else AppIcons.BookmarkBorder,
-                contentDescription = if (isFavorite) "Remove from library" else "Add to library",
+                contentDescription = stringResource(
+                    if (isFavorite) R.string.novel_action_remove_from_library
+                    else R.string.novel_action_add_to_library,
+                ),
             )
         }
-        PlainTooltipIconButton(onClick = onPickCategory, enabled = canToggleLibrary, tooltip = "Change category") {
-            Icon(AppIcons.Label, contentDescription = "Change category")
+        PlainTooltipIconButton(onClick = onPickCategory, enabled = canToggleLibrary, tooltip = stringResource(R.string.novel_action_change_category)) {
+            Icon(AppIcons.Label, contentDescription = stringResource(R.string.novel_action_change_category))
         }
         Spacer(Modifier.weight(1f))
-        Button(onClick = onOpen) { Text("Open") }
+        Button(onClick = onOpen) { Text(stringResource(R.string.action_open)) }
     }
 }
 
@@ -295,9 +301,8 @@ private fun ChapterSection(
         ) {
             Text(
                 text = when {
-                    loading && chapterCount == 0 -> "Loading chapters…"
-                    chapterCount == 1 -> "1 chapter"
-                    else -> "$chapterCount chapters"
+                    loading && chapterCount == 0 -> stringResource(R.string.novel_loading_chapters)
+                    else -> pluralStringResource(R.plurals.novel_chapter_total, chapterCount, chapterCount)
                 },
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
@@ -307,7 +312,9 @@ private fun ChapterSection(
             } else if (chapterCount > 0) {
                 Icon(
                     if (expanded) AppIcons.ExpandLess else AppIcons.ExpandMore,
-                    contentDescription = if (expanded) "Collapse" else "Expand",
+                    contentDescription = stringResource(
+                        if (expanded) R.string.novel_collapse else R.string.novel_expand,
+                    ),
                 )
             }
         }

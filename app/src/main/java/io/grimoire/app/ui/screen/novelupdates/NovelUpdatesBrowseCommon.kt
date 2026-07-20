@@ -35,8 +35,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
 import io.grimoire.app.data.novelupdates.NuSearchResult
+import io.grimoire.app.R
 
 /** Infinite-scroll cover grid + loading/error/empty states shared by the
  *  Rankings/Latest browse screen and the Advanced Search screen. */
@@ -78,11 +80,11 @@ fun NuResultsArea(
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                TextButton(onClick = onRetry) { Text("Retry") }
+                TextButton(onClick = onRetry) { Text(stringResource(R.string.action_retry)) }
             }
             results.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                 Text(
-                    "No results",
+                    stringResource(R.string.global_search_no_results),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

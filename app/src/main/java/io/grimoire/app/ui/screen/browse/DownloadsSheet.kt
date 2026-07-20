@@ -16,9 +16,11 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.R
 import io.grimoire.app.ui.icon.*
 
 /** Bottom sheet of bulk download actions, each enabled per the current download state. */
@@ -47,25 +49,25 @@ internal fun DownloadsSheet(
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(modifier = Modifier.padding(bottom = 8.dp)) {
             Text(
-                "Downloads",
+                stringResource(R.string.novel_downloads_title),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
             Text(
-                "$downloaded / ${chapters.size} downloaded",
+                stringResource(R.string.novel_downloads_progress, downloaded, chapters.size),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
             Spacer(Modifier.height(8.dp))
 
-            DownloadAction(AppIcons.Download, "Download all", canDownloadAll) { onDownloadAll(); onDismiss() }
-            DownloadAction(AppIcons.Download, "Download unread", canDownloadUnread) { onDownloadUnread(); onDismiss() }
-            DownloadAction(AppIcons.Download, "Download next $nextCount", canDownloadUnread) { onDownloadNext(); onDismiss() }
-            DownloadAction(AppIcons.Close, "Cancel queued downloads", canCancel) { onCancelQueued(); onDismiss() }
+            DownloadAction(AppIcons.Download, stringResource(R.string.novel_download_all), canDownloadAll) { onDownloadAll(); onDismiss() }
+            DownloadAction(AppIcons.Download, stringResource(R.string.novel_download_unread), canDownloadUnread) { onDownloadUnread(); onDismiss() }
+            DownloadAction(AppIcons.Download, stringResource(R.string.novel_download_next, nextCount), canDownloadUnread) { onDownloadNext(); onDismiss() }
+            DownloadAction(AppIcons.Close, stringResource(R.string.novel_download_cancel_queued), canCancel) { onCancelQueued(); onDismiss() }
             DownloadAction(
                 AppIcons.Delete,
-                "Delete all downloads",
+                stringResource(R.string.novel_download_delete_all),
                 enabled = downloaded > 0,
                 tint = MaterialTheme.colorScheme.error,
             ) { onDeleteAll(); onDismiss() }

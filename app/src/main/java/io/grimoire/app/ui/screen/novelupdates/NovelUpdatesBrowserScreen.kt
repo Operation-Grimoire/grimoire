@@ -31,11 +31,13 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.novelupdates.NuGenres
 import io.grimoire.app.data.novelupdates.NuLanguages
 import io.grimoire.app.data.novelupdates.NuListingFilter
 import io.grimoire.app.data.novelupdates.NuRankingType
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,19 +63,19 @@ fun NovelUpdatesBrowserScreen(
     Column(modifier.fillMaxSize()) {
         TopAppBar(
             navigationIcon = {
-                PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                    Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                    Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                 }
             },
             title = {
-                Text(if (mode == NuBrowseMode.RANKINGS) "Rankings" else "Latest")
+                Text(stringResource(if (mode == NuBrowseMode.RANKINGS) R.string.nu_rankings else R.string.nu_latest))
             },
             actions = {
-                PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.currentPageUrl()) }, tooltip = "Open in WebView") {
-                    Icon(AppIcons.Language, contentDescription = "Open in WebView")
+                PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.currentPageUrl()) }, tooltip = stringResource(R.string.action_open_in_webview)) {
+                    Icon(AppIcons.Language, contentDescription = stringResource(R.string.action_open_in_webview))
                 }
-                PlainTooltipIconButton(onClick = { showFilters = true }, tooltip = "Filters") {
-                    Icon(AppIcons.FilterList, contentDescription = "Filters")
+                PlainTooltipIconButton(onClick = { showFilters = true }, tooltip = stringResource(R.string.source_browse_filters)) {
+                    Icon(AppIcons.FilterList, contentDescription = stringResource(R.string.source_browse_filters))
                 }
             },
         )
@@ -90,7 +92,19 @@ fun NovelUpdatesBrowserScreen(
                     FilterChip(
                         selected = rankingType == type,
                         onClick = { viewModel.setRankingType(type) },
-                        label = { Text(type.label) },
+                        label = {
+                            Text(
+                                stringResource(
+                                    when (type) {
+                                        NuRankingType.POPULAR_MONTH -> R.string.nu_ranking_popular_month
+                                        NuRankingType.POPULAR_ALL -> R.string.nu_ranking_popular_all
+                                        NuRankingType.ACTIVITY_WEEK -> R.string.nu_ranking_activity_week
+                                        NuRankingType.ACTIVITY_MONTH -> R.string.nu_ranking_activity_month
+                                        NuRankingType.ACTIVITY_ALL -> R.string.nu_ranking_activity_all
+                                    },
+                                ),
+                            )
+                        },
                     )
                 }
             }
@@ -149,11 +163,11 @@ private fun ListingFilterSheet(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Genres", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.nu_genres), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             FilterChip(
                 selected = matchAll,
                 onClick = { matchAll = !matchAll },
-                label = { Text(if (matchAll) "Match ALL" else "Match ANY") },
+                label = { Text(stringResource(if (matchAll) R.string.nu_match_all else R.string.nu_match_any)) },
             )
         }
         ChipFlow {
@@ -161,18 +175,18 @@ private fun ListingFilterSheet(
                 FilterChip(
                     selected = name in genres,
                     onClick = { toggle(genres, name) },
-                    label = { Text(name) },
+                    label = { Text(localizedNuGenre(name)) },
                 )
             }
         }
 
-        Text("Language", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.nu_language), style = MaterialTheme.typography.titleSmall)
         ChipFlow {
             NuLanguages.all.keys.forEach { name ->
                 FilterChip(
                     selected = name in languages,
                     onClick = { toggle(languages, name) },
-                    label = { Text(name) },
+                    label = { Text(localizedNuLanguage(name)) },
                 )
             }
         }
@@ -188,7 +202,7 @@ private fun ListingFilterSheet(
                 )
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("Apply") }
+        ) { Text(stringResource(R.string.action_apply)) }
     }
 }
 

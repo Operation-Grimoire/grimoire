@@ -25,10 +25,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
+import io.grimoire.app.R
 
 internal data class ReaderColors(val background: Color, val foreground: Color)
 
@@ -80,7 +82,14 @@ internal fun ColorThemePicker(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = theme.name.lowercase().replaceFirstChar { it.uppercase() },
+                    text = stringResource(
+                        when (theme) {
+                            ReaderColorTheme.LIGHT -> R.string.reader_theme_light
+                            ReaderColorTheme.SEPIA -> R.string.reader_theme_sepia
+                            ReaderColorTheme.DARK -> R.string.reader_theme_dark
+                            ReaderColorTheme.BLACK -> R.string.reader_theme_black
+                        },
+                    ),
                     color = tc.foreground,
                     style = MaterialTheme.typography.labelMedium,
                 )
@@ -99,9 +108,9 @@ internal fun FontPicker(
         ReaderFont.entries.forEach { font ->
             val isSelected = font == selected
             val label = when (font) {
-                ReaderFont.DEFAULT -> "Sans"
-                ReaderFont.SERIF -> "Serif"
-                ReaderFont.MONOSPACE -> "Mono"
+                ReaderFont.DEFAULT -> stringResource(R.string.reader_font_sans)
+                ReaderFont.SERIF -> stringResource(R.string.reader_font_serif)
+                ReaderFont.MONOSPACE -> stringResource(R.string.reader_font_mono)
             }
             Box(
                 modifier = Modifier
@@ -145,9 +154,9 @@ internal fun MarkAsReadStrategyPicker(
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         MarkAsReadStrategy.entries.forEach { value ->
             val label = when (value) {
-                MarkAsReadStrategy.PERCENT -> "Percent"
-                MarkAsReadStrategy.PARAGRAPHS_FROM_END -> "Near end"
-                MarkAsReadStrategy.AT_END -> "At end"
+                MarkAsReadStrategy.PERCENT -> stringResource(R.string.reader_mark_percent)
+                MarkAsReadStrategy.PARAGRAPHS_FROM_END -> stringResource(R.string.reader_mark_near_end)
+                MarkAsReadStrategy.AT_END -> stringResource(R.string.reader_mark_at_end)
             }
             FilterChip(
                 selected = selected == value,
@@ -167,9 +176,9 @@ internal fun OrientationPicker(
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ReaderOrientation.entries.forEach { value ->
             val label = when (value) {
-                ReaderOrientation.FREE -> "Free"
-                ReaderOrientation.PORTRAIT -> "Vertical"
-                ReaderOrientation.LANDSCAPE -> "Horizontal"
+                ReaderOrientation.FREE -> stringResource(R.string.reader_orientation_free)
+                ReaderOrientation.PORTRAIT -> stringResource(R.string.reader_orientation_vertical)
+                ReaderOrientation.LANDSCAPE -> stringResource(R.string.reader_orientation_horizontal)
             }
             FilterChip(
                 selected = selected == value,
@@ -205,7 +214,7 @@ internal fun StepperRow(
             PlainTooltipIconButton(
                 onClick = onDecrement,
                 enabled = decrementEnabled,
-                tooltip = "Decrease",
+                tooltip = stringResource(R.string.action_decrease),
                 modifier = Modifier.size(36.dp),
             ) {
                 Text(
@@ -224,7 +233,7 @@ internal fun StepperRow(
             PlainTooltipIconButton(
                 onClick = onIncrement,
                 enabled = incrementEnabled,
-                tooltip = "Increase",
+                tooltip = stringResource(R.string.action_increase),
                 modifier = Modifier.size(36.dp),
             ) {
                 Text(

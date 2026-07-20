@@ -35,10 +35,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
+import io.grimoire.app.R
 
 @SuppressLint("SetJavaScriptEnabled")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,6 +53,7 @@ fun WebViewScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val copiedUrlMessage = stringResource(R.string.webview_url_copied)
 
     var webView by remember { mutableStateOf<WebView?>(null) }
     var currentUrl by remember { mutableStateOf(url) }
@@ -70,8 +73,8 @@ fun WebViewScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 title = { Text(currentUrl, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -80,46 +83,46 @@ fun WebViewScreen(
                         PlainTooltipIconButton(onClick = {
                             webView?.stopLoading()
                             isLoading = false
-                        }, tooltip = "Stop loading") {
-                            Icon(AppIcons.Close, contentDescription = "Stop loading")
+                        }, tooltip = stringResource(R.string.action_stop_loading)) {
+                            Icon(AppIcons.Close, contentDescription = stringResource(R.string.action_stop_loading))
                         }
                     } else {
-                        PlainTooltipIconButton(onClick = { webView?.reload() }, tooltip = "Refresh") {
-                            Icon(AppIcons.Refresh, contentDescription = "Refresh")
+                        PlainTooltipIconButton(onClick = { webView?.reload() }, tooltip = stringResource(R.string.action_refresh)) {
+                            Icon(AppIcons.Refresh, contentDescription = stringResource(R.string.action_refresh))
                         }
                     }
                     Box {
-                        PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = "More actions") {
-                            Icon(AppIcons.MoreVert, contentDescription = "More actions")
+                        PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = stringResource(R.string.action_more_actions)) {
+                            Icon(AppIcons.MoreVert, contentDescription = stringResource(R.string.action_more_actions))
                         }
                         DropdownMenu(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Back") },
+                                text = { Text(stringResource(R.string.action_back)) },
                                 enabled = canGoBack,
                                 leadingIcon = { Icon(AppIcons.ArrowBack, null) },
                                 onClick = { menuExpanded = false; webView?.goBack() },
                             )
                             DropdownMenuItem(
-                                text = { Text("Forward") },
+                                text = { Text(stringResource(R.string.action_forward)) },
                                 enabled = canGoForward,
                                 leadingIcon = { Icon(AppIcons.ArrowForward, null) },
                                 onClick = { menuExpanded = false; webView?.goForward() },
                             )
                             DropdownMenuItem(
-                                text = { Text("Copy URL") },
+                                text = { Text(stringResource(R.string.action_copy_url)) },
                                 leadingIcon = { Icon(AppIcons.ContentCopy, null) },
                                 onClick = {
                                     menuExpanded = false
                                     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     cm.setPrimaryClip(ClipData.newPlainText("URL", currentUrl))
-                                    scope.launch { snackbarHostState.showSnackbar("Copied URL") }
+                                    scope.launch { snackbarHostState.showSnackbar(copiedUrlMessage) }
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Share") },
+                                text = { Text(stringResource(R.string.action_share)) },
                                 leadingIcon = { Icon(AppIcons.Share, null) },
                                 onClick = {
                                     menuExpanded = false
@@ -131,7 +134,7 @@ fun WebViewScreen(
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Open in browser") },
+                                text = { Text(stringResource(R.string.action_open_in_browser)) },
                                 leadingIcon = { Icon(AppIcons.OpenInBrowser, null) },
                                 onClick = {
                                     menuExpanded = false

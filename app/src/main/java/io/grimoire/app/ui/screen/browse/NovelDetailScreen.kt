@@ -78,6 +78,8 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -98,6 +100,7 @@ import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.rememberShimmerAlpha
 import io.grimoire.app.ui.theme.premiumGold
 import kotlinx.coroutines.launch
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -279,12 +282,12 @@ fun NovelDetailScreen(
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(
-                    "New chapters",
+                    stringResource(R.string.novel_new_chapters_title),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
                 Text(
-                    "Choose what happens when sync finds new chapters for this novel.",
+                    stringResource(R.string.novel_new_chapters_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 12.dp),
@@ -297,9 +300,9 @@ fun NovelDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Notify on new chapters", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.novel_notify_new), style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            "When sync finds chapters you can read now.",
+                            stringResource(R.string.novel_notify_new_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -317,9 +320,9 @@ fun NovelDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Notify on new locked chapters", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.novel_notify_locked), style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            "When sync finds chapters gated behind a paid tier.",
+                            stringResource(R.string.novel_notify_locked_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -337,9 +340,9 @@ fun NovelDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Auto-download new chapters", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.novel_auto_download_new), style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            "Queue readable chapters for download as sync finds them.",
+                            stringResource(R.string.novel_auto_download_new_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -374,8 +377,8 @@ fun NovelDetailScreen(
                     val n = ch.chapterNumber
                     if (n > 0f) {
                         val pretty = if (n % 1f == 0f) n.toInt().toString() else n.toString()
-                        "Chapter $pretty"
-                    } else "Next chapter"
+                        stringResource(R.string.novel_chapter_number, pretty)
+                    } else stringResource(R.string.novel_next_chapter)
                 }
             },
             onJumpToNextUnread = {
@@ -416,17 +419,13 @@ fun NovelDetailScreen(
                     tint = MaterialTheme.colorScheme.premiumGold,
                 )
             },
-            title = { Text("Chapter locked") },
+            title = { Text(stringResource(R.string.novel_locked_title)) },
             text = {
                 Text(
                     if (signedIn) {
-                        "\"${locked.name}\" is a premium chapter your " +
-                            "${viewModel.sourceName} account hasn't unlocked. Unlock it " +
-                            "on ${viewModel.sourceName}, then refresh to read it here."
+                        stringResource(R.string.novel_locked_signed_in, locked.name, viewModel.sourceName)
                     } else {
-                        "\"${locked.name}\" is locked. Reading it requires a " +
-                            "${viewModel.sourceName} account that has purchased these " +
-                            "chapters. Log in to read the chapters your account has unlocked."
+                        stringResource(R.string.novel_locked_signed_out, locked.name, viewModel.sourceName)
                     },
                 )
             },
@@ -437,10 +436,15 @@ fun NovelDetailScreen(
                     // Signed in: open the chapter page itself so they can unlock/buy it.
                     // Signed out: send them through the source login flow first.
                     if (signedIn) onOpenWebView(chapterUrl) else onNavigateToLogin(viewModel.pkg)
-                }) { Text(if (signedIn) "Open ${viewModel.sourceName}" else "Log in") }
+                }) {
+                    Text(
+                        if (signedIn) stringResource(R.string.novel_open_source, viewModel.sourceName)
+                        else stringResource(R.string.novel_log_in),
+                    )
+                }
             },
             dismissButton = {
-                TextButton(onClick = { lockedDialogChapter = null }) { Text("Close") }
+                TextButton(onClick = { lockedDialogChapter = null }) { Text(stringResource(R.string.action_close)) }
             },
         )
     }
@@ -469,25 +473,32 @@ fun NovelDetailScreen(
     if (showMigrateConfirm) {
         AlertDialog(
             onDismissRequest = { showMigrateConfirm = false },
-            title = { Text("Migrate to this novel?") },
+            title = { Text(stringResource(R.string.novel_migrate_confirm_title)) },
             text = {
                 Text(
-                    (if (migrateMatchCount > 0) {
-                        "$migrateMatchCount chapter${if (migrateMatchCount == 1) "" else "s"} " +
-                            "will be marked as read here."
-                    } else {
-                        "No chapters could be matched, so no read progress will carry over."
-                    }) + " \"$migrateFromTitle\" will be removed from your library.",
+                    stringResource(
+                        R.string.novel_migrate_summary,
+                        if (migrateMatchCount > 0) {
+                        pluralStringResource(
+                            R.plurals.novel_migrate_matched_chapters,
+                            migrateMatchCount,
+                            migrateMatchCount,
+                        )
+                        } else {
+                            stringResource(R.string.novel_migrate_no_matches)
+                        },
+                        migrateFromTitle,
+                    ),
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     showMigrateConfirm = false
                     viewModel.confirmMigration()
-                }) { Text("Migrate") }
+                }) { Text(stringResource(R.string.novel_migrate_action)) }
             },
             dismissButton = {
-                TextButton(onClick = { showMigrateConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showMigrateConfirm = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -495,10 +506,10 @@ fun NovelDetailScreen(
     (migrationState as? MigrationState.Error)?.let { error ->
         AlertDialog(
             onDismissRequest = viewModel::dismissMigrationError,
-            title = { Text("Migration failed") },
+            title = { Text(stringResource(R.string.novel_migrate_failed)) },
             text = { Text(error.message) },
             confirmButton = {
-                TextButton(onClick = viewModel::dismissMigrationError) { Text("OK") }
+                TextButton(onClick = viewModel::dismissMigrationError) { Text(stringResource(R.string.action_ok)) }
             },
         )
     }
@@ -513,7 +524,9 @@ fun NovelDetailScreen(
                         onChapterClick(viewModel.pkg, novel.url, continueChapter!!.url)
                     },
                     icon = { Icon(AppIcons.PlayArrow, contentDescription = null) },
-                    text = { Text(if (chapters.none { it.read }) "Start" else "Continue") },
+                    text = {
+                        Text(stringResource(if (chapters.none { it.read }) R.string.novel_start else R.string.novel_continue))
+                    },
                     expanded = fabExpanded,
                 )
             }
@@ -540,8 +553,8 @@ fun NovelDetailScreen(
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = barColor),
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 title = {
@@ -569,10 +582,10 @@ fun NovelDetailScreen(
                         val autoOn = autoDownloadNewChapters
                         val active = notificationsOn || autoOn
                         val tooltip = when {
-                            notificationsOn && autoOn -> "Notifications + auto-download on"
-                            notificationsOn -> "Notifications on"
-                            autoOn -> "Auto-download on"
-                            else -> "Notifications & download"
+                            notificationsOn && autoOn -> stringResource(R.string.novel_notifications_auto_on)
+                            notificationsOn -> stringResource(R.string.novel_notifications_on)
+                            autoOn -> stringResource(R.string.novel_auto_download_on)
+                            else -> stringResource(R.string.novel_notifications_download)
                         }
                         // wifi_notification icon for auto-download; fill when a notify toggle is on.
                         val icon = when {
@@ -593,7 +606,9 @@ fun NovelDetailScreen(
                         val downloading = chapters.any { it.downloadStatus in ChapterDownloadStatus.DOWNLOADING_ORDINALS }
                         PlainTooltipIconButton(
                             onClick = { showDownloadsSheet = true },
-                            tooltip = if (downloading) "Downloading…" else "Downloads",
+                            tooltip = stringResource(
+                                if (downloading) R.string.novel_downloading else R.string.novel_downloads_title,
+                            ),
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 if (downloading) {
@@ -604,7 +619,7 @@ fun NovelDetailScreen(
                                 }
                                 Icon(
                                     AppIcons.Download,
-                                    contentDescription = "Downloads",
+                                    contentDescription = stringResource(R.string.novel_downloads_title),
                                     modifier = Modifier.size(if (downloading) 14.dp else 24.dp),
                                 )
                             }
@@ -612,8 +627,8 @@ fun NovelDetailScreen(
                     }
                     if (hasBulkActions || canMigrate || canConfigureNewChapters || canOpenSourceSettings || canExport) {
                         Box {
-                            PlainTooltipIconButton(onClick = { overflowMenuExpanded = true }, tooltip = "More actions") {
-                                Icon(AppIcons.MoreVert, contentDescription = "More actions")
+                            PlainTooltipIconButton(onClick = { overflowMenuExpanded = true }, tooltip = stringResource(R.string.action_more_actions)) {
+                                Icon(AppIcons.MoreVert, contentDescription = stringResource(R.string.action_more_actions))
                             }
                             DropdownMenu(
                                 expanded = overflowMenuExpanded,
@@ -621,18 +636,18 @@ fun NovelDetailScreen(
                             ) {
                                 if (hasBulkActions) {
                                     DropdownMenuItem(
-                                        text = { Text("Mark all as read") },
+                                        text = { Text(stringResource(R.string.novel_mark_all_read)) },
                                         onClick = { viewModel.markAllRead(true); overflowMenuExpanded = false },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Mark all as unread") },
+                                        text = { Text(stringResource(R.string.novel_mark_all_unread)) },
                                         onClick = { viewModel.markAllRead(false); overflowMenuExpanded = false },
                                     )
                                 }
                                 if (canMigrate) {
                                     if (hasBulkActions) HorizontalDivider()
                                     DropdownMenuItem(
-                                        text = { Text("Migrate") },
+                                        text = { Text(stringResource(R.string.novel_migrate_action)) },
                                         onClick = {
                                             overflowMenuExpanded = false
                                             onMigrate(novelId)
@@ -643,7 +658,7 @@ fun NovelDetailScreen(
                                 if (canOpenSourceSettings) {
                                     if (hasBulkActions || canMigrate) HorizontalDivider()
                                     DropdownMenuItem(
-                                        text = { Text("Source settings") },
+                                        text = { Text(stringResource(R.string.novel_source_settings)) },
                                         onClick = {
                                             overflowMenuExpanded = false
                                             onOpenSourceSettings(viewModel.pkg)
@@ -654,7 +669,7 @@ fun NovelDetailScreen(
                                 if (canExport) {
                                     if (hasBulkActions || canMigrate || canOpenSourceSettings) HorizontalDivider()
                                     DropdownMenuItem(
-                                        text = { Text("Export as EPUB") },
+                                        text = { Text(stringResource(R.string.novel_export_epub)) },
                                         enabled = !isExporting,
                                         onClick = {
                                             overflowMenuExpanded = false
@@ -689,8 +704,10 @@ fun NovelDetailScreen(
                                 .padding(16.dp),
                         ) {
                             Text(
-                                if (migrationState == MigrationState.Running) "Migrating…"
-                                else "Migrate here",
+                                stringResource(
+                                    if (migrationState == MigrationState.Running) R.string.novel_migrating
+                                    else R.string.novel_migrate_here,
+                                ),
                             )
                         }
                     }
@@ -719,7 +736,7 @@ fun NovelDetailScreen(
                     TooltipIconButton(
                         visible = showMarkRead,
                         icon = AppIcons.DoneAll,
-                        label = "Mark read",
+                        label = stringResource(R.string.novel_mark_read),
                         onClick = {
                             viewModel.markChaptersRead(selectedIds.toList(), true)
                             clearSelection()
@@ -728,7 +745,7 @@ fun NovelDetailScreen(
                     TooltipIconButton(
                         visible = showMarkUnread,
                         icon = AppIcons.RemoveDone,
-                        label = "Mark unread",
+                        label = stringResource(R.string.novel_mark_unread),
                         onClick = {
                             viewModel.markChaptersRead(selectedIds.toList(), false)
                             clearSelection()
@@ -737,7 +754,7 @@ fun NovelDetailScreen(
                     TooltipIconButton(
                         visible = showDownload,
                         icon = AppIcons.Download,
-                        label = "Download",
+                        label = stringResource(R.string.novel_download),
                         onClick = {
                             viewModel.downloadChapters(selectedChapters)
                             clearSelection()
@@ -746,7 +763,7 @@ fun NovelDetailScreen(
                     TooltipIconButton(
                         visible = showDelete,
                         icon = AppIcons.Delete,
-                        label = "Delete",
+                        label = stringResource(R.string.action_delete),
                         onClick = {
                             viewModel.deleteDownloads(selectedChapters)
                             clearSelection()
@@ -755,7 +772,7 @@ fun NovelDetailScreen(
                     TooltipIconButton(
                         visible = showRedownload,
                         icon = AppIcons.Refresh,
-                        label = "Redownload",
+                        label = stringResource(R.string.novel_redownload),
                         onClick = {
                             viewModel.redownloadChapters(selectedChapters)
                             clearSelection()
@@ -764,7 +781,7 @@ fun NovelDetailScreen(
                     TooltipIconButton(
                         visible = showCancel,
                         icon = AppIcons.Close,
-                        label = "Cancel",
+                        label = stringResource(R.string.action_cancel),
                         onClick = {
                             viewModel.cancelDownloads(selectedChapters)
                             clearSelection()
@@ -773,7 +790,7 @@ fun NovelDetailScreen(
                     TooltipIconButton(
                         visible = singleSelection,
                         icon = AppIcons.VerticalAlignTop,
-                        label = "Select above",
+                        label = stringResource(R.string.novel_select_above),
                         onClick = {
                             val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
                             if (idx >= 0) {
@@ -785,7 +802,7 @@ fun NovelDetailScreen(
                     TooltipIconButton(
                         visible = singleSelection,
                         icon = AppIcons.VerticalAlignBottom,
-                        label = "Select below",
+                        label = stringResource(R.string.novel_select_below),
                         onClick = {
                             val idx = displayedChapters.indexOfFirst { it.id in selectedIds }
                             if (idx >= 0) {
@@ -824,7 +841,7 @@ fun NovelDetailScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Text(novelError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                                TextButton(onClick = viewModel::retryNovel) { Text("Retry") }
+                                TextButton(onClick = viewModel::retryNovel) { Text(stringResource(R.string.action_retry)) }
                             }
                             else -> NovelHeader(
                                 novel = novel,
@@ -935,11 +952,16 @@ fun NovelDetailScreen(
                                             color = MaterialTheme.colorScheme.onPrimary,
                                         )
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Downloading…")
+                                        Text(stringResource(R.string.novel_downloading))
                                     } else {
                                         Icon(AppIcons.Download, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text(if (chapters.isEmpty()) "Download EPUB" else "Re-download EPUB")
+                                        Text(
+                                            stringResource(
+                                                if (chapters.isEmpty()) R.string.novel_download_epub
+                                                else R.string.novel_redownload_epub,
+                                            ),
+                                        )
                                     }
                                 }
                                 (bookDownload as? BookDownloadState.Error)?.let { err ->
@@ -966,11 +988,19 @@ fun NovelDetailScreen(
                             ) {
                                 Text(
                                     text = when {
-                                        isLoadingChapters && chapterPage > 0 -> "Loading page $chapterPage…"
-                                        isLoadingChapters -> "Loading chapters…"
-                                        chaptersError != null -> "Chapters"
-                                        searchQuery.isNotBlank() -> "${displayedChapters.size} of ${chapters.size}"
-                                        else -> "${chapters.size} chapter${if (chapters.size != 1) "s" else ""}"
+                                        isLoadingChapters && chapterPage > 0 -> stringResource(R.string.novel_loading_page, chapterPage)
+                                        isLoadingChapters -> stringResource(R.string.novel_loading_chapters)
+                                        chaptersError != null -> stringResource(R.string.novel_chapters_title)
+                                        searchQuery.isNotBlank() -> stringResource(
+                                            R.string.novel_chapter_filtered_count,
+                                            displayedChapters.size,
+                                            chapters.size,
+                                        )
+                                        else -> pluralStringResource(
+                                            R.plurals.novel_chapter_total,
+                                            chapters.size,
+                                            chapters.size,
+                                        )
                                     },
                                     style = MaterialTheme.typography.titleMedium,
                                     modifier = Modifier
@@ -981,15 +1011,21 @@ fun NovelDetailScreen(
                                     PlainTooltipIconButton(onClick = {
                                         searchActive = !searchActive
                                         if (!searchActive) viewModel.setSearchQuery("")
-                                    }, tooltip = if (searchActive) "Close search" else "Search chapters") {
+                                    }, tooltip = stringResource(
+                                        if (searchActive) R.string.novel_close_search
+                                        else R.string.novel_search_chapters,
+                                    )) {
                                         Icon(
                                             if (searchActive) AppIcons.Close else AppIcons.Search,
-                                            contentDescription = if (searchActive) "Close search" else "Search chapters",
+                                            contentDescription = stringResource(
+                                                if (searchActive) R.string.novel_close_search
+                                                else R.string.novel_search_chapters,
+                                            ),
                                         )
                                     }
                                     Box {
-                                        PlainTooltipIconButton(onClick = { sortMenuExpanded = true }, tooltip = "Sort options") {
-                                            Icon(AppIcons.SwapVert, contentDescription = "Sort options")
+                                        PlainTooltipIconButton(onClick = { sortMenuExpanded = true }, tooltip = stringResource(R.string.novel_sort_options)) {
+                                            Icon(AppIcons.SwapVert, contentDescription = stringResource(R.string.novel_sort_options))
                                         }
                                         DropdownMenu(
                                             expanded = sortMenuExpanded,
@@ -998,7 +1034,18 @@ fun NovelDetailScreen(
                                             ChapterSort.entries.forEach { sort ->
                                                 val dateSort = sort == ChapterSort.DATE_ASC || sort == ChapterSort.DATE_DESC
                                                 DropdownMenuItem(
-                                                    text = { Text(sort.label) },
+                                                    text = {
+                                                        Text(
+                                                            stringResource(
+                                                                when (sort) {
+                                                                    ChapterSort.NUMBER_ASC -> R.string.novel_sort_number_asc
+                                                                    ChapterSort.NUMBER_DESC -> R.string.novel_sort_number_desc
+                                                                    ChapterSort.DATE_ASC -> R.string.novel_sort_date_oldest
+                                                                    ChapterSort.DATE_DESC -> R.string.novel_sort_date_newest
+                                                                },
+                                                            ),
+                                                        )
+                                                    },
                                                     onClick = { viewModel.setSort(sort); sortMenuExpanded = false },
                                                     enabled = !dateSort || hasUploadDates,
                                                     trailingIcon = if (chapterSort == sort) {
@@ -1077,7 +1124,7 @@ fun NovelDetailScreen(
                                         ) {
                                             Icon(
                                                 AppIcons.Lock,
-                                                contentDescription = "Locked chapters",
+                                                contentDescription = stringResource(R.string.library_locked_chapters),
                                                 modifier = Modifier.size(18.dp),
                                                 tint = MaterialTheme.colorScheme.premiumGold,
                                             )
@@ -1094,7 +1141,7 @@ fun NovelDetailScreen(
                                 OutlinedTextField(
                                     value = searchQuery,
                                     onValueChange = { viewModel.setSearchQuery(it) },
-                                    placeholder = { Text("Search chapters…") },
+                                    placeholder = { Text(stringResource(R.string.novel_search_chapters_placeholder)) },
                                     singleLine = true,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1115,7 +1162,7 @@ fun NovelDetailScreen(
                             ) {
                                 Text(chaptersError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                                 Spacer(Modifier.height(4.dp))
-                                TextButton(onClick = viewModel::retryChapters) { Text("Retry") }
+                                TextButton(onClick = viewModel::retryChapters) { Text(stringResource(R.string.action_retry)) }
                             }
                         }
                     }
@@ -1141,14 +1188,13 @@ fun NovelDetailScreen(
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
                                 Text(
-                                    "Some chapters are locked. Log in to ${viewModel.sourceName} " +
-                                        "to read the chapters your account has unlocked.",
+                                    stringResource(R.string.novel_locked_login_banner, viewModel.sourceName),
                                     modifier = Modifier.weight(1f),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
                                 TextButton(onClick = { onNavigateToLogin(viewModel.pkg) }) {
-                                    Text("Log in")
+                                    Text(stringResource(R.string.novel_log_in))
                                 }
                             }
                         }
@@ -1196,4 +1242,3 @@ fun NovelDetailScreen(
         }
     }
 }
-

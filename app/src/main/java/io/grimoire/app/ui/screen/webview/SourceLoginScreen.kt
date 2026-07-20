@@ -36,9 +36,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.BuildConfig
+import io.grimoire.app.R
 
 private const val TAG = "SourceLogin"
 
@@ -120,13 +122,13 @@ fun SourceLoginScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = { finish() }, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = { finish() }, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Log in to ${viewModel.sourceName}") },
+                title = { Text(stringResource(R.string.source_login_title, viewModel.sourceName)) },
                 actions = {
-                    TextButton(onClick = { finish() }) { Text("Done") }
+                    TextButton(onClick = { finish() }) { Text(stringResource(R.string.action_done)) }
                 },
             )
         },
@@ -138,7 +140,7 @@ fun SourceLoginScreen(
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    "This source does not support signing in.",
+                    stringResource(R.string.source_login_unsupported),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

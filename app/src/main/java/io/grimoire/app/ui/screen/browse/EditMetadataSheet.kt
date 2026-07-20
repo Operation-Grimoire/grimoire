@@ -39,18 +39,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelStatus
-import io.grimoire.app.ui.component.displayName
+import io.grimoire.app.ui.component.localizedDisplayName
+import io.grimoire.app.R
 import sh.calvin.reorderable.ReorderableColumn
 
 /** A single novel-metadata field that can be overridden (#152). */
-internal enum class EditableField(val label: String) {
-    TITLE("title"),
-    AUTHOR("author"),
-    STATUS("status"),
-    GENRES("genres"),
-    DESCRIPTION("description"),
+internal enum class EditableField(@param:StringRes val labelRes: Int) {
+    TITLE(R.string.novel_edit_field_title),
+    AUTHOR(R.string.novel_edit_field_author),
+    STATUS(R.string.novel_edit_field_status),
+    GENRES(R.string.novel_edit_field_genres),
+    DESCRIPTION(R.string.novel_edit_field_description),
 }
 
 /**
@@ -117,18 +120,19 @@ internal fun MetadataFieldEditSheet(
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text("Edit ${field.label}", style = MaterialTheme.typography.titleLarge)
+            val fieldLabel = stringResource(field.labelRes)
+            Text(stringResource(R.string.novel_edit_title, fieldLabel), style = MaterialTheme.typography.titleLarge)
 
             when (field) {
                 EditableField.STATUS -> Box {
                     OutlinedButton(onClick = { statusMenu = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(status.displayName, modifier = Modifier.weight(1f))
+                        Text(status.localizedDisplayName(), modifier = Modifier.weight(1f))
                         Icon(AppIcons.ArrowDropDown, contentDescription = null)
                     }
                     DropdownMenu(expanded = statusMenu, onDismissRequest = { statusMenu = false }) {
                         NovelStatus.entries.forEach { option ->
                             DropdownMenuItem(
-                                text = { Text(option.displayName) },
+                                text = { Text(option.localizedDisplayName()) },
                                 onClick = { status = option; statusMenu = false },
                             )
                         }
@@ -138,7 +142,7 @@ internal fun MetadataFieldEditSheet(
                 else -> OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text(field.label.replaceFirstChar { it.uppercase() }) },
+                    label = { Text(fieldLabel) },
                     singleLine = field == EditableField.TITLE || field == EditableField.AUTHOR,
                     minLines = if (field == EditableField.DESCRIPTION) 4 else 1,
                     modifier = Modifier.fillMaxWidth(),
@@ -149,10 +153,10 @@ internal fun MetadataFieldEditSheet(
                 TextButton(
                     enabled = isOverridden,
                     onClick = { onSave(overridesWithReset()); onDismiss() },
-                ) { Text("Reset to source") }
+                ) { Text(stringResource(R.string.novel_edit_reset_to_source)) }
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = onDismiss) { Text("Cancel") }
-                Button(onClick = { onSave(overridesWithEdit()); onDismiss() }) { Text("Save") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+                Button(onClick = { onSave(overridesWithEdit()); onDismiss() }) { Text(stringResource(R.string.action_save)) }
             }
         }
     }
@@ -181,7 +185,7 @@ private fun GenreListEditor(genres: SnapshotStateList<String>) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         if (genres.isEmpty()) {
             Text(
-                "No genres",
+                stringResource(R.string.novel_edit_no_genres),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -201,7 +205,7 @@ private fun GenreListEditor(genres: SnapshotStateList<String>) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 AppIcons.DragHandle,
-                                contentDescription = "Drag to reorder",
+                                contentDescription = stringResource(R.string.novel_edit_drag_to_reorder),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier
                                     .draggableHandle()
@@ -210,7 +214,7 @@ private fun GenreListEditor(genres: SnapshotStateList<String>) {
                             )
                             Text(genre, modifier = Modifier.weight(1f))
                             IconButton(onClick = { genres.remove(genre) }) {
-                                Icon(AppIcons.Close, contentDescription = "Remove $genre")
+                                Icon(AppIcons.Close, contentDescription = stringResource(R.string.novel_edit_remove_genre, genre))
                             }
                         }
                     }
@@ -222,14 +226,14 @@ private fun GenreListEditor(genres: SnapshotStateList<String>) {
             OutlinedTextField(
                 value = newGenre,
                 onValueChange = { newGenre = it },
-                label = { Text("Add genre") },
+                label = { Text(stringResource(R.string.novel_edit_add_genre)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { addGenres() }),
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = { addGenres() }) {
-                Icon(AppIcons.Add, contentDescription = "Add genre")
+                Icon(AppIcons.Add, contentDescription = stringResource(R.string.novel_edit_add_genre))
             }
         }
     }

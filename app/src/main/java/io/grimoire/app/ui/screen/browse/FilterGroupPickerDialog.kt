@@ -26,9 +26,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.grimoire.api.model.filter.Filter
+import io.grimoire.app.R
 
 /**
  * A searchable picker for the children of a [Filter.Group]. Each row's
@@ -75,7 +78,9 @@ internal fun FilterGroupPickerDialog(
                 OutlinedTextField(
                     value = search,
                     onValueChange = { search = it },
-                    placeholder = { Text("Filter ${children.size} options…") },
+                    placeholder = {
+                        Text(pluralStringResource(R.plurals.source_filter_options_placeholder, children.size, children.size))
+                    },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -83,7 +88,7 @@ internal fun FilterGroupPickerDialog(
                 )
                 if (filtered.isEmpty()) {
                     Text(
-                        "No matches",
+                        stringResource(R.string.source_filter_no_matches),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 16.dp),
@@ -156,8 +161,8 @@ internal fun FilterGroupPickerDialog(
                             }
                             onChanged()
                         },
-                    ) { Text("Clear") }
-                    TextButton(onClick = onDismiss) { Text("Done") }
+                    ) { Text(stringResource(R.string.action_clear)) }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_done)) }
                 }
             }
         }
@@ -191,9 +196,9 @@ private fun TriStatePickerRow(name: String, state: Int, onCycle: () -> Unit) {
         Text(name, modifier = Modifier.weight(1f))
         Text(
             when (state) {
-                Filter.TriState.STATE_INCLUDE -> "include"
-                Filter.TriState.STATE_EXCLUDE -> "exclude"
-                else -> "any"
+                Filter.TriState.STATE_INCLUDE -> stringResource(R.string.source_filter_include)
+                Filter.TriState.STATE_EXCLUDE -> stringResource(R.string.source_filter_exclude)
+                else -> stringResource(R.string.source_filter_any)
             },
             style = MaterialTheme.typography.labelMedium,
             color = when (state) {

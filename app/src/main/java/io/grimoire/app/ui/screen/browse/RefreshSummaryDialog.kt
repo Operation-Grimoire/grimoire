@@ -22,6 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import io.grimoire.app.R
 import io.grimoire.app.ui.theme.premiumGold
 
 @Composable
@@ -39,7 +42,7 @@ internal fun RefreshSummaryDialog(
                 tint = MaterialTheme.colorScheme.primary,
             )
         },
-        title = { Text(if (count == 1) "1 new chapter" else "$count new chapters") },
+        title = { Text(pluralStringResource(R.plurals.novel_refresh_new_chapters, count, count)) },
         text = {
             LazyColumn(
                 modifier = Modifier.heightIn(max = 280.dp),
@@ -54,7 +57,7 @@ internal fun RefreshSummaryDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("OK") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_ok)) }
         },
     )
 }
@@ -68,14 +71,14 @@ private fun RefreshSummaryRow(chapter: RefreshedChapter) {
         if (chapter.locked) {
             Icon(
                 AppIcons.Lock,
-                contentDescription = "Locked",
+                contentDescription = stringResource(R.string.content_description_locked),
                 modifier = Modifier.size(14.dp),
                 tint = MaterialTheme.colorScheme.premiumGold,
             )
         }
         if (chapter.unlockedFromLocked) {
             Text(
-                text = "Unlocked",
+                text = stringResource(R.string.novel_refresh_unlocked),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.premiumGold,
                 modifier = Modifier
@@ -92,7 +95,7 @@ private fun RefreshSummaryRow(chapter: RefreshedChapter) {
                     chapter.chapterNumber.toString()
                 }
                 Text(
-                    text = "Chapter $formatted",
+                    text = stringResource(R.string.novel_chapter_number, formatted),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
