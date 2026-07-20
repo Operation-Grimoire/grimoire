@@ -43,6 +43,16 @@ import javax.inject.Inject
 
 private const val KEY_SEARCH_QUERY = "library_search_query"
 
+internal sealed interface LibraryImportMessage {
+    data class Added(val title: String) : LibraryImportMessage
+    data class Failed(val detail: String?) : LibraryImportMessage
+}
+
+internal data class LibrarySourceOption(
+    val id: Long,
+    val name: String?,
+)
+
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
@@ -70,8 +80,8 @@ class LibraryViewModel @Inject constructor(
     private val _pendingImport = MutableStateFlow<StagedEpub?>(null)
     val pendingImport: StateFlow<StagedEpub?> = _pendingImport.asStateFlow()
 
-    private val _importMessage = MutableStateFlow<String?>(null)
-    val importMessage: StateFlow<String?> = _importMessage.asStateFlow()
+    private val _importMessage = MutableStateFlow<LibraryImportMessage?>(null)
+    internal val importMessage: StateFlow<LibraryImportMessage?> = _importMessage.asStateFlow()
 
     /** Parse the picked EPUB and surface its metadata for confirmation. */
     fun stageEpub(uri: Uri) {
@@ -81,7 +91,7 @@ class LibraryViewModel @Inject constructor(
             epubImporter.stage(uri).fold(
                 onSuccess = { _pendingImport.value = it },
                 onFailure = { e ->
-                    _importMessage.value = "Import failed: ${e.message ?: "unknown error"}"
+                    _importMessage.value = LibraryImportMessage.Failed(e.message)
                 },
             )
             _staging.value = false
@@ -101,8 +111,8 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             val result = epubImporter.commit(staged)
             _importMessage.value = result.fold(
-                onSuccess = { "Added \"${it.title}\" to library" },
-                onFailure = { e -> "Import failed: ${e.message ?: "unknown error"}" },
+                onSuccess = { LibraryImportMessage.Added(it.title) },
+                onFailure = { e -> LibraryImportMessage.Failed(e.message) },
             )
             _pendingImport.value = null
             _importing.value = false
@@ -184,7 +194,7 @@ class LibraryViewModel @Inject constructor(
      * sources whose extension is no longer installed). Drives the source filter
      * chip row so it only lists sources the user actually has novels from.
      */
-    val librarySources: StateFlow<List<Pair<Long, String>>> = combine(
+    internal val librarySources: StateFlow<List<LibrarySourceOption>> = combine(
         libraryFavorites.favorites,
         extensionManager.extensions,
     ) { favoritesOrNull, exts ->
@@ -192,11 +202,7 @@ class LibraryViewModel @Inject constructor(
         val sourceIds = favorites.map { it.sourceId }.toSortedSet()
         val nameBySourceId = exts.associate { it.id to it.source.name }
         sourceIds.map { id ->
-            val name = when {
-                id == LOCAL_SOURCE_ID -> "Local"
-                else -> nameBySourceId[id] ?: "Source $id"
-            }
-            id to name
+            LibrarySourceOption(id = id, name = nameBySourceId[id])
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 

@@ -14,7 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.R
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.effectiveTotal
 import io.grimoire.app.data.local.entity.readPercent
@@ -76,7 +78,7 @@ internal fun NovelStatsRowInline(
         if (visibility.showLocked) {
             InlineBadge(
                 icon = AppIcons.Lock,
-                contentDescription = "Locked chapters",
+                contentDescription = stringResource(R.string.library_locked_chapters),
                 text = "${stats.lockedCount}",
                 tint = MaterialTheme.colorScheme.premiumGold,
             )
@@ -194,12 +196,12 @@ internal fun NovelEpubBadgeOverlay(
     ) {
         Icon(
             AppIcons.MenuBook,
-            contentDescription = "EPUB",
+            contentDescription = stringResource(R.string.library_epub_badge),
             tint = Color.White,
             modifier = Modifier.size(11.dp),
         )
         Text(
-            text = "EPUB",
+            text = stringResource(R.string.library_epub_badge),
             style = MaterialTheme.typography.labelSmall,
             color = Color.White,
         )
@@ -232,7 +234,7 @@ internal fun NovelStatusBadgeOverlay(
         if (showNotify) {
             Icon(
                 AppIcons.Notifications,
-                contentDescription = "Notifications enabled",
+                contentDescription = stringResource(R.string.library_notifications_enabled),
                 tint = Color.White,
                 modifier = Modifier.size(11.dp),
             )
@@ -240,7 +242,7 @@ internal fun NovelStatusBadgeOverlay(
         if (showAutoDownload) {
             Icon(
                 AppIcons.CloudDownload,
-                contentDescription = "Auto-download enabled",
+                contentDescription = stringResource(R.string.library_auto_download_enabled),
                 tint = Color.White,
                 modifier = Modifier.size(11.dp),
             )

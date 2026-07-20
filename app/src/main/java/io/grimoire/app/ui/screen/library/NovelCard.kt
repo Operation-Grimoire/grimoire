@@ -20,9 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import io.grimoire.app.R
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.ui.theme.premiumGold
@@ -127,7 +129,9 @@ internal fun NovelCard(
                             NovelCountBadgeOverlay(
                                 count = stats.lockedCount,
                                 icon = AppIcons.Lock,
-                                iconContentDescription = "Locked chapters",
+                                iconContentDescription = stringResource(
+                                    R.string.library_locked_chapters,
+                                ),
                                 iconTint = MaterialTheme.colorScheme.premiumGold,
                             )
                         }

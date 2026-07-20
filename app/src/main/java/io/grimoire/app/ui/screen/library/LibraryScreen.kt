@@ -63,9 +63,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.app.R
+import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
 import io.grimoire.app.data.preferences.LibraryDisplayMode
@@ -116,7 +120,7 @@ fun LibraryScreen(
     val filterAutoDownloadEnabled by viewModel.filterAutoDownloadEnabled.collectAsState()
     val filterType by viewModel.filterType.collectAsState()
     val filterSourceIds by viewModel.filterSourceIds.collectAsState()
-    val librarySources by viewModel.librarySources.collectAsState()
+    val librarySourceOptions by viewModel.librarySources.collectAsState()
     val isUnlocked by viewModel.isUnlocked.collectAsState()
     val hasPin by viewModel.hasPin.collectAsState()
     val biometricEnabled by viewModel.biometricEnabled.collectAsState()
@@ -152,6 +156,22 @@ fun LibraryScreen(
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkMove by remember { mutableStateOf(false) }
     var showBulkRemoveConfirm by remember { mutableStateOf(false) }
+    val extensionNotInstalledMessage = stringResource(R.string.library_extension_not_installed)
+    val libraryUpdateQueuedMessage = stringResource(R.string.library_update_queued)
+    val categoryUpdateQueuedMessage = stringResource(R.string.library_category_update_queued)
+    val queuedDownloadsMessage = pluralStringResource(
+        R.plurals.library_downloads_queued,
+        selectedIds.size,
+        selectedIds.size,
+    )
+    val localSourceLabel = stringResource(R.string.library_local_source)
+    val librarySources = librarySourceOptions.map { source ->
+        source.id to when {
+            source.id == LOCAL_SOURCE_ID -> localSourceLabel
+            source.name != null -> source.name
+            else -> stringResource(R.string.library_unknown_source, source.id)
+        }
+    }
     val toggleSelect: (Long) -> Unit = { id ->
         selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
     }
@@ -179,8 +199,19 @@ fun LibraryScreen(
         if (searchActive) searchFocusRequester.requestFocus()
     }
 
-    LaunchedEffect(importMessage) {
-        importMessage?.let {
+    val importMessageText = when (val message = importMessage) {
+        is LibraryImportMessage.Added -> stringResource(
+            R.string.library_import_added,
+            message.title,
+        )
+        is LibraryImportMessage.Failed -> stringResource(
+            R.string.library_import_failed,
+            message.detail ?: stringResource(R.string.library_unknown_error),
+        )
+        null -> null
+    }
+    LaunchedEffect(importMessageText) {
+        importMessageText?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.consumeImportMessage()
         }
@@ -190,7 +221,10 @@ fun LibraryScreen(
         filterNotifyEnabled || filterAutoDownloadEnabled || filterType != NovelTypeFilter.ALL ||
         filterSourceIds.isNotEmpty()
 
-    val tabs = displayedTabs.map { it.label }
+    val allCategoryLabel = stringResource(R.string.library_all)
+    val tabs = displayedTabs.map {
+        if (it.categoryId == ALL_TAB_CATEGORY_ID) allCategoryLabel else it.label.orEmpty()
+    }
     // Parallel to `tabs`: the category id behind each tab, or ALL_TAB_CATEGORY_ID for "All".
     val tabCategoryIds = displayedTabs.map { it.categoryId }
 
@@ -271,14 +305,14 @@ fun LibraryScreen(
                         AppSearchField(
                             value = searchQuery,
                             onValueChange = { viewModel.setSearchQuery(it) },
-                            placeholder = "Search library…",
+                            placeholder = stringResource(R.string.library_search_placeholder),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .focusRequester(searchFocusRequester),
                         )
                     } else {
                         Text(
-                            "Library",
+                            stringResource(R.string.library_title),
                             modifier = Modifier.combinedClickable(
                                 onClick = {},
                                 onLongClick = { if (hasPin && !isUnlocked) showUnlock = true },
@@ -295,29 +329,65 @@ fun LibraryScreen(
                         } else {
                             searchActive = true
                         }
-                    }, tooltip = if (searchActive) "Close search" else "Search library") {
+                    }, tooltip = if (searchActive) {
+                        stringResource(R.string.library_close_search)
+                    } else {
+                        stringResource(R.string.library_search)
+                    }) {
                         Icon(
                             if (searchActive) AppIcons.ArrowUpward else AppIcons.Search,
-                            contentDescription = if (searchActive) "Close search" else "Search library",
+                            contentDescription = if (searchActive) {
+                                stringResource(R.string.library_close_search)
+                            } else {
+                                stringResource(R.string.library_search)
+                            },
                         )
                     }
                     if (!searchActive) {
                         if (isUnlocked) {
-                            PlainTooltipIconButton(onClick = { viewModel.lock() }, tooltip = "Lock hidden categories") {
-                                Icon(AppIcons.Lock, contentDescription = "Lock hidden categories")
+                            PlainTooltipIconButton(
+                                onClick = { viewModel.lock() },
+                                tooltip = stringResource(R.string.library_lock_hidden_categories),
+                            ) {
+                                Icon(
+                                    AppIcons.Lock,
+                                    contentDescription = stringResource(
+                                        R.string.library_lock_hidden_categories,
+                                    ),
+                                )
                             }
                         }
-                        PlainTooltipIconButton(onClick = { showFilterSheet = true }, tooltip = "Filter & sort") {
+                        PlainTooltipIconButton(
+                            onClick = { showFilterSheet = true },
+                            tooltip = stringResource(R.string.library_filter_and_sort),
+                        ) {
                             BadgedBox(badge = { if (isFilterActive) Badge() }) {
-                                Icon(AppIcons.FilterList, contentDescription = "Filter & sort")
+                                Icon(
+                                    AppIcons.FilterList,
+                                    contentDescription = stringResource(
+                                        R.string.library_filter_and_sort,
+                                    ),
+                                )
                             }
                         }
-                        PlainTooltipIconButton(onClick = { showRefreshSheet = true }, tooltip = "Refresh library") {
-                            Icon(AppIcons.Refresh, contentDescription = "Refresh library")
+                        PlainTooltipIconButton(
+                            onClick = { showRefreshSheet = true },
+                            tooltip = stringResource(R.string.library_refresh),
+                        ) {
+                            Icon(
+                                AppIcons.Refresh,
+                                contentDescription = stringResource(R.string.library_refresh),
+                            )
                         }
                         Box {
-                            PlainTooltipIconButton(onClick = { libraryMenuExpanded = true }, tooltip = "More actions") {
-                                Icon(AppIcons.MoreVert, contentDescription = "More actions")
+                            PlainTooltipIconButton(
+                                onClick = { libraryMenuExpanded = true },
+                                tooltip = stringResource(R.string.library_more_actions),
+                            ) {
+                                Icon(
+                                    AppIcons.MoreVert,
+                                    contentDescription = stringResource(R.string.library_more_actions),
+                                )
                             }
                             DropdownMenu(
                                 expanded = libraryMenuExpanded,
@@ -325,7 +395,13 @@ fun LibraryScreen(
                             ) {
                                 DropdownMenuItem(
                                     text = {
-                                        Text(if (importing || staging) "Importing EPUB…" else "Import EPUB")
+                                        Text(
+                                            if (importing || staging) {
+                                                stringResource(R.string.library_importing_epub)
+                                            } else {
+                                                stringResource(R.string.library_import_epub)
+                                            },
+                                        )
                                     },
                                     enabled = !importing && !staging,
                                     onClick = {
@@ -344,7 +420,7 @@ fun LibraryScreen(
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Manage categories") },
+                                    text = { Text(stringResource(R.string.library_manage_categories)) },
                                     onClick = {
                                         libraryMenuExpanded = false
                                         showManage = true
@@ -367,12 +443,12 @@ fun LibraryScreen(
             ) {
                 TooltipIconButton(
                     icon = AppIcons.Label,
-                    label = "Move",
+                    label = stringResource(R.string.library_move),
                     onClick = { showBulkMove = true },
                 )
                 TooltipIconButton(
                     icon = AppIcons.DoneAll,
-                    label = "Mark read",
+                    label = stringResource(R.string.library_mark_read),
                     onClick = {
                         viewModel.setNovelsRead(selectedIds, true)
                         clearSelection()
@@ -380,7 +456,7 @@ fun LibraryScreen(
                 )
                 TooltipIconButton(
                     icon = AppIcons.RemoveDone,
-                    label = "Mark unread",
+                    label = stringResource(R.string.library_mark_unread),
                     onClick = {
                         viewModel.setNovelsRead(selectedIds, false)
                         clearSelection()
@@ -388,21 +464,18 @@ fun LibraryScreen(
                 )
                 TooltipIconButton(
                     icon = AppIcons.Download,
-                    label = "Download",
+                    label = stringResource(R.string.library_download),
                     onClick = {
-                        val count = selectedIds.size
                         viewModel.downloadNovels(selectedIds)
                         scope.launch {
-                            snackbarHostState.showSnackbar(
-                                "Queued downloads for $count novels"
-                            )
+                            snackbarHostState.showSnackbar(queuedDownloadsMessage)
                         }
                         clearSelection()
                     },
                 )
                 TooltipIconButton(
                     icon = AppIcons.Delete,
-                    label = "Remove",
+                    label = stringResource(R.string.library_remove),
                     onClick = { showBulkRemoveConfirm = true },
                     tint = MaterialTheme.colorScheme.error,
                 )
@@ -412,7 +485,7 @@ fun LibraryScreen(
             val onNovelClickWrapped: (NovelEntity) -> Unit = { novel ->
                 val pkg = viewModel.pkgForNovel(novel)
                 if (pkg.isNotEmpty()) onNovelClick(pkg, novel.url)
-                else scope.launch { snackbarHostState.showSnackbar("Extension not installed") }
+                else scope.launch { snackbarHostState.showSnackbar(extensionNotInstalledMessage) }
             }
 
             SwipeTabRow(
@@ -439,7 +512,7 @@ fun LibraryScreen(
                     ) {
                         if (searchQuery.isNotBlank()) {
                             Text(
-                                "No matches found",
+                                stringResource(R.string.library_no_matches),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -456,11 +529,11 @@ fun LibraryScreen(
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                                 Text(
-                                    "Your library is empty",
+                                    stringResource(R.string.library_empty_title),
                                     style = MaterialTheme.typography.titleMedium,
                                 )
                                 Text(
-                                    "Add novels from a source, or import an EPUB from your device.",
+                                    stringResource(R.string.library_empty_description),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -473,7 +546,7 @@ fun LibraryScreen(
                                             modifier = Modifier.size(18.dp),
                                         )
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Browse sources")
+                                        Text(stringResource(R.string.library_browse_sources))
                                     }
                                     TextButton(
                                         onClick = { epubPicker.launch(EPUB_MIME_TYPES) },
@@ -485,7 +558,7 @@ fun LibraryScreen(
                                             modifier = Modifier.size(18.dp),
                                         )
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Import EPUB")
+                                        Text(stringResource(R.string.library_import_epub))
                                     }
                                 }
                             }
@@ -585,25 +658,34 @@ fun LibraryScreen(
         ) {
             Column(Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                 Text(
-                    "Refresh library",
+                    stringResource(R.string.library_refresh),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
                 )
                 ListItem(
-                    headlineContent = { Text("Update library") },
-                    supportingContent = { Text("Fetch new chapters across all categories") },
+                    headlineContent = { Text(stringResource(R.string.library_update)) },
+                    supportingContent = {
+                        Text(stringResource(R.string.library_update_all_description))
+                    },
                     leadingContent = { Icon(AppIcons.Refresh, contentDescription = null) },
                     modifier = Modifier.clickable {
                         viewModel.updateLibrary()
-                        scope.launch { snackbarHostState.showSnackbar("Library update queued") }
+                        scope.launch { snackbarHostState.showSnackbar(libraryUpdateQueuedMessage) }
                         showRefreshSheet = false
                     },
                 )
                 if (currentCategoryId != ALL_TAB_CATEGORY_ID) {
                     ListItem(
-                        headlineContent = { Text("Update \"$currentCategoryName\"") },
+                        headlineContent = {
+                            Text(
+                                stringResource(
+                                    R.string.library_update_category,
+                                    currentCategoryName,
+                                ),
+                            )
+                        },
                         supportingContent = {
-                            Text("Fetch new chapters for novels in this category")
+                            Text(stringResource(R.string.library_update_category_description))
                         },
                         leadingContent = {
                             Icon(AppIcons.Label, contentDescription = null)
@@ -611,14 +693,14 @@ fun LibraryScreen(
                         modifier = Modifier.clickable {
                             viewModel.updateCategory(currentCategoryId)
                             scope.launch {
-                                snackbarHostState.showSnackbar("Category update queued")
+                                snackbarHostState.showSnackbar(categoryUpdateQueuedMessage)
                             }
                             showRefreshSheet = false
                         },
                     )
                 }
                 ListItem(
-                    headlineContent = { Text("Cancel") },
+                    headlineContent = { Text(stringResource(R.string.action_cancel)) },
                     leadingContent = {
                         Icon(AppIcons.Close, contentDescription = null)
                     },
@@ -684,11 +766,14 @@ fun LibraryScreen(
         val count = selectedIds.size
         AlertDialog(
             onDismissRequest = { showBulkRemoveConfirm = false },
-            title = { Text("Remove from library") },
+            title = { Text(stringResource(R.string.library_remove_from_library)) },
             text = {
                 Text(
-                    "Remove $count ${if (count == 1) "novel" else "novels"} from your library? " +
-                        "Downloaded chapters and read progress are kept."
+                    pluralStringResource(
+                        R.plurals.library_remove_confirmation,
+                        count,
+                        count,
+                    ),
                 )
             },
             confirmButton = {
@@ -697,13 +782,17 @@ fun LibraryScreen(
                     showBulkRemoveConfirm = false
                     clearSelection()
                 }) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                    Text(
+                        stringResource(R.string.library_remove),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showBulkRemoveConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showBulkRemoveConfirm = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             },
         )
     }
 }
-

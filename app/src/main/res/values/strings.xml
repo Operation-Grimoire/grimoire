@@ -47,4 +47,123 @@
     <string name="language_option_system">System default</string>
     <string name="language_option_english">English</string>
     <string name="language_option_chinese_simplified">简体中文</string>
+
+    <!-- Library -->
+    <string name="library_title">Library</string>
+    <string name="library_all">All</string>
+    <string name="library_search_placeholder">Search library…</string>
+    <string name="library_search">Search library</string>
+    <string name="library_close_search">Close search</string>
+    <string name="library_lock_hidden_categories">Lock hidden categories</string>
+    <string name="library_filter_and_sort">Filter &amp; sort</string>
+    <string name="library_refresh">Refresh library</string>
+    <string name="library_more_actions">More actions</string>
+    <string name="library_importing_epub">Importing EPUB…</string>
+    <string name="library_import_epub">Import EPUB</string>
+    <string name="library_manage_categories">Manage categories</string>
+    <string name="library_move">Move</string>
+    <string name="library_mark_read">Mark read</string>
+    <string name="library_mark_unread">Mark unread</string>
+    <string name="library_download">Download</string>
+    <string name="library_remove">Remove</string>
+    <plurals name="library_downloads_queued">
+        <item quantity="one">Queued downloads for %1$d novel</item>
+        <item quantity="other">Queued downloads for %1$d novels</item>
+    </plurals>
+    <string name="library_extension_not_installed">Extension not installed</string>
+    <string name="library_no_matches">No matches found</string>
+    <string name="library_empty_title">Your library is empty</string>
+    <string name="library_empty_description">Add novels from a source, or import an EPUB from your device.</string>
+    <string name="library_browse_sources">Browse sources</string>
+    <string name="library_update">Update library</string>
+    <string name="library_update_all_description">Fetch new chapters across all categories</string>
+    <string name="library_update_queued">Library update queued</string>
+    <string name="library_update_category">Update “%1$s”</string>
+    <string name="library_update_category_description">Fetch new chapters for novels in this category</string>
+    <string name="library_category_update_queued">Category update queued</string>
+    <string name="library_remove_from_library">Remove from library</string>
+    <plurals name="library_remove_confirmation">
+        <item quantity="one">Remove %1$d novel from your library? Downloaded chapters and read progress are kept.</item>
+        <item quantity="other">Remove %1$d novels from your library? Downloaded chapters and read progress are kept.</item>
+    </plurals>
+
+    <!-- Library selection and category picker -->
+    <plurals name="selection_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="action_clear_selection">Clear selection</string>
+    <string name="action_select_all">Select all</string>
+    <string name="move_to_category_title">Move to category</string>
+    <plurals name="novel_count">
+        <item quantity="one">%1$d novel</item>
+        <item quantity="other">%1$d novels</item>
+    </plurals>
+    <string name="current_category">Current category</string>
+    <string name="unlock_hidden_categories">Unlock hidden categories</string>
+
+    <!-- Library filters and sorting -->
+    <string name="library_filter_tab">Filter</string>
+    <string name="library_sort_tab">Sort</string>
+    <string name="library_filter_status">Status</string>
+    <string name="library_filter_source">Source</string>
+    <string name="library_filter_type">Type</string>
+    <string name="library_status_ongoing">Ongoing</string>
+    <string name="library_status_completed">Completed</string>
+    <string name="library_status_hiatus">Hiatus</string>
+    <string name="library_status_cancelled">Cancelled</string>
+    <string name="library_status_unknown">Unknown</string>
+    <string name="library_type_epub">EPUB</string>
+    <string name="library_type_web">Web</string>
+    <string name="library_filter_unread_only">Unread only</string>
+    <string name="library_filter_unread_only_description">Hide fully read novels</string>
+    <string name="library_filter_has_downloads">Has downloads</string>
+    <string name="library_filter_has_downloads_description">Show only novels with downloaded chapters</string>
+    <string name="library_filter_notifications_on">Notifications on</string>
+    <string name="library_filter_notifications_on_description">Show only novels set to notify on new chapters</string>
+    <string name="library_filter_auto_download_on">Auto-download on</string>
+    <string name="library_filter_auto_download_on_description">Show only novels set to auto-download new chapters</string>
+    <string name="library_sort_last_read">Last read</string>
+    <string name="library_sort_title">Title</string>
+    <string name="library_sort_last_updated">Last updated</string>
+    <string name="library_sort_unread_chapters">Unread chapters</string>
+    <string name="library_sort_total_chapters">Total chapters</string>
+    <string name="library_sort_ascending_description">Ascending, tap to flip</string>
+    <string name="library_sort_descending_description">Descending, tap to flip</string>
+
+    <!-- Library category management and unlocking -->
+    <string name="library_manage_categories_title">Manage Categories</string>
+    <string name="library_unlock_to_manage_hidden">Unlock to manage hidden categories</string>
+    <string name="library_drag_to_reorder">Drag to reorder</string>
+    <string name="library_unhide_category">Unhide</string>
+    <string name="library_hide_category">Hide</string>
+    <string name="library_rename_category">Rename</string>
+    <string name="library_delete_category">Delete</string>
+    <string name="library_add_category">Add category</string>
+    <string name="library_category_name">Name</string>
+    <string name="library_save_category">Save</string>
+    <string name="library_enter_pin">Enter PIN</string>
+    <string name="library_pin">PIN</string>
+    <string name="library_use_biometric">Use biometric</string>
+    <string name="library_incorrect_pin">Incorrect PIN</string>
+    <string name="library_unlock">Unlock</string>
+    <string name="library_biometric_unlock_title">Unlock hidden categories</string>
+    <string name="library_biometric_unlock_subtitle">Use your biometric to reveal hidden categories</string>
+
+    <!-- Library EPUB import and novel badges -->
+    <plurals name="library_chapter_count">
+        <item quantity="one">%1$d chapter</item>
+        <item quantity="other">%1$d chapters</item>
+    </plurals>
+    <string name="library_genre_separator">, </string>
+    <string name="library_add_to_library">Add to library</string>
+    <string name="library_import_failed">Import failed: %1$s</string>
+    <string name="library_unknown_error">unknown error</string>
+    <string name="library_import_added">Added “%1$s” to library</string>
+    <string name="library_local_source">Local</string>
+    <string name="library_unknown_source">Source %1$d</string>
+    <string name="library_locked_chapters">Locked chapters</string>
+    <string name="library_epub_badge">EPUB</string>
+    <string name="library_notifications_enabled">Notifications enabled</string>
+    <string name="library_auto_download_enabled">Auto-download enabled</string>
 </resources>

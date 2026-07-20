@@ -20,11 +20,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import io.grimoire.app.R
 import kotlinx.coroutines.launch
 
 @Composable
@@ -40,6 +42,9 @@ fun HiddenCategoriesUnlockDialog(
     var error by remember { mutableStateOf<String?>(null) }
     var checking by remember { mutableStateOf(false) }
     var biometricAttempted by remember { mutableStateOf(false) }
+    val biometricTitle = stringResource(R.string.library_biometric_unlock_title)
+    val biometricSubtitle = stringResource(R.string.library_biometric_unlock_subtitle)
+    val incorrectPinMessage = stringResource(R.string.library_incorrect_pin)
 
     LaunchedEffect(biometricEnabled) {
         if (!biometricAttempted && biometricEnabled && context.canAuthenticateBiometric()) {
@@ -47,6 +52,8 @@ fun HiddenCategoriesUnlockDialog(
             val activity = context.findFragmentActivity() ?: return@LaunchedEffect
             promptBiometric(
                 activity = activity,
+                title = biometricTitle,
+                subtitle = biometricSubtitle,
                 onSuccess = {
                     onUnlockedByBiometric()
                     onDismiss()
@@ -58,14 +65,14 @@ fun HiddenCategoriesUnlockDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Enter PIN") },
+        title = { Text(stringResource(R.string.library_enter_pin)) },
         text = {
             Column {
                 val errorMessage = error
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { pin = it.filter(Char::isDigit); error = null },
-                    label = { Text("PIN") },
+                    label = { Text(stringResource(R.string.library_pin)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -80,6 +87,8 @@ fun HiddenCategoriesUnlockDialog(
                         val activity = context.findFragmentActivity() ?: return@TextButton
                         promptBiometric(
                             activity = activity,
+                            title = biometricTitle,
+                            subtitle = biometricSubtitle,
                             onSuccess = {
                                 onUnlockedByBiometric()
                                 onDismiss()
@@ -88,7 +97,7 @@ fun HiddenCategoriesUnlockDialog(
                                 if (msg != null) error = msg
                             },
                         )
-                    }) { Text("Use biometric") }
+                    }) { Text(stringResource(R.string.library_use_biometric)) }
                 }
             }
         },
@@ -101,14 +110,16 @@ fun HiddenCategoriesUnlockDialog(
                         val ok = onVerifyPin(pin)
                         checking = false
                         if (ok) onDismiss() else {
-                            error = "Incorrect PIN"
+                            error = incorrectPinMessage
                             pin = ""
                         }
                     }
                 },
-            ) { Text("Unlock") }
+            ) { Text(stringResource(R.string.library_unlock)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
     )
 }
 
@@ -130,6 +141,8 @@ private fun Context.findFragmentActivity(): FragmentActivity? {
 
 private fun promptBiometric(
     activity: FragmentActivity,
+    title: String,
+    subtitle: String,
     onSuccess: () -> Unit,
     onError: (String?) -> Unit,
 ) {
@@ -148,8 +161,8 @@ private fun promptBiometric(
         }
     })
     val info = BiometricPrompt.PromptInfo.Builder()
-        .setTitle("Unlock hidden categories")
-        .setSubtitle("Use your biometric to reveal hidden categories")
+        .setTitle(title)
+        .setSubtitle(subtitle)
         .setAllowedAuthenticators(
             BiometricManager.Authenticators.BIOMETRIC_WEAK or
                 BiometricManager.Authenticators.DEVICE_CREDENTIAL

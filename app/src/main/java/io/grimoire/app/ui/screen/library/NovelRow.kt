@@ -23,9 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import io.grimoire.app.R
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 
@@ -119,7 +121,9 @@ internal fun NovelRow(
                             if (showNotify) {
                                 Icon(
                                     AppIcons.Notifications,
-                                    contentDescription = "Notifications enabled",
+                                    contentDescription = stringResource(
+                                        R.string.library_notifications_enabled,
+                                    ),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp),
                                 )
@@ -127,7 +131,9 @@ internal fun NovelRow(
                             if (novel.autoDownloadNewChapters) {
                                 Icon(
                                     AppIcons.CloudDownload,
-                                    contentDescription = "Auto-download enabled",
+                                    contentDescription = stringResource(
+                                        R.string.library_auto_download_enabled,
+                                    ),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp),
                                 )

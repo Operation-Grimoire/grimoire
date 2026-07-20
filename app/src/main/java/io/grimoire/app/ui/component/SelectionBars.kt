@@ -25,6 +25,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import io.grimoire.app.R
 
 /** True while the hosting [TooltipBottomBar] is visible; lets buttons freeze weight during exit. */
 internal val LocalActionBarVisible = staticCompositionLocalOf { true }
@@ -37,17 +40,21 @@ fun SelectionTopBar(
     onSelectAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val clearSelectionLabel = stringResource(R.string.action_clear_selection)
+    val selectAllLabel = stringResource(R.string.action_select_all)
     TopAppBar(
         modifier = modifier,
-        title = { Text("$count selected") },
+        title = {
+            Text(pluralStringResource(R.plurals.selection_count, count, count))
+        },
         navigationIcon = {
-            PlainTooltipIconButton(onClick = onClear, tooltip = "Clear selection") {
-                Icon(AppIcons.Close, contentDescription = "Clear selection")
+            PlainTooltipIconButton(onClick = onClear, tooltip = clearSelectionLabel) {
+                Icon(AppIcons.Close, contentDescription = clearSelectionLabel)
             }
         },
         actions = {
-            PlainTooltipIconButton(onClick = onSelectAll, tooltip = "Select all") {
-                Icon(AppIcons.SelectAll, contentDescription = "Select all")
+            PlainTooltipIconButton(onClick = onSelectAll, tooltip = selectAllLabel) {
+                Icon(AppIcons.SelectAll, contentDescription = selectAllLabel)
             }
         },
     )

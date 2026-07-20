@@ -34,7 +34,7 @@ internal data class LibraryFilterInputs(
 
 internal data class LibraryTab(
     val categoryId: Long,
-    val label: String,
+    val label: String?,
     val novels: List<NovelEntity>?,
 )
 
@@ -74,10 +74,10 @@ internal fun resolveRestoreTargetPage(
  * once, so callers can distinguish "still loading" from "no matches".
  */
 internal fun buildLibraryTabs(inputs: LibraryFilterInputs): List<LibraryTab> {
-    val allCategoryName = "All"
     val tabSpecs = buildList {
         if (inputs.showAllTab) {
-            add(LibraryTab(categoryId = ALL_TAB_CATEGORY_ID, label = allCategoryName, novels = null))
+            // The synthetic tab label is supplied by the UI so it follows the active locale.
+            add(LibraryTab(categoryId = ALL_TAB_CATEGORY_ID, label = null, novels = null))
         }
         inputs.categories.forEach { cat ->
             add(LibraryTab(categoryId = cat.id, label = cat.name, novels = null))
