@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,6 +50,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -923,24 +925,40 @@ fun NovelDetailScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 val downloading = bookDownload is BookDownloadState.Downloading
-                                Button(
-                                    onClick = { viewModel.downloadBook() },
-                                    enabled = !downloading,
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
+                                val hasBook = chapters.isNotEmpty()
+                                val label = when {
+                                    downloading -> "Downloading…"
+                                    hasBook -> "Re-download EPUB"
+                                    else -> "Download EPUB"
+                                }
+                                val content: @Composable RowScope.() -> Unit = {
                                     if (downloading) {
                                         CircularProgressIndicator(
                                             Modifier.size(18.dp),
                                             strokeWidth = 2.dp,
-                                            color = MaterialTheme.colorScheme.onPrimary,
+                                            color = LocalContentColor.current,
                                         )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Downloading…")
                                     } else {
                                         Icon(AppIcons.Download, contentDescription = null)
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(if (chapters.isEmpty()) "Download EPUB" else "Re-download EPUB")
                                     }
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(label)
+                                }
+                                if (hasBook) {
+                                    // The book is already downloaded: Continue reading is the
+                                    // primary action (the FAB), so keep re-download quiet.
+                                    OutlinedButton(
+                                        onClick = { viewModel.downloadBook() },
+                                        enabled = !downloading,
+                                        content = content,
+                                    )
+                                } else {
+                                    Button(
+                                        onClick = { viewModel.downloadBook() },
+                                        enabled = !downloading,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        content = content,
+                                    )
                                 }
                                 (bookDownload as? BookDownloadState.Error)?.let { err ->
                                     Text(
