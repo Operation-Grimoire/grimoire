@@ -10,7 +10,7 @@ enum class LibraryDisplayMode { GRID, LIST }
 /** Sentinel [LibraryPreferences.selectedCategoryId] value for the "All" tab, which has no category. */
 const val ALL_TAB_CATEGORY_ID = -1L
 
-enum class SortField { TITLE, LAST_UPDATED, UNREAD, TOTAL, LAST_READ }
+enum class SortField { TITLE, LAST_UPDATED, UNREAD, TOTAL, LAST_READ, USER_RATING }
 
 enum class SortDirection { ASC, DESC }
 
@@ -82,6 +82,12 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
     val filterAutoDownloadEnabled = store.getBoolean("library_filter_auto_download_enabled", false)
     val filterType = store.getEnum("library_filter_type", NovelTypeFilter.ALL)
 
+    // User-rating range filter (1–10, inclusive). The full 1..10 range means "no
+    // restriction". Once narrowed, only novels whose rating falls inside the range
+    // show — unrated novels are hidden.
+    val filterMinUserRating = store.getInt("library_filter_min_user_rating", 1)
+    val filterMaxUserRating = store.getInt("library_filter_max_user_rating", 10)
+
     // Status and source filters are multi-select sets. An empty set means "no
     // restriction" (show all), so users can either tap "All" to clear or tap any
     // combination of chips. The legacy single-value keys are read as a fallback so
@@ -117,6 +123,7 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
     val showReadBadge = store.getBoolean("library_show_read_badge", true)
     val showDownloadedBadge = store.getBoolean("library_show_downloaded_badge", true)
     val showLockedBadge = store.getBoolean("library_show_locked_badge", true)
+    val showRatingBadge = store.getBoolean("library_show_rating_badge", true)
 
     // Flags imported-EPUB (local) novels with a badge so they're distinguishable
     // from extension-backed novels at a glance. Only renders on local novels.

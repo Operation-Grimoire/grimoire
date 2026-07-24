@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,11 +19,17 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
@@ -49,6 +56,7 @@ internal val SORT_FIELD_OPTIONS = listOf(
     SortField.LAST_UPDATED to "Last updated",
     SortField.UNREAD to "Unread chapters",
     SortField.TOTAL to "Total chapters",
+    SortField.USER_RATING to "Your rating",
 )
 
 @Composable
@@ -60,6 +68,8 @@ internal fun FilterSortContent(
     filterDownloadedOnly: Boolean,
     filterNotifyEnabled: Boolean,
     filterAutoDownloadEnabled: Boolean,
+    filterMinUserRating: Int,
+    filterMaxUserRating: Int,
     filterType: NovelTypeFilter,
     filterSourceIds: Set<Long>,
     librarySources: List<Pair<Long, String>>,
@@ -70,6 +80,7 @@ internal fun FilterSortContent(
     onDownloadedOnlyChange: (Boolean) -> Unit,
     onNotifyEnabledChange: (Boolean) -> Unit,
     onAutoDownloadEnabledChange: (Boolean) -> Unit,
+    onUserRatingRangeChange: (Int, Int) -> Unit,
     onFilterTypeChange: (NovelTypeFilter) -> Unit,
     onToggleFilterSource: (Long?) -> Unit,
 ) {
@@ -89,6 +100,8 @@ internal fun FilterSortContent(
                     filterDownloadedOnly = filterDownloadedOnly,
                     filterNotifyEnabled = filterNotifyEnabled,
                     filterAutoDownloadEnabled = filterAutoDownloadEnabled,
+                    filterMinUserRating = filterMinUserRating,
+                    filterMaxUserRating = filterMaxUserRating,
                     filterType = filterType,
                     filterSourceIds = filterSourceIds,
                     librarySources = librarySources,
@@ -97,6 +110,7 @@ internal fun FilterSortContent(
                     onDownloadedOnlyChange = onDownloadedOnlyChange,
                     onNotifyEnabledChange = onNotifyEnabledChange,
                     onAutoDownloadEnabledChange = onAutoDownloadEnabledChange,
+                    onUserRatingRangeChange = onUserRatingRangeChange,
                     onFilterTypeChange = onFilterTypeChange,
                     onToggleFilterSource = onToggleFilterSource,
                 )
@@ -120,6 +134,8 @@ private fun FilterTab(
     filterDownloadedOnly: Boolean,
     filterNotifyEnabled: Boolean,
     filterAutoDownloadEnabled: Boolean,
+    filterMinUserRating: Int,
+    filterMaxUserRating: Int,
     filterType: NovelTypeFilter,
     filterSourceIds: Set<Long>,
     librarySources: List<Pair<Long, String>>,
@@ -128,6 +144,7 @@ private fun FilterTab(
     onDownloadedOnlyChange: (Boolean) -> Unit,
     onNotifyEnabledChange: (Boolean) -> Unit,
     onAutoDownloadEnabledChange: (Boolean) -> Unit,
+    onUserRatingRangeChange: (Int, Int) -> Unit,
     onFilterTypeChange: (NovelTypeFilter) -> Unit,
     onToggleFilterSource: (Long?) -> Unit,
 ) {
@@ -214,6 +231,50 @@ private fun FilterTab(
                 )
             }
         }
+        // Local drag state so the pref is written once per gesture (on release), not on
+        // every frame. Re-seeded whenever the persisted values change.
+        var range by remember(filterMinUserRating, filterMaxUserRating) {
+            mutableStateOf(filterMinUserRating.toFloat()..filterMaxUserRating.toFloat())
+        }
+        val lo = range.start.roundToInt()
+        val hi = range.endInclusive.roundToInt()
+        val ratingActive = lo > 1 || hi < 10
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                "Rating range",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                if (ratingActive) "$lo – $hi" else "Any",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (ratingActive) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
+        RangeSlider(
+            value = range,
+            onValueChange = { range = it },
+            onValueChangeFinished = {
+                onUserRatingRangeChange(
+                    range.start.roundToInt(),
+                    range.endInclusive.roundToInt(),
+                )
+            },
+            valueRange = 1f..10f,
+            steps = 8, // 10 discrete stops
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+        )
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
         ListItem(
             headlineContent = { Text("Unread only") },

@@ -127,6 +127,10 @@ interface NovelDao {
     @Query("UPDATE novels SET autoDownloadNewChapters = :value WHERE id = :id")
     suspend fun updateAutoDownloadNewChapters(id: Long, value: Boolean)
 
+    /** Write the user's 1–10 rating. Pass null to clear it (back to unrated). */
+    @Query("UPDATE novels SET userRating = :rating WHERE id = :id")
+    suspend fun updateUserRating(id: Long, rating: Int?)
+
     /** Write the per-field metadata overrides (#152). A null clears that field's override. */
     @Query("""
         UPDATE novels SET

@@ -199,6 +199,10 @@ class NovelDetailViewModel @Inject constructor(
     private val _autoDownloadNewChapters = MutableStateFlow(false)
     val autoDownloadNewChapters: StateFlow<Boolean> = _autoDownloadNewChapters.asStateFlow()
 
+    /** The user's own 1–10 rating for this novel; null when unrated. */
+    private val _userRating = MutableStateFlow<Int?>(null)
+    val userRating: StateFlow<Int?> = _userRating.asStateFlow()
+
     /** Title of the novel being migrated from, shown in the migration prompt. */
     private val _migrateFromTitle = MutableStateFlow("")
     val migrateFromTitle: StateFlow<String> = _migrateFromTitle.asStateFlow()
@@ -380,6 +384,7 @@ class NovelDetailViewModel @Inject constructor(
         _notifyOnNewChapters.value = existing.notifyOnNewChapters
         _notifyOnNewLockedChapters.value = existing.notifyOnNewLockedChapters
         _autoDownloadNewChapters.value = existing.autoDownloadNewChapters
+        _userRating.value = existing.userRating
         _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
         _categoryId.value = existing.categoryId
         _isLoadingNovel.value = false
@@ -602,6 +607,7 @@ class NovelDetailViewModel @Inject constructor(
                     _notifyOnNewChapters.value = existing.notifyOnNewChapters
                     _notifyOnNewLockedChapters.value = existing.notifyOnNewLockedChapters
                     _autoDownloadNewChapters.value = existing.autoDownloadNewChapters
+                    _userRating.value = existing.userRating
                     _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
                     _categoryId.value = existing.categoryId
                     _isLoadingNovel.value = false
@@ -661,6 +667,7 @@ class NovelDetailViewModel @Inject constructor(
                 overrideDescription = existing?.overrideDescription,
                 overrideStatus = existing?.overrideStatus,
                 overrideGenres = existing?.overrideGenres,
+                userRating = existing?.userRating,
             ))
             cachedNovelId = existing?.id ?: upsertId
             _liveNovelId.value = cachedNovelId
@@ -671,6 +678,7 @@ class NovelDetailViewModel @Inject constructor(
             _notifyOnNewChapters.value = existing?.notifyOnNewChapters ?: false
             _notifyOnNewLockedChapters.value = existing?.notifyOnNewLockedChapters ?: false
             _autoDownloadNewChapters.value = existing?.autoDownloadNewChapters ?: false
+            _userRating.value = existing?.userRating
             _chapterSort.value = ChapterSort.entries.getOrElse(existing?.chapterSortOrder ?: 0) { ChapterSort.NUMBER_ASC }
             _categoryId.value = existing?.categoryId
         }.onFailure { e ->
@@ -899,6 +907,15 @@ class NovelDetailViewModel @Inject constructor(
         }
     }
 
+    /** Set (1–10) or clear (null) the user's own rating for this novel. */
+    fun setUserRating(rating: Int?) {
+        val clamped = rating?.coerceIn(1, 10)
+        _userRating.value = clamped
+        if (cachedNovelId > 0L) viewModelScope.launch {
+            novelDao.updateUserRating(cachedNovelId, clamped)
+        }
+    }
+
     /** How many of this novel's chapters the pending migration would mark read. */
     suspend fun migrationMatchCount(): Int {
         if (!isMigrationTarget || cachedNovelId <= 0L) return 0
@@ -1019,6 +1036,7 @@ internal fun Novel.toEntity(
     overrideDescription: String? = null,
     overrideStatus: Int? = null,
     overrideGenres: String? = null,
+    userRating: Int? = null,
 ) = NovelEntity(
     id = existingId,
     sourceId = sourceId,
@@ -1048,6 +1066,7 @@ internal fun Novel.toEntity(
     overrideDescription = overrideDescription,
     overrideStatus = overrideStatus,
     overrideGenres = overrideGenres,
+    userRating = userRating,
 )
 
 /**
