@@ -35,9 +35,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import io.grimoire.app.data.novelupdates.NuSearchResult
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -55,11 +57,11 @@ fun NovelUpdatesBookmarksScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Saved on NovelUpdates") },
+                title = { Text(stringResource(R.string.nu_saved_title)) },
             )
         },
     ) { padding ->
@@ -71,13 +73,12 @@ fun NovelUpdatesBookmarksScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        "Nothing saved yet",
+                        stringResource(R.string.nu_nothing_saved),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        "Tap the save icon on a NovelUpdates series to keep it here. " +
-                            "Saved series are NovelUpdates listings — add one to a source to read it.",
+                        stringResource(R.string.nu_nothing_saved_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -105,16 +106,16 @@ fun NovelUpdatesBookmarksScreen(
     removing?.let { item ->
         AlertDialog(
             onDismissRequest = { removing = null },
-            title = { Text("Remove from saved?") },
+            title = { Text(stringResource(R.string.nu_remove_saved_title)) },
             text = { Text(item.title) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.remove(item.slug)
                     removing = null
-                }) { Text("Remove") }
+                }) { Text(stringResource(R.string.action_remove)) }
             },
             dismissButton = {
-                TextButton(onClick = { removing = null }) { Text("Cancel") }
+                TextButton(onClick = { removing = null }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }

@@ -32,9 +32,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,15 +52,15 @@ fun TasksScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Tasks") },
+                title = { Text(stringResource(R.string.tasks_title)) },
                 actions = {
                     if (history.isNotEmpty()) {
-                        PlainTooltipIconButton(onClick = { confirmClear = true }, tooltip = "Clear log") {
-                            Icon(AppIcons.DeleteSweep, contentDescription = "Clear log")
+                        PlainTooltipIconButton(onClick = { confirmClear = true }, tooltip = stringResource(R.string.action_clear_log)) {
+                            Icon(AppIcons.DeleteSweep, contentDescription = stringResource(R.string.action_clear_log))
                         }
                     }
                 },
@@ -73,7 +75,7 @@ fun TasksScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "No tasks yet.\nDownloads and library syncs appear here while they run,\nand their results are kept below.",
+                    stringResource(R.string.tasks_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -81,7 +83,7 @@ fun TasksScreen(
         } else {
             LazyColumn(modifier = Modifier.padding(padding)) {
                 if (tasks.isNotEmpty()) {
-                    item { SectionHeader("Running") }
+                    item { SectionHeader(stringResource(R.string.tasks_running)) }
                     items(tasks.size) { index ->
                         val task = tasks[index]
                         TaskRow(task = task, onCancel = { viewModel.cancel(task.id) })
@@ -89,7 +91,7 @@ fun TasksScreen(
                     }
                 }
                 if (history.isNotEmpty()) {
-                    item { SectionHeader("History") }
+                    item { SectionHeader(stringResource(R.string.tasks_history)) }
                     items(history.size) { index ->
                         HistoryRow(entry = history[index])
                         HorizontalDivider()
@@ -102,16 +104,16 @@ fun TasksScreen(
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
-            title = { Text("Clear task log?") },
-            text = { Text("Removes the history of completed library syncs and downloads. Running tasks are not affected.") },
+            title = { Text(stringResource(R.string.tasks_clear_title)) },
+            text = { Text(stringResource(R.string.tasks_clear_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.clearHistory()
                     confirmClear = false
-                }) { Text("Clear") }
+                }) { Text(stringResource(R.string.action_clear)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmClear = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -159,8 +161,9 @@ private fun TaskRow(task: TaskUiState, onCancel: () -> Unit) {
             }
         }
         Spacer(Modifier.width(8.dp))
-        PlainTooltipIconButton(onClick = onCancel, tooltip = "Cancel ${task.title}") {
-            Icon(AppIcons.Close, contentDescription = "Cancel ${task.title}")
+        val cancelLabel = stringResource(R.string.tasks_cancel_named, task.title)
+        PlainTooltipIconButton(onClick = onCancel, tooltip = cancelLabel) {
+            Icon(AppIcons.Close, contentDescription = cancelLabel)
         }
     }
 }
@@ -201,7 +204,7 @@ private fun HistoryRow(entry: TaskLogUiState) {
             }
             Spacer(Modifier.height(2.dp))
             Text(
-                text = entry.summary,
+                text = localizedTaskSummary(entry.summary),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -210,7 +213,7 @@ private fun HistoryRow(entry: TaskLogUiState) {
             Spacer(Modifier.width(8.dp))
             Icon(
                 imageVector = AppIcons.ErrorOutline,
-                contentDescription = "Finished with errors",
+                contentDescription = stringResource(R.string.tasks_finished_with_errors),
                 tint = MaterialTheme.colorScheme.error,
             )
         }

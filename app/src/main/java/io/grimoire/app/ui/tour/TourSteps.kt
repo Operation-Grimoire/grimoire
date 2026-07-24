@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.tour
 
+import io.grimoire.app.R
 import io.grimoire.app.ui.ROUTE_EXTENSION_MANAGE
 import io.grimoire.app.ui.TopLevelDestination
 
@@ -10,55 +11,54 @@ private val MORE = TopLevelDestination.More.route
 /** The first-run orientation tour: a handful of cross-screen stops. */
 private val welcomeTour = Tour(
     id = TourId.Welcome,
-    title = "Welcome tour",
-    description = "The essentials: library, browsing, sources and settings.",
+    titleRes = R.string.tour_welcome_title,
+    descriptionRes = R.string.tour_welcome_description,
     version = 1,
     autoRun = true,
     steps = listOf(
         TourStep(
             target = null,
-            title = "Welcome to Grimoire",
-            body = "A quick tour of the essentials — takes about 20 seconds.",
+            titleRes = R.string.tour_step_welcome_title,
+            bodyRes = R.string.tour_step_welcome_body,
             route = LIBRARY,
             art = TourArt.Welcome,
         ),
         TourStep(
             target = TourKey.LibraryTab,
-            title = "Your library",
-            body = "Novels you add live here, organised into categories.",
+            titleRes = R.string.tour_step_library_title,
+            bodyRes = R.string.tour_step_library_body,
             route = LIBRARY,
         ),
         TourStep(
             target = TourKey.BrowseTab,
-            title = "Browse",
-            body = "Tap Browse to find novels across your sources.",
+            titleRes = R.string.tour_step_browse_title,
+            bodyRes = R.string.tour_step_browse_body,
             route = BROWSE,
             advanceOnReach = true,
         ),
         TourStep(
             target = TourKey.ExtensionManager,
-            title = "Sources & extensions",
-            body = "Sources install from here. Open it to see what's available.",
+            titleRes = R.string.tour_step_extensions_title,
+            bodyRes = R.string.tour_step_extensions_body,
             route = BROWSE,
             actions = listOf(TourActionId.OpenExtensions),
         ),
         TourStep(
             target = TourKey.RepoManager,
-            title = "Repositories",
-            body = "Sources come from repositories. The official one is already " +
-                "added — tap here to manage them or add your own.",
+            titleRes = R.string.tour_step_repositories_title,
+            bodyRes = R.string.tour_step_repositories_body,
             route = ROUTE_EXTENSION_MANAGE,
         ),
         TourStep(
             target = TourKey.MoreTab,
-            title = "Everything else",
-            body = "Downloads, statistics, backups and settings are under More.",
+            titleRes = R.string.tour_step_more_title,
+            bodyRes = R.string.tour_step_more_body,
             route = MORE,
         ),
         TourStep(
             target = null,
-            title = "You're all set",
-            body = "Replay any tour from More → Tours.",
+            titleRes = R.string.tour_step_done_title,
+            bodyRes = R.string.tour_step_done_body,
             route = LIBRARY,
             art = TourArt.Done,
         ),

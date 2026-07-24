@@ -27,7 +27,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.R
 import io.grimoire.app.data.local.entity.CategoryEntity
 import sh.calvin.reorderable.ReorderableColumn
 import sh.calvin.reorderable.ReorderableItem
@@ -49,7 +51,7 @@ internal fun ManageCategoriesSheet(
 
     Column(Modifier.padding(bottom = 32.dp)) {
         Text(
-            "Manage Categories",
+            stringResource(R.string.library_manage_categories_title),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
         )
@@ -61,7 +63,7 @@ internal fun ManageCategoriesSheet(
             ) {
                 Icon(AppIcons.Lock, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Unlock to manage hidden categories")
+                Text(stringResource(R.string.library_unlock_to_manage_hidden))
             }
         }
         ReorderableColumn(
@@ -78,7 +80,9 @@ internal fun ManageCategoriesSheet(
                             leadingContent = {
                                 Icon(
                                     AppIcons.DragHandle,
-                                    contentDescription = "Drag to reorder",
+                                    contentDescription = stringResource(
+                                        R.string.library_drag_to_reorder,
+                                    ),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier
                                         .draggableHandle()
@@ -89,21 +93,42 @@ internal fun ManageCategoriesSheet(
                             trailingContent = {
                                 Row {
                                     if (isUnlocked && !cat.isDefault) {
-                                        PlainTooltipIconButton(onClick = { onToggleHidden(cat, !cat.isHidden) }, tooltip = if (cat.isHidden) "Unhide" else "Hide") {
+                                        val visibilityLabel = if (cat.isHidden) {
+                                            stringResource(R.string.library_unhide_category)
+                                        } else {
+                                            stringResource(R.string.library_hide_category)
+                                        }
+                                        PlainTooltipIconButton(
+                                            onClick = { onToggleHidden(cat, !cat.isHidden) },
+                                            tooltip = visibilityLabel,
+                                        ) {
                                             Icon(
                                                 if (cat.isHidden) AppIcons.VisibilityOff else AppIcons.Visibility,
-                                                contentDescription = if (cat.isHidden) "Unhide" else "Hide",
+                                                contentDescription = visibilityLabel,
                                             )
                                         }
                                     }
-                                    PlainTooltipIconButton(onClick = { renamingCategory = cat }, tooltip = "Rename") {
-                                        Icon(AppIcons.Edit, contentDescription = "Rename")
+                                    PlainTooltipIconButton(
+                                        onClick = { renamingCategory = cat },
+                                        tooltip = stringResource(R.string.library_rename_category),
+                                    ) {
+                                        Icon(
+                                            AppIcons.Edit,
+                                            contentDescription = stringResource(
+                                                R.string.library_rename_category,
+                                            ),
+                                        )
                                     }
                                     if (!cat.isDefault) {
-                                        PlainTooltipIconButton(onClick = { onDelete(cat) }, tooltip = "Delete") {
+                                        PlainTooltipIconButton(
+                                            onClick = { onDelete(cat) },
+                                            tooltip = stringResource(R.string.library_delete_category),
+                                        ) {
                                             Icon(
                                                 AppIcons.Delete,
-                                                contentDescription = "Delete",
+                                                contentDescription = stringResource(
+                                                    R.string.library_delete_category,
+                                                ),
                                                 tint = MaterialTheme.colorScheme.error,
                                             )
                                         }
@@ -121,13 +146,13 @@ internal fun ManageCategoriesSheet(
         ) {
             Icon(AppIcons.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Add category")
+            Text(stringResource(R.string.library_add_category))
         }
     }
 
     if (showAddDialog) {
         CategoryNameDialog(
-            title = "Add category",
+            title = stringResource(R.string.library_add_category),
             onConfirm = { name -> onAdd(name); showAddDialog = false },
             onDismiss = { showAddDialog = false },
         )
@@ -135,7 +160,7 @@ internal fun ManageCategoriesSheet(
 
     renamingCategory?.let { cat ->
         CategoryNameDialog(
-            title = "Rename",
+            title = stringResource(R.string.library_rename_category),
             initial = cat.name,
             onConfirm = { name -> onRename(cat, name); renamingCategory = null },
             onDismiss = { renamingCategory = null },
@@ -158,7 +183,7 @@ private fun CategoryNameDialog(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.library_category_name)) },
                 singleLine = true,
             )
         },
@@ -166,8 +191,10 @@ private fun CategoryNameDialog(
             TextButton(
                 onClick = { if (name.isNotBlank()) onConfirm(name.trim()) },
                 enabled = name.isNotBlank(),
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.library_save_category)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
     )
 }

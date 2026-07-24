@@ -21,9 +21,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.preferences.BrowseDisplayMode
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,11 +44,11 @@ fun BrowseSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Browse") },
+                title = { Text(stringResource(R.string.settings_browse_title)) },
             )
         },
     ) { padding ->
@@ -54,7 +56,7 @@ fun BrowseSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Display") },
+                    headlineContent = { Text(stringResource(R.string.settings_display_mode)) },
                     supportingContent = {
                         SingleChoiceSegmentedButtonRow(
                             modifier = Modifier
@@ -66,7 +68,7 @@ fun BrowseSettingsScreen(
                                     selected = displayMode == mode,
                                     onClick = { viewModel.setBrowseDisplayMode(mode) },
                                     shape = SegmentedButtonDefaults.itemShape(index, BrowseDisplayMode.entries.size),
-                                    label = { Text(mode.displayName) },
+                                    label = { Text(mode.localizedDisplayName()) },
                                 )
                             }
                         }
@@ -77,7 +79,7 @@ fun BrowseSettingsScreen(
             item {
                 AnimatedVisibility(visible = displayMode == BrowseDisplayMode.GRID) {
                     ListItem(
-                        headlineContent = { Text("Columns") },
+                        headlineContent = { Text(stringResource(R.string.settings_columns)) },
                         supportingContent = {
                             SingleChoiceSegmentedButtonRow(
                                 modifier = Modifier
@@ -100,9 +102,9 @@ fun BrowseSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("NovelUpdates shortcuts") },
+                    headlineContent = { Text(stringResource(R.string.browse_settings_nu_shortcuts)) },
                     supportingContent = {
-                        Text("Show the NovelUpdates search, rankings, and latest links on Browse.")
+                        Text(stringResource(R.string.browse_settings_nu_shortcuts_summary))
                     },
                     trailingContent = {
                         Switch(
@@ -118,9 +120,9 @@ fun BrowseSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Show pinned in language groups") },
+                    headlineContent = { Text(stringResource(R.string.browse_settings_pinned_groups)) },
                     supportingContent = {
-                        Text("Also list pinned sources under their language, not just in Pinned.")
+                        Text(stringResource(R.string.browse_settings_pinned_groups_summary))
                     },
                     trailingContent = {
                         Switch(
@@ -137,8 +139,10 @@ fun BrowseSettingsScreen(
     }
 }
 
-private val BrowseDisplayMode.displayName: String
-    get() = when (this) {
-        BrowseDisplayMode.GRID -> "Grid"
-        BrowseDisplayMode.LIST -> "List"
-    }
+@Composable
+private fun BrowseDisplayMode.localizedDisplayName(): String = stringResource(
+    when (this) {
+        BrowseDisplayMode.GRID -> R.string.settings_display_grid
+        BrowseDisplayMode.LIST -> R.string.settings_display_list
+    },
+)

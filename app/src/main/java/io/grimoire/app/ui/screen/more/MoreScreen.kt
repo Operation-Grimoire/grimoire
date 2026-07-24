@@ -16,7 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,16 +42,18 @@ fun MoreScreen(
     val incognito by viewModel.incognito.collectAsState()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("More") }) },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.more_title)) }) },
     ) { padding ->
         androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.padding(padding)) {
             item {
                 ListItem(
-                    headlineContent = { Text("Incognito") },
+                    headlineContent = { Text(stringResource(R.string.more_incognito)) },
                     supportingContent = {
                         Text(
-                            if (incognito) "Not recording history this session"
-                            else "Pause reading & browsing history"
+                            stringResource(
+                                if (incognito) R.string.more_incognito_enabled
+                                else R.string.more_incognito_disabled,
+                            )
                         )
                     },
                     leadingContent = {
@@ -70,19 +75,21 @@ fun MoreScreen(
                 val hasUpdates = updateCount > 0
                 val hasSubscribedUpdates = subscribedUpdateCount > 0
                 ListItem(
-                    headlineContent = { Text("Updates") },
+                    headlineContent = { Text(stringResource(R.string.more_updates)) },
                     supportingContent = {
                         Text(
                             when {
-                                hasSubscribedUpdates -> {
-                                    val chapters =
-                                        "$subscribedUpdateCount new chapter${if (subscribedUpdateCount == 1) "" else "s"}"
-                                    "$chapters from subscribed novels"
-                                }
-                                hasUpdates -> {
-                                    "$updateCount new chapter${if (updateCount == 1) "" else "s"} across your library"
-                                }
-                                else -> "No new chapters"
+                                hasSubscribedUpdates -> pluralStringResource(
+                                    R.plurals.more_subscribed_updates_summary,
+                                    subscribedUpdateCount,
+                                    subscribedUpdateCount,
+                                )
+                                hasUpdates -> pluralStringResource(
+                                    R.plurals.more_updates_summary,
+                                    updateCount,
+                                    updateCount,
+                                )
+                                else -> stringResource(R.string.more_no_new_chapters)
                             }
                         )
                     },
@@ -103,8 +110,8 @@ fun MoreScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("History") },
-                    supportingContent = { Text("Recently read chapters and browsed novels") },
+                    headlineContent = { Text(stringResource(R.string.more_history)) },
+                    supportingContent = { Text(stringResource(R.string.more_history_summary)) },
                     leadingContent = { Icon(AppIcons.History, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToHistory),
                 )
@@ -112,11 +119,14 @@ fun MoreScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Downloads") },
+                    headlineContent = { Text(stringResource(R.string.more_downloads)) },
                     supportingContent = {
                         Text(
-                            if (activeCount > 0) "$activeCount in progress"
-                            else "Downloaded chapters and queue"
+                            if (activeCount > 0) pluralStringResource(
+                                R.plurals.more_downloads_in_progress,
+                                activeCount,
+                                activeCount,
+                            ) else stringResource(R.string.more_downloads_summary)
                         )
                     },
                     leadingContent = { Icon(AppIcons.Download, contentDescription = null) },
@@ -126,8 +136,8 @@ fun MoreScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Tasks") },
-                    supportingContent = { Text("Running downloads and syncs, plus their history") },
+                    headlineContent = { Text(stringResource(R.string.more_tasks)) },
+                    supportingContent = { Text(stringResource(R.string.more_tasks_summary)) },
                     leadingContent = {
                         Icon(AppIcons.PendingActions, contentDescription = null)
                     },
@@ -138,15 +148,14 @@ fun MoreScreen(
             item {
                 val hasIssues = issueCount > 0
                 ListItem(
-                    headlineContent = { Text("Update warnings") },
+                    headlineContent = { Text(stringResource(R.string.more_update_warnings)) },
                     supportingContent = {
                         Text(
-                            if (hasIssues) {
-                                val noun = if (issueCount == 1) "novel needs" else "novels need"
-                                "$issueCount $noun attention"
-                            } else {
-                                "No refresh problems"
-                            }
+                            if (hasIssues) pluralStringResource(
+                                R.plurals.more_update_warnings_summary,
+                                issueCount,
+                                issueCount,
+                            ) else stringResource(R.string.more_no_refresh_problems)
                         )
                     },
                     leadingContent = {
@@ -166,8 +175,8 @@ fun MoreScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Statistics") },
-                    supportingContent = { Text("Your reading activity") },
+                    headlineContent = { Text(stringResource(R.string.more_statistics)) },
+                    supportingContent = { Text(stringResource(R.string.more_statistics_summary)) },
                     leadingContent = { Icon(AppIcons.BarChart, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToStatistics),
                 )
@@ -175,8 +184,8 @@ fun MoreScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Settings") },
-                    supportingContent = { Text("Appearance, library, reader, backups") },
+                    headlineContent = { Text(stringResource(R.string.settings_title)) },
+                    supportingContent = { Text(stringResource(R.string.more_settings_summary)) },
                     leadingContent = { Icon(AppIcons.Settings, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToSettings),
                 )
@@ -184,8 +193,8 @@ fun MoreScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Tours") },
-                    supportingContent = { Text("Replay the in-app guided tours") },
+                    headlineContent = { Text(stringResource(R.string.more_tours)) },
+                    supportingContent = { Text(stringResource(R.string.more_tours_summary)) },
                     leadingContent = { Icon(AppIcons.Explore, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToTours),
                 )
@@ -193,8 +202,8 @@ fun MoreScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("About") },
-                    supportingContent = { Text("Version, update channel, licenses") },
+                    headlineContent = { Text(stringResource(R.string.more_about)) },
+                    supportingContent = { Text(stringResource(R.string.more_about_summary)) },
                     leadingContent = { Icon(AppIcons.Info, contentDescription = null) },
                     modifier = Modifier.clickable(onClick = onNavigateToAbout),
                 )

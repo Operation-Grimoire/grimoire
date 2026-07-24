@@ -20,12 +20,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.local.entity.UpdateIssueEntity
 import io.grimoire.app.data.local.entity.UpdateIssueSeverity
 import java.text.DateFormat
 import java.util.Date
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,11 +42,11 @@ fun UpdateIssuesScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Update warnings") },
+                title = { Text(stringResource(R.string.update_issues_title)) },
             )
         },
     ) { padding ->
@@ -56,7 +58,7 @@ fun UpdateIssuesScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "No problems.\nNovels that fail to refresh show up here.",
+                    stringResource(R.string.update_issues_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -86,13 +88,13 @@ private fun IssueRow(issue: UpdateIssueEntity, onClick: () -> Unit) {
             if (isError) {
                 Icon(
                     AppIcons.ErrorOutline,
-                    contentDescription = "Error",
+                    contentDescription = stringResource(R.string.status_error),
                     tint = MaterialTheme.colorScheme.error,
                 )
             } else {
                 Icon(
                     AppIcons.WarningAmber,
-                    contentDescription = "Warning",
+                    contentDescription = stringResource(R.string.status_warning),
                     tint = MaterialTheme.colorScheme.tertiary,
                 )
             }
@@ -100,7 +102,7 @@ private fun IssueRow(issue: UpdateIssueEntity, onClick: () -> Unit) {
         headlineContent = { Text(issue.novelTitle) },
         supportingContent = {
             Text(
-                issue.message,
+                localizedIssueMessage(issue.message),
                 style = MaterialTheme.typography.bodySmall,
             )
         },
@@ -113,4 +115,14 @@ private fun IssueRow(issue: UpdateIssueEntity, onClick: () -> Unit) {
             )
         },
     )
+}
+
+@Composable
+private fun localizedIssueMessage(message: String): String = when (message) {
+    "Source not installed — skipped" -> stringResource(R.string.update_issue_source_missing)
+    "Source returned no chapters — kept the existing list" ->
+        stringResource(R.string.update_issue_no_chapters)
+    "Source returned incomplete data — kept the previous title/cover" ->
+        stringResource(R.string.update_issue_incomplete_data)
+    else -> message
 }

@@ -39,6 +39,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,6 +50,7 @@ import io.grimoire.app.ui.screen.settings.formatTimeOfDay
 import io.grimoire.app.ui.screen.settings.intervalSummary
 import java.text.DateFormat
 import java.util.Date
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,12 +105,25 @@ fun BackupSettingsScreen(
         }
     }
 
-    LaunchedEffect(uiState.event) {
-        val msg = when (val ev = uiState.event) {
-            is BackupUiEvent.Info -> ev.message
-            is BackupUiEvent.Error -> ev.message
-            null -> null
-        }
+    val eventMessage = when (val event = uiState.event) {
+        is BackupUiEvent.Saved -> pluralStringResource(
+            R.plurals.backup_saved,
+            event.novelCount,
+            event.fileName,
+            event.novelCount,
+        )
+        is BackupUiEvent.Restored -> pluralStringResource(
+            R.plurals.backup_restored,
+            event.novelCount,
+            event.novelCount,
+            event.chapterCount,
+        )
+        BackupUiEvent.Queued -> stringResource(R.string.backup_queued)
+        is BackupUiEvent.Error -> event.message
+        null -> null
+    }
+    LaunchedEffect(uiState.event, eventMessage) {
+        val msg = eventMessage
         if (msg != null) {
             snackbarHostState.showSnackbar(msg)
             viewModel.consumeEvent()
@@ -119,21 +135,21 @@ fun BackupSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Backup & restore") },
+                title = { Text(stringResource(R.string.settings_backup_title)) },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
-            item { SectionHeader("Backup") }
+            item { SectionHeader(stringResource(R.string.backup_section_backup)) }
 
             item {
                 Text(
-                    text = "Backups are saved as a gzipped JSON file to a folder you pick on this device. Choose a folder you can find later (such as Downloads or Documents).",
+                    text = stringResource(R.string.backup_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -142,10 +158,10 @@ fun BackupSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Backup folder") },
+                    headlineContent = { Text(stringResource(R.string.backup_folder)) },
                     supportingContent = {
                         Text(
-                            text = if (folderUri.isBlank()) "Not selected" else displayFolderName(folderUri),
+                            text = if (folderUri.isBlank()) stringResource(R.string.backup_folder_not_selected) else displayFolderName(folderUri),
                             style = MaterialTheme.typography.bodySmall,
                         )
                     },
@@ -153,7 +169,7 @@ fun BackupSettingsScreen(
                         OutlinedButton(onClick = {
                             pickerMode = FolderPickerMode.SELECT_ONLY
                             folderPicker.launch(defaultInitialUri())
-                        }) { Text("Choose") }
+                        }) { Text(stringResource(R.string.action_choose)) }
                     },
                 )
             }
@@ -176,23 +192,23 @@ fun BackupSettingsScreen(
                         },
                         enabled = !uiState.running,
                         modifier = Modifier.weight(1f),
-                    ) { Text("Backup now") }
+                    ) { Text(stringResource(R.string.backup_now)) }
                     OutlinedButton(
                         onClick = {
                             filePicker.launch(arrayOf("application/gzip", "application/json", "application/octet-stream", "*/*"))
                         },
                         enabled = !uiState.running,
                         modifier = Modifier.weight(1f),
-                    ) { Text("Restore…") }
+                    ) { Text(stringResource(R.string.backup_restore_ellipsis)) }
                 }
             }
 
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
-            item { SectionHeader("Scheduled backup") }
+            item { SectionHeader(stringResource(R.string.backup_scheduled)) }
 
             item {
                 Text(
-                    text = "Runs in the background on this device. The app does not need to be open.",
+                    text = stringResource(R.string.backup_scheduled_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -201,11 +217,13 @@ fun BackupSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Back up automatically") },
+                    headlineContent = { Text(stringResource(R.string.backup_automatic)) },
                     supportingContent = {
                         Text(
-                            if (enabled) "Runs every ${intervalSummary(intervalCount, intervalUnit)}"
-                            else "Off",
+                            if (enabled) stringResource(
+                                R.string.schedule_runs_every,
+                                intervalSummary(intervalCount, intervalUnit),
+                            ) else stringResource(R.string.schedule_off),
                         )
                     },
                     trailingContent = {
@@ -228,11 +246,14 @@ fun BackupSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Time of day") },
+                    headlineContent = { Text(stringResource(R.string.schedule_time_of_day)) },
                     supportingContent = {
                         Text(
-                            if (enabled) "Runs around ${formatTimeOfDay(preferredMinutes)}"
-                            else "Runs around ${formatTimeOfDay(preferredMinutes)} when scheduled",
+                            stringResource(
+                                if (enabled) R.string.schedule_runs_around
+                                else R.string.schedule_runs_around_when_scheduled,
+                                formatTimeOfDay(preferredMinutes),
+                            ),
                         )
                     },
                     trailingContent = {
@@ -252,8 +273,8 @@ fun BackupSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Only on Wi-Fi") },
-                    supportingContent = { Text("Skip auto backup on cellular") },
+                    headlineContent = { Text(stringResource(R.string.backup_wifi_only)) },
+                    supportingContent = { Text(stringResource(R.string.backup_wifi_only_summary)) },
                     trailingContent = {
                         Switch(
                             checked = onlyOnWifi,
@@ -266,7 +287,7 @@ fun BackupSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Only while charging") },
+                    headlineContent = { Text(stringResource(R.string.backup_charging_only)) },
                     trailingContent = {
                         Switch(
                             checked = requiresCharging,
@@ -279,8 +300,8 @@ fun BackupSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Run scheduled backup now") },
-                    supportingContent = { Text("Uses the selected folder and schedule constraints") },
+                    headlineContent = { Text(stringResource(R.string.backup_run_scheduled)) },
+                    supportingContent = { Text(stringResource(R.string.backup_run_scheduled_summary)) },
                     modifier = Modifier.clickable(
                         enabled = folderUri.isNotBlank() && enabled,
                     ) { viewModel.triggerScheduledBackupNow() },
@@ -288,24 +309,28 @@ fun BackupSettingsScreen(
             }
 
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
-            item { SectionHeader("Last automatic backup") }
+            item { SectionHeader(stringResource(R.string.backup_last_automatic)) }
 
             item {
                 val statusLine = if (lastAutoBackupAt == 0L) {
-                    "Never"
+                    stringResource(R.string.schedule_never)
                 } else {
                     val date = DateFormat.getDateTimeInstance().format(Date(lastAutoBackupAt))
                     if (lastAutoBackupSuccess) {
-                        "$date — ${lastAutoBackupFile.ifBlank { "succeeded" }}"
+                        stringResource(
+                            R.string.backup_succeeded_at,
+                            date,
+                            lastAutoBackupFile.ifBlank { stringResource(R.string.backup_succeeded) },
+                        )
                     } else {
-                        "$date — failed"
+                        stringResource(R.string.schedule_failed_at, date)
                     }
                 }
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
                     Text(statusLine, style = MaterialTheme.typography.bodyMedium)
                     if (lastAutoBackupMessage.isNotBlank()) {
                         Text(
-                            lastAutoBackupMessage,
+                            localizedBackupMessage(lastAutoBackupMessage),
                             style = MaterialTheme.typography.bodySmall,
                             color = if (lastAutoBackupSuccess) {
                                 MaterialTheme.colorScheme.onSurfaceVariant
@@ -324,18 +349,18 @@ fun BackupSettingsScreen(
     pendingRestoreUri?.let { uri ->
         AlertDialog(
             onDismissRequest = { pendingRestoreUri = null },
-            title = { Text("Restore backup?") },
+            title = { Text(stringResource(R.string.backup_restore_title)) },
             text = {
-                Text("This will merge the backup into your current library. Existing entries are kept; new ones are added and reading progress is merged.")
+                Text(stringResource(R.string.backup_restore_message))
             },
             confirmButton = {
                 Button(onClick = {
                     pendingRestoreUri = null
                     viewModel.restoreFrom(uri)
-                }) { Text("Restore") }
+                }) { Text(stringResource(R.string.action_restore)) }
             },
             dismissButton = {
-                OutlinedButton(onClick = { pendingRestoreUri = null }) { Text("Cancel") }
+                OutlinedButton(onClick = { pendingRestoreUri = null }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -376,3 +401,17 @@ private fun defaultInitialUri(): Uri? {
     // Point the SAF picker at the Downloads folder by default.
     return "content://com.android.externalstorage.documents/document/primary%3ADownload".toUri()
 }
+
+@Composable
+private fun localizedBackupMessage(message: String): String {
+    if (message == "No backup folder selected") {
+        return stringResource(R.string.backup_no_folder_selected)
+    }
+    BACKED_UP_REGEX.matchEntire(message)?.let { match ->
+        val count = match.groupValues[1].toInt()
+        return pluralStringResource(R.plurals.backup_novels_backed_up, count, count)
+    }
+    return message
+}
+
+private val BACKED_UP_REGEX = Regex("""Backed up (\d+) novels?""")

@@ -19,10 +19,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import io.grimoire.app.R
 import io.grimoire.app.data.epub.StagedEpub
 import java.nio.ByteBuffer
 
@@ -38,7 +41,7 @@ internal fun EpubImportPreviewDialog(
     val coverBytes = staged.coverBytes
     AlertDialog(
         onDismissRequest = { if (!importing) onDismiss() },
-        title = { Text("Import EPUB") },
+        title = { Text(stringResource(R.string.library_import_epub)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -66,13 +69,19 @@ internal fun EpubImportPreviewDialog(
                             )
                         }
                         Text(
-                            "${staged.chapterCount} chapters",
+                            pluralStringResource(
+                                R.plurals.library_chapter_count,
+                                staged.chapterCount,
+                                staged.chapterCount,
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         if (staged.genres.isNotEmpty()) {
                             Text(
-                                staged.genres.joinToString(", "),
+                                staged.genres.joinToString(
+                                    separator = stringResource(R.string.library_genre_separator),
+                                ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 2,
@@ -100,13 +109,13 @@ internal fun EpubImportPreviewDialog(
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Text("Add to library")
+                    Text(stringResource(R.string.library_add_to_library))
                 }
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !importing) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
         },
     )

@@ -31,6 +31,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -39,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.crash.buildCrashIssueUrl
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import kotlinx.coroutines.launch
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,16 +53,18 @@ fun CrashReportScreen(
     val clipboard = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val noBrowserMessage = stringResource(R.string.crash_no_browser)
+    val copiedMessage = stringResource(R.string.crash_details_copied)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("App crashed") },
+                title = { Text(stringResource(R.string.crash_title)) },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -73,7 +77,7 @@ fun CrashReportScreen(
                     .padding(16.dp),
             ) {
                 Text(
-                    "No crash report available.",
+                    stringResource(R.string.crash_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -87,9 +91,7 @@ fun CrashReportScreen(
                 .padding(padding),
         ) {
             Text(
-                "The app closed unexpectedly last time it ran. Filing a report helps " +
-                    "get it fixed — the crash details below are filled in for you. You " +
-                    "can also copy them to share elsewhere.",
+                stringResource(R.string.crash_description),
                 modifier = Modifier.padding(16.dp),
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -129,22 +131,22 @@ fun CrashReportScreen(
                             )
                         }.onFailure {
                             scope.launch {
-                                snackbarHostState.showSnackbar("No browser available to open GitHub.")
+                                snackbarHostState.showSnackbar(noBrowserMessage)
                             }
                         }
                     },
                     modifier = Modifier.weight(1f),
                 ) {
                     Icon(AppIcons.BugReport, contentDescription = null)
-                    Text(" Report on GitHub")
+                    Text(stringResource(R.string.crash_report_github))
                 }
                 OutlinedButton(
                     onClick = {
                         clipboard.setText(AnnotatedString(report))
-                        scope.launch { snackbarHostState.showSnackbar("Crash details copied.") }
+                        scope.launch { snackbarHostState.showSnackbar(copiedMessage) }
                     },
                 ) {
-                    Icon(AppIcons.ContentCopy, contentDescription = "Copy details")
+                    Icon(AppIcons.ContentCopy, contentDescription = stringResource(R.string.crash_copy_details))
                 }
             }
 
@@ -158,7 +160,7 @@ fun CrashReportScreen(
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 16.dp),
             ) {
-                Text("Dismiss")
+                Text(stringResource(R.string.action_dismiss))
             }
         }
     }

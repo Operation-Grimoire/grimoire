@@ -1,6 +1,7 @@
 package io.grimoire.app
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -27,6 +28,7 @@ import io.grimoire.app.ui.component.LocalSynopsisRenderLinks
 import io.grimoire.app.ui.component.ProvideAppHaptics
 import io.grimoire.app.ui.theme.GrimoireTheme
 import io.grimoire.app.ui.update.AppUpdateUi
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -51,6 +53,10 @@ class MainActivity : FragmentActivity() {
 
     /** Inbound "add this extension repo" deep link; cleared once Extensions picks it up. */
     private val pendingAddRepo = MutableStateFlow<PendingAddRepo?>(null)
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

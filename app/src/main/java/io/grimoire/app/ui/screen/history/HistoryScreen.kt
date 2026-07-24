@@ -41,6 +41,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -56,6 +58,7 @@ import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.dayKey
 import io.grimoire.app.ui.component.dayLabel
 import io.grimoire.app.ui.component.timeLabel
+import io.grimoire.app.R
 
 private const val READING_TAB = 0
 private const val BROWSING_TAB = 1
@@ -141,24 +144,31 @@ fun HistoryScreen(
             } else {
                 TopAppBar(
                     navigationIcon = {
-                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                            Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                            Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     },
-                    title = { Text("History") },
+                    title = { Text(stringResource(R.string.history_title)) },
                     actions = {
                         val hasEntries = if (currentPage == READING_TAB) reading.isNotEmpty() else browsing.isNotEmpty()
                         if (hasEntries) {
                             Box {
-                                PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = "More actions") {
-                                    Icon(AppIcons.MoreVert, contentDescription = "More actions")
+                                PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = stringResource(R.string.action_more_actions)) {
+                                    Icon(AppIcons.MoreVert, contentDescription = stringResource(R.string.action_more_actions))
                                 }
                                 DropdownMenu(
                                     expanded = menuExpanded,
                                     onDismissRequest = { menuExpanded = false },
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("Clear ${if (currentPage == READING_TAB) "reading" else "browsing"} history") },
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    if (currentPage == READING_TAB) R.string.history_clear_reading
+                                                    else R.string.history_clear_browsing,
+                                                ),
+                                            )
+                                        },
                                         onClick = {
                                             menuExpanded = false
                                             showClearConfirm = true
@@ -175,7 +185,7 @@ fun HistoryScreen(
             TooltipBottomBar(visible = selectionMode) {
                 TooltipIconButton(
                     icon = AppIcons.DeleteHistory,
-                    label = "Delete",
+                    label = stringResource(R.string.action_delete),
                     onClick = {
                         if (currentPage == READING_TAB) viewModel.deleteReading(selectedIds)
                         else viewModel.deleteBrowsing(selectedIds)
@@ -187,14 +197,17 @@ fun HistoryScreen(
         },
     ) { padding ->
         SwipeTabRow(
-            tabs = listOf("Reading", "Browsing"),
+            tabs = listOf(
+                stringResource(R.string.history_reading),
+                stringResource(R.string.history_browsing),
+            ),
             modifier = Modifier.padding(padding),
             pagerState = pagerState,
             style = SwipeTabStyle.Primary,
         ) { page ->
             if (page == READING_TAB) {
                 if (reading.isEmpty()) {
-                    EmptyHistory("No reading history yet.\nChapters you open in the reader appear here.")
+                    EmptyHistory(stringResource(R.string.history_reading_empty))
                 } else {
                     LazyColumn {
                         readingDays.forEach { (dayKeyValue, dayEntries) ->
@@ -265,7 +278,7 @@ fun HistoryScreen(
                 }
             } else {
                 if (browsing.isEmpty()) {
-                    EmptyHistory("No browsing history yet.\nNovels you open in Browse (and haven't added to your library) appear here.")
+                    EmptyHistory(stringResource(R.string.history_browsing_empty))
                 } else {
                     LazyColumn {
                         browsingDays.forEach { (dayKeyValue, entries) ->
@@ -296,21 +309,30 @@ fun HistoryScreen(
         val reading = currentPage == READING_TAB
         AlertDialog(
             onDismissRequest = { showClearConfirm = false },
-            title = { Text("Clear ${if (reading) "reading" else "browsing"} history?") },
+            title = {
+                Text(
+                    stringResource(
+                        if (reading) R.string.history_clear_reading_title
+                        else R.string.history_clear_browsing_title,
+                    ),
+                )
+            },
             text = {
                 Text(
-                    if (reading) "This permanently removes every entry from your reading history. Your library and chapters are not affected."
-                    else "This permanently removes every entry from your browsing history. Your library is not affected."
+                    stringResource(
+                        if (reading) R.string.history_clear_reading_message
+                        else R.string.history_clear_browsing_message,
+                    )
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     showClearConfirm = false
                     if (reading) viewModel.clearReading() else viewModel.clearBrowsing()
-                }) { Text("Clear") }
+                }) { Text(stringResource(R.string.action_clear)) }
             },
             dismissButton = {
-                TextButton(onClick = { showClearConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showClearConfirm = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -419,7 +441,11 @@ private fun ReadingGroupHeader(
         },
         supportingContent = {
             Text(
-                text = "${group.size} chapters",
+                text = pluralStringResource(
+                    R.plurals.history_chapter_count,
+                    group.size,
+                    group.size,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -434,13 +460,14 @@ private fun ReadingGroupHeader(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                val collapseLabel = stringResource(if (collapsed) R.string.action_expand else R.string.action_collapse)
                 PlainTooltipIconButton(
                     onClick = onToggleCollapse,
-                    tooltip = if (collapsed) "Expand" else "Collapse",
+                    tooltip = collapseLabel,
                 ) {
                     Icon(
                         imageVector = if (collapsed) AppIcons.ExpandMore else AppIcons.ExpandLess,
-                        contentDescription = if (collapsed) "Expand" else "Collapse",
+                        contentDescription = collapseLabel,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

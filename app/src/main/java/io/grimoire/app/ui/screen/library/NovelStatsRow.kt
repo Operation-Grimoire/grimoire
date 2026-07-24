@@ -14,7 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.R
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.effectiveTotal
 import io.grimoire.app.data.local.entity.readPercent
@@ -77,7 +79,7 @@ internal fun NovelStatsRowInline(
         if (stats != null && visibility.showLocked) {
             InlineBadge(
                 icon = AppIcons.Lock,
-                contentDescription = "Locked chapters",
+                contentDescription = stringResource(R.string.library_locked_chapters),
                 text = "${stats.lockedCount}",
                 tint = MaterialTheme.colorScheme.premiumGold,
             )
@@ -85,7 +87,7 @@ internal fun NovelStatsRowInline(
         if (userRating != null) {
             InlineBadge(
                 icon = AppIcons.Star,
-                contentDescription = "Your rating",
+                contentDescription = stringResource(R.string.novel_your_rating),
                 text = "$userRating/10",
                 tint = MaterialTheme.colorScheme.primary,
             )
@@ -203,7 +205,7 @@ internal fun NovelRatingBadgeOverlay(
     ) {
         Icon(
             AppIcons.Star,
-            contentDescription = "Your rating",
+            contentDescription = stringResource(R.string.novel_your_rating),
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(11.dp),
         )
@@ -236,12 +238,12 @@ internal fun NovelEpubBadgeOverlay(
     ) {
         Icon(
             AppIcons.MenuBook,
-            contentDescription = "EPUB",
+            contentDescription = stringResource(R.string.library_epub_badge),
             tint = Color.White,
             modifier = Modifier.size(11.dp),
         )
         Text(
-            text = "EPUB",
+            text = stringResource(R.string.library_epub_badge),
             style = MaterialTheme.typography.labelSmall,
             color = Color.White,
         )
@@ -274,7 +276,7 @@ internal fun NovelStatusBadgeOverlay(
         if (showNotify) {
             Icon(
                 AppIcons.Notifications,
-                contentDescription = "Notifications enabled",
+                contentDescription = stringResource(R.string.library_notifications_enabled),
                 tint = Color.White,
                 modifier = Modifier.size(11.dp),
             )
@@ -282,7 +284,7 @@ internal fun NovelStatusBadgeOverlay(
         if (showAutoDownload) {
             Icon(
                 AppIcons.CloudDownload,
-                contentDescription = "Auto-download enabled",
+                contentDescription = stringResource(R.string.library_auto_download_enabled),
                 tint = Color.White,
                 modifier = Modifier.size(11.dp),
             )

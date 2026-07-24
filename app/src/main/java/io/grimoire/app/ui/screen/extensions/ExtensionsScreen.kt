@@ -63,6 +63,7 @@ import io.grimoire.app.ui.tour.tourTarget
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.source.feature.ConfigurableSource
@@ -80,6 +81,7 @@ import io.grimoire.app.util.ContentLanguages
 import io.grimoire.app.util.languageLabel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -178,10 +180,10 @@ fun ExtensionsScreen(
             FloatingActionButton(onClick = { showFilters = true }) {
                 if (filtersActive) {
                     BadgedBox(badge = { Badge() }) {
-                        Icon(AppIcons.FilterList, contentDescription = "Filters")
+                        Icon(AppIcons.FilterList, contentDescription = stringResource(R.string.extensions_filters))
                     }
                 } else {
-                    Icon(AppIcons.FilterList, contentDescription = "Filters")
+                    Icon(AppIcons.FilterList, contentDescription = stringResource(R.string.extensions_filters))
                 }
             }
         },
@@ -189,15 +191,15 @@ fun ExtensionsScreen(
             if (searchActive) {
                 TopAppBar(
                     navigationIcon = {
-                        PlainTooltipIconButton(onClick = exitSearch, tooltip = "Close search") {
-                            Icon(AppIcons.ArrowUpward, contentDescription = "Close search")
+                        PlainTooltipIconButton(onClick = exitSearch, tooltip = stringResource(R.string.extensions_close_search)) {
+                            Icon(AppIcons.ArrowUpward, contentDescription = stringResource(R.string.extensions_close_search))
                         }
                     },
                     title = {
                         AppSearchField(
                             value = nameFilter,
                             onValueChange = viewModel::setNameFilter,
-                            placeholder = "Search extensions…",
+                            placeholder = stringResource(R.string.extensions_search_placeholder),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .focusRequester(searchFocusRequester),
@@ -207,24 +209,24 @@ fun ExtensionsScreen(
             } else {
                 TopAppBar(
                     navigationIcon = {
-                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                            Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                            Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     },
-                    title = { Text("Extensions") },
+                    title = { Text(stringResource(R.string.extensions_title)) },
                     actions = {
-                        PlainTooltipIconButton(onClick = { searchActive = true }, tooltip = "Search") {
-                            Icon(AppIcons.Search, contentDescription = "Search")
+                        PlainTooltipIconButton(onClick = { searchActive = true }, tooltip = stringResource(R.string.action_search)) {
+                            Icon(AppIcons.Search, contentDescription = stringResource(R.string.action_search))
                         }
                         if (ui.updateCount > 0) {
-                            PlainTooltipIconButton(onClick = viewModel::updateAll, tooltip = "Update all") {
-                                Icon(AppIcons.SystemUpdateAlt, contentDescription = "Update all")
+                            PlainTooltipIconButton(onClick = viewModel::updateAll, tooltip = stringResource(R.string.extensions_update_all)) {
+                                Icon(AppIcons.SystemUpdateAlt, contentDescription = stringResource(R.string.extensions_update_all))
                             }
                         }
-                        PlainTooltipIconButton(onClick = { showRepos = true }, tooltip = "Repositories") {
+                        PlainTooltipIconButton(onClick = { showRepos = true }, tooltip = stringResource(R.string.extensions_repositories)) {
                             Icon(
                                 AppIcons.Storage,
-                                contentDescription = "Repositories",
+                                contentDescription = stringResource(R.string.extensions_repositories),
                                 modifier = Modifier.tourTarget(TourKey.RepoManager),
                             )
                         }
@@ -291,18 +293,18 @@ fun ExtensionsScreen(
                         // labelled Installed (sans-updates) / Available groups.
                         if (ui.updates.isNotEmpty()) {
                             item(key = "__updates_header__") {
-                                ExtensionSectionHeader("Updates (${ui.updates.size})")
+                                ExtensionSectionHeader(stringResource(R.string.extensions_updates_count, ui.updates.size))
                             }
                             items(ui.updates, key = { it.packageName }) { extensionRow(it) }
                         }
                         val installedNoUpdates = ui.installed
                             .filterNot { it is ExtensionItem.Installed && it.hasUpdate }
                         if (installedNoUpdates.isNotEmpty()) {
-                            item(key = "__installed_header__") { ExtensionSectionHeader("Installed") }
+                            item(key = "__installed_header__") { ExtensionSectionHeader(stringResource(R.string.extensions_installed)) }
                             items(installedNoUpdates, key = { it.packageName }) { extensionRow(it) }
                         }
                         if (ui.available.isNotEmpty()) {
-                            item(key = "__available_header__") { ExtensionSectionHeader("Available") }
+                            item(key = "__available_header__") { ExtensionSectionHeader(stringResource(R.string.extensions_available)) }
                             items(ui.available, key = { it.packageName }) { extensionRow(it) }
                         }
                     } else {
@@ -320,11 +322,11 @@ fun ExtensionsScreen(
         ) {
             Column(Modifier.padding(bottom = 24.dp)) {
                 Text(
-                    "Filters",
+                    stringResource(R.string.extensions_filters),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
-                FilterSheetLabel("Show")
+                FilterSheetLabel(stringResource(R.string.extensions_show))
                 SectionFilterChips(
                     section = section,
                     updateCount = ui.updateCount,
@@ -332,7 +334,7 @@ fun ExtensionsScreen(
                     modifier = Modifier.padding(vertical = 4.dp),
                 )
                 if (ui.languages.size > 1) {
-                    FilterSheetLabel("Language")
+                    FilterSheetLabel(stringResource(R.string.extensions_language))
                     LanguageFilterChips(
                         languages = ui.languages,
                         selected = languageFilter,
@@ -340,7 +342,7 @@ fun ExtensionsScreen(
                         modifier = Modifier.padding(vertical = 4.dp),
                     )
                 }
-                FilterSheetLabel("Adult content")
+                FilterSheetLabel(stringResource(R.string.extensions_adult_content))
                 AdultFilterChips(
                     selected = adultFilter,
                     onSelect = viewModel::setAdultFilter,
@@ -362,12 +364,12 @@ fun ExtensionsScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "Repositories",
+                    stringResource(R.string.extensions_repositories),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
-                PlainTooltipIconButton(onClick = { showAddRepo = true }, tooltip = "Add repository") {
-                    Icon(AppIcons.Add, contentDescription = "Add repository")
+                PlainTooltipIconButton(onClick = { showAddRepo = true }, tooltip = stringResource(R.string.extensions_add_repository)) {
+                    Icon(AppIcons.Add, contentDescription = stringResource(R.string.extensions_add_repository))
                 }
             }
             HorizontalDivider()
@@ -379,7 +381,7 @@ fun ExtensionsScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        "No repositories\nTap + to add one",
+                        stringResource(R.string.extensions_no_repositories),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -405,20 +407,20 @@ fun ExtensionsScreen(
                                         onCheckedChange = { viewModel.toggleRepo(repo) },
                                     )
                                     Box {
-                                        PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = "Options") {
-                                            Icon(AppIcons.MoreVert, contentDescription = "Options")
+                                        PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = stringResource(R.string.extensions_options)) {
+                                            Icon(AppIcons.MoreVert, contentDescription = stringResource(R.string.extensions_options))
                                         }
                                         DropdownMenu(
                                             expanded = menuExpanded,
                                             onDismissRequest = { menuExpanded = false },
                                         ) {
                                             DropdownMenuItem(
-                                                text = { Text("Edit") },
+                                                text = { Text(stringResource(R.string.action_edit)) },
                                                 leadingIcon = { Icon(AppIcons.Edit, null) },
                                                 onClick = { menuExpanded = false; editRepo = repo },
                                             )
                                             DropdownMenuItem(
-                                                text = { Text("Delete") },
+                                                text = { Text(stringResource(R.string.action_delete)) },
                                                 leadingIcon = { Icon(AppIcons.Delete, null) },
                                                 onClick = { menuExpanded = false; viewModel.deleteRepo(repo) },
                                             )
@@ -468,14 +470,13 @@ fun ExtensionsScreen(
         val notConnected = githubLogin == null
         AlertDialog(
             onDismissRequest = viewModel::dismissRateLimitPrompt,
-            title = { Text("GitHub rate limit reached") },
+            title = { Text(stringResource(R.string.extensions_rate_limit_title)) },
             text = {
                 Text(
                     if (notConnected) {
-                        "You've hit GitHub's anonymous request limit (60 per hour). " +
-                            "Connect a GitHub account to raise it to 5,000 per hour, or try again later."
+                        stringResource(R.string.extensions_rate_limit_anonymous)
                     } else {
-                        "You've hit GitHub's request limit. Please wait a little while and try again."
+                        stringResource(R.string.extensions_rate_limit_connected)
                     }
                 )
             },
@@ -484,13 +485,13 @@ fun ExtensionsScreen(
                     TextButton(onClick = {
                         viewModel.dismissRateLimitPrompt()
                         onConnectGitHub()
-                    }) { Text("Connect GitHub") }
+                    }) { Text(stringResource(R.string.extensions_connect_github)) }
                 } else {
-                    TextButton(onClick = viewModel::dismissRateLimitPrompt) { Text("OK") }
+                    TextButton(onClick = viewModel::dismissRateLimitPrompt) { Text(stringResource(R.string.action_ok)) }
                 }
             },
             dismissButton = if (notConnected) {
-                { TextButton(onClick = viewModel::dismissRateLimitPrompt) { Text("Later") } }
+                { TextButton(onClick = viewModel::dismissRateLimitPrompt) { Text(stringResource(R.string.action_later)) } }
             } else {
                 null
             },
@@ -500,8 +501,8 @@ fun ExtensionsScreen(
     pendingRemove?.let { item ->
         AlertDialog(
             onDismissRequest = { pendingRemove = null },
-            title = { Text("Remove extension?") },
-            text = { Text("Remove ${item.name}?") },
+            title = { Text(stringResource(R.string.extensions_remove_title)) },
+            text = { Text(stringResource(R.string.extensions_remove_description, item.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     @Suppress("DEPRECATION")
@@ -512,10 +513,10 @@ fun ExtensionsScreen(
                         }
                     )
                     pendingRemove = null
-                }) { Text("Remove") }
+                }) { Text(stringResource(R.string.action_remove)) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingRemove = null }) { Text("Cancel") }
+                TextButton(onClick = { pendingRemove = null }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -609,22 +610,27 @@ private fun SectionFilterChips(
         FilterChip(
             selected = section == ExtensionSection.ALL,
             onClick = { onSelect(ExtensionSection.ALL) },
-            label = { Text("All") },
+            label = { Text(stringResource(R.string.extensions_all)) },
         )
         FilterChip(
             selected = section == ExtensionSection.INSTALLED,
             onClick = { onSelect(ExtensionSection.INSTALLED) },
-            label = { Text("Installed") },
+            label = { Text(stringResource(R.string.extensions_installed)) },
         )
         FilterChip(
             selected = section == ExtensionSection.AVAILABLE,
             onClick = { onSelect(ExtensionSection.AVAILABLE) },
-            label = { Text("Available") },
+            label = { Text(stringResource(R.string.extensions_available)) },
         )
         FilterChip(
             selected = section == ExtensionSection.UPDATES,
             onClick = { onSelect(ExtensionSection.UPDATES) },
-            label = { Text(if (updateCount > 0) "Updates ($updateCount)" else "Updates") },
+            label = {
+                Text(
+                    if (updateCount > 0) stringResource(R.string.extensions_updates_count, updateCount)
+                    else stringResource(R.string.extensions_updates),
+                )
+            },
         )
     }
 }
@@ -644,17 +650,17 @@ private fun AdultFilterChips(
         FilterChip(
             selected = selected == AdultFilter.ALL,
             onClick = { onSelect(AdultFilter.ALL) },
-            label = { Text("All") },
+            label = { Text(stringResource(R.string.extensions_all)) },
         )
         FilterChip(
             selected = selected == AdultFilter.HIDE,
             onClick = { onSelect(AdultFilter.HIDE) },
-            label = { Text("Hide 18+") },
+            label = { Text(stringResource(R.string.extensions_hide_adult)) },
         )
         FilterChip(
             selected = selected == AdultFilter.ONLY,
             onClick = { onSelect(AdultFilter.ONLY) },
-            label = { Text("Only 18+") },
+            label = { Text(stringResource(R.string.extensions_only_adult)) },
         )
     }
 }
@@ -697,7 +703,10 @@ private fun ExtensionRow(
                 }
                 if (hasUpdate && state == null) {
                     Text(
-                        "Update available: v${(item as ExtensionItem.Installed).remoteVersionName}",
+                        stringResource(
+                            R.string.extensions_update_available,
+                            (item as ExtensionItem.Installed).remoteVersionName,
+                        ),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -719,18 +728,18 @@ private fun ExtensionRow(
                         state is InstallState.Error -> OutlinedButton(onClick = {
                             if (item is ExtensionItem.Installed) onUpdate(item)
                             else onDismissError(item.packageName)
-                        }) { Text("Retry") }
+                        }) { Text(stringResource(R.string.action_retry)) }
                         hasUpdate -> OutlinedButton(onClick = {
                             onUpdate(item as ExtensionItem.Installed)
-                        }) { Text("Update") }
+                        }) { Text(stringResource(R.string.extensions_update)) }
                     }
                     if (hasSettings) {
-                        PlainTooltipIconButton(onClick = { onSettings(item.packageName) }, tooltip = "Settings") {
-                            Icon(AppIcons.Settings, contentDescription = "Settings")
+                        PlainTooltipIconButton(onClick = { onSettings(item.packageName) }, tooltip = stringResource(R.string.action_settings)) {
+                            Icon(AppIcons.Settings, contentDescription = stringResource(R.string.action_settings))
                         }
                     }
-                    PlainTooltipIconButton(onClick = { onRemove(item) }, tooltip = "Remove") {
-                        Icon(AppIcons.Delete, contentDescription = "Remove")
+                    PlainTooltipIconButton(onClick = { onRemove(item) }, tooltip = stringResource(R.string.action_remove)) {
+                        Icon(AppIcons.Delete, contentDescription = stringResource(R.string.action_remove))
                     }
                 } else {
                     when (state) {
@@ -740,10 +749,12 @@ private fun ExtensionRow(
                         )
                         is InstallState.Error -> OutlinedButton(onClick = {
                             (item as? ExtensionItem.Available)?.let(onInstall)
-                        }) { Text("Retry") }
+                        }) { Text(stringResource(R.string.action_retry)) }
                         null -> PlainTooltipIconButton(onClick = {
                             (item as? ExtensionItem.Available)?.let(onInstall)
-                        }, tooltip = "Install") { Icon(AppIcons.Download, contentDescription = "Install") }
+                        }, tooltip = stringResource(R.string.action_install)) {
+                            Icon(AppIcons.Download, contentDescription = stringResource(R.string.action_install))
+                        }
                     }
                 }
             }
@@ -751,12 +762,15 @@ private fun ExtensionRow(
     )
 }
 
-private fun emptyExtensionsMessage(section: ExtensionSection): String = when (section) {
-    ExtensionSection.ALL -> "No extensions found\nAdd a repository to discover extensions"
-    ExtensionSection.INSTALLED -> "No installed extensions\nAdd a repository to discover extensions"
-    ExtensionSection.AVAILABLE -> "No available extensions\nAdd a repository to discover extensions"
-    ExtensionSection.UPDATES -> "Everything's up to date"
-}
+@Composable
+private fun emptyExtensionsMessage(section: ExtensionSection): String = stringResource(
+    when (section) {
+        ExtensionSection.ALL -> R.string.extensions_empty_all
+        ExtensionSection.INSTALLED -> R.string.extensions_empty_installed
+        ExtensionSection.AVAILABLE -> R.string.extensions_empty_available
+        ExtensionSection.UPDATES -> R.string.extensions_empty_updates
+    },
+)
 
 @Composable
 private fun RepoDialog(
@@ -772,24 +786,26 @@ private fun RepoDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (isEdit) "Edit Repository" else "Add Repository") },
+        title = {
+            Text(stringResource(if (isEdit) R.string.extensions_edit_repository else R.string.extensions_add_repository_title))
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.extensions_repository_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = url,
                     onValueChange = { url = it },
-                    label = { Text("Index URL") },
+                    label = { Text(stringResource(R.string.extensions_repository_index_url)) },
                     placeholder = { Text("https://example.com/index.json") },
                     singleLine = true,
                     isError = urlError,
-                    supportingText = if (urlError) ({ Text("Must be an http(s) URL ending in .json") }) else null,
+                    supportingText = if (urlError) ({ Text(stringResource(R.string.extensions_repository_url_error)) }) else null,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -798,10 +814,10 @@ private fun RepoDialog(
             TextButton(
                 onClick = { onConfirm(name, url) },
                 enabled = name.isNotBlank() && url.isNotBlank() && !urlError,
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
 }
@@ -827,29 +843,33 @@ private fun AuthRequiredBanner(
         ) {
             if (signedInAs == null) {
                 Text(
-                    if (repoNames.size == 1) "Sign-in required for ${repoNames.first()}"
-                    else "Sign-in required for $joinedNames",
+                    stringResource(
+                        if (repoNames.size == 1) R.string.extensions_sign_in_required_one
+                        else R.string.extensions_sign_in_required_many,
+                        if (repoNames.size == 1) repoNames.first() else joinedNames,
+                    ),
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
-                    "These look like private GitHub repositories. Connect a GitHub account to load them.",
+                    stringResource(R.string.extensions_private_repositories),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                OutlinedButton(onClick = onConnect) { Text("Connect GitHub") }
+                OutlinedButton(onClick = onConnect) { Text(stringResource(R.string.extensions_connect_github)) }
             } else {
                 Text(
-                    if (repoNames.size == 1) "No access to ${repoNames.first()}"
-                    else "No access to $joinedNames",
+                    stringResource(
+                        if (repoNames.size == 1) R.string.extensions_no_access_one
+                        else R.string.extensions_no_access_many,
+                        if (repoNames.size == 1) repoNames.first() else joinedNames,
+                    ),
                     style = MaterialTheme.typography.titleSmall,
                 )
                 LinkText(
-                    text = "Signed in as @$signedInAs, but this OAuth app hasn't been granted access " +
-                        "to the owning organization yet. Approve it at github.com/settings/applications, " +
-                        "then pull to refresh.",
+                    text = stringResource(R.string.extensions_org_access, signedInAs),
                     "github.com/settings/applications" to "https://github.com/settings/applications",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                OutlinedButton(onClick = onConnect) { Text("Manage GitHub connection") }
+                OutlinedButton(onClick = onConnect) { Text(stringResource(R.string.extensions_manage_github)) }
             }
         }
     }
@@ -884,8 +904,10 @@ private fun ExtensionItem.hasSettings(): Boolean {
 
 private const val MULTI_LANGUAGE_PREVIEW_COUNT = 3
 
+@Composable
 private fun multiLanguageSummary(languages: List<String>): String {
     val shown = languages.take(MULTI_LANGUAGE_PREVIEW_COUNT)
     val extra = languages.size - shown.size
-    return shown.joinToString(", ") + if (extra > 0) " + $extra more" else ""
+    val summary = shown.joinToString(", ")
+    return if (extra > 0) stringResource(R.string.extensions_more_languages, summary, extra) else summary
 }

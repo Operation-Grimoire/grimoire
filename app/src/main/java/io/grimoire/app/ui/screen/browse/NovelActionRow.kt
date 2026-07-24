@@ -28,6 +28,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import io.grimoire.app.R
 
 /**
  * Prominent action row shown directly below [NovelHeader] (#bookmark-surfacing).
@@ -86,7 +88,10 @@ internal fun NovelActionRow(
         NovelActionButton(
             modifier = Modifier.weight(1f),
             icon = if (inLibrary) AppIcons.Bookmark else AppIcons.BookmarkBorder,
-            label = if (inLibrary) "In library" else "Add to library",
+            label = stringResource(
+                if (inLibrary) R.string.novel_action_in_library
+                else R.string.novel_action_add_to_library,
+            ),
             active = inLibrary,
             onClick = onToggleLibrary,
         )
@@ -94,7 +99,7 @@ internal fun NovelActionRow(
             NovelActionButton(
                 modifier = Modifier.weight(1f),
                 icon = AppIcons.Language,
-                label = "WebView",
+                label = stringResource(R.string.novel_action_webview),
                 active = false,
                 onClick = onOpenWebView,
             )
@@ -105,7 +110,7 @@ internal fun NovelActionRow(
             NovelActionButton(
                 modifier = Modifier.weight(inLibraryWeight),
                 icon = AppIcons.Star,
-                label = if (userRating != null) "$userRating/10" else "Rate",
+                label = if (userRating != null) "$userRating/10" else stringResource(R.string.novel_action_rate),
                 active = userRating != null,
                 onClick = onRate,
                 contentAlpha = inLibraryWeight.coerceIn(0f, 1f),

@@ -33,9 +33,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
+import io.grimoire.app.R
 import io.grimoire.app.ui.icon.AppIcons
 import io.grimoire.app.ui.icon.ContentCopy
 import io.grimoire.app.ui.icon.Share
@@ -74,7 +76,7 @@ internal fun ShareNovelDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    "Share",
+                    stringResource(R.string.action_share),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -92,7 +94,7 @@ internal fun ShareNovelDialog(
                     if (uri != null) {
                         AsyncImage(
                             model = uri,
-                            contentDescription = "Share card preview",
+                            contentDescription = stringResource(R.string.share_preview_content_description),
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -100,7 +102,7 @@ internal fun ShareNovelDialog(
                         CircularProgressIndicator()
                     } else {
                         Text(
-                            "Couldn't build image",
+                            stringResource(R.string.share_build_failed),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -117,7 +119,7 @@ internal fun ShareNovelDialog(
                         OutlinedButton(
                             onClick = {
                                 copyToClipboard(context, novelUrl)
-                                Toast.makeText(context, "Link copied", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.share_link_copied), Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier
                                 .weight(1f)
@@ -125,7 +127,7 @@ internal fun ShareNovelDialog(
                         ) {
                             Icon(AppIcons.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(
-                                "Copy link",
+                                stringResource(R.string.share_copy_link),
                                 maxLines = 1,
                                 softWrap = false,
                                 modifier = Modifier.padding(start = 8.dp),
@@ -141,7 +143,7 @@ internal fun ShareNovelDialog(
                     ) {
                         Icon(AppIcons.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(
-                            "Share",
+                            stringResource(R.string.action_share),
                             maxLines = 1,
                             softWrap = false,
                             modifier = Modifier.padding(start = 8.dp),
@@ -164,5 +166,5 @@ private fun shareImage(context: Context, uri: Uri) {
         putExtra(Intent.EXTRA_STREAM, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    context.startActivity(Intent.createChooser(send, "Share"))
+    context.startActivity(Intent.createChooser(send, context.getString(R.string.action_share)))
 }

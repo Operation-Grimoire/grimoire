@@ -16,7 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,11 +34,11 @@ fun NovelUpdatesSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("NovelUpdates") },
+                title = { Text(stringResource(R.string.settings_novelupdates_title)) },
             )
         },
     ) { padding ->
@@ -44,12 +46,9 @@ fun NovelUpdatesSettingsScreen(
             item {
                 ListItem(
                     leadingContent = { Icon(AppIcons.AutoStories, contentDescription = null) },
-                    headlineContent = { Text("Show NovelUpdates section") },
+                    headlineContent = { Text(stringResource(R.string.nu_settings_show_section)) },
                     supportingContent = {
-                        Text(
-                            "Adds a NovelUpdates panel to a novel's details with " +
-                                "alternative titles, rating, and recommendations.",
-                        )
+                        Text(stringResource(R.string.nu_settings_show_section_summary))
                     },
                     trailingContent = {
                         Switch(

@@ -15,7 +15,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.R
 import io.grimoire.app.data.local.entity.CategoryEntity
 
 /**
@@ -38,12 +41,16 @@ fun MoveToCategorySheet(
     onUnlockClick: (() -> Unit)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState()
+    val currentCategoryLabel = stringResource(R.string.current_category)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
             Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                Text("Move to category", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    text = if (count == 1) "1 novel" else "$count novels",
+                    stringResource(R.string.move_to_category_title),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Text(
+                    text = pluralStringResource(R.plurals.novel_count, count, count),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -71,7 +78,7 @@ fun MoveToCategorySheet(
                         {
                             Icon(
                                 AppIcons.Check,
-                                contentDescription = "Current category",
+                                contentDescription = currentCategoryLabel,
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                         }
@@ -82,7 +89,7 @@ fun MoveToCategorySheet(
             if (onUnlockClick != null) {
                 HorizontalDivider()
                 ListItem(
-                    headlineContent = { Text("Unlock hidden categories") },
+                    headlineContent = { Text(stringResource(R.string.unlock_hidden_categories)) },
                     leadingContent = {
                         Icon(
                             AppIcons.LockOpen,

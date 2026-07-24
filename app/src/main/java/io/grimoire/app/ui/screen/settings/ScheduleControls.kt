@@ -22,12 +22,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.schedule.SCHEDULE_MAX_COUNT
 import io.grimoire.app.data.schedule.SCHEDULE_MIN_COUNT
 import io.grimoire.app.data.schedule.ScheduleUnit
 import java.text.DateFormat
 import java.util.Calendar
+import io.grimoire.app.R
 
 /**
  * Count stepper + Hours/Days/Weeks unit selector. Shared by the library refresh
@@ -46,11 +49,11 @@ internal fun IntervalSelector(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("Every", style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.schedule_every), style = MaterialTheme.typography.bodyLarge)
             PlainTooltipIconButton(
                 onClick = { onCountChange(count - 1) },
-                enabled = count > SCHEDULE_MIN_COUNT, tooltip = "Decrease") {
-                Icon(AppIcons.Remove, contentDescription = "Decrease")
+                enabled = count > SCHEDULE_MIN_COUNT, tooltip = stringResource(R.string.action_decrease)) {
+                Icon(AppIcons.Remove, contentDescription = stringResource(R.string.action_decrease))
             }
             Text(
                 count.toString(),
@@ -59,8 +62,8 @@ internal fun IntervalSelector(
             )
             PlainTooltipIconButton(
                 onClick = { onCountChange(count + 1) },
-                enabled = count < SCHEDULE_MAX_COUNT, tooltip = "Increase") {
-                Icon(AppIcons.Add, contentDescription = "Increase")
+                enabled = count < SCHEDULE_MAX_COUNT, tooltip = stringResource(R.string.action_increase)) {
+                Icon(AppIcons.Add, contentDescription = stringResource(R.string.action_increase))
             }
         }
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
@@ -70,7 +73,7 @@ internal fun IntervalSelector(
                     onClick = { onUnitChange(entry) },
                     shape = SegmentedButtonDefaults.itemShape(index, ScheduleUnit.entries.size),
                 ) {
-                    Text(entry.label(count))
+                    Text(entry.label())
                 }
             }
         }
@@ -78,22 +81,26 @@ internal fun IntervalSelector(
 }
 
 /** "3 hours" / "hour" — singular noun when [count] is 1. */
-internal fun intervalSummary(count: Int, unit: ScheduleUnit): String {
-    val noun = unit.singularNoun()
-    return if (count == 1) noun else "$count ${noun}s"
-}
-
-private fun ScheduleUnit.singularNoun(): String = when (this) {
-    ScheduleUnit.HOURS -> "hour"
-    ScheduleUnit.DAYS -> "day"
-    ScheduleUnit.WEEKS -> "week"
-}
+@Composable
+internal fun intervalSummary(count: Int, unit: ScheduleUnit): String = pluralStringResource(
+    when (unit) {
+        ScheduleUnit.HOURS -> R.plurals.schedule_hours
+        ScheduleUnit.DAYS -> R.plurals.schedule_days
+        ScheduleUnit.WEEKS -> R.plurals.schedule_weeks
+    },
+    count,
+    count,
+)
 
 /** Segmented-button label, capitalised and pluralised to match [count]. */
-private fun ScheduleUnit.label(count: Int): String {
-    val noun = singularNoun().replaceFirstChar { it.uppercase() }
-    return if (count == 1) noun else "${noun}s"
-}
+@Composable
+private fun ScheduleUnit.label(): String = stringResource(
+    when (this) {
+        ScheduleUnit.HOURS -> R.string.schedule_unit_hour
+        ScheduleUnit.DAYS -> R.string.schedule_unit_day
+        ScheduleUnit.WEEKS -> R.string.schedule_unit_week
+    },
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,13 +118,13 @@ internal fun TimeOfDayPickerDialog(
     )
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Time of day") },
+        title = { Text(stringResource(R.string.schedule_time_of_day)) },
         text = { TimePicker(state = state) },
         confirmButton = {
-            TextButton(onClick = { onConfirm(state.hour, state.minute) }) { Text("Set") }
+            TextButton(onClick = { onConfirm(state.hour, state.minute) }) { Text(stringResource(R.string.action_set)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
 }

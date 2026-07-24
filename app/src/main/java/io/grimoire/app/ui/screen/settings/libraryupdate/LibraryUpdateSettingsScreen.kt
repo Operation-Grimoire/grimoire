@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.screen.settings.IntervalSelector
@@ -36,6 +37,8 @@ import io.grimoire.app.ui.screen.settings.intervalSummary
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
+import io.grimoire.app.R
+import io.grimoire.app.ui.screen.tasks.localizedTaskSummary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +61,7 @@ fun LibraryUpdateSettingsScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val queuedMessage = stringResource(R.string.library_update_queued)
     var showTimePicker by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -65,21 +69,21 @@ fun LibraryUpdateSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Library updates") },
+                title = { Text(stringResource(R.string.settings_library_updates_title)) },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
-            item { SectionHeader("Scheduled update") }
+            item { SectionHeader(stringResource(R.string.library_update_scheduled)) }
 
             item {
                 Text(
-                    text = "Refreshes your library in the background, fetching new chapters. The app does not need to be open.",
+                    text = stringResource(R.string.library_update_scheduled_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -88,11 +92,13 @@ fun LibraryUpdateSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Update automatically") },
+                    headlineContent = { Text(stringResource(R.string.library_update_automatic)) },
                     supportingContent = {
                         Text(
-                            if (enabled) "Runs every ${intervalSummary(intervalCount, intervalUnit)}"
-                            else "Off",
+                            if (enabled) stringResource(
+                                R.string.schedule_runs_every,
+                                intervalSummary(intervalCount, intervalUnit),
+                            ) else stringResource(R.string.schedule_off),
                         )
                     },
                     trailingContent = {
@@ -115,11 +121,14 @@ fun LibraryUpdateSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Time of day") },
+                    headlineContent = { Text(stringResource(R.string.schedule_time_of_day)) },
                     supportingContent = {
                         Text(
-                            if (enabled) "Run around ${formatTimeOfDay(preferredMinutes)}"
-                            else "Runs around ${formatTimeOfDay(preferredMinutes)} when scheduled",
+                            stringResource(
+                                if (enabled) R.string.schedule_run_around
+                                else R.string.schedule_runs_around_when_scheduled,
+                                formatTimeOfDay(preferredMinutes),
+                            ),
                         )
                     },
                     trailingContent = {
@@ -139,8 +148,8 @@ fun LibraryUpdateSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Only on Wi-Fi") },
-                    supportingContent = { Text("Skip the scheduled update on cellular") },
+                    headlineContent = { Text(stringResource(R.string.library_update_wifi_only)) },
+                    supportingContent = { Text(stringResource(R.string.library_update_wifi_only_summary)) },
                     trailingContent = {
                         Switch(checked = onlyOnWifi, onCheckedChange = viewModel::setOnlyOnWifi)
                     },
@@ -150,7 +159,7 @@ fun LibraryUpdateSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Only while charging") },
+                    headlineContent = { Text(stringResource(R.string.library_update_charging_only)) },
                     trailingContent = {
                         Switch(
                             checked = requiresCharging,
@@ -162,13 +171,13 @@ fun LibraryUpdateSettingsScreen(
             }
 
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
-            item { SectionHeader("Sync scope") }
+            item { SectionHeader(stringResource(R.string.library_update_sync_scope)) }
 
             item {
                 ListItem(
-                    headlineContent = { Text("Include EPUBs") },
+                    headlineContent = { Text(stringResource(R.string.library_update_include_epubs)) },
                     supportingContent = {
-                        Text("Refresh EPUB novels (local imports and EPUB sources like Z-Library) during library updates. They have no new chapters to fetch, so this is off by default.")
+                        Text(stringResource(R.string.library_update_include_epubs_summary))
                     },
                     trailingContent = {
                         Switch(
@@ -181,11 +190,11 @@ fun LibraryUpdateSettingsScreen(
             }
 
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
-            item { SectionHeader("Performance") }
+            item { SectionHeader(stringResource(R.string.library_update_performance)) }
 
             item {
                 ListItem(
-                    headlineContent = { Text("Sync concurrency: $concurrency") },
+                    headlineContent = { Text(stringResource(R.string.library_update_concurrency, concurrency)) },
                     supportingContent = {
                         Column {
                             Slider(
@@ -195,7 +204,7 @@ fun LibraryUpdateSettingsScreen(
                                 steps = 6,
                             )
                             Text(
-                                "How many novels to refresh in parallel. Higher is faster but may trigger rate-limiting from some sources.",
+                                stringResource(R.string.library_update_concurrency_summary),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -208,30 +217,33 @@ fun LibraryUpdateSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Update library now") },
-                    supportingContent = { Text("Refresh every novel in your library in the background") },
+                    headlineContent = { Text(stringResource(R.string.library_update_now)) },
+                    supportingContent = { Text(stringResource(R.string.library_update_now_summary)) },
                     modifier = Modifier.clickable {
                         viewModel.updateLibraryNow()
-                        scope.launch { snackbarHostState.showSnackbar("Library update queued") }
+                        scope.launch { snackbarHostState.showSnackbar(queuedMessage) }
                     },
                 )
             }
 
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
-            item { SectionHeader("Last update") }
+            item { SectionHeader(stringResource(R.string.library_update_last)) }
 
             item {
                 val statusLine = if (lastRunAt == 0L) {
-                    "Never"
+                    stringResource(R.string.schedule_never)
                 } else {
                     val date = DateFormat.getDateTimeInstance().format(Date(lastRunAt))
-                    if (lastRunSuccess) "$date — completed" else "$date — failed"
+                    stringResource(
+                        if (lastRunSuccess) R.string.schedule_completed_at else R.string.schedule_failed_at,
+                        date,
+                    )
                 }
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
                     Text(statusLine, style = MaterialTheme.typography.bodyMedium)
                     if (lastRunMessage.isNotBlank()) {
                         Text(
-                            lastRunMessage,
+                            localizedTaskSummary(lastRunMessage),
                             style = MaterialTheme.typography.bodySmall,
                             color = if (lastRunSuccess) {
                                 MaterialTheme.colorScheme.onSurfaceVariant

@@ -1,12 +1,12 @@
 package io.grimoire.app.data.update
 
-enum class ChangelogCategory(val displayName: String) {
-    FEATURES("Features"),
-    BUG_FIXES("Bug fixes"),
-    SOURCES("Sources"),
-    DOCUMENTATION("Documentation"),
-    OTHER("Other changes"),
-    CHANGES("Changes"),
+enum class ChangelogCategory {
+    FEATURES,
+    BUG_FIXES,
+    SOURCES,
+    DOCUMENTATION,
+    OTHER,
+    CHANGES,
 }
 
 data class ChangelogItem(

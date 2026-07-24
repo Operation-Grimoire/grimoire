@@ -5,9 +5,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.screen.settings.common.LanguagePickerScreen
 import io.grimoire.app.ui.screen.settings.common.OverrideToggle
+import io.grimoire.app.R
 
 @Composable
 fun SourceLanguagesScreen(
@@ -28,7 +30,7 @@ fun SourceLanguagesScreen(
     val toggle = remember(viewModel) { { v: Boolean -> viewModel.setOverride(v) } }
 
     LanguagePickerScreen(
-        title = "${viewModel.sourceName} languages",
+        title = stringResource(R.string.source_settings_languages_title, viewModel.sourceName),
         available = available,
         enabled = rowSelection,
         onToggle = viewModel::toggle,

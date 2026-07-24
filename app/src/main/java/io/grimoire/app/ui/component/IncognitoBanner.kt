@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import io.grimoire.app.R
 
 /**
  * App-wide strip shown above every screen while incognito is on, so it's obvious from
@@ -41,7 +43,7 @@ fun IncognitoBanner(modifier: Modifier = Modifier) {
                 modifier = Modifier.size(18.dp),
             )
             Text(
-                text = "Incognito · history paused",
+                text = stringResource(R.string.incognito_banner),
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.padding(start = 8.dp),
             )

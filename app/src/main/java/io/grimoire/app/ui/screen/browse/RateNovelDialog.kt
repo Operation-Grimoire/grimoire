@@ -15,8 +15,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.R
 
 /**
  * Picker for the user's own 1–10 rating. A slider selects the value; the selection is held
@@ -36,7 +38,7 @@ internal fun RateNovelDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Your rating") },
+        title = { Text(stringResource(R.string.novel_your_rating)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -44,7 +46,7 @@ internal fun RateNovelDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    text = "$rating / 10",
+                    text = stringResource(R.string.novel_rating_value, rating),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -56,7 +58,7 @@ internal fun RateNovelDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
-                    text = "Your own score, separate from the source rating.",
+                    text = stringResource(R.string.novel_rating_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -67,10 +69,10 @@ internal fun RateNovelDialog(
             TextButton(
                 enabled = rating != current,
                 onClick = { onSetRating(rating); onDismiss() },
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = {
-            TextButton(onClick = { onSetRating(null); onDismiss() }) { Text("Clear") }
+            TextButton(onClick = { onSetRating(null); onDismiss() }) { Text(stringResource(R.string.action_clear)) }
         },
     )
 }

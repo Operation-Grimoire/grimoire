@@ -24,10 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.grimoire.api.model.novel.Novel
+import io.grimoire.app.R
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -72,7 +74,7 @@ internal fun NovelCard(
                     ) {
                         Icon(
                             AppIcons.Bookmark,
-                            contentDescription = "In library",
+                            contentDescription = stringResource(R.string.content_description_in_library),
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(14.dp),
                         )
@@ -132,7 +134,7 @@ internal fun NovelListItem(
                 ) {
                     Icon(
                         AppIcons.Bookmark,
-                        contentDescription = "In library",
+                        contentDescription = stringResource(R.string.content_description_in_library),
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(12.dp),
                     )

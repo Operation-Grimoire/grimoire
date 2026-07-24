@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -44,6 +45,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.screen.library.HiddenCategoriesUnlockDialog
 import io.grimoire.app.ui.screen.library.canAuthenticateBiometric
 import kotlinx.coroutines.launch
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,11 +72,11 @@ fun HiddenCategoriesSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Hidden categories") },
+                title = { Text(stringResource(R.string.hidden_title)) },
             )
         },
     ) { padding ->
@@ -82,46 +84,48 @@ fun HiddenCategoriesSettingsScreen(
             when {
                 !hasPin -> item {
                     ListItem(
-                        headlineContent = { Text("Set up a PIN") },
+                        headlineContent = { Text(stringResource(R.string.hidden_setup_pin)) },
                         supportingContent = {
-                            Text("A PIN is required to hide categories and unlock them later.")
+                            Text(stringResource(R.string.hidden_setup_pin_summary))
                         },
                     )
                     Button(
                         onClick = { showSetPin = true },
                         modifier = Modifier.padding(horizontal = 16.dp),
-                    ) { Text("Set up PIN") }
+                    ) { Text(stringResource(R.string.hidden_setup_pin_action)) }
                 }
 
                 !isUnlocked -> item {
                     ListItem(
-                        headlineContent = { Text("Locked") },
-                        supportingContent = { Text("Unlock to manage hidden categories.") },
+                        headlineContent = { Text(stringResource(R.string.hidden_locked)) },
+                        supportingContent = { Text(stringResource(R.string.hidden_locked_summary)) },
                     )
                     Button(
                         onClick = { showUnlock = true },
                         modifier = Modifier.padding(horizontal = 16.dp),
-                    ) { Text("Unlock") }
+                    ) { Text(stringResource(R.string.library_unlock)) }
                 }
 
                 else -> {
                     item {
                         ListItem(
-                            headlineContent = { Text("Change PIN") },
+                            headlineContent = { Text(stringResource(R.string.hidden_change_pin)) },
                             modifier = Modifier.padding(top = 4.dp),
                             trailingContent = {
-                                TextButton(onClick = { showChangePin = true }) { Text("Change") }
+                                TextButton(onClick = { showChangePin = true }) { Text(stringResource(R.string.hidden_change)) }
                             },
                         )
                     }
                     item {
                         val biometricAvailable = context.canAuthenticateBiometric()
                         ListItem(
-                            headlineContent = { Text("Use biometric unlock") },
+                            headlineContent = { Text(stringResource(R.string.hidden_biometric)) },
                             supportingContent = {
                                 Text(
-                                    if (biometricAvailable) "Fingerprint or face unlock instead of PIN"
-                                    else "Not available — no biometrics enrolled"
+                                    stringResource(
+                                        if (biometricAvailable) R.string.hidden_biometric_available
+                                        else R.string.hidden_biometric_unavailable,
+                                    )
                                 )
                             },
                             trailingContent = {
@@ -142,9 +146,9 @@ fun HiddenCategoriesSettingsScreen(
                     }
                     item {
                         ListItem(
-                            headlineContent = { Text("Show hidden in \"All\" tab") },
+                            headlineContent = { Text(stringResource(R.string.hidden_show_in_all)) },
                             supportingContent = {
-                                Text("When unlocked, also list hidden novels under the All tab")
+                                Text(stringResource(R.string.hidden_show_in_all_summary))
                             },
                             trailingContent = {
                                 Switch(
@@ -160,7 +164,7 @@ fun HiddenCategoriesSettingsScreen(
                     item {
                         HorizontalDivider(Modifier.padding(vertical = 8.dp))
                         Text(
-                            "Categories",
+                            stringResource(R.string.hidden_categories_section),
                             style = MaterialTheme.typography.titleSmall,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         )
@@ -169,7 +173,7 @@ fun HiddenCategoriesSettingsScreen(
                         ListItem(
                             headlineContent = { Text(cat.name) },
                             supportingContent = {
-                                if (cat.isDefault) Text("Default — cannot be hidden")
+                                if (cat.isDefault) Text(stringResource(R.string.hidden_default_category))
                             },
                             trailingContent = {
                                 Switch(
@@ -197,7 +201,7 @@ fun HiddenCategoriesSettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp),
-                        ) { Text("Remove PIN and unhide all") }
+                        ) { Text(stringResource(R.string.hidden_remove_pin_action)) }
                         Spacer(Modifier.height(16.dp))
                     }
                 }
@@ -207,7 +211,7 @@ fun HiddenCategoriesSettingsScreen(
 
     if (showSetPin) {
         PinEntryDialog(
-            title = "Set up PIN",
+            title = stringResource(R.string.hidden_setup_pin),
             requireConfirm = true,
             onConfirm = { pin ->
                 viewModel.setPin(pin)
@@ -219,7 +223,7 @@ fun HiddenCategoriesSettingsScreen(
 
     if (showChangePin) {
         PinEntryDialog(
-            title = "Change PIN",
+            title = stringResource(R.string.hidden_change_pin),
             requireConfirm = true,
             onConfirm = { pin ->
                 viewModel.setPin(pin)
@@ -241,16 +245,16 @@ fun HiddenCategoriesSettingsScreen(
     if (showRemoveConfirm) {
         AlertDialog(
             onDismissRequest = { showRemoveConfirm = false },
-            title = { Text("Remove PIN?") },
-            text = { Text("All hidden categories will become visible to anyone using the app.") },
+            title = { Text(stringResource(R.string.hidden_remove_pin_title)) },
+            text = { Text(stringResource(R.string.hidden_remove_pin_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.clearPin()
                     showRemoveConfirm = false
-                }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.action_remove), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showRemoveConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showRemoveConfirm = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -266,6 +270,7 @@ private fun PinEntryDialog(
     var pin by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    val pinMismatchMessage = stringResource(R.string.hidden_pin_mismatch)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -275,7 +280,7 @@ private fun PinEntryDialog(
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { pin = it.filter(Char::isDigit).take(8); error = null },
-                    label = { Text("PIN (4–8 digits)") },
+                    label = { Text(stringResource(R.string.hidden_pin_label)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -285,7 +290,7 @@ private fun PinEntryDialog(
                     OutlinedTextField(
                         value = confirm,
                         onValueChange = { confirm = it.filter(Char::isDigit).take(8); error = null },
-                        label = { Text("Confirm PIN") },
+                        label = { Text(stringResource(R.string.hidden_confirm_pin)) },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -302,13 +307,13 @@ private fun PinEntryDialog(
                 enabled = pin.length in 4..8 && (!requireConfirm || confirm.length == pin.length),
                 onClick = {
                     if (requireConfirm && pin != confirm) {
-                        error = "PINs don't match"
+                        error = pinMismatchMessage
                     } else {
                         onConfirm(pin)
                     }
                 },
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.action_save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }

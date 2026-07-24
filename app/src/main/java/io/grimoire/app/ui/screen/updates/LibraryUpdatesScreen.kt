@@ -44,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -62,6 +64,7 @@ import io.grimoire.app.ui.component.dayKey
 import io.grimoire.app.ui.component.dayLabel
 import io.grimoire.app.ui.component.timeLabel
 import io.grimoire.app.ui.theme.premiumGold
+import io.grimoire.app.R
 
 /** New chapters from one novel found in a single library refresh, identified by [key]. */
 private data class UpdateGroup(
@@ -169,22 +172,22 @@ fun LibraryUpdatesScreen(
             } else {
                 TopAppBar(
                     navigationIcon = {
-                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                            Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                            Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     },
-                    title = { Text("Updates") },
+                    title = { Text(stringResource(R.string.updates_title)) },
                     actions = {
                         Box {
-                            PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = "More actions") {
-                                Icon(AppIcons.MoreVert, contentDescription = "More actions")
+                            PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = stringResource(R.string.action_more_actions)) {
+                                Icon(AppIcons.MoreVert, contentDescription = stringResource(R.string.action_more_actions))
                             }
                             DropdownMenu(
                                 expanded = menuExpanded,
                                 onDismissRequest = { menuExpanded = false },
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Clear log") },
+                                    text = { Text(stringResource(R.string.action_clear_log)) },
                                     onClick = {
                                         menuExpanded = false
                                         showClearConfirm = true
@@ -221,7 +224,7 @@ fun LibraryUpdatesScreen(
                 TooltipIconButton(
                     visible = openNovelSample != null,
                     icon = AppIcons.OpenInNew,
-                    label = "Open novel",
+                    label = stringResource(R.string.updates_open_novel),
                     onClick = {
                         openNovelSample?.let {
                             onOpenNovel(it.sourcePackage, it.novelUrl)
@@ -232,7 +235,7 @@ fun LibraryUpdatesScreen(
                 TooltipIconButton(
                     visible = showMarkRead,
                     icon = AppIcons.DoneAll,
-                    label = "Mark read",
+                    label = stringResource(R.string.library_mark_read),
                     onClick = {
                         viewModel.setEntriesRead(selectedEntryIds, true)
                         clearSelection()
@@ -241,7 +244,7 @@ fun LibraryUpdatesScreen(
                 TooltipIconButton(
                     visible = showMarkUnread,
                     icon = AppIcons.RemoveDone,
-                    label = "Mark unread",
+                    label = stringResource(R.string.library_mark_unread),
                     onClick = {
                         viewModel.setEntriesRead(selectedEntryIds, false)
                         clearSelection()
@@ -250,7 +253,7 @@ fun LibraryUpdatesScreen(
                 TooltipIconButton(
                     visible = showDownload,
                     icon = AppIcons.Download,
-                    label = "Download",
+                    label = stringResource(R.string.library_download),
                     onClick = {
                         viewModel.downloadEntries(selectedEntryIds)
                         clearSelection()
@@ -259,7 +262,7 @@ fun LibraryUpdatesScreen(
                 TooltipIconButton(
                     visible = showCancel,
                     icon = AppIcons.Close,
-                    label = "Cancel",
+                    label = stringResource(R.string.action_cancel),
                     onClick = {
                         viewModel.cancelDownloadEntries(selectedEntryIds)
                         clearSelection()
@@ -268,7 +271,7 @@ fun LibraryUpdatesScreen(
                 TooltipIconButton(
                     visible = showDeleteDownload,
                     icon = AppIcons.FileDownloadOff,
-                    label = "Delete download",
+                    label = stringResource(R.string.downloads_delete_download),
                     onClick = {
                         viewModel.deleteDownloadEntries(selectedEntryIds)
                         clearSelection()
@@ -276,7 +279,7 @@ fun LibraryUpdatesScreen(
                 )
                 TooltipIconButton(
                     icon = AppIcons.DeleteHistory,
-                    label = "Delete from log",
+                    label = stringResource(R.string.updates_delete_from_log),
                     onClick = {
                         viewModel.deleteEntries(selectedEntryIds)
                         clearSelection()
@@ -294,14 +297,17 @@ fun LibraryUpdatesScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "No updates yet.\nNew chapters found by a library refresh appear here.",
+                    stringResource(R.string.updates_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
             SwipeTabRow(
-                tabs = if (hasSubscribed) listOf("Subscribed", "All") else listOf("Updates"),
+                tabs = if (hasSubscribed) listOf(
+                    stringResource(R.string.updates_tab_subscribed),
+                    stringResource(R.string.updates_tab_all),
+                ) else listOf(stringResource(R.string.updates_title)),
                 modifier = Modifier.padding(padding),
                 pagerState = pagerState,
                 style = SwipeTabStyle.Primary,
@@ -314,7 +320,7 @@ fun LibraryUpdatesScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            "No updates from subscribed novels yet.",
+                            stringResource(R.string.updates_subscribed_empty),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -432,16 +438,16 @@ fun LibraryUpdatesScreen(
     if (showClearConfirm) {
         AlertDialog(
             onDismissRequest = { showClearConfirm = false },
-            title = { Text("Clear updates log?") },
-            text = { Text("This permanently removes every entry from the updates log. Your library and chapters are not affected.") },
+            title = { Text(stringResource(R.string.updates_clear_title)) },
+            text = { Text(stringResource(R.string.updates_clear_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     showClearConfirm = false
                     viewModel.clearLog()
-                }) { Text("Clear") }
+                }) { Text(stringResource(R.string.action_clear)) }
             },
             dismissButton = {
-                TextButton(onClick = { showClearConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { showClearConfirm = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -565,11 +571,19 @@ private fun UpdateGroupHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                val parts = buildList {
-                    add("$total new")
-                    if (lockedCount > 0) add("$lockedCount locked")
-                    if (downloadedCount > 0) add("$downloadedCount downloaded")
-                }
+                val parts = listOfNotNull(
+                    pluralStringResource(R.plurals.updates_count_new, total, total),
+                    if (lockedCount > 0) pluralStringResource(
+                        R.plurals.updates_count_locked,
+                        lockedCount,
+                        lockedCount,
+                    ) else null,
+                    if (downloadedCount > 0) pluralStringResource(
+                        R.plurals.updates_count_downloaded,
+                        downloadedCount,
+                        downloadedCount,
+                    ) else null,
+                )
                 Text(
                     text = parts.joinToString(" • "),
                     style = MaterialTheme.typography.bodySmall,
@@ -578,13 +592,19 @@ private fun UpdateGroupHeader(
                 if (allDownloaded) {
                     Icon(
                         imageVector = AppIcons.CheckCircle,
-                        contentDescription = "All downloaded",
+                        contentDescription = stringResource(R.string.updates_all_downloaded),
                         modifier = Modifier.size(14.dp),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }
                 if (unlockedCount > 0) {
-                    UnlockedTag(label = "$unlockedCount unlocked")
+                    UnlockedTag(
+                        label = pluralStringResource(
+                            R.plurals.updates_count_unlocked,
+                            unlockedCount,
+                            unlockedCount,
+                        ),
+                    )
                 }
             }
         },
@@ -598,10 +618,11 @@ private fun UpdateGroupHeader(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                PlainTooltipIconButton(onClick = onToggleCollapse, tooltip = if (collapsed) "Expand" else "Collapse") {
+                val collapseLabel = stringResource(if (collapsed) R.string.action_expand else R.string.action_collapse)
+                PlainTooltipIconButton(onClick = onToggleCollapse, tooltip = collapseLabel) {
                     Icon(
                         imageVector = if (collapsed) AppIcons.ExpandMore else AppIcons.ExpandLess,
-                        contentDescription = if (collapsed) "Expand" else "Collapse",
+                        contentDescription = collapseLabel,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -628,9 +649,9 @@ private fun updateListItemColors(selected: Boolean) =
     }
 
 @Composable
-private fun UnlockedTag(label: String = "Unlocked") {
+private fun UnlockedTag(label: String? = null) {
     Text(
-        text = label,
+        text = label ?: stringResource(R.string.updates_unlocked),
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.premiumGold,
         modifier = Modifier
@@ -679,4 +700,3 @@ private fun NovelCover(thumbnailUrl: String?) {
             .clip(RoundedCornerShape(4.dp)),
     )
 }
-

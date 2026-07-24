@@ -16,7 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,11 +34,11 @@ fun BehaviorSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("Behavior") },
+                title = { Text(stringResource(R.string.settings_behavior_title)) },
             )
         },
     ) { padding ->
@@ -44,9 +46,9 @@ fun BehaviorSettingsScreen(
             item {
                 ListItem(
                     leadingContent = { Icon(AppIcons.Vibration, contentDescription = null) },
-                    headlineContent = { Text("Haptic feedback") },
+                    headlineContent = { Text(stringResource(R.string.behavior_haptics)) },
                     supportingContent = {
-                        Text("Vibrate on long-press, tab switches, and selection actions.")
+                        Text(stringResource(R.string.behavior_haptics_summary))
                     },
                     trailingContent = {
                         Switch(

@@ -47,6 +47,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -57,6 +59,7 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -106,16 +109,16 @@ fun DownloadsScreen(
                     .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text("Download settings", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.downloads_settings), style = MaterialTheme.typography.titleMedium)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column {
-                        Text("Parallel downloads", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.downloads_parallel), style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            "Number of chapters downloaded at once",
+                            stringResource(R.string.downloads_parallel_summary),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -123,8 +126,8 @@ fun DownloadsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         PlainTooltipIconButton(
                             onClick = { viewModel.setConcurrency(concurrency - 1) },
-                            enabled = concurrency > 1, tooltip = "Decrease") {
-                            Icon(AppIcons.Remove, contentDescription = "Decrease")
+                            enabled = concurrency > 1, tooltip = stringResource(R.string.action_decrease)) {
+                            Icon(AppIcons.Remove, contentDescription = stringResource(R.string.action_decrease))
                         }
                         Text(
                             text = concurrency.toString(),
@@ -134,8 +137,8 @@ fun DownloadsScreen(
                         )
                         PlainTooltipIconButton(
                             onClick = { viewModel.setConcurrency(concurrency + 1) },
-                            enabled = concurrency < 5, tooltip = "Increase") {
-                            Icon(AppIcons.Add, contentDescription = "Increase")
+                            enabled = concurrency < 5, tooltip = stringResource(R.string.action_increase)) {
+                            Icon(AppIcons.Add, contentDescription = stringResource(R.string.action_increase))
                         }
                     }
                 }
@@ -164,23 +167,24 @@ fun DownloadsScreen(
                 )
             } else {
                 TopAppBar(
-                    title = { Text("Downloads") },
+                    title = { Text(stringResource(R.string.downloads_title)) },
                     navigationIcon = {
-                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                            Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                            Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     },
                     actions = {
                         if (!currentDownloads.isNullOrEmpty()) {
-                            PlainTooltipIconButton(onClick = viewModel::togglePause, tooltip = if (isPaused) "Resume" else "Pause") {
+                            val pauseLabel = stringResource(if (isPaused) R.string.action_resume else R.string.action_pause)
+                            PlainTooltipIconButton(onClick = viewModel::togglePause, tooltip = pauseLabel) {
                                 Icon(
                                     if (isPaused) AppIcons.PlayArrow else AppIcons.Pause,
-                                    contentDescription = if (isPaused) "Resume" else "Pause",
+                                    contentDescription = pauseLabel,
                                 )
                             }
                         }
-                        PlainTooltipIconButton(onClick = { showSettings = true }, tooltip = "Settings") {
-                            Icon(AppIcons.Settings, contentDescription = "Settings")
+                        PlainTooltipIconButton(onClick = { showSettings = true }, tooltip = stringResource(R.string.action_settings)) {
+                            Icon(AppIcons.Settings, contentDescription = stringResource(R.string.action_settings))
                         }
                     },
                 )
@@ -203,7 +207,7 @@ fun DownloadsScreen(
                 TooltipIconButton(
                     visible = hasQueued,
                     icon = AppIcons.KeyboardDoubleArrowUp,
-                    label = "Move to top",
+                    label = stringResource(R.string.downloads_move_to_top),
                     onClick = {
                         target.novelIds.forEach { viewModel.moveToTopOfQueue(it) }
                         clearSelection()
@@ -212,7 +216,7 @@ fun DownloadsScreen(
                 TooltipIconButton(
                     visible = hasInFlight,
                     icon = AppIcons.Close,
-                    label = "Cancel",
+                    label = stringResource(R.string.action_cancel),
                     onClick = {
                         target.chapters
                             .filter { it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }
@@ -223,7 +227,7 @@ fun DownloadsScreen(
                 TooltipIconButton(
                     visible = hasError,
                     icon = AppIcons.Refresh,
-                    label = "Retry",
+                    label = stringResource(R.string.action_retry),
                     onClick = {
                         target.chapters
                             .filter { it.downloadStatus in ChapterDownloadStatus.ERROR_ORDINALS }
@@ -234,7 +238,7 @@ fun DownloadsScreen(
                 TooltipIconButton(
                     visible = hasError,
                     icon = AppIcons.Close,
-                    label = "Cancel failed",
+                    label = stringResource(R.string.downloads_cancel_failed),
                     onClick = {
                         target.novelIds.forEach { viewModel.cancelAllFailed(it) }
                         clearSelection()
@@ -243,7 +247,7 @@ fun DownloadsScreen(
                 TooltipIconButton(
                     visible = hasRedownloadable,
                     icon = AppIcons.Refresh,
-                    label = "Redownload",
+                    label = stringResource(R.string.downloads_redownload),
                     onClick = {
                         val redownloadable = target.chapters.filter {
                             !it.locked && (
@@ -258,7 +262,7 @@ fun DownloadsScreen(
                 TooltipIconButton(
                     visible = hasDownloaded,
                     icon = AppIcons.Delete,
-                    label = "Delete",
+                    label = stringResource(R.string.action_delete),
                     onClick = {
                         target.chapters
                             .filter { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
@@ -281,7 +285,7 @@ fun DownloadsScreen(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("No downloads", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.downloads_empty), style = MaterialTheme.typography.bodyLarge)
             }
             else -> LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
                 item {
@@ -301,13 +305,13 @@ fun DownloadsScreen(
                         FilterChip(
                             selected = selectedStatusFilters.isEmpty(),
                             onClick = { viewModel.clearStatusFilters() },
-                            label = { Text("All") },
+                            label = { Text(stringResource(R.string.filter_all)) },
                         )
                         DownloadStatusFilter.entries.forEach { chip ->
                             FilterChip(
                                 selected = chip in selectedStatusFilters,
                                 onClick = { viewModel.toggleStatusFilter(chip) },
-                                label = { Text(chip.label) },
+                                label = { Text(stringResource(chip.labelRes)) },
                             )
                         }
                     }
@@ -410,14 +414,12 @@ private fun NovelDownloadHeader(
     // Counts are precomputed off the main thread in the ViewModel (over the full, unfiltered
     // chapter set) so the header shows the complete tally even while a filter is active.
     val counts = novelDownloads.counts
-    val stats = remember(counts) {
-        buildList {
-            if (counts.downloaded > 0) add("${counts.downloaded} downloaded")
-            if (counts.queued > 0) add("${counts.queued} queued")
-            if (counts.downloading > 0) add("${counts.downloading} downloading")
-            if (counts.error > 0) add("${counts.error} failed")
-        }.joinToString(" • ")
-    }
+    val stats = buildList {
+        if (counts.downloaded > 0) add(pluralStringResource(R.plurals.downloads_count_downloaded, counts.downloaded, counts.downloaded))
+        if (counts.queued > 0) add(pluralStringResource(R.plurals.downloads_count_queued, counts.queued, counts.queued))
+        if (counts.downloading > 0) add(pluralStringResource(R.plurals.downloads_count_downloading, counts.downloading, counts.downloading))
+        if (counts.error > 0) add(pluralStringResource(R.plurals.downloads_count_failed, counts.error, counts.error))
+    }.joinToString(" • ")
 
     Row(
         modifier = Modifier
@@ -452,10 +454,11 @@ private fun NovelDownloadHeader(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        PlainTooltipIconButton(onClick = onToggleCollapse, tooltip = if (collapsed) "Expand" else "Collapse") {
+        val collapseLabel = stringResource(if (collapsed) R.string.action_expand else R.string.action_collapse)
+        PlainTooltipIconButton(onClick = onToggleCollapse, tooltip = collapseLabel) {
             Icon(
                 if (collapsed) AppIcons.ExpandMore else AppIcons.ExpandLess,
-                contentDescription = if (collapsed) "Expand" else "Collapse",
+                contentDescription = collapseLabel,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -492,7 +495,7 @@ private fun ChapterDownloadItem(
                 ChapterDownloadStatus.QUEUED,
                 ChapterDownloadStatus.REDOWNLOAD_QUEUED -> Icon(
                     AppIcons.HourglassEmpty,
-                    contentDescription = "Queued",
+                    contentDescription = stringResource(R.string.status_queued),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp),
                 )
@@ -503,14 +506,14 @@ private fun ChapterDownloadItem(
                 )
                 ChapterDownloadStatus.DOWNLOADED -> Icon(
                     AppIcons.DownloadDone,
-                    contentDescription = "Downloaded",
+                    contentDescription = stringResource(R.string.status_downloaded),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp),
                 )
                 ChapterDownloadStatus.ERROR,
                 ChapterDownloadStatus.REDOWNLOAD_ERROR -> Icon(
                     AppIcons.ErrorOutline,
-                    contentDescription = "Error",
+                    contentDescription = stringResource(R.string.status_error),
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(20.dp),
                 )
@@ -523,32 +526,32 @@ private fun ChapterDownloadItem(
             {
                 when (status) {
                     ChapterDownloadStatus.QUEUED,
-                    ChapterDownloadStatus.REDOWNLOAD_QUEUED -> PlainTooltipIconButton(onClick = onCancel, tooltip = "Cancel") {
-                        Icon(AppIcons.Close, contentDescription = "Cancel")
+                    ChapterDownloadStatus.REDOWNLOAD_QUEUED -> PlainTooltipIconButton(onClick = onCancel, tooltip = stringResource(R.string.action_cancel)) {
+                        Icon(AppIcons.Close, contentDescription = stringResource(R.string.action_cancel))
                     }
                     ChapterDownloadStatus.ERROR,
-                    ChapterDownloadStatus.REDOWNLOAD_ERROR -> PlainTooltipIconButton(onClick = onRetry, tooltip = "Retry") {
-                        Icon(AppIcons.Refresh, contentDescription = "Retry")
+                    ChapterDownloadStatus.REDOWNLOAD_ERROR -> PlainTooltipIconButton(onClick = onRetry, tooltip = stringResource(R.string.action_retry)) {
+                        Icon(AppIcons.Refresh, contentDescription = stringResource(R.string.action_retry))
                     }
                     ChapterDownloadStatus.DOWNLOADED -> {
                         var menuExpanded by remember { mutableStateOf(false) }
                         Box {
-                            PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = "Download options") {
-                                Icon(AppIcons.MoreVert, contentDescription = "Download options")
+                            PlainTooltipIconButton(onClick = { menuExpanded = true }, tooltip = stringResource(R.string.downloads_delete_options)) {
+                                Icon(AppIcons.MoreVert, contentDescription = stringResource(R.string.downloads_delete_options))
                             }
                             DropdownMenu(
                                 expanded = menuExpanded,
                                 onDismissRequest = { menuExpanded = false },
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Redownload") },
+                                    text = { Text(stringResource(R.string.downloads_redownload)) },
                                     onClick = {
                                         menuExpanded = false
                                         onRedownload()
                                     },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Delete download") },
+                                    text = { Text(stringResource(R.string.downloads_delete_download)) },
                                     onClick = {
                                         menuExpanded = false
                                         onDelete()

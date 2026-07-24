@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
@@ -33,6 +35,7 @@ import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.ui.component.SwipeTabRow
 import io.grimoire.app.ui.component.SwipeTabStyle
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +88,10 @@ internal fun ReaderSettingsSheet(
         scrimColor = Color.Transparent,
     ) {
         SwipeTabRow(
-            tabs = listOf("Display", "Read aloud"),
+            tabs = listOf(
+                stringResource(R.string.reader_display_tab),
+                stringResource(R.string.reader_tts_tab),
+            ),
             style = SwipeTabStyle.Primary,
             // Inside a sheet: wrap the page height instead of filling the screen.
             fillHeight = false,
@@ -180,7 +186,7 @@ private fun ReaderDisplaySettings(
             .padding(horizontal = 20.dp, vertical = 12.dp),
     ) {
         Text(
-            text = "The quick brown fox jumps over the lazy dog. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
+            text = stringResource(R.string.reader_preview_text),
             style = textStyle,
         )
     }
@@ -194,14 +200,14 @@ private fun ReaderDisplaySettings(
             .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        SettingsSectionLabel("Color theme")
+        SettingsSectionLabel(stringResource(R.string.reader_color_theme))
         ColorThemePicker(selected = colorTheme, onSelect = onColorTheme)
 
-        SettingsSectionLabel("Font")
+        SettingsSectionLabel(stringResource(R.string.reader_font))
         FontPicker(selected = readerFont, onSelect = onFont)
 
         StepperRow(
-            label = "Font size",
+            label = stringResource(R.string.reader_font_size),
             value = "${fontSize}sp",
             onDecrement = { onFontSize(fontSize - 1) },
             onIncrement = { onFontSize(fontSize + 1) },
@@ -210,7 +216,7 @@ private fun ReaderDisplaySettings(
         )
 
         StepperRow(
-            label = "Line height",
+            label = stringResource(R.string.reader_line_height),
             value = "%.1f×".format(lineHeightTimes10 / 10f),
             onDecrement = { onLineHeight(lineHeightTimes10 - 1) },
             onIncrement = { onLineHeight(lineHeightTimes10 + 1) },
@@ -219,7 +225,7 @@ private fun ReaderDisplaySettings(
         )
 
         StepperRow(
-            label = "Paragraph spacing",
+            label = stringResource(R.string.reader_paragraph_spacing),
             value = "${paragraphSpacing}dp",
             onDecrement = { onParagraphSpacing(paragraphSpacing - 4) },
             onIncrement = { onParagraphSpacing(paragraphSpacing + 4) },
@@ -227,21 +233,21 @@ private fun ReaderDisplaySettings(
             incrementEnabled = paragraphSpacing < 32,
         )
 
-        SettingsSectionLabel("Screen rotation")
+        SettingsSectionLabel(stringResource(R.string.reader_screen_rotation))
         OrientationPicker(selected = orientation, onSelect = onOrientation)
 
-        SettingsSectionLabel("Privacy")
+        SettingsSectionLabel(stringResource(R.string.reader_privacy))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Hide images",
+                    text = stringResource(R.string.reader_hide_images_setting),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = "Tap to reveal · hold to peek",
+                    text = stringResource(R.string.reader_hide_images_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -249,13 +255,13 @@ private fun ReaderDisplaySettings(
             Switch(checked = hideInlineImages, onCheckedChange = onHideInlineImages)
         }
 
-        SettingsSectionLabel("Reading progress")
+        SettingsSectionLabel(stringResource(R.string.reader_reading_progress))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Show chapter %",
+                text = stringResource(R.string.reader_show_chapter_percent),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
@@ -269,7 +275,7 @@ private fun ReaderDisplaySettings(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Show book %",
+                text = stringResource(R.string.reader_show_book_percent),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
@@ -279,14 +285,14 @@ private fun ReaderDisplaySettings(
             )
         }
 
-        SettingsSectionLabel("Auto-mark as read")
+        SettingsSectionLabel(stringResource(R.string.reader_auto_mark_read))
         MarkAsReadStrategyPicker(
             selected = markAsReadStrategy,
             onSelect = onMarkAsReadStrategy,
         )
         when (markAsReadStrategy) {
             MarkAsReadStrategy.PERCENT -> StepperRow(
-                label = "Mark at",
+                label = stringResource(R.string.reader_mark_at),
                 value = "$markAsReadThreshold%",
                 onDecrement = { onMarkAsReadThreshold(markAsReadThreshold - 5) },
                 onIncrement = { onMarkAsReadThreshold(markAsReadThreshold + 5) },
@@ -294,9 +300,12 @@ private fun ReaderDisplaySettings(
                 incrementEnabled = markAsReadThreshold < 100,
             )
             MarkAsReadStrategy.PARAGRAPHS_FROM_END -> StepperRow(
-                label = "Within last",
-                value = if (markAsReadParagraphsFromEnd == 1) "1 paragraph"
-                        else "$markAsReadParagraphsFromEnd paragraphs",
+                label = stringResource(R.string.reader_within_last),
+                value = pluralStringResource(
+                    R.plurals.reader_paragraph_count,
+                    markAsReadParagraphsFromEnd,
+                    markAsReadParagraphsFromEnd,
+                ),
                 onDecrement = { onMarkAsReadParagraphsFromEnd(markAsReadParagraphsFromEnd - 1) },
                 onIncrement = { onMarkAsReadParagraphsFromEnd(markAsReadParagraphsFromEnd + 1) },
                 decrementEnabled = markAsReadParagraphsFromEnd > 0,
@@ -305,18 +314,18 @@ private fun ReaderDisplaySettings(
             MarkAsReadStrategy.AT_END -> Unit
         }
 
-        SettingsSectionLabel("Easter eggs")
+        SettingsSectionLabel(stringResource(R.string.reader_easter_eggs))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Animate the word \"grimoire\"",
+                    text = stringResource(R.string.reader_animate_grimoire),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = "Tap a styled word in any chapter for details",
+                    text = stringResource(R.string.reader_animate_grimoire_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -358,11 +367,11 @@ private fun ReaderTtsSettings(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Enable text-to-speech",
+                    text = stringResource(R.string.reader_enable_tts),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = "Show playback controls in the reader",
+                    text = stringResource(R.string.reader_enable_tts_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -370,12 +379,12 @@ private fun ReaderTtsSettings(
             Switch(checked = enabled, onCheckedChange = onEnabled)
         }
 
-        SettingsSectionLabel("Speech engine")
+        SettingsSectionLabel(stringResource(R.string.reader_speech_engine))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
                 selected = engine == TtsEngineType.DEVICE,
                 onClick = { onEngine(TtsEngineType.DEVICE) },
-                label = { Text("On-device") },
+                label = { Text(stringResource(R.string.reader_on_device)) },
             )
             FilterChip(
                 selected = engine == TtsEngineType.ELEVENLABS,
@@ -385,7 +394,7 @@ private fun ReaderTtsSettings(
         }
 
         StepperRow(
-            label = "Speech rate",
+            label = stringResource(R.string.reader_speech_rate),
             value = "%.2f×".format(speechRate / 100f),
             onDecrement = { onSpeechRate(speechRate - 5) },
             onIncrement = { onSpeechRate(speechRate + 5) },
@@ -394,7 +403,7 @@ private fun ReaderTtsSettings(
         )
 
         StepperRow(
-            label = "Pitch (on-device only)",
+            label = stringResource(R.string.reader_pitch),
             value = "%.2f×".format(pitch / 100f),
             onDecrement = { onPitch(pitch - 5) },
             onIncrement = { onPitch(pitch + 5) },
@@ -407,7 +416,7 @@ private fun ReaderTtsSettings(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Auto-advance to next chapter",
+                text = stringResource(R.string.reader_auto_advance),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
@@ -415,7 +424,7 @@ private fun ReaderTtsSettings(
         }
 
         TextButton(onClick = onOpenFullSettings) {
-            Text("Manage voices & more settings")
+            Text(stringResource(R.string.reader_manage_voices))
         }
     }
 }

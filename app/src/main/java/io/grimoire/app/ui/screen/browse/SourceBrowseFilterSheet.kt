@@ -37,7 +37,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import io.grimoire.api.model.filter.Filter
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,10 +70,10 @@ internal fun FilterSheet(
                 .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Filters", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.source_browse_filters), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             if (canReload) {
-                PlainTooltipIconButton(onClick = onLoad, tooltip = "Reload filters") {
-                    Icon(AppIcons.Refresh, contentDescription = "Reload filters")
+                PlainTooltipIconButton(onClick = onLoad, tooltip = stringResource(R.string.source_filters_reload)) {
+                    Icon(AppIcons.Refresh, contentDescription = stringResource(R.string.source_filters_reload))
                 }
             }
             TextButton(
@@ -82,8 +85,8 @@ internal fun FilterSheet(
                     }
                     onApply(filters, sheetQuery)
                 },
-            ) { Text("Apply") }
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            ) { Text(stringResource(R.string.action_apply)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
         HorizontalDivider()
 
@@ -101,7 +104,7 @@ internal fun FilterSheet(
                     OutlinedTextField(
                         value = sheetQuery,
                         onValueChange = { sheetQuery = it },
-                        label = { Text("Search") },
+                        label = { Text(stringResource(R.string.action_search)) },
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -130,11 +133,11 @@ private fun FilterLoadHeader(state: FilterLoadState, onLoad: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                "Filter options need to be loaded from the source.",
+                stringResource(R.string.source_filters_need_load),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(8.dp))
-            TextButton(onClick = onLoad) { Text("Load filters") }
+            TextButton(onClick = onLoad) { Text(stringResource(R.string.source_filters_load)) }
         }
         FilterLoadState.Loading -> Row(
             modifier = Modifier
@@ -145,7 +148,7 @@ private fun FilterLoadHeader(state: FilterLoadState, onLoad: () -> Unit) {
         ) {
             CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
             Spacer(Modifier.width(12.dp))
-            Text("Loading filters…")
+            Text(stringResource(R.string.source_filters_loading))
         }
         is FilterLoadState.Error -> Column(
             Modifier
@@ -154,12 +157,12 @@ private fun FilterLoadHeader(state: FilterLoadState, onLoad: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                "Failed to load filters: ${state.message}",
+                stringResource(R.string.source_filters_load_failed, state.message),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(8.dp))
-            TextButton(onClick = onLoad) { Text("Retry") }
+            TextButton(onClick = onLoad) { Text(stringResource(R.string.action_retry)) }
         }
         else -> Unit
     }
@@ -214,9 +217,9 @@ private fun FilterItem(
                 else -> Filter.TriState.STATE_IGNORE
             }
             val label = when (current) {
-                Filter.TriState.STATE_INCLUDE -> "include"
-                Filter.TriState.STATE_EXCLUDE -> "exclude"
-                else -> "any"
+                Filter.TriState.STATE_INCLUDE -> stringResource(R.string.source_filter_include)
+                Filter.TriState.STATE_EXCLUDE -> stringResource(R.string.source_filter_exclude)
+                else -> stringResource(R.string.source_filter_any)
             }
             Row(
                 modifier = Modifier
@@ -336,7 +339,11 @@ private fun FilterItem(
             ) {
                 Text(filter.name, modifier = Modifier.weight(1f))
                 Text(
-                    if (selectedCount > 0) "$selectedCount selected" else "Any",
+                    if (selectedCount > 0) {
+                        pluralStringResource(R.plurals.source_filter_selected_count, selectedCount, selectedCount)
+                    } else {
+                        stringResource(R.string.source_filter_any)
+                    },
                     style = MaterialTheme.typography.labelMedium,
                     color = if (selectedCount > 0) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant,

@@ -84,6 +84,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -105,6 +106,7 @@ import io.grimoire.app.ui.component.ZoomableCoverImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import io.grimoire.app.R
 
 private fun Context.findActivity(): Activity? {
     var c: Context? = this
@@ -349,7 +351,7 @@ fun ReaderScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                    TextButton(onClick = viewModel::loadPages) { Text("Retry") }
+                    TextButton(onClick = viewModel::loadPages) { Text(stringResource(R.string.action_retry)) }
                 }
                 else -> SelectionContainer {
                 LazyColumn(
@@ -490,11 +492,11 @@ fun ReaderScreen(
                         ) {
                             if (hasNext) {
                                 TextButton(onClick = viewModel::navigateNext) {
-                                    Text("Next chapter →", color = colors.foreground.copy(alpha = 0.7f))
+                                    Text(stringResource(R.string.reader_next_chapter), color = colors.foreground.copy(alpha = 0.7f))
                                 }
                             } else {
                                 Text(
-                                    "End of book",
+                                    stringResource(R.string.reader_end_of_book),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = colors.foreground.copy(alpha = 0.4f),
                                 )
@@ -523,8 +525,8 @@ fun ReaderScreen(
                     actionIconContentColor = colors.foreground,
                 ),
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 title = {
@@ -542,27 +544,40 @@ fun ReaderScreen(
                             onClick = {
                                 if (allRevealed) viewModel.hideAllImagesInCurrentChapter()
                                 else viewModel.revealAllImagesInCurrentChapter()
-                            }, tooltip = if (allRevealed) "Hide all images in this chapter"
-                                                     else "Reveal all images in this chapter") {
+                            }, tooltip = stringResource(
+                                if (allRevealed) R.string.reader_hide_images
+                                else R.string.reader_reveal_images,
+                            )) {
                             Icon(
                                 if (allRevealed) AppIcons.HideImage else AppIcons.ImageOutlined,
-                                contentDescription = if (allRevealed) "Hide all images in this chapter"
-                                                     else "Reveal all images in this chapter",
+                                contentDescription = stringResource(
+                                    if (allRevealed) R.string.reader_hide_images
+                                    else R.string.reader_reveal_images,
+                                ),
                                 tint = colors.foreground,
                             )
                         }
                     }
-                    PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.chapterWebUrl) }, tooltip = "Open in WebView") {
+                    PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.chapterWebUrl) }, tooltip = stringResource(R.string.action_open_in_webview)) {
                         Icon(
                             AppIcons.Language,
-                            contentDescription = "Open in WebView",
+                            contentDescription = stringResource(R.string.action_open_in_webview),
                             tint = colors.foreground,
                         )
                     }
-                    PlainTooltipIconButton(onClick = viewModel::toggleRead, tooltip = if (currentChapter?.read == true) "Mark as unread" else "Mark as read") {
+                    PlainTooltipIconButton(
+                        onClick = viewModel::toggleRead,
+                        tooltip = stringResource(
+                            if (currentChapter?.read == true) R.string.reader_mark_unread
+                            else R.string.reader_mark_read,
+                        ),
+                    ) {
                         Icon(
                             if (currentChapter?.read == true) AppIcons.CheckCircle else AppIcons.CheckCircleOutlined,
-                            contentDescription = if (currentChapter?.read == true) "Mark as unread" else "Mark as read",
+                            contentDescription = stringResource(
+                                if (currentChapter?.read == true) R.string.reader_mark_unread
+                                else R.string.reader_mark_read,
+                            ),
                             tint = if (currentChapter?.read == true) MaterialTheme.colorScheme.primary
                                    else colors.foreground.copy(alpha = 0.6f),
                         )
@@ -574,8 +589,8 @@ fun ReaderScreen(
                 val chapterPct = ((currentChapter?.readProgress ?: 0f) * 100).toInt().coerceIn(0, 100)
                 val novelPct = (novelProgress * 100).toInt().coerceIn(0, 100)
                 val parts = buildList {
-                    if (showChapterProgressPercent) add("Chapter $chapterPct%")
-                    if (showNovelProgressPercent) add("Book $novelPct%")
+                    if (showChapterProgressPercent) add(stringResource(R.string.reader_chapter_progress, chapterPct))
+                    if (showNovelProgressPercent) add(stringResource(R.string.reader_book_progress, novelPct))
                 }
                 Box(
                     modifier = Modifier
@@ -605,30 +620,32 @@ fun ReaderScreen(
         ) {
             TooltipIconButton(
                 icon = AppIcons.NavigateBefore,
-                label = "Previous",
+                label = stringResource(R.string.reader_previous),
                 onClick = viewModel::navigatePrev,
                 enabled = hasPrev,
             )
             TooltipIconButton(
                 visible = ttsEnabled,
                 icon = if (ttsPlayingThisChapter) AppIcons.Pause else AppIcons.PlayArrow,
-                label = if (ttsPlayingThisChapter) "Pause" else "Read aloud",
+                label = stringResource(
+                    if (ttsPlayingThisChapter) R.string.reader_pause else R.string.reader_read_aloud,
+                ),
                 onClick = viewModel::toggleTts,
             )
             TooltipIconButton(
                 visible = ttsEnabled && ttsActiveForChapter,
                 icon = AppIcons.Stop,
-                label = "Stop",
+                label = stringResource(R.string.reader_stop),
                 onClick = viewModel::stopTts,
             )
             TooltipIconButton(
                 icon = AppIcons.Settings,
-                label = "Settings",
+                label = stringResource(R.string.reader_settings),
                 onClick = { showSettings = true },
             )
             TooltipIconButton(
                 icon = AppIcons.NavigateNext,
-                label = "Next",
+                label = stringResource(R.string.reader_next),
                 onClick = viewModel::navigateNext,
                 enabled = hasNext,
             )
@@ -692,4 +709,3 @@ fun ReaderScreen(
         )
     }
 }
-

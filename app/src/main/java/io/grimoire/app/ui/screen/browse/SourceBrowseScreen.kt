@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.NovelQuickViewSheet
 import androidx.compose.ui.unit.dp
@@ -61,6 +62,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.model.filter.Filter
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.app.data.preferences.BrowseDisplayMode
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,20 +133,20 @@ fun SourceBrowseScreen(
             Box {
                 TopAppBar(
                     navigationIcon = {
-                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                            Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                        PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                            Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     },
                     title = {
                         Text(viewModel.sourceName, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     },
                     actions = {
-                        PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.sourceBaseUrl) }, tooltip = "Open in WebView") {
-                            Icon(AppIcons.Language, contentDescription = "Open in WebView")
+                        PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.sourceBaseUrl) }, tooltip = stringResource(R.string.action_open_in_webview)) {
+                            Icon(AppIcons.Language, contentDescription = stringResource(R.string.action_open_in_webview))
                         }
                         if (viewModel.isConfigurable) {
-                            PlainTooltipIconButton(onClick = onOpenSourceSettings, tooltip = "Source settings") {
-                                Icon(AppIcons.Settings, contentDescription = "Source settings")
+                            PlainTooltipIconButton(onClick = onOpenSourceSettings, tooltip = stringResource(R.string.source_browse_source_settings)) {
+                                Icon(AppIcons.Settings, contentDescription = stringResource(R.string.source_browse_source_settings))
                             }
                         }
                     },
@@ -160,15 +162,15 @@ fun SourceBrowseScreen(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         ),
                         navigationIcon = {
-                            PlainTooltipIconButton(onClick = closeSearch, tooltip = "Close search") {
-                                Icon(AppIcons.ArrowUpward, contentDescription = "Close search")
+                            PlainTooltipIconButton(onClick = closeSearch, tooltip = stringResource(R.string.novel_close_search)) {
+                                Icon(AppIcons.ArrowUpward, contentDescription = stringResource(R.string.novel_close_search))
                             }
                         },
                         title = {
                             AppSearchField(
                                 value = query,
                                 onValueChange = viewModel::setQuery,
-                                placeholder = "Search ${viewModel.sourceName}…",
+                                placeholder = stringResource(R.string.source_browse_search_placeholder, viewModel.sourceName),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .focusRequester(focusRequester),
@@ -196,7 +198,7 @@ fun SourceBrowseScreen(
                     FilterChip(
                         selected = mode == BrowseMode.POPULAR,
                         onClick = { searchActive = false; viewModel.setMode(BrowseMode.POPULAR) },
-                        label = { Text("Popular") },
+                        label = { Text(stringResource(R.string.source_browse_popular)) },
                         leadingIcon = {
                             Icon(
                                 AppIcons.Explosion,
@@ -210,7 +212,7 @@ fun SourceBrowseScreen(
                     FilterChip(
                         selected = mode == BrowseMode.LATEST,
                         onClick = { searchActive = false; viewModel.setMode(BrowseMode.LATEST) },
-                        label = { Text("Latest") },
+                        label = { Text(stringResource(R.string.source_browse_latest)) },
                         leadingIcon = {
                             Icon(
                                 AppIcons.AvgTime,
@@ -224,7 +226,7 @@ fun SourceBrowseScreen(
                     FilterChip(
                         selected = mode == BrowseMode.SEARCH && activeFilters.isEmpty(),
                         onClick = { if (searchActive) closeSearch() else searchActive = true },
-                        label = { Text("Search") },
+                        label = { Text(stringResource(R.string.action_search)) },
                         leadingIcon = {
                             Icon(
                                 AppIcons.Search,
@@ -238,7 +240,7 @@ fun SourceBrowseScreen(
                     FilterChip(
                         selected = mode == BrowseMode.SEARCH && activeFilters.isNotEmpty(),
                         onClick = { showFilters = true },
-                        label = { Text("Filters", maxLines = 1, softWrap = false) },
+                        label = { Text(stringResource(R.string.source_browse_filters), maxLines = 1, softWrap = false) },
                         leadingIcon = {
                             Icon(
                                 AppIcons.FilterList,
@@ -270,14 +272,12 @@ fun SourceBrowseScreen(
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            "Cloudflare challenge",
+                            stringResource(R.string.source_browse_cloudflare_title),
                             style = MaterialTheme.typography.titleMedium,
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "${viewModel.sourceName} is protected by a Cloudflare challenge " +
-                                "that couldn't be solved automatically. Open it in WebView, " +
-                                "solve the challenge there, then come back and retry.",
+                            stringResource(R.string.source_browse_cloudflare_description, viewModel.sourceName),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -285,10 +285,10 @@ fun SourceBrowseScreen(
                         Button(onClick = { onOpenWebView(viewModel.sourceBaseUrl) }) {
                             Icon(AppIcons.Language, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Open in WebView")
+                            Text(stringResource(R.string.action_open_in_webview))
                         }
                         Spacer(Modifier.height(4.dp))
-                        TextButton(onClick = { viewModel.retry() }) { Text("Retry") }
+                        TextButton(onClick = { viewModel.retry() }) { Text(stringResource(R.string.action_retry)) }
                     }
                 }
                 error != null && novels.isEmpty() -> Box(
@@ -302,7 +302,7 @@ fun SourceBrowseScreen(
                             style = MaterialTheme.typography.bodyLarge,
                         )
                         Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { viewModel.retry() }) { Text("Retry") }
+                        TextButton(onClick = { viewModel.retry() }) { Text(stringResource(R.string.action_retry)) }
                     }
                 }
                 mode == BrowseMode.SEARCH && query.isBlank() &&
@@ -313,7 +313,7 @@ fun SourceBrowseScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        "Type to search ${viewModel.sourceName}",
+                        stringResource(R.string.source_browse_type_to_search, viewModel.sourceName),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -392,4 +392,3 @@ fun SourceBrowseScreen(
         }
     }
 }
-

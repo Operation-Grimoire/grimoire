@@ -31,12 +31,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.ui.theme.premiumGold
+import io.grimoire.app.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -146,19 +148,19 @@ fun ChapterStatusTrailing(
     when {
         chapter.locked -> ChapterTrailingIcon(
             icon = AppIcons.Lock,
-            description = "Locked",
+            description = stringResource(R.string.content_description_locked),
             tint = MaterialTheme.colorScheme.premiumGold,
             onClick = if (selectionMode) null else onLockedClick,
         )
         dlStatus == ChapterDownloadStatus.NONE -> ChapterTrailingIcon(
             icon = AppIcons.Download,
-            description = "Download",
+            description = stringResource(R.string.library_download),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = if (selectionMode) null else onDownload,
         )
         dlStatus == ChapterDownloadStatus.QUEUED -> ChapterTrailingIcon(
             icon = AppIcons.Close,
-            description = "Cancel download",
+            description = stringResource(R.string.chapter_cancel_download),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = if (selectionMode) null else onCancelDownload,
         )
@@ -167,36 +169,42 @@ fun ChapterStatusTrailing(
                 LinearProgressIndicator(modifier = Modifier.width(24.dp))
             }
         dlStatus == ChapterDownloadStatus.DOWNLOADED -> DownloadedRowAction(
-            description = "Downloaded",
+            description = stringResource(R.string.status_downloaded),
             badge = null,
             selectionMode = selectionMode,
-            menuActions = downloadedMenuActions(onRedownload, onDeleteDownload),
+            menuActions = listOf(
+                stringResource(R.string.downloads_redownload) to onRedownload,
+                stringResource(R.string.downloads_delete_download) to onDeleteDownload,
+            ),
         )
         dlStatus == ChapterDownloadStatus.REDOWNLOAD_QUEUED -> DownloadedRowAction(
-            description = "Downloaded · refresh queued",
+            description = stringResource(R.string.chapter_downloaded_refresh_queued),
             badge = { RefreshBadgeDot(color = MaterialTheme.colorScheme.onSurfaceVariant) },
             selectionMode = selectionMode,
             menuActions = listOf(
-                "Cancel refresh" to onCancelDownload,
-                "Delete download" to onDeleteDownload,
+                stringResource(R.string.chapter_cancel_refresh) to onCancelDownload,
+                stringResource(R.string.downloads_delete_download) to onDeleteDownload,
             ),
         )
         dlStatus == ChapterDownloadStatus.REDOWNLOADING -> DownloadedRowAction(
-            description = "Downloaded · refreshing",
+            description = stringResource(R.string.chapter_downloaded_refreshing),
             badge = { RefreshBadgeSpinner() },
             selectionMode = selectionMode,
             menuActions = null, // non-interactive, matches plain DOWNLOADING
         )
         dlStatus == ChapterDownloadStatus.REDOWNLOAD_ERROR -> DownloadedRowAction(
-            description = "Downloaded · refresh failed",
+            description = stringResource(R.string.chapter_downloaded_refresh_failed),
             badge = { RefreshBadgeDot(color = MaterialTheme.colorScheme.error) },
             selectionMode = selectionMode,
-            menuActions = downloadedMenuActions(onRedownload, onDeleteDownload),
+            menuActions = listOf(
+                stringResource(R.string.downloads_redownload) to onRedownload,
+                stringResource(R.string.downloads_delete_download) to onDeleteDownload,
+            ),
         )
         else -> Row(verticalAlignment = Alignment.CenterVertically) {
             ChapterTrailingIcon(
                 icon = AppIcons.Close,
-                description = "Cancel",
+                description = stringResource(R.string.action_cancel),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 onClick = if (selectionMode) null else onDeleteDownload,
                 buttonSize = 40.dp,
@@ -204,7 +212,7 @@ fun ChapterStatusTrailing(
             )
             ChapterTrailingIcon(
                 icon = AppIcons.Refresh,
-                description = "Retry",
+                description = stringResource(R.string.action_retry),
                 tint = MaterialTheme.colorScheme.error,
                 onClick = if (selectionMode) null else onDownload,
                 buttonSize = 40.dp,
@@ -236,14 +244,6 @@ fun ChapterTrailingIcon(
         }
     }
 }
-
-private fun downloadedMenuActions(
-    onRedownload: () -> Unit,
-    onDeleteDownload: () -> Unit,
-): List<Pair<String, () -> Unit>> = listOf(
-    "Redownload" to onRedownload,
-    "Delete download" to onDeleteDownload,
-)
 
 /**
  * Trailing affordance shared by all the "row has saved content" states (DOWNLOADED and the three

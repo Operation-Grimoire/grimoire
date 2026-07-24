@@ -28,7 +28,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.R
 import kotlin.math.roundToInt
 import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
@@ -37,26 +39,26 @@ import io.grimoire.app.ui.component.SwipeTabRow
 import io.grimoire.app.ui.component.SwipeTabStyle
 
 internal val STATUS_OPTIONS = listOf(
-    1 to "Ongoing",
-    2 to "Completed",
-    3 to "Hiatus",
-    4 to "Cancelled",
-    0 to "Unknown",
+    1 to R.string.library_status_ongoing,
+    2 to R.string.library_status_completed,
+    3 to R.string.library_status_hiatus,
+    4 to R.string.library_status_cancelled,
+    0 to R.string.library_status_unknown,
 )
 
 internal val NOVEL_TYPE_OPTIONS = listOf(
-    NovelTypeFilter.ALL to "All",
-    NovelTypeFilter.EPUB to "EPUB",
-    NovelTypeFilter.WEB to "Web",
+    NovelTypeFilter.ALL to R.string.library_all,
+    NovelTypeFilter.EPUB to R.string.library_type_epub,
+    NovelTypeFilter.WEB to R.string.library_type_web,
 )
 
 internal val SORT_FIELD_OPTIONS = listOf(
-    SortField.LAST_READ to "Last read",
-    SortField.TITLE to "Title",
-    SortField.LAST_UPDATED to "Last updated",
-    SortField.UNREAD to "Unread chapters",
-    SortField.TOTAL to "Total chapters",
-    SortField.USER_RATING to "Your rating",
+    SortField.LAST_READ to R.string.library_sort_last_read,
+    SortField.TITLE to R.string.library_sort_title,
+    SortField.LAST_UPDATED to R.string.library_sort_last_updated,
+    SortField.UNREAD to R.string.library_sort_unread_chapters,
+    SortField.TOTAL to R.string.library_sort_total_chapters,
+    SortField.USER_RATING to R.string.library_sort_your_rating,
 )
 
 @Composable
@@ -85,7 +87,10 @@ internal fun FilterSortContent(
     onToggleFilterSource: (Long?) -> Unit,
 ) {
     SwipeTabRow(
-        tabs = listOf("Filter", "Sort"),
+        tabs = listOf(
+            stringResource(R.string.library_filter_tab),
+            stringResource(R.string.library_sort_tab),
+        ),
         style = SwipeTabStyle.Secondary,
         // Inside a sheet: wrap the page height instead of filling the screen.
         fillHeight = false,
@@ -150,7 +155,7 @@ private fun FilterTab(
 ) {
     Column {
         Text(
-            "Status",
+            stringResource(R.string.library_filter_status),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
@@ -172,19 +177,19 @@ private fun FilterTab(
             FilterChip(
                 selected = filterStatuses.isEmpty(),
                 onClick = { onToggleFilterStatus(null) },
-                label = { Text("All") },
+                label = { Text(stringResource(R.string.library_all)) },
             )
-            STATUS_OPTIONS.forEach { (ordinal, label) ->
+            STATUS_OPTIONS.forEach { (ordinal, labelRes) ->
                 FilterChip(
                     selected = ordinal in filterStatuses,
                     onClick = { onToggleFilterStatus(ordinal) },
-                    label = { Text(label) },
+                    label = { Text(stringResource(labelRes)) },
                 )
             }
         }
         if (librarySources.size > 1) {
             Text(
-                "Source",
+                stringResource(R.string.library_filter_source),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
@@ -199,7 +204,7 @@ private fun FilterTab(
                 FilterChip(
                     selected = filterSourceIds.isEmpty(),
                     onClick = { onToggleFilterSource(null) },
-                    label = { Text("All") },
+                    label = { Text(stringResource(R.string.library_all)) },
                 )
                 librarySources.forEach { (id, label) ->
                     FilterChip(
@@ -211,7 +216,7 @@ private fun FilterTab(
             }
         }
         Text(
-            "Type",
+            stringResource(R.string.library_filter_type),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
@@ -223,11 +228,11 @@ private fun FilterTab(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            NOVEL_TYPE_OPTIONS.forEach { (option, label) ->
+            NOVEL_TYPE_OPTIONS.forEach { (option, labelRes) ->
                 FilterChip(
                     selected = filterType == option,
                     onClick = { onFilterTypeChange(option) },
-                    label = { Text(label) },
+                    label = { Text(stringResource(labelRes)) },
                 )
             }
         }
@@ -246,12 +251,12 @@ private fun FilterTab(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                "Rating range",
+                stringResource(R.string.library_filter_rating_range),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                if (ratingActive) "$lo – $hi" else "Any",
+                if (ratingActive) "$lo – $hi" else stringResource(R.string.library_filter_rating_any),
                 style = MaterialTheme.typography.labelMedium,
                 color = if (ratingActive) {
                     MaterialTheme.colorScheme.primary
@@ -277,32 +282,44 @@ private fun FilterTab(
         )
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
         ListItem(
-            headlineContent = { Text("Unread only") },
-            supportingContent = { Text("Hide fully read novels") },
+            headlineContent = { Text(stringResource(R.string.library_filter_unread_only)) },
+            supportingContent = {
+                Text(stringResource(R.string.library_filter_unread_only_description))
+            },
             trailingContent = {
                 Switch(checked = filterUnreadOnly, onCheckedChange = onUnreadOnlyChange)
             },
             modifier = Modifier.clickable { onUnreadOnlyChange(!filterUnreadOnly) },
         )
         ListItem(
-            headlineContent = { Text("Has downloads") },
-            supportingContent = { Text("Show only novels with downloaded chapters") },
+            headlineContent = { Text(stringResource(R.string.library_filter_has_downloads)) },
+            supportingContent = {
+                Text(stringResource(R.string.library_filter_has_downloads_description))
+            },
             trailingContent = {
                 Switch(checked = filterDownloadedOnly, onCheckedChange = onDownloadedOnlyChange)
             },
             modifier = Modifier.clickable { onDownloadedOnlyChange(!filterDownloadedOnly) },
         )
         ListItem(
-            headlineContent = { Text("Notifications on") },
-            supportingContent = { Text("Show only novels set to notify on new chapters") },
+            headlineContent = {
+                Text(stringResource(R.string.library_filter_notifications_on))
+            },
+            supportingContent = {
+                Text(stringResource(R.string.library_filter_notifications_on_description))
+            },
             trailingContent = {
                 Switch(checked = filterNotifyEnabled, onCheckedChange = onNotifyEnabledChange)
             },
             modifier = Modifier.clickable { onNotifyEnabledChange(!filterNotifyEnabled) },
         )
         ListItem(
-            headlineContent = { Text("Auto-download on") },
-            supportingContent = { Text("Show only novels set to auto-download new chapters") },
+            headlineContent = {
+                Text(stringResource(R.string.library_filter_auto_download_on))
+            },
+            supportingContent = {
+                Text(stringResource(R.string.library_filter_auto_download_on_description))
+            },
             trailingContent = {
                 Switch(checked = filterAutoDownloadEnabled, onCheckedChange = onAutoDownloadEnabledChange)
             },
@@ -319,14 +336,14 @@ private fun SortTab(
     onToggleSortDirection: () -> Unit,
 ) {
     Column(Modifier.padding(vertical = 8.dp)) {
-        SORT_FIELD_OPTIONS.forEach { (field, label) ->
+        SORT_FIELD_OPTIONS.forEach { (field, labelRes) ->
             val selected = sortField == field
             // Tapping the active row flips the direction in place; tapping any other
             // row promotes that field to active without changing the direction. This
             // is the standard Material sort pattern and avoids needing a separate
             // arrow button per row.
             ListItem(
-                headlineContent = { Text(label) },
+                headlineContent = { Text(stringResource(labelRes)) },
                 leadingContent = {
                     if (selected) {
                         Icon(
@@ -334,8 +351,10 @@ private fun SortTab(
                                 AppIcons.ArrowUpward
                             } else AppIcons.ArrowDownward,
                             contentDescription = if (sortDirection == SortDirection.ASC) {
-                                "Ascending, tap to flip"
-                            } else "Descending, tap to flip",
+                                stringResource(R.string.library_sort_ascending_description)
+                            } else {
+                                stringResource(R.string.library_sort_descending_description)
+                            },
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     } else {

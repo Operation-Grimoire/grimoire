@@ -1,0 +1,186 @@
+<resources>
+    <!-- “更多”及其子界面共用文案 -->
+    <string name="common_today">今天</string>
+    <string name="common_yesterday">昨天</string>
+    <string name="action_pause">暂停</string>
+    <string name="action_resume">继续</string>
+    <string name="action_expand">展开</string>
+    <string name="action_collapse">收起</string>
+    <string name="action_clear_log">清除记录</string>
+    <string name="action_set">设置</string>
+    <string name="action_choose">选择</string>
+    <string name="action_restore">恢复</string>
+    <string name="action_disconnect">断开连接</string>
+    <string name="action_dismiss">关闭</string>
+    <string name="action_try_again">重试</string>
+    <string name="action_skip">跳过</string>
+    <string name="action_next">下一步</string>
+    <string name="status_error">错误</string>
+    <string name="status_warning">警告</string>
+    <string name="status_completed">已完成</string>
+    <string name="status_queued">已排队</string>
+    <string name="status_downloaded">已下载</string>
+    <string name="chapter_cancel_download">取消下载</string>
+    <string name="chapter_downloaded_refresh_queued">已下载 · 已加入刷新队列</string>
+    <string name="chapter_cancel_refresh">取消刷新</string>
+    <string name="chapter_downloaded_refreshing">已下载 · 正在刷新</string>
+    <string name="chapter_downloaded_refresh_failed">已下载 · 刷新失败</string>
+
+    <!-- 更多 -->
+    <string name="more_title">更多</string>
+    <string name="more_incognito">无痕模式</string>
+    <string name="more_incognito_enabled">本次使用期间不会记录历史</string>
+    <string name="more_incognito_disabled">暂停记录阅读与浏览历史</string>
+    <string name="incognito_banner">无痕模式 · 已暂停历史记录</string>
+    <string name="more_updates">更新</string>
+    <plurals name="more_subscribed_updates_summary"><item quantity="other">已订阅小说有 %1$d 个新章节</item></plurals>
+    <plurals name="more_updates_summary"><item quantity="other">书库中共有 %1$d 个新章节</item></plurals>
+    <string name="more_no_new_chapters">没有新章节</string>
+    <string name="more_history">历史记录</string>
+    <string name="more_history_summary">最近阅读的章节和浏览过的小说</string>
+    <string name="more_downloads">下载</string>
+    <plurals name="more_downloads_in_progress"><item quantity="other">%1$d 项进行中</item></plurals>
+    <string name="more_downloads_summary">已下载章节和下载队列</string>
+    <string name="more_tasks">任务</string>
+    <string name="more_tasks_summary">正在运行的下载和同步及其历史记录</string>
+    <string name="more_update_warnings">更新警告</string>
+    <plurals name="more_update_warnings_summary"><item quantity="other">%1$d 本小说需要处理</item></plurals>
+    <string name="more_no_refresh_problems">没有刷新问题</string>
+    <string name="more_statistics">统计</string>
+    <string name="more_statistics_summary">你的阅读活动</string>
+    <string name="more_settings_summary">外观、书库、阅读器、备份</string>
+    <string name="more_tours">使用导览</string>
+    <string name="more_tours_summary">重新播放应用内使用导览</string>
+    <string name="more_about">关于</string>
+    <string name="more_about_summary">版本、更新渠道、许可协议</string>
+
+    <!-- 使用导览及共享导览浮层 -->
+    <string name="tour_start">开始</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">欢迎导览</string>
+    <string name="tour_welcome_description">快速了解书库、浏览、书源和设置。</string>
+    <string name="tour_step_welcome_title">欢迎使用 Grimoire</string>
+    <string name="tour_step_welcome_body">用大约 20 秒快速了解核心功能。</string>
+    <string name="tour_step_library_title">你的书库</string>
+    <string name="tour_step_library_body">你添加的小说会按分类收纳在这里。</string>
+    <string name="tour_step_browse_title">浏览</string>
+    <string name="tour_step_browse_body">点按“浏览”，从各个书源中寻找小说。</string>
+    <string name="tour_step_extensions_title">书源与扩展</string>
+    <string name="tour_step_extensions_body">书源从这里安装。打开看看有哪些可用内容。</string>
+    <string name="tour_open_extensions">打开扩展</string>
+    <string name="tour_step_repositories_title">仓库</string>
+    <string name="tour_step_repositories_body">书源由仓库提供。官方仓库已添加；点按此处可管理仓库或添加自己的仓库。</string>
+    <string name="tour_step_more_title">其他功能</string>
+    <string name="tour_step_more_body">下载、统计、备份和设置都在“更多”中。</string>
+    <string name="tour_step_done_title">一切就绪</string>
+    <string name="tour_step_done_body">你可以随时从“更多”→“使用导览”重新播放。</string>
+
+    <!-- 下载 -->
+    <string name="downloads_title">下载</string>
+    <string name="downloads_settings">下载设置</string>
+    <string name="downloads_parallel">并行下载</string>
+    <string name="downloads_parallel_summary">同时下载的章节数</string>
+    <string name="downloads_move_to_top">移至队首</string>
+    <string name="downloads_cancel_failed">取消失败项</string>
+    <string name="downloads_redownload">重新下载</string>
+    <string name="downloads_delete_download">删除下载</string>
+    <string name="downloads_delete_options">下载选项</string>
+    <string name="downloads_empty">暂无下载</string>
+    <string name="downloads_filter_downloading">下载中</string>
+    <string name="downloads_filter_queued">排队中</string>
+    <string name="downloads_filter_done">已完成</string>
+    <string name="downloads_filter_failed">失败</string>
+    <plurals name="downloads_count_downloaded"><item quantity="other">已下载 %1$d 个</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="other">排队中 %1$d 个</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="other">下载中 %1$d 个</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="other">失败 %1$d 个</item></plurals>
+
+    <!-- 统计 -->
+    <string name="statistics_title">统计</string>
+    <string name="statistics_reading">阅读</string>
+    <string name="statistics_chapters_read">已读章节</string>
+    <string name="statistics_words_read">已读字数</string>
+    <string name="statistics_novels_completed">已读完小说</string>
+    <string name="statistics_novels_started">已开始小说</string>
+    <string name="statistics_average_words">平均每章字数</string>
+    <string name="statistics_last_read">最近阅读</string>
+    <string name="statistics_library">书库</string>
+    <string name="statistics_library_novels">书库小说</string>
+    <string name="statistics_library_chapters">书库章节</string>
+    <string name="statistics_library_unread">书库未读章节</string>
+    <string name="statistics_downloaded">已下载</string>
+    <string name="statistics_empty_hint">阅读一些章节后即可开始统计。</string>
+    <string name="statistics_counting_hint">每个章节只统计一次；标为未读不会扣减统计数据。</string>
+
+    <!-- 任务 -->
+    <string name="tasks_title">任务</string>
+    <string name="tasks_empty">暂无任务。\n下载和书库同步运行时会显示在这里，\n完成结果会保留在下方。</string>
+    <string name="tasks_running">运行中</string>
+    <string name="tasks_history">历史记录</string>
+    <string name="tasks_clear_title">清除任务记录？</string>
+    <string name="tasks_clear_message">将删除已完成的书库同步和下载记录。正在运行的任务不受影响。</string>
+    <string name="tasks_cancel_named">取消%1$s</string>
+    <string name="tasks_finished_with_errors">完成但有错误</string>
+    <string name="tasks_updating_library">正在更新书库</string>
+    <string name="tasks_starting">正在开始…</string>
+    <plurals name="tasks_novels_progress"><item quantity="other">%1$d / %2$d 本小说</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">正在下载章节</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="other">还剩 %1$d 个章节</item></plurals>
+    <string name="tasks_downloads">下载</string>
+    <string name="tasks_library_sync">书库同步</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="other">已下载 %1$d 个章节</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="other">%1$d 个失败</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="other">已检查 %1$d 本小说</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="other">%1$d 个新章节</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="other">%1$d 个警告</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="other">%1$d 个错误</item></plurals>
+    <string name="tasks_sync_failed">书库同步失败 · %1$s</string>
+
+    <!-- 书库更新 -->
+    <string name="updates_title">更新</string>
+    <string name="updates_open_novel">打开小说</string>
+    <string name="updates_delete_from_log">从记录中删除</string>
+    <string name="updates_empty">暂无更新。\n书库刷新发现的新章节会显示在这里。</string>
+    <string name="updates_tab_subscribed">已订阅</string>
+    <string name="updates_tab_all">全部</string>
+    <string name="updates_subscribed_empty">已订阅的小说暂无更新。</string>
+    <string name="updates_clear_title">清除更新记录？</string>
+    <string name="updates_clear_message">这将永久删除更新记录中的所有条目，不会影响书库和章节。</string>
+    <plurals name="updates_count_new"><item quantity="other">%1$d 个新章节</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="other">%1$d 个已锁定</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="other">%1$d 个已下载</item></plurals>
+    <string name="updates_all_downloaded">已全部下载</string>
+    <string name="updates_unlocked">已解锁</string>
+    <plurals name="updates_count_unlocked"><item quantity="other">%1$d 个已解锁</item></plurals>
+
+    <!-- 历史记录 -->
+    <string name="history_title">历史记录</string>
+    <string name="history_reading">阅读</string>
+    <string name="history_browsing">浏览</string>
+    <string name="history_clear_reading">清除阅读历史</string>
+    <string name="history_clear_browsing">清除浏览历史</string>
+    <string name="history_reading_empty">暂无阅读历史。\n在阅读器中打开的章节会显示在这里。</string>
+    <string name="history_browsing_empty">暂无浏览历史。\n从“浏览”中打开且未加入书库的小说会显示在这里。</string>
+    <string name="history_clear_reading_title">清除阅读历史？</string>
+    <string name="history_clear_browsing_title">清除浏览历史？</string>
+    <string name="history_clear_reading_message">这将永久删除所有阅读历史，不会影响书库和章节。</string>
+    <string name="history_clear_browsing_message">这将永久删除所有浏览历史，不会影响书库。</string>
+    <plurals name="history_chapter_count"><item quantity="other">%1$d 个章节</item></plurals>
+
+    <!-- 更新警告 -->
+    <string name="update_issues_title">更新警告</string>
+    <string name="update_issues_empty">没有问题。\n刷新失败的小说会显示在这里。</string>
+    <string name="update_issue_source_missing">未安装对应书源 — 已跳过</string>
+    <string name="update_issue_no_chapters">书源未返回章节 — 已保留现有列表</string>
+    <string name="update_issue_incomplete_data">书源返回的数据不完整 — 已保留原有标题和封面</string>
+
+    <!-- 崩溃报告 -->
+    <string name="crash_title">应用崩溃</string>
+    <string name="crash_empty">没有可用的崩溃报告。</string>
+    <string name="crash_description">应用上次运行时意外关闭。提交报告有助于修复问题，下方已为你填入崩溃详情；你也可以复制并分享到其他地方。</string>
+    <string name="crash_no_browser">没有可用于打开 GitHub 的浏览器。</string>
+    <string name="crash_report_github">在 GitHub 上报告</string>
+    <string name="crash_details_copied">崩溃详情已复制。</string>
+    <string name="crash_copy_details">复制详情</string>
+</resources>

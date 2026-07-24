@@ -15,6 +15,8 @@ import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.TaskLogDao
 import io.grimoire.app.data.local.entity.TaskLogType
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
+import io.grimoire.app.R
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -57,6 +59,7 @@ class TasksViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val workManager = WorkManager.getInstance(context)
+    private val localizedContext = AppLocale.wrap(context)
 
     private val librarySyncTask = combine(
         workManager.getWorkInfosForUniqueWorkFlow(LibraryUpdateWorker.ONE_OFF_NAME),
@@ -69,11 +72,16 @@ class TasksViewModel @Inject constructor(
         val title = running.progress.getString(LibraryUpdateWorker.KEY_TITLE)
         TaskUiState(
             id = TaskId.LIBRARY_SYNC,
-            title = "Updating library",
+            title = localizedContext.getString(R.string.tasks_updating_library),
             detail = when {
-                total <= 0 -> "Starting…"
-                title.isNullOrBlank() -> "$done / $total novels"
-                else -> "$done / $total · $title"
+                total <= 0 -> localizedContext.getString(R.string.tasks_starting)
+                title.isNullOrBlank() -> localizedContext.resources.getQuantityString(
+                    R.plurals.tasks_novels_progress,
+                    total,
+                    done,
+                    total,
+                )
+                else -> localizedContext.getString(R.string.tasks_novel_progress_title, done, total, title)
             },
             progress = if (total > 0 && done >= 0) {
                 (done.toFloat() / total).coerceIn(0f, 1f)
@@ -92,8 +100,12 @@ class TasksViewModel @Inject constructor(
         } else {
             TaskUiState(
                 id = TaskId.DOWNLOADS,
-                title = "Downloading chapters",
-                detail = "$active chapter${if (active == 1) "" else "s"} remaining",
+                title = localizedContext.getString(R.string.tasks_downloading_chapters),
+                detail = localizedContext.resources.getQuantityString(
+                    R.plurals.tasks_chapters_remaining,
+                    active,
+                    active,
+                ),
                 progress = null,
             )
         }
@@ -115,7 +127,10 @@ class TasksViewModel @Inject constructor(
                     TaskLogUiState(
                         id = e.id,
                         kind = kind,
-                        title = if (kind == TaskId.DOWNLOADS) "Downloads" else "Library sync",
+                        title = localizedContext.getString(
+                            if (kind == TaskId.DOWNLOADS) R.string.tasks_downloads
+                            else R.string.tasks_library_sync,
+                        ),
                         summary = e.summary,
                         success = e.success,
                         completedAt = e.completedAt,

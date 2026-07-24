@@ -29,6 +29,11 @@ sealed class CheckState {
     data class Error(val message: String) : CheckState()
 }
 
+sealed interface ChangelogContent {
+    data class Notes(val text: String) : ChangelogContent
+    data object Unavailable : ChangelogContent
+}
+
 @HiltViewModel
 class AppUpdateViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -39,8 +44,8 @@ class AppUpdateViewModel @Inject constructor(
     private val checkStore: AppUpdateCheckStore,
 ) : ViewModel() {
 
-    private val _changelogText = MutableStateFlow<String?>(null)
-    val changelogText: StateFlow<String?> = _changelogText.asStateFlow()
+    private val _changelogContent = MutableStateFlow<ChangelogContent?>(null)
+    val changelogContent: StateFlow<ChangelogContent?> = _changelogContent.asStateFlow()
 
     private val _availableRelease = MutableStateFlow<ReleaseInfo?>(null)
     val availableRelease: StateFlow<ReleaseInfo?> = _availableRelease.asStateFlow()
@@ -85,7 +90,10 @@ class AppUpdateViewModel @Inject constructor(
                             }
                         }
                     }
-                    _changelogText.value = remote ?: Changelog.since(lastSeen, BuildConfig.VERSION_CODE)
+                    _changelogContent.value = (remote ?: Changelog.since(
+                        lastSeen,
+                        BuildConfig.VERSION_CODE,
+                    ))?.let(ChangelogContent::Notes)
                 } else {
                     // Popup disabled — mark this version as seen so we don't
                     // accumulate fetches if the user re-enables it later.
@@ -117,7 +125,7 @@ class AppUpdateViewModel @Inject constructor(
                     checkStore.set(CheckState.UpToDate)
                 }
             }.onFailure { e ->
-                checkStore.set(CheckState.Error(e.message ?: "Unknown error"))
+                checkStore.set(CheckState.Error(e.message.orEmpty()))
             }
         }
     }
@@ -128,13 +136,13 @@ class AppUpdateViewModel @Inject constructor(
     }
 
     fun showCurrentChangelog() {
-        if (_changelogText.value != null || _isLoadingChangelog.value) return
+        if (_changelogContent.value != null || _isLoadingChangelog.value) return
         viewModelScope.launch {
             _isLoadingChangelog.value = true
             try {
                 val remote = checker.fetchNotesForVersion(BuildConfig.VERSION_NAME)
-                _changelogText.value = remote
-                    ?: "No changelog available for ${BuildConfig.VERSION_NAME}."
+                _changelogContent.value = remote?.let(ChangelogContent::Notes)
+                    ?: ChangelogContent.Unavailable
             } finally {
                 _isLoadingChangelog.value = false
             }
@@ -142,7 +150,7 @@ class AppUpdateViewModel @Inject constructor(
     }
 
     fun dismissChangelog() {
-        _changelogText.value = null
+        _changelogContent.value = null
         viewModelScope.launch {
             appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
             appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)

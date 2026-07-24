@@ -23,7 +23,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed class BackupUiEvent {
-    data class Info(val message: String) : BackupUiEvent()
+    data class Saved(val fileName: String, val novelCount: Int) : BackupUiEvent()
+    data class Restored(val novelCount: Int, val chapterCount: Int) : BackupUiEvent()
+    data object Queued : BackupUiEvent()
     data class Error(val message: String) : BackupUiEvent()
 }
 
@@ -89,9 +91,9 @@ class BackupSettingsViewModel @Inject constructor(
         _ui.value = _ui.value.copy(running = true, event = null)
         when (val result = backupManager.backupTo(folderUri)) {
             is BackupResult.Success ->
-                _ui.value = BackupUiState(event = BackupUiEvent.Info(
-                    "Saved ${result.fileName} (${result.novelCount} novels)"
-                ))
+                _ui.value = BackupUiState(
+                    event = BackupUiEvent.Saved(result.fileName, result.novelCount),
+                )
             is BackupResult.Failure ->
                 _ui.value = BackupUiState(event = BackupUiEvent.Error(result.message))
         }
@@ -101,9 +103,9 @@ class BackupSettingsViewModel @Inject constructor(
         _ui.value = _ui.value.copy(running = true, event = null)
         when (val result = backupManager.restoreFrom(fileUri)) {
             is RestoreResult.Success ->
-                _ui.value = BackupUiState(event = BackupUiEvent.Info(
-                    "Restored ${result.novelCount} novels, ${result.chapterCount} chapters"
-                ))
+                _ui.value = BackupUiState(
+                    event = BackupUiEvent.Restored(result.novelCount, result.chapterCount),
+                )
             is RestoreResult.Failure ->
                 _ui.value = BackupUiState(event = BackupUiEvent.Error(result.message))
         }
@@ -111,7 +113,7 @@ class BackupSettingsViewModel @Inject constructor(
 
     fun triggerScheduledBackupNow() {
         backupScheduler.triggerOneOffNow()
-        _ui.value = BackupUiState(event = BackupUiEvent.Info("Backup queued"))
+        _ui.value = BackupUiState(event = BackupUiEvent.Queued)
     }
 
     fun consumeEvent() {

@@ -42,14 +42,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.app.ui.component.ImageAction
 import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ZoomableCoverImage
-import io.grimoire.app.ui.component.displayName
+import io.grimoire.app.ui.component.localizedDisplayName
 import io.grimoire.app.ui.component.icon
 import java.util.Locale
+import io.grimoire.app.R
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -71,15 +73,17 @@ internal fun NovelHeader(
     if (showRatingInfo) {
         AlertDialog(
             onDismissRequest = { showRatingInfo = false },
-            title = { Text("About this rating") },
+            title = { Text(stringResource(R.string.novel_rating_info_title)) },
             text = {
                 Text(
-                    "This rating is reported by ${sourceName.ifBlank { "the source" }} " +
-                        "and reflects readers there — not your activity in Grimoire.",
+                    stringResource(
+                        R.string.novel_rating_info_description,
+                        sourceName.ifBlank { stringResource(R.string.novel_rating_source_fallback) },
+                    ),
                 )
             },
             confirmButton = {
-                TextButton(onClick = { showRatingInfo = false }) { Text("Got it") }
+                TextButton(onClick = { showRatingInfo = false }) { Text(stringResource(R.string.novel_rating_got_it)) }
             },
         )
     }
@@ -92,7 +96,7 @@ internal fun NovelHeader(
         var url by remember { mutableStateOf(overrides.coverUrl.orEmpty()) }
         AlertDialog(
             onDismissRequest = { showCoverUrlDialog = false },
-            title = { Text("Cover image URL") },
+            title = { Text(stringResource(R.string.novel_cover_url_title)) },
             text = {
                 OutlinedTextField(
                     value = url,
@@ -106,24 +110,24 @@ internal fun NovelHeader(
                 TextButton(
                     enabled = url.isNotBlank(),
                     onClick = { onSetCoverUrl(url); showCoverUrlDialog = false },
-                ) { Text("Save") }
+                ) { Text(stringResource(R.string.action_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { showCoverUrlDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showCoverUrlDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
 
     val hasCoverOverride = overrides.coverPath != null || overrides.coverUrl != null
     val coverActions = buildList {
-        add(ImageAction(AppIcons.Image, "Replace with image") {
+        add(ImageAction(AppIcons.Image, stringResource(R.string.novel_cover_replace_image)) {
             coverPicker.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
             )
         })
-        add(ImageAction(AppIcons.Link, "Replace with URL") { showCoverUrlDialog = true })
+        add(ImageAction(AppIcons.Link, stringResource(R.string.novel_cover_replace_url)) { showCoverUrlDialog = true })
         if (hasCoverOverride) {
-            add(ImageAction(AppIcons.Restore, "Reset to source cover") { onResetCover() })
+            add(ImageAction(AppIcons.Restore, stringResource(R.string.novel_cover_reset)) { onResetCover() })
         }
     }
 
@@ -172,7 +176,7 @@ internal fun NovelHeader(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     MetaChip(
-                        text = novel.status.displayName,
+                        text = novel.status.localizedDisplayName(),
                         icon = novel.status.icon,
                         modifier = Modifier.longPressToEdit(EditableField.STATUS, onEditField),
                     )
@@ -266,7 +270,7 @@ internal fun OverrideIndicator(overridden: Boolean, onClick: () -> Unit) {
     IconButton(onClick = onClick, modifier = Modifier.size(24.dp)) {
         Icon(
             AppIcons.EditOutlined,
-            contentDescription = "Edited — tap to change",
+            contentDescription = stringResource(R.string.novel_metadata_edited),
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(14.dp),
         )

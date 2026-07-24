@@ -36,9 +36,11 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.R
 import kotlin.math.roundToInt
 
 private const val MAX_W_DP = 320
@@ -163,22 +165,24 @@ private fun BalloonContent(
             TourArt.Done -> Icon(AppIcons.Celebration, contentDescription = null)
             TourArt.None -> Unit
         }
-        Text(step.title, style = MaterialTheme.typography.titleMedium)
-        Text(step.body, style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(step.titleRes), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(step.bodyRes), style = MaterialTheme.typography.bodyMedium)
 
         step.actions.forEach { action ->
-            OutlinedButton(onClick = { onAction(action) }) { Text(action.label) }
+            OutlinedButton(onClick = { onAction(action) }) { Text(stringResource(action.labelRes)) }
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("${index + 1}/$stepCount", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.tour_progress, index + 1, stepCount), style = MaterialTheme.typography.labelMedium)
             if (!last) {
                 Spacer(Modifier.size(8.dp))
-                TextButton(onClick = onSkip) { Text("Skip") }
+                TextButton(onClick = onSkip) { Text(stringResource(R.string.action_skip)) }
             }
             Spacer(Modifier.weight(1f))
-            if (index > 0) TextButton(onClick = onBack) { Text("Back") }
-            Button(onClick = onNext) { Text(if (last) "Done" else "Next") }
+            if (index > 0) TextButton(onClick = onBack) { Text(stringResource(R.string.action_back)) }
+            Button(onClick = onNext) {
+                Text(stringResource(if (last) R.string.action_done else R.string.action_next))
+            }
         }
     }
 }

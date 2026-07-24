@@ -21,8 +21,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.app.R
 import java.text.DateFormat
 import java.util.Date
 
@@ -38,10 +40,10 @@ fun StatisticsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Statistics") },
+                title = { Text(stringResource(R.string.statistics_title)) },
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
             )
@@ -52,46 +54,46 @@ fun StatisticsScreen(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { SectionHeader("Reading") }
+            item { SectionHeader(stringResource(R.string.statistics_reading)) }
             item {
                 StatPairRow(
-                    StatTile("Chapters read", reading.chaptersRead.formatted()),
-                    StatTile("Words read", reading.wordsRead.formatted()),
+                    StatTile(stringResource(R.string.statistics_chapters_read), reading.chaptersRead.formatted()),
+                    StatTile(stringResource(R.string.statistics_words_read), reading.wordsRead.formatted()),
                 )
             }
             item {
                 StatPairRow(
-                    StatTile("Novels completed", reading.novelsCompleted.formatted()),
-                    StatTile("Novels started", reading.novelsStarted.formatted()),
+                    StatTile(stringResource(R.string.statistics_novels_completed), reading.novelsCompleted.formatted()),
+                    StatTile(stringResource(R.string.statistics_novels_started), reading.novelsStarted.formatted()),
                 )
             }
             item {
                 val avg = if (reading.chaptersRead > 0)
                     (reading.wordsRead / reading.chaptersRead).formatted() else "–"
                 StatPairRow(
-                    StatTile("Avg words / chapter", avg),
-                    StatTile("Last read", reading.lastReadAt.formatDate()),
+                    StatTile(stringResource(R.string.statistics_average_words), avg),
+                    StatTile(stringResource(R.string.statistics_last_read), reading.lastReadAt.formatDate()),
                 )
             }
 
-            item { SectionHeader("Library") }
+            item { SectionHeader(stringResource(R.string.statistics_library)) }
             item {
                 StatPairRow(
-                    StatTile("Novels in library", library.favoriteNovels.formatted()),
-                    StatTile("Library chapters", library.libraryChapters.formatted()),
+                    StatTile(stringResource(R.string.statistics_library_novels), library.favoriteNovels.formatted()),
+                    StatTile(stringResource(R.string.statistics_library_chapters), library.libraryChapters.formatted()),
                 )
             }
             item {
                 StatPairRow(
-                    StatTile("Unread in library", library.libraryUnreadChapters.formatted()),
-                    StatTile("Downloaded", library.downloadedChapters.formatted()),
+                    StatTile(stringResource(R.string.statistics_library_unread), library.libraryUnreadChapters.formatted()),
+                    StatTile(stringResource(R.string.statistics_downloaded), library.downloadedChapters.formatted()),
                 )
             }
 
             if (reading.chaptersRead == 0) {
                 item {
                     Text(
-                        text = "Read some chapters to start tracking statistics.",
+                        text = stringResource(R.string.statistics_empty_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp),
@@ -100,7 +102,7 @@ fun StatisticsScreen(
             } else {
                 item {
                     Text(
-                        text = "Stats count each chapter once — marking unread doesn't subtract.",
+                        text = stringResource(R.string.statistics_counting_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp),

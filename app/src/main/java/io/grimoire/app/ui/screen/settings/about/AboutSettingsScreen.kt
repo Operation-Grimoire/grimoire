@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -73,10 +74,14 @@ fun AboutSettingsScreen(
         }.getOrDefault(0)
     }
     val gitSha = remember { BuildConfig.GIT_SHA.take(7).ifBlank { "–" } }
-    val buildSummary = remember(version, versionCode, gitSha) {
-        "Grimoire $version (build $versionCode)\n" +
-            "Commit $gitSha · Extensions API ${BuildConfig.EXTENSIONS_API_VERSION}"
-    }
+    val buildSummary = stringResource(
+        R.string.about_version_summary,
+        version ?: "–",
+        versionCode,
+        gitSha,
+        BuildConfig.EXTENSIONS_API_VERSION,
+    )
+    val buildCopiedMessage = stringResource(R.string.about_build_copied)
     val clipboard = LocalClipboardManager.current
     val checkState by updateViewModel.checkState.collectAsState()
     val channel by viewModel.channel.collectAsState()
@@ -89,11 +94,11 @@ fun AboutSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
-                title = { Text("About") },
+                title = { Text(stringResource(R.string.about_title)) },
             )
         },
     ) { padding ->
@@ -119,7 +124,7 @@ fun AboutSettingsScreen(
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
             item {
                 ListItem(
-                    headlineContent = { Text("Version") },
+                    headlineContent = { Text(stringResource(R.string.about_version)) },
                     supportingContent = { Text(version ?: "–") },
                 )
             }
@@ -127,14 +132,16 @@ fun AboutSettingsScreen(
             item {
                 val checking = checkState is CheckState.Checking
                 ListItem(
-                    headlineContent = { Text("Check for updates") },
+                    headlineContent = { Text(stringResource(R.string.about_check_updates)) },
                     supportingContent = {
                         Text(
                             when (val s = checkState) {
-                                is CheckState.Idle -> "Tap to check for a new version"
-                                is CheckState.Checking -> "Checking…"
-                                is CheckState.UpToDate -> "You're on the latest version"
-                                is CheckState.Error -> s.message
+                                is CheckState.Idle -> stringResource(R.string.about_check_updates_idle)
+                                is CheckState.Checking -> stringResource(R.string.about_checking)
+                                is CheckState.UpToDate -> stringResource(R.string.about_latest_version)
+                                is CheckState.Error -> s.message.ifBlank {
+                                    stringResource(R.string.update_unknown_error)
+                                }
                             },
                             color = if (checkState is CheckState.Error) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -148,12 +155,12 @@ fun AboutSettingsScreen(
                             )
                             is CheckState.UpToDate -> Icon(
                                 AppIcons.CheckCircle,
-                                contentDescription = "Up to date",
+                                contentDescription = stringResource(R.string.about_up_to_date),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                             is CheckState.Error -> Icon(
                                 AppIcons.Refresh,
-                                contentDescription = "Retry",
+                                contentDescription = stringResource(R.string.action_retry),
                             )
                             is CheckState.Idle -> Icon(
                                 AppIcons.Refresh,
@@ -170,8 +177,10 @@ fun AboutSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Show changelog") },
-                    supportingContent = { Text("Open the release notes for ${version ?: "–"}") },
+                    headlineContent = { Text(stringResource(R.string.about_show_changelog)) },
+                    supportingContent = {
+                        Text(stringResource(R.string.about_show_changelog_summary, version ?: "–"))
+                    },
                     trailingContent = {
                         if (isLoadingChangelog) {
                             CircularProgressIndicator(
@@ -189,7 +198,7 @@ fun AboutSettingsScreen(
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
             item {
                 Text(
-                    text = "Updates",
+                    text = stringResource(R.string.about_updates_section),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -204,8 +213,8 @@ fun AboutSettingsScreen(
                             updateViewModel.resetCheckState()
                         })
                     },
-                    headlineContent = { Text(entry.displayName) },
-                    supportingContent = { Text(entry.description) },
+                    headlineContent = { Text(entry.localizedDisplayName()) },
+                    supportingContent = { Text(entry.localizedDescription()) },
                     modifier = Modifier.clickable {
                         viewModel.setChannel(entry)
                         updateViewModel.resetCheckState()
@@ -215,9 +224,9 @@ fun AboutSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Automatic update popups") },
+                    headlineContent = { Text(stringResource(R.string.about_update_popups)) },
                     supportingContent = {
-                        Text("Show a dialog on launch when an update is available")
+                        Text(stringResource(R.string.about_update_popups_summary))
                     },
                     trailingContent = {
                         Switch(
@@ -233,9 +242,9 @@ fun AboutSettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Changelog after updates") },
+                    headlineContent = { Text(stringResource(R.string.about_changelog_after_update)) },
                     supportingContent = {
-                        Text("Show release notes the first time you launch a new version")
+                        Text(stringResource(R.string.about_changelog_after_update_summary))
                     },
                     trailingContent = {
                         Switch(
@@ -252,7 +261,7 @@ fun AboutSettingsScreen(
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
             item {
                 Text(
-                    text = "Build",
+                    text = stringResource(R.string.about_build_section),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -260,11 +269,15 @@ fun AboutSettingsScreen(
             }
             item {
                 ListItem(
-                    headlineContent = { Text("Build details") },
+                    headlineContent = { Text(stringResource(R.string.about_build_details)) },
                     supportingContent = {
                         Text(
-                            "Build $versionCode · commit $gitSha · " +
-                                "Extensions API ${BuildConfig.EXTENSIONS_API_VERSION}",
+                            stringResource(
+                                R.string.about_build_details_summary,
+                                versionCode,
+                                gitSha,
+                                BuildConfig.EXTENSIONS_API_VERSION,
+                            ),
                         )
                     },
                     trailingContent = {
@@ -272,7 +285,7 @@ fun AboutSettingsScreen(
                     },
                     modifier = Modifier.clickable {
                         clipboard.setText(AnnotatedString(buildSummary))
-                        Toast.makeText(context, "Build info copied", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, buildCopiedMessage, Toast.LENGTH_SHORT).show()
                     },
                 )
             }
@@ -289,14 +302,18 @@ private fun Context.findActivity(): Activity? {
     return null
 }
 
-private val UpdateChannel.displayName: String
-    get() = when (this) {
-        UpdateChannel.STABLE -> "Stable"
-        UpdateChannel.BETA -> "Beta"
-    }
+@Composable
+private fun UpdateChannel.localizedDisplayName(): String = stringResource(
+    when (this) {
+        UpdateChannel.STABLE -> R.string.about_channel_stable
+        UpdateChannel.BETA -> R.string.about_channel_beta
+    },
+)
 
-private val UpdateChannel.description: String
-    get() = when (this) {
-        UpdateChannel.STABLE -> "Tagged releases only. Recommended."
-        UpdateChannel.BETA -> "Fresh builds from main on every commit. May be unstable."
-    }
+@Composable
+private fun UpdateChannel.localizedDescription(): String = stringResource(
+    when (this) {
+        UpdateChannel.STABLE -> R.string.about_channel_stable_summary
+        UpdateChannel.BETA -> R.string.about_channel_beta_summary
+    },
+)

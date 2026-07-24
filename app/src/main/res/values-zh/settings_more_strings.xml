@@ -1,0 +1,306 @@
+<resources>
+    <!-- 外观 -->
+    <string name="appearance_theme">主题</string>
+    <string name="appearance_theme_system">跟随系统</string>
+    <string name="appearance_theme_light">浅色</string>
+    <string name="appearance_theme_dark">深色</string>
+    <string name="appearance_dynamic_color">动态取色</string>
+    <string name="appearance_dynamic_color_summary">根据壁纸调整应用配色</string>
+    <string name="appearance_synopsis_links">简介中的链接</string>
+    <string name="appearance_synopsis_links_summary">将小说简介中的网页地址显示为可点击链接</string>
+    <string name="appearance_color_palette">配色方案</string>
+    <string name="appearance_color_palette_summary">选择应用使用的强调色方案。</string>
+    <string name="appearance_color_palette_disabled">关闭动态取色后可选择自定义配色。</string>
+    <string name="color_theme_default">默认</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">海洋</string>
+    <string name="color_theme_sunset">落日</string>
+    <string name="color_theme_forest">森林</string>
+    <string name="color_theme_rose">玫瑰</string>
+    <string name="color_theme_midnight">午夜</string>
+
+    <!-- 行为 -->
+    <string name="behavior_haptics">触感反馈</string>
+    <string name="behavior_haptics_summary">长按、切换标签和执行选择操作时振动。</string>
+
+    <!-- 书库设置 -->
+    <string name="settings_section_display">显示</string>
+    <string name="settings_display_mode">显示方式</string>
+    <string name="settings_display_grid">网格</string>
+    <string name="settings_display_list">列表</string>
+    <string name="settings_columns">列数</string>
+    <string name="settings_section_organization">整理</string>
+    <string name="library_settings_show_all">显示“全部”标签</string>
+    <string name="library_settings_show_all_summary">显示汇总所有分类的标签页</string>
+    <string name="library_settings_hidden">隐藏分类</string>
+    <string name="library_settings_hidden_summary">设置 PIN 并管理要隐藏的分类</string>
+    <string name="library_settings_section_counts">章节计数</string>
+    <string name="library_settings_locked_totals">总数中包含锁定章节</string>
+    <string name="library_settings_locked_totals_summary">书库徽标和小说详情页的章节总数与已读百分比中计入锁定章节</string>
+    <string name="library_settings_section_badges">封面徽标</string>
+    <string name="library_settings_read_badge">显示阅读进度徽标</string>
+    <string name="library_settings_read_badge_summary">在书库封面上显示已读数量和百分比</string>
+    <string name="library_settings_downloaded_badge">显示下载徽标</string>
+    <string name="library_settings_downloaded_badge_summary">在书库封面上显示已下载章节数</string>
+    <string name="library_settings_locked_badge">显示锁定章节徽标</string>
+    <string name="library_settings_locked_badge_summary">在书库封面上用金色锁形徽标显示锁定章节数</string>
+    <string name="library_settings_epub_badge">显示 EPUB 徽标</string>
+    <string name="library_settings_epub_badge_summary">在导入的 EPUB 小说封面上显示 EPUB 徽标</string>
+
+    <!-- 浏览设置与内容语言 -->
+    <string name="browse_settings_nu_shortcuts">NovelUpdates 快捷入口</string>
+    <string name="browse_settings_nu_shortcuts_summary">在“浏览”中显示 NovelUpdates 搜索、排行榜和最新内容入口。</string>
+    <string name="browse_settings_pinned_groups">在语言分组中显示已固定书源</string>
+    <string name="browse_settings_pinned_groups_summary">除了“已固定”分组，也在对应语言分组下显示已固定书源。</string>
+    <string name="content_languages_title">内容语言</string>
+    <string name="content_languages_helper">此处选择的语言适用于所有多语言书源，除非在单个书源设置中覆盖。全部不选则显示所有语言。</string>
+
+    <!-- 阅读器设置 -->
+    <string name="settings_section_appearance">外观</string>
+    <string name="reader_settings_color_theme">配色主题</string>
+    <string name="reader_settings_font_size">字号</string>
+    <string name="reader_settings_line_height">行高</string>
+    <string name="reader_settings_paragraph_spacing">段落间距</string>
+    <string name="settings_section_reading">阅读</string>
+    <string name="reader_settings_auto_mark">自动标为已读</string>
+    <string name="reader_settings_within_last">距末尾</string>
+    <plurals name="reader_settings_paragraph_count"><item quantity="other">%1$d 个段落</item></plurals>
+    <string name="reader_settings_rotation">屏幕方向</string>
+    <string name="reader_settings_hide_status_bar">隐藏通知栏</string>
+    <string name="reader_settings_hide_status_bar_summary">阅读时隐藏屏幕顶部的状态栏</string>
+    <string name="settings_section_privacy">隐私</string>
+    <string name="reader_settings_hide_images">隐藏图片</string>
+    <string name="reader_settings_hide_images_summary">默认隐藏正文图片，点按可显示，长按可临时查看</string>
+
+    <!-- NovelUpdates 与连接 -->
+    <string name="nu_settings_show_section">显示 NovelUpdates 信息</string>
+    <string name="nu_settings_show_section_summary">在小说详情中加入 NovelUpdates 面板，显示别名、评分和相关推荐。</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">未连接</string>
+    <string name="connections_signing_in">正在登录…</string>
+    <string name="connections_error">连接错误</string>
+
+    <!-- 共用调度控件 -->
+    <string name="schedule_every">每</string>
+    <plurals name="schedule_hours"><item quantity="other">%1$d 小时</item></plurals>
+    <plurals name="schedule_days"><item quantity="other">%1$d 天</item></plurals>
+    <plurals name="schedule_weeks"><item quantity="other">%1$d 周</item></plurals>
+    <string name="schedule_unit_hour">小时</string>
+    <string name="schedule_unit_day">天</string>
+    <string name="schedule_unit_week">周</string>
+    <string name="schedule_time_of_day">执行时间</string>
+    <string name="schedule_off">关闭</string>
+    <string name="schedule_runs_every">每 %1$s 运行一次</string>
+    <string name="schedule_runs_around">大约在 %1$s 运行</string>
+    <string name="schedule_run_around">大约在 %1$s 运行</string>
+    <string name="schedule_runs_around_when_scheduled">启用计划后大约在 %1$s 运行</string>
+    <string name="schedule_never">从未</string>
+    <string name="schedule_completed_at">%1$s — 已完成</string>
+    <string name="schedule_failed_at">%1$s — 失败</string>
+
+    <!-- 隐藏分类 -->
+    <string name="hidden_title">隐藏分类</string>
+    <string name="hidden_setup_pin">设置 PIN</string>
+    <string name="hidden_setup_pin_summary">需要设置 PIN，才能隐藏分类并在之后解锁。</string>
+    <string name="hidden_setup_pin_action">设置 PIN</string>
+    <string name="hidden_locked">已锁定</string>
+    <string name="hidden_locked_summary">解锁后可管理隐藏分类。</string>
+    <string name="hidden_change_pin">更改 PIN</string>
+    <string name="hidden_change">更改</string>
+    <string name="hidden_biometric">使用生物识别解锁</string>
+    <string name="hidden_biometric_available">使用指纹或人脸代替 PIN 解锁</string>
+    <string name="hidden_biometric_unavailable">不可用 — 尚未录入生物识别信息</string>
+    <string name="hidden_show_in_all">在“全部”标签中显示隐藏内容</string>
+    <string name="hidden_show_in_all_summary">解锁后，也在“全部”标签中列出隐藏小说</string>
+    <string name="hidden_categories_section">分类</string>
+    <string name="hidden_default_category">默认分类 — 无法隐藏</string>
+    <string name="hidden_remove_pin_action">移除 PIN 并取消隐藏全部分类</string>
+    <string name="hidden_remove_pin_title">移除 PIN？</string>
+    <string name="hidden_remove_pin_message">所有隐藏分类都将对使用此应用的任何人可见。</string>
+    <string name="hidden_pin_label">PIN（4–8 位数字）</string>
+    <string name="hidden_confirm_pin">确认 PIN</string>
+    <string name="hidden_pin_mismatch">两次输入的 PIN 不一致</string>
+
+    <!-- 备份与恢复 -->
+    <string name="backup_section_backup">备份</string>
+    <string name="backup_description">备份会以 gzip 压缩的 JSON 文件保存到你在此设备上选择的文件夹。请选择方便以后找到的位置，例如“下载”或“文档”。</string>
+    <string name="backup_folder">备份文件夹</string>
+    <string name="backup_folder_not_selected">未选择</string>
+    <string name="backup_no_folder_selected">尚未选择备份文件夹</string>
+    <plurals name="backup_novels_backed_up"><item quantity="other">已备份 %1$d 本小说</item></plurals>
+    <string name="backup_now">立即备份</string>
+    <string name="backup_restore_ellipsis">恢复…</string>
+    <string name="backup_scheduled">定时备份</string>
+    <string name="backup_scheduled_description">备份会在此设备后台运行，无需保持应用打开。</string>
+    <string name="backup_automatic">自动备份</string>
+    <string name="backup_wifi_only">仅使用 Wi-Fi</string>
+    <string name="backup_wifi_only_summary">使用移动网络时跳过自动备份</string>
+    <string name="backup_charging_only">仅充电时运行</string>
+    <string name="backup_run_scheduled">立即运行定时备份</string>
+    <string name="backup_run_scheduled_summary">使用已选文件夹和计划约束</string>
+    <string name="backup_last_automatic">上次自动备份</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">成功</string>
+    <string name="backup_restore_title">恢复备份？</string>
+    <string name="backup_restore_message">备份将合并到当前书库。现有条目会保留，并添加新条目和合并阅读进度。</string>
+    <string name="backup_created">备份已创建：%1$s</string>
+    <plurals name="backup_saved"><item quantity="other">已保存 %1$s（%2$d 本小说）</item></plurals>
+    <plurals name="backup_restored"><item quantity="other">已恢复 %1$d 本小说、%2$d 个章节</item></plurals>
+    <string name="backup_queued">备份已加入队列</string>
+    <string name="backup_folder_inaccessible">无法访问备份文件夹</string>
+    <string name="backup_folder_not_writable">备份文件夹不可写入</string>
+    <string name="backup_create_file_failed">无法创建备份文件</string>
+    <string name="backup_open_output_failed">无法打开备份输出流</string>
+    <string name="backup_read_file_failed">无法读取备份文件</string>
+    <string name="backup_failed">备份失败</string>
+    <string name="backup_newer_version">备份文件来自更新版本的应用（v%1$d）</string>
+    <string name="restore_failed">恢复失败</string>
+
+    <!-- 数据管理 -->
+    <string name="data_storage">存储空间</string>
+    <string name="data_storage_summary">Grimoire 已使用 %1$s · 设备共 %3$s，剩余 %2$s</string>
+    <string name="data_your_data">你的数据</string>
+    <plurals name="data_library_novels"><item quantity="other">%1$d 本小说 · %2$d 个章节</item></plurals>
+    <string name="data_browse">浏览数据</string>
+    <plurals name="data_browse_count"><item quantity="other">%1$d 本未收藏或阅读的缓存小说</item></plurals>
+    <string name="data_downloads">下载内容</string>
+    <string name="data_chapter_text">章节文本</string>
+    <plurals name="data_chapter_text_summary"><item quantity="other">%1$s · %2$d 个章节</item></plurals>
+    <string name="data_chapter_images">章节图片</string>
+    <plurals name="data_chapter_images_summary"><item quantity="other">%1$s · %2$d 张图片</item></plurals>
+    <string name="data_caches">缓存</string>
+    <string name="data_cover_cache">封面缓存</string>
+    <string name="data_database">数据库</string>
+    <string name="data_installer_files">安装文件</string>
+    <string name="data_installer_summary">%1$s · 应用和扩展更新留下的安装包</string>
+    <string name="data_clear_cover_title">清除封面缓存？</string>
+    <string name="data_clear_cover_message">下次显示封面时会重新下载图片。</string>
+    <string name="data_clear_browse_title">清除浏览数据？</string>
+    <string name="data_clear_browse_message">将移除未加入书库或阅读过的缓存小说，再次打开时会从书源重新获取。阅读历史和下载内容会保留。</string>
+    <string name="data_clear_installer_title">清除安装文件？</string>
+    <string name="data_clear_installer_message">将删除应用和扩展更新留下的 .apk 文件，下次更新时会重新下载。安装进行中时请勿清除。</string>
+    <string name="data_cover_cache_cleared">封面缓存已清除</string>
+    <plurals name="data_browse_cleared"><item quantity="other">已清除 %1$d 本浏览缓存小说</item></plurals>
+    <plurals name="data_installers_cleared"><item quantity="other">已清除 %1$d 个安装文件</item></plurals>
+
+    <!-- 书库更新设置 -->
+    <string name="library_update_scheduled">定时更新</string>
+    <string name="library_update_scheduled_description">在后台刷新书库并获取新章节，无需保持应用打开。</string>
+    <string name="library_update_automatic">自动更新</string>
+    <string name="library_update_wifi_only">仅使用 Wi-Fi</string>
+    <string name="library_update_wifi_only_summary">使用移动网络时跳过定时更新</string>
+    <string name="library_update_charging_only">仅充电时运行</string>
+    <string name="library_update_sync_scope">同步范围</string>
+    <string name="library_update_include_epubs">包含 EPUB</string>
+    <string name="library_update_include_epubs_summary">书库更新时也刷新 EPUB 小说（本地导入和 Z-Library 等 EPUB 书源）。它们通常没有新章节可获取，因此默认关闭。</string>
+    <string name="library_update_performance">性能</string>
+    <string name="library_update_concurrency">同步并发数：%1$d</string>
+    <string name="library_update_concurrency_summary">同时刷新的小说数。并发越高速度越快，但可能触发部分书源的频率限制。</string>
+    <string name="library_update_now">立即更新书库</string>
+    <string name="library_update_now_summary">在后台刷新书库中的所有小说</string>
+    <string name="library_update_last">上次更新</string>
+
+    <!-- 语音朗读 -->
+    <string name="tts_enable">启用语音朗读</string>
+    <string name="tts_enable_summary">在阅读器中显示朗读控件</string>
+    <string name="tts_speech_engine">语音引擎</string>
+    <string name="tts_on_device">设备端</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">使用设备内置语音朗读，可离线使用。</string>
+    <string name="tts_elevenlabs_summary">使用 ElevenLabs 的自然云端语音，需要网络连接，并按账户朗读字符数计费。</string>
+    <string name="tts_elevenlabs_account">ElevenLabs 账户</string>
+    <string name="tts_api_key">API 密钥</string>
+    <string name="tts_playback">播放</string>
+    <string name="tts_speech_rate">语速</string>
+    <string name="tts_pitch">音高（仅设备端）</string>
+    <string name="tts_auto_advance">自动进入下一章</string>
+    <string name="tts_auto_advance_summary">当前章节结束后继续朗读下一章</string>
+    <string name="tts_voices">语音</string>
+    <string name="tts_voices_summary">为每种语言选择朗读语音。小说会按内容语言匹配。</string>
+    <string name="tts_custom_voice">已选择自定义语音</string>
+    <string name="tts_system_default">系统默认</string>
+    <string name="tts_credit_usage">额度用量</string>
+    <string name="tts_refresh_usage">刷新用量</string>
+    <string name="tts_usage_api_key_hint">在上方输入 API 密钥以查看剩余字符数。</string>
+    <string name="tts_loading">正在加载…</string>
+    <string name="tts_usage_summary">已使用 %1$,d / %2$,d 个字符</string>
+    <string name="tts_quota_reset">额度于 %1$s 重置</string>
+    <string name="tts_voice_title">语音</string>
+    <string name="tts_voice_needs_key">请先在语音朗读设置中添加 ElevenLabs API 密钥，再选择云端语音。</string>
+    <string name="tts_elevenlabs_plan_note">ElevenLabs 免费方案额度有限（约每月 10,000 个字符），许多语音（甚至部分默认语音）需要付费方案。如果某个语音无法播放，请尝试其他语音，或改用可无限离线朗读的设备端引擎。</string>
+    <string name="tts_system_default_summary">由引擎为此语言选择语音</string>
+    <string name="tts_install_voices">安装更多语音…</string>
+    <string name="tts_install_voices_summary">下载设备端引擎的更多语音数据</string>
+    <string name="tts_stop_preview">停止试听</string>
+    <string name="tts_preview_voice">试听语音</string>
+    <string name="tts_load_usage_failed">无法加载用量</string>
+    <string name="tts_load_voices_failed">无法加载语音</string>
+
+    <!-- GitHub 连接 -->
+    <string name="github_account_title">GitHub 账户</string>
+    <string name="github_privacy_note">连接 GitHub 账户后，可从你自己的私有仓库安装扩展。访问令牌只保存在此设备上，且仅发送到 github.com。你可以随时在 github.com/settings/applications 撤销授权。</string>
+    <string name="github_not_connected">未连接。</string>
+    <string name="github_connect">连接 GitHub</string>
+    <string name="github_enter_code">在 github.com 输入此代码</string>
+    <string name="github_open_device_page">打开 github.com/login/device</string>
+    <string name="github_copy_code">复制代码</string>
+    <string name="github_waiting">正在等待你在浏览器中完成操作…</string>
+    <string name="github_connected">已连接</string>
+    <string name="github_authorization_failed">授权失败</string>
+    <string name="github_no_client_id">此版本未配置 OAuth 客户端 ID</string>
+    <string name="github_no_client_id_summary">请在 gradle.properties 中设置 GITHUB_OAUTH_CLIENT_ID（或使用环境变量），然后重新构建。</string>
+
+    <!-- 关于与更新 -->
+    <string name="about_title">关于</string>
+    <string name="about_version">版本</string>
+    <string name="about_version_summary">Grimoire %1$s（构建 %2$d）\n提交 %3$s · 扩展 API %4$s</string>
+    <string name="about_check_updates">检查更新</string>
+    <string name="about_check_updates_idle">点按以检查新版本</string>
+    <string name="about_checking">正在检查…</string>
+    <string name="about_latest_version">当前已是最新版本</string>
+    <string name="about_up_to_date">已是最新版本</string>
+    <string name="about_show_changelog">查看更新日志</string>
+    <string name="about_show_changelog_summary">打开 %1$s 的发行说明</string>
+    <string name="about_updates_section">更新</string>
+    <string name="about_update_popups">自动显示更新弹窗</string>
+    <string name="about_update_popups_summary">有可用更新时，在应用启动时显示对话框</string>
+    <string name="about_changelog_after_update">更新后显示更新日志</string>
+    <string name="about_changelog_after_update_summary">新版本首次启动时显示发行说明</string>
+    <string name="about_build_section">构建</string>
+    <string name="about_build_details">构建详情</string>
+    <string name="about_build_details_summary">构建 %1$d · 提交 %2$s · 扩展 API %3$s</string>
+    <string name="about_build_copied">构建信息已复制</string>
+    <string name="about_channel_stable">稳定版</string>
+    <string name="about_channel_beta">测试版</string>
+    <string name="about_channel_stable_summary">仅接收带标签的正式版本，推荐使用。</string>
+    <string name="about_channel_beta_summary">每次主分支提交都会生成新构建，可能不稳定。</string>
+    <string name="update_whats_new">%1$s 的新变化</string>
+    <string name="update_got_it">知道了</string>
+    <string name="update_ready">更新已就绪</string>
+    <string name="update_available">有可用更新</string>
+    <string name="update_unknown_error">未知错误</string>
+    <string name="update_no_changelog">没有 %1$s 的更新日志。</string>
+    <string name="action_update">更新</string>
+    <string name="update_download_complete">下载完成 — 点按“安装”完成更新。</string>
+    <string name="update_skip_version">跳过此版本</string>
+    <string name="update_downloading_background">正在后台下载，你可以关闭应用。</string>
+    <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
+    <string name="update_download_size">%1$s MB</string>
+    <string name="changelog_features">新功能</string>
+    <string name="changelog_bug_fixes">问题修复</string>
+    <string name="changelog_sources">书源</string>
+    <string name="changelog_documentation">文档</string>
+    <string name="changelog_other">其他变化</string>
+    <string name="changelog_changes">改动</string>
+
+    <!-- 共用语言选择器 -->
+    <string name="language_override_global">覆盖全局内容语言</string>
+    <string name="language_override_on_helper">仅为此书源选择要显示的语言。</string>
+    <string name="language_override_off_helper">此书源使用全局内容语言设置。开启后可单独选择不同的语言组合。</string>
+    <string name="language_global_all">全局：不筛选（显示所有语言）</string>
+    <plurals name="language_global_selected"><item quantity="other">全局：已选择 %1$d 种语言</item></plurals>
+    <string name="language_saved">已保存</string>
+    <string name="language_global">全局</string>
+    <string name="language_added_here">在此处添加</string>
+    <string name="language_hidden_here">在此处隐藏</string>
+</resources>

@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,18 +46,19 @@ import io.grimoire.app.data.update.ChangelogParser
 import io.grimoire.app.data.update.ChangelogSection
 import io.grimoire.app.data.update.DownloadState
 import io.grimoire.app.data.update.ReleaseInfo
+import io.grimoire.app.R
 
 @Composable
 fun AppUpdateUi(viewModel: AppUpdateViewModel = hiltViewModel()) {
-    val changelogText by viewModel.changelogText.collectAsState()
+    val changelogContent by viewModel.changelogContent.collectAsState()
     val availableRelease by viewModel.availableRelease.collectAsState()
     val downloadState by viewModel.downloadState.collectAsState()
 
-    changelogText?.let { text ->
-        ChangelogDialog(text = text, onDismiss = viewModel::dismissChangelog)
+    changelogContent?.let { content ->
+        ChangelogDialog(content = content, onDismiss = viewModel::dismissChangelog)
     }
 
-    if (availableRelease != null && changelogText == null) {
+    if (availableRelease != null && changelogContent == null) {
         UpdateDialog(
             release = availableRelease!!,
             downloadState = downloadState,
@@ -69,10 +71,17 @@ fun AppUpdateUi(viewModel: AppUpdateViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun ChangelogDialog(text: String, onDismiss: () -> Unit) {
+private fun ChangelogDialog(content: ChangelogContent, onDismiss: () -> Unit) {
+    val text = when (content) {
+        is ChangelogContent.Notes -> content.text
+        ChangelogContent.Unavailable -> stringResource(
+            R.string.update_no_changelog,
+            BuildConfig.VERSION_NAME,
+        )
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("What's new in ${BuildConfig.VERSION_NAME}") },
+        title = { Text(stringResource(R.string.update_whats_new, BuildConfig.VERSION_NAME)) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -82,7 +91,7 @@ private fun ChangelogDialog(text: String, onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Got it") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.update_got_it)) }
         },
     )
 }
@@ -130,7 +139,7 @@ private fun ChangelogSectionCard(section: ChangelogSection) {
                 modifier = Modifier.size(20.dp),
             )
             Text(
-                text = section.category.displayName,
+                text = section.category.localizedDisplayName(),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f),
@@ -142,7 +151,9 @@ private fun ChangelogSectionCard(section: ChangelogSection) {
             )
             Icon(
                 imageVector = AppIcons.KeyboardArrowDown,
-                contentDescription = if (expanded) "Collapse" else "Expand",
+                contentDescription = stringResource(
+                    if (expanded) R.string.action_collapse else R.string.action_expand,
+                ),
                 modifier = Modifier
                     .size(20.dp)
                     .rotate(chevronRotation),
@@ -223,7 +234,12 @@ private fun UpdateDialog(
             )
         },
         title = {
-            Text(if (downloadState is DownloadState.Completed) "Update ready" else "Update available")
+            Text(
+                stringResource(
+                    if (downloadState is DownloadState.Completed) R.string.update_ready
+                    else R.string.update_available,
+                ),
+            )
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -247,7 +263,7 @@ private fun UpdateDialog(
                         color = MaterialTheme.colorScheme.error,
                     )
                     is DownloadState.Completed -> Text(
-                        text = "Download complete — tap Install to finish updating.",
+                        text = stringResource(R.string.update_download_complete),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -257,7 +273,7 @@ private fun UpdateDialog(
                             modifier = Modifier.align(Alignment.End),
                         ) {
                             Text(
-                                text = "Skip this version",
+                                text = stringResource(R.string.update_skip_version),
                                 style = MaterialTheme.typography.labelSmall,
                             )
                         }
@@ -273,19 +289,19 @@ private fun UpdateDialog(
                     }
                 }
                 is DownloadState.Error -> {
-                    Button(onClick = onUpdate) { Text("Retry") }
+                    Button(onClick = onUpdate) { Text(stringResource(R.string.action_retry)) }
                 }
                 is DownloadState.Completed -> {
-                    Button(onClick = onInstall) { Text("Install") }
+                    Button(onClick = onInstall) { Text(stringResource(R.string.action_install)) }
                 }
                 DownloadState.Idle -> {
-                    Button(onClick = onUpdate) { Text("Update") }
+                    Button(onClick = onUpdate) { Text(stringResource(R.string.action_update)) }
                 }
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Later")
+                Text(stringResource(R.string.action_later))
             }
         },
     )
@@ -346,7 +362,7 @@ private fun DownloadProgressRow(state: DownloadState.Downloading) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = "Downloading in the background — you can close the app.",
+            text = stringResource(R.string.update_downloading_background),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -356,11 +372,29 @@ private fun DownloadProgressRow(state: DownloadState.Downloading) {
 private fun downloadPercent(state: DownloadState.Downloading): Int =
     if (state.totalBytes > 0) (state.bytesRead * 100 / state.totalBytes).toInt().coerceIn(0, 100) else 0
 
+@Composable
 private fun downloadLabel(state: DownloadState.Downloading): String {
     val mb: (Long) -> String = { "%.1f".format(it / 1024.0 / 1024.0) }
     return if (state.totalBytes > 0) {
-        "${mb(state.bytesRead)} / ${mb(state.totalBytes)} MB · ${downloadPercent(state)}%"
+        stringResource(
+            R.string.update_download_progress,
+            mb(state.bytesRead),
+            mb(state.totalBytes),
+            downloadPercent(state),
+        )
     } else {
-        "${mb(state.bytesRead)} MB"
+        stringResource(R.string.update_download_size, mb(state.bytesRead))
     }
 }
+
+@Composable
+private fun ChangelogCategory.localizedDisplayName(): String = stringResource(
+    when (this) {
+        ChangelogCategory.FEATURES -> R.string.changelog_features
+        ChangelogCategory.BUG_FIXES -> R.string.changelog_bug_fixes
+        ChangelogCategory.SOURCES -> R.string.changelog_sources
+        ChangelogCategory.DOCUMENTATION -> R.string.changelog_documentation
+        ChangelogCategory.OTHER -> R.string.changelog_other
+        ChangelogCategory.CHANGES -> R.string.changelog_changes
+    },
+)

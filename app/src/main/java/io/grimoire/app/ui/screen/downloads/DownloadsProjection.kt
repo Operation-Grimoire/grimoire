@@ -1,8 +1,10 @@
 package io.grimoire.app.ui.screen.downloads
 
+import androidx.annotation.StringRes
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.R
 
 /**
  * Each chip in the downloads filter row represents a logical "category" of download
@@ -10,11 +12,11 @@ import io.grimoire.app.data.local.entity.NovelEntity
  * lets the user pick any combination — the predicate the list filters on is the union of
  * every selected category's [ordinals].
  */
-internal enum class DownloadStatusFilter(val label: String, val ordinals: Set<Int>) {
-    DOWNLOADING("Downloading", ChapterDownloadStatus.DOWNLOADING_ORDINALS),
-    QUEUED("Queued", ChapterDownloadStatus.QUEUED_ORDINALS),
-    DONE("Done", setOf(ChapterDownloadStatus.DOWNLOADED.ordinal)),
-    FAILED("Failed", ChapterDownloadStatus.ERROR_ORDINALS),
+internal enum class DownloadStatusFilter(@StringRes val labelRes: Int, val ordinals: Set<Int>) {
+    DOWNLOADING(R.string.downloads_filter_downloading, ChapterDownloadStatus.DOWNLOADING_ORDINALS),
+    QUEUED(R.string.downloads_filter_queued, ChapterDownloadStatus.QUEUED_ORDINALS),
+    DONE(R.string.downloads_filter_done, setOf(ChapterDownloadStatus.DOWNLOADED.ordinal)),
+    FAILED(R.string.downloads_filter_failed, ChapterDownloadStatus.ERROR_ORDINALS),
 }
 
 /** Per-novel tallies for the section header, computed from the full (unfiltered) chapter set. */

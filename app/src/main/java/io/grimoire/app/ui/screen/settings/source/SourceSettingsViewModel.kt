@@ -92,20 +92,20 @@ class SourceSettingsViewModel @Inject constructor(
      * set the source is using right now — "Using global · 3 languages",
      * "Using global · no filter", "Override · 2 languages", etc.
      */
-    val languageSummary: StateFlow<String> = combine(
+    data class LanguageSummary(val override: Boolean, val languageCount: Int)
+
+    val languageSummary: StateFlow<LanguageSummary> = combine(
         sourceSettings.contentLanguagesOverride(pkg).changes(),
         sourceSettings.contentLanguages(pkg).changes(),
         appLanguages.enabled.changes(),
     ) { override, perSource, global ->
         val effective = if (override) perSource else global
-        val prefix = if (override) "Override" else "Using global"
-        val tail = when {
-            effective.isEmpty() -> "no filter"
-            effective.size == 1 -> "1 language"
-            else -> "${effective.size} languages"
-        }
-        "$prefix · $tail"
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "Using global · no filter")
+        LanguageSummary(override = override, languageCount = effective.size)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        LanguageSummary(override = false, languageCount = 0),
+    )
 
     sealed interface ValidationState {
         data object Idle : ValidationState

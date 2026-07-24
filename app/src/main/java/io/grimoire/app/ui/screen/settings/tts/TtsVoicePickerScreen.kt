@@ -33,10 +33,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsPreviewManager
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,7 +69,7 @@ fun TtsVoicePickerScreen(
         modifier = modifier,
         topBar = {
             TopAppBarWithTitle(
-                title = viewModel.language ?: "Voice",
+                title = viewModel.language ?: stringResource(R.string.tts_voice_title),
                 onNavigateBack = onNavigateBack,
             )
         },
@@ -79,8 +81,7 @@ fun TtsVoicePickerScreen(
                 )
 
                 is VoiceListState.NeedsApiKey -> CenteredMessage(
-                    text = "Add an ElevenLabs API key in Text-to-speech settings to " +
-                        "choose a cloud voice.",
+                    text = stringResource(R.string.tts_voice_needs_key),
                 )
 
                 is VoiceListState.Error -> Column(
@@ -88,22 +89,18 @@ fun TtsVoicePickerScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        s.message,
+                        s.message.ifBlank { stringResource(R.string.tts_load_voices_failed) },
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    TextButton(onClick = viewModel::loadVoices) { Text("Retry") }
+                    TextButton(onClick = viewModel::loadVoices) { Text(stringResource(R.string.action_retry)) }
                 }
 
                 is VoiceListState.Loaded -> LazyColumn(Modifier.fillMaxSize()) {
                     if (engine == TtsEngineType.ELEVENLABS) {
                         item {
                             Text(
-                                text = "The ElevenLabs free plan is limited (~10,000 " +
-                                    "characters/month) and many voices — even some Default " +
-                                    "ones — require a paid plan. If a voice won't play, try " +
-                                    "another, or use the On-device engine for unlimited " +
-                                    "offline reading.",
+                                text = stringResource(R.string.tts_elevenlabs_plan_note),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -113,8 +110,8 @@ fun TtsVoicePickerScreen(
                     }
                     item {
                         VoiceRow(
-                            title = "System default",
-                            subtitle = "Let the engine pick a voice for this language",
+                            title = stringResource(R.string.tts_system_default),
+                            subtitle = stringResource(R.string.tts_system_default_summary),
                             selected = selectedId == null,
                             previewState = previewStateFor(preview, viewModel.previewKey(null)),
                             onClick = { viewModel.selectVoice(null) },
@@ -136,9 +133,9 @@ fun TtsVoicePickerScreen(
                         item {
                             HorizontalDivider()
                             ListItem(
-                                headlineContent = { Text("Install more voices…") },
+                                headlineContent = { Text(stringResource(R.string.tts_install_voices)) },
                                 supportingContent = {
-                                    Text("Download additional voice data for the device engine")
+                                    Text(stringResource(R.string.tts_install_voices_summary))
                                 },
                                 modifier = Modifier.clickable {
                                     runCatching {
@@ -162,8 +159,8 @@ fun TtsVoicePickerScreen(
 private fun TopAppBarWithTitle(title: String, onNavigateBack: () -> Unit) {
     androidx.compose.material3.TopAppBar(
         navigationIcon = {
-            PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                Icon(AppIcons.ArrowBack, contentDescription = "Back")
+            PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
             }
         },
         title = { Text(title) },
@@ -212,11 +209,11 @@ private fun PreviewButton(state: PreviewButtonState, onClick: () -> Unit) {
         }
 
         PreviewButtonState.PLAYING -> IconButton(onClick = onClick) {
-            Icon(AppIcons.Stop, contentDescription = "Stop preview")
+            Icon(AppIcons.Stop, contentDescription = stringResource(R.string.tts_stop_preview))
         }
 
         PreviewButtonState.IDLE -> IconButton(onClick = onClick) {
-            Icon(AppIcons.PlayArrow, contentDescription = "Preview voice")
+            Icon(AppIcons.PlayArrow, contentDescription = stringResource(R.string.tts_preview_voice))
         }
     }
 }

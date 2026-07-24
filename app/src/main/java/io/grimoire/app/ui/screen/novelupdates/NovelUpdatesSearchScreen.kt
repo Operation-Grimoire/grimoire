@@ -41,6 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import io.grimoire.app.ui.component.AppSearchField
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -51,6 +53,7 @@ import io.grimoire.app.data.novelupdates.NuLanguages
 import io.grimoire.app.data.novelupdates.NuNovelType
 import io.grimoire.app.data.novelupdates.NuStoryStatus
 import io.grimoire.app.data.novelupdates.NuTag
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,25 +82,25 @@ fun NovelUpdatesSearchScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 title = {
                     AppSearchField(
                         value = query,
                         onValueChange = viewModel::setQuery,
-                        placeholder = "Search NovelUpdates…",
+                        placeholder = stringResource(R.string.nu_search_label) + "…",
                         modifier = Modifier.fillMaxWidth(),
                         onSearch = { viewModel.submitSearch() },
                     )
                 },
                 actions = {
-                    PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.currentPageUrl()) }, tooltip = "Open in WebView") {
-                        Icon(AppIcons.Language, contentDescription = "Open in WebView")
+                    PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.currentPageUrl()) }, tooltip = stringResource(R.string.action_open_in_webview)) {
+                        Icon(AppIcons.Language, contentDescription = stringResource(R.string.action_open_in_webview))
                     }
-                    PlainTooltipIconButton(onClick = { showFilters = true }, tooltip = "Filters") {
-                        Icon(AppIcons.FilterList, contentDescription = "Filters")
+                    PlainTooltipIconButton(onClick = { showFilters = true }, tooltip = stringResource(R.string.source_browse_filters)) {
+                        Icon(AppIcons.FilterList, contentDescription = stringResource(R.string.source_browse_filters))
                     }
                 },
             )
@@ -170,27 +173,46 @@ private fun AdvancedFilterSheet(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Order by", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.nu_order_by), style = MaterialTheme.typography.titleSmall)
         ChipFlow {
             NuBrowseSort.entries.forEach { s ->
-                FilterChip(selected = sort == s, onClick = { sort = s }, label = { Text(s.label) })
+                FilterChip(
+                    selected = sort == s,
+                    onClick = { sort = s },
+                    label = {
+                        Text(
+                            stringResource(
+                                when (s) {
+                                    NuBrowseSort.READERS -> R.string.nu_sort_readers
+                                    NuBrowseSort.LAST_UPDATED -> R.string.nu_sort_last_updated
+                                    NuBrowseSort.RATING -> R.string.nu_sort_rating
+                                    NuBrowseSort.RANK -> R.string.nu_sort_rank
+                                    NuBrowseSort.REVIEWS -> R.string.nu_sort_reviews
+                                    NuBrowseSort.CHAPTERS -> R.string.nu_sort_chapters
+                                    NuBrowseSort.FREQUENCY -> R.string.nu_sort_frequency
+                                    NuBrowseSort.TITLE -> R.string.nu_sort_title
+                                },
+                            ),
+                        )
+                    },
+                )
             }
         }
         FilterChip(
             selected = ascending,
             onClick = { ascending = !ascending },
-            label = { Text(if (ascending) "Ascending" else "Descending") },
+            label = { Text(stringResource(if (ascending) R.string.nu_ascending else R.string.nu_descending)) },
         )
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Genres", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.nu_genres), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             FilterChip(
                 selected = genresMatchAll,
                 onClick = { genresMatchAll = !genresMatchAll },
-                label = { Text(if (genresMatchAll) "Match ALL" else "Match ANY") },
+                label = { Text(stringResource(if (genresMatchAll) R.string.nu_match_all else R.string.nu_match_any)) },
             )
         }
         ChipFlow {
@@ -198,50 +220,71 @@ private fun AdvancedFilterSheet(
                 FilterChip(
                     selected = name in genreInc,
                     onClick = { toggle(genreInc, name) },
-                    label = { Text(name) },
+                    label = { Text(localizedNuGenre(name)) },
                 )
             }
         }
-        Text("Exclude genres", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.nu_exclude_genres), style = MaterialTheme.typography.titleSmall)
         ChipFlow {
             NuGenres.all.keys.forEach { name ->
                 FilterChip(
                     selected = name in genreExc,
                     onClick = { toggle(genreExc, name) },
-                    label = { Text(name) },
+                    label = { Text(localizedNuGenre(name)) },
                 )
             }
         }
 
-        Text("Language", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.nu_language), style = MaterialTheme.typography.titleSmall)
         ChipFlow {
             NuLanguages.all.keys.forEach { name ->
                 FilterChip(
                     selected = name in langs,
                     onClick = { toggle(langs, name) },
-                    label = { Text(name) },
+                    label = { Text(localizedNuLanguage(name)) },
                 )
             }
         }
 
-        Text("Novel type", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.nu_novel_type), style = MaterialTheme.typography.titleSmall)
         ChipFlow {
             NuNovelType.entries.forEach { t ->
                 FilterChip(
                     selected = t in types,
                     onClick = { toggleT(types, t) },
-                    label = { Text(t.label) },
+                    label = {
+                        Text(
+                            stringResource(
+                                when (t) {
+                                    NuNovelType.LIGHT_NOVEL -> R.string.nu_type_light_novel
+                                    NuNovelType.PUBLISHED_NOVEL -> R.string.nu_type_published_novel
+                                    NuNovelType.WEB_NOVEL -> R.string.nu_type_web_novel
+                                },
+                            ),
+                        )
+                    },
                 )
             }
         }
 
-        Text("Story status", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.nu_story_status), style = MaterialTheme.typography.titleSmall)
         ChipFlow {
             NuStoryStatus.entries.forEach { s ->
                 FilterChip(
                     selected = status == s,
                     onClick = { status = s },
-                    label = { Text(s.label) },
+                    label = {
+                        Text(
+                            stringResource(
+                                when (s) {
+                                    NuStoryStatus.ANY -> R.string.source_filter_any
+                                    NuStoryStatus.COMPLETED -> R.string.library_status_completed
+                                    NuStoryStatus.ONGOING -> R.string.library_status_ongoing
+                                    NuStoryStatus.HIATUS -> R.string.library_status_hiatus
+                                },
+                            ),
+                        )
+                    },
                 )
             }
         }
@@ -250,11 +293,11 @@ private fun AdvancedFilterSheet(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Tags", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.nu_tags), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             FilterChip(
                 selected = tagsMatchAll,
                 onClick = { tagsMatchAll = !tagsMatchAll },
-                label = { Text(if (tagsMatchAll) "Match ALL" else "Match ANY") },
+                label = { Text(stringResource(if (tagsMatchAll) R.string.nu_match_all else R.string.nu_match_any)) },
             )
         }
         OutlinedButton(
@@ -264,9 +307,9 @@ private fun AdvancedFilterSheet(
         ) {
             Text(
                 when {
-                    tagsLoading -> "Loading tags…"
-                    tagInc.isEmpty() -> "Include tags"
-                    else -> "Include tags (${tagInc.size})"
+                    tagsLoading -> stringResource(R.string.nu_loading_tags)
+                    tagInc.isEmpty() -> stringResource(R.string.nu_include_tags)
+                    else -> stringResource(R.string.nu_include_tags_count, tagInc.size)
                 },
             )
         }
@@ -275,7 +318,10 @@ private fun AdvancedFilterSheet(
             enabled = !tagsLoading,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (tagExc.isEmpty()) "Exclude tags" else "Exclude tags (${tagExc.size})")
+            Text(
+                if (tagExc.isEmpty()) stringResource(R.string.nu_exclude_tags)
+                else stringResource(R.string.nu_exclude_tags_count, tagExc.size),
+            )
         }
 
         Button(
@@ -298,13 +344,16 @@ private fun AdvancedFilterSheet(
                 )
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("Apply") }
+        ) { Text(stringResource(R.string.action_apply)) }
     }
 
     tagPicker?.let { target ->
         val selected = if (target == TagPickerTarget.INCLUDE) tagInc else tagExc
         TagPickerDialog(
-            title = if (target == TagPickerTarget.INCLUDE) "Include tags" else "Exclude tags",
+            title = stringResource(
+                if (target == TagPickerTarget.INCLUDE) R.string.nu_include_tags
+                else R.string.nu_exclude_tags,
+            ),
             tags = tags,
             selectedIds = selected,
             onToggle = { id -> toggle(selected, id) },
@@ -338,7 +387,9 @@ private fun TagPickerDialog(
                 OutlinedTextField(
                     value = search,
                     onValueChange = { search = it },
-                    placeholder = { Text("Filter ${tags.size} tags…") },
+                    placeholder = {
+                        Text(pluralStringResource(R.plurals.nu_filter_tags_placeholder, tags.size, tags.size))
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 )
@@ -351,7 +402,7 @@ private fun TagPickerDialog(
                                 if (checked) {
                                     Icon(
                                         AppIcons.Check,
-                                        contentDescription = "Selected",
+                                        contentDescription = stringResource(R.string.content_description_selected),
                                         tint = MaterialTheme.colorScheme.primary,
                                     )
                                 }
@@ -363,7 +414,7 @@ private fun TagPickerDialog(
                     }
                 }
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    TextButton(onClick = onDismiss) { Text("Done") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_done)) }
                 }
             }
         }

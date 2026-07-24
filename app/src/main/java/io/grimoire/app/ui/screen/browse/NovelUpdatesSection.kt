@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
@@ -48,6 +49,7 @@ import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.data.novelupdates.NuSearchResult
 import io.grimoire.app.ui.screen.novelupdates.NovelUpdatesSeriesContent
+import io.grimoire.app.R
 
 @Composable
 fun NovelUpdatesSection(
@@ -79,7 +81,7 @@ fun NovelUpdatesSection(
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                "NovelUpdates",
+                stringResource(R.string.nu_title),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
             )
@@ -91,7 +93,7 @@ fun NovelUpdatesSection(
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.width(4.dp))
-                    Text("Open")
+                    Text(stringResource(R.string.action_open))
                 }
             }
         }
@@ -101,7 +103,7 @@ fun NovelUpdatesSection(
                 TextButton(
                     onClick = { viewModel.loadNovelUpdates() },
                     contentPadding = PaddingValues(0.dp),
-                ) { Text("Load from NovelUpdates") }
+                ) { Text(stringResource(R.string.nu_load)) }
 
             is NuInfoState.Loading ->
                 Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) {
@@ -118,29 +120,29 @@ fun NovelUpdatesSection(
 
             is NuInfoState.Ambiguous -> Column {
                 Text(
-                    "Multiple NovelUpdates matches.",
+                    stringResource(R.string.nu_multiple_matches),
                     style = MaterialTheme.typography.bodySmall,
                 )
                 TextButton(
                     onClick = { showLinkDialog = true },
                     contentPadding = PaddingValues(0.dp),
-                ) { Text("Choose the right one") }
+                ) { Text(stringResource(R.string.nu_choose_match)) }
             }
 
             is NuInfoState.NotFound -> Column {
                 Text(
-                    "No NovelUpdates match found.",
+                    stringResource(R.string.nu_no_match),
                     style = MaterialTheme.typography.bodySmall,
                 )
                 TextButton(
                     onClick = { showLinkDialog = true },
                     contentPadding = PaddingValues(0.dp),
-                ) { Text("Link manually") }
+                ) { Text(stringResource(R.string.nu_link_manually)) }
             }
 
             is NuInfoState.Error -> Column {
                 Text(
-                    "NovelUpdates unavailable.",
+                    stringResource(R.string.nu_unavailable),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -148,12 +150,12 @@ fun NovelUpdatesSection(
                     TextButton(
                         onClick = { viewModel.retryNovelUpdates() },
                         contentPadding = PaddingValues(0.dp),
-                    ) { Text("Retry") }
+                    ) { Text(stringResource(R.string.action_retry)) }
                     Spacer(Modifier.width(16.dp))
                     TextButton(
                         onClick = { showLinkDialog = true },
                         contentPadding = PaddingValues(0.dp),
-                    ) { Text("Link manually") }
+                    ) { Text(stringResource(R.string.nu_link_manually)) }
                 }
             }
 
@@ -200,21 +202,21 @@ private fun LinkDialog(
             Column(Modifier.fillMaxSize().padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "Link NovelUpdates",
+                        stringResource(R.string.nu_link_title),
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.weight(1f),
                     )
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
                 }
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    label = { Text("Search NovelUpdates") },
+                    label = { Text(stringResource(R.string.nu_search_label)) },
                     singleLine = true,
                     trailingIcon = {
                         TextButton(onClick = { viewModel.searchNovelUpdates(query) }) {
-                            Text("Search")
+                            Text(stringResource(R.string.action_search))
                         }
                     },
                     keyboardActions = KeyboardActions(
@@ -235,7 +237,7 @@ private fun LinkDialog(
                         Alignment.Center,
                     ) {
                         Text(
-                            "No results — try a shorter or different title.",
+                            stringResource(R.string.nu_search_empty),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -286,7 +288,7 @@ private fun SearchResultRow(result: NuSearchResult, onClick: () -> Unit) {
                 result.rating?.let { r ->
                     Icon(
                         AppIcons.Star,
-                        contentDescription = "Rating",
+                        contentDescription = stringResource(R.string.content_description_rating),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp),
                     )
@@ -300,7 +302,7 @@ private fun SearchResultRow(result: NuSearchResult, onClick: () -> Unit) {
                     if (result.rating != null) Spacer(Modifier.width(14.dp))
                     Icon(
                         AppIcons.Translate,
-                        contentDescription = "Language",
+                        contentDescription = stringResource(R.string.content_description_language),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp),
                     )

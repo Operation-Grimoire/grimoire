@@ -17,9 +17,12 @@ import javax.inject.Inject
  * the UI accent the row when an account is linked.
  */
 data class ConnectionStatus(
-    val statusLabel: String,
+    val status: ConnectionStatusType,
+    val login: String? = null,
     val isConnected: Boolean,
 )
+
+enum class ConnectionStatusType { DISCONNECTED, SIGNING_IN, CONNECTED, ERROR }
 
 @HiltViewModel
 class ConnectionsSettingsViewModel @Inject constructor(
@@ -35,9 +38,9 @@ class ConnectionsSettingsViewModel @Inject constructor(
         )
 
     private fun toStatus(state: GitHubAuthState): ConnectionStatus = when (state) {
-        GitHubAuthState.Disconnected -> ConnectionStatus("Not connected", false)
-        is GitHubAuthState.AwaitingUser -> ConnectionStatus("Signing in…", false)
-        is GitHubAuthState.Connected -> ConnectionStatus("@${state.login}", true)
-        is GitHubAuthState.Failed -> ConnectionStatus("Connection error", false)
+        GitHubAuthState.Disconnected -> ConnectionStatus(ConnectionStatusType.DISCONNECTED, isConnected = false)
+        is GitHubAuthState.AwaitingUser -> ConnectionStatus(ConnectionStatusType.SIGNING_IN, isConnected = false)
+        is GitHubAuthState.Connected -> ConnectionStatus(ConnectionStatusType.CONNECTED, state.login, true)
+        is GitHubAuthState.Failed -> ConnectionStatus(ConnectionStatusType.ERROR, isConnected = false)
     }
 }

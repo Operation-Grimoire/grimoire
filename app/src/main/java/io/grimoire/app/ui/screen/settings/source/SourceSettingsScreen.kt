@@ -46,8 +46,11 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.model.pref.SourcePreference
+import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,8 +86,8 @@ fun SourceSettingsScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = "Back") {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 title = { Text(viewModel.sourceName) },
@@ -100,7 +103,7 @@ fun SourceSettingsScreen(
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    "This source has no settings.",
+                    stringResource(R.string.source_settings_empty),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -118,10 +121,25 @@ fun SourceSettingsScreen(
             Spacer(Modifier.height(4.dp))
 
             if (viewModel.isMultiLanguage) {
-                SectionHeader("Content")
+                SectionHeader(stringResource(R.string.source_settings_content))
                 ListItem(
-                    headlineContent = { Text("Content languages") },
-                    supportingContent = { Text(languageSummary) },
+                    headlineContent = { Text(stringResource(R.string.source_settings_content_languages)) },
+                    supportingContent = {
+                        val prefix = stringResource(
+                            if (languageSummary.override) R.string.source_settings_override
+                            else R.string.source_settings_using_global,
+                        )
+                        val tail = if (languageSummary.languageCount == 0) {
+                            stringResource(R.string.source_settings_no_filter)
+                        } else {
+                            pluralStringResource(
+                                R.plurals.source_settings_language_count,
+                                languageSummary.languageCount,
+                                languageSummary.languageCount,
+                            )
+                        }
+                        Text(stringResource(R.string.source_settings_language_summary, prefix, tail))
+                    },
                     leadingContent = {
                         Icon(AppIcons.Translate, contentDescription = null)
                     },
@@ -138,7 +156,7 @@ fun SourceSettingsScreen(
             if (viewModel.isMultiHost) {
                 val activeHost by viewModel.activeHost.collectAsState()
                 if (viewModel.isMultiLanguage) HorizontalDivider()
-                SectionHeader("Mirror")
+                SectionHeader(stringResource(R.string.source_settings_mirror))
                 var expanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = expanded,
@@ -151,7 +169,7 @@ fun SourceSettingsScreen(
                         value = activeHost.substringAfter("://").ifEmpty { activeHost },
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Mirror") },
+                        label = { Text(stringResource(R.string.source_settings_mirror)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -178,15 +196,15 @@ fun SourceSettingsScreen(
                 val loginState by viewModel.loginState.collectAsState()
                 val signedIn = loginState == SourceSettingsViewModel.LoginUiState.SIGNED_IN
                 if (viewModel.isMultiLanguage || viewModel.isMultiHost) HorizontalDivider()
-                SectionHeader("Account")
+                SectionHeader(stringResource(R.string.source_settings_account))
                 ListItem(
-                    headlineContent = { Text("Sign-in status") },
+                    headlineContent = { Text(stringResource(R.string.source_settings_sign_in_status)) },
                     supportingContent = {
                         Text(
                             when (loginState) {
-                                SourceSettingsViewModel.LoginUiState.SIGNED_IN -> "Signed in"
-                                SourceSettingsViewModel.LoginUiState.SIGNED_OUT -> "Not signed in"
-                                SourceSettingsViewModel.LoginUiState.UNKNOWN -> "Checking…"
+                                SourceSettingsViewModel.LoginUiState.SIGNED_IN -> stringResource(R.string.source_settings_signed_in)
+                                SourceSettingsViewModel.LoginUiState.SIGNED_OUT -> stringResource(R.string.source_settings_not_signed_in)
+                                SourceSettingsViewModel.LoginUiState.UNKNOWN -> stringResource(R.string.source_settings_checking)
                             },
                         )
                     },
@@ -201,14 +219,14 @@ fun SourceSettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Button(onClick = onNavigateToLogin, modifier = Modifier.weight(1f)) {
-                        Text(if (signedIn) "Log in again" else "Log in")
+                        Text(stringResource(if (signedIn) R.string.source_settings_log_in_again else R.string.novel_log_in))
                     }
                     if (signedIn) {
                         OutlinedButton(
                             onClick = viewModel::logout,
                             modifier = Modifier.weight(1f),
                         ) {
-                            Text("Log out")
+                            Text(stringResource(R.string.source_settings_log_out))
                         }
                     }
                 }
@@ -218,7 +236,7 @@ fun SourceSettingsScreen(
                 if (viewModel.isMultiLanguage || viewModel.supportsWebViewLogin || viewModel.isMultiHost) {
                     HorizontalDivider()
                 }
-                SectionHeader("Configuration")
+                SectionHeader(stringResource(R.string.source_settings_configuration))
             }
 
             viewModel.preferences.forEach { pref ->
@@ -277,9 +295,9 @@ fun SourceSettingsScreen(
                             strokeWidth = 2.dp,
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Checking…")
+                        Text(stringResource(R.string.source_settings_checking))
                     } else {
-                        Text("Test configuration")
+                        Text(stringResource(R.string.source_settings_test_configuration))
                     }
                 }
                 (validation as? SourceSettingsViewModel.ValidationState.Done)?.let { result ->
@@ -303,7 +321,7 @@ fun SourceSettingsScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                 ) {
-                    Text(if (saved) "Saved" else "Save")
+                    Text(stringResource(if (saved) R.string.source_settings_saved else R.string.action_save))
                 }
             }
             Spacer(Modifier.height(16.dp))

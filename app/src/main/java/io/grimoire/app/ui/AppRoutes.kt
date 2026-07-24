@@ -1,12 +1,14 @@
 package io.grimoire.app.ui
 
 import io.grimoire.app.ui.icon.*
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
+import io.grimoire.app.R
 
 internal enum class TopLevelDestination(
     val route: String,
     val icon: ImageVector,
-    val label: String,
+    @param:StringRes val labelRes: Int,
     /** Shown instead of [icon] when the tab has something to surface. */
     val activeIcon: ImageVector = icon,
     /** Filled variant shown while the tab is selected. */
@@ -14,9 +16,9 @@ internal enum class TopLevelDestination(
     /** Filled [activeIcon] shown while the tab is selected and has something to surface. */
     val activeSelectedIcon: ImageVector = activeIcon,
 ) {
-    Library("library", AppIcons.LocalLibrary, "Library", selectedIcon = AppIcons.LocalLibraryFilled),
-    Browse("browse", AppIcons.Explore, "Browse", selectedIcon = AppIcons.ExploreFilled),
-    More("more", AppIcons.MoreHoriz, "More", activeIcon = AppIcons.NewReleases, activeSelectedIcon = AppIcons.NewReleasesFilled),
+    Library("library", AppIcons.LocalLibrary, R.string.nav_library, selectedIcon = AppIcons.LocalLibraryFilled),
+    Browse("browse", AppIcons.Explore, R.string.nav_browse, selectedIcon = AppIcons.ExploreFilled),
+    More("more", AppIcons.MoreHoriz, R.string.nav_more, activeIcon = AppIcons.NewReleases, activeSelectedIcon = AppIcons.NewReleasesFilled),
 }
 
 // Subpages nested under a top-level graph that should still hide the bottom navbar.
