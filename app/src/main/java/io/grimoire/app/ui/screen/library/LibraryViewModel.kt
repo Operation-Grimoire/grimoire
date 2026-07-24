@@ -175,6 +175,8 @@ class LibraryViewModel @Inject constructor(
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
     val filterNotifyEnabled: StateFlow<Boolean> = libraryPreferences.filterNotifyEnabled.stateIn(viewModelScope)
     val filterAutoDownloadEnabled: StateFlow<Boolean> = libraryPreferences.filterAutoDownloadEnabled.stateIn(viewModelScope)
+    val filterMinUserRating: StateFlow<Int> = libraryPreferences.filterMinUserRating.stateIn(viewModelScope)
+    val filterMaxUserRating: StateFlow<Int> = libraryPreferences.filterMaxUserRating.stateIn(viewModelScope)
     val filterType: StateFlow<NovelTypeFilter> = libraryPreferences.filterType.stateIn(viewModelScope)
     val filterSourceIds: StateFlow<Set<Long>> = libraryPreferences.filterSourceIds.stateIn(viewModelScope)
 
@@ -214,6 +216,7 @@ class LibraryViewModel @Inject constructor(
     val showReadBadge: StateFlow<Boolean> = libraryPreferences.showReadBadge.stateIn(viewModelScope)
     val showDownloadedBadge: StateFlow<Boolean> = libraryPreferences.showDownloadedBadge.stateIn(viewModelScope)
     val showLockedBadge: StateFlow<Boolean> = libraryPreferences.showLockedBadge.stateIn(viewModelScope)
+    val showRatingBadge: StateFlow<Boolean> = libraryPreferences.showRatingBadge.stateIn(viewModelScope)
     val showEpubBadge: StateFlow<Boolean> = libraryPreferences.showEpubBadge.stateIn(viewModelScope)
 
     // null until the persisted value is read from disk, so the restore can wait for
@@ -264,6 +267,8 @@ class LibraryViewModel @Inject constructor(
             filterAutoDownloadEnabled,
             filterType,
             epubSourceIds,
+            filterMinUserRating,
+            filterMaxUserRating,
         ),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
@@ -292,6 +297,8 @@ class LibraryViewModel @Inject constructor(
             filterAutoDownloadEnabled = values[16] as Boolean,
             filterType = values[17] as NovelTypeFilter,
             epubSourceIds = values[18] as Set<Long>,
+            filterMinUserRating = values[19] as Int,
+            filterMaxUserRating = values[20] as Int,
         )
     }
 
@@ -409,6 +416,14 @@ class LibraryViewModel @Inject constructor(
 
     fun setFilterType(value: NovelTypeFilter) = viewModelScope.launch {
         libraryPreferences.filterType.set(value)
+    }
+
+    /** Sets the inclusive user-rating range (1–10) a novel must fall in; the full 1..10 clears it. */
+    fun setFilterUserRatingRange(min: Int, max: Int) = viewModelScope.launch {
+        val lo = min.coerceIn(1, 10)
+        val hi = max.coerceIn(lo, 10)
+        libraryPreferences.filterMinUserRating.set(lo)
+        libraryPreferences.filterMaxUserRating.set(hi)
     }
 
     /** Toggles [sourceId] in the active source filter set, or clears it entirely when null. */

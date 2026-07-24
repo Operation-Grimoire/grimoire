@@ -173,6 +173,8 @@ fun NovelDetailScreen(
     var showJumpDialog by remember { mutableStateOf(false) }
     var showDownloadsSheet by remember { mutableStateOf(false) }
     var showShareSheet by remember { mutableStateOf(false) }
+    var showRateDialog by remember { mutableStateOf(false) }
+    val userRating by viewModel.userRating.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val isExporting by viewModel.isExporting.collectAsState()
@@ -355,6 +357,14 @@ fun NovelDetailScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
+    }
+
+    if (showRateDialog) {
+        RateNovelDialog(
+            current = userRating,
+            onSetRating = viewModel::setUserRating,
+            onDismiss = { showRateDialog = false },
+        )
     }
 
     if (showShareSheet) {
@@ -877,6 +887,8 @@ fun NovelDetailScreen(
                                 onOpenWebView = { onOpenWebView(viewModel.novelWebUrl) },
                                 categoryName = currentCategoryName,
                                 onEditCategory = { showCategoryDialog = true },
+                                userRating = userRating,
+                                onRate = { showRateDialog = true },
                             )
                         }
                     }

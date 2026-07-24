@@ -22,6 +22,8 @@ internal data class LibraryFilterInputs(
     val filterDownloadedOnly: Boolean,
     val filterNotifyEnabled: Boolean,
     val filterAutoDownloadEnabled: Boolean,
+    val filterMinUserRating: Int,
+    val filterMaxUserRating: Int,
     val filterType: NovelTypeFilter,
     val epubSourceIds: Set<Long>,
     val filterSourceIds: Set<Long>,
@@ -132,6 +134,9 @@ internal fun computeTabNovels(
             chapterStats[it.id]?.effectiveTotal(includeLockedInTotals) ?: 0
         }
         SortField.LAST_READ -> compareBy { it.lastReadAt }
+        // Unrated (null) counts as 0, so it lands with the lowest scores — bottom of a
+        // DESC (highest-first) sort — matching how UNREAD/TOTAL treat a missing count.
+        SortField.USER_RATING -> compareBy { it.userRating ?: 0 }
     }
     val comparator = if (sortDirection == SortDirection.DESC) ascComparator.reversed() else ascComparator
     val trimmedQuery = searchQuery.trim()
@@ -142,6 +147,9 @@ internal fun computeTabNovels(
             (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
             (!filterNotifyEnabled || novel.notifyOnNewChapters || novel.notifyOnNewLockedChapters) &&
             (!filterAutoDownloadEnabled || novel.autoDownloadNewChapters) &&
+            // Full 1..10 range = off; once narrowed, keep only rated novels inside it.
+            ((filterMinUserRating <= 1 && filterMaxUserRating >= 10) ||
+                (novel.userRating != null && novel.userRating in filterMinUserRating..filterMaxUserRating)) &&
             (when (filterType) {
                 NovelTypeFilter.ALL -> true
                 NovelTypeFilter.EPUB -> novel.isEpubType(epubSourceIds)

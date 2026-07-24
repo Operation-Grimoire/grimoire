@@ -114,6 +114,8 @@ fun LibraryScreen(
     val filterDownloadedOnly by viewModel.filterDownloadedOnly.collectAsState()
     val filterNotifyEnabled by viewModel.filterNotifyEnabled.collectAsState()
     val filterAutoDownloadEnabled by viewModel.filterAutoDownloadEnabled.collectAsState()
+    val filterMinUserRating by viewModel.filterMinUserRating.collectAsState()
+    val filterMaxUserRating by viewModel.filterMaxUserRating.collectAsState()
     val filterType by viewModel.filterType.collectAsState()
     val filterSourceIds by viewModel.filterSourceIds.collectAsState()
     val librarySources by viewModel.librarySources.collectAsState()
@@ -124,6 +126,7 @@ fun LibraryScreen(
     val showReadBadge by viewModel.showReadBadge.collectAsState()
     val showDownloadedBadge by viewModel.showDownloadedBadge.collectAsState()
     val showLockedBadge by viewModel.showLockedBadge.collectAsState()
+    val showRatingBadge by viewModel.showRatingBadge.collectAsState()
     val showEpubBadge by viewModel.showEpubBadge.collectAsState()
     val epubSourceIds by viewModel.epubSourceIds.collectAsState()
     val staging by viewModel.staging.collectAsState()
@@ -187,8 +190,9 @@ fun LibraryScreen(
     }
 
     val isFilterActive = filterStatuses.isNotEmpty() || filterUnreadOnly || filterDownloadedOnly ||
-        filterNotifyEnabled || filterAutoDownloadEnabled || filterType != NovelTypeFilter.ALL ||
-        filterSourceIds.isNotEmpty()
+        filterNotifyEnabled || filterAutoDownloadEnabled ||
+        filterMinUserRating > 1 || filterMaxUserRating < 10 ||
+        filterType != NovelTypeFilter.ALL || filterSourceIds.isNotEmpty()
 
     val tabs = displayedTabs.map { it.label }
     // Parallel to `tabs`: the category id behind each tab, or ALL_TAB_CATEGORY_ID for "All".
@@ -508,6 +512,7 @@ fun LibraryScreen(
                                         showReadBadge = showReadBadge,
                                         showDownloadedBadge = showDownloadedBadge,
                                         showLockedBadge = showLockedBadge,
+                                        showRatingBadge = showRatingBadge,
                                         showEpubBadge = showEpubBadge,
                                         isEpub = novel.isEpubType(epubSourceIds),
                                         selected = novel.id in selectedIds,
@@ -529,6 +534,7 @@ fun LibraryScreen(
                                         showReadBadge = showReadBadge,
                                         showDownloadedBadge = showDownloadedBadge,
                                         showLockedBadge = showLockedBadge,
+                                        showRatingBadge = showRatingBadge,
                                         showEpubBadge = showEpubBadge,
                                         isEpub = novel.isEpubType(epubSourceIds),
                                         selected = novel.id in selectedIds,
@@ -559,6 +565,8 @@ fun LibraryScreen(
                 filterDownloadedOnly = filterDownloadedOnly,
                 filterNotifyEnabled = filterNotifyEnabled,
                 filterAutoDownloadEnabled = filterAutoDownloadEnabled,
+                filterMinUserRating = filterMinUserRating,
+                filterMaxUserRating = filterMaxUserRating,
                 filterType = filterType,
                 filterSourceIds = filterSourceIds,
                 librarySources = librarySources,
@@ -569,6 +577,7 @@ fun LibraryScreen(
                 onDownloadedOnlyChange = viewModel::setFilterDownloadedOnly,
                 onNotifyEnabledChange = viewModel::setFilterNotifyEnabled,
                 onAutoDownloadEnabledChange = viewModel::setFilterAutoDownloadEnabled,
+                onUserRatingRangeChange = viewModel::setFilterUserRatingRange,
                 onFilterTypeChange = viewModel::setFilterType,
                 onToggleFilterSource = viewModel::toggleFilterSource,
             )
