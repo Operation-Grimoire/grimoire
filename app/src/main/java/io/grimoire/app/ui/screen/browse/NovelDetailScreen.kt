@@ -113,6 +113,7 @@ fun NovelDetailScreen(
     onOpenNuSeries: (slug: String) -> Unit = {},
     onNavigateToLogin: (pkg: String) -> Unit = {},
     onOpenSourceSettings: (pkg: String) -> Unit = {},
+    onOpenExtensions: (query: String) -> Unit = {},
     onMigrate: (novelId: Long) -> Unit = {},
     onMigrationComplete: (pkg: String, url: String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
@@ -142,6 +143,8 @@ fun NovelDetailScreen(
     val notifyOnNewLockedChapters by viewModel.notifyOnNewLockedChapters.collectAsState()
     val autoDownloadNewChapters by viewModel.autoDownloadNewChapters.collectAsState()
     val migrationState by viewModel.migrationState.collectAsState()
+    val sourceMissing by viewModel.sourceMissing.collectAsState()
+    val missingSourceName by viewModel.missingSourceName.collectAsState()
     val migrateFromTitle by viewModel.migrateFromTitle.collectAsState()
     val refreshSummary by viewModel.refreshSummary.collectAsState()
 
@@ -177,6 +180,7 @@ fun NovelDetailScreen(
     var showDownloadsSheet by remember { mutableStateOf(false) }
     var showShareSheet by remember { mutableStateOf(false) }
     var showRateDialog by remember { mutableStateOf(false) }
+    var showMissingSourceDialog by remember { mutableStateOf(false) }
     val userRating by viewModel.userRating.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -367,6 +371,31 @@ fun NovelDetailScreen(
             current = userRating,
             onSetRating = viewModel::setUserRating,
             onDismiss = { showRateDialog = false },
+        )
+    }
+
+    if (showMissingSourceDialog) {
+        val named = missingSourceName?.let { "\"$it\"" } ?: "This novel's source"
+        AlertDialog(
+            onDismissRequest = { showMissingSourceDialog = false },
+            icon = { Icon(AppIcons.WarningAmber, contentDescription = null) },
+            title = { Text("Source not installed") },
+            text = {
+                Text(
+                    "$named isn't installed on this device. Your saved details and any " +
+                        "downloaded chapters are still available, but you can't fetch new " +
+                        "chapters or open the source until you reinstall its extension.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showMissingSourceDialog = false
+                    onOpenExtensions(missingSourceName.orEmpty())
+                }) { Text("Open extensions") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMissingSourceDialog = false }) { Text("Close") }
+            },
         )
     }
 
@@ -599,7 +628,7 @@ fun NovelDetailScreen(
                     // Z-Library) have no scraped chapter list, so "notify / auto-download
                     // new chapters" can never fire — hide it for both.
                     val canConfigureNewChapters = isFavorite && novelId > 0L &&
-                        !viewModel.isLocal && !viewModel.isEpubSource
+                        !viewModel.isLocal && !viewModel.isEpubSource && !sourceMissing
                     val canOpenSourceSettings = viewModel.hasSourceSettings
                     // Exporting reads chapter text straight from the local download
                     // store, so it's offered whenever at least one chapter is saved
@@ -632,7 +661,7 @@ fun NovelDetailScreen(
                             )
                         }
                     }
-                    if (!viewModel.isLocal) {
+                    if (!viewModel.isLocal && !sourceMissing) {
                         val downloading = chapters.any { it.downloadStatus in ChapterDownloadStatus.DOWNLOADING_ORDINALS }
                         PlainTooltipIconButton(
                             onClick = { showDownloadsSheet = true },
@@ -879,6 +908,9 @@ fun NovelDetailScreen(
                                 coverModel = coverModel,
                                 sourceName = viewModel.sourceName,
                                 isLocal = viewModel.isLocal,
+                                sourceMissing = sourceMissing,
+                                missingSourceName = missingSourceName,
+                                onSourceMissingClick = { showMissingSourceDialog = true },
                                 onEditField = { editingField = it },
                                 onSetCoverUri = viewModel::setCustomCoverFromUri,
                                 onSetCoverUrl = viewModel::setCustomCoverUrl,
@@ -900,7 +932,7 @@ fun NovelDetailScreen(
                             NovelActionRow(
                                 inLibrary = isFavorite,
                                 onToggleLibrary = viewModel::toggleFavorite,
-                                showWebView = !viewModel.isLocal,
+                                showWebView = !viewModel.isLocal && !sourceMissing,
                                 onOpenWebView = { onOpenWebView(viewModel.novelWebUrl) },
                                 categoryName = currentCategoryName,
                                 onEditCategory = { showCategoryDialog = true },
@@ -1274,7 +1306,8 @@ fun NovelDetailScreen(
                 }
             }
         }
-        if (viewModel.isLocal) {
+        if (viewModel.isLocal || sourceMissing) {
+            // No live source to refresh against — render without pull-to-refresh.
             Box(Modifier.padding(padding)) { detailBody() }
         } else {
             PullToRefreshBox(

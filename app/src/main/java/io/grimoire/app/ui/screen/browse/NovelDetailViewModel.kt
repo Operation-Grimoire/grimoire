@@ -72,6 +72,7 @@ internal const val BROWSE_TTL_MS = 30 * 60 * 1000L
 class NovelDetailViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
+    private val extensionRepository: io.grimoire.app.extension.repo.ExtensionRepository,
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
     private val browsingHistoryDao: io.grimoire.app.data.local.dao.BrowsingHistoryDao,
@@ -105,9 +106,23 @@ class NovelDetailViewModel @Inject constructor(
     /** A locally-imported EPUB novel: fully stored in the DB, no backing extension. */
     val isLocal: Boolean = pkg == LOCAL_PKG
 
-    /** Canonical id this novel is keyed by — derived from [pkg], or [LOCAL_SOURCE_ID] for a local book. */
+    /**
+     * Source id passed by the caller as a fallback identity — used when the novel's
+     * extension is uninstalled so its [pkg] is empty/unresolvable. 0 = not supplied.
+     */
+    private val navSourceId: Long = savedStateHandle.get<Long>("sourceId") ?: 0L
+
+    /**
+     * Canonical id this novel is keyed by — [LOCAL_SOURCE_ID] for a local book, the
+     * caller-supplied [navSourceId] when present (uninstalled source), otherwise
+     * derived from [pkg].
+     */
     private val canonicalSourceId: Long
-        get() = if (isLocal) LOCAL_SOURCE_ID else sourceIdFor(pkg)
+        get() = when {
+            isLocal -> LOCAL_SOURCE_ID
+            navSourceId > 0L -> navSourceId
+            else -> sourceIdFor(pkg)
+        }
 
     private val loaded get() = extensionManager.extensions.value.firstOrNull { it.info.packageName == pkg }
     private val source get() = loaded?.source
@@ -119,6 +134,28 @@ class NovelDetailViewModel @Inject constructor(
 
     private val _bookDownload = MutableStateFlow<BookDownloadState>(BookDownloadState.Idle)
     val bookDownload: StateFlow<BookDownloadState> = _bookDownload.asStateFlow()
+
+    /**
+     * True when the backing extension isn't installed but the novel is in our DB.
+     * The detail page still opens (cached metadata + downloaded chapters); source-
+     * dependent actions (refresh, WebView, downloading new chapters) are disabled.
+     */
+    private val _sourceMissing = MutableStateFlow(false)
+    val sourceMissing: StateFlow<Boolean> = _sourceMissing.asStateFlow()
+
+    /**
+     * Human-readable name of the uninstalled source, recovered by matching this
+     * novel's source id against the extension repo index (which still lists
+     * uninstalled sources). Null while installed or when the source is unknown to
+     * any configured repo.
+     */
+    val missingSourceName: StateFlow<String?> = combine(
+        _sourceMissing,
+        extensionRepository.items,
+    ) { missing, items ->
+        if (!missing) null
+        else items.firstOrNull { sourceIdFor(it.packageName) == canonicalSourceId }?.name
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /** Diff produced by the most recent user-triggered [refresh]; the screen shows a modal while non-null. */
     private val _refreshSummary = MutableStateFlow<RefreshSummary?>(null)
@@ -290,13 +327,16 @@ class NovelDetailViewModel @Inject constructor(
             if (isLocal) {
                 loadLocalNovel()
             } else {
-                extensionManager.extensions
-                    .filter { list -> list.any { it.info.packageName == pkg } }
-                    .take(1)
-                    .collect {
-                        loadNovel(forceRefresh = false)
-                        refreshLoginState()
-                    }
+                // Wait for the initial scan so a source that's simply still loading
+                // isn't mistaken for one that's uninstalled.
+                extensionManager.awaitReady()
+                if (source != null) {
+                    loadNovel(forceRefresh = false)
+                    refreshLoginState()
+                } else {
+                    // Extension uninstalled — open the novel read-only from the DB.
+                    loadCachedNovel()
+                }
             }
         }
         viewModelScope.launch {
@@ -368,6 +408,33 @@ class NovelDetailViewModel @Inject constructor(
             _nuSearchResults.value = novelUpdatesRepository.search(query)
             _nuSearching.value = false
         }
+    }
+
+    /**
+     * Load a novel whose source extension is no longer installed, from the DB only.
+     * Metadata + downloaded chapters remain readable; the screen disables the
+     * source-dependent actions and flags the source as missing.
+     */
+    private suspend fun loadCachedNovel() {
+        val existing = novelDao.getBySourceUrl(canonicalSourceId, novelUrl) ?: run {
+            _novelError.value = "Source not installed, and this novel isn't in your library"
+            _isLoadingNovel.value = false
+            return
+        }
+        _sourceMissing.value = true
+        cachedNovelId = existing.id
+        _liveNovelId.value = existing.id
+        _novel.value = existing.toNovel()
+        _overrides.value = existing.toOverrides()
+        _isFavorite.value = existing.favorite
+        _notifyOnNewChapters.value = existing.notifyOnNewChapters
+        _notifyOnNewLockedChapters.value = existing.notifyOnNewLockedChapters
+        _autoDownloadNewChapters.value = existing.autoDownloadNewChapters
+        _userRating.value = existing.userRating
+        _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
+        _categoryId.value = existing.categoryId
+        _isLoadingNovel.value = false
+        _isLoadingChapters.value = false
     }
 
     private suspend fun loadLocalNovel() {

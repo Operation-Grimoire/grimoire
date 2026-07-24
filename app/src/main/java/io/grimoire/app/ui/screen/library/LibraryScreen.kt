@@ -99,7 +99,7 @@ private val EmptyExternalEpubUri: StateFlow<Uri?> = MutableStateFlow(null).asSta
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LibraryScreen(
-    onNovelClick: (pkg: String, url: String) -> Unit,
+    onNovelClick: (pkg: String, url: String, sourceId: Long) -> Unit,
     onBrowse: () -> Unit,
     modifier: Modifier = Modifier,
     onSelectionActiveChange: (Boolean) -> Unit = {},
@@ -159,7 +159,6 @@ fun LibraryScreen(
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkMove by remember { mutableStateOf(false) }
     var showBulkRemoveConfirm by remember { mutableStateOf(false) }
-    val extensionNotInstalledMessage = stringResource(R.string.library_extension_not_installed)
     val libraryUpdateQueuedMessage = stringResource(R.string.library_update_queued)
     val categoryUpdateQueuedMessage = stringResource(R.string.library_category_update_queued)
     val queuedDownloadsMessage = pluralStringResource(
@@ -487,9 +486,10 @@ fun LibraryScreen(
         },
     ) { padding ->
             val onNovelClickWrapped: (NovelEntity) -> Unit = { novel ->
-                val pkg = viewModel.pkgForNovel(novel)
-                if (pkg.isNotEmpty()) onNovelClick(pkg, novel.url)
-                else scope.launch { snackbarHostState.showSnackbar(extensionNotInstalledMessage) }
+                // Navigate even when the extension is uninstalled (pkg blank): the
+                // detail screen opens the novel read-only from the DB, keyed by its
+                // sourceId, and flags the missing source.
+                onNovelClick(viewModel.pkgForNovel(novel), novel.url, novel.sourceId)
             }
 
             SwipeTabRow(
