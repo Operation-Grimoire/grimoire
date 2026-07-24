@@ -93,6 +93,7 @@ fun ExtensionsScreen(
     viewModel: ExtensionsViewModel = hiltViewModel(),
     pendingAddRepo: StateFlow<PendingAddRepo?> = MutableStateFlow(null),
     onAddRepoHandled: () -> Unit = {},
+    prefillQuery: String = "",
 ) {
     val ui by viewModel.ui.collectAsState()
     val repos by viewModel.repos.collectAsState()
@@ -159,6 +160,14 @@ fun ExtensionsScreen(
     BackHandler(enabled = searchActive) { exitSearch() }
     LaunchedEffect(searchActive) {
         if (searchActive) searchFocusRequester.requestFocus()
+    }
+    // Deep-linked from a novel whose source is uninstalled: pre-fill the search so
+    // that source is easy to find and install.
+    LaunchedEffect(prefillQuery) {
+        if (prefillQuery.isNotBlank()) {
+            viewModel.setNameFilter(prefillQuery)
+            searchActive = true
+        }
     }
 
     LaunchedEffect(pendingAddRepo) {

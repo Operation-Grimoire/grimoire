@@ -68,9 +68,9 @@ internal fun NavGraphBuilder.libraryDestination(
 ) {
     composable(route = TopLevelDestination.Library.route) {
         LibraryScreen(
-            onNovelClick = { pkg, url ->
+            onNovelClick = { pkg, url, sourceId ->
                 navController.navigate(
-                    "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(url)}"
+                    "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(url)}&sourceId=$sourceId"
                 )
             },
             onBrowse = {
@@ -103,7 +103,7 @@ internal fun NavGraphBuilder.browseGraph(
             }
             val vm: BrowseViewModel = hiltViewModel(graphEntry)
             BrowseScreen(
-                onNavigateToManage = { navController.navigate(ROUTE_EXTENSION_MANAGE) },
+                onNavigateToManage = { navController.navigate("extensions") },
                 onNavigateToSource = { pkg -> navController.navigate("browse/$pkg") },
                 onNavigateToGlobalSearch = { navController.navigate(ROUTE_GLOBAL_SEARCH) },
                 onNavigateToNovelUpdatesSearch = { navController.navigate(ROUTE_NU_SEARCH) },
@@ -409,7 +409,12 @@ internal fun NavGraphBuilder.sourceDestinations(
     pendingAddRepo: StateFlow<PendingAddRepo?> = MutableStateFlow(null),
     onAddRepoHandled: () -> Unit = {},
 ) {
-    composable(route = ROUTE_EXTENSION_MANAGE) {
+    composable(
+        route = ROUTE_EXTENSION_MANAGE,
+        arguments = listOf(
+            navArgument("query") { type = NavType.StringType; defaultValue = "" },
+        ),
+    ) { entry ->
         ExtensionsScreen(
             onNavigateBack = { navController.popBackStack() },
             onOpenSourceSettings = { pkg ->
@@ -418,6 +423,7 @@ internal fun NavGraphBuilder.sourceDestinations(
             onConnectGitHub = { navController.navigate(ROUTE_SETTINGS_GITHUB) },
             pendingAddRepo = pendingAddRepo,
             onAddRepoHandled = onAddRepoHandled,
+            prefillQuery = entry.arguments?.getString("query").orEmpty(),
         )
     }
     composable(
@@ -491,6 +497,9 @@ internal fun NavGraphBuilder.novelDetailDestinations(navController: NavHostContr
             navArgument("pkg") { type = NavType.StringType },
             navArgument("url") { type = NavType.StringType },
             navArgument("migrateFrom") { type = NavType.LongType; defaultValue = -1L },
+            // Fallback source identity for a novel whose extension is uninstalled
+            // (so its pkg can't be resolved); 0 = derive from pkg as usual.
+            navArgument("sourceId") { type = NavType.LongType; defaultValue = 0L },
         ),
     ) {
         NovelDetailScreen(
@@ -511,6 +520,9 @@ internal fun NavGraphBuilder.novelDetailDestinations(navController: NavHostContr
             },
             onOpenSourceSettings = { pkg ->
                 navController.navigate("settings/source/${Uri.encode(pkg)}")
+            },
+            onOpenExtensions = { query ->
+                navController.navigate("extensions?query=${Uri.encode(query)}")
             },
             onMigrate = { novelId ->
                 navController.navigate("migrate?novelId=$novelId")

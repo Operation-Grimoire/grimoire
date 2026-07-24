@@ -61,6 +61,9 @@ internal fun NovelHeader(
     coverModel: Any?,
     sourceName: String = "",
     isLocal: Boolean = false,
+    sourceMissing: Boolean = false,
+    missingSourceName: String? = null,
+    onSourceMissingClick: () -> Unit = {},
     onEditField: (EditableField) -> Unit = {},
     onSetCoverUri: (Uri) -> Unit = {},
     onSetCoverUrl: (String) -> Unit = {},
@@ -193,7 +196,16 @@ internal fun NovelHeader(
                         onClick = { showRatingInfo = true },
                     )
                 }
-                if (isLocal) {
+                if (sourceMissing) {
+                    // Extension gone: name the source when the repo index still knows it,
+                    // so it's clear which one to reinstall.
+                    MetaChip(
+                        text = missingSourceName?.let { "$it (uninstalled)" } ?: "Source uninstalled",
+                        icon = AppIcons.WarningAmber,
+                        iconTint = MaterialTheme.colorScheme.error,
+                        onClick = onSourceMissingClick,
+                    )
+                } else if (isLocal) {
                     MetaChip(text = "EPUB", icon = AppIcons.Book)
                 } else if (sourceName.isNotBlank()) {
                     MetaChip(text = sourceName, icon = AppIcons.ExtensionFilled)
