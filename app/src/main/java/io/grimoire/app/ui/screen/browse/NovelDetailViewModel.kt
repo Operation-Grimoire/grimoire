@@ -928,6 +928,35 @@ class NovelDetailViewModel @Inject constructor(
             _migrationState.value = MigrationState.Idle
         }
     }
+
+    /**
+     * Snapshot of the facts the share card renders. Reading totals mirror the on-screen
+     * stats row (locked chapters count only when [includeLockedInTotals] is set); word
+     * counts sum [ChapterEntity.wordCount], which is 0 until a chapter has been read.
+     */
+    fun shareData(): io.grimoire.app.util.NovelShareData {
+        val list = chapters.value
+        val lockedCount = list.count { it.locked }
+        val total = if (includeLockedInTotals.value) {
+            list.size
+        } else {
+            (list.size - lockedCount).coerceAtLeast(0)
+        }
+        val read = list.count { it.read }
+        val percent = if (total > 0) (read * 100 / total).coerceIn(0, 100) else 0
+        val n = novel.value
+        return io.grimoire.app.util.NovelShareData(
+            coverModel = coverModel.value,
+            title = n.title,
+            author = n.author?.takeIf { it.isNotBlank() },
+            sourceName = sourceName,
+            readChapters = read,
+            totalChapters = total,
+            percent = percent,
+            wordsRead = list.filter { it.read }.sumOf { it.wordCount },
+            totalWords = list.sumOf { it.wordCount },
+        )
+    }
 }
 
 /** Outcome of an EPUB export, surfaced to the screen as a one-shot snackbar message. */

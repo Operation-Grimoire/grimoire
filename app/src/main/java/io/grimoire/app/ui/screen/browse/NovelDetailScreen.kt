@@ -172,6 +172,7 @@ fun NovelDetailScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     var showJumpDialog by remember { mutableStateOf(false) }
     var showDownloadsSheet by remember { mutableStateOf(false) }
+    var showShareSheet by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val isExporting by viewModel.isExporting.collectAsState()
@@ -354,6 +355,17 @@ fun NovelDetailScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
+    }
+
+    if (showShareSheet) {
+        // Snapshot the stats once as the sheet opens so the card renders a single time.
+        val shareData = remember { viewModel.shareData() }
+        ShareNovelDialog(
+            data = shareData,
+            novelUrl = viewModel.novelWebUrl,
+            showCopyLink = !viewModel.isLocal,
+            onDismiss = { showShareSheet = false },
+        )
     }
 
     if (showDownloadsSheet) {
@@ -552,6 +564,12 @@ fun NovelDetailScreen(
                     }
                 },
                 actions = {
+                    val canShare = !isLoadingNovel && novelError == null && novel.title.isNotBlank()
+                    if (canShare) {
+                        PlainTooltipIconButton(onClick = { showShareSheet = true }, tooltip = "Share") {
+                            Icon(AppIcons.Share, contentDescription = "Share")
+                        }
+                    }
                     val hasBulkActions = chapters.isNotEmpty()
                     val canMigrate = isFavorite && novelId > 0L
                     // EPUB novels (local imports and EPUB-source extensions like
