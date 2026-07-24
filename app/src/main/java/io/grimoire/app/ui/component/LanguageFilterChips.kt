@@ -48,3 +48,40 @@ internal fun LanguageFilterChips(
         }
     }
 }
+
+/**
+ * Multi-select language chips for the persistent "which languages show in this
+ * list" setting. [enabled] is the chosen set; an **empty set means "all"**, so
+ * every chip (and the leading "All") reads as selected. Tapping "All" clears the
+ * selection back to all; tapping a language toggles just that one.
+ */
+@Composable
+internal fun LanguageMultiSelectChips(
+    languages: List<String>,
+    enabled: Set<String>,
+    onToggle: (String) -> Unit,
+    onAll: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (languages.size < 2) return
+    val showAll = enabled.isEmpty()
+    Row(
+        modifier = modifier
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        FilterChip(
+            selected = showAll,
+            onClick = onAll,
+            label = { Text(stringResource(R.string.filter_all)) },
+        )
+        languages.forEach { lang ->
+            FilterChip(
+                selected = showAll || lang in enabled,
+                onClick = { onToggle(lang) },
+                label = { Text(languageLabel(lang)) },
+            )
+        }
+    }
+}

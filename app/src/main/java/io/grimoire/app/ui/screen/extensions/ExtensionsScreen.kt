@@ -74,7 +74,7 @@ import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.PendingAddRepo
 import io.grimoire.app.ui.component.AppSearchField
-import io.grimoire.app.ui.component.LanguageFilterChips
+import io.grimoire.app.ui.component.LanguageMultiSelectChips
 import io.grimoire.app.ui.component.LinkText
 import io.grimoire.app.ui.component.SourceListItem
 import io.grimoire.app.util.ContentLanguages
@@ -102,7 +102,7 @@ fun ExtensionsScreen(
     val githubLogin by viewModel.githubLogin.collectAsState()
     val rateLimitPrompt by viewModel.rateLimitPrompt.collectAsState()
     val nameFilter by viewModel.nameFilter.collectAsState()
-    val languageFilter by viewModel.languageFilter.collectAsState()
+    val enabledLanguages by viewModel.enabledLanguages.collectAsState()
     val adultFilter by viewModel.adultFilter.collectAsState()
     val section by viewModel.section.collectAsState()
 
@@ -149,7 +149,7 @@ fun ExtensionsScreen(
     val searchFocusRequester = remember { FocusRequester() }
     val repoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val filterSheetState = rememberModalBottomSheetState()
-    val filtersActive = section != ExtensionSection.ALL || languageFilter != null ||
+    val filtersActive = section != ExtensionSection.ALL || enabledLanguages.isNotEmpty() ||
         adultFilter != AdultFilter.ALL
 
     val exitSearch = {
@@ -335,10 +335,11 @@ fun ExtensionsScreen(
                 )
                 if (ui.languages.size > 1) {
                     FilterSheetLabel(stringResource(R.string.extensions_language))
-                    LanguageFilterChips(
+                    LanguageMultiSelectChips(
                         languages = ui.languages,
-                        selected = languageFilter,
-                        onSelect = viewModel::setLanguageFilter,
+                        enabled = enabledLanguages,
+                        onToggle = { viewModel.toggleLanguage(it, ui.languages) },
+                        onAll = viewModel::clearLanguageFilter,
                         modifier = Modifier.padding(vertical = 4.dp),
                     )
                 }
