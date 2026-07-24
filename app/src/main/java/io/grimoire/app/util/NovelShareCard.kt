@@ -29,7 +29,8 @@ data class NovelShareData(
     val coverModel: Any?,
     val title: String,
     val author: String?,
-    val sourceName: String,
+    /** The user's own 1–10 rating, drawn large when present. */
+    val userRating: Int?,
     val readChapters: Int,
     val totalChapters: Int,
     val percent: Int,
@@ -151,6 +152,22 @@ object NovelShareCardRenderer {
             textSize = 34f
         }
         canvas.drawText("read", margin + percentPaint.measureText(percentText) + 24f, y + percentPaint.textSize * 0.65f, labelPaint)
+
+        // Big user rating on the right of the same row (only when the user has rated it).
+        data.userRating?.let { rating ->
+            val baseY = y + percentPaint.textSize * 0.75f
+            val starPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = palette.accent; textSize = 84f }
+            val numPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = onColor; textSize = 130f; isFakeBoldText = true }
+            val ofPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = onMuted; textSize = 40f }
+            val star = "★ "
+            val num = rating.toString()
+            val of = "/10"
+            val total = starPaint.measureText(star) + numPaint.measureText(num) + ofPaint.measureText(of)
+            var x = W - margin - total
+            canvas.drawText(star, x, baseY, starPaint); x += starPaint.measureText(star)
+            canvas.drawText(num, x, baseY, numPaint); x += numPaint.measureText(num)
+            canvas.drawText(of, x, baseY, ofPaint)
+        }
         y += percentPaint.textSize + 16f
 
         // Progress bar.
@@ -180,13 +197,12 @@ object NovelShareCardRenderer {
         val statLayout = ellipsizedLayout(stat, statPaint, (W - margin * 2).toInt(), maxLines = 1)
         canvas.withTranslation(margin, y) { statLayout.draw(this) }
 
-        // Footer: source + app wordmark.
+        // Footer: app wordmark.
         val footPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             color = onMuted
             textSize = 32f
         }
-        val footer = if (data.sourceName.isNotBlank()) "${data.sourceName}  ·  Grimoire" else "Grimoire"
-        canvas.drawText(footer, margin, H - 72f, footPaint)
+        canvas.drawText("Grimoire", margin, H - 72f, footPaint)
 
         return bmp
     }

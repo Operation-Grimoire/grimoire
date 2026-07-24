@@ -966,7 +966,7 @@ class NovelDetailViewModel @Inject constructor(
             coverModel = coverModel.value,
             title = n.title,
             author = n.author?.takeIf { it.isNotBlank() },
-            sourceName = sourceName,
+            userRating = _userRating.value,
             readChapters = read,
             totalChapters = total,
             percent = percent,
