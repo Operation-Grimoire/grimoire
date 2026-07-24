@@ -54,7 +54,7 @@ object NovelShareCardRenderer {
         val cover = data.coverModel?.let { loadBitmap(context, it) }
         val palette = cover?.let { extractPalette(it) } ?: DEFAULT_PALETTE
         val card = drawCard(data, cover, palette)
-        cacheForShare(context, card, data.title)
+        cacheForShare(context, card, data.title, data.hashCode())
     }
 
     private suspend fun loadBitmap(context: Context, model: Any): Bitmap? {
@@ -191,10 +191,15 @@ object NovelShareCardRenderer {
         return bmp
     }
 
-    private fun cacheForShare(context: Context, bitmap: Bitmap, baseName: String): Uri? = runCatching {
+    private fun cacheForShare(context: Context, bitmap: Bitmap, baseName: String, contentKey: Int): Uri? = runCatching {
         val dir = File(context.cacheDir, "shared_images").apply { mkdirs() }
         val slug = baseName.ifBlank { "novel" }.replace(Regex("[^A-Za-z0-9._-]"), "_").take(50)
-        val file = File(dir, "share_$slug.png")
+        // The file name must change whenever the rendered facts do: image loaders (Coil in
+        // the preview, and whatever the receiving app uses) cache by URI, so re-writing the
+        // same path would keep serving a card with stale progress.
+        val name = "share_${slug}_${Integer.toHexString(contentKey)}.png"
+        dir.listFiles { f -> f.name.startsWith("share_$slug") && f.name != name }?.forEach { it.delete() }
+        val file = File(dir, name)
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
     }.getOrNull()
