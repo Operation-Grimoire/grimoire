@@ -19,3 +19,6 @@ local.properties
 
 # local screenshot scratch
 nd.png
+
+# Kotlin compiler daemon scratch/error logs
+.kotlin/

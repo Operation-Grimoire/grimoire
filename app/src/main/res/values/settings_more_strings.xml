@@ -44,6 +44,8 @@
     <string name="library_settings_downloaded_badge_summary">Show the downloaded-chapter count on library covers</string>
     <string name="library_settings_locked_badge">Show locked chapters badge</string>
     <string name="library_settings_locked_badge_summary">Show a gold lock badge with the locked-chapter count on library covers</string>
+    <string name="library_settings_rating_badge">Show rating badge</string>
+    <string name="library_settings_rating_badge_summary">Show your own rating on library covers</string>
     <string name="library_settings_epub_badge">Show EPUB badge</string>
     <string name="library_settings_epub_badge_summary">Flag imported EPUB novels with a badge on library covers</string>
 

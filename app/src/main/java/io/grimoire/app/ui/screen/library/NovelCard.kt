@@ -38,6 +38,7 @@ internal fun NovelCard(
     showReadBadge: Boolean,
     showDownloadedBadge: Boolean,
     showLockedBadge: Boolean,
+    showRatingBadge: Boolean,
     showEpubBadge: Boolean,
     isEpub: Boolean,
     selected: Boolean,
@@ -136,6 +137,14 @@ internal fun NovelCard(
                             )
                         }
                     }
+                }
+                novel.userRating?.takeIf { showRatingBadge }?.let { rating ->
+                    NovelRatingBadgeOverlay(
+                        rating = rating,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(4.dp),
+                    )
                 }
             }
             Text(

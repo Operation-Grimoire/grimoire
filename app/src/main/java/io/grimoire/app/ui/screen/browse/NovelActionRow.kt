@@ -38,10 +38,10 @@ import io.grimoire.app.R
  * rather than a sparse centered cluster. The WebView and category actions live here
  * too, leaving the top bar with just back / title / overflow.
  *
- * Order is category → library → WebView. The category button is present only while the
- * novel is in the library ([categoryName] non-null); its slot grows/shrinks on a weight
- * animation so toggling the library reflows the row smoothly instead of snapping, and the
- * library button cross-fades its icon/label/tint between the add and in-library states.
+ * Order is category → library → WebView → rate. The category and rate buttons are present only
+ * while the novel is in the library; their slots grow/shrink on a shared weight animation so
+ * toggling the library reflows the row smoothly instead of snapping, and the library button
+ * cross-fades its icon/label/tint between the add and in-library states.
  */
 @Composable
 internal fun NovelActionRow(
@@ -51,6 +51,8 @@ internal fun NovelActionRow(
     onOpenWebView: () -> Unit,
     categoryName: String?,
     onEditCategory: () -> Unit,
+    userRating: Int?,
+    onRate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Retain the last name so the category button can animate out without its label
@@ -58,11 +60,12 @@ internal fun NovelActionRow(
     var lastCategoryName by remember { mutableStateOf(categoryName) }
     if (categoryName != null) lastCategoryName = categoryName
 
-    // Drives both the slot width (weight) and a fade, so the button grows in from the
-    // left edge and shrinks back out rather than popping in/out.
-    val categoryWeight by animateFloatAsState(
+    // Drives both the slot width (weight) and a fade for the library-only buttons
+    // (category + rate), so they grow in from their edge and shrink back out rather
+    // than popping in/out.
+    val inLibraryWeight by animateFloatAsState(
         targetValue = if (inLibrary) 1f else 0f,
-        label = "categoryWeight",
+        label = "inLibraryWeight",
     )
 
     Row(
@@ -72,14 +75,14 @@ internal fun NovelActionRow(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (categoryWeight > 0.001f) {
+        if (inLibraryWeight > 0.001f) {
             NovelActionButton(
-                modifier = Modifier.weight(categoryWeight),
+                modifier = Modifier.weight(inLibraryWeight),
                 icon = AppIcons.Label,
                 label = lastCategoryName ?: "—",
                 active = false,
                 onClick = onEditCategory,
-                contentAlpha = categoryWeight.coerceIn(0f, 1f),
+                contentAlpha = inLibraryWeight.coerceIn(0f, 1f),
             )
         }
         NovelActionButton(
@@ -99,6 +102,18 @@ internal fun NovelActionRow(
                 label = stringResource(R.string.novel_action_webview),
                 active = false,
                 onClick = onOpenWebView,
+            )
+        }
+        // Rating is a library-only action: it grows/shrinks with the same weight as the
+        // category button so the row reflows smoothly when the library is toggled.
+        if (inLibraryWeight > 0.001f) {
+            NovelActionButton(
+                modifier = Modifier.weight(inLibraryWeight),
+                icon = AppIcons.Star,
+                label = if (userRating != null) "$userRating/10" else stringResource(R.string.novel_action_rate),
+                active = userRating != null,
+                onClick = onRate,
+                contentAlpha = inLibraryWeight.coerceIn(0f, 1f),
             )
         }
     }

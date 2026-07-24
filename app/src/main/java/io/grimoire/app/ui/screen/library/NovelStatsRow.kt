@@ -47,17 +47,18 @@ internal fun resolveBadgeVisibility(
 
 @Composable
 internal fun NovelStatsRowInline(
-    stats: NovelChapterStats,
+    stats: NovelChapterStats?,
     includeLockedInTotals: Boolean,
     visibility: NovelBadgeVisibility,
     modifier: Modifier = Modifier,
+    userRating: Int? = null,
 ) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (visibility.showRead) {
+        if (stats != null && visibility.showRead) {
             val displayedTotal = stats.effectiveTotal(includeLockedInTotals)
             val percent = stats.readPercent(includeLockedInTotals)
             InlineBadge(
@@ -67,7 +68,7 @@ internal fun NovelStatsRowInline(
                 tint = MaterialTheme.colorScheme.primary,
             )
         }
-        if (visibility.showDownloaded) {
+        if (stats != null && visibility.showDownloaded) {
             InlineBadge(
                 icon = AppIcons.Download,
                 contentDescription = null,
@@ -75,12 +76,20 @@ internal fun NovelStatsRowInline(
                 tint = MaterialTheme.colorScheme.primary,
             )
         }
-        if (visibility.showLocked) {
+        if (stats != null && visibility.showLocked) {
             InlineBadge(
                 icon = AppIcons.Lock,
                 contentDescription = stringResource(R.string.library_locked_chapters),
                 text = "${stats.lockedCount}",
                 tint = MaterialTheme.colorScheme.premiumGold,
+            )
+        }
+        if (userRating != null) {
+            InlineBadge(
+                icon = AppIcons.Star,
+                contentDescription = stringResource(R.string.novel_your_rating),
+                text = "$userRating/10",
+                tint = MaterialTheme.colorScheme.primary,
             )
         }
     }
@@ -169,6 +178,39 @@ internal fun NovelCountBadgeOverlay(
         )
         Text(
             text = "$count",
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White,
+        )
+    }
+}
+
+/**
+ * Cover overlay showing the user's own 1–10 rating (star + score). Callers gate it on the
+ * novel having a rating and on the "Show rating badge" preference.
+ */
+@Composable
+internal fun NovelRatingBadgeOverlay(
+    rating: Int,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .background(
+                MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f),
+                MaterialTheme.shapes.extraSmall,
+            )
+            .padding(horizontal = 4.dp, vertical = 1.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Icon(
+            AppIcons.Star,
+            contentDescription = stringResource(R.string.novel_your_rating),
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(11.dp),
+        )
+        Text(
+            text = "$rating",
             style = MaterialTheme.typography.labelSmall,
             color = Color.White,
         )

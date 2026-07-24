@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,6 +50,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -173,6 +175,9 @@ fun NovelDetailScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     var showJumpDialog by remember { mutableStateOf(false) }
     var showDownloadsSheet by remember { mutableStateOf(false) }
+    var showShareSheet by remember { mutableStateOf(false) }
+    var showRateDialog by remember { mutableStateOf(false) }
+    val userRating by viewModel.userRating.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val isExporting by viewModel.isExporting.collectAsState()
@@ -355,6 +360,25 @@ fun NovelDetailScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
+    }
+
+    if (showRateDialog) {
+        RateNovelDialog(
+            current = userRating,
+            onSetRating = viewModel::setUserRating,
+            onDismiss = { showRateDialog = false },
+        )
+    }
+
+    if (showShareSheet) {
+        // Snapshot the stats once as the sheet opens so the card renders a single time.
+        val shareData = remember { viewModel.shareData() }
+        ShareNovelDialog(
+            data = shareData,
+            novelUrl = viewModel.novelWebUrl,
+            showCopyLink = !viewModel.isLocal,
+            onDismiss = { showShareSheet = false },
+        )
     }
 
     if (showDownloadsSheet) {
@@ -563,6 +587,12 @@ fun NovelDetailScreen(
                     }
                 },
                 actions = {
+                    val canShare = !isLoadingNovel && novelError == null && novel.title.isNotBlank()
+                    if (canShare) {
+                        PlainTooltipIconButton(onClick = { showShareSheet = true }, tooltip = stringResource(R.string.action_share)) {
+                            Icon(AppIcons.Share, contentDescription = stringResource(R.string.action_share))
+                        }
+                    }
                     val hasBulkActions = chapters.isNotEmpty()
                     val canMigrate = isFavorite && novelId > 0L
                     // EPUB novels (local imports and EPUB-source extensions like
@@ -874,6 +904,8 @@ fun NovelDetailScreen(
                                 onOpenWebView = { onOpenWebView(viewModel.novelWebUrl) },
                                 categoryName = currentCategoryName,
                                 onEditCategory = { showCategoryDialog = true },
+                                userRating = userRating,
+                                onRate = { showRateDialog = true },
                             )
                         }
                     }
@@ -940,29 +972,40 @@ fun NovelDetailScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 val downloading = bookDownload is BookDownloadState.Downloading
-                                Button(
-                                    onClick = { viewModel.downloadBook() },
-                                    enabled = !downloading,
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
+                                val hasBook = chapters.isNotEmpty()
+                                val label = when {
+                                    downloading -> stringResource(R.string.novel_downloading)
+                                    hasBook -> stringResource(R.string.novel_redownload_epub)
+                                    else -> stringResource(R.string.novel_download_epub)
+                                }
+                                val content: @Composable RowScope.() -> Unit = {
                                     if (downloading) {
                                         CircularProgressIndicator(
                                             Modifier.size(18.dp),
                                             strokeWidth = 2.dp,
-                                            color = MaterialTheme.colorScheme.onPrimary,
+                                            color = LocalContentColor.current,
                                         )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(stringResource(R.string.novel_downloading))
                                     } else {
                                         Icon(AppIcons.Download, contentDescription = null)
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            stringResource(
-                                                if (chapters.isEmpty()) R.string.novel_download_epub
-                                                else R.string.novel_redownload_epub,
-                                            ),
-                                        )
                                     }
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(label)
+                                }
+                                if (hasBook) {
+                                    // The book is already downloaded: Continue reading is the
+                                    // primary action (the FAB), so keep re-download quiet.
+                                    OutlinedButton(
+                                        onClick = { viewModel.downloadBook() },
+                                        enabled = !downloading,
+                                        content = content,
+                                    )
+                                } else {
+                                    Button(
+                                        onClick = { viewModel.downloadBook() },
+                                        enabled = !downloading,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        content = content,
+                                    )
                                 }
                                 (bookDownload as? BookDownloadState.Error)?.let { err ->
                                     Text(

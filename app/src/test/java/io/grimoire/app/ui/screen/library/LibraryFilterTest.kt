@@ -29,6 +29,7 @@ class LibraryFilterTest {
         overrideTitle: String? = null,
         overrideAuthor: String? = null,
         overrideStatus: Int? = null,
+        userRating: Int? = null,
     ) = NovelEntity(
         id = id,
         sourceId = sourceId,
@@ -46,6 +47,7 @@ class LibraryFilterTest {
         overrideTitle = overrideTitle,
         overrideAuthor = overrideAuthor,
         overrideStatus = overrideStatus,
+        userRating = userRating,
     )
 
     private fun category(id: Long, name: String, isDefault: Boolean = false, isHidden: Boolean = false) =
@@ -77,6 +79,8 @@ class LibraryFilterTest {
         filterDownloadedOnly: Boolean = false,
         filterNotifyEnabled: Boolean = false,
         filterAutoDownloadEnabled: Boolean = false,
+        filterMinUserRating: Int = 1,
+        filterMaxUserRating: Int = 10,
         filterType: NovelTypeFilter = NovelTypeFilter.ALL,
         epubSourceIds: Set<Long> = emptySet(),
         filterSourceIds: Set<Long> = emptySet(),
@@ -97,6 +101,8 @@ class LibraryFilterTest {
         filterDownloadedOnly = filterDownloadedOnly,
         filterNotifyEnabled = filterNotifyEnabled,
         filterAutoDownloadEnabled = filterAutoDownloadEnabled,
+        filterMinUserRating = filterMinUserRating,
+        filterMaxUserRating = filterMaxUserRating,
         filterType = filterType,
         epubSourceIds = epubSourceIds,
         filterSourceIds = filterSourceIds,
@@ -431,6 +437,60 @@ class LibraryFilterTest {
             ),
         )
         assertEquals(listOf("Same", "Less", "More"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `sort by USER_RATING orders by rating, unrated last on descending`() {
+        val novels = listOf(
+            novel(1, title = "Mid", userRating = 5),
+            novel(2, title = "Top", userRating = 9),
+            novel(3, title = "Unrated", userRating = null),
+        )
+        val desc = buildLibraryTabs(
+            baseInputs(
+                novels = novels,
+                sortField = SortField.USER_RATING,
+                sortDirection = SortDirection.DESC,
+            ),
+        )
+        // Highest first; unrated (null == 0) sinks to the bottom.
+        assertEquals(listOf("Top", "Mid", "Unrated"), desc[0].novels!!.map { it.title })
+
+        val asc = buildLibraryTabs(
+            baseInputs(
+                novels = novels,
+                sortField = SortField.USER_RATING,
+                sortDirection = SortDirection.ASC,
+            ),
+        )
+        assertEquals(listOf("Unrated", "Mid", "Top"), asc[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `user-rating range keeps only novels whose rating falls inside it`() {
+        val novels = listOf(
+            novel(1, title = "Low", userRating = 3),
+            novel(2, title = "Mid", userRating = 6),
+            novel(3, title = "High", userRating = 9),
+            novel(4, title = "Unrated", userRating = null),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterMinUserRating = 5, filterMaxUserRating = 8),
+        )
+        // Only the 6 is inside [5,8]; the 3, the 9, and unrated are dropped.
+        assertEquals(listOf("Mid"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `full user-rating range is treated as no filter and keeps unrated novels`() {
+        val novels = listOf(
+            novel(1, title = "Rated", userRating = 4),
+            novel(2, title = "Unrated", userRating = null),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterMinUserRating = 1, filterMaxUserRating = 10),
+        )
+        assertEquals(listOf("Rated", "Unrated"), tabs[0].novels!!.map { it.title })
     }
 
     @Test

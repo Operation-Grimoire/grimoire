@@ -123,11 +123,14 @@
     <string name="library_filter_notifications_on_description">Show only novels set to notify on new chapters</string>
     <string name="library_filter_auto_download_on">Auto-download on</string>
     <string name="library_filter_auto_download_on_description">Show only novels set to auto-download new chapters</string>
+    <string name="library_filter_rating_range">Rating range</string>
+    <string name="library_filter_rating_any">Any</string>
     <string name="library_sort_last_read">Last read</string>
     <string name="library_sort_title">Title</string>
     <string name="library_sort_last_updated">Last updated</string>
     <string name="library_sort_unread_chapters">Unread chapters</string>
     <string name="library_sort_total_chapters">Total chapters</string>
+    <string name="library_sort_your_rating">Your rating</string>
     <string name="library_sort_ascending_description">Ascending, tap to flip</string>
     <string name="library_sort_descending_description">Descending, tap to flip</string>
 
@@ -217,6 +220,10 @@
     <string name="action_save">Save</string>
     <string name="action_search">Search</string>
     <string name="action_share">Share</string>
+    <string name="share_copy_link">Copy link</string>
+    <string name="share_link_copied">Link copied</string>
+    <string name="share_preview_content_description">Share card preview</string>
+    <string name="share_build_failed">Couldn\'t build image</string>
     <string name="action_settings">Settings</string>
     <string name="action_more_actions">More actions</string>
     <string name="action_open_in_webview">Open in WebView</string>
@@ -282,6 +289,7 @@
     <string name="novel_expand">Expand</string>
     <string name="novel_collapse">Collapse</string>
     <string name="novel_action_webview">WebView</string>
+    <string name="novel_action_rate">Rate</string>
     <string name="novel_edit_field_title">title</string>
     <string name="novel_edit_field_author">author</string>
     <string name="novel_edit_field_status">status</string>
@@ -297,6 +305,9 @@
     <string name="novel_rating_info_description">This rating is reported by %1$s and reflects readers there — not your activity in Grimoire.</string>
     <string name="novel_rating_source_fallback">the source</string>
     <string name="novel_rating_got_it">Got it</string>
+    <string name="novel_your_rating">Your rating</string>
+    <string name="novel_rating_hint">Your own score, separate from the source rating.</string>
+    <string name="novel_rating_value">%1$d / 10</string>
     <string name="novel_cover_url_title">Cover image URL</string>
     <string name="novel_cover_replace_image">Replace with image</string>
     <string name="novel_cover_replace_url">Replace with URL</string>

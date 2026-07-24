@@ -37,6 +37,9 @@ data class NovelEntity(
     val lastAccessedAt: Long = 0L,
     val rating: Float? = null,
     val ratingCount: Int? = null,
+    /** The user's own 1–10 rating for this novel; null when unrated. Distinct from the
+     *  source [rating], which reflects readers on the source site. */
+    val userRating: Int? = null,
     val language: String? = null,
     val notifyOnNewChapters: Boolean = false,
     val notifyOnNewLockedChapters: Boolean = false,

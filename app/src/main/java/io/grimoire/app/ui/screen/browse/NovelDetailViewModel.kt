@@ -199,6 +199,10 @@ class NovelDetailViewModel @Inject constructor(
     private val _autoDownloadNewChapters = MutableStateFlow(false)
     val autoDownloadNewChapters: StateFlow<Boolean> = _autoDownloadNewChapters.asStateFlow()
 
+    /** The user's own 1–10 rating for this novel; null when unrated. */
+    private val _userRating = MutableStateFlow<Int?>(null)
+    val userRating: StateFlow<Int?> = _userRating.asStateFlow()
+
     /** Title of the novel being migrated from, shown in the migration prompt. */
     private val _migrateFromTitle = MutableStateFlow("")
     val migrateFromTitle: StateFlow<String> = _migrateFromTitle.asStateFlow()
@@ -380,6 +384,7 @@ class NovelDetailViewModel @Inject constructor(
         _notifyOnNewChapters.value = existing.notifyOnNewChapters
         _notifyOnNewLockedChapters.value = existing.notifyOnNewLockedChapters
         _autoDownloadNewChapters.value = existing.autoDownloadNewChapters
+        _userRating.value = existing.userRating
         _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
         _categoryId.value = existing.categoryId
         _isLoadingNovel.value = false
@@ -602,6 +607,7 @@ class NovelDetailViewModel @Inject constructor(
                     _notifyOnNewChapters.value = existing.notifyOnNewChapters
                     _notifyOnNewLockedChapters.value = existing.notifyOnNewLockedChapters
                     _autoDownloadNewChapters.value = existing.autoDownloadNewChapters
+                    _userRating.value = existing.userRating
                     _chapterSort.value = ChapterSort.entries.getOrElse(existing.chapterSortOrder) { ChapterSort.NUMBER_ASC }
                     _categoryId.value = existing.categoryId
                     _isLoadingNovel.value = false
@@ -661,6 +667,7 @@ class NovelDetailViewModel @Inject constructor(
                 overrideDescription = existing?.overrideDescription,
                 overrideStatus = existing?.overrideStatus,
                 overrideGenres = existing?.overrideGenres,
+                userRating = existing?.userRating,
             ))
             cachedNovelId = existing?.id ?: upsertId
             _liveNovelId.value = cachedNovelId
@@ -671,6 +678,7 @@ class NovelDetailViewModel @Inject constructor(
             _notifyOnNewChapters.value = existing?.notifyOnNewChapters ?: false
             _notifyOnNewLockedChapters.value = existing?.notifyOnNewLockedChapters ?: false
             _autoDownloadNewChapters.value = existing?.autoDownloadNewChapters ?: false
+            _userRating.value = existing?.userRating
             _chapterSort.value = ChapterSort.entries.getOrElse(existing?.chapterSortOrder ?: 0) { ChapterSort.NUMBER_ASC }
             _categoryId.value = existing?.categoryId
         }.onFailure { e ->
@@ -899,6 +907,15 @@ class NovelDetailViewModel @Inject constructor(
         }
     }
 
+    /** Set (1–10) or clear (null) the user's own rating for this novel. */
+    fun setUserRating(rating: Int?) {
+        val clamped = rating?.coerceIn(1, 10)
+        _userRating.value = clamped
+        if (cachedNovelId > 0L) viewModelScope.launch {
+            novelDao.updateUserRating(cachedNovelId, clamped)
+        }
+    }
+
     /** How many of this novel's chapters the pending migration would mark read. */
     suspend fun migrationMatchCount(): Int {
         if (!isMigrationTarget || cachedNovelId <= 0L) return 0
@@ -927,6 +944,35 @@ class NovelDetailViewModel @Inject constructor(
         if (_migrationState.value is MigrationState.Error) {
             _migrationState.value = MigrationState.Idle
         }
+    }
+
+    /**
+     * Snapshot of the facts the share card renders. Reading totals mirror the on-screen
+     * stats row (locked chapters count only when [includeLockedInTotals] is set); word
+     * counts sum [ChapterEntity.wordCount], which is 0 until a chapter has been read.
+     */
+    fun shareData(): io.grimoire.app.util.NovelShareData {
+        val list = chapters.value
+        val lockedCount = list.count { it.locked }
+        val total = if (includeLockedInTotals.value) {
+            list.size
+        } else {
+            (list.size - lockedCount).coerceAtLeast(0)
+        }
+        val read = list.count { it.read }
+        val percent = if (total > 0) (read * 100 / total).coerceIn(0, 100) else 0
+        val n = novel.value
+        return io.grimoire.app.util.NovelShareData(
+            coverModel = coverModel.value,
+            title = n.title,
+            author = n.author?.takeIf { it.isNotBlank() },
+            sourceName = sourceName,
+            readChapters = read,
+            totalChapters = total,
+            percent = percent,
+            wordsRead = list.filter { it.read }.sumOf { it.wordCount },
+            totalWords = list.sumOf { it.wordCount },
+        )
     }
 }
 
@@ -990,6 +1036,7 @@ internal fun Novel.toEntity(
     overrideDescription: String? = null,
     overrideStatus: Int? = null,
     overrideGenres: String? = null,
+    userRating: Int? = null,
 ) = NovelEntity(
     id = existingId,
     sourceId = sourceId,
@@ -1019,6 +1066,7 @@ internal fun Novel.toEntity(
     overrideDescription = overrideDescription,
     overrideStatus = overrideStatus,
     overrideGenres = overrideGenres,
+    userRating = userRating,
 )
 
 /**

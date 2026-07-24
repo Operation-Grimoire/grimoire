@@ -40,6 +40,7 @@ internal fun NovelRow(
     showReadBadge: Boolean,
     showDownloadedBadge: Boolean,
     showLockedBadge: Boolean,
+    showRatingBadge: Boolean,
     showEpubBadge: Boolean,
     isEpub: Boolean,
     selected: Boolean,
@@ -66,13 +67,15 @@ internal fun NovelRow(
                     showDownloadedBadge = showDownloadedBadge,
                     showLockedBadge = showLockedBadge,
                 )
+                val ratingForRow = novel.userRating.takeIf { showRatingBadge }
                 when {
-                    visibility.any && stats != null -> {
+                    visibility.any || ratingForRow != null -> {
                         {
                             NovelStatsRowInline(
                                 stats = stats,
                                 includeLockedInTotals = includeLockedInTotals,
                                 visibility = visibility,
+                                userRating = ratingForRow,
                             )
                         }
                     }

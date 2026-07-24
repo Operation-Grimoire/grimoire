@@ -43,6 +43,7 @@ fun LibrarySettingsScreen(
     val showReadBadge by viewModel.libraryShowReadBadge.collectAsState()
     val showDownloadedBadge by viewModel.libraryShowDownloadedBadge.collectAsState()
     val showLockedBadge by viewModel.libraryShowLockedBadge.collectAsState()
+    val showRatingBadge by viewModel.libraryShowRatingBadge.collectAsState()
     val showEpubBadge by viewModel.libraryShowEpubBadge.collectAsState()
 
     Scaffold(
@@ -189,6 +190,19 @@ fun LibrarySettingsScreen(
                         )
                     },
                     modifier = Modifier.clickable { viewModel.setLibraryShowLockedBadge(!showLockedBadge) },
+                )
+            }
+            item {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.library_settings_rating_badge)) },
+                    supportingContent = { Text(stringResource(R.string.library_settings_rating_badge_summary)) },
+                    trailingContent = {
+                        Switch(
+                            checked = showRatingBadge,
+                            onCheckedChange = { viewModel.setLibraryShowRatingBadge(it) },
+                        )
+                    },
+                    modifier = Modifier.clickable { viewModel.setLibraryShowRatingBadge(!showRatingBadge) },
                 )
             }
             item {
