@@ -10,6 +10,13 @@
 </p>
 
 <p align="center">
+  <em>Tachiyomi/Mihon-inspired &mdash; but <strong>not a fork</strong>.</em><br/>
+  Grimoire is written from scratch to read <strong>novels</strong>, so it isn't shoehorned
+  into a manga app's page/image data model &mdash; the library, sources, and reader are
+  built around prose from the ground up.
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/status-alpha-orange" alt="status" />
   <img src="https://img.shields.io/badge/minSdk-26-blue" alt="min sdk" />
   <img src="https://img.shields.io/badge/targetSdk-36-blue" alt="target sdk" />
@@ -25,13 +32,18 @@
 ## Features
 
 - **Library** — categories (incl. PIN-locked hidden categories), per-category background refresh, custom sort + filter + search, EPUB import, swipeable tabs throughout
+- **Personal ratings** — rate any novel 1–10; sort, filter, and badge your library by your own score (separate from the source's rating)
+- **Cover & metadata overrides** — replace a novel's cover, title, author, description, status or genres without losing them on refresh
 - **Reader** — adjustable font, spacing, line height, colour theme and orientation; in-line image privacy mode; optional Text-to-Speech (on-device + ElevenLabs voices)
+- **History & Incognito** — reading and browsing history, with an incognito mode that pauses history while you explore
 - **Sources via extensions** — every source is a separate APK the app discovers at runtime via `PackageManager`, so the catalogue grows without re-shipping the app. Ships with the official extension repository enabled out of the box; add your own repos too (including private GitHub repos via OAuth)
 - **Downloads** — foreground download service with a per-chapter image store for offline reading
 - **NovelUpdates integration** — cross-source metadata, rankings, latest releases, saved series, and "read this with one of your sources" matching
 - **Library updates** — background refresh via `WorkManager`, per-novel notification rules, and an update-issues log
 - **Source migration** — move a novel from one source to another, keeping its history
+- **Share** — generate a shareable reading-progress card (cover + stats over a cover-derived gradient) or copy a novel's link
 - **Backup & restore** — manual and scheduled local backups
+- **Localization** — English and Simplified Chinese, with the rest of the UI ready for more translations
 - **Statistics & tasks** — reading statistics and a background-task log
 - **Self-updating** — in-app updater pulls signed APKs from GitHub releases with changelogs; uncaught crashes are captured on the next launch and pre-fill a GitHub issue
 
@@ -73,7 +85,7 @@ Grimoire is split into three repos that ship independently:
 | Repo | Purpose |
 |------|---------|
 | `grimoire` (this) | Main Android app |
-| `grimoire-extensions-api` | Shared contract library (Source, Novel, Chapter, Filter…) — consumed via JitPack at `io.grimoire:extensions-api:0.3.0` |
+| `grimoire-extensions-api` | Shared contract library (Source, Novel, Chapter, Filter…) — published to GitHub Packages and consumed as `io.grimoire:extensions-api` |
 | `grimoire-extensions` | First-party extension APKs (one per source) |
 
 The app does **not** dynamically load extension classes — each extension is a separate APK that the OS installs, discovered via `PackageManager` + a manifest metadata flag. See `app/src/main/java/io/grimoire/app/extension/`.
@@ -103,4 +115,4 @@ The release `versionCode` is derived from the latest git tag (`vMAJOR.MINOR.PATC
 
 ## License
 
-To be determined.
+[Apache License 2.0](./LICENSE).
