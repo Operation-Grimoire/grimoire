@@ -9,6 +9,7 @@ import io.grimoire.app.extension.repo.ExtensionInstaller
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.extension.repo.ExtensionRepository
 import io.grimoire.app.extension.repo.GitHubRateLimitException
+import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.repo.HashMismatchException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -54,6 +55,7 @@ data class ExtensionsUi(
 class ExtensionsViewModel @Inject constructor(
     private val repository: ExtensionRepository,
     private val installer: ExtensionInstaller,
+    private val extensionPreferences: io.grimoire.app.data.preferences.ExtensionPreferences,
     githubAuthStore: GitHubAuthStore,
 ) : ViewModel() {
 
@@ -92,8 +94,9 @@ class ExtensionsViewModel @Inject constructor(
     private val _nameFilter = MutableStateFlow("")
     val nameFilter: StateFlow<String> = _nameFilter.asStateFlow()
 
-    private val _languageFilter = MutableStateFlow<String?>(null)
-    val languageFilter: StateFlow<String?> = _languageFilter.asStateFlow()
+    /** Persistent set of language codes to show; empty = show all. */
+    val enabledLanguages: StateFlow<Set<String>> =
+        extensionPreferences.enabledLanguages.stateIn(viewModelScope)
 
     private val _adultFilter = MutableStateFlow(AdultFilter.ALL)
     val adultFilter: StateFlow<AdultFilter> = _adultFilter.asStateFlow()
@@ -102,21 +105,38 @@ class ExtensionsViewModel @Inject constructor(
     val section: StateFlow<ExtensionSection> = _section.asStateFlow()
 
     fun setNameFilter(query: String) { _nameFilter.value = query }
-    fun setLanguageFilter(lang: String?) { _languageFilter.value = lang }
     fun setAdultFilter(value: AdultFilter) { _adultFilter.value = value }
     fun setSection(value: ExtensionSection) { _section.value = value }
+
+    /**
+     * Toggle a language's visibility. [allLanguages] is the full set of available
+     * codes, so an empty (= "all") selection can be materialised before removing
+     * one, and collapsed back to empty when everything is on again.
+     */
+    fun toggleLanguage(lang: String, allLanguages: List<String>) = viewModelScope.launch {
+        val current = enabledLanguages.value.ifEmpty { allLanguages.toSet() }
+        val next = if (lang in current) current - lang else current + lang
+        extensionPreferences.enabledLanguages.set(
+            if (next == allLanguages.toSet()) emptySet() else next,
+        )
+    }
+
+    /** Reset to "show all languages". */
+    fun clearLanguageFilter() = viewModelScope.launch {
+        extensionPreferences.enabledLanguages.set(emptySet())
+    }
 
     @OptIn(FlowPreview::class)
     val ui: StateFlow<ExtensionsUi> = combine(
         items,
         _nameFilter.debounce(120L),
-        _languageFilter,
+        enabledLanguages,
         _adultFilter,
-    ) { all, query, langFilter, adultFilter ->
+    ) { all, query, enabledLangs, adultFilter ->
         val q = query.trim()
         fun matches(item: ExtensionItem): Boolean =
             (q.isBlank() || item.name.contains(q, ignoreCase = true)) &&
-                (langFilter == null || item.lang.uppercase() == langFilter) &&
+                (enabledLangs.isEmpty() || item.lang.uppercase() in enabledLangs) &&
                 when (adultFilter) {
                     AdultFilter.ALL -> true
                     AdultFilter.HIDE -> !item.isAdult
