@@ -2,6 +2,7 @@ package io.grimoire.app.ui.screen.more
 
 import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +43,9 @@ fun MoreScreen(
     val incognito by viewModel.incognito.collectAsState()
 
     Scaffold(
+        // The app-level Scaffold already reserves the bottom-nav inset; without this
+        // the inner Scaffold reserves it again, leaving an empty gap at the bottom.
+        contentWindowInsets = WindowInsets(0),
         topBar = { TopAppBar(title = { Text(stringResource(R.string.more_title)) }) },
     ) { padding ->
         androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.padding(padding)) {
