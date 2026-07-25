@@ -54,6 +54,9 @@ jobs:
           APP_GIT_SHA: ${{ github.sha }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Aptabase app key is non-sensitive (shipped in every APK) → repo variable.
+          APTABASE_APP_KEY: ${{ vars.APTABASE_APP_KEY }}
+          GLITCHTIP_DSN: ${{ secrets.GLITCHTIP_DSN }}
 
       - name: Sign APK
         env:
