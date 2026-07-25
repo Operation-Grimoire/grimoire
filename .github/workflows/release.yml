@@ -74,6 +74,8 @@ jobs:
           APP_GIT_SHA: ${{ github.sha }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APTABASE_APP_KEY: ${{ secrets.APTABASE_APP_KEY }}
+          GLITCHTIP_DSN: ${{ secrets.GLITCHTIP_DSN }}
 
       - name: Sign APK
         env:
