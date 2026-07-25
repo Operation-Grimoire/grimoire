@@ -6,8 +6,13 @@ import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -23,30 +28,34 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -302,18 +311,9 @@ fun LibraryScreen(
                     },
                 )
             } else {
-            TopAppBar(
-                title = {
-                    if (searchActive) {
-                        AppSearchField(
-                            value = searchQuery,
-                            onValueChange = { viewModel.setSearchQuery(it) },
-                            placeholder = stringResource(R.string.library_search_placeholder),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .focusRequester(searchFocusRequester),
-                        )
-                    } else {
+            Box {
+                TopAppBar(
+                    title = {
                         Text(
                             stringResource(R.string.library_title),
                             modifier = Modifier.combinedClickable(
@@ -321,32 +321,10 @@ fun LibraryScreen(
                                 onLongClick = { if (hasPin && !isUnlocked) showUnlock = true },
                             ),
                         )
-                    }
-                },
-                actions = {
-                    PlainTooltipIconButton(onClick = {
-                        if (searchActive) {
-                            searchActive = false
-                            viewModel.setSearchQuery("")
-                            keyboard?.hide()
-                        } else {
-                            searchActive = true
-                        }
-                    }, tooltip = if (searchActive) {
-                        stringResource(R.string.library_close_search)
-                    } else {
-                        stringResource(R.string.library_search)
-                    }) {
-                        Icon(
-                            if (searchActive) AppIcons.ArrowUpward else AppIcons.Search,
-                            contentDescription = if (searchActive) {
-                                stringResource(R.string.library_close_search)
-                            } else {
-                                stringResource(R.string.library_search)
-                            },
-                        )
-                    }
-                    if (!searchActive) {
+                    },
+                    actions = {
+                        // Search + Filter live in the floating bottom toolbar; Search
+                        // opens the bar that slides in over this one (below).
                         if (isUnlocked) {
                             PlainTooltipIconButton(
                                 onClick = { viewModel.lock() },
@@ -356,19 +334,6 @@ fun LibraryScreen(
                                     AppIcons.Lock,
                                     contentDescription = stringResource(
                                         R.string.library_lock_hidden_categories,
-                                    ),
-                                )
-                            }
-                        }
-                        PlainTooltipIconButton(
-                            onClick = { showFilterSheet = true },
-                            tooltip = stringResource(R.string.library_filter_and_sort),
-                        ) {
-                            BadgedBox(badge = { if (isFilterActive) Badge() }) {
-                                Icon(
-                                    AppIcons.FilterList,
-                                    contentDescription = stringResource(
-                                        R.string.library_filter_and_sort,
                                     ),
                                 )
                             }
@@ -432,9 +397,46 @@ fun LibraryScreen(
                                 )
                             }
                         }
-                    }
-                },
-            )
+                    },
+                )
+                // A search toolbar slides in over the main one when Search is tapped.
+                AnimatedVisibility(
+                    visible = searchActive,
+                    enter = slideInVertically { -it } + fadeIn(),
+                    exit = slideOutVertically { -it } + fadeOut(),
+                ) {
+                    TopAppBar(
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        ),
+                        navigationIcon = {
+                            PlainTooltipIconButton(
+                                onClick = {
+                                    searchActive = false
+                                    viewModel.setSearchQuery("")
+                                    keyboard?.hide()
+                                },
+                                tooltip = stringResource(R.string.library_close_search),
+                            ) {
+                                Icon(
+                                    AppIcons.ArrowUpward,
+                                    contentDescription = stringResource(R.string.library_close_search),
+                                )
+                            }
+                        },
+                        title = {
+                            AppSearchField(
+                                value = searchQuery,
+                                onValueChange = { viewModel.setSearchQuery(it) },
+                                placeholder = stringResource(R.string.library_search_placeholder),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(searchFocusRequester),
+                            )
+                        },
+                    )
+                }
+            }
             }
         },
         bottomBar = {
@@ -485,6 +487,7 @@ fun LibraryScreen(
             }
         },
     ) { padding ->
+        Box(Modifier.fillMaxSize()) {
             val onNovelClickWrapped: (NovelEntity) -> Unit = { novel ->
                 // Navigate even when the extension is uninstalled (pkg blank): the
                 // detail screen opens the novel read-only from the DB, keyed by its
@@ -623,6 +626,20 @@ fun LibraryScreen(
                     }
                 }
             }
+
+            // Floating pill mirroring Browse: Filter + Search anchored bottom-centre.
+            if (!selectionMode && !searchActive) {
+                LibraryBottomToolbar(
+                    onSearch = { searchActive = true },
+                    onFilter = { showFilterSheet = true },
+                    filterActive = isFilterActive,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .padding(bottom = 16.dp),
+                )
+            }
+        }
         }
 
     if (showFilterSheet) {
@@ -803,5 +820,49 @@ fun LibraryScreen(
                 }
             },
         )
+    }
+}
+
+/**
+ * Floating toolbar pill anchored bottom-centre on Library, mirroring Browse: a
+ * Filter button (opens the filter/sort sheet; tinted when a filter is active)
+ * and a Search button (activates the top-bar search field).
+ */
+@Composable
+private fun LibraryBottomToolbar(
+    onSearch: () -> Unit,
+    onFilter: () -> Unit,
+    filterActive: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shadowElevation = 3.dp,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+            IconButton(onClick = onFilter) {
+                Icon(
+                    AppIcons.FilterList,
+                    contentDescription = stringResource(R.string.library_filter_and_sort),
+                    tint = if (filterActive) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        LocalContentColor.current
+                    },
+                )
+            }
+            IconButton(onClick = onSearch) {
+                Icon(
+                    AppIcons.Search,
+                    contentDescription = stringResource(R.string.library_search),
+                )
+            }
+        }
     }
 }
