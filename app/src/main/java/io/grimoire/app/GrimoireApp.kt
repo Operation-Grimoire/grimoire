@@ -29,6 +29,7 @@ import io.grimoire.api.network.NetworkContext
 import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import javax.inject.Inject
@@ -131,7 +132,13 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
             override fun onStart(owner: LifecycleOwner) {
                 relockJob?.cancel()
                 relockJob = null
-                analytics.track(io.grimoire.app.data.analytics.AnalyticsEvent.APP_OPENED)
+                // Await the opt-in pref (and lazily init the SDK) before tracking, so the
+                // first cold-start open isn't dropped by the enable-collect racing onStart.
+                ProcessLifecycleOwner.get().lifecycleScope.launch {
+                    val on = analyticsPreferences.usageAnalyticsEnabled.changes().first()
+                    analytics.setEnabled(this@GrimoireApp, on)
+                    analytics.track(io.grimoire.app.data.analytics.AnalyticsEvent.APP_OPENED)
+                }
             }
 
             override fun onStop(owner: LifecycleOwner) {
