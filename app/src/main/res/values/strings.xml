@@ -32,6 +32,8 @@
     <string name="settings_backup_subtitle">Export, import, scheduled backups</string>
     <string name="settings_data_title">Data management</string>
     <string name="settings_data_subtitle">Storage usage, clear caches and browse data</string>
+    <string name="settings_privacy_title">Privacy</string>
+    <string name="settings_privacy_subtitle">Crash reports and anonymous usage analytics</string>
     <string name="settings_novelupdates_title">NovelUpdates</string>
     <string name="settings_novelupdates_subtitle">Show the NovelUpdates info panel</string>
     <string name="settings_connections_title">Connections</string>

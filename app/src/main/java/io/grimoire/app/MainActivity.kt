@@ -93,15 +93,27 @@ class MainActivity : FragmentActivity() {
                         LocalSynopsisRenderLinks provides theme.renderSynopsisLinks,
                     ) {
                         ProvideAppHaptics(enabled = theme.hapticsEnabled) {
-                            AppNavigation(
-                                pendingTarget = pendingTarget.asStateFlow(),
-                                onTargetHandled = { pendingTarget.value = null },
-                                pendingEpubUri = pendingEpubUri.asStateFlow(),
-                                onEpubUriHandled = { pendingEpubUri.value = null },
-                                pendingAddRepo = pendingAddRepo.asStateFlow(),
-                                onAddRepoHandled = { pendingAddRepo.value = null },
-                            )
-                            AppUpdateUi()
+                            val consentVm: io.grimoire.app.ui.screen.onboarding.DiagnosticsConsentViewModel =
+                                androidx.hilt.navigation.compose.hiltViewModel()
+                            val prompted by consentVm.prompted.collectAsState()
+                            when (prompted) {
+                                // null = still loading the pref; render nothing to avoid a flash.
+                                null -> Unit
+                                false -> io.grimoire.app.ui.screen.onboarding.DiagnosticsConsentScreen(
+                                    onDone = consentVm::save,
+                                )
+                                true -> {
+                                    AppNavigation(
+                                        pendingTarget = pendingTarget.asStateFlow(),
+                                        onTargetHandled = { pendingTarget.value = null },
+                                        pendingEpubUri = pendingEpubUri.asStateFlow(),
+                                        onEpubUriHandled = { pendingEpubUri.value = null },
+                                        pendingAddRepo = pendingAddRepo.asStateFlow(),
+                                        onAddRepoHandled = { pendingAddRepo.value = null },
+                                    )
+                                    AppUpdateUi()
+                                }
+                            }
                         }
                     }
                 }

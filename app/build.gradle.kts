@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -57,6 +59,23 @@ val githubOAuthClientId: String =
         ?: System.getenv("GITHUB_OAUTH_CLIENT_ID")
         ?: ""
 
+// Aptabase (privacy-first analytics) app key + GlitchTip (crash reporting) DSN.
+// Resolved from gradle property > env var > local.properties (gitignored), so the
+// secrets never live in committed source. Empty ⇒ that integration is inert
+// (also opt-in and config-gated at runtime).
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+fun resolveSecret(name: String): String =
+    (project.findProperty(name) as? String)
+        ?: System.getenv(name)
+        ?: localProperties.getProperty(name)
+        ?: ""
+val aptabaseAppKey: String = resolveSecret("APTABASE_APP_KEY")
+val glitchTipDsn: String = resolveSecret("GLITCHTIP_DSN")
+
 android {
     namespace = "io.grimoire.app"
     compileSdk {
@@ -75,6 +94,8 @@ android {
         buildConfigField("String", "GIT_SHA", "\"$appGitSha\"")
         buildConfigField("String", "EXTENSIONS_API_VERSION", "\"$extensionsApiVersion\"")
         buildConfigField("String", "GITHUB_OAUTH_CLIENT_ID", "\"$githubOAuthClientId\"")
+        buildConfigField("String", "APTABASE_APP_KEY", "\"$aptabaseAppKey\"")
+        buildConfigField("String", "GLITCHTIP_DSN", "\"$glitchTipDsn\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -114,6 +135,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("io.grimoire:extensions-api:$extensionsApiVersion")
+    implementation("com.github.aptabase:aptabase-kotlin:0.0.8") // privacy-first analytics
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)

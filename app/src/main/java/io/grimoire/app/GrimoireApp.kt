@@ -46,6 +46,8 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject lateinit var extensionRepository: ExtensionRepository
     @Inject lateinit var transientNovelPruner: TransientNovelPruner
     @Inject lateinit var crashLogStore: CrashLogStore
+    @Inject lateinit var analytics: io.grimoire.app.data.analytics.Analytics
+    @Inject lateinit var analyticsPreferences: io.grimoire.app.data.preferences.AnalyticsPreferences
     @Inject @GitHubAuthorized lateinit var imageHttpClient: OkHttpClient
 
     private var relockJob: Job? = null
@@ -109,6 +111,12 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         installCrashHandler()
+        // Keep the analytics enabled-flag in sync with the opt-in preference.
+        ProcessLifecycleOwner.get().lifecycleScope.launch {
+            analyticsPreferences.usageAnalyticsEnabled.changes().collect {
+                analytics.setEnabled(this@GrimoireApp, it)
+            }
+        }
         NetworkContext.init(this)
         coverPreloader.start()
         extensionRepository.checkForUpdatesOnLaunch()
@@ -123,6 +131,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
             override fun onStart(owner: LifecycleOwner) {
                 relockJob?.cancel()
                 relockJob = null
+                analytics.track(io.grimoire.app.data.analytics.AnalyticsEvent.APP_OPENED)
             }
 
             override fun onStop(owner: LifecycleOwner) {
