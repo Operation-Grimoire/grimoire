@@ -28,6 +28,7 @@ dependencyResolutionManagement {
         }
         google()
         mavenCentral()
+        maven { url = uri("https://www.jitpack.io") } // Aptabase analytics SDK
     }
 }
 

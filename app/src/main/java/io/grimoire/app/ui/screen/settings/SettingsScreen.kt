@@ -31,6 +31,7 @@ fun SettingsScreen(
     onNavigateToLibraryUpdates: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToData: () -> Unit,
+    onNavigateToPrivacy: () -> Unit,
     onNavigateToNovelUpdates: () -> Unit,
     onNavigateToConnections: () -> Unit,
     modifier: Modifier = Modifier,
@@ -133,6 +134,14 @@ fun SettingsScreen(
                     title = stringResource(R.string.settings_data_title),
                     subtitle = stringResource(R.string.settings_data_subtitle),
                     onClick = onNavigateToData,
+                )
+            }
+            item {
+                SettingsNavItem(
+                    icon = AppIcons.Shield,
+                    title = stringResource(R.string.settings_privacy_title),
+                    subtitle = stringResource(R.string.settings_privacy_subtitle),
+                    onClick = onNavigateToPrivacy,
                 )
             }
             item {
