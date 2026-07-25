@@ -110,7 +110,12 @@ internal fun NovelCard(
                             .padding(4.dp),
                     )
                 }
-                if (stats != null && (visibility.showDownloaded || visibility.showLocked)) {
+                // Download / locked counts and the user rating share the top-right
+                // column so the wide bottom progress badge (many chapters) never
+                // collides with them.
+                val ratingBadge = novel.userRating?.takeIf { showRatingBadge }
+                val showCounts = stats != null && (visibility.showDownloaded || visibility.showLocked)
+                if (showCounts || ratingBadge != null) {
                     Column(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -118,7 +123,7 @@ internal fun NovelCard(
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
-                        if (visibility.showDownloaded) {
+                        if (stats != null && visibility.showDownloaded) {
                             NovelCountBadgeOverlay(
                                 count = stats.downloadedCount,
                                 icon = AppIcons.Download,
@@ -126,7 +131,7 @@ internal fun NovelCard(
                                 iconTint = Color.White,
                             )
                         }
-                        if (visibility.showLocked) {
+                        if (stats != null && visibility.showLocked) {
                             NovelCountBadgeOverlay(
                                 count = stats.lockedCount,
                                 icon = AppIcons.Lock,
@@ -136,15 +141,10 @@ internal fun NovelCard(
                                 iconTint = MaterialTheme.colorScheme.premiumGold,
                             )
                         }
+                        if (ratingBadge != null) {
+                            NovelRatingBadgeOverlay(rating = ratingBadge)
+                        }
                     }
-                }
-                novel.userRating?.takeIf { showRatingBadge }?.let { rating ->
-                    NovelRatingBadgeOverlay(
-                        rating = rating,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(4.dp),
-                    )
                 }
             }
             Text(
