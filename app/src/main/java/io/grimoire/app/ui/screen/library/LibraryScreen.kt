@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -575,7 +574,7 @@ fun LibraryScreen(
                         if (displayMode == LibraryDisplayMode.GRID) {
                             LazyVerticalGrid(
                                 columns = GridCells.Fixed(gridColumns),
-                                contentPadding = PaddingValues(8.dp),
+                                contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 88.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.fillMaxSize(),
@@ -601,7 +600,10 @@ fun LibraryScreen(
                                 }
                             }
                         } else {
-                            LazyColumn(Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 88.dp),
+                            ) {
                                 items(pageNovels, key = { it.id }) { novel ->
                                     NovelRow(
                                         novel = novel,
@@ -635,7 +637,6 @@ fun LibraryScreen(
                     filterActive = isFilterActive,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .navigationBarsPadding()
                         .padding(bottom = 16.dp),
                 )
             }

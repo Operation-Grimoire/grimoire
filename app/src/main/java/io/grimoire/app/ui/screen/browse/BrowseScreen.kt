@@ -126,20 +126,6 @@ fun BrowseScreen(
             } else {
                 TopAppBar(
                     title = { Text(stringResource(R.string.nav_browse)) },
-                    actions = {
-                        PlainTooltipIconButton(
-                            onClick = onNavigateToManage,
-                            tooltip = stringResource(R.string.browse_manage_extensions),
-                        ) {
-                            Icon(
-                                AppIcons.Extension,
-                                contentDescription = stringResource(
-                                    R.string.browse_manage_extensions,
-                                ),
-                                modifier = Modifier.tourTarget(TourKey.ExtensionManager),
-                            )
-                        }
-                    },
                 )
             }
         },
@@ -247,6 +233,7 @@ fun BrowseScreen(
 
             if (!selectionMode) {
                 BrowseBottomToolbar(
+                    onManage = onNavigateToManage,
                     onSearch = onNavigateToGlobalSearch,
                     onFilter = { showFilterSheet = true },
                     filterActive = filterActive,
@@ -427,6 +414,7 @@ private fun SectionHeader(text: String) {
  */
 @Composable
 private fun BrowseBottomToolbar(
+    onManage: () -> Unit,
     onSearch: () -> Unit,
     onFilter: () -> Unit,
     filterActive: Boolean,
@@ -443,6 +431,13 @@ private fun BrowseBottomToolbar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
+            IconButton(onClick = onManage) {
+                Icon(
+                    AppIcons.ExtensionFilled,
+                    contentDescription = stringResource(R.string.browse_manage_extensions),
+                    modifier = Modifier.tourTarget(TourKey.ExtensionManager),
+                )
+            }
             IconButton(onClick = onFilter) {
                 Icon(
                     AppIcons.FilterList,
