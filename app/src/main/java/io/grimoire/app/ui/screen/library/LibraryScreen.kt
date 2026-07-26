@@ -85,6 +85,7 @@ import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.MoveToCategorySheet
 import io.grimoire.app.ui.component.TooltipBottomBar
+import io.grimoire.app.ui.component.SearchCancelToolbar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.SwipeTabRow
 import io.grimoire.app.ui.component.SwipeTabStyle
@@ -408,21 +409,6 @@ fun LibraryScreen(
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         ),
-                        navigationIcon = {
-                            PlainTooltipIconButton(
-                                onClick = {
-                                    searchActive = false
-                                    viewModel.setSearchQuery("")
-                                    keyboard?.hide()
-                                },
-                                tooltip = stringResource(R.string.library_close_search),
-                            ) {
-                                Icon(
-                                    AppIcons.ArrowUpward,
-                                    contentDescription = stringResource(R.string.library_close_search),
-                                )
-                            }
-                        },
                         title = {
                             AppSearchField(
                                 value = searchQuery,
@@ -630,15 +616,29 @@ fun LibraryScreen(
             }
 
             // Floating pill mirroring Browse: Filter + Search anchored bottom-centre.
-            if (!selectionMode && !searchActive) {
-                LibraryBottomToolbar(
-                    onSearch = { searchActive = true },
-                    onFilter = { showFilterSheet = true },
-                    filterActive = isFilterActive,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp),
-                )
+            // While searching it swaps to a single X that cancels the search.
+            if (!selectionMode) {
+                val pillModifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp)
+                if (searchActive) {
+                    SearchCancelToolbar(
+                        onCancel = {
+                            searchActive = false
+                            viewModel.setSearchQuery("")
+                            keyboard?.hide()
+                        },
+                        contentDescription = stringResource(R.string.library_close_search),
+                        modifier = pillModifier,
+                    )
+                } else {
+                    LibraryBottomToolbar(
+                        onSearch = { searchActive = true },
+                        onFilter = { showFilterSheet = true },
+                        filterActive = isFilterActive,
+                        modifier = pillModifier,
+                    )
+                }
             }
         }
         }
