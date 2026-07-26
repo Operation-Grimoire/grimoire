@@ -12,6 +12,11 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,28 +29,30 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -74,6 +81,7 @@ import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.PendingAddRepo
 import io.grimoire.app.ui.component.AppSearchField
+import io.grimoire.app.ui.component.SearchCancelToolbar
 import io.grimoire.app.ui.component.LanguageMultiSelectChips
 import io.grimoire.app.ui.component.LinkText
 import io.grimoire.app.ui.component.SourceListItem
@@ -185,37 +193,8 @@ fun ExtensionsScreen(
 
     Scaffold(
         modifier = modifier,
-        floatingActionButton = {
-            FloatingActionButton(onClick = { showFilters = true }) {
-                if (filtersActive) {
-                    BadgedBox(badge = { Badge() }) {
-                        Icon(AppIcons.FilterList, contentDescription = stringResource(R.string.extensions_filters))
-                    }
-                } else {
-                    Icon(AppIcons.FilterList, contentDescription = stringResource(R.string.extensions_filters))
-                }
-            }
-        },
         topBar = {
-            if (searchActive) {
-                TopAppBar(
-                    navigationIcon = {
-                        PlainTooltipIconButton(onClick = exitSearch, tooltip = stringResource(R.string.extensions_close_search)) {
-                            Icon(AppIcons.ArrowUpward, contentDescription = stringResource(R.string.extensions_close_search))
-                        }
-                    },
-                    title = {
-                        AppSearchField(
-                            value = nameFilter,
-                            onValueChange = viewModel::setNameFilter,
-                            placeholder = stringResource(R.string.extensions_search_placeholder),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .focusRequester(searchFocusRequester),
-                        )
-                    },
-                )
-            } else {
+            Box {
                 TopAppBar(
                     navigationIcon = {
                         PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
@@ -224,23 +203,37 @@ fun ExtensionsScreen(
                     },
                     title = { Text(stringResource(R.string.extensions_title)) },
                     actions = {
-                        PlainTooltipIconButton(onClick = { searchActive = true }, tooltip = stringResource(R.string.action_search)) {
-                            Icon(AppIcons.Search, contentDescription = stringResource(R.string.action_search))
-                        }
+                        // Repos + Search + Filter live in the floating bottom toolbar;
+                        // Update-all stays here since it's contextual.
                         if (ui.updateCount > 0) {
                             PlainTooltipIconButton(onClick = viewModel::updateAll, tooltip = stringResource(R.string.extensions_update_all)) {
                                 Icon(AppIcons.SystemUpdateAlt, contentDescription = stringResource(R.string.extensions_update_all))
                             }
                         }
-                        PlainTooltipIconButton(onClick = { showRepos = true }, tooltip = stringResource(R.string.extensions_repositories)) {
-                            Icon(
-                                AppIcons.Storage,
-                                contentDescription = stringResource(R.string.extensions_repositories),
-                                modifier = Modifier.tourTarget(TourKey.RepoManager),
-                            )
-                        }
                     },
                 )
+                // A search toolbar slides in over the main one when Search is tapped.
+                AnimatedVisibility(
+                    visible = searchActive,
+                    enter = slideInVertically { -it } + fadeIn(),
+                    exit = slideOutVertically { -it } + fadeOut(),
+                ) {
+                    TopAppBar(
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        ),
+                        title = {
+                            AppSearchField(
+                                value = nameFilter,
+                                onValueChange = viewModel::setNameFilter,
+                                placeholder = stringResource(R.string.extensions_search_placeholder),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(searchFocusRequester),
+                            )
+                        },
+                    )
+                }
             }
         },
     ) { padding ->
@@ -320,6 +313,27 @@ fun ExtensionsScreen(
                         items(list, key = { it.packageName }) { extensionRow(it) }
                     }
                 }
+            }
+
+            // Floating pill mirroring Browse: Repos + Filter + Search anchored bottom-centre.
+            // While searching it swaps to a single X that cancels the search.
+            val pillModifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp)
+            if (searchActive) {
+                SearchCancelToolbar(
+                    onCancel = exitSearch,
+                    contentDescription = stringResource(R.string.extensions_close_search),
+                    modifier = pillModifier,
+                )
+            } else {
+                ExtensionsBottomToolbar(
+                    onRepos = { showRepos = true },
+                    onFilter = { showFilters = true },
+                    onSearch = { searchActive = true },
+                    filterActive = filtersActive,
+                    modifier = pillModifier,
+                )
             }
         }
     }
@@ -920,4 +934,55 @@ private fun multiLanguageSummary(languages: List<String>): String {
     val extra = languages.size - shown.size
     val summary = shown.joinToString(", ")
     return if (extra > 0) stringResource(R.string.extensions_more_languages, summary, extra) else summary
+}
+
+/**
+ * Floating toolbar pill anchored bottom-centre on Extensions, mirroring Browse:
+ * Repositories, Filter (tinted when a filter is active), and Search.
+ */
+@Composable
+private fun ExtensionsBottomToolbar(
+    onRepos: () -> Unit,
+    onFilter: () -> Unit,
+    onSearch: () -> Unit,
+    filterActive: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shadowElevation = 3.dp,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+            IconButton(onClick = onRepos) {
+                Icon(
+                    AppIcons.Storage,
+                    contentDescription = stringResource(R.string.extensions_repositories),
+                    modifier = Modifier.tourTarget(TourKey.RepoManager),
+                )
+            }
+            IconButton(onClick = onFilter) {
+                Icon(
+                    AppIcons.FilterList,
+                    contentDescription = stringResource(R.string.extensions_filters),
+                    tint = if (filterActive) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        LocalContentColor.current
+                    },
+                )
+            }
+            IconButton(onClick = onSearch) {
+                Icon(
+                    AppIcons.Search,
+                    contentDescription = stringResource(R.string.action_search),
+                )
+            }
+        }
+    }
 }
