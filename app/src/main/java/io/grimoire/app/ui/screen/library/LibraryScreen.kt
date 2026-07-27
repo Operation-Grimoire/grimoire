@@ -60,6 +60,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -241,27 +242,22 @@ fun LibraryScreen(
     val tabCategoryIds = displayedTabs.map { it.categoryId }
 
     val pageCount = tabs.size.coerceAtLeast(1)
-    val pagerState = rememberPagerState(
-        initialPage = tabCategoryIds.indexOf(persistedCategoryId ?: ALL_TAB_CATEGORY_ID)
-            .coerceIn(0, pageCount - 1),
-        pageCount = { pageCount },
-    )
-    val currentTab = pagerState.currentPage.coerceIn(0, pageCount - 1)
 
-    // Restore the last-viewed category once the persisted id, the category list, AND the
-    // built tabs are all available. `resolveRestoreTargetPage` returns null until then so
-    // the restore can't fire during the startup window where the tabs are still empty and
-    // latch onto the fallback tab, losing the saved category. A remembered category that is
-    // now hidden (the app starts locked) is absent from `tabCategoryIds`, so it resolves to
-    // the first tab and stays hidden.
-    var restored by remember { mutableStateOf(false) }
-    LaunchedEffect(restored, categoriesLoaded, persistedCategoryId, tabCategoryIds) {
-        if (restored) return@LaunchedEffect
-        val target = resolveRestoreTargetPage(categoriesLoaded, persistedCategoryId, tabCategoryIds)
-            ?: return@LaunchedEffect
-        if (target != pagerState.currentPage) pagerState.scrollToPage(target)
-        restored = true
+    // The restore target is null until the persisted id, the category list, AND the built
+    // tabs are all available — the tabbed content stays behind a loader until then. Keying
+    // the pager on "target known" means it is first created already on the saved category's
+    // page, instead of painting tab 0 and then visibly scrolling to it. A remembered
+    // category that is now hidden (the app starts locked) is absent from `tabCategoryIds`,
+    // so it resolves to the first tab and stays hidden.
+    val restoreTarget: Int? = resolveRestoreTargetPage(categoriesLoaded, persistedCategoryId, tabCategoryIds)
+    val restored = restoreTarget != null
+    val pagerState = key(restored) {
+        rememberPagerState(
+            initialPage = (restoreTarget ?: 0).coerceIn(0, pageCount - 1),
+            pageCount = { pageCount },
+        )
     }
+    val currentTab = pagerState.currentPage.coerceIn(0, pageCount - 1)
 
     LaunchedEffect(pageCount) {
         if (pagerState.currentPage >= pageCount) {
@@ -269,12 +265,11 @@ fun LibraryScreen(
         }
     }
 
-    // Persist the category the user settles on. `drop(1)` skips the settle emitted by
-    // the restore above, so a remembered-but-hidden category isn't overwritten with the
-    // fallback tab and is restored again on a later unlocked reopen.
+    // Persist the category the user settles on. `drop(1)` skips the initial settle emitted
+    // by creating the pager on the restored page, so a remembered-but-hidden category isn't
+    // overwritten with the fallback tab and is restored again on a later unlocked reopen.
     val latestTabCategoryIds by rememberUpdatedState(tabCategoryIds)
-    LaunchedEffect(pagerState, restored) {
-        if (!restored) return@LaunchedEffect
+    LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }
             .drop(1)
             .collect { page ->
@@ -480,6 +475,10 @@ fun LibraryScreen(
                 onNovelClick(viewModel.pkgForNovel(novel), novel.url, novel.sourceId)
             }
 
+            // Hold the pager behind a loader until the saved-category restore resolves,
+            // so it's revealed already on the correct tab instead of painting tab 0 and
+            // then visibly scrolling to the remembered category.
+            if (restored) {
             SwipeTabRow(
                 tabs = tabs,
                 modifier = Modifier.padding(padding),
@@ -612,6 +611,11 @@ fun LibraryScreen(
                             }
                         }
                     }
+                }
+            }
+            } else {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    if (rememberDelayedVisibility(true)) CircularProgressIndicator()
                 }
             }
 
