@@ -219,6 +219,13 @@ class BackupManager @Inject constructor(
                 notifyOnNewLockedChapters = n.notifyOnNewLockedChapters,
                 autoDownloadNewChapters = n.autoDownloadNewChapters,
                 language = n.language,
+                readerTextAlign = n.readerTextAlign,
+                customCoverUrl = n.customCoverUrl,
+                overrideTitle = n.overrideTitle,
+                overrideAuthor = n.overrideAuthor,
+                overrideDescription = n.overrideDescription,
+                overrideStatus = n.overrideStatus,
+                overrideGenres = n.overrideGenres,
                 chapters = chapters.map { c ->
                     BackupChapter(
                         url = c.url,
@@ -365,6 +372,16 @@ class BackupManager @Inject constructor(
                 notifyOnNewLockedChapters = novel.notifyOnNewLockedChapters || (existing?.notifyOnNewLockedChapters ?: false),
                 autoDownloadNewChapters = novel.autoDownloadNewChapters || (existing?.autoDownloadNewChapters ?: false),
                 language = novel.language ?: existing?.language,
+                readerTextAlign = if (novel.readerTextAlign != 0) novel.readerTextAlign
+                    else (existing?.readerTextAlign ?: 0),
+                // Never in the backup (device-local file) — keep whatever this device has.
+                customCoverPath = existing?.customCoverPath,
+                customCoverUrl = novel.customCoverUrl ?: existing?.customCoverUrl,
+                overrideTitle = novel.overrideTitle ?: existing?.overrideTitle,
+                overrideAuthor = novel.overrideAuthor ?: existing?.overrideAuthor,
+                overrideDescription = novel.overrideDescription ?: existing?.overrideDescription,
+                overrideStatus = novel.overrideStatus ?: existing?.overrideStatus,
+                overrideGenres = novel.overrideGenres ?: existing?.overrideGenres,
             )
             val novelId = novelDao.upsert(mergedNovel)
             val effectiveId = if (existing != null && novelId == -1L) existing.id else novelId

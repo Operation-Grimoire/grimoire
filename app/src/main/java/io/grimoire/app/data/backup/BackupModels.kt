@@ -82,6 +82,15 @@ data class BackupNovel(
     val notifyOnNewLockedChapters: Boolean = false,
     val autoDownloadNewChapters: Boolean = false,
     val language: String? = null,
+    /** [io.grimoire.app.data.local.entity.ReaderTextAlign] ordinal; 0 = AUTO. */
+    val readerTextAlign: Int = 0,
+    /** User cover URL override. The local-file cover (customCoverPath) never travels — it's device-specific. */
+    val customCoverUrl: String? = null,
+    val overrideTitle: String? = null,
+    val overrideAuthor: String? = null,
+    val overrideDescription: String? = null,
+    val overrideStatus: Int? = null,
+    val overrideGenres: String? = null,
     val chapters: List<BackupChapter> = emptyList(),
 )
 
