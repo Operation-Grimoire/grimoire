@@ -70,6 +70,7 @@ import io.grimoire.app.ui.tour.tourTarget
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -155,6 +156,7 @@ fun ExtensionsScreen(
     var addRepoPrefill by remember { mutableStateOf<PendingAddRepo?>(null) }
     var pendingRemove by remember { mutableStateOf<ExtensionItem?>(null) }
     var showFilters by remember { mutableStateOf(false) }
+    var showLanguagePicker by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
     val repoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -371,13 +373,43 @@ fun ExtensionsScreen(
                     modifier = Modifier.padding(vertical = 4.dp),
                 )
                 if (ui.languages.size > 1) {
+                    val enabledCodes = enabledLanguages.mapTo(mutableSetOf()) { it.code }
                     SheetSectionLabel(stringResource(R.string.extensions_language))
-                    LanguageCheckboxRows(
-                        languages = ui.languages,
-                        enabledCodes = enabledLanguages.mapTo(mutableSetOf()) { it.code },
-                        onToggle = { viewModel.toggleLanguage(it, ui.languages) },
-                        onAll = viewModel::clearLanguageFilter,
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.extensions_language)) },
+                        trailingContent = {
+                            Text(
+                                if (enabledCodes.isEmpty()) {
+                                    stringResource(R.string.extensions_all)
+                                } else {
+                                    pluralStringResource(
+                                        R.plurals.source_filter_selected_count,
+                                        enabledCodes.size,
+                                        enabledCodes.size,
+                                    )
+                                },
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (enabledCodes.isEmpty()) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                },
+                            )
+                        },
+                        modifier = Modifier.clickable { showLanguagePicker = true },
                     )
+                    if (showLanguagePicker) {
+                        io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog(
+                            title = stringResource(R.string.extensions_language),
+                            options = ui.languages,
+                            optionLabel = ::languageLabel,
+                            isChecked = { enabledCodes.isEmpty() || it in enabledCodes },
+                            onToggle = { viewModel.toggleLanguage(it, ui.languages) },
+                            onClear = viewModel::clearLanguageFilter,
+                            clearEnabled = enabledCodes.isNotEmpty(),
+                            onDismiss = { showLanguagePicker = false },
+                        )
+                    }
                 }
                 SheetSectionLabel(stringResource(R.string.extensions_adult_content))
                 SingleChoiceSegmented(
@@ -629,35 +661,6 @@ private fun ExtensionSectionHeader(text: String) {
     )
 }
 
-/**
- * Multi-select language rows over the global content-language set. The leading
- * "All" row is checked while the set is empty (= no filter); checking it clears
- * the selection. Mirrors the chip semantics it replaced: with "All" active,
- * every language reads as selected.
- */
-@Composable
-private fun LanguageCheckboxRows(
-    languages: List<String>,
-    enabledCodes: Set<String>,
-    onToggle: (String) -> Unit,
-    onAll: () -> Unit,
-) {
-    val showAll = enabledCodes.isEmpty()
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.extensions_all)) },
-        leadingContent = { Checkbox(checked = showAll, onCheckedChange = null) },
-        modifier = Modifier.clickable(enabled = !showAll) { onAll() },
-    )
-    languages.forEach { code ->
-        ListItem(
-            headlineContent = { Text(languageLabel(code)) },
-            leadingContent = {
-                Checkbox(checked = showAll || code in enabledCodes, onCheckedChange = null)
-            },
-            modifier = Modifier.clickable { onToggle(code) },
-        )
-    }
-}
 
 @Composable
 private fun ExtensionRow(
