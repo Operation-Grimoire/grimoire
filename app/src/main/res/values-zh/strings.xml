@@ -54,6 +54,12 @@
     <string name="reader_align_right">居右</string>
     <string name="reader_align_center">居中</string>
     <string name="reader_align_justify">两端对齐</string>
+    <string name="onboarding_welcome_title">欢迎使用 Grimoire</string>
+    <string name="onboarding_welcome_subtitle">两个快速选择——之后都可以在「设置 › 语言」中更改。</string>
+    <string name="onboarding_reading_title">你阅读哪些语言？</string>
+    <string name="onboarding_reading_helper">书源和多语言浏览将按所选语言过滤。全部不选则显示所有语言。</string>
+    <string name="onboarding_continue">继续</string>
+    <string name="onboarding_get_started">开始使用</string>
 
     <!-- 书库 -->
     <string name="library_title">书库</string>
