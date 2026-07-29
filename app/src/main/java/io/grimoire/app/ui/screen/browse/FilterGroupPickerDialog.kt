@@ -19,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,29 +39,32 @@ import io.grimoire.app.R
  * Treating every child as tri-state regardless of declared type used to
  * write `Int` into a CheckBox's `Boolean state` and crash at the source
  * with `ClassCastException`.
+ *
+ * [children] supplies names and types only and is never written — edits flow
+ * through [states]/[onStatesChange] (index-aligned with [children]) so the
+ * filter sheet's Cancel genuinely discards them. The live `Filter.state` is
+ * only touched by the sheet's Apply.
  */
 @Composable
 internal fun FilterGroupPickerDialog(
     title: String,
     children: List<Filter<*>>,
-    onChanged: () -> Unit,
+    states: List<Any?>,
+    onStatesChange: (List<Any?>) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var search by remember { mutableStateOf("") }
-    // Compose-observable mirror of each child's state, keyed by index. The
-    // value type matches the child filter type (Boolean for CheckBox, Int for
-    // TriState) — the per-row branch below reads and writes the right shape.
-    val states = remember(children) {
-        mutableStateMapOf<Int, Any?>().apply {
-            children.forEachIndexed { i, c -> put(i, c.state) }
-        }
-    }
     val filtered = remember(search, children) {
         val q = search.trim()
         children.indices.filter {
             q.isEmpty() || children[it].name.contains(q, ignoreCase = true)
         }
     }
+
+    fun stateAt(idx: Int): Any? = states.getOrNull(idx)
+    fun changeAt(idx: Int, value: Any?) =
+        onStatesChange(children.indices.map { if (it == idx) value else stateAt(it) })
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -96,29 +98,25 @@ internal fun FilterGroupPickerDialog(
                 }
                 LazyColumn(Modifier.weight(1f, fill = false)) {
                     items(filtered, key = { it }) { idx ->
-                        val child = children[idx]
-                        when (child) {
+                        when (val child = children[idx]) {
                             is Filter.CheckBox -> {
-                                val checked = states[idx] as? Boolean ?: false
+                                val checked = stateAt(idx) as? Boolean ?: false
                                 CheckBoxPickerRow(name = child.name, checked = checked) {
-                                    val next = !checked
-                                    states[idx] = next
-                                    child.state = next
-                                    onChanged()
+                                    changeAt(idx, !checked)
                                 }
                             }
                             is Filter.TriState -> {
-                                val current = states[idx] as? Int
+                                val current = stateAt(idx) as? Int
                                     ?: Filter.TriState.STATE_IGNORE
                                 TriStatePickerRow(name = child.name, state = current) {
-                                    val next = when (current) {
-                                        Filter.TriState.STATE_IGNORE -> Filter.TriState.STATE_INCLUDE
-                                        Filter.TriState.STATE_INCLUDE -> Filter.TriState.STATE_EXCLUDE
-                                        else -> Filter.TriState.STATE_IGNORE
-                                    }
-                                    states[idx] = next
-                                    child.state = next
-                                    onChanged()
+                                    changeAt(
+                                        idx,
+                                        when (current) {
+                                            Filter.TriState.STATE_IGNORE -> Filter.TriState.STATE_INCLUDE
+                                            Filter.TriState.STATE_INCLUDE -> Filter.TriState.STATE_EXCLUDE
+                                            else -> Filter.TriState.STATE_IGNORE
+                                        },
+                                    )
                                 }
                             }
                             // Other Filter subtypes (Text, Select, …) inside a
@@ -131,10 +129,10 @@ internal fun FilterGroupPickerDialog(
                 // rows above so Clear lights up for both CheckBox and TriState
                 // children, and disabling it when nothing is set keeps the
                 // affordance from looking actionable on an empty group.
-                val anySelected = children.any { c ->
-                    when (c) {
-                        is Filter.TriState -> c.state != Filter.TriState.STATE_IGNORE
-                        is Filter.CheckBox -> c.state
+                val anySelected = children.indices.any { i ->
+                    when (children[i]) {
+                        is Filter.TriState -> (stateAt(i) as? Int ?: Filter.TriState.STATE_IGNORE) != Filter.TriState.STATE_IGNORE
+                        is Filter.CheckBox -> stateAt(i) as? Boolean ?: false
                         else -> false
                     }
                 }
@@ -146,20 +144,15 @@ internal fun FilterGroupPickerDialog(
                     TextButton(
                         enabled = anySelected,
                         onClick = {
-                            children.forEachIndexed { i, child ->
-                                when (child) {
-                                    is Filter.CheckBox -> {
-                                        child.state = false
-                                        states[i] = false
+                            onStatesChange(
+                                children.map { child ->
+                                    when (child) {
+                                        is Filter.CheckBox -> false
+                                        is Filter.TriState -> Filter.TriState.STATE_IGNORE
+                                        else -> child.state
                                     }
-                                    is Filter.TriState -> {
-                                        child.state = Filter.TriState.STATE_IGNORE
-                                        states[i] = Filter.TriState.STATE_IGNORE
-                                    }
-                                    else -> Unit
-                                }
-                            }
-                            onChanged()
+                                },
+                            )
                         },
                     ) { Text(stringResource(R.string.action_clear)) }
                     TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_done)) }

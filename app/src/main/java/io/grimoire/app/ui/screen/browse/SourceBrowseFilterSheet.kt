@@ -48,17 +48,27 @@ internal fun FilterSheet(
     filters: List<Filter<*>>,
     loadState: FilterLoadState,
     showSearchField: Boolean,
+    initialQuery: String,
     onLoad: () -> Unit,
     onApply: (List<Filter<*>>, String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    // Edited states live alongside the filter list so Cancel doesn't mutate the source.
+    // Edited states live alongside the filter list so Cancel doesn't mutate the
+    // source. A Group's entry is a *copy* of its children's states (the children
+    // themselves are shared with the VM), so group edits stay cancellable too.
     val edited = remember(filters) {
         mutableStateMapOf<Int, Any?>().apply {
-            filters.forEachIndexed { i, f -> put(i, f.state) }
+            filters.forEachIndexed { i, f ->
+                put(
+                    i,
+                    if (f is Filter.Group<*>) f.childFilters().map { it.state } else f.state,
+                )
+            }
         }
     }
-    var sheetQuery by remember(filters) { mutableStateOf("") }
+    // Seed from the active query so applying filters doesn't wipe a search the
+    // user already ran (only shown for sources that search with filters).
+    var sheetQuery by remember(filters) { mutableStateOf(initialQuery) }
 
     val canApply = loadState is FilterLoadState.Ready || loadState is FilterLoadState.Loaded
     val canReload = loadState is FilterLoadState.Loaded || loadState is FilterLoadState.Error
@@ -81,7 +91,14 @@ internal fun FilterSheet(
                 onClick = {
                     @Suppress("UNCHECKED_CAST")
                     filters.forEachIndexed { i, f ->
-                        (f as Filter<Any?>).state = edited[i]
+                        if (f is Filter.Group<*>) {
+                            val states = edited[i] as? List<*> ?: return@forEachIndexed
+                            f.childFilters().forEachIndexed { j, child ->
+                                if (j < states.size) (child as Filter<Any?>).state = states[j]
+                            }
+                        } else {
+                            (f as Filter<Any?>).state = edited[i]
+                        }
                     }
                     onApply(filters, sheetQuery)
                 },
@@ -314,21 +331,22 @@ private fun FilterItem(
         is Filter.Group<*> -> {
             // Children stay identity-stable for the screen's lifetime; only
             // their `state` mutates, so derive the list once.
-            val children = remember(filter) {
-                (filter.state as? List<*>).orEmpty().filterIsInstance<Filter<*>>()
-            }
+            val children = remember(filter) { filter.childFilters() }
+            // `state` here is the sheet's edited copy of the children's states,
+            // index-aligned with [children] — never the live child objects.
+            val stateList = (state as? List<*>).orEmpty()
             // Mirror the dispatch in FilterGroupPickerDialog: count tri-state
             // include/exclude AND checked binary boxes so the badge reflects
             // whichever shape this Group's children take.
-            val selectedCount = (state as? List<*>).orEmpty()
-                .filterIsInstance<Filter<*>>()
-                .count { child ->
-                    when (child) {
-                        is Filter.TriState -> child.state != Filter.TriState.STATE_IGNORE
-                        is Filter.CheckBox -> child.state
-                        else -> false
-                    }
+            val selectedCount = children.indices.count { j ->
+                when (children[j]) {
+                    is Filter.TriState ->
+                        (stateList.getOrNull(j) as? Int ?: Filter.TriState.STATE_IGNORE) !=
+                            Filter.TriState.STATE_IGNORE
+                    is Filter.CheckBox -> stateList.getOrNull(j) as? Boolean ?: false
+                    else -> false
                 }
+            }
             var showPicker by remember { mutableStateOf(false) }
             Row(
                 modifier = Modifier
@@ -359,10 +377,15 @@ private fun FilterItem(
                 FilterGroupPickerDialog(
                     title = filter.name,
                     children = children,
-                    onChanged = { onStateChange(children.toList()) },
+                    states = children.indices.map { stateList.getOrNull(it) ?: children[it].state },
+                    onStatesChange = onStateChange,
                     onDismiss = { showPicker = false },
                 )
             }
         }
     }
 }
+
+/** The live child filters of a [Filter.Group] (shared with the VM — read-only here). */
+private fun Filter.Group<*>.childFilters(): List<Filter<*>> =
+    (state as? List<*>).orEmpty().filterIsInstance<Filter<*>>()

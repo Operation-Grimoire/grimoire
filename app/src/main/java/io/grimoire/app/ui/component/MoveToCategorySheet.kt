@@ -2,6 +2,8 @@ package io.grimoire.app.ui.component
 
 import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -55,6 +57,12 @@ fun MoveToCategorySheet(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            // Scrolls so a long category list stays reachable inside the sheet.
+            Column(
+                Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+            ) {
             categories.forEach { cat ->
                 val targetId = if (cat.isDefault) null else cat.id
                 val isCurrent = showCurrent && (
@@ -85,6 +93,7 @@ fun MoveToCategorySheet(
                     } else null,
                     modifier = Modifier.clickable { onSelect(targetId) },
                 )
+            }
             }
             if (onUnlockClick != null) {
                 HorizontalDivider()
