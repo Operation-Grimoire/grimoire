@@ -3,7 +3,9 @@ package io.grimoire.app.ui.screen.extensions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.grimoire.api.model.lang.Language
 import io.grimoire.app.auth.github.GitHubAuthStore
+import io.grimoire.app.util.ContentLanguages
 import io.grimoire.app.data.local.entity.RepoEntity
 import io.grimoire.app.extension.repo.ExtensionInstaller
 import io.grimoire.app.extension.repo.ExtensionItem
@@ -55,7 +57,8 @@ data class ExtensionsUi(
 class ExtensionsViewModel @Inject constructor(
     private val repository: ExtensionRepository,
     private val installer: ExtensionInstaller,
-    private val extensionPreferences: io.grimoire.app.data.preferences.ExtensionPreferences,
+    private val appLanguages: io.grimoire.app.data.preferences.AppLanguagePreferences,
+    private val extensionManager: io.grimoire.app.extension.ExtensionManager,
     githubAuthStore: GitHubAuthStore,
 ) : ViewModel() {
 
@@ -94,9 +97,13 @@ class ExtensionsViewModel @Inject constructor(
     private val _nameFilter = MutableStateFlow("")
     val nameFilter: StateFlow<String> = _nameFilter.asStateFlow()
 
-    /** Persistent set of language codes to show; empty = show all. */
-    val enabledLanguages: StateFlow<Set<String>> =
-        extensionPreferences.enabledLanguages.stateIn(viewModelScope)
+    /**
+     * The app-wide content-language selection — the same single list the Browse
+     * settings picker edits and multi-language sources filter by. Editing it
+     * here (via the chips) edits it everywhere. Empty = show all.
+     */
+    val enabledLanguages: StateFlow<Set<Language>> =
+        appLanguages.enabled.stateIn(viewModelScope)
 
     private val _adultFilter = MutableStateFlow(AdultFilter.ALL)
     val adultFilter: StateFlow<AdultFilter> = _adultFilter.asStateFlow()
@@ -109,21 +116,26 @@ class ExtensionsViewModel @Inject constructor(
     fun setSection(value: ExtensionSection) { _section.value = value }
 
     /**
-     * Toggle a language's visibility. [allLanguages] is the full set of available
-     * codes, so an empty (= "all") selection can be materialised before removing
-     * one, and collapsed back to empty when everything is on again.
+     * Toggle a language in the *global* content-language selection. [allLanguages]
+     * is the full list of codes on offer, so an empty (= "all") selection can be
+     * materialised before removing one. Never collapses back to empty — the global
+     * set outlives this screen's language list, so "everything currently listed"
+     * is not the same as "no filter". Reapplies to loaded sources immediately.
      */
     fun toggleLanguage(lang: String, allLanguages: List<String>) = viewModelScope.launch {
-        val current = enabledLanguages.value.ifEmpty { allLanguages.toSet() }
-        val next = if (lang in current) current - lang else current + lang
-        extensionPreferences.enabledLanguages.set(
-            if (next == allLanguages.toSet()) emptySet() else next,
-        )
+        val language = ContentLanguages.parse(lang) ?: return@launch
+        val current = enabledLanguages.value.ifEmpty {
+            allLanguages.mapNotNullTo(mutableSetOf()) { ContentLanguages.parse(it) }
+        }
+        val next = if (language in current) current - language else current + language
+        appLanguages.enabled.set(next)
+        extensionManager.reapplyAllPreferences()
     }
 
-    /** Reset to "show all languages". */
+    /** Reset the global selection to "no filter — every language". */
     fun clearLanguageFilter() = viewModelScope.launch {
-        extensionPreferences.enabledLanguages.set(emptySet())
+        appLanguages.enabled.set(emptySet())
+        extensionManager.reapplyAllPreferences()
     }
 
     @OptIn(FlowPreview::class)
@@ -134,16 +146,28 @@ class ExtensionsViewModel @Inject constructor(
         _adultFilter,
     ) { all, query, enabledLangs, adultFilter ->
         val q = query.trim()
+        // Multi-language ("all") and unclassifiable codes are always shown — hide
+        // only what we can positively say is a language the user didn't pick.
+        fun matchesLanguage(code: String): Boolean {
+            if (enabledLangs.isEmpty()) return true
+            val lang = Language.fromCode(code)
+            return lang == Language.MULTI || lang == Language.UNKNOWN || lang in enabledLangs
+        }
         fun matches(item: ExtensionItem): Boolean =
             (q.isBlank() || item.name.contains(q, ignoreCase = true)) &&
-                (enabledLangs.isEmpty() || item.lang.uppercase() in enabledLangs) &&
+                matchesLanguage(item.lang) &&
                 when (adultFilter) {
                     AdultFilter.ALL -> true
                     AdultFilter.HIDE -> !item.isAdult
                     AdultFilter.ONLY -> item.isAdult
                 }
 
-        val languages = all.map { it.lang.uppercase() }.distinct().sorted()
+        // Chip list: real codes only — "all" sources are always visible, so they
+        // get no chip.
+        val languages = all.map { it.lang.lowercase() }
+            .filter { it != "all" }
+            .distinct()
+            .sorted()
         val updateCount = all.filterIsInstance<ExtensionItem.Installed>().count { it.hasUpdate }
 
         val installed = (all.filterIsInstance<ExtensionItem.Installed>() +

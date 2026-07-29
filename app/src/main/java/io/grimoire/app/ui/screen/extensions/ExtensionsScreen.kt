@@ -360,7 +360,7 @@ fun ExtensionsScreen(
                     FilterSheetLabel(stringResource(R.string.extensions_language))
                     LanguageMultiSelectChips(
                         languages = ui.languages,
-                        enabled = enabledLanguages,
+                        enabled = enabledLanguages.mapTo(mutableSetOf()) { it.code },
                         onToggle = { viewModel.toggleLanguage(it, ui.languages) },
                         onAll = viewModel::clearLanguageFilter,
                         modifier = Modifier.padding(vertical = 4.dp),
