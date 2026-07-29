@@ -58,4 +58,11 @@ object ContentLanguages {
 
     /** Display names for a source's advertised [Language] list. */
     fun displayNames(languages: List<Language>): List<String> = languages.map { it.displayName }
+
+    /**
+     * Stable key for the per-language TTS voice maps: the ISO [Language.code]
+     * when [token] resolves (accepts codes and English names), otherwise the
+     * normalized raw token so unrecognised novel languages still round-trip.
+     */
+    fun voiceKey(token: String): String = parse(token)?.code ?: normalize(token)
 }

@@ -82,12 +82,12 @@ class TtsSettingsViewModel @Inject constructor(
         combine(engine, deviceVoices, cloudVoices) { eng, device, cloud ->
             val lang = language ?: return@combine null
             val map = if (eng == TtsEngineType.ELEVENLABS) cloud else device
-            map[ContentLanguages.normalize(lang)]
+            map[ContentLanguages.voiceKey(lang)]
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** Subtitle text for a language row on the main screen (the chosen voice name). */
     fun hasCustomVoice(language: String, voices: Map<String, String>): Boolean =
-        voices[ContentLanguages.normalize(language)] != null
+        voices[ContentLanguages.voiceKey(language)] != null
 
     val deviceVoiceMap: StateFlow<Map<String, String>> get() = deviceVoices
     val cloudVoiceMap: StateFlow<Map<String, String>> get() = cloudVoices
@@ -106,7 +106,7 @@ class TtsSettingsViewModel @Inject constructor(
             val novelLanguages = runCatching { novelDao.getAll() }.getOrDefault(emptyList())
                 .mapNotNull { it.language?.trim()?.takeIf { l -> l.isNotEmpty() } }
             _languages.value = (ContentLanguages.ALL + novelLanguages)
-                .distinctBy { ContentLanguages.normalize(it) }
+                .distinctBy { ContentLanguages.voiceKey(it) }
         }
         if (language != null) loadVoices()
     }
@@ -167,7 +167,7 @@ class TtsSettingsViewModel @Inject constructor(
 
     fun selectVoice(voiceId: String?) {
         val lang = language ?: return
-        val key = ContentLanguages.normalize(lang)
+        val key = ContentLanguages.voiceKey(lang)
         viewModelScope.launch {
             val isCloud = prefs.engine.changes().first() == TtsEngineType.ELEVENLABS
             val pref = if (isCloud) prefs.cloudVoiceByLanguage else prefs.deviceVoiceByLanguage

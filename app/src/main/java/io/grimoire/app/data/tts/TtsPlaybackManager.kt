@@ -351,20 +351,22 @@ class TtsPlaybackManager @Inject constructor(
     /**
      * The voice picked for this novel's language, or null for the engine default.
      *
-     * The per-language map is keyed by the lowercased English language *name* the voice
-     * picker lists (e.g. "english"), but a novel's [novelLanguage] is frequently null or a
-     * BCP-47 tag ("en"). Try the novel's own value first, then fall back to the resolved
-     * [locale]'s English display name — so a tag-language or unlabelled novel (which
-     * [TtsLanguageResolver] maps to the device locale) still uses the chosen voice instead
-     * of silently reverting to the default.
+     * The per-language map is keyed by [ContentLanguages.voiceKey] (the ISO code);
+     * voiceKey also resolves the English names novels store. Try the novel's own
+     * language first, then the resolved [locale]'s code and English display name —
+     * so a tag-language or unlabelled novel (which [TtsLanguageResolver] maps to
+     * the device locale) still uses the chosen voice instead of the default.
      */
     private fun selectVoiceId(voiceMap: Map<String, String>, locale: java.util.Locale): String? {
         novelLanguage?.trim()?.takeIf { it.isNotEmpty() }?.let { lang ->
-            voiceMap[ContentLanguages.normalize(lang)]?.let { return it }
+            voiceMap[ContentLanguages.voiceKey(lang)]?.let { return it }
+        }
+        locale.language.takeIf { it.isNotBlank() }?.let { code ->
+            voiceMap[ContentLanguages.voiceKey(code)]?.let { return it }
         }
         val localeName = locale.getDisplayLanguage(java.util.Locale.ENGLISH)
         if (localeName.isNotBlank()) {
-            voiceMap[ContentLanguages.normalize(localeName)]?.let { return it }
+            voiceMap[ContentLanguages.voiceKey(localeName)]?.let { return it }
         }
         return null
     }
