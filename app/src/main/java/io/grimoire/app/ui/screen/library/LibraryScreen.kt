@@ -742,22 +742,18 @@ fun LibraryScreen(
     }
 
     if (showManage) {
-        ModalBottomSheet(
-            onDismissRequest = { showManage = false },
-            sheetState = sheetState,
-        ) {
-            ManageCategoriesSheet(
-                categories = categories,
-                isUnlocked = isUnlocked,
-                hasPin = hasPin,
-                onAdd = viewModel::addCategory,
-                onRename = { cat, name -> viewModel.renameCategory(cat, name) },
-                onDelete = viewModel::deleteCategory,
-                onToggleHidden = { cat, hidden -> viewModel.setCategoryHidden(cat, hidden) },
-                onMove = { from, to -> viewModel.moveCategory(categories, from, to) },
-                onUnlockRequest = { showUnlock = true },
-            )
-        }
+        ManageCategoriesSheet(
+            categories = categories,
+            isUnlocked = isUnlocked,
+            hasPin = hasPin,
+            onAdd = viewModel::addCategory,
+            onRename = { cat, name -> viewModel.renameCategory(cat, name) },
+            onDelete = viewModel::deleteCategory,
+            onToggleHidden = { cat, hidden -> viewModel.setCategoryHidden(cat, hidden) },
+            onMove = { from, to -> viewModel.moveCategory(categories, from, to) },
+            onUnlockRequest = { showUnlock = true },
+            onDismiss = { showManage = false },
+        )
     }
 
     if (showUnlock) {

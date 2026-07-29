@@ -1,17 +1,50 @@
 package io.grimoire.app.ui.component.sheet
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
+import io.grimoire.app.ui.icon.*
+
+/**
+ * Trailing content for the summary rows: the current-selection text plus a
+ * chevron, so the row reads as "tap to open a picker" rather than a heading.
+ */
+@Composable
+private fun SummaryTrailing(text: String, active: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (active) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
+        Spacer(Modifier.width(4.dp))
+        Icon(
+            AppIcons.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+        )
+    }
+}
 
 /**
  * The shared idioms for bottom-sheet content. Every option/filter sheet uses
@@ -55,8 +88,8 @@ fun MultiSelectSummaryRow(
     ListItem(
         headlineContent = { Text(title) },
         trailingContent = {
-            Text(
-                if (selectedCount == 0) {
+            SummaryTrailing(
+                text = if (selectedCount == 0) {
                     stringResource(R.string.filter_all)
                 } else {
                     pluralStringResource(
@@ -65,12 +98,7 @@ fun MultiSelectSummaryRow(
                         selectedCount,
                     )
                 },
-                style = MaterialTheme.typography.labelMedium,
-                color = if (selectedCount == 0) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.primary
-                },
+                active = selectedCount > 0,
             )
         },
         modifier = modifier.clickable(onClick = onClick),
@@ -95,18 +123,13 @@ fun TriStateSummaryRow(
     ListItem(
         headlineContent = { Text(title) },
         trailingContent = {
-            Text(
-                if (!active) {
+            SummaryTrailing(
+                text = if (!active) {
                     stringResource(R.string.filter_all)
                 } else {
                     stringResource(R.string.filter_included_excluded, includedCount, excludedCount)
                 },
-                style = MaterialTheme.typography.labelMedium,
-                color = if (active) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
+                active = active,
             )
         },
         modifier = modifier.clickable(enabled = enabled, onClick = onClick),

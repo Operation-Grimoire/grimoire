@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
+import io.grimoire.app.ui.component.dialog.FullScreenDialog
 import io.grimoire.app.data.local.entity.CategoryEntity
 import sh.calvin.reorderable.ReorderableColumn
 import sh.calvin.reorderable.ReorderableItem
@@ -47,17 +48,16 @@ internal fun ManageCategoriesSheet(
     onToggleHidden: (CategoryEntity, Boolean) -> Unit,
     onMove: (fromIndex: Int, toIndex: Int) -> Unit,
     onUnlockRequest: () -> Unit,
+    onDismiss: () -> Unit,
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var renamingCategory by remember { mutableStateOf<CategoryEntity?>(null) }
 
-    Column(Modifier.padding(bottom = 32.dp)) {
-        Text(
-            stringResource(R.string.library_manage_categories_title),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-        )
-        HorizontalDivider()
+    FullScreenDialog(
+        title = stringResource(R.string.library_manage_categories_title),
+        onDismiss = onDismiss,
+    ) { padding ->
+    Column(Modifier.padding(padding).padding(bottom = 32.dp)) {
         if (hasPin && !isUnlocked) {
             TextButton(
                 onClick = onUnlockRequest,
@@ -156,6 +156,7 @@ internal fun ManageCategoriesSheet(
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.library_add_category))
         }
+    }
     }
 
     if (showAddDialog) {
