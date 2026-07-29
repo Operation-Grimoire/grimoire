@@ -413,6 +413,7 @@
     <string name="novel_download_epub">Download EPUB</string>
     <string name="novel_redownload_epub">Re-download EPUB</string>
     <string name="novel_loading_page">Loading page %1$d…</string>
+    <string name="novel_loading_page_of">Loading page %1$d of %2$d…</string>
     <string name="novel_loading_chapters">Loading chapters…</string>
     <string name="novel_chapters_title">Chapters</string>
     <string name="novel_chapter_filtered_count">%1$d of %2$d</string>

@@ -259,6 +259,10 @@ class NovelDetailViewModel @Inject constructor(
     private val _chapterPage = MutableStateFlow(0)
     val chapterPage: StateFlow<Int> = _chapterPage.asStateFlow()
 
+    /** Declared page count while chapters load, or null when the source doesn't say. */
+    private val _chapterPageTotal = MutableStateFlow<Int?>(null)
+    val chapterPageTotal: StateFlow<Int?> = _chapterPageTotal.asStateFlow()
+
     private val _chapterSort = MutableStateFlow(ChapterSort.NUMBER_ASC)
     val chapterSort: StateFlow<ChapterSort> = _chapterSort.asStateFlow()
 
@@ -774,9 +778,16 @@ class NovelDetailViewModel @Inject constructor(
         _isLoadingChapters.value = true
         _chaptersError.value = null
         _chapterPage.value = 0
+        _chapterPageTotal.value = null
 
         runCatching {
-            fetchAllChapters(src, novel, onPageProgress = { _chapterPage.value = it })
+            fetchAllChapters(
+                src, novel,
+                onPageProgress = { page, total ->
+                    _chapterPage.value = page
+                    _chapterPageTotal.value = total
+                },
+            )
         }.onSuccess { list ->
             if (cachedNovelId > 0L) {
                 val existing = chapterDao.getChaptersOnce(cachedNovelId).associateBy { it.url }
@@ -799,6 +810,7 @@ class NovelDetailViewModel @Inject constructor(
 
         _isLoadingChapters.value = false
         _chapterPage.value = 0
+        _chapterPageTotal.value = null
     }
 
     fun markAllRead(read: Boolean) {

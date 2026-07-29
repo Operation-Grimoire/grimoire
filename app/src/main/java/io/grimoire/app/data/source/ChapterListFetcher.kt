@@ -60,7 +60,8 @@ class TruncatedChapterListException(page: Int) : Exception(
  * [maxPages] pages so a source with broken pagination cannot exhaust memory.
  *
  * [onPageProgress] is invoked after each window with the highest page number
- * just fetched, so UI ("Loading page N…") can keep ticking.
+ * just fetched — plus the declared total when the source provides one — so UI
+ * ("Loading page N of M…") can keep ticking.
  */
 suspend fun fetchAllChapters(
     src: Source,
@@ -68,7 +69,7 @@ suspend fun fetchAllChapters(
     window: Int = 4,
     maxPages: Int = MAX_CHAPTER_PAGES,
     retryDelayMs: Long = PAGE_RETRY_DELAY_MS,
-    onPageProgress: (page: Int) -> Unit = {},
+    onPageProgress: (page: Int, totalPages: Int?) -> Unit = { _, _ -> },
 ): List<Chapter> {
     if (src !is PaginatedSource) {
         return (src as? ChapterListSource)?.getChapterList(novel) ?: emptyList()
@@ -92,7 +93,7 @@ private suspend fun fetchDeclaredPages(
     totalPages: Int,
     window: Int,
     retryDelayMs: Long,
-    onPageProgress: (page: Int) -> Unit,
+    onPageProgress: (page: Int, totalPages: Int?) -> Unit,
 ): List<Chapter> {
     val all = mutableListOf<Chapter>()
     val seen = mutableSetOf<String>()
@@ -102,7 +103,7 @@ private suspend fun fetchDeclaredPages(
         val batches = coroutineScope {
             pages.map { p -> async { src.getChapterList(novel, p) } }.awaitAll()
         }
-        onPageProgress(pages.last())
+        onPageProgress(pages.last(), totalPages)
         for (i in batches.indices) {
             var fresh = batches[i].filter { it.url !in seen }.distinctBy { it.url }
             if (fresh.isEmpty()) {
@@ -129,7 +130,7 @@ private suspend fun fetchHeuristically(
     window: Int,
     maxPages: Int,
     retryDelayMs: Long,
-    onPageProgress: (page: Int) -> Unit,
+    onPageProgress: (page: Int, totalPages: Int?) -> Unit,
 ): List<Chapter> {
     val all = mutableListOf<Chapter>()
     val seen = mutableSetOf<String>()
@@ -140,7 +141,7 @@ private suspend fun fetchHeuristically(
         val batches = coroutineScope {
             pages.map { p -> async { src.getChapterList(novel, p) } }.awaitAll()
         }
-        onPageProgress(pages.last())
+        onPageProgress(pages.last(), null)
         var stop = false
         for (i in batches.indices) {
             var fresh = batches[i].filter { it.url !in seen }.distinctBy { it.url }

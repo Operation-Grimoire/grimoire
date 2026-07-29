@@ -87,7 +87,7 @@ class ChapterListFetcherTest {
         val src = FakePaginatedSource(totalNonEmptyPages = 5, perPageDelayMs = 0)
         val seen = mutableListOf<Int>()
 
-        fetchAllChapters(src, Novel(url = "n", title = "", language = Language.UNKNOWN), window = 4, retryDelayMs = 0) { seen += it }
+        fetchAllChapters(src, Novel(url = "n", title = "", language = Language.UNKNOWN), window = 4, retryDelayMs = 0) { page, _ -> seen += page }
 
         // First window reports page 4 (highest in [1,4]); second window reports page 8.
         assertEquals(listOf(4, 8), seen)
@@ -176,6 +176,20 @@ class ChapterListFetcherTest {
         val result = fetchAllChapters(src, novel, window = 4, retryDelayMs = 0)
 
         assertEquals(5 * 3, result.size)
+    }
+
+    @Test
+    fun fetchAllChapters_declaredPageCount_progressCarriesTotal() = runBlocking {
+        val src = FakePaginatedSource(totalNonEmptyPages = 7, perPageDelayMs = 0, pageCount = 7)
+        val seen = mutableListOf<Pair<Int, Int?>>()
+
+        fetchAllChapters(
+            src, Novel(url = "n", title = "", language = Language.UNKNOWN),
+            window = 4, retryDelayMs = 0,
+        ) { page, total -> seen += page to total }
+
+        // Windows [1..4] and [5..7]; both report the declared total.
+        assertEquals(listOf(4 to 7, 7 to 7), seen)
     }
 
     private fun chapter(suffix: String) =

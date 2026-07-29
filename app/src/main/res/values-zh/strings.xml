@@ -401,6 +401,7 @@
     <string name="novel_download_epub">下载 EPUB</string>
     <string name="novel_redownload_epub">重新下载 EPUB</string>
     <string name="novel_loading_page">正在加载第 %1$d 页…</string>
+    <string name="novel_loading_page_of">正在加载第 %1$d / %2$d 页…</string>
     <string name="novel_loading_chapters">正在加载章节…</string>
     <string name="novel_chapters_title">章节</string>
     <string name="novel_chapter_filtered_count">%1$d / %2$d</string>

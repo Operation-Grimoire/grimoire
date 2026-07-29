@@ -128,6 +128,7 @@ fun NovelDetailScreen(
     val isFavorite by viewModel.isFavorite.collectAsState()
     val novelId by viewModel.novelId.collectAsState()
     val chapterPage by viewModel.chapterPage.collectAsState()
+    val chapterPageTotal by viewModel.chapterPageTotal.collectAsState()
     val chapterSort by viewModel.chapterSort.collectAsState()
     val categoryId by viewModel.categoryId.collectAsState()
     val categories by viewModel.categories.collectAsState()
@@ -1013,7 +1014,10 @@ fun NovelDetailScreen(
                             ) {
                                 Text(
                                     text = when {
-                                        isLoadingChapters && chapterPage > 0 -> stringResource(R.string.novel_loading_page, chapterPage)
+                                        isLoadingChapters && chapterPage > 0 ->
+                                            chapterPageTotal?.let { total ->
+                                                stringResource(R.string.novel_loading_page_of, chapterPage, total)
+                                            } ?: stringResource(R.string.novel_loading_page, chapterPage)
                                         isLoadingChapters -> stringResource(R.string.novel_loading_chapters)
                                         chaptersError != null -> stringResource(R.string.novel_chapters_title)
                                         searchQuery.isNotBlank() -> stringResource(
