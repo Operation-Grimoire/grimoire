@@ -72,7 +72,7 @@ class AppUpdateService : Service() {
                 .onFailure { e ->
                     val message = when (e) {
                         is AppUpdateHashMismatchException ->
-                            localizedContext.getString(R.string.app_update_verification_failed)
+                            localizedContext.getString(R.string.error_verification_failed)
                         else -> e.message
                             ?: localizedContext.getString(R.string.app_update_download_failed)
                     }

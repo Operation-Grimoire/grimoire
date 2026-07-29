@@ -102,7 +102,7 @@
     <string name="app_update_notification_ready_version">Grimoire %1$s 已就绪</string>
     <string name="app_update_notification_tap_to_install">点按以安装</string>
     <string name="app_update_notification_failed">更新下载失败</string>
-    <string name="app_update_verification_failed">下载校验失败——请重试或更换网络</string>
+    <string name="error_verification_failed">下载校验失败——请重试或更换网络</string>
     <string name="app_update_download_failed">下载失败</string>
 
     <!-- 下载 -->

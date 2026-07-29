@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
 import androidx.media.session.MediaButtonReceiver
 import io.grimoire.app.GrimoireApp
+import io.grimoire.app.util.AppLocale
 import io.grimoire.app.MainActivity
 import io.grimoire.app.R
 
@@ -25,9 +26,11 @@ object TtsNotificationBuilder {
         state: TtsPlaybackState,
     ): Notification {
         val playing = state == TtsPlaybackState.PLAYING
+        // Resolve strings in the in-app language override, like every other notification.
+        val res = AppLocale.wrap(context)
         val builder = NotificationCompat.Builder(context, GrimoireApp.TTS_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_tts)
-            .setContentTitle(nowPlaying?.chapterName ?: context.getString(R.string.tts_notification_title))
+            .setContentTitle(nowPlaying?.chapterName ?: res.getString(R.string.tts_notification_title))
             .setContentText(nowPlaying?.novelTitle ?: "")
             .setContentIntent(contentIntent(context))
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -36,24 +39,24 @@ object TtsNotificationBuilder {
             .setOngoing(playing)
             .setShowWhen(false)
             .addAction(
-                action(context, android.R.drawable.ic_media_previous, context.getString(R.string.action_previous),
+                action(context, android.R.drawable.ic_media_previous, res.getString(R.string.action_previous),
                     PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS),
             )
             .addAction(
                 if (playing) {
-                    action(context, android.R.drawable.ic_media_pause, context.getString(R.string.action_pause),
+                    action(context, android.R.drawable.ic_media_pause, res.getString(R.string.action_pause),
                         PlaybackStateCompat.ACTION_PLAY_PAUSE)
                 } else {
-                    action(context, android.R.drawable.ic_media_play, context.getString(R.string.action_play),
+                    action(context, android.R.drawable.ic_media_play, res.getString(R.string.action_play),
                         PlaybackStateCompat.ACTION_PLAY_PAUSE)
                 },
             )
             .addAction(
-                action(context, android.R.drawable.ic_media_next, context.getString(R.string.action_next),
+                action(context, android.R.drawable.ic_media_next, res.getString(R.string.action_next),
                     PlaybackStateCompat.ACTION_SKIP_TO_NEXT),
             )
             .addAction(
-                action(context, R.drawable.ic_tts_stop, context.getString(R.string.action_stop), PlaybackStateCompat.ACTION_STOP),
+                action(context, R.drawable.ic_tts_stop, res.getString(R.string.action_stop), PlaybackStateCompat.ACTION_STOP),
             )
             .setStyle(
                 MediaStyle()
