@@ -20,13 +20,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -45,6 +43,7 @@ import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelStatus
 import io.grimoire.app.ui.component.localizedDisplayName
 import io.grimoire.app.R
+import io.grimoire.app.ui.component.dialog.FullScreenDialog
 import sh.calvin.reorderable.ReorderableColumn
 
 /** A single novel-metadata field that can be overridden (#152). */
@@ -57,10 +56,10 @@ internal enum class EditableField(@param:StringRes val labelRes: Int) {
 }
 
 /**
- * Edits ONE metadata field at a time in a focused bottom sheet (opened by long-pressing
+ * Edits ONE metadata field at a time in a full-screen dialog (opened by long-pressing
  * the field, or tapping its override indicator). "Reset to source" clears the override
  * for this field; saving a value equal to the source also clears it. Other fields and the
- * cover override are passed through untouched.
+ * cover override are passed through untouched. X/back cancels; only Save commits.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,8 +70,7 @@ internal fun MetadataFieldEditSheet(
     onSave: (NovelOverrides) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    run {
         var text by remember {
             mutableStateOf(
                 when (field) {
@@ -112,17 +110,22 @@ internal fun MetadataFieldEditSheet(
             EditableField.STATUS -> overrides.copy(status = null)
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            val fieldLabel = stringResource(field.labelRes)
-            Text(stringResource(R.string.novel_edit_title, fieldLabel), style = MaterialTheme.typography.titleLarge)
-
+        val fieldLabel = stringResource(field.labelRes)
+        FullScreenDialog(
+            title = stringResource(R.string.novel_edit_title, fieldLabel),
+            onDismiss = onDismiss,
+            confirmLabel = stringResource(R.string.action_save),
+            onConfirm = { onSave(overridesWithEdit()); onDismiss() },
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
             when (field) {
                 EditableField.STATUS -> Box {
                     OutlinedButton(onClick = { statusMenu = true }, modifier = Modifier.fillMaxWidth()) {
@@ -149,14 +152,10 @@ internal fun MetadataFieldEditSheet(
                 )
             }
 
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                TextButton(
-                    enabled = isOverridden,
-                    onClick = { onSave(overridesWithReset()); onDismiss() },
-                ) { Text(stringResource(R.string.novel_edit_reset_to_source)) }
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-                Button(onClick = { onSave(overridesWithEdit()); onDismiss() }) { Text(stringResource(R.string.action_save)) }
+            TextButton(
+                enabled = isOverridden,
+                onClick = { onSave(overridesWithReset()); onDismiss() },
+            ) { Text(stringResource(R.string.novel_edit_reset_to_source)) }
             }
         }
     }

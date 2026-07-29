@@ -94,7 +94,6 @@ fun SourceBrowseScreen(
     }
     var showFilters by remember { mutableStateOf(false) }
     var quickView by remember { mutableStateOf<Novel?>(null) }
-    val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val focusRequester = remember { FocusRequester() }
 
     // Held in the VM so scroll survives navigating to a novel and back; the VM
@@ -373,23 +372,18 @@ fun SourceBrowseScreen(
     }
 
     if (showFilters) {
-        ModalBottomSheet(
-            onDismissRequest = { showFilters = false },
-            sheetState = filterSheetState,
-        ) {
-            FilterSheet(
-                filters = filters,
-                loadState = filterLoadState,
-                showSearchField = viewModel.supportsSearchWithFilters,
-                initialQuery = query,
-                onLoad = { viewModel.loadFilterOptions() },
-                onApply = { applied, sheetQuery ->
-                    viewModel.applyFilters(applied, sheetQuery)
-                    searchActive = false
-                    showFilters = false
-                },
-                onDismiss = { showFilters = false },
-            )
-        }
+        FilterSheet(
+            filters = filters,
+            loadState = filterLoadState,
+            showSearchField = viewModel.supportsSearchWithFilters,
+            initialQuery = query,
+            onLoad = { viewModel.loadFilterOptions() },
+            onApply = { applied, sheetQuery ->
+                viewModel.applyFilters(applied, sheetQuery)
+                searchActive = false
+                showFilters = false
+            },
+            onDismiss = { showFilters = false },
+        )
     }
 }

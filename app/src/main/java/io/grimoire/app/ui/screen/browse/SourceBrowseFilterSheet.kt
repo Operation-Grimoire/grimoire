@@ -43,6 +43,7 @@ import io.grimoire.api.model.filter.Filter
 import io.grimoire.app.ui.component.sheet.FilterTriState
 import io.grimoire.app.ui.component.sheet.TriStateFilterRow
 import io.grimoire.app.R
+import io.grimoire.app.ui.component.dialog.FullScreenDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,46 +76,38 @@ internal fun FilterSheet(
     val canApply = loadState is FilterLoadState.Ready || loadState is FilterLoadState.Loaded
     val canReload = loadState is FilterLoadState.Loaded || loadState is FilterLoadState.Error
 
-    Column(Modifier.padding(bottom = 16.dp)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(stringResource(R.string.source_browse_filters), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+    FullScreenDialog(
+        title = stringResource(R.string.source_browse_filters),
+        onDismiss = onDismiss,
+        confirmLabel = stringResource(R.string.action_apply),
+        confirmEnabled = canApply,
+        onConfirm = {
+            @Suppress("UNCHECKED_CAST")
+            filters.forEachIndexed { i, f ->
+                if (f is Filter.Group<*>) {
+                    val states = edited[i] as? List<*> ?: return@forEachIndexed
+                    f.childFilters().forEachIndexed { j, child ->
+                        if (j < states.size) (child as Filter<Any?>).state = states[j]
+                    }
+                } else {
+                    (f as Filter<Any?>).state = edited[i]
+                }
+            }
+            onApply(filters, sheetQuery)
+        },
+        actions = {
             if (canReload) {
                 PlainTooltipIconButton(onClick = onLoad, tooltip = stringResource(R.string.source_filters_reload)) {
                     Icon(AppIcons.Refresh, contentDescription = stringResource(R.string.source_filters_reload))
                 }
             }
-            TextButton(
-                enabled = canApply,
-                onClick = {
-                    @Suppress("UNCHECKED_CAST")
-                    filters.forEachIndexed { i, f ->
-                        if (f is Filter.Group<*>) {
-                            val states = edited[i] as? List<*> ?: return@forEachIndexed
-                            f.childFilters().forEachIndexed { j, child ->
-                                if (j < states.size) (child as Filter<Any?>).state = states[j]
-                            }
-                        } else {
-                            (f as Filter<Any?>).state = edited[i]
-                        }
-                    }
-                    onApply(filters, sheetQuery)
-                },
-            ) { Text(stringResource(R.string.action_apply)) }
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-        }
-        HorizontalDivider()
-
-        // Header above stays pinned; the filter list scrolls so long filter sets
-        // (e.g. Royal Road's tags + advanced fields) stay reachable inside the sheet.
+        },
+    ) { padding ->
         Column(
             Modifier
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState()),
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 24.dp),
         ) {
             FilterLoadHeader(loadState, onLoad)
 
