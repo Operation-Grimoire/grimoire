@@ -87,6 +87,39 @@
     <string name="tour_step_done_title">You’re all set</string>
     <string name="tour_step_done_body">Replay any tour from More → Tours.</string>
 
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">Diagnostics</string>
+    <string name="privacy_diagnostics_note">Diagnostics are anonymous and never include personal data, novel titles, or links. Everything is off unless you turn it on.</string>
+    <string name="privacy_crash_reports">Send crash reports</string>
+    <string name="privacy_crash_reports_summary">Anonymous stack traces when the app crashes</string>
+    <string name="privacy_usage_analytics">Send anonymous usage analytics</string>
+    <string name="privacy_usage_analytics_summary">Which features get used, to guide what to build</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">Downloading chapters</string>
+    <string name="download_notification_starting">Starting…</string>
+    <string name="download_notification_working">Downloading…</string>
+    <string name="download_notification_queued">+%1$d queued</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d queued)</string>
+    <string name="download_notification_complete_title">Downloads complete</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="one">%1$d chapter downloaded</item>
+        <item quantity="other">%1$d chapters downloaded</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">Downloading update</string>
+    <string name="app_update_notification_downloading_version">Downloading update %1$s</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">Starting…</string>
+    <string name="app_update_notification_ready">Update ready to install</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s ready</string>
+    <string name="app_update_notification_tap_to_install">Tap to install</string>
+    <string name="app_update_notification_failed">Update download failed</string>
+    <string name="app_update_verification_failed">Download verification failed — try again or switch networks</string>
+    <string name="app_update_download_failed">Download failed</string>
+
     <!-- Downloads -->
     <string name="downloads_title">Downloads</string>
     <string name="downloads_settings">Download settings</string>
@@ -148,6 +181,10 @@
     <plurals name="tasks_warning_count"><item quantity="one">%1$d warning</item><item quantity="other">%1$d warnings</item></plurals>
     <plurals name="tasks_error_count"><item quantity="one">%1$d error</item><item quantity="other">%1$d errors</item></plurals>
     <string name="tasks_sync_failed">Library sync failed · %1$s</string>
+    <string name="library_update_downloading_new">Downloading new chapters</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d queued</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="one">%1$d new locked chapter</item><item quantity="other">%1$d new locked chapters</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · %2$d locked</string>
 
     <!-- Library updates -->
     <string name="updates_title">Updates</string>
@@ -195,4 +232,14 @@
     <string name="crash_report_github">Report on GitHub</string>
     <string name="crash_details_copied">Crash details copied.</string>
     <string name="crash_copy_details">Copy details</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">Previous</string>
+    <string name="action_play">Play</string>
+    <string name="action_stop">Stop</string>
+    <string name="tts_notification_title">Text-to-speech</string>
+    <string name="tts_error_request_failed">ElevenLabs request failed</string>
+    <string name="tts_error_play_audio">Could not play audio</string>
+    <string name="tts_error_play_preview">Could not play preview audio</string>
+    <string name="tts_error_start_playback">Could not start playback</string>
 </resources>

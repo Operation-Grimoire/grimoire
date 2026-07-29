@@ -375,26 +375,23 @@ fun NovelDetailScreen(
     }
 
     if (showMissingSourceDialog) {
-        val named = missingSourceName?.let { "\"$it\"" } ?: "This novel's source"
+        val named = missingSourceName?.let { stringResource(R.string.novel_source_missing_named, it) }
+            ?: stringResource(R.string.novel_source_missing_generic)
         AlertDialog(
             onDismissRequest = { showMissingSourceDialog = false },
             icon = { Icon(AppIcons.WarningAmber, contentDescription = null) },
-            title = { Text("Source not installed") },
-            text = {
-                Text(
-                    "$named isn't installed on this device. Your saved details and any " +
-                        "downloaded chapters are still available, but you can't fetch new " +
-                        "chapters or open the source until you reinstall its extension.",
-                )
-            },
+            title = { Text(stringResource(R.string.novel_source_missing_title)) },
+            text = { Text(stringResource(R.string.novel_source_missing_message, named)) },
             confirmButton = {
                 TextButton(onClick = {
                     showMissingSourceDialog = false
                     onOpenExtensions(missingSourceName.orEmpty())
-                }) { Text("Open extensions") }
+                }) { Text(stringResource(R.string.action_open_extensions)) }
             },
             dismissButton = {
-                TextButton(onClick = { showMissingSourceDialog = false }) { Text("Close") }
+                TextButton(onClick = { showMissingSourceDialog = false }) {
+                    Text(stringResource(R.string.action_close))
+                }
             },
         )
     }

@@ -1,18 +1,22 @@
 package io.grimoire.app.ui.screen.browse
 
+import android.content.Context
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.source.feature.SearchSource
 import io.grimoire.api.source.sourceIdFor
+import io.grimoire.app.R
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.preferences.BrowsePreferences
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.extension.repo.ExtensionRepository
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -55,11 +59,15 @@ data class BrowseSourcesUi(
 
 @HiltViewModel
 class BrowseViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     private val repository: ExtensionRepository,
     private val extensionManager: ExtensionManager,
     private val novelDao: NovelDao,
     private val browsePreferences: BrowsePreferences,
 ) : ViewModel() {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     val libraryKeys: StateFlow<Set<Pair<Long, String>>> = novelDao.getFavoriteKeys()
         .map { keys -> keys.mapTo(HashSet(keys.size)) { it.sourceId to it.url } }
@@ -250,7 +258,11 @@ class BrowseViewModel @Inject constructor(
                         if (entry.packageName != pkg) return@map entry
                         result.fold(
                             onSuccess = { novels -> entry.copy(novels = novels, isLoading = false) },
-                            onFailure = { e -> entry.copy(isLoading = false, error = e.message ?: "Failed") },
+                            onFailure = { e -> entry.copy(
+                                    isLoading = false,
+                                    error = e.message
+                                        ?: localizedContext.getString(R.string.error_failed),
+                                ) },
                         )
                     }
                 }

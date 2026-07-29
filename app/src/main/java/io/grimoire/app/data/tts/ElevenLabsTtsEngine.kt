@@ -4,6 +4,8 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.grimoire.app.R
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,6 +30,9 @@ class ElevenLabsTtsEngine @Inject constructor(
     @ApplicationContext private val context: Context,
     private val api: ElevenLabsApi,
 ) : TtsEngine {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     override val type = TtsEngineType.ELEVENLABS
     override val canResumeMidUtterance = true
@@ -60,7 +65,10 @@ class ElevenLabsTtsEngine @Inject constructor(
             } catch (ce: CancellationException) {
                 throw ce
             } catch (e: Exception) {
-                listener?.onError(utteranceId, e.message ?: "ElevenLabs request failed")
+                listener?.onError(
+                    utteranceId,
+                    e.message ?: localizedContext.getString(R.string.tts_error_request_failed),
+                )
             }
         }
     }
@@ -145,7 +153,10 @@ class ElevenLabsTtsEngine @Inject constructor(
             mp.setDataSource(file.path)
             mp.prepareAsync()
         }.onFailure {
-            listener?.onError(utteranceId, it.message ?: "Could not play audio")
+            listener?.onError(
+                utteranceId,
+                it.message ?: localizedContext.getString(R.string.tts_error_play_audio),
+            )
         }
     }
 

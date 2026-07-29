@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.app.R
 import io.grimoire.app.ui.icon.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -30,6 +31,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
@@ -114,7 +116,7 @@ fun PrivacyImage(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Tap to reveal · hold to peek",
+                text = stringResource(R.string.privacy_image_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

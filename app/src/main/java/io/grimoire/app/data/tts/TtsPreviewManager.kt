@@ -6,6 +6,8 @@ import android.media.MediaPlayer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.grimoire.app.R
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -40,6 +42,9 @@ class TtsPreviewManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val api: ElevenLabsApi,
 ) {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     /** Where a preview is in its lifecycle once a row is active. */
     enum class Phase { LOADING, PLAYING }
@@ -152,7 +157,7 @@ class TtsPreviewManager @Inject constructor(
             } catch (ce: CancellationException) {
                 throw ce
             } catch (e: Exception) {
-                fail(myToken, e.message ?: "ElevenLabs request failed")
+                fail(myToken, e.message ?: localizedContext.getString(R.string.tts_error_request_failed))
                 return@launch
             }
             if (myToken != token) return@launch
@@ -191,7 +196,7 @@ class TtsPreviewManager @Inject constructor(
             mp.setDataSource(file.path)
             mp.prepareAsync()
         }.onFailure {
-            fail(myToken, it.message ?: "Could not play preview audio")
+            fail(myToken, it.message ?: localizedContext.getString(R.string.tts_error_play_preview))
         }
     }
 

@@ -1,9 +1,11 @@
 package io.grimoire.app.ui.screen.settings.source
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.source.feature.ConfigurableSource
 import io.grimoire.api.source.feature.MultiHostSource
 import io.grimoire.api.source.feature.MultiLanguageSource
@@ -11,6 +13,7 @@ import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.pref.PrefValue
 import io.grimoire.api.model.pref.SourcePreference
 import io.grimoire.api.source.feature.WebViewLoginSource
+import io.grimoire.app.R
 import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,6 +22,7 @@ import kotlinx.coroutines.withContext
 import io.grimoire.app.data.preferences.AppLanguagePreferences
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,11 +36,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SourceSettingsViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     private val savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val sourceSettings: SourceSettingsPreferences,
     private val appLanguages: AppLanguagePreferences,
 ) : ViewModel() {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
 
@@ -232,13 +240,19 @@ class SourceSettingsViewModel @Inject constructor(
             _validation.value = result.fold(
                 onSuccess = { res ->
                     if (res == null) {
-                        ValidationState.Done(true, "This source has nothing to validate.")
+                        ValidationState.Done(
+                            true,
+                            localizedContext.getString(R.string.source_validate_nothing),
+                        )
                     } else {
                         ValidationState.Done(res.success, res.message)
                     }
                 },
                 onFailure = { e ->
-                    ValidationState.Done(false, e.message ?: "Validation failed.")
+                    ValidationState.Done(
+                        false,
+                        e.message ?: localizedContext.getString(R.string.source_validate_failed),
+                    )
                 },
             )
         }

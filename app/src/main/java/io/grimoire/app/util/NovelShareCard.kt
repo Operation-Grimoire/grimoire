@@ -19,6 +19,7 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import io.grimoire.app.R
 import java.io.File
 
 /**
@@ -54,7 +55,7 @@ object NovelShareCardRenderer {
     suspend fun render(context: Context, data: NovelShareData): Uri? = withContext(Dispatchers.IO) {
         val cover = data.coverModel?.let { loadBitmap(context, it) }
         val palette = cover?.let { extractPalette(it) } ?: DEFAULT_PALETTE
-        val card = drawCard(data, cover, palette)
+        val card = drawCard(context, data, cover, palette)
         cacheForShare(context, card, data.title, data.hashCode())
     }
 
@@ -68,7 +69,12 @@ object NovelShareCardRenderer {
 
     // --- Drawing ---
 
-    private fun drawCard(data: NovelShareData, cover: Bitmap?, palette: Palette): Bitmap {
+    private fun drawCard(
+        context: Context,
+        data: NovelShareData,
+        cover: Bitmap?,
+        palette: Palette,
+    ): Bitmap {
         val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
 
@@ -151,7 +157,12 @@ object NovelShareCardRenderer {
             color = onMuted
             textSize = 34f
         }
-        canvas.drawText("read", margin + percentPaint.measureText(percentText) + 24f, y + percentPaint.textSize * 0.65f, labelPaint)
+        canvas.drawText(
+            context.getString(R.string.share_card_read),
+            margin + percentPaint.measureText(percentText) + 24f,
+            y + percentPaint.textSize * 0.65f,
+            labelPaint,
+        )
 
         // Big user rating on the right of the same row (only when the user has rated it).
         data.userRating?.let { rating ->
@@ -188,9 +199,17 @@ object NovelShareCardRenderer {
             color = onColor
             textSize = 40f
         }
-        val chapterStat = "${data.readChapters} / ${data.totalChapters} chapters"
+        val chapterStat = context.getString(
+            R.string.share_card_chapters,
+            data.readChapters,
+            data.totalChapters,
+        )
         val stat = if (data.totalWords > 0) {
-            "$chapterStat   •   ${formatCount(data.wordsRead)} words read"
+            context.getString(
+                R.string.share_card_stats,
+                chapterStat,
+                context.getString(R.string.share_card_words_read, formatCount(data.wordsRead)),
+            )
         } else {
             chapterStat
         }

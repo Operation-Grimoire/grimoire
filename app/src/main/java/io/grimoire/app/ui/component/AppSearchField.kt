@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.app.R
 import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.layout.fillMaxWidth
 import io.grimoire.app.ui.component.PlainTooltipIconButton
@@ -17,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -59,8 +61,9 @@ fun AppSearchField(
         } else null,
         trailingIcon = {
             if (value.isNotEmpty()) {
-                PlainTooltipIconButton(onClick = { onValueChange("") }, tooltip = "Clear search") {
-                    Icon(AppIcons.Clear, contentDescription = "Clear search")
+                val clearLabel = stringResource(R.string.action_clear_search)
+                PlainTooltipIconButton(onClick = { onValueChange("") }, tooltip = clearLabel) {
+                    Icon(AppIcons.Clear, contentDescription = clearLabel)
                 }
             }
         },

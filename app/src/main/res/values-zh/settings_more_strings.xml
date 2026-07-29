@@ -44,6 +44,8 @@
     <string name="library_settings_downloaded_badge_summary">在书库封面上显示已下载章节数</string>
     <string name="library_settings_locked_badge">显示锁定章节徽标</string>
     <string name="library_settings_locked_badge_summary">在书库封面上用金色锁形徽标显示锁定章节数</string>
+    <string name="library_settings_rating_badge">显示评分徽标</string>
+    <string name="library_settings_rating_badge_summary">在书库封面上显示你自己的评分</string>
     <string name="library_settings_epub_badge">显示 EPUB 徽标</string>
     <string name="library_settings_epub_badge_summary">在导入的 EPUB 小说封面上显示 EPUB 徽标</string>
 

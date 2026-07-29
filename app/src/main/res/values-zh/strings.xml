@@ -32,6 +32,8 @@
     <string name="settings_backup_subtitle">导出、导入、定时备份</string>
     <string name="settings_data_title">数据管理</string>
     <string name="settings_data_subtitle">存储占用、清除缓存与浏览数据</string>
+    <string name="settings_privacy_title">隐私</string>
+    <string name="settings_privacy_subtitle">崩溃报告与匿名使用统计</string>
     <string name="settings_novelupdates_title">NovelUpdates</string>
     <string name="settings_novelupdates_subtitle">显示 NovelUpdates 信息面板</string>
     <string name="settings_connections_title">连接</string>
@@ -132,11 +134,14 @@
     <string name="library_filter_notifications_on_description">仅显示已开启新章节通知的小说</string>
     <string name="library_filter_auto_download_on">已开启自动下载</string>
     <string name="library_filter_auto_download_on_description">仅显示已开启新章节自动下载的小说</string>
+    <string name="library_filter_rating_range">评分范围</string>
+    <string name="library_filter_rating_any">不限</string>
     <string name="library_sort_last_read">最近阅读</string>
     <string name="library_sort_title">标题</string>
     <string name="library_sort_last_updated">最近更新</string>
     <string name="library_sort_unread_chapters">未读章节数</string>
     <string name="library_sort_total_chapters">总章节数</string>
+    <string name="library_sort_your_rating">我的评分</string>
     <string name="library_sort_ascending_description">升序，点按切换</string>
     <string name="library_sort_descending_description">降序，点按切换</string>
 
@@ -223,6 +228,14 @@
     <string name="action_save">保存</string>
     <string name="action_search">搜索</string>
     <string name="action_share">分享</string>
+    <string name="share_copy_link">复制链接</string>
+    <string name="share_link_copied">已复制链接</string>
+    <string name="share_preview_content_description">分享卡片预览</string>
+    <string name="share_build_failed">无法生成图片</string>
+    <string name="share_card_read">已读</string>
+    <string name="share_card_chapters">%1$d / %2$d 章</string>
+    <string name="share_card_words_read">已读 %1$s 字</string>
+    <string name="share_card_stats">%1$s   •   %2$s</string>
     <string name="action_settings">设置</string>
     <string name="action_more_actions">更多操作</string>
     <string name="action_open_in_webview">在内置网页中打开</string>
@@ -231,11 +244,24 @@
     <string name="action_stop_loading">停止加载</string>
     <string name="action_decrease">减小</string>
     <string name="action_increase">增大</string>
+    <string name="action_clear_search">清除搜索内容</string>
+    <string name="action_show_more">展开</string>
+    <string name="action_show_less">收起</string>
+    <string name="action_download">下载</string>
+    <string name="action_open_extensions">打开扩展</string>
     <string name="content_description_in_library">已在书库中</string>
     <string name="content_description_locked">已锁定</string>
     <string name="content_description_rating">评分</string>
     <string name="content_description_language">语言</string>
     <string name="content_description_selected">已选择</string>
+
+    <!-- 全屏图片查看器与隐私模糊封面 -->
+    <string name="image_saved">已保存到 Pictures/Grimoire</string>
+    <string name="image_save_failed">无法保存图片</string>
+    <string name="image_share_failed">无法分享图片</string>
+    <string name="image_storage_permission">需要存储权限才能保存</string>
+    <string name="image_share_chooser">分享图片</string>
+    <string name="privacy_image_hint">点按显示 · 长按预览</string>
 
     <!-- 全局搜索与书源浏览 -->
     <string name="global_search_pinned_placeholder">搜索已固定书源…</string>
@@ -285,6 +311,7 @@
     <string name="novel_expand">展开</string>
     <string name="novel_collapse">收起</string>
     <string name="novel_action_webview">内置网页</string>
+    <string name="novel_action_rate">评分</string>
     <string name="novel_edit_field_title">标题</string>
     <string name="novel_edit_field_author">作者</string>
     <string name="novel_edit_field_status">状态</string>
@@ -300,6 +327,15 @@
     <string name="novel_rating_info_description">此评分由%1$s提供，反映的是该处读者的评价，而非你在 Grimoire 中的活动。</string>
     <string name="novel_rating_source_fallback">书源</string>
     <string name="novel_rating_got_it">知道了</string>
+    <string name="novel_your_rating">我的评分</string>
+    <string name="novel_rating_hint">你自己的评分，与书源评分互不影响。</string>
+    <string name="novel_rating_value">%1$d / 10</string>
+    <string name="novel_source_missing_title">书源未安装</string>
+    <string name="novel_source_missing_message">本机尚未安装%1$s。已保存的信息和已下载的章节仍可使用，但在重新安装对应扩展之前，无法获取新章节或打开书源。</string>
+    <string name="novel_source_missing_generic">这本小说的书源</string>
+    <string name="novel_source_missing_named">“%1$s”</string>
+    <string name="novel_source_uninstalled">书源已卸载</string>
+    <string name="novel_source_uninstalled_named">%1$s（已卸载）</string>
     <string name="novel_cover_url_title">封面图片网址</string>
     <string name="novel_cover_replace_image">替换为本地图片</string>
     <string name="novel_cover_replace_url">替换为网址图片</string>
@@ -647,4 +683,17 @@
     <string name="extensions_org_access">当前已以 @%1$s 登录，但此 OAuth 应用尚未获得所属组织的访问权限。请前往 github.com/settings/applications 批准，然后下拉刷新。</string>
     <string name="extensions_manage_github">管理 GitHub 连接</string>
     <string name="extensions_more_languages">%1$s，另有 %2$d 种</string>
+
+    <!-- ViewModel 抛出的错误提示 -->
+    <string name="error_source_not_available">书源不可用</string>
+    <string name="error_chapter_not_found">数据库中找不到该章节</string>
+    <string name="error_unknown">未知错误</string>
+    <string name="error_failed">失败</string>
+    <string name="error_no_readable_pages">该书源不提供可阅读的章节内容</string>
+    <string name="error_download_failed">下载失败</string>
+    <string name="error_export_failed">导出失败</string>
+    <string name="error_imported_book_not_found">找不到已导入的书籍</string>
+    <string name="error_save_to_library_first">请先将这本小说加入书库</string>
+    <string name="source_validate_nothing">该书源没有需要验证的内容。</string>
+    <string name="source_validate_failed">验证失败。</string>
 </resources>
