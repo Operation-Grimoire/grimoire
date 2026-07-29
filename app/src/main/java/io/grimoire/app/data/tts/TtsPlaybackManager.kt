@@ -15,10 +15,12 @@ import androidx.media.AudioFocusRequestCompat
 import androidx.media.AudioManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.novel.NovelPage
+import io.grimoire.app.R
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.preferences.TtsPreferences
+import io.grimoire.app.util.AppLocale
 import io.grimoire.app.util.ContentLanguages
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +56,9 @@ class TtsPlaybackManager @Inject constructor(
     private val chapterDao: ChapterDao,
     private val novelDao: NovelDao,
 ) {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -155,7 +160,7 @@ class TtsPlaybackManager @Inject constructor(
                 }
                 startChapter(chapterIndex, preloadedPages)
             } catch (e: Exception) {
-                fail(e.message ?: "Could not start playback")
+                fail(e.message ?: localizedContext.getString(R.string.tts_error_start_playback))
             }
         }
     }

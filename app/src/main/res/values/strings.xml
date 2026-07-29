@@ -239,6 +239,10 @@
     <string name="share_link_copied">Link copied</string>
     <string name="share_preview_content_description">Share card preview</string>
     <string name="share_build_failed">Couldn\'t build image</string>
+    <string name="share_card_read">read</string>
+    <string name="share_card_chapters">%1$d / %2$d chapters</string>
+    <string name="share_card_words_read">%1$s words read</string>
+    <string name="share_card_stats">%1$s   •   %2$s</string>
     <string name="action_settings">Settings</string>
     <string name="action_more_actions">More actions</string>
     <string name="action_open_in_webview">Open in WebView</string>
@@ -247,11 +251,24 @@
     <string name="action_stop_loading">Stop loading</string>
     <string name="action_decrease">Decrease</string>
     <string name="action_increase">Increase</string>
+    <string name="action_clear_search">Clear search</string>
+    <string name="action_show_more">Show more</string>
+    <string name="action_show_less">Show less</string>
+    <string name="action_download">Download</string>
+    <string name="action_open_extensions">Open extensions</string>
     <string name="content_description_in_library">In library</string>
     <string name="content_description_locked">Locked</string>
     <string name="content_description_rating">Rating</string>
     <string name="content_description_language">Language</string>
     <string name="content_description_selected">Selected</string>
+
+    <!-- Full-screen image viewer and privacy-blurred covers -->
+    <string name="image_saved">Saved to Pictures/Grimoire</string>
+    <string name="image_save_failed">Couldn\'t save image</string>
+    <string name="image_share_failed">Couldn\'t share image</string>
+    <string name="image_storage_permission">Storage permission needed to save</string>
+    <string name="image_share_chooser">Share image</string>
+    <string name="privacy_image_hint">Tap to reveal · hold to peek</string>
 
     <!-- Global search and source browsing -->
     <string name="global_search_pinned_placeholder">Search pinned sources…</string>
@@ -323,6 +340,12 @@
     <string name="novel_your_rating">Your rating</string>
     <string name="novel_rating_hint">Your own score, separate from the source rating.</string>
     <string name="novel_rating_value">%1$d / 10</string>
+    <string name="novel_source_missing_title">Source not installed</string>
+    <string name="novel_source_missing_message">%1$s isn\'t installed on this device. Your saved details and any downloaded chapters are still available, but you can\'t fetch new chapters or open the source until you reinstall its extension.</string>
+    <string name="novel_source_missing_generic">This novel\'s source</string>
+    <string name="novel_source_missing_named">\"%1$s\"</string>
+    <string name="novel_source_uninstalled">Source uninstalled</string>
+    <string name="novel_source_uninstalled_named">%1$s (uninstalled)</string>
     <string name="novel_cover_url_title">Cover image URL</string>
     <string name="novel_cover_replace_image">Replace with image</string>
     <string name="novel_cover_replace_url">Replace with URL</string>
@@ -677,4 +700,17 @@
     <string name="extensions_org_access">Signed in as @%1$s, but this OAuth app hasn’t been granted access to the owning organization yet. Approve it at github.com/settings/applications, then pull to refresh.</string>
     <string name="extensions_manage_github">Manage GitHub connection</string>
     <string name="extensions_more_languages">%1$s + %2$d more</string>
+
+    <!-- Errors surfaced by ViewModels -->
+    <string name="error_source_not_available">Source not available</string>
+    <string name="error_chapter_not_found">Chapter not found in database</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="error_failed">Failed</string>
+    <string name="error_no_readable_pages">This source does not provide readable chapter pages</string>
+    <string name="error_download_failed">Download failed</string>
+    <string name="error_export_failed">Export failed</string>
+    <string name="error_imported_book_not_found">Imported book not found</string>
+    <string name="error_save_to_library_first">Save this novel to your library first</string>
+    <string name="source_validate_nothing">This source has nothing to validate.</string>
+    <string name="source_validate_failed">Validation failed.</string>
 </resources>

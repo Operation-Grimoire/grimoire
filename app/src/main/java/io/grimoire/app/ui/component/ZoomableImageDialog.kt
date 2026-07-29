@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.app.R
 import io.grimoire.app.ui.icon.*
 import android.Manifest
 import android.content.Intent
@@ -36,6 +37,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -85,7 +87,7 @@ fun ZoomableImageDialog(
                 val ok = ImageSaver.saveToGallery(context, model, saveBaseName)
                 Toast.makeText(
                     context,
-                    if (ok) "Saved to Pictures/Grimoire" else "Couldn't save image",
+                    context.getString(if (ok) R.string.image_saved else R.string.image_save_failed),
                     Toast.LENGTH_SHORT,
                 ).show()
             }
@@ -95,7 +97,11 @@ fun ZoomableImageDialog(
             ActivityResultContracts.RequestPermission(),
         ) { granted ->
             if (granted) saveNow()
-            else Toast.makeText(context, "Storage permission needed to save", Toast.LENGTH_SHORT).show()
+            else Toast.makeText(
+                context,
+                context.getString(R.string.image_storage_permission),
+                Toast.LENGTH_SHORT,
+            ).show()
         }
 
         fun onDownload() {
@@ -110,7 +116,11 @@ fun ZoomableImageDialog(
             scope.launch {
                 val uri = ImageSaver.cacheForShare(context, model, saveBaseName)
                 if (uri == null) {
-                    Toast.makeText(context, "Couldn't share image", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.image_share_failed),
+                        Toast.LENGTH_SHORT,
+                    ).show()
                     return@launch
                 }
                 val send = Intent(Intent.ACTION_SEND).apply {
@@ -118,7 +128,9 @@ fun ZoomableImageDialog(
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                context.startActivity(Intent.createChooser(send, "Share image"))
+                context.startActivity(
+                    Intent.createChooser(send, context.getString(R.string.image_share_chooser)),
+                )
             }
         }
 
@@ -184,15 +196,27 @@ fun ZoomableImageDialog(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = ::onDownload) {
-                    Icon(AppIcons.Download, contentDescription = "Download", tint = Color.White)
+                    Icon(
+                        AppIcons.Download,
+                        contentDescription = stringResource(R.string.action_download),
+                        tint = Color.White,
+                    )
                 }
                 IconButton(onClick = ::onShare) {
-                    Icon(AppIcons.Share, contentDescription = "Share", tint = Color.White)
+                    Icon(
+                        AppIcons.Share,
+                        contentDescription = stringResource(R.string.action_share),
+                        tint = Color.White,
+                    )
                 }
                 if (extraActions.isNotEmpty()) {
                     Box {
                         IconButton(onClick = { overflowOpen = true }) {
-                            Icon(AppIcons.Edit, contentDescription = "Edit", tint = Color.White)
+                            Icon(
+                                AppIcons.Edit,
+                                contentDescription = stringResource(R.string.action_edit),
+                                tint = Color.White,
+                            )
                         }
                         DropdownMenu(expanded = overflowOpen, onDismissRequest = { overflowOpen = false }) {
                             extraActions.forEach { action ->
@@ -209,7 +233,11 @@ fun ZoomableImageDialog(
                     }
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(AppIcons.Close, contentDescription = "Close", tint = Color.White)
+                    Icon(
+                        AppIcons.Close,
+                        contentDescription = stringResource(R.string.action_close),
+                        tint = Color.White,
+                    )
                 }
             }
         }

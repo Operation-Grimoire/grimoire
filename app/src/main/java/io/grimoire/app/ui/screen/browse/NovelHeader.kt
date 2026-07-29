@@ -200,7 +200,9 @@ internal fun NovelHeader(
                     // Extension gone: name the source when the repo index still knows it,
                     // so it's clear which one to reinstall.
                     MetaChip(
-                        text = missingSourceName?.let { "$it (uninstalled)" } ?: "Source uninstalled",
+                        text = missingSourceName
+                            ?.let { stringResource(R.string.novel_source_uninstalled_named, it) }
+                            ?: stringResource(R.string.novel_source_uninstalled),
                         icon = AppIcons.WarningAmber,
                         iconTint = MaterialTheme.colorScheme.error,
                         onClick = onSourceMissingClick,

@@ -27,7 +27,7 @@ object TtsNotificationBuilder {
         val playing = state == TtsPlaybackState.PLAYING
         val builder = NotificationCompat.Builder(context, GrimoireApp.TTS_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_tts)
-            .setContentTitle(nowPlaying?.chapterName ?: "Text-to-speech")
+            .setContentTitle(nowPlaying?.chapterName ?: context.getString(R.string.tts_notification_title))
             .setContentText(nowPlaying?.novelTitle ?: "")
             .setContentIntent(contentIntent(context))
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -36,24 +36,24 @@ object TtsNotificationBuilder {
             .setOngoing(playing)
             .setShowWhen(false)
             .addAction(
-                action(context, android.R.drawable.ic_media_previous, "Previous",
+                action(context, android.R.drawable.ic_media_previous, context.getString(R.string.action_previous),
                     PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS),
             )
             .addAction(
                 if (playing) {
-                    action(context, android.R.drawable.ic_media_pause, "Pause",
+                    action(context, android.R.drawable.ic_media_pause, context.getString(R.string.action_pause),
                         PlaybackStateCompat.ACTION_PLAY_PAUSE)
                 } else {
-                    action(context, android.R.drawable.ic_media_play, "Play",
+                    action(context, android.R.drawable.ic_media_play, context.getString(R.string.action_play),
                         PlaybackStateCompat.ACTION_PLAY_PAUSE)
                 },
             )
             .addAction(
-                action(context, android.R.drawable.ic_media_next, "Next",
+                action(context, android.R.drawable.ic_media_next, context.getString(R.string.action_next),
                     PlaybackStateCompat.ACTION_SKIP_TO_NEXT),
             )
             .addAction(
-                action(context, R.drawable.ic_tts_stop, "Stop", PlaybackStateCompat.ACTION_STOP),
+                action(context, R.drawable.ic_tts_stop, context.getString(R.string.action_stop), PlaybackStateCompat.ACTION_STOP),
             )
             .setStyle(
                 MediaStyle()

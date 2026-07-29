@@ -75,6 +75,36 @@
     <string name="tour_step_done_title">一切就绪</string>
     <string name="tour_step_done_body">你可以随时从“更多”→“使用导览”重新播放。</string>
 
+    <!-- 隐私设置 -->
+    <string name="privacy_section_diagnostics">诊断信息</string>
+    <string name="privacy_diagnostics_note">诊断信息均为匿名，绝不包含个人数据、小说标题或链接。除非你主动开启，否则全部处于关闭状态。</string>
+    <string name="privacy_crash_reports">发送崩溃报告</string>
+    <string name="privacy_crash_reports_summary">应用崩溃时发送匿名的堆栈信息</string>
+    <string name="privacy_usage_analytics">发送匿名使用统计</string>
+    <string name="privacy_usage_analytics_summary">了解哪些功能常被使用，为后续开发提供参考</string>
+
+    <!-- 章节下载通知 -->
+    <string name="download_notification_title">正在下载章节</string>
+    <string name="download_notification_starting">正在开始…</string>
+    <string name="download_notification_working">正在下载…</string>
+    <string name="download_notification_queued">还有 %1$d 个排队中</string>
+    <string name="download_notification_chapter_queued">%1$s（还有 %2$d 个排队中）</string>
+    <string name="download_notification_complete_title">下载完成</string>
+    <plurals name="download_notification_complete_count"><item quantity="other">已下载 %1$d 个章节</item></plurals>
+
+    <!-- 应用更新通知 -->
+    <string name="app_update_notification_downloading">正在下载更新</string>
+    <string name="app_update_notification_downloading_version">正在下载更新 %1$s</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">正在开始…</string>
+    <string name="app_update_notification_ready">更新已就绪，可以安装</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s 已就绪</string>
+    <string name="app_update_notification_tap_to_install">点按以安装</string>
+    <string name="app_update_notification_failed">更新下载失败</string>
+    <string name="app_update_verification_failed">下载校验失败——请重试或更换网络</string>
+    <string name="app_update_download_failed">下载失败</string>
+
     <!-- 下载 -->
     <string name="downloads_title">下载</string>
     <string name="downloads_settings">下载设置</string>
@@ -136,6 +166,10 @@
     <plurals name="tasks_warning_count"><item quantity="other">%1$d 个警告</item></plurals>
     <plurals name="tasks_error_count"><item quantity="other">%1$d 个错误</item></plurals>
     <string name="tasks_sync_failed">书库同步失败 · %1$s</string>
+    <string name="library_update_downloading_new">正在下载新章节</string>
+    <string name="library_update_chapter_queued">%1$s · 还有 %2$d 个排队中</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="other">%1$d 个新的锁定章节</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · %2$d 章锁定</string>
 
     <!-- 书库更新 -->
     <string name="updates_title">更新</string>
@@ -183,4 +217,14 @@
     <string name="crash_report_github">在 GitHub 上报告</string>
     <string name="crash_details_copied">崩溃详情已复制。</string>
     <string name="crash_copy_details">复制详情</string>
+
+    <!-- 朗读媒体通知与播放错误 -->
+    <string name="action_previous">上一个</string>
+    <string name="action_play">播放</string>
+    <string name="action_stop">停止</string>
+    <string name="tts_notification_title">语音朗读</string>
+    <string name="tts_error_request_failed">ElevenLabs 请求失败</string>
+    <string name="tts_error_play_audio">无法播放音频</string>
+    <string name="tts_error_play_preview">无法播放试听音频</string>
+    <string name="tts_error_start_playback">无法开始播放</string>
 </resources>

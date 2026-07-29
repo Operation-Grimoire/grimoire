@@ -1,9 +1,12 @@
 package io.grimoire.app.ui.screen.extensions
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.lang.Language
+import io.grimoire.app.R
 import io.grimoire.app.auth.github.GitHubAuthStore
 import io.grimoire.app.util.ContentLanguages
 import io.grimoire.app.data.local.entity.RepoEntity
@@ -13,6 +16,7 @@ import io.grimoire.app.extension.repo.ExtensionRepository
 import io.grimoire.app.extension.repo.GitHubRateLimitException
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.repo.HashMismatchException
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,12 +59,16 @@ data class ExtensionsUi(
 
 @HiltViewModel
 class ExtensionsViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     private val repository: ExtensionRepository,
     private val installer: ExtensionInstaller,
     private val appLanguages: io.grimoire.app.data.preferences.AppLanguagePreferences,
     private val extensionManager: io.grimoire.app.extension.ExtensionManager,
     githubAuthStore: GitHubAuthStore,
 ) : ViewModel() {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     val items: StateFlow<List<ExtensionItem>> = repository.items
     val isFetching: StateFlow<Boolean> = repository.isFetching
@@ -233,9 +241,10 @@ class ExtensionsViewModel @Inject constructor(
                             "Download verification failed — try again or switch networks"
                         is GitHubRateLimitException -> {
                             _rateLimitPrompt.value = true
-                            "GitHub rate limit reached"
+                            localizedContext.getString(R.string.extensions_rate_limit_title)
                         }
-                        else -> e.message ?: "Download failed"
+                        else -> e.message
+                            ?: localizedContext.getString(R.string.error_download_failed)
                     }
                     _installStates.update { it + (pkg to InstallState.Error(msg)) }
                 }

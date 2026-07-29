@@ -1,14 +1,18 @@
 package io.grimoire.app.ui.screen.migrate
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.source.feature.SearchSource
 import io.grimoire.api.source.sourceIdFor
+import io.grimoire.app.R
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.ui.screen.browse.GlobalSearchResult
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -26,10 +30,14 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class MigrateViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val novelDao: NovelDao,
 ) : ViewModel() {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     private val sourceNovelId: Long = checkNotNull(savedStateHandle["novelId"])
 
@@ -93,7 +101,11 @@ class MigrateViewModel @Inject constructor(
                             if (entry.packageName != pkg) return@map entry
                             result.fold(
                                 onSuccess = { novels -> entry.copy(novels = novels, isLoading = false) },
-                                onFailure = { e -> entry.copy(isLoading = false, error = e.message ?: "Failed") },
+                                onFailure = { e -> entry.copy(
+                                    isLoading = false,
+                                    error = e.message
+                                        ?: localizedContext.getString(R.string.error_failed),
+                                ) },
                             )
                         }
                     }

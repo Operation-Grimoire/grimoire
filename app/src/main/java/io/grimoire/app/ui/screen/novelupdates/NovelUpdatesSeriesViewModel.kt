@@ -1,9 +1,12 @@
 package io.grimoire.app.ui.screen.novelupdates
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.grimoire.app.R
 import io.grimoire.app.data.local.dao.NuBookmarkDao
 import io.grimoire.app.data.local.entity.NuBookmarkEntity
 import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
@@ -15,6 +18,7 @@ import io.grimoire.app.extension.repo.ExtensionRepository
 import io.grimoire.app.extension.repo.GitHubRateLimitException
 import io.grimoire.app.extension.repo.HashMismatchException
 import io.grimoire.app.ui.screen.extensions.InstallState
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,12 +37,16 @@ sealed interface NuSeriesState {
 
 @HiltViewModel
 class NovelUpdatesSeriesViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     savedStateHandle: SavedStateHandle,
     private val repository: NovelUpdatesInfoRepository,
     private val extensionRepository: ExtensionRepository,
     private val installer: ExtensionInstaller,
     private val bookmarkDao: NuBookmarkDao,
 ) : ViewModel() {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     private val slug: String = checkNotNull(savedStateHandle["slug"])
 
@@ -139,8 +147,10 @@ class NovelUpdatesSeriesViewModel @Inject constructor(
                     val msg = when (e) {
                         is HashMismatchException ->
                             "Download verification failed — try again or switch networks"
-                        is GitHubRateLimitException -> "GitHub rate limit reached"
-                        else -> e.message ?: "Download failed"
+                        is GitHubRateLimitException ->
+                            localizedContext.getString(R.string.extensions_rate_limit_title)
+                        else -> e.message
+                            ?: localizedContext.getString(R.string.error_download_failed)
                     }
                     _installStates.update { it + (pkg to InstallState.Error(msg)) }
                 }

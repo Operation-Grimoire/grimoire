@@ -12,6 +12,8 @@ import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.AndroidEntryPoint
 import io.grimoire.app.GrimoireApp
 import io.grimoire.app.MainActivity
+import io.grimoire.app.R
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,6 +34,9 @@ class AppUpdateService : Service() {
     @Inject lateinit var downloadStore: AppUpdateDownloadStore
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** Notification text follows the in-app language override, like [io.grimoire.app.data.backup.BackupManager]. */
+    private val localizedContext by lazy { AppLocale.wrap(this) }
 
     override fun onBind(intent: Intent?) = null
 
@@ -67,8 +72,9 @@ class AppUpdateService : Service() {
                 .onFailure { e ->
                     val message = when (e) {
                         is AppUpdateHashMismatchException ->
-                            "Download verification failed — try again or switch networks"
-                        else -> e.message ?: "Download failed"
+                            localizedContext.getString(R.string.app_update_verification_failed)
+                        else -> e.message
+                            ?: localizedContext.getString(R.string.app_update_download_failed)
                     }
                     downloadStore.set(DownloadState.Error(message))
                     stopForeground(STOP_FOREGROUND_REMOVE)
@@ -105,7 +111,11 @@ class AppUpdateService : Service() {
     )
 
     private fun progressNotification(version: String, read: Long, total: Long): Notification {
-        val title = if (version.isBlank()) "Downloading update" else "Downloading update $version"
+        val title = if (version.isBlank()) {
+            localizedContext.getString(R.string.app_update_notification_downloading)
+        } else {
+            localizedContext.getString(R.string.app_update_notification_downloading_version, version)
+        }
         val builder = NotificationCompat.Builder(this, GrimoireApp.APP_UPDATE_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentTitle(title)
@@ -115,10 +125,23 @@ class AppUpdateService : Service() {
         if (total > 0) {
             val percent = (read * 100 / total).toInt().coerceIn(0, 100)
             builder.setProgress(100, percent, false)
-            builder.setContentText("$percent%  ·  ${mb(read)} / ${mb(total)} MB")
+            builder.setContentText(
+                localizedContext.getString(
+                    R.string.app_update_notification_progress,
+                    percent,
+                    mb(read),
+                    mb(total),
+                ),
+            )
         } else {
             builder.setProgress(0, 0, true)
-            builder.setContentText(if (read > 0) "${mb(read)} MB" else "Starting…")
+            builder.setContentText(
+                if (read > 0) {
+                    localizedContext.getString(R.string.app_update_notification_size, mb(read))
+                } else {
+                    localizedContext.getString(R.string.app_update_notification_starting)
+                },
+            )
         }
         return builder.build()
     }
@@ -128,11 +151,15 @@ class AppUpdateService : Service() {
             this, 0, checker.installIntent(file),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val title = if (version.isBlank()) "Update ready to install" else "Grimoire $version ready"
+        val title = if (version.isBlank()) {
+            localizedContext.getString(R.string.app_update_notification_ready)
+        } else {
+            localizedContext.getString(R.string.app_update_notification_ready_version, version)
+        }
         return NotificationCompat.Builder(this, GrimoireApp.APP_UPDATE_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setContentTitle(title)
-            .setContentText("Tap to install")
+            .setContentText(localizedContext.getString(R.string.app_update_notification_tap_to_install))
             .setContentIntent(installIntent)
             .setAutoCancel(true)
             .build()
@@ -141,7 +168,7 @@ class AppUpdateService : Service() {
     private fun errorNotification(message: String): Notification =
         NotificationCompat.Builder(this, GrimoireApp.APP_UPDATE_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setContentTitle("Update download failed")
+            .setContentTitle(localizedContext.getString(R.string.app_update_notification_failed))
             .setContentText(message)
             .setContentIntent(tapIntent())
             .setAutoCancel(true)

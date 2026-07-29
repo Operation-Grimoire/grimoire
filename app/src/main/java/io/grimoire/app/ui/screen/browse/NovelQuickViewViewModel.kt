@@ -1,16 +1,19 @@
 package io.grimoire.app.ui.screen.browse
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.source.epub.EpubSource
 import io.grimoire.api.source.Source
 import io.grimoire.api.source.sourceIdFor
+import io.grimoire.app.R
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
@@ -20,6 +23,7 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.source.fetchAllChapters
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,6 +40,7 @@ import kotlinx.coroutines.launch
 /** Backing VM for the long-press preview sheet; warms the same DB cache the full detail screen uses. */
 @HiltViewModel(assistedFactory = NovelQuickViewViewModel.Factory::class)
 class NovelQuickViewViewModel @AssistedInject constructor(
+    @ApplicationContext context: Context,
     @Assisted("pkg") val pkg: String,
     @Assisted("novelUrl") private val novelUrl: String,
     private val extensionManager: ExtensionManager,
@@ -47,6 +52,9 @@ class NovelQuickViewViewModel @AssistedInject constructor(
     private val authManager: HiddenCategoriesAuthManager,
     private val analytics: io.grimoire.app.data.analytics.Analytics,
 ) : ViewModel() {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     @AssistedFactory
     interface Factory {
@@ -133,7 +141,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
 
     private suspend fun loadNovel() {
         val src = source ?: run {
-            _error.value = "Source not available"
+            _error.value = localizedContext.getString(R.string.error_source_not_available)
             _isLoading.value = false
             return
         }

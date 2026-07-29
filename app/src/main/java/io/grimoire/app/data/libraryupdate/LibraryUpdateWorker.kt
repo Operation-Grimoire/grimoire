@@ -18,6 +18,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.grimoire.app.GrimoireApp
 import io.grimoire.app.MainActivity
+import io.grimoire.app.R
 import io.grimoire.app.data.crash.CrashContext
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.CategoryDao
@@ -28,6 +29,7 @@ import io.grimoire.app.data.local.entity.TaskLogType
 import io.grimoire.app.data.preferences.LibraryUpdatePreferences
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.app.util.AppLocale
 
 /**
  * Runs a library refresh in the background. Used for both the periodic schedule
@@ -50,8 +52,17 @@ class LibraryUpdateWorker @AssistedInject constructor(
     private val taskLogDao: TaskLogDao,
 ) : CoroutineWorker(applicationContext, params) {
 
+    /** Notification text follows the in-app language override, like [io.grimoire.app.data.backup.BackupManager]. */
+    private val localizedContext = AppLocale.wrap(applicationContext)
+
     override suspend fun getForegroundInfo(): ForegroundInfo =
-        foregroundInfo(buildProgressNotification("Starting…", total = 0, done = 0))
+        foregroundInfo(
+            buildProgressNotification(
+                localizedContext.getString(R.string.tasks_starting),
+                total = 0,
+                done = 0,
+            ),
+        )
 
     override suspend fun doWork(): Result {
         val rawCategory = inputData.getLong(KEY_CATEGORY_ID, ALL_LIBRARY)
@@ -129,9 +140,14 @@ class LibraryUpdateWorker @AssistedInject constructor(
     }
 
     private fun downloadingText(chapterName: String, remaining: Int): String = when {
-        chapterName.isBlank() && remaining > 0 -> "+$remaining queued"
-        chapterName.isBlank() -> "Starting…"
-        remaining > 0 -> "$chapterName · +$remaining queued"
+        chapterName.isBlank() && remaining > 0 ->
+            localizedContext.getString(R.string.download_notification_queued, remaining)
+        chapterName.isBlank() -> localizedContext.getString(R.string.tasks_starting)
+        remaining > 0 -> localizedContext.getString(
+            R.string.library_update_chapter_queued,
+            chapterName,
+            remaining,
+        )
         else -> chapterName
     }
 
@@ -183,7 +199,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
         text: String,
         total: Int,
         done: Int,
-        title: String = "Updating library",
+        title: String = localizedContext.getString(R.string.tasks_updating_library),
     ): Notification =
         NotificationCompat.Builder(applicationContext, GrimoireApp.LIBRARY_UPDATE_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
@@ -205,7 +221,12 @@ class LibraryUpdateWorker @AssistedInject constructor(
         runCatching {
             setForegroundAsync(
                 foregroundInfo(
-                    buildProgressNotification(text, total = 0, done = 0, title = "Downloading new chapters"),
+                    buildProgressNotification(
+                        text,
+                        total = 0,
+                        done = 0,
+                        title = localizedContext.getString(R.string.library_update_downloading_new),
+                    ),
                 ),
             )
         }
@@ -227,13 +248,23 @@ class LibraryUpdateWorker @AssistedInject constructor(
             if (hidden) return
         }
 
+        val newChapters = localizedContext.resources.getQuantityString(
+            R.plurals.tasks_new_chapters,
+            readablePart,
+            readablePart,
+        )
         val body = when {
-            readablePart > 0 && lockedPart > 0 ->
-                "${readablePart} new chapter${plural(readablePart)} · ${lockedPart} locked"
-            readablePart > 0 ->
-                "${readablePart} new chapter${plural(readablePart)}"
-            else ->
-                "${lockedPart} new locked chapter${plural(lockedPart)}"
+            readablePart > 0 && lockedPart > 0 -> localizedContext.getString(
+                R.string.library_update_new_with_locked,
+                newChapters,
+                lockedPart,
+            )
+            readablePart > 0 -> newChapters
+            else -> localizedContext.resources.getQuantityString(
+                R.plurals.library_update_new_locked_chapters,
+                lockedPart,
+                lockedPart,
+            )
         }
 
         val pkg = extensionManager.extensions.value

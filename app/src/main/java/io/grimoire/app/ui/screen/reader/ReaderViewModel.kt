@@ -1,13 +1,16 @@
 package io.grimoire.app.ui.screen.reader
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.api.source.web.PageListSource
+import io.grimoire.app.R
 import io.grimoire.app.util.imageUrl
 import io.grimoire.app.util.isSeparator
 import io.grimoire.app.util.text
@@ -37,6 +40,7 @@ import io.grimoire.app.data.tts.TtsController
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsPlaybackState
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,6 +61,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     private val savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
@@ -70,6 +75,9 @@ class ReaderViewModel @Inject constructor(
     private val chapterImageStore: ChapterImageStore,
     private val analytics: io.grimoire.app.data.analytics.Analytics,
 ) : ViewModel() {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
 
@@ -254,7 +262,7 @@ class ReaderViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val chapter = chapterDao.getByUrl(initialChapterUrl) ?: run {
-                _error.value = "Chapter not found in database"
+                _error.value = localizedContext.getString(R.string.error_chapter_not_found)
                 _isLoading.value = false
                 return@launch
             }
@@ -376,13 +384,13 @@ class ReaderViewModel @Inject constructor(
             // surface "Source not available" for an installed extension.
             extensionManager.awaitReady()
             val src = source ?: run {
-                _error.value = "Source not available"
+                _error.value = localizedContext.getString(R.string.error_source_not_available)
                 _isLoading.value = false
                 return@launch
             }
             runCatching {
                 (src as? PageListSource)?.getPageList(fresh.toChapter())
-                    ?: error("This source does not provide readable chapter pages")
+                    ?: error(localizedContext.getString(R.string.error_no_readable_pages))
             }
                 .onSuccess {
                     _pages.value = it

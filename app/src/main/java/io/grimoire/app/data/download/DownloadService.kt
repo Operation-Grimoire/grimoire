@@ -9,10 +9,12 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.AndroidEntryPoint
 import io.grimoire.app.GrimoireApp
+import io.grimoire.app.R
 import io.grimoire.app.MainActivity
 import io.grimoire.app.data.local.dao.TaskLogDao
 import io.grimoire.app.data.local.entity.TaskLogEntity
 import io.grimoire.app.data.local.entity.TaskLogType
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,16 +30,25 @@ class DownloadService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    /** Notification text follows the in-app language override, like [io.grimoire.app.data.backup.BackupManager]. */
+    private val localizedContext by lazy { AppLocale.wrap(this) }
+
     override fun onBind(intent: Intent?) = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        showNotification("Starting…")
+        showNotification(localizedContext.getString(R.string.download_notification_starting))
         scope.launch {
             val result = downloadManager.processQueue { chapterName, remaining ->
                 val text = when {
-                    chapterName.isBlank() && remaining > 0 -> "+$remaining queued"
-                    chapterName.isBlank() -> "Downloading…"
-                    remaining > 0 -> "$chapterName  (+$remaining queued)"
+                    chapterName.isBlank() && remaining > 0 ->
+                        localizedContext.getString(R.string.download_notification_queued, remaining)
+                    chapterName.isBlank() ->
+                        localizedContext.getString(R.string.download_notification_working)
+                    remaining > 0 -> localizedContext.getString(
+                        R.string.download_notification_chapter_queued,
+                        chapterName,
+                        remaining,
+                    )
                     else -> chapterName
                 }
                 showNotification(text)
@@ -86,7 +97,7 @@ class DownloadService : Service() {
     private fun showNotification(text: String) {
         val notification = NotificationCompat.Builder(this, GrimoireApp.DOWNLOAD_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download)
-            .setContentTitle("Downloading chapters")
+            .setContentTitle(localizedContext.getString(R.string.download_notification_title))
             .setContentText(text)
             .setContentIntent(tapIntent())
             .setOngoing(true)
@@ -102,8 +113,14 @@ class DownloadService : Service() {
     private fun showCompletionNotification(count: Int) {
         val notification = NotificationCompat.Builder(this, GrimoireApp.DOWNLOAD_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setContentTitle("Downloads complete")
-            .setContentText("$count chapter${if (count != 1) "s" else ""} downloaded")
+            .setContentTitle(localizedContext.getString(R.string.download_notification_complete_title))
+            .setContentText(
+                localizedContext.resources.getQuantityString(
+                    R.plurals.download_notification_complete_count,
+                    count,
+                    count,
+                ),
+            )
             .setContentIntent(tapIntent())
             .setAutoCancel(true)
             .build()

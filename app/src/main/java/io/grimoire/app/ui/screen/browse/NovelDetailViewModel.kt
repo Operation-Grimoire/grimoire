@@ -1,14 +1,17 @@
 package io.grimoire.app.ui.screen.browse
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelStatus
+import io.grimoire.app.R
 import io.grimoire.app.util.ContentLanguages
 import io.grimoire.api.source.feature.ConfigurableSource
 import io.grimoire.api.source.epub.EpubSource
@@ -43,6 +46,7 @@ import io.grimoire.app.domain.migration.NovelMigrator
 import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -70,6 +74,7 @@ internal const val BROWSE_TTL_MS = 30 * 60 * 1000L
 
 @HiltViewModel
 class NovelDetailViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     private val savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val extensionRepository: io.grimoire.app.extension.repo.ExtensionRepository,
@@ -89,6 +94,9 @@ class NovelDetailViewModel @Inject constructor(
     private val authManager: HiddenCategoriesAuthManager,
     private val analytics: io.grimoire.app.data.analytics.Analytics,
 ) : ViewModel() {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     /** Mirrors the library preference that decides whether locked chapters count toward totals. */
     val includeLockedInTotals: StateFlow<Boolean> =
@@ -440,7 +448,7 @@ class NovelDetailViewModel @Inject constructor(
 
     private suspend fun loadLocalNovel() {
         val existing = novelDao.getBySourceUrl(LOCAL_SOURCE_ID, novelUrl) ?: run {
-            _novelError.value = "Imported book not found"
+            _novelError.value = localizedContext.getString(R.string.error_imported_book_not_found)
             _isLoadingNovel.value = false
             return
         }
@@ -636,7 +644,10 @@ class NovelDetailViewModel @Inject constructor(
         if (isLocal) return
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
-            val src = source ?: run { _novelError.value = "Source not available"; return@launch }
+            val src = source ?: run {
+                _novelError.value = localizedContext.getString(R.string.error_source_not_available)
+                return@launch
+            }
             fetchFromNetwork(src)
         }
     }
@@ -651,7 +662,7 @@ class NovelDetailViewModel @Inject constructor(
 
     private suspend fun loadNovel(forceRefresh: Boolean) {
         val src = source ?: run {
-            _novelError.value = "Source not available"
+            _novelError.value = localizedContext.getString(R.string.error_source_not_available)
             _isLoadingNovel.value = false
             return
         }
@@ -844,7 +855,7 @@ class NovelDetailViewModel @Inject constructor(
     /** Downloads and imports the whole-book EPUB for an [EpubSource]. */
     fun downloadBook() {
         val src = source as? EpubSource ?: run {
-            _bookDownload.value = BookDownloadState.Error("Source unavailable")
+            _bookDownload.value = BookDownloadState.Error(localizedContext.getString(R.string.error_source_not_available))
             return
         }
         if (_bookDownload.value is BookDownloadState.Downloading) return
@@ -859,7 +870,8 @@ class NovelDetailViewModel @Inject constructor(
                 }
                 .onFailure { e ->
                     _bookDownload.value = BookDownloadState.Error(
-                        e.message ?: e::class.simpleName ?: "Download failed",
+                        e.message ?: e::class.simpleName
+                            ?: localizedContext.getString(R.string.error_download_failed),
                     )
                 }
         }
@@ -886,7 +898,7 @@ class NovelDetailViewModel @Inject constructor(
     fun exportEpub(dest: Uri) {
         val id = _liveNovelId.value
         if (id <= 0L) {
-            _exportEvent.value = ExportEvent.Error("Save this novel to your library first")
+            _exportEvent.value = ExportEvent.Error(localizedContext.getString(R.string.error_save_to_library_first))
             return
         }
         if (_isExporting.value) return
@@ -901,7 +913,8 @@ class NovelDetailViewModel @Inject constructor(
                 },
                 onFailure = { e ->
                     _exportEvent.value = ExportEvent.Error(
-                        e.message ?: e::class.simpleName ?: "Export failed",
+                        e.message ?: e::class.simpleName
+                            ?: localizedContext.getString(R.string.error_export_failed),
                     )
                 },
             )
@@ -1008,7 +1021,8 @@ class NovelDetailViewModel @Inject constructor(
                 onSuccess = { _migrationState.value = MigrationState.Success },
                 onFailure = { e ->
                     _migrationState.value = MigrationState.Error(
-                        e.message ?: e::class.simpleName ?: "Migration failed",
+                        e.message ?: e::class.simpleName
+                            ?: localizedContext.getString(R.string.novel_migrate_failed),
                     )
                 },
             )

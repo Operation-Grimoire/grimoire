@@ -44,11 +44,10 @@ fun PrivacySettingsScreen(
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
-            item { SettingsSectionHeader("Diagnostics") }
+            item { SettingsSectionHeader(stringResource(R.string.privacy_section_diagnostics)) }
             item {
                 Text(
-                    "Diagnostics are anonymous and never include personal data, novel titles, or links. " +
-                        "Everything is off unless you turn it on.",
+                    stringResource(R.string.privacy_diagnostics_note),
                     style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
                     color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -57,8 +56,8 @@ fun PrivacySettingsScreen(
             item {
                 val crashReports by viewModel.crashReportsEnabled.collectAsState()
                 ListItem(
-                    headlineContent = { Text("Send crash reports") },
-                    supportingContent = { Text("Anonymous stack traces when the app crashes") },
+                    headlineContent = { Text(stringResource(R.string.privacy_crash_reports)) },
+                    supportingContent = { Text(stringResource(R.string.privacy_crash_reports_summary)) },
                     trailingContent = {
                         Switch(checked = crashReports, onCheckedChange = { viewModel.setCrashReports(it) })
                     },
@@ -68,8 +67,8 @@ fun PrivacySettingsScreen(
             item {
                 val usageAnalytics by viewModel.usageAnalyticsEnabled.collectAsState()
                 ListItem(
-                    headlineContent = { Text("Send anonymous usage analytics") },
-                    supportingContent = { Text("Which features get used, to guide what to build") },
+                    headlineContent = { Text(stringResource(R.string.privacy_usage_analytics)) },
+                    supportingContent = { Text(stringResource(R.string.privacy_usage_analytics_summary)) },
                     trailingContent = {
                         Switch(checked = usageAnalytics, onCheckedChange = { viewModel.setUsageAnalytics(it) })
                     },

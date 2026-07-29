@@ -1,10 +1,12 @@
 package io.grimoire.app.ui.screen.browse
 
+import android.content.Context
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.filter.Filter
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.network.CloudflareException
@@ -16,11 +18,13 @@ import io.grimoire.api.source.feature.MultiLanguageSource
 import io.grimoire.api.source.feature.PopularSource
 import io.grimoire.api.source.feature.SearchSource
 import io.grimoire.api.source.SourceInfo
+import io.grimoire.app.R
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.preferences.BrowseDisplayMode
 import io.grimoire.app.data.preferences.BrowsePreferences
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.app.util.AppLocale
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -55,11 +59,15 @@ sealed interface FilterLoadState {
 
 @HiltViewModel
 class SourceBrowseViewModel @Inject constructor(
+    @ApplicationContext context: Context,
     savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val browsePreferences: BrowsePreferences,
     private val novelDao: NovelDao,
 ) : ViewModel() {
+
+    /** Resources in the in-app UI language, for error text surfaced to the screen. */
+    private val localizedContext = AppLocale.wrap(context)
 
     val packageName: String = checkNotNull(savedStateHandle["pkg"])
 
@@ -215,7 +223,8 @@ class SourceBrowseViewModel @Inject constructor(
                 .onFailure { e ->
                     Log.e(TAG, "Failed to load filter options [pkg=$packageName]", e)
                     _filterLoadState.value = FilterLoadState.Error(
-                        e.message ?: e::class.simpleName ?: "Unknown error"
+                        e.message ?: e::class.simpleName
+                            ?: localizedContext.getString(R.string.error_unknown)
                     )
                 }
         }
@@ -288,7 +297,10 @@ class SourceBrowseViewModel @Inject constructor(
         get() = supportsSearch && !supportsPopular && !supportsLatest
 
     private fun load(reset: Boolean) {
-        if (loaded?.source == null) { _error.value = "Source not available"; return }
+        if (loaded?.source == null) {
+            _error.value = localizedContext.getString(R.string.error_source_not_available)
+            return
+        }
         // A blank, unfiltered search has nothing to browse: wait for the user to
         // type instead of auto-firing an empty query (which some sources answer
         // with a seeded browse). Clears any prior results and stops loading.
