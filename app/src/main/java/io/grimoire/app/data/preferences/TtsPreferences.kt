@@ -1,6 +1,7 @@
 package io.grimoire.app.data.preferences
 
 import io.grimoire.app.data.tts.TtsEngineType
+import io.grimoire.app.util.ContentLanguages
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,7 +23,11 @@ class TtsPreferences @Inject constructor(store: PreferenceStore) {
     val elevenLabsApiKey = store.getString("tts_elevenlabs_api_key", "")
     val elevenLabsModel = store.getString("tts_elevenlabs_model", "eleven_multilingual_v2")
 
-    /** Normalized language name (see [io.grimoire.app.util.ContentLanguages.normalize]) → voice id. */
+    /**
+     * [io.grimoire.app.util.ContentLanguages.voiceKey] (ISO code) → voice id.
+     * Legacy maps keyed by English names heal to codes in [deserializeVoiceMap]
+     * and are rewritten as codes on the next save.
+     */
     val deviceVoiceByLanguage = store.getObject(
         key = "tts_device_voice_by_language",
         defaultValue = emptyMap<String, String>(),
@@ -46,6 +51,11 @@ private fun deserializeVoiceMap(raw: String): Map<String, String> {
     if (raw.isBlank()) return emptyMap()
     return raw.lineSequence().mapNotNull { line ->
         val parts = line.split("\t", limit = 2)
-        if (parts.size == 2 && parts[0].isNotEmpty()) parts[0] to parts[1] else null
+        // Re-key legacy English-name entries to ISO codes; codes pass through.
+        if (parts.size == 2 && parts[0].isNotEmpty()) {
+            ContentLanguages.voiceKey(parts[0]) to parts[1]
+        } else {
+            null
+        }
     }.toMap()
 }
