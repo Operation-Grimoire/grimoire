@@ -18,6 +18,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -50,7 +52,9 @@ fun ExpandableText(
     ) {
         Text(
             rich,
-            style = style,
+            // Content-derived direction: an RTL synopsis (Arabic etc.) reads
+            // right-aligned per paragraph without knowing the novel's language.
+            style = style.copy(textAlign = TextAlign.Start, textDirection = TextDirection.Content),
             maxLines = if (expanded) Int.MAX_VALUE else collapsedMaxLines,
             overflow = if (expanded) TextOverflow.Clip else TextOverflow.Ellipsis,
         )

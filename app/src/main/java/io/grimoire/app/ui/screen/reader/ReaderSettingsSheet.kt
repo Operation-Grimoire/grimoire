@@ -44,6 +44,7 @@ internal fun ReaderSettingsSheet(
     sheetState: SheetState,
     colors: ReaderColors,
     textStyle: TextStyle,
+    previewText: String,
     fontSize: Int,
     lineHeightTimes10: Int,
     paragraphSpacing: Int,
@@ -103,6 +104,7 @@ internal fun ReaderSettingsSheet(
             ReaderDisplaySettings(
                 colors = colors,
                 textStyle = textStyle,
+                previewText = previewText,
                 fontSize = fontSize,
                 lineHeightTimes10 = lineHeightTimes10,
                 paragraphSpacing = paragraphSpacing,
@@ -155,6 +157,7 @@ internal fun ReaderSettingsSheet(
 private fun ReaderDisplaySettings(
     colors: ReaderColors,
     textStyle: TextStyle,
+    previewText: String,
     fontSize: Int,
     lineHeightTimes10: Int,
     paragraphSpacing: Int,
@@ -193,8 +196,10 @@ private fun ReaderDisplaySettings(
             .padding(horizontal = 20.dp, vertical = 12.dp),
     ) {
         Text(
-            text = stringResource(R.string.reader_preview_text),
+            text = previewText,
             style = textStyle,
+            maxLines = 4,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
     }
     HorizontalDivider()
