@@ -2,6 +2,8 @@ package io.grimoire.app.ui.screen.library
 
 import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -66,10 +68,16 @@ internal fun ManageCategoriesSheet(
                 Text(stringResource(R.string.library_unlock_to_manage_hidden))
             }
         }
+        // Scrolls so a long category list stays reachable; ReorderableColumn is
+        // non-lazy, so without this the overflow is simply unreachable. Drag
+        // still works — the handle initiates the reorder, not the scroll.
         ReorderableColumn(
             list = categories,
             onSettle = { from, to -> onMove(from, to) },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
         ) { _, cat, isDragging ->
             key(cat.id) {
                 ReorderableItem {

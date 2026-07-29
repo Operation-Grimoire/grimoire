@@ -381,6 +381,7 @@ fun SourceBrowseScreen(
                 filters = filters,
                 loadState = filterLoadState,
                 showSearchField = viewModel.supportsSearchWithFilters,
+                initialQuery = query,
                 onLoad = { viewModel.loadFilterOptions() },
                 onApply = { applied, sheetQuery ->
                     viewModel.applyFilters(applied, sheetQuery)
