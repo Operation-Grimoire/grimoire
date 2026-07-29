@@ -138,7 +138,7 @@ fun AppNavigation(
             if (value != null &&
                 navController.currentDestination?.route != ROUTE_EXTENSION_MANAGE
             ) {
-                navController.navigate(ROUTE_EXTENSION_MANAGE) { launchSingleTop = true }
+                navController.navigate(extensionManageRoute()) { launchSingleTop = true }
             }
         }
     }
@@ -186,12 +186,18 @@ fun AppNavigation(
         val onRoute = backStack?.destination?.hierarchy?.any { it.route == route } == true
         if (!onRoute) {
             val isTab = TopLevelDestination.entries.any { it.route == route }
-            navController.navigate(route) {
-                // Tabs restore their saved back-stack; a detail route (e.g. the
-                // extensions screen) is just pushed.
+            // Step routes are patterns (for the on-route check above); translate
+            // the parameterised one into a navigable value so the placeholder
+            // never leaks into the screen as a literal "{query}" prefill (#316).
+            val navRoute = if (route == ROUTE_EXTENSION_MANAGE) extensionManageRoute() else route
+            navController.navigate(navRoute) {
+                // Tour navigation is a *fresh* walk: land each tab on its start
+                // state and discard saved stacks, so a detail screen the tour
+                // opened (extensions) isn't restored when the user taps the tab
+                // again after the tour (#316).
                 if (isTab) {
-                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                    restoreState = true
+                    popUpTo(navController.graph.findStartDestination().id) { saveState = false }
+                    restoreState = false
                 }
                 launchSingleTop = true
             }
@@ -200,7 +206,7 @@ fun AppNavigation(
     val onTourAction: (TourActionId) -> Unit = { action ->
         when (action) {
             TourActionId.OpenExtensions ->
-                navController.navigate(ROUTE_EXTENSION_MANAGE) { launchSingleTop = true }
+                navController.navigate(extensionManageRoute()) { launchSingleTop = true }
         }
     }
 

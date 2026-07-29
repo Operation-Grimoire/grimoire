@@ -527,7 +527,7 @@ internal fun NavGraphBuilder.novelDetailDestinations(navController: NavHostContr
                 navController.navigate("settings/source/${Uri.encode(pkg)}")
             },
             onOpenExtensions = { query ->
-                navController.navigate("extensions?query=${Uri.encode(query)}")
+                navController.navigate(extensionManageRoute(query))
             },
             onMigrate = { novelId ->
                 navController.navigate("migrate?novelId=$novelId")

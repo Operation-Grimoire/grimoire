@@ -33,6 +33,15 @@ internal const val ROUTE_NU_SEARCH = "nu_search"
 internal const val ROUTE_NU_SERIES = "nu_series?slug={slug}"
 internal const val ROUTE_NU_BOOKMARKS = "nu_bookmarks"
 internal const val ROUTE_EXTENSION_MANAGE = "extensions?query={query}"
+
+/**
+ * Navigable form of [ROUTE_EXTENSION_MANAGE]. The constant above is the route
+ * *pattern* — navigating to it verbatim delivers the literal text "{query}" as
+ * the search prefill (the broken-tour bug, #316). Every programmatic
+ * navigation goes through this builder instead.
+ */
+internal fun extensionManageRoute(query: String = ""): String =
+    "extensions?query=${android.net.Uri.encode(query)}"
 internal const val ROUTE_SOURCE_BROWSE = "browse/{pkg}?q={q}"
 internal const val ROUTE_SOURCE_SETTINGS = "settings/source/{pkg}"
 internal const val ROUTE_SOURCE_LANGUAGES = "settings/source/{pkg}/languages"
