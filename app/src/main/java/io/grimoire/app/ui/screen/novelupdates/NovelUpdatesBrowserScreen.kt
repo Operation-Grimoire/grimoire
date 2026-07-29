@@ -1,26 +1,22 @@
 package io.grimoire.app.ui.screen.novelupdates
 
 import io.grimoire.app.ui.icon.*
-import androidx.compose.foundation.horizontalScroll
 import io.grimoire.app.ui.component.PlainTooltipIconButton
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,7 +24,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -37,6 +32,9 @@ import io.grimoire.app.data.novelupdates.NuGenres
 import io.grimoire.app.data.novelupdates.NuLanguages
 import io.grimoire.app.data.novelupdates.NuListingFilter
 import io.grimoire.app.data.novelupdates.NuRankingType
+import io.grimoire.app.ui.component.dialog.FullScreenDialog
+import io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow
+import io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog
 import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,7 +56,6 @@ fun NovelUpdatesBrowserScreen(
     val filter by viewModel.filter.collectAsState()
 
     var showFilters by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Column(modifier.fillMaxSize()) {
         TopAppBar(
@@ -81,33 +78,10 @@ fun NovelUpdatesBrowserScreen(
         )
 
         if (mode == NuBrowseMode.RANKINGS) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                NuRankingType.entries.forEach { type ->
-                    FilterChip(
-                        selected = rankingType == type,
-                        onClick = { viewModel.setRankingType(type) },
-                        label = {
-                            Text(
-                                stringResource(
-                                    when (type) {
-                                        NuRankingType.POPULAR_MONTH -> R.string.nu_ranking_popular_month
-                                        NuRankingType.POPULAR_ALL -> R.string.nu_ranking_popular_all
-                                        NuRankingType.ACTIVITY_WEEK -> R.string.nu_ranking_activity_week
-                                        NuRankingType.ACTIVITY_MONTH -> R.string.nu_ranking_activity_month
-                                        NuRankingType.ACTIVITY_ALL -> R.string.nu_ranking_activity_all
-                                    },
-                                ),
-                            )
-                        },
-                    )
-                }
-            }
+            RankingTypeDropdown(
+                selected = rankingType,
+                onSelect = viewModel::setRankingType,
+            )
         }
 
         NuResultsArea(
@@ -124,22 +98,74 @@ fun NovelUpdatesBrowserScreen(
     }
 
     if (showFilters) {
-        ModalBottomSheet(onDismissRequest = { showFilters = false }, sheetState = sheetState) {
-            ListingFilterSheet(
-                current = filter,
-                onApply = {
-                    showFilters = false
-                    viewModel.applyFilter(it)
-                },
-            )
+        ListingFilterDialog(
+            current = filter,
+            onDismiss = { showFilters = false },
+            onApply = {
+                showFilters = false
+                viewModel.applyFilter(it)
+            },
+        )
+    }
+}
+
+/** Exclusive ranking window — 7 options, so a dropdown instead of a chip row. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RankingTypeDropdown(
+    selected: NuRankingType,
+    onSelect: (NuRankingType) -> Unit,
+) {
+    @Composable
+    fun label(type: NuRankingType) = stringResource(
+        when (type) {
+            NuRankingType.POPULAR_MONTH -> R.string.nu_ranking_popular_month
+            NuRankingType.POPULAR_ALL -> R.string.nu_ranking_popular_all
+            NuRankingType.ACTIVITY_WEEK -> R.string.nu_ranking_activity_week
+            NuRankingType.ACTIVITY_MONTH -> R.string.nu_ranking_activity_month
+            NuRankingType.ACTIVITY_ALL -> R.string.nu_ranking_activity_all
+        },
+    )
+
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+    ) {
+        OutlinedTextField(
+            value = label(selected),
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            NuRankingType.entries.forEach { type ->
+                DropdownMenuItem(
+                    text = { Text(label(type)) },
+                    onClick = {
+                        onSelect(type)
+                        expanded = false
+                    },
+                )
+            }
         }
     }
 }
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+/**
+ * Full-screen listing-filter form. Edits stay local until the top-bar Apply
+ * commits them; X/back is an explicit cancel.
+ */
 @Composable
-private fun ListingFilterSheet(
+private fun ListingFilterDialog(
     current: NuListingFilter,
+    onDismiss: () -> Unit,
     onApply: (NuListingFilter) -> Unit,
 ) {
     val genres = remember {
@@ -151,67 +177,69 @@ private fun ListingFilterSheet(
             .toMutableStateList()
     }
     var matchAll by remember { mutableStateOf(current.genresMatchAll) }
+    var showGenrePicker by remember { mutableStateOf(false) }
+    var showLanguagePicker by remember { mutableStateOf(false) }
 
-    fun toggle(list: MutableList<String>, v: String) { if (!list.remove(v)) list.add(v) }
+    val genreLabels = NuGenres.all.keys.associateWith { localizedNuGenre(it) }
+    val languageLabels = NuLanguages.all.keys.associateWith { localizedNuLanguage(it) }
 
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(max = 560.dp)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.nu_genres), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-            FilterChip(
-                selected = matchAll,
-                onClick = { matchAll = !matchAll },
-                label = { Text(stringResource(if (matchAll) R.string.nu_match_all else R.string.nu_match_any)) },
+    FullScreenDialog(
+        title = stringResource(R.string.source_browse_filters),
+        onDismiss = onDismiss,
+        confirmLabel = stringResource(R.string.action_apply),
+        onConfirm = {
+            onApply(
+                NuListingFilter(
+                    languages = languages.mapNotNull { NuLanguages.all[it] },
+                    genres = genres.mapNotNull { NuGenres.all[it] },
+                    genresMatchAll = matchAll,
+                ),
+            )
+        },
+    ) { padding ->
+        Column(
+            Modifier
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 24.dp),
+        ) {
+            MultiSelectSummaryRow(
+                title = stringResource(R.string.nu_genres),
+                selectedCount = genres.size,
+                onClick = { showGenrePicker = true },
+            )
+            MatchModeSegmented(matchAll = matchAll, onChange = { matchAll = it })
+
+            MultiSelectSummaryRow(
+                title = stringResource(R.string.nu_language),
+                selectedCount = languages.size,
+                onClick = { showLanguagePicker = true },
             )
         }
-        ChipFlow {
-            NuGenres.all.keys.forEach { name ->
-                FilterChip(
-                    selected = name in genres,
-                    onClick = { toggle(genres, name) },
-                    label = { Text(localizedNuGenre(name)) },
-                )
-            }
-        }
-
-        Text(stringResource(R.string.nu_language), style = MaterialTheme.typography.titleSmall)
-        ChipFlow {
-            NuLanguages.all.keys.forEach { name ->
-                FilterChip(
-                    selected = name in languages,
-                    onClick = { toggle(languages, name) },
-                    label = { Text(localizedNuLanguage(name)) },
-                )
-            }
-        }
-
-        Button(
-            onClick = {
-                onApply(
-                    NuListingFilter(
-                        languages = languages.mapNotNull { NuLanguages.all[it] },
-                        genres = genres.mapNotNull { NuGenres.all[it] },
-                        genresMatchAll = matchAll,
-                    ),
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(R.string.action_apply)) }
     }
-}
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-internal fun ChipFlow(content: @Composable androidx.compose.foundation.layout.FlowRowScope.() -> Unit) {
-    androidx.compose.foundation.layout.FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        content = content,
-    )
+    if (showGenrePicker) {
+        SearchableMultiSelectDialog(
+            title = stringResource(R.string.nu_genres),
+            options = NuGenres.all.keys.toList(),
+            optionLabel = { genreLabels[it].orEmpty() },
+            isChecked = { it in genres },
+            onToggle = { name -> if (!genres.remove(name)) genres.add(name) },
+            onClear = { genres.clear() },
+            clearEnabled = genres.isNotEmpty(),
+            onDismiss = { showGenrePicker = false },
+        )
+    }
+    if (showLanguagePicker) {
+        SearchableMultiSelectDialog(
+            title = stringResource(R.string.nu_language),
+            options = NuLanguages.all.keys.toList(),
+            optionLabel = { languageLabels[it].orEmpty() },
+            isChecked = { it in languages },
+            onToggle = { name -> if (!languages.remove(name)) languages.add(name) },
+            onClear = { languages.clear() },
+            clearEnabled = languages.isNotEmpty(),
+            onDismiss = { showLanguagePicker = false },
+        )
+    }
 }

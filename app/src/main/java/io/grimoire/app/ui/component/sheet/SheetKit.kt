@@ -78,6 +78,42 @@ fun MultiSelectSummaryRow(
 }
 
 /**
+ * Entry row for a large include/exclude selection: "All" while nothing is
+ * set, else "N included · M excluded". Tap opens the associated
+ * [SearchableTriStateDialog].
+ */
+@Composable
+fun TriStateSummaryRow(
+    title: String,
+    includedCount: Int,
+    excludedCount: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val active = includedCount > 0 || excludedCount > 0
+    ListItem(
+        headlineContent = { Text(title) },
+        trailingContent = {
+            Text(
+                if (!active) {
+                    stringResource(R.string.filter_all)
+                } else {
+                    stringResource(R.string.filter_included_excluded, includedCount, excludedCount)
+                },
+                style = MaterialTheme.typography.labelMedium,
+                color = if (active) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        },
+        modifier = modifier.clickable(enabled = enabled, onClick = onClick),
+    )
+}
+
+/**
  * Binary setting row: title, optional supporting hint, trailing switch. The
  * whole row toggles — never just the switch.
  */
