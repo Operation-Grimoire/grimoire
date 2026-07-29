@@ -82,6 +82,17 @@ private fun countByStatus(chapters: List<ChapterEntity>): DownloadCounts {
  * novels left with nothing. [DownloadCounts] are preserved from the full set so the header
  * still shows the complete tally. An empty filter set returns the input unchanged.
  */
+/**
+ * Chapters per filter category across the *unfiltered* groups — drives the
+ * count badges on the filter segments and the "any downloads at all?" check,
+ * so the filter row can stay visible (and show real numbers) even while the
+ * active selection matches nothing.
+ */
+internal fun countByFilter(grouped: List<NovelDownloads>): Map<DownloadStatusFilter, Int> =
+    DownloadStatusFilter.entries.associateWith { filter ->
+        grouped.sumOf { nd -> nd.chapters.count { it.downloadStatus in filter.ordinals } }
+    }
+
 internal fun applyStatusFilter(
     downloads: List<NovelDownloads>,
     filters: Set<DownloadStatusFilter>,

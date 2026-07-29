@@ -31,6 +31,15 @@ internal data class NovelDownloads(
     val counts: DownloadCounts = DownloadCounts(),
 )
 
+/** Everything the Downloads screen renders: the filtered groups plus the
+ *  unfiltered per-status counts that drive the filter segments. */
+internal data class DownloadsUiState(
+    val novels: List<NovelDownloads>,
+    val statusCounts: Map<DownloadStatusFilter, Int>,
+) {
+    val hasAnyDownloads: Boolean get() = statusCounts.values.any { it > 0 }
+}
+
 @HiltViewModel
 class DownloadsViewModel @Inject constructor(
     private val chapterDao: ChapterDao,
@@ -58,9 +67,12 @@ class DownloadsViewModel @Inject constructor(
     // The list the screen renders: grouped, sorted, and already narrowed to the active filter.
     // All of it (grouping, sorting, counting, filtering) runs on Dispatchers.Default so the UI
     // thread never does the projection — the screen just reads precomputed sections by index.
-    internal val downloads: StateFlow<List<NovelDownloads>?> =
+    internal val downloads: StateFlow<DownloadsUiState?> =
         combine(baseDownloads, statusFilters) { grouped, filters ->
-            applyStatusFilter(grouped, filters)
+            DownloadsUiState(
+                novels = applyStatusFilter(grouped, filters),
+                statusCounts = countByFilter(grouped),
+            )
         }
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)

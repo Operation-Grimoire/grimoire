@@ -123,6 +123,7 @@
     <!-- Downloads -->
     <string name="downloads_title">Downloads</string>
     <string name="downloads_settings">Download settings</string>
+    <string name="downloads_no_filter_matches">No downloads match the selected filters.</string>
     <string name="downloads_parallel">Parallel downloads</string>
     <string name="downloads_parallel_summary">Number of chapters downloaded at once</string>
     <string name="downloads_move_to_top">Move to top</string>

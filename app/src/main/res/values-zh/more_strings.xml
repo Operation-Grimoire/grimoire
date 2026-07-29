@@ -108,6 +108,7 @@
     <!-- 下载 -->
     <string name="downloads_title">下载</string>
     <string name="downloads_settings">下载设置</string>
+    <string name="downloads_no_filter_matches">没有符合所选筛选条件的下载。</string>
     <string name="downloads_parallel">并行下载</string>
     <string name="downloads_parallel_summary">同时下载的章节数</string>
     <string name="downloads_move_to_top">移至队首</string>
