@@ -136,4 +136,32 @@ class DownloadsProjectionTest {
         assertTrue(filtered[0].chapters.map { it.id }.containsAll(listOf(1L, 2L)))
         assertEquals(2, filtered[0].chapters.size)
     }
+
+    @Test
+    fun `countByFilter tallies chapters per category across unfiltered groups`() {
+        val grouped = groupDownloads(
+            listOf(
+                chapter(1, novelId = 1, status = ChapterDownloadStatus.DOWNLOADING),
+                chapter(2, novelId = 1, status = ChapterDownloadStatus.QUEUED),
+                chapter(3, novelId = 1, status = ChapterDownloadStatus.DOWNLOADED),
+                chapter(4, novelId = 2, status = ChapterDownloadStatus.ERROR),
+                chapter(5, novelId = 2, status = ChapterDownloadStatus.REDOWNLOAD_ERROR),
+                chapter(6, novelId = 2, status = ChapterDownloadStatus.DOWNLOADED),
+            ),
+            novelMap(novel(1), novel(2)),
+        )
+
+        val counts = countByFilter(grouped)
+
+        assertEquals(1, counts[DownloadStatusFilter.DOWNLOADING])
+        assertEquals(1, counts[DownloadStatusFilter.QUEUED])
+        assertEquals(2, counts[DownloadStatusFilter.DONE])
+        assertEquals(2, counts[DownloadStatusFilter.FAILED])
+    }
+
+    @Test
+    fun `countByFilter is empty-safe`() {
+        val counts = countByFilter(emptyList())
+        assertTrue(counts.values.all { it == 0 })
+    }
 }

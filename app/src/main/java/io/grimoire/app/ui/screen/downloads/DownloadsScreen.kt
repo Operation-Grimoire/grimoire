@@ -11,7 +11,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,7 +34,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.MultiChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -45,6 +52,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
@@ -69,8 +78,8 @@ fun DownloadsScreen(
 ) {
     // `downloads` is already grouped, sorted, and narrowed to the active filter off the
     // main thread by the ViewModel — the screen renders sections as-is, no per-frame work.
-    val downloads by viewModel.downloads.collectAsState()
-    val currentDownloads = downloads
+    val uiState by viewModel.downloads.collectAsState()
+    val currentDownloads = uiState?.novels
     val selectedStatusFilters by viewModel.activeStatusFilters.collectAsState()
     val isPaused by viewModel.isPaused.collectAsState()
     val concurrency by viewModel.concurrency.collectAsState()
@@ -251,34 +260,51 @@ fun DownloadsScreen(
             }
         },
     ) { padding ->
+        val state = uiState
         when {
-            currentDownloads == null -> Box(
+            state == null -> Box(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator()
             }
-            currentDownloads.isEmpty() -> Box(
+            // Nothing downloading or downloaded at all — no filter to show.
+            !state.hasAnyDownloads -> Box(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(stringResource(R.string.downloads_empty), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    stringResource(R.string.downloads_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            else -> LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
-                item {
-                    // Multi-select status segments; nothing checked = show all
-                    // (the empty-set semantics the chips had, minus the extra
-                    // "All" affordance — unchecking everything is the reset).
-                    io.grimoire.app.ui.component.sheet.MultiChoiceSegmented(
-                        options = DownloadStatusFilter.entries,
-                        isChecked = { it in selectedStatusFilters },
-                        onToggle = { viewModel.toggleStatusFilter(it) },
-                        label = { stringResource(it.labelRes) },
-                        modifier = Modifier.padding(vertical = 4.dp),
-                    )
-                }
+            else -> Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                // The filter stays visible even when the active selection matches
+                // nothing — hiding it left no way to un-filter (#317). Segments
+                // are icon + live count (text labels with counts overflow four
+                // segments); zero-count segments disable unless they're the
+                // selected filter that still needs un-toggling.
+                StatusFilterSegments(
+                    counts = state.statusCounts,
+                    selected = selectedStatusFilters,
+                    onToggle = viewModel::toggleStatusFilter,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+                if (state.novels.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            stringResource(R.string.downloads_no_filter_matches),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else LazyColumn(modifier = Modifier.fillMaxSize()) {
 
-                currentDownloads.forEach { novelDownloads ->
+                state.novels.forEach { novelDownloads ->
                     // Already filtered by the ViewModel — novels with no matching chapters
                     // were dropped, so chapters is non-empty here.
                     val visibleChapters = novelDownloads.chapters
@@ -312,6 +338,7 @@ fun DownloadsScreen(
 
                     if (!isCollapsed) {
                         items(items = visibleChapters, key = { it.id }) { chapter ->
+                            ChildRail {
                             ChapterDownloadItem(
                                 chapter = chapter,
                                 selected = chapter.id in selectedChapterIds,
@@ -323,6 +350,7 @@ fun DownloadsScreen(
                                 onDelete = { viewModel.deleteDownload(chapter) },
                                 onRedownload = { viewModel.redownloadChapter(chapter) },
                             )
+                            }
                         }
                     }
 
@@ -330,7 +358,93 @@ fun DownloadsScreen(
                         HorizontalDivider(modifier = Modifier.padding(top = 4.dp))
                     }
                 }
+                }
             }
+        }
+    }
+}
+
+/**
+ * Wraps a chapter row belonging to an expanded novel group, drawing a vertical
+ * rail down its left edge so the nesting under the group header reads at a
+ * glance — the same idiom as the updates page. The rail is centered under the
+ * header's 48dp cover (16dp padding + 24dp half-cover = 40dp).
+ */
+@Composable
+private fun ChildRail(content: @Composable () -> Unit) {
+    val railColor = MaterialTheme.colorScheme.outlineVariant
+    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+        Box(
+            modifier = Modifier
+                .width(48.dp)
+                .fillMaxHeight()
+                .drawBehind {
+                    val x = 40.dp.toPx()
+                    drawLine(
+                        color = railColor,
+                        start = Offset(x, 0f),
+                        end = Offset(x, size.height),
+                        strokeWidth = 2.dp.toPx(),
+                    )
+                },
+        )
+        Box(modifier = Modifier.weight(1f)) { content() }
+    }
+}
+
+/**
+ * Icon + count filter segments over the download statuses. Icons match the
+ * per-chapter status icons below so the mapping reads instantly (failed is
+ * error-tinted); the count is the live unfiltered tally for that status.
+ */
+@Composable
+private fun StatusFilterSegments(
+    counts: Map<DownloadStatusFilter, Int>,
+    selected: Set<DownloadStatusFilter>,
+    onToggle: (DownloadStatusFilter) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    MultiChoiceSegmentedButtonRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+    ) {
+        val entries = DownloadStatusFilter.entries
+        entries.forEachIndexed { index, filter ->
+            val count = counts[filter] ?: 0
+            SegmentedButton(
+                checked = filter in selected,
+                onCheckedChange = { onToggle(filter) },
+                enabled = count > 0 || filter in selected,
+                shape = SegmentedButtonDefaults.itemShape(
+                    index = index,
+                    count = entries.size,
+                ),
+                // Suppress the default checkmark: the checked container color
+                // already signals selection and the row has no width to spare.
+                icon = {},
+                label = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            when (filter) {
+                                DownloadStatusFilter.DOWNLOADING -> AppIcons.Download
+                                DownloadStatusFilter.QUEUED -> AppIcons.HourglassEmpty
+                                DownloadStatusFilter.DONE -> AppIcons.DownloadDone
+                                DownloadStatusFilter.FAILED -> AppIcons.ErrorOutline
+                            },
+                            contentDescription = stringResource(filter.labelRes),
+                            tint = if (filter == DownloadStatusFilter.FAILED && count > 0) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                LocalContentColor.current
+                            },
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(count.toString(), maxLines = 1)
+                    }
+                },
+            )
         }
     }
 }

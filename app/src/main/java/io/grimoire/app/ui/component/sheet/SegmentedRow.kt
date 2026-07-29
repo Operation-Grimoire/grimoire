@@ -51,6 +51,7 @@ fun <T> MultiChoiceSegmented(
     onToggle: (T) -> Unit,
     label: @Composable (T) -> String,
     modifier: Modifier = Modifier,
+    isEnabled: (T) -> Boolean = { true },
 ) {
     MultiChoiceSegmentedButtonRow(
         modifier = modifier
@@ -61,6 +62,7 @@ fun <T> MultiChoiceSegmented(
             SegmentedButton(
                 checked = isChecked(option),
                 onCheckedChange = { onToggle(option) },
+                enabled = isEnabled(option),
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                 label = { Text(label(option), maxLines = 1) },
             )
