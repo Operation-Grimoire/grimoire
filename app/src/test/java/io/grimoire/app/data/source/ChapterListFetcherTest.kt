@@ -133,6 +133,51 @@ class ChapterListFetcherTest {
         assertEquals(4 * 3, result.size)
     }
 
+    @Test
+    fun fetchAllChapters_declaredPageCount_fetchesExactlyThatRange() = runBlocking {
+        val src = FakePaginatedSource(totalNonEmptyPages = 7, perPageDelayMs = 0, pageCount = 7)
+        val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
+
+        val result = fetchAllChapters(src, novel, window = 4, retryDelayMs = 0)
+
+        assertEquals(7 * 3, result.size)
+        // No trailing empty-page probe: exactly the declared pages are fetched.
+        assertEquals(7, src.calls.get())
+    }
+
+    @Test
+    fun fetchAllChapters_declaredPageCount_emptyFinalPageThrows() = runBlocking {
+        // The heuristic walk would read an empty last page as a normal stop; a
+        // declared count makes it a provable failure.
+        val src = FakePaginatedSource(totalNonEmptyPages = 6, perPageDelayMs = 0, pageCount = 7)
+        val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
+
+        val thrown = runCatching { fetchAllChapters(src, novel, window = 4, retryDelayMs = 0) }
+        assertTrue(thrown.exceptionOrNull() is TruncatedChapterListException)
+    }
+
+    @Test
+    fun fetchAllChapters_declaredPageCount_transientEmptyRecovers() = runBlocking {
+        val src = FakePaginatedSource(
+            totalNonEmptyPages = 7, perPageDelayMs = 0, pageCount = 7, failOncePages = setOf(3),
+        )
+        val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
+
+        val result = fetchAllChapters(src, novel, window = 4, retryDelayMs = 0)
+
+        assertEquals(7 * 3, result.size)
+    }
+
+    @Test
+    fun fetchAllChapters_brokenGetPageCount_fallsBackToHeuristic() = runBlocking {
+        val src = FakePaginatedSource(totalNonEmptyPages = 5, perPageDelayMs = 0, pageCountThrows = true)
+        val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
+
+        val result = fetchAllChapters(src, novel, window = 4, retryDelayMs = 0)
+
+        assertEquals(5 * 3, result.size)
+    }
+
     private fun chapter(suffix: String) =
         Chapter(url = suffix, name = "Chapter $suffix")
 
@@ -144,6 +189,9 @@ class ChapterListFetcherTest {
         private val failOncePages: Set<Int> = emptySet(),
         /** Pages that return empty on every call (persistent failure). */
         private val alwaysEmptyPages: Set<Int> = emptySet(),
+        /** Declared page count for the strict path; null = heuristic walk. */
+        private val pageCount: Int? = null,
+        private val pageCountThrows: Boolean = false,
     ) : PaginatedSource {
         override val name: String = "fake"
         override val lang: Language = Language.EN
@@ -151,6 +199,11 @@ class ChapterListFetcherTest {
         private val failedOnce = mutableSetOf<Int>()
 
         override suspend fun getNovelDetails(novel: Novel): Novel = novel
+
+        override suspend fun getPageCount(novel: Novel): Int? {
+            if (pageCountThrows) error("page count unavailable")
+            return pageCount
+        }
 
         override suspend fun getChapterList(novel: Novel, page: Int): List<Chapter> {
             calls.incrementAndGet()
