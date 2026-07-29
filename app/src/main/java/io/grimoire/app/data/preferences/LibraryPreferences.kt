@@ -104,6 +104,15 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
         serializeElement = { it.toString() },
     )
 
+    // Statuses excluded outright (tri-state EXCLUDE). Kept separate from the
+    // include set so both remain independently empty-means-off.
+    val filterStatusesExclude: Preference<Set<Int>> = store.getObject(
+        key = "library_filter_statuses_exclude",
+        defaultValue = emptySet(),
+        serialize = { it.serializeFilterSet { v -> v.toString() } },
+        deserialize = { it.deserializeFilterSet { token -> token.toIntOrNull() } },
+    )
+
     val filterSourceIds: Preference<Set<Long>> = store.getObject(
         key = "library_filter_source_ids",
         defaultValue = emptySet(),

@@ -18,6 +18,7 @@ internal data class LibraryFilterInputs(
     val sortField: SortField,
     val sortDirection: SortDirection,
     val filterStatuses: Set<Int>,
+    val filterStatusesExclude: Set<Int>,
     val filterUnreadOnly: Boolean,
     val filterDownloadedOnly: Boolean,
     val filterNotifyEnabled: Boolean,
@@ -143,6 +144,7 @@ internal fun computeTabNovels(
     return tabFiltered
         .filter { novel ->
             (filterStatuses.isEmpty() || novel.effectiveStatus in filterStatuses) &&
+            novel.effectiveStatus !in filterStatusesExclude &&
             (!filterUnreadOnly || (chapterStats[novel.id]?.let { it.effectiveTotal(includeLockedInTotals) - it.readCount > 0 } == true)) &&
             (!filterDownloadedOnly || (chapterStats[novel.id]?.downloadedCount ?: 0) > 0) &&
             (!filterNotifyEnabled || novel.notifyOnNewChapters || novel.notifyOnNewLockedChapters) &&

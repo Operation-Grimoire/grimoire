@@ -66,6 +66,7 @@ internal fun FilterSortContent(
     sortField: SortField,
     sortDirection: SortDirection,
     filterStatuses: Set<Int>,
+    filterStatusesExclude: Set<Int>,
     filterUnreadOnly: Boolean,
     filterDownloadedOnly: Boolean,
     filterNotifyEnabled: Boolean,
@@ -77,7 +78,8 @@ internal fun FilterSortContent(
     librarySources: List<Pair<Long, String>>,
     onSortFieldChange: (SortField) -> Unit,
     onToggleSortDirection: () -> Unit,
-    onToggleFilterStatus: (Int?) -> Unit,
+    onStatusStateChange: (Int, io.grimoire.app.ui.component.sheet.FilterTriState) -> Unit,
+    onClearStatuses: () -> Unit,
     onUnreadOnlyChange: (Boolean) -> Unit,
     onDownloadedOnlyChange: (Boolean) -> Unit,
     onNotifyEnabledChange: (Boolean) -> Unit,
@@ -101,6 +103,7 @@ internal fun FilterSortContent(
             when (page) {
                 0 -> FilterTab(
                     filterStatuses = filterStatuses,
+                    filterStatusesExclude = filterStatusesExclude,
                     filterUnreadOnly = filterUnreadOnly,
                     filterDownloadedOnly = filterDownloadedOnly,
                     filterNotifyEnabled = filterNotifyEnabled,
@@ -110,7 +113,8 @@ internal fun FilterSortContent(
                     filterType = filterType,
                     filterSourceIds = filterSourceIds,
                     librarySources = librarySources,
-                    onToggleFilterStatus = onToggleFilterStatus,
+                    onStatusStateChange = onStatusStateChange,
+                    onClearStatuses = onClearStatuses,
                     onUnreadOnlyChange = onUnreadOnlyChange,
                     onDownloadedOnlyChange = onDownloadedOnlyChange,
                     onNotifyEnabledChange = onNotifyEnabledChange,
@@ -135,6 +139,7 @@ internal fun FilterSortContent(
 @Composable
 private fun FilterTab(
     filterStatuses: Set<Int>,
+    filterStatusesExclude: Set<Int>,
     filterUnreadOnly: Boolean,
     filterDownloadedOnly: Boolean,
     filterNotifyEnabled: Boolean,
@@ -144,7 +149,8 @@ private fun FilterTab(
     filterType: NovelTypeFilter,
     filterSourceIds: Set<Long>,
     librarySources: List<Pair<Long, String>>,
-    onToggleFilterStatus: (Int?) -> Unit,
+    onStatusStateChange: (Int, io.grimoire.app.ui.component.sheet.FilterTriState) -> Unit,
+    onClearStatuses: () -> Unit,
     onUnreadOnlyChange: (Boolean) -> Unit,
     onDownloadedOnlyChange: (Boolean) -> Unit,
     onNotifyEnabledChange: (Boolean) -> Unit,
@@ -158,20 +164,27 @@ private fun FilterTab(
         val statusLabels = STATUS_OPTIONS.associate { (ordinal, labelRes) ->
             ordinal.toString() to stringResource(labelRes)
         }
-        io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow(
+        io.grimoire.app.ui.component.sheet.TriStateSummaryRow(
             title = stringResource(R.string.library_filter_status),
-            selectedCount = filterStatuses.size,
+            includedCount = filterStatuses.size,
+            excludedCount = filterStatusesExclude.size,
             onClick = { showStatusPicker = true },
         )
         if (showStatusPicker) {
-            io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog(
+            io.grimoire.app.ui.component.sheet.SearchableTriStateDialog(
                 title = stringResource(R.string.library_filter_status),
                 options = STATUS_OPTIONS.map { it.first.toString() },
                 optionLabel = { statusLabels[it].orEmpty() },
-                isChecked = { it.toInt() in filterStatuses },
-                onToggle = { onToggleFilterStatus(it.toInt()) },
-                onClear = { onToggleFilterStatus(null) },
-                clearEnabled = filterStatuses.isNotEmpty(),
+                stateOf = {
+                    when (it.toInt()) {
+                        in filterStatuses -> io.grimoire.app.ui.component.sheet.FilterTriState.INCLUDE
+                        in filterStatusesExclude -> io.grimoire.app.ui.component.sheet.FilterTriState.EXCLUDE
+                        else -> io.grimoire.app.ui.component.sheet.FilterTriState.ANY
+                    }
+                },
+                onStateChange = { key, state -> onStatusStateChange(key.toInt(), state) },
+                onClear = onClearStatuses,
+                clearEnabled = filterStatuses.isNotEmpty() || filterStatusesExclude.isNotEmpty(),
                 onDismiss = { showStatusPicker = false },
             )
         }
