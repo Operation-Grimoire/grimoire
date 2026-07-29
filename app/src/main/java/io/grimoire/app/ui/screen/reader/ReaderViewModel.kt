@@ -17,8 +17,11 @@ import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.ReadingHistoryDao
+import io.grimoire.api.model.lang.Language
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.local.entity.ReaderTextAlign
 import io.grimoire.app.data.local.entity.ReadingHistoryEntity
+import io.grimoire.app.util.ContentLanguages
 import io.grimoire.app.data.local.entity.decodeChapterContent
 import io.grimoire.app.data.local.entity.effectiveTotal
 import io.grimoire.api.source.SourceInfo
@@ -104,6 +107,20 @@ class ReaderViewModel @Inject constructor(
 
     private val _pages = MutableStateFlow<List<NovelPage>>(emptyList())
     val pages: StateFlow<List<NovelPage>> = _pages.asStateFlow()
+
+    // Per-novel text alignment + the novel's language (for AUTO direction).
+    // Loaded with the chapter list; the setter persists on the novel row.
+    private var novelIdForAlign = -1L
+    private val _textAlign = MutableStateFlow(ReaderTextAlign.AUTO)
+    val textAlign: StateFlow<ReaderTextAlign> = _textAlign.asStateFlow()
+    private val _novelLanguage = MutableStateFlow<Language?>(null)
+    val novelLanguage: StateFlow<Language?> = _novelLanguage.asStateFlow()
+
+    fun setTextAlign(value: ReaderTextAlign) {
+        _textAlign.value = value
+        val id = novelIdForAlign
+        if (id > 0L) viewModelScope.launch { novelDao.updateReaderTextAlign(id, value.ordinal) }
+    }
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -242,6 +259,12 @@ class ReaderViewModel @Inject constructor(
                 return@launch
             }
             novelDao.updateLastReadAt(chapter.novelId, System.currentTimeMillis())
+            novelDao.getById(chapter.novelId)?.let { novel ->
+                novelIdForAlign = novel.id
+                _textAlign.value =
+                    ReaderTextAlign.entries.getOrElse(novel.readerTextAlign) { ReaderTextAlign.AUTO }
+                _novelLanguage.value = novel.language?.let { ContentLanguages.parse(it) }
+            }
             recordHistory(chapter)
             // Metadata only — the per-chapter content is read on demand in loadPages
             // (via getByUrl). Pulling every chapter's downloadedContent here made

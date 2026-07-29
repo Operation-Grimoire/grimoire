@@ -36,7 +36,7 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
         ReadingHistoryEntity::class,
         BrowsingHistoryEntity::class,
     ],
-    version = 29,
+    version = 30,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {

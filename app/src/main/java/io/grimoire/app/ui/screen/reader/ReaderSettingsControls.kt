@@ -1,6 +1,8 @@
 package io.grimoire.app.ui.screen.reader
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.data.local.entity.ReaderTextAlign
 import androidx.compose.ui.res.stringResource
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.data.preferences.ReaderColorTheme
@@ -179,6 +182,39 @@ internal fun OrientationPicker(
                 ReaderOrientation.FREE -> stringResource(R.string.reader_orientation_free)
                 ReaderOrientation.PORTRAIT -> stringResource(R.string.reader_orientation_vertical)
                 ReaderOrientation.LANDSCAPE -> stringResource(R.string.reader_orientation_horizontal)
+            }
+            FilterChip(
+                selected = selected == value,
+                onClick = { onSelect(value) },
+                label = { Text(label) },
+            )
+        }
+    }
+}
+
+/** 5 chips over the per-novel text alignment; scrolls when the row overflows. */
+@Composable
+internal fun TextAlignPicker(
+    selected: ReaderTextAlign,
+    onSelect: (ReaderTextAlign) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ReaderTextAlign.entries.forEach { value ->
+            val label = when (value) {
+                ReaderTextAlign.AUTO ->
+                    stringResource(R.string.reader_align_auto)
+                ReaderTextAlign.LEFT ->
+                    stringResource(R.string.reader_align_left)
+                ReaderTextAlign.RIGHT ->
+                    stringResource(R.string.reader_align_right)
+                ReaderTextAlign.CENTER ->
+                    stringResource(R.string.reader_align_center)
+                ReaderTextAlign.JUSTIFY ->
+                    stringResource(R.string.reader_align_justify)
             }
             FilterChip(
                 selected = selected == value,
