@@ -238,6 +238,17 @@ class LibraryUpdater @Inject constructor(
         // content; only metadata is rewritten. New chapters are inserted, vanished
         // ones deleted. No downloadedContent is read or written here.
         val plan = buildReconcilePlan(novel.id, existing, fetchedChapters, merge)
+        // A fetch that would wipe most of an established list is far more likely a
+        // silently truncated response (throttle page mid-pagination) than a real
+        // mass removal — deleting would destroy read state and downloads, and the
+        // next healthy sync would re-detect everything as "new". Keep the list.
+        if (isSuspectTruncation(existing.size, plan.deleteIds.size)) {
+            setIssue(
+                novel, pkg, UpdateIssueSeverity.WARNING,
+                "Source returned ${fetchedChapters.size} of ${existing.size} chapters — kept the existing list",
+            )
+            return NovelRefreshResult.Warned(0)
+        }
         chapterDao.reconcileChapters(plan.deleteIds, plan.updates, plan.inserts)
 
         // Only log new chapters when the novel already had a chapter list, so the
@@ -251,6 +262,18 @@ class LibraryUpdater @Inject constructor(
                 val prev = merge.priors[i]
                 prev == null || (prev.locked && !ch.locked)
             }
+        }
+        // Feed cap: a per-novel burst above MAX_LOGGED_NEW_CHAPTERS is chapters
+        // being re-detected after an earlier bad sync, not a real release. The DB
+        // was reconciled above either way; only the feed/auto-download side is
+        // suppressed so the updates list and download queue don't flood.
+        if (newChapters.size > MAX_LOGGED_NEW_CHAPTERS) {
+            setIssue(
+                novel, pkg, UpdateIssueSeverity.WARNING,
+                "${newChapters.size} chapters appeared at once — update entries suppressed " +
+                    "(source likely recovered from an earlier bad sync)",
+            )
+            return NovelRefreshResult.Warned(0)
         }
         if (newChapters.isNotEmpty()) {
             val priorByUrl = fetchedChapters.indices.asSequence()
