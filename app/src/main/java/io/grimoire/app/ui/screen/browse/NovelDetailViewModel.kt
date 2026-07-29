@@ -87,6 +87,7 @@ class NovelDetailViewModel @Inject constructor(
     private val coverStore: CustomCoverStore,
     libraryPreferences: LibraryPreferences,
     private val authManager: HiddenCategoriesAuthManager,
+    private val analytics: io.grimoire.app.data.analytics.Analytics,
 ) : ViewModel() {
 
     /** Mirrors the library preference that decides whether locked chapters count toward totals. */
@@ -924,6 +925,13 @@ class NovelDetailViewModel @Inject constructor(
         val sourceId = canonicalSourceId
         val next = !_isFavorite.value
         _isFavorite.value = next
+        if (next) {
+            analytics.trackSource(
+                io.grimoire.app.data.analytics.AnalyticsEvent.NOVEL_ADDED,
+                sourceId,
+                loaded?.info?.label ?: if (isLocal) "Local" else "Unknown",
+            )
+        }
         viewModelScope.launch {
             val entity = novelDao.getBySourceUrl(sourceId, novelUrl) ?: return@launch
             val updated = entity.copy(favorite = next)

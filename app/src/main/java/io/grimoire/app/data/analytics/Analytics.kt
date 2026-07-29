@@ -33,12 +33,22 @@ class Analytics @Inject constructor() {
             runCatching { Aptabase.instance.trackEvent(event, props) }
         }
     }
+
+    /**
+     * Tags an event with the source it happened on. [sourceId] is the stable
+     * package-derived id (survives a rename); [sourceName] is the human label
+     * for the dashboard. The source is the *extension*, not the novel — no PII.
+     */
+    fun trackSource(event: String, sourceId: Long, sourceName: String) =
+        track(event, mapOf("source_id" to sourceId.toString(), "source" to sourceName))
 }
 
 /** Anonymous event names — no per-novel identifiers. */
 object AnalyticsEvent {
     const val APP_OPENED = "app_opened"
+    const val APP_BACKGROUNDED = "app_backgrounded"
     const val EXTENSION_INSTALLED = "extension_installed"
-    const val CHAPTER_READ = "chapter_read"
-    const val BACKUP_CREATED = "backup_created"
+    const val EXTENSION_UNINSTALLED = "extension_uninstalled"
+    const val NOVEL_ADDED = "novel_added"
+    const val READER_OPENED = "reader_opened"
 }

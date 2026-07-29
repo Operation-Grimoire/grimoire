@@ -45,6 +45,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
     private val categoryDao: CategoryDao,
     private val downloadManager: DownloadManager,
     private val authManager: HiddenCategoriesAuthManager,
+    private val analytics: io.grimoire.app.data.analytics.Analytics,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -220,6 +221,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
         val src = source ?: return
         val next = !_isFavorite.value
         _isFavorite.value = next
+        if (next) trackNovelAdded()
         viewModelScope.launch {
             val entity = novelDao.getBySourceUrl(canonicalSourceId, novelUrl) ?: return@launch
             novelDao.upsert(entity.copy(favorite = next))
@@ -228,10 +230,21 @@ class NovelQuickViewViewModel @AssistedInject constructor(
         }
     }
 
+    private fun trackNovelAdded() = loaded?.let {
+        analytics.trackSource(
+            io.grimoire.app.data.analytics.AnalyticsEvent.NOVEL_ADDED,
+            it.id,
+            it.info.label,
+        )
+    }
+
     fun setCategory(target: Long?) {
         val src = source ?: return
         _categoryId.value = target
-        if (!_isFavorite.value) _isFavorite.value = true
+        if (!_isFavorite.value) {
+            _isFavorite.value = true
+            trackNovelAdded()
+        }
         viewModelScope.launch {
             val entity = novelDao.getBySourceUrl(canonicalSourceId, novelUrl) ?: return@launch
             novelDao.upsert(entity.copy(categoryId = target, favorite = true))
