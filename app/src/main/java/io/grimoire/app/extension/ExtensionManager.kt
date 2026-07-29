@@ -12,6 +12,8 @@ import io.grimoire.api.model.pref.SourcePreference
 import io.grimoire.api.source.feature.ConfigurableSource
 import io.grimoire.api.source.feature.MultiHostSource
 import io.grimoire.api.source.feature.MultiLanguageSource
+import io.grimoire.app.data.analytics.Analytics
+import io.grimoire.app.data.analytics.AnalyticsEvent
 import io.grimoire.app.data.preferences.SourceSettingsPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -35,9 +37,15 @@ class ExtensionManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val loader: ExtensionLoader,
     private val sourceSettings: SourceSettingsPreferences,
+    private val analytics: Analytics,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val scanMutex = Mutex()
+
+    // Last scanned set (pkg -> extension) used to detect install/uninstall across
+    // rescans. Null until the first scan seeds a baseline so we don't report every
+    // already-installed source as freshly "installed" on launch. Guarded by scanMutex.
+    private var trackedSources: Map<String, LoadedExtension>? = null
 
     private val _extensions = MutableStateFlow<List<LoadedExtension>>(emptyList())
     val extensions: StateFlow<List<LoadedExtension>> = _extensions.asStateFlow()
@@ -136,6 +144,26 @@ class ExtensionManager @Inject constructor(
         // hasn't had its persisted login/host/language settings pushed in yet.
         loaded.forEach { applyPreferences(it) }
         _extensions.value = loaded
+        trackInstallChanges(loaded)
+    }
+
+    /**
+     * Emits install/uninstall analytics from the diff between this scan and the
+     * previous one — the one place that sees every add/remove regardless of path
+     * (repo install, sideload, system settings). The first scan only seeds the
+     * baseline. Dropped anyway unless the user opted into analytics.
+     */
+    private fun trackInstallChanges(loaded: List<LoadedExtension>) {
+        val current = loaded.associateBy { it.info.packageName }
+        val previous = trackedSources
+        trackedSources = current
+        if (previous == null) return
+        (current - previous.keys).values.forEach {
+            analytics.trackSource(AnalyticsEvent.EXTENSION_INSTALLED, it.id, it.info.label)
+        }
+        (previous - current.keys).values.forEach {
+            analytics.trackSource(AnalyticsEvent.EXTENSION_UNINSTALLED, it.id, it.info.label)
+        }
     }
 }
 

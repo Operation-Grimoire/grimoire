@@ -12,6 +12,8 @@ import io.grimoire.app.util.imageUrl
 import io.grimoire.app.util.isSeparator
 import io.grimoire.app.util.text
 import io.grimoire.app.data.download.ChapterImageStore
+import io.grimoire.app.data.epub.LOCAL_PKG
+import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.ReadingHistoryDao
@@ -63,6 +65,7 @@ class ReaderViewModel @Inject constructor(
     private val ttsController: TtsController,
     private val ttsPreferences: TtsPreferences,
     private val chapterImageStore: ChapterImageStore,
+    private val analytics: io.grimoire.app.data.analytics.Analytics,
 ) : ViewModel() {
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
@@ -247,6 +250,7 @@ class ReaderViewModel @Inject constructor(
             _chapters.value = allChapters
             _currentIndex.value = allChapters.indexOfFirst { it.url == initialChapterUrl }.coerceAtLeast(0)
             loadPages()
+            trackReaderOpened()
         }
         // Keep the reader in sync when TTS auto-advances or skips chapters.
         viewModelScope.launch {
@@ -261,6 +265,24 @@ class ReaderViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /**
+     * Fires once per reader open, tagged with the source it was opened on. Awaits the
+     * extension scan so the label resolves (the list can be empty this early). Anonymous
+     * by design — source identity only, never the novel title. Dropped unless opted in.
+     */
+    private suspend fun trackReaderOpened() {
+        extensionManager.awaitReady()
+        val loaded = extensionManager.extensions.value.firstOrNull { it.info.packageName == pkg }
+        analytics.track(
+            io.grimoire.app.data.analytics.AnalyticsEvent.READER_OPENED,
+            mapOf(
+                "source_id" to (loaded?.id ?: sourceIdFor(pkg)).toString(),
+                "source" to (loaded?.info?.label ?: if (pkg == LOCAL_PKG) "Local" else "Unknown"),
+                "source_type" to if (pkg == LOCAL_PKG) "local" else "extension",
+            ),
+        )
     }
 
     /** Records a chapter switch: persists it for process-death restore and resets scroll. */

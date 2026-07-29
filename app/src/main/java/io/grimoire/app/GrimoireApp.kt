@@ -148,6 +148,10 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
                 // categories in the middle of the user's own flow. A real exit longer
                 // than the window still locks. In-memory only on purpose — process death
                 // always restarts locked.
+                // Fires for real backgrounding *and* app-driven excursions (SAF picker,
+                // share sheet, in-app browser) — same as the relock below. Dropped unless
+                // the user opted into analytics; onStart already initialised the SDK.
+                analytics.track(io.grimoire.app.data.analytics.AnalyticsEvent.APP_BACKGROUNDED)
                 relockJob?.cancel()
                 relockJob = ProcessLifecycleOwner.get().lifecycleScope.launch {
                     delay(RELOCK_GRACE_MS)
