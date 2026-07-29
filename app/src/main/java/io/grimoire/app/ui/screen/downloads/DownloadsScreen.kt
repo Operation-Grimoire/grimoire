@@ -11,7 +11,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -49,6 +52,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
@@ -333,6 +338,7 @@ fun DownloadsScreen(
 
                     if (!isCollapsed) {
                         items(items = visibleChapters, key = { it.id }) { chapter ->
+                            ChildRail {
                             ChapterDownloadItem(
                                 chapter = chapter,
                                 selected = chapter.id in selectedChapterIds,
@@ -344,6 +350,7 @@ fun DownloadsScreen(
                                 onDelete = { viewModel.deleteDownload(chapter) },
                                 onRedownload = { viewModel.redownloadChapter(chapter) },
                             )
+                            }
                         }
                     }
 
@@ -354,6 +361,34 @@ fun DownloadsScreen(
                 }
             }
         }
+    }
+}
+
+/**
+ * Wraps a chapter row belonging to an expanded novel group, drawing a vertical
+ * rail down its left edge so the nesting under the group header reads at a
+ * glance — the same idiom as the updates page. The rail is centered under the
+ * header's 48dp cover (16dp padding + 24dp half-cover = 40dp).
+ */
+@Composable
+private fun ChildRail(content: @Composable () -> Unit) {
+    val railColor = MaterialTheme.colorScheme.outlineVariant
+    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+        Box(
+            modifier = Modifier
+                .width(48.dp)
+                .fillMaxHeight()
+                .drawBehind {
+                    val x = 40.dp.toPx()
+                    drawLine(
+                        color = railColor,
+                        start = Offset(x, 0f),
+                        end = Offset(x, size.height),
+                        strokeWidth = 2.dp.toPx(),
+                    )
+                },
+        )
+        Box(modifier = Modifier.weight(1f)) { content() }
     }
 }
 
