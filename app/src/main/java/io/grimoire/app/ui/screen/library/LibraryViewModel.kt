@@ -181,6 +181,8 @@ class LibraryViewModel @Inject constructor(
     val sortField: StateFlow<SortField> = libraryPreferences.sortField.stateIn(viewModelScope)
     val sortDirection: StateFlow<SortDirection> = libraryPreferences.sortDirection.stateIn(viewModelScope)
     val filterStatuses: StateFlow<Set<Int>> = libraryPreferences.filterStatuses.stateIn(viewModelScope)
+    val filterStatusesExclude: StateFlow<Set<Int>> =
+        libraryPreferences.filterStatusesExclude.stateIn(viewModelScope)
     val filterUnreadOnly: StateFlow<Boolean> = libraryPreferences.filterUnreadOnly.stateIn(viewModelScope)
     val filterDownloadedOnly: StateFlow<Boolean> = libraryPreferences.filterDownloadedOnly.stateIn(viewModelScope)
     val filterNotifyEnabled: StateFlow<Boolean> = libraryPreferences.filterNotifyEnabled.stateIn(viewModelScope)
@@ -275,6 +277,7 @@ class LibraryViewModel @Inject constructor(
             epubSourceIds,
             filterMinUserRating,
             filterMaxUserRating,
+            filterStatusesExclude,
         ),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
@@ -305,6 +308,7 @@ class LibraryViewModel @Inject constructor(
             epubSourceIds = values[18] as Set<Long>,
             filterMinUserRating = values[19] as Int,
             filterMaxUserRating = values[20] as Int,
+            filterStatusesExclude = values[21] as Set<Int>,
         )
     }
 
@@ -394,14 +398,22 @@ class LibraryViewModel @Inject constructor(
     }
 
     /** Toggles [status] in the active filter set, or clears the set entirely when null. */
-    fun toggleFilterStatus(status: Int?) = viewModelScope.launch {
-        val current = filterStatuses.value
-        val next = when {
-            status == null -> emptySet()
-            status in current -> current - status
-            else -> current + status
+    /** Tri-state status filter: INCLUDE/EXCLUDE membership per status ordinal. */
+    fun setFilterStatusState(status: Int, state: io.grimoire.app.ui.component.sheet.FilterTriState) =
+        viewModelScope.launch {
+            val inc = filterStatuses.value
+            val exc = filterStatusesExclude.value
+            libraryPreferences.filterStatuses.set(
+                if (state == io.grimoire.app.ui.component.sheet.FilterTriState.INCLUDE) inc + status else inc - status,
+            )
+            libraryPreferences.filterStatusesExclude.set(
+                if (state == io.grimoire.app.ui.component.sheet.FilterTriState.EXCLUDE) exc + status else exc - status,
+            )
         }
-        libraryPreferences.filterStatuses.set(next)
+
+    fun clearFilterStatuses() = viewModelScope.launch {
+        libraryPreferences.filterStatuses.set(emptySet())
+        libraryPreferences.filterStatusesExclude.set(emptySet())
     }
 
     fun setFilterUnreadOnly(value: Boolean) = viewModelScope.launch {

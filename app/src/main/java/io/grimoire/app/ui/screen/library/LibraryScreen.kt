@@ -124,6 +124,7 @@ fun LibraryScreen(
     val sortField by viewModel.sortField.collectAsState()
     val sortDirection by viewModel.sortDirection.collectAsState()
     val filterStatuses by viewModel.filterStatuses.collectAsState()
+    val filterStatusesExclude by viewModel.filterStatusesExclude.collectAsState()
     val filterUnreadOnly by viewModel.filterUnreadOnly.collectAsState()
     val filterDownloadedOnly by viewModel.filterDownloadedOnly.collectAsState()
     val filterNotifyEnabled by viewModel.filterNotifyEnabled.collectAsState()
@@ -155,7 +156,7 @@ fun LibraryScreen(
     var showManage by remember { mutableStateOf(false) }
     var libraryMenuExpanded by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
-    var showRefreshSheet by remember { mutableStateOf(false) }
+    var refreshMenuExpanded by remember { mutableStateOf(false) }
     var showUnlock by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
@@ -229,7 +230,7 @@ fun LibraryScreen(
         }
     }
 
-    val isFilterActive = filterStatuses.isNotEmpty() || filterUnreadOnly || filterDownloadedOnly ||
+    val isFilterActive = filterStatuses.isNotEmpty() || filterStatusesExclude.isNotEmpty() || filterUnreadOnly || filterDownloadedOnly ||
         filterNotifyEnabled || filterAutoDownloadEnabled ||
         filterMinUserRating > 1 || filterMaxUserRating < 10 ||
         filterType != NovelTypeFilter.ALL || filterSourceIds.isNotEmpty()
@@ -333,14 +334,52 @@ fun LibraryScreen(
                                 )
                             }
                         }
-                        PlainTooltipIconButton(
-                            onClick = { showRefreshSheet = true },
-                            tooltip = stringResource(R.string.library_refresh),
-                        ) {
-                            Icon(
-                                AppIcons.Refresh,
-                                contentDescription = stringResource(R.string.library_refresh),
-                            )
+                        Box {
+                            PlainTooltipIconButton(
+                                onClick = { refreshMenuExpanded = true },
+                                tooltip = stringResource(R.string.library_refresh),
+                            ) {
+                                Icon(
+                                    AppIcons.Refresh,
+                                    contentDescription = stringResource(R.string.library_refresh),
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = refreshMenuExpanded,
+                                onDismissRequest = { refreshMenuExpanded = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.library_update)) },
+                                    leadingIcon = { Icon(AppIcons.Refresh, contentDescription = null) },
+                                    onClick = {
+                                        refreshMenuExpanded = false
+                                        viewModel.updateLibrary()
+                                        scope.launch { snackbarHostState.showSnackbar(libraryUpdateQueuedMessage) }
+                                    },
+                                )
+                                val currentCategoryId =
+                                    tabCategoryIds.getOrNull(currentTab) ?: ALL_TAB_CATEGORY_ID
+                                if (currentCategoryId != ALL_TAB_CATEGORY_ID) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    R.string.library_update_category,
+                                                    tabs.getOrElse(currentTab) { "" },
+                                                ),
+                                            )
+                                        },
+                                        leadingIcon = { Icon(AppIcons.Label, contentDescription = null) },
+                                        onClick = {
+                                            refreshMenuExpanded = false
+                                            viewModel.updateCategory(currentCategoryId)
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(categoryUpdateQueuedMessage)
+                                            }
+                                        },
+                                    )
+                                }
+                            }
                         }
                         Box {
                             PlainTooltipIconButton(
@@ -656,6 +695,7 @@ fun LibraryScreen(
                 sortField = sortField,
                 sortDirection = sortDirection,
                 filterStatuses = filterStatuses,
+                filterStatusesExclude = filterStatusesExclude,
                 filterUnreadOnly = filterUnreadOnly,
                 filterDownloadedOnly = filterDownloadedOnly,
                 filterNotifyEnabled = filterNotifyEnabled,
@@ -667,7 +707,8 @@ fun LibraryScreen(
                 librarySources = librarySources,
                 onSortFieldChange = viewModel::setSortField,
                 onToggleSortDirection = viewModel::toggleSortDirection,
-                onToggleFilterStatus = viewModel::toggleFilterStatus,
+                onStatusStateChange = viewModel::setFilterStatusState,
+                onClearStatuses = viewModel::clearFilterStatuses,
                 onUnreadOnlyChange = viewModel::setFilterUnreadOnly,
                 onDownloadedOnlyChange = viewModel::setFilterDownloadedOnly,
                 onNotifyEnabledChange = viewModel::setFilterNotifyEnabled,
@@ -676,68 +717,6 @@ fun LibraryScreen(
                 onFilterTypeChange = viewModel::setFilterType,
                 onToggleFilterSource = viewModel::toggleFilterSource,
             )
-        }
-    }
-
-    if (showRefreshSheet) {
-        val refreshSheetState = rememberModalBottomSheetState()
-        val currentCategoryId = tabCategoryIds.getOrNull(currentTab) ?: ALL_TAB_CATEGORY_ID
-        val currentCategoryName = tabs.getOrElse(currentTab) { "" }
-        ModalBottomSheet(
-            onDismissRequest = { showRefreshSheet = false },
-            sheetState = refreshSheetState,
-        ) {
-            Column(Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                Text(
-                    stringResource(R.string.library_refresh),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                )
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.library_update)) },
-                    supportingContent = {
-                        Text(stringResource(R.string.library_update_all_description))
-                    },
-                    leadingContent = { Icon(AppIcons.Refresh, contentDescription = null) },
-                    modifier = Modifier.clickable {
-                        viewModel.updateLibrary()
-                        scope.launch { snackbarHostState.showSnackbar(libraryUpdateQueuedMessage) }
-                        showRefreshSheet = false
-                    },
-                )
-                if (currentCategoryId != ALL_TAB_CATEGORY_ID) {
-                    ListItem(
-                        headlineContent = {
-                            Text(
-                                stringResource(
-                                    R.string.library_update_category,
-                                    currentCategoryName,
-                                ),
-                            )
-                        },
-                        supportingContent = {
-                            Text(stringResource(R.string.library_update_category_description))
-                        },
-                        leadingContent = {
-                            Icon(AppIcons.Label, contentDescription = null)
-                        },
-                        modifier = Modifier.clickable {
-                            viewModel.updateCategory(currentCategoryId)
-                            scope.launch {
-                                snackbarHostState.showSnackbar(categoryUpdateQueuedMessage)
-                            }
-                            showRefreshSheet = false
-                        },
-                    )
-                }
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.action_cancel)) },
-                    leadingContent = {
-                        Icon(AppIcons.Close, contentDescription = null)
-                    },
-                    modifier = Modifier.clickable { showRefreshSheet = false },
-                )
-            }
         }
     }
 

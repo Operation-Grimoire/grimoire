@@ -75,6 +75,7 @@ class LibraryFilterTest {
         sortField: SortField = SortField.TITLE,
         sortDirection: SortDirection = SortDirection.ASC,
         filterStatuses: Set<Int> = emptySet(),
+        filterStatusesExclude: Set<Int> = emptySet(),
         filterUnreadOnly: Boolean = false,
         filterDownloadedOnly: Boolean = false,
         filterNotifyEnabled: Boolean = false,
@@ -97,6 +98,7 @@ class LibraryFilterTest {
         sortField = sortField,
         sortDirection = sortDirection,
         filterStatuses = filterStatuses,
+        filterStatusesExclude = filterStatusesExclude,
         filterUnreadOnly = filterUnreadOnly,
         filterDownloadedOnly = filterDownloadedOnly,
         filterNotifyEnabled = filterNotifyEnabled,
@@ -244,6 +246,37 @@ class LibraryFilterTest {
         )
         val tabs = buildLibraryTabs(
             baseInputs(novels = novels, filterStatuses = setOf(1)),
+        )
+        assertEquals(listOf("A", "C"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `excluded statuses are filtered out with no include set`() {
+        val novels = listOf(
+            novel(1, "A", status = 1),
+            novel(2, "B", status = 2),
+            novel(3, "C", status = 0),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterStatusesExclude = setOf(2)),
+        )
+        assertEquals(listOf("A", "C"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
+    fun `include and exclude status sets combine`() {
+        val novels = listOf(
+            novel(1, "A", status = 1),
+            novel(2, "B", status = 2),
+            novel(3, "C", status = 1),
+        )
+        // Include ongoing(1)+completed(2) but exclude completed(2): only ongoing left.
+        val tabs = buildLibraryTabs(
+            baseInputs(
+                novels = novels,
+                filterStatuses = setOf(1, 2),
+                filterStatusesExclude = setOf(2),
+            ),
         )
         assertEquals(listOf("A", "C"), tabs[0].novels!!.map { it.title })
     }
