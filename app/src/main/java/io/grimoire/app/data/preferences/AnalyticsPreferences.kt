@@ -4,19 +4,16 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Opt-in diagnostics preferences. Both default **off** — nothing is sent until the
- * user explicitly opts in (on the first-run consent screen or in settings), and
- * only when the corresponding build key is configured.
+ * Diagnostics preferences. Both default **on** and are opt-out from Settings →
+ * Privacy; anonymous data is still only sent when the corresponding build key is
+ * configured. Users who previously turned a toggle off keep that stored choice.
  */
 @Singleton
 class AnalyticsPreferences @Inject constructor(store: PreferenceStore) {
 
     /** Send anonymous crash reports (GlitchTip). */
-    val crashReportsEnabled = store.getBoolean("diagnostics_crash_reports", false)
+    val crashReportsEnabled = store.getBoolean("diagnostics_crash_reports", true)
 
     /** Send anonymous usage analytics (Aptabase). */
-    val usageAnalyticsEnabled = store.getBoolean("diagnostics_usage_analytics", false)
-
-    /** Whether the first-run consent prompt has been shown and answered. */
-    val prompted = store.getBoolean("diagnostics_prompted", false)
+    val usageAnalyticsEnabled = store.getBoolean("diagnostics_usage_analytics", true)
 }
