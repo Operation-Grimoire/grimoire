@@ -245,6 +245,7 @@
     <string name="action_decrease">减小</string>
     <string name="action_increase">增大</string>
     <string name="action_clear_search">清除搜索内容</string>
+    <string name="filter_included_excluded">包含 %1$d 项 · 排除 %2$d 项</string>
     <string name="action_show_more">展开</string>
     <string name="action_show_less">收起</string>
     <string name="action_download">下载</string>

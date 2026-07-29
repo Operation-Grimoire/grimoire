@@ -1,50 +1,34 @@
 package io.grimoire.app.ui.screen.novelupdates
 
 import io.grimoire.app.ui.icon.*
-import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.PlainTooltipIconButton
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import io.grimoire.app.ui.component.AppSearchField
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.novelupdates.NuBrowseFilter
 import io.grimoire.app.data.novelupdates.NuBrowseSort
@@ -53,6 +37,15 @@ import io.grimoire.app.data.novelupdates.NuLanguages
 import io.grimoire.app.data.novelupdates.NuNovelType
 import io.grimoire.app.data.novelupdates.NuStoryStatus
 import io.grimoire.app.data.novelupdates.NuTag
+import io.grimoire.app.ui.component.dialog.FullScreenDialog
+import io.grimoire.app.ui.component.sheet.FilterTriState
+import io.grimoire.app.ui.component.sheet.MultiChoiceSegmented
+import io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow
+import io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog
+import io.grimoire.app.ui.component.sheet.SearchableTriStateDialog
+import io.grimoire.app.ui.component.sheet.SheetSectionLabel
+import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
+import io.grimoire.app.ui.component.sheet.TriStateSummaryRow
 import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,7 +68,6 @@ fun NovelUpdatesSearchScreen(
     val tagsLoading by viewModel.tagsLoading.collectAsState()
 
     var showFilters by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
         modifier = modifier,
@@ -120,26 +112,31 @@ fun NovelUpdatesSearchScreen(
     }
 
     if (showFilters) {
-        ModalBottomSheet(onDismissRequest = { showFilters = false }, sheetState = sheetState) {
-            AdvancedFilterSheet(
-                current = filter,
-                tags = tags,
-                tagsLoading = tagsLoading,
-                onApply = {
-                    showFilters = false
-                    viewModel.applyFilter(it)
-                },
-            )
-        }
+        AdvancedFilterDialog(
+            current = filter,
+            tags = tags,
+            tagsLoading = tagsLoading,
+            onDismiss = { showFilters = false },
+            onApply = {
+                showFilters = false
+                viewModel.applyFilter(it)
+            },
+        )
     }
 }
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+/**
+ * Full-screen advanced-filter form. Edits stay local until the top-bar Apply
+ * commits them; X/back is an explicit cancel. Genres and tags are single
+ * include/exclude tri-state pickers instead of the old paired
+ * include-list + exclude-list sections.
+ */
 @Composable
-private fun AdvancedFilterSheet(
+private fun AdvancedFilterDialog(
     current: NuBrowseFilter,
     tags: List<NuTag>,
     tagsLoading: Boolean,
+    onDismiss: () -> Unit,
     onApply: (NuBrowseFilter) -> Unit,
 ) {
     fun namesOf(ids: List<String>, table: Map<String, String>) =
@@ -150,272 +147,236 @@ private fun AdvancedFilterSheet(
     var status by remember { mutableStateOf(current.storyStatus) }
     var genresMatchAll by remember { mutableStateOf(current.genresMatchAll) }
     var tagsMatchAll by remember { mutableStateOf(current.tagsMatchAll) }
-    val genreInc = remember { namesOf(current.genresInclude, NuGenres.all).toMutableStateList() }
-    val genreExc = remember { namesOf(current.genresExclude, NuGenres.all).toMutableStateList() }
+    val genreStates = remember {
+        mutableStateMapOf<String, FilterTriState>().apply {
+            namesOf(current.genresInclude, NuGenres.all).forEach { put(it, FilterTriState.INCLUDE) }
+            namesOf(current.genresExclude, NuGenres.all).forEach { put(it, FilterTriState.EXCLUDE) }
+        }
+    }
     val langs = remember { namesOf(current.languages, NuLanguages.all).toMutableStateList() }
     val types = remember {
         current.novelTypes.mapNotNull { id -> NuNovelType.entries.firstOrNull { it.id == id } }
             .toMutableStateList()
     }
-    val tagInc = remember { current.tagsInclude.toMutableStateList() }
-    val tagExc = remember { current.tagsExclude.toMutableStateList() }
-
-    var tagPicker by remember { mutableStateOf<TagPickerTarget?>(null) }
-
-    fun toggle(list: MutableList<String>, v: String) { if (!list.remove(v)) list.add(v) }
-    fun <T> toggleT(list: MutableList<T>, v: T) { if (!list.remove(v)) list.add(v) }
-
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(max = 620.dp)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(stringResource(R.string.nu_order_by), style = MaterialTheme.typography.titleSmall)
-        ChipFlow {
-            NuBrowseSort.entries.forEach { s ->
-                FilterChip(
-                    selected = sort == s,
-                    onClick = { sort = s },
-                    label = {
-                        Text(
-                            stringResource(
-                                when (s) {
-                                    NuBrowseSort.READERS -> R.string.nu_sort_readers
-                                    NuBrowseSort.LAST_UPDATED -> R.string.nu_sort_last_updated
-                                    NuBrowseSort.RATING -> R.string.nu_sort_rating
-                                    NuBrowseSort.RANK -> R.string.nu_sort_rank
-                                    NuBrowseSort.REVIEWS -> R.string.nu_sort_reviews
-                                    NuBrowseSort.CHAPTERS -> R.string.nu_sort_chapters
-                                    NuBrowseSort.FREQUENCY -> R.string.nu_sort_frequency
-                                    NuBrowseSort.TITLE -> R.string.nu_sort_title
-                                },
-                            ),
-                        )
-                    },
-                )
-            }
+    val tagStates = remember {
+        mutableStateMapOf<String, FilterTriState>().apply {
+            current.tagsInclude.forEach { put(it, FilterTriState.INCLUDE) }
+            current.tagsExclude.forEach { put(it, FilterTriState.EXCLUDE) }
         }
-        FilterChip(
-            selected = ascending,
-            onClick = { ascending = !ascending },
-            label = { Text(stringResource(if (ascending) R.string.nu_ascending else R.string.nu_descending)) },
-        )
+    }
+    var showGenrePicker by remember { mutableStateOf(false) }
+    var showLanguagePicker by remember { mutableStateOf(false) }
+    var showTagPicker by remember { mutableStateOf(false) }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(stringResource(R.string.nu_genres), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-            FilterChip(
-                selected = genresMatchAll,
-                onClick = { genresMatchAll = !genresMatchAll },
-                label = { Text(stringResource(if (genresMatchAll) R.string.nu_match_all else R.string.nu_match_any)) },
+    // Localized labels resolved once here — the picker dialogs take plain lambdas.
+    val genreLabels = NuGenres.all.keys.associateWith { localizedNuGenre(it) }
+    val languageLabels = NuLanguages.all.keys.associateWith { localizedNuLanguage(it) }
+    val tagNames = remember(tags) { tags.associate { it.id to it.name } }
+
+    fun includes(map: Map<String, FilterTriState>) = map.count { it.value == FilterTriState.INCLUDE }
+    fun excludes(map: Map<String, FilterTriState>) = map.count { it.value == FilterTriState.EXCLUDE }
+
+    FullScreenDialog(
+        title = stringResource(R.string.source_browse_filters),
+        onDismiss = onDismiss,
+        confirmLabel = stringResource(R.string.action_apply),
+        onConfirm = {
+            onApply(
+                NuBrowseFilter(
+                    query = current.query,
+                    sort = sort,
+                    orderAscending = ascending,
+                    languages = langs.mapNotNull { NuLanguages.all[it] },
+                    genresInclude = genreStates.filterValues { it == FilterTriState.INCLUDE }
+                        .keys.mapNotNull { NuGenres.all[it] },
+                    genresExclude = genreStates.filterValues { it == FilterTriState.EXCLUDE }
+                        .keys.mapNotNull { NuGenres.all[it] },
+                    genresMatchAll = genresMatchAll,
+                    novelTypes = types.map { it.id },
+                    storyStatus = status,
+                    tagsInclude = tagStates.filterValues { it == FilterTriState.INCLUDE }.keys.toList(),
+                    tagsExclude = tagStates.filterValues { it == FilterTriState.EXCLUDE }.keys.toList(),
+                    tagsMatchAll = tagsMatchAll,
+                ),
             )
-        }
-        ChipFlow {
-            NuGenres.all.keys.forEach { name ->
-                FilterChip(
-                    selected = name in genreInc,
-                    onClick = { toggle(genreInc, name) },
-                    label = { Text(localizedNuGenre(name)) },
-                )
-            }
-        }
-        Text(stringResource(R.string.nu_exclude_genres), style = MaterialTheme.typography.titleSmall)
-        ChipFlow {
-            NuGenres.all.keys.forEach { name ->
-                FilterChip(
-                    selected = name in genreExc,
-                    onClick = { toggle(genreExc, name) },
-                    label = { Text(localizedNuGenre(name)) },
-                )
-            }
-        }
-
-        Text(stringResource(R.string.nu_language), style = MaterialTheme.typography.titleSmall)
-        ChipFlow {
-            NuLanguages.all.keys.forEach { name ->
-                FilterChip(
-                    selected = name in langs,
-                    onClick = { toggle(langs, name) },
-                    label = { Text(localizedNuLanguage(name)) },
-                )
-            }
-        }
-
-        Text(stringResource(R.string.nu_novel_type), style = MaterialTheme.typography.titleSmall)
-        ChipFlow {
-            NuNovelType.entries.forEach { t ->
-                FilterChip(
-                    selected = t in types,
-                    onClick = { toggleT(types, t) },
-                    label = {
-                        Text(
-                            stringResource(
-                                when (t) {
-                                    NuNovelType.LIGHT_NOVEL -> R.string.nu_type_light_novel
-                                    NuNovelType.PUBLISHED_NOVEL -> R.string.nu_type_published_novel
-                                    NuNovelType.WEB_NOVEL -> R.string.nu_type_web_novel
-                                },
-                            ),
-                        )
-                    },
-                )
-            }
-        }
-
-        Text(stringResource(R.string.nu_story_status), style = MaterialTheme.typography.titleSmall)
-        ChipFlow {
-            NuStoryStatus.entries.forEach { s ->
-                FilterChip(
-                    selected = status == s,
-                    onClick = { status = s },
-                    label = {
-                        Text(
-                            stringResource(
-                                when (s) {
-                                    NuStoryStatus.ANY -> R.string.source_filter_any
-                                    NuStoryStatus.COMPLETED -> R.string.library_status_completed
-                                    NuStoryStatus.ONGOING -> R.string.library_status_ongoing
-                                    NuStoryStatus.HIATUS -> R.string.library_status_hiatus
-                                },
-                            ),
-                        )
-                    },
-                )
-            }
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        },
+    ) { padding ->
+        Column(
+            Modifier
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 24.dp),
         ) {
-            Text(stringResource(R.string.nu_tags), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-            FilterChip(
-                selected = tagsMatchAll,
-                onClick = { tagsMatchAll = !tagsMatchAll },
-                label = { Text(stringResource(if (tagsMatchAll) R.string.nu_match_all else R.string.nu_match_any)) },
-            )
-        }
-        OutlinedButton(
-            onClick = { tagPicker = TagPickerTarget.INCLUDE },
-            enabled = !tagsLoading,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(
-                when {
-                    tagsLoading -> stringResource(R.string.nu_loading_tags)
-                    tagInc.isEmpty() -> stringResource(R.string.nu_include_tags)
-                    else -> stringResource(R.string.nu_include_tags_count, tagInc.size)
+            SheetSectionLabel(stringResource(R.string.nu_order_by))
+            SortDropdown(selected = sort, onSelect = { sort = it })
+            SingleChoiceSegmented(
+                options = listOf(false, true),
+                selected = ascending,
+                onSelect = { ascending = it },
+                label = { asc ->
+                    stringResource(if (asc) R.string.nu_ascending else R.string.nu_descending)
                 },
+                modifier = Modifier.padding(vertical = 4.dp),
             )
-        }
-        OutlinedButton(
-            onClick = { tagPicker = TagPickerTarget.EXCLUDE },
-            enabled = !tagsLoading,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(
-                if (tagExc.isEmpty()) stringResource(R.string.nu_exclude_tags)
-                else stringResource(R.string.nu_exclude_tags_count, tagExc.size),
-            )
-        }
 
-        Button(
-            onClick = {
-                onApply(
-                    NuBrowseFilter(
-                        query = current.query,
-                        sort = sort,
-                        orderAscending = ascending,
-                        languages = langs.mapNotNull { NuLanguages.all[it] },
-                        genresInclude = genreInc.mapNotNull { NuGenres.all[it] },
-                        genresExclude = genreExc.mapNotNull { NuGenres.all[it] },
-                        genresMatchAll = genresMatchAll,
-                        novelTypes = types.map { it.id },
-                        storyStatus = status,
-                        tagsInclude = tagInc.toList(),
-                        tagsExclude = tagExc.toList(),
-                        tagsMatchAll = tagsMatchAll,
-                    ),
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(R.string.action_apply)) }
+            TriStateSummaryRow(
+                title = stringResource(R.string.nu_genres),
+                includedCount = includes(genreStates),
+                excludedCount = excludes(genreStates),
+                onClick = { showGenrePicker = true },
+            )
+            MatchModeSegmented(matchAll = genresMatchAll, onChange = { genresMatchAll = it })
+
+            MultiSelectSummaryRow(
+                title = stringResource(R.string.nu_language),
+                selectedCount = langs.size,
+                onClick = { showLanguagePicker = true },
+            )
+
+            SheetSectionLabel(stringResource(R.string.nu_novel_type))
+            MultiChoiceSegmented(
+                options = NuNovelType.entries.toList(),
+                isChecked = { it in types },
+                onToggle = { t -> if (!types.remove(t)) types.add(t) },
+                label = { t ->
+                    stringResource(
+                        when (t) {
+                            NuNovelType.LIGHT_NOVEL -> R.string.nu_type_light_novel
+                            NuNovelType.PUBLISHED_NOVEL -> R.string.nu_type_published_novel
+                            NuNovelType.WEB_NOVEL -> R.string.nu_type_web_novel
+                        },
+                    )
+                },
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
+
+            SheetSectionLabel(stringResource(R.string.nu_story_status))
+            SingleChoiceSegmented(
+                options = NuStoryStatus.entries.toList(),
+                selected = status,
+                onSelect = { status = it },
+                label = { s ->
+                    stringResource(
+                        when (s) {
+                            NuStoryStatus.ANY -> R.string.source_filter_any
+                            NuStoryStatus.COMPLETED -> R.string.library_status_completed
+                            NuStoryStatus.ONGOING -> R.string.library_status_ongoing
+                            NuStoryStatus.HIATUS -> R.string.library_status_hiatus
+                        },
+                    )
+                },
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
+
+            TriStateSummaryRow(
+                title = stringResource(
+                    if (tagsLoading) R.string.nu_loading_tags else R.string.nu_tags,
+                ),
+                includedCount = includes(tagStates),
+                excludedCount = excludes(tagStates),
+                onClick = { showTagPicker = true },
+                enabled = !tagsLoading,
+            )
+            MatchModeSegmented(matchAll = tagsMatchAll, onChange = { tagsMatchAll = it })
+        }
     }
 
-    tagPicker?.let { target ->
-        val selected = if (target == TagPickerTarget.INCLUDE) tagInc else tagExc
-        TagPickerDialog(
-            title = stringResource(
-                if (target == TagPickerTarget.INCLUDE) R.string.nu_include_tags
-                else R.string.nu_exclude_tags,
-            ),
-            tags = tags,
-            selectedIds = selected,
-            onToggle = { id -> toggle(selected, id) },
-            onDismiss = { tagPicker = null },
+    if (showGenrePicker) {
+        SearchableTriStateDialog(
+            title = stringResource(R.string.nu_genres),
+            options = NuGenres.all.keys.toList(),
+            optionLabel = { genreLabels[it].orEmpty() },
+            stateOf = { genreStates[it] ?: FilterTriState.ANY },
+            onStateChange = { name, state -> genreStates[name] = state },
+            onClear = { genreStates.clear() },
+            clearEnabled = genreStates.values.any { it != FilterTriState.ANY },
+            onDismiss = { showGenrePicker = false },
+        )
+    }
+    if (showLanguagePicker) {
+        SearchableMultiSelectDialog(
+            title = stringResource(R.string.nu_language),
+            options = NuLanguages.all.keys.toList(),
+            optionLabel = { languageLabels[it].orEmpty() },
+            isChecked = { it in langs },
+            onToggle = { name -> if (!langs.remove(name)) langs.add(name) },
+            onClear = { langs.clear() },
+            clearEnabled = langs.isNotEmpty(),
+            onDismiss = { showLanguagePicker = false },
+        )
+    }
+    if (showTagPicker) {
+        SearchableTriStateDialog(
+            title = stringResource(R.string.nu_tags),
+            options = tags.map { it.id },
+            optionLabel = { tagNames[it].orEmpty() },
+            stateOf = { tagStates[it] ?: FilterTriState.ANY },
+            onStateChange = { id, state -> tagStates[id] = state },
+            onClear = { tagStates.clear() },
+            clearEnabled = tagStates.values.any { it != FilterTriState.ANY },
+            onDismiss = { showTagPicker = false },
         )
     }
 }
 
-private enum class TagPickerTarget { INCLUDE, EXCLUDE }
-
+/** Any/All segmented toggle shown under a tri-state summary row. */
 @Composable
-private fun TagPickerDialog(
-    title: String,
-    tags: List<NuTag>,
-    selectedIds: List<String>,
-    onToggle: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var search by remember { mutableStateOf("") }
-    val filtered = remember(search, tags) {
-        if (search.isBlank()) tags
-        else tags.filter { it.name.contains(search, ignoreCase = true) }
-    }
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        androidx.compose.material3.Surface(
-            shape = MaterialTheme.shapes.large,
-            modifier = Modifier.fillMaxWidth(0.95f).heightIn(max = 600.dp),
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                OutlinedTextField(
-                    value = search,
-                    onValueChange = { search = it },
-                    placeholder = {
-                        Text(pluralStringResource(R.plurals.nu_filter_tags_placeholder, tags.size, tags.size))
+internal fun MatchModeSegmented(matchAll: Boolean, onChange: (Boolean) -> Unit) {
+    SingleChoiceSegmented(
+        options = listOf(false, true),
+        selected = matchAll,
+        onSelect = onChange,
+        label = { all ->
+            stringResource(if (all) R.string.nu_match_all else R.string.nu_match_any)
+        },
+        modifier = Modifier.padding(vertical = 4.dp),
+    )
+}
+
+/** Exclusive sort choice — 8 options, so a dropdown instead of segments. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SortDropdown(selected: NuBrowseSort, onSelect: (NuBrowseSort) -> Unit) {
+    @Composable
+    fun label(s: NuBrowseSort) = stringResource(
+        when (s) {
+            NuBrowseSort.READERS -> R.string.nu_sort_readers
+            NuBrowseSort.LAST_UPDATED -> R.string.nu_sort_last_updated
+            NuBrowseSort.RATING -> R.string.nu_sort_rating
+            NuBrowseSort.RANK -> R.string.nu_sort_rank
+            NuBrowseSort.REVIEWS -> R.string.nu_sort_reviews
+            NuBrowseSort.CHAPTERS -> R.string.nu_sort_chapters
+            NuBrowseSort.FREQUENCY -> R.string.nu_sort_frequency
+            NuBrowseSort.TITLE -> R.string.nu_sort_title
+        },
+    )
+
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        OutlinedTextField(
+            value = label(selected),
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            NuBrowseSort.entries.forEach { s ->
+                DropdownMenuItem(
+                    text = { Text(label(s)) },
+                    onClick = {
+                        onSelect(s)
+                        expanded = false
                     },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 )
-                LazyColumn(Modifier.weight(1f)) {
-                    items(filtered, key = { it.id }) { tag ->
-                        val checked = tag.id in selectedIds
-                        ListItem(
-                            headlineContent = { Text(tag.name) },
-                            trailingContent = {
-                                if (checked) {
-                                    Icon(
-                                        AppIcons.Check,
-                                        contentDescription = stringResource(R.string.content_description_selected),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onToggle(tag.id) },
-                        )
-                    }
-                }
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_done)) }
-                }
             }
         }
     }

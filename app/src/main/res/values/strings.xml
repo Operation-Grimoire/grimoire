@@ -252,6 +252,7 @@
     <string name="action_decrease">Decrease</string>
     <string name="action_increase">Increase</string>
     <string name="action_clear_search">Clear search</string>
+    <string name="filter_included_excluded">%1$d included · %2$d excluded</string>
     <string name="action_show_more">Show more</string>
     <string name="action_show_less">Show less</string>
     <string name="action_download">Download</string>
