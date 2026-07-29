@@ -24,6 +24,8 @@ data class ParsedEpub(
     val author: String?,
     val description: String?,
     val genres: List<String>,
+    /** BCP-47 tag from `dc:language` (e.g. "en", "pt-BR"), or null when absent. */
+    val language: String?,
     val cover: EpubCover?,
     val chapters: List<EpubChapter>,
 )
@@ -57,6 +59,7 @@ object EpubParser {
         val title = opf.firstText("dc:title", "title").orEmpty().ifBlank { file.nameWithoutExtension }
         val author = opf.firstText("dc:creator", "creator")
         val description = opf.firstText("dc:description", "description")
+        val language = opf.firstText("dc:language", "language")?.trim()?.takeIf { it.isNotEmpty() }
         val genres = (opf.getElementsByTag("dc:subject") + opf.getElementsByTag("subject"))
             .map { it.text().trim() }
             .filter { it.isNotEmpty() }
@@ -177,6 +180,7 @@ object EpubParser {
             author = author?.trim()?.takeIf { it.isNotEmpty() },
             description = description?.trim()?.takeIf { it.isNotEmpty() },
             genres = genres,
+            language = language,
             cover = cover,
             chapters = chapters,
         )

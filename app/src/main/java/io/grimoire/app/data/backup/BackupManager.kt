@@ -218,6 +218,7 @@ class BackupManager @Inject constructor(
                 notifyOnNewChapters = n.notifyOnNewChapters,
                 notifyOnNewLockedChapters = n.notifyOnNewLockedChapters,
                 autoDownloadNewChapters = n.autoDownloadNewChapters,
+                language = n.language,
                 chapters = chapters.map { c ->
                     BackupChapter(
                         url = c.url,
@@ -363,6 +364,7 @@ class BackupManager @Inject constructor(
                 notifyOnNewChapters = novel.notifyOnNewChapters || (existing?.notifyOnNewChapters ?: false),
                 notifyOnNewLockedChapters = novel.notifyOnNewLockedChapters || (existing?.notifyOnNewLockedChapters ?: false),
                 autoDownloadNewChapters = novel.autoDownloadNewChapters || (existing?.autoDownloadNewChapters ?: false),
+                language = novel.language ?: existing?.language,
             )
             val novelId = novelDao.upsert(mergedNovel)
             val effectiveId = if (existing != null && novelId == -1L) existing.id else novelId

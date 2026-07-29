@@ -81,6 +81,7 @@ data class BackupNovel(
     val notifyOnNewChapters: Boolean = false,
     val notifyOnNewLockedChapters: Boolean = false,
     val autoDownloadNewChapters: Boolean = false,
+    val language: String? = null,
     val chapters: List<BackupChapter> = emptyList(),
 )
 

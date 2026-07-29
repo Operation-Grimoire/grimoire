@@ -3,6 +3,7 @@ package io.grimoire.app.data.epub
 import android.content.Context
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.NovelStatus
 import io.grimoire.api.model.novel.PageContent
@@ -159,6 +160,14 @@ class EpubImporter @Inject constructor(
                 author = parsed.author,
                 description = parsed.description,
                 genres = parsed.genres.joinToString(","),
+                // dc:language is a BCP-47 tag; store the English name to match how
+                // source novels persist theirs (see Novel.toEntity). Unmappable or
+                // absent tags keep whatever an earlier import recorded.
+                language = parsed.language
+                    ?.let { Language.fromCode(it.substringBefore('-')) }
+                    ?.takeIf { it != Language.UNKNOWN && it != Language.MULTI }
+                    ?.displayName
+                    ?: existing?.language,
                 status = NovelStatus.COMPLETED.ordinal,
                 favorite = existing?.favorite ?: favorite,
                 lastUpdated = System.currentTimeMillis(),
