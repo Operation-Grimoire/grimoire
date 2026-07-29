@@ -154,88 +154,58 @@ private fun FilterTab(
     onToggleFilterSource: (Long?) -> Unit,
 ) {
     Column {
-        Text(
-            stringResource(R.string.library_filter_status),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+        var showStatusPicker by remember { mutableStateOf(false) }
+        val statusLabels = STATUS_OPTIONS.associate { (ordinal, labelRes) ->
+            ordinal.toString() to stringResource(labelRes)
+        }
+        io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow(
+            title = stringResource(R.string.library_filter_status),
+            selectedCount = filterStatuses.size,
+            onClick = { showStatusPicker = true },
         )
-        // FlowRow wraps chips onto multiple lines instead of clipping past the
-        // edge — a long status/source list stays visible without horizontal
-        // scrolling, which is the multi-select pattern most apps use.
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            // "All" is rendered first as a distinct chip: tapping it clears the
-            // entire selection set rather than toggling a status value. This lets
-            // a user always reach the unfiltered state in one tap even when many
-            // statuses are selected.
-            FilterChip(
-                selected = filterStatuses.isEmpty(),
-                onClick = { onToggleFilterStatus(null) },
-                label = { Text(stringResource(R.string.library_all)) },
+        if (showStatusPicker) {
+            io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog(
+                title = stringResource(R.string.library_filter_status),
+                options = STATUS_OPTIONS.map { it.first.toString() },
+                optionLabel = { statusLabels[it].orEmpty() },
+                isChecked = { it.toInt() in filterStatuses },
+                onToggle = { onToggleFilterStatus(it.toInt()) },
+                onClear = { onToggleFilterStatus(null) },
+                clearEnabled = filterStatuses.isNotEmpty(),
+                onDismiss = { showStatusPicker = false },
             )
-            STATUS_OPTIONS.forEach { (ordinal, labelRes) ->
-                FilterChip(
-                    selected = ordinal in filterStatuses,
-                    onClick = { onToggleFilterStatus(ordinal) },
-                    label = { Text(stringResource(labelRes)) },
-                )
-            }
         }
         if (librarySources.size > 1) {
-            Text(
-                stringResource(R.string.library_filter_source),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+            var showSourcePicker by remember { mutableStateOf(false) }
+            val sourceLabels = librarySources.associate { (id, label) -> id.toString() to label }
+            io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow(
+                title = stringResource(R.string.library_filter_source),
+                selectedCount = filterSourceIds.size,
+                onClick = { showSourcePicker = true },
             )
-            FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                FilterChip(
-                    selected = filterSourceIds.isEmpty(),
-                    onClick = { onToggleFilterSource(null) },
-                    label = { Text(stringResource(R.string.library_all)) },
+            if (showSourcePicker) {
+                io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog(
+                    title = stringResource(R.string.library_filter_source),
+                    options = librarySources.map { it.first.toString() },
+                    optionLabel = { sourceLabels[it].orEmpty() },
+                    isChecked = { it.toLong() in filterSourceIds },
+                    onToggle = { onToggleFilterSource(it.toLong()) },
+                    onClear = { onToggleFilterSource(null) },
+                    clearEnabled = filterSourceIds.isNotEmpty(),
+                    onDismiss = { showSourcePicker = false },
                 )
-                librarySources.forEach { (id, label) ->
-                    FilterChip(
-                        selected = id in filterSourceIds,
-                        onClick = { onToggleFilterSource(id) },
-                        label = { Text(label) },
-                    )
-                }
             }
         }
-        Text(
-            stringResource(R.string.library_filter_type),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+        io.grimoire.app.ui.component.sheet.SheetSectionLabel(stringResource(R.string.library_filter_type))
+        io.grimoire.app.ui.component.sheet.SingleChoiceSegmented(
+            options = NOVEL_TYPE_OPTIONS.map { it.first },
+            selected = filterType,
+            onSelect = onFilterTypeChange,
+            label = { option ->
+                stringResource(NOVEL_TYPE_OPTIONS.first { it.first == option }.second)
+            },
+            modifier = Modifier.padding(vertical = 4.dp),
         )
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            NOVEL_TYPE_OPTIONS.forEach { (option, labelRes) ->
-                FilterChip(
-                    selected = filterType == option,
-                    onClick = { onFilterTypeChange(option) },
-                    label = { Text(stringResource(labelRes)) },
-                )
-            }
-        }
         // Local drag state so the pref is written once per gesture (on release), not on
         // every frame. Re-seeded whenever the persisted values change.
         var range by remember(filterMinUserRating, filterMaxUserRating) {

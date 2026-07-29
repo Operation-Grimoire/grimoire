@@ -21,7 +21,11 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -51,7 +55,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.component.AppSearchField
-import io.grimoire.app.ui.component.LanguageFilterChips
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.SourceListItem
 import io.grimoire.app.ui.component.TooltipBottomBar
@@ -265,13 +268,10 @@ fun BrowseScreen(
                         .padding(horizontal = 16.dp),
                 )
                 if (ui.languages.size > 1) {
-                    Text(
+                    io.grimoire.app.ui.component.sheet.SheetSectionLabel(
                         stringResource(R.string.browse_language),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 2.dp),
                     )
-                    LanguageFilterChips(
+                    LanguageDropdown(
                         languages = ui.languages,
                         selected = languageFilter,
                         onSelect = viewModel::setLanguageFilter,
@@ -453,6 +453,55 @@ private fun BrowseBottomToolbar(
                 Icon(
                     AppIcons.Search,
                     contentDescription = stringResource(R.string.browse_search),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Single-select language filter for the source list. Replaces the old chip
+ * row: the full option set is in one anchored menu instead of scrolling off
+ * the sheet edge. null = all languages.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LanguageDropdown(
+    languages: List<String>,
+    selected: String?,
+    onSelect: (String?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        OutlinedTextField(
+            value = selected?.let(::languageLabel) ?: stringResource(R.string.filter_all),
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(androidx.compose.material3.MenuAnchorType.PrimaryNotEditable),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.filter_all)) },
+                onClick = {
+                    onSelect(null)
+                    expanded = false
+                },
+            )
+            languages.forEach { lang ->
+                DropdownMenuItem(
+                    text = { Text(languageLabel(lang)) },
+                    onClick = {
+                        onSelect(lang)
+                        expanded = false
+                    },
                 )
             }
         }

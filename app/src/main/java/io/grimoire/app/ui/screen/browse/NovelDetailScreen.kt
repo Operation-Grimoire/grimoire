@@ -289,79 +289,32 @@ fun NovelDetailScreen(
             onDismissRequest = { showNotifSheet = false },
             sheetState = notifSheetState,
         ) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Text(
-                    stringResource(R.string.novel_new_chapters_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
+            Column(modifier = Modifier.padding(bottom = 16.dp)) {
+                io.grimoire.app.ui.component.sheet.SheetTitle(stringResource(R.string.novel_new_chapters_title))
                 Text(
                     stringResource(R.string.novel_new_chapters_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 12.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 4.dp),
                 )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { viewModel.setNotifyOnNewChapters(!notifyOnNewChapters) }
-                        .padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.novel_notify_new), style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            stringResource(R.string.novel_notify_new_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = notifyOnNewChapters,
-                        onCheckedChange = { viewModel.setNotifyOnNewChapters(it) },
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { viewModel.setNotifyOnNewLockedChapters(!notifyOnNewLockedChapters) }
-                        .padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.novel_notify_locked), style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            stringResource(R.string.novel_notify_locked_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = notifyOnNewLockedChapters,
-                        onCheckedChange = { viewModel.setNotifyOnNewLockedChapters(it) },
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { viewModel.setAutoDownloadNewChapters(!autoDownloadNewChapters) }
-                        .padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.novel_auto_download_new), style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            stringResource(R.string.novel_auto_download_new_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = autoDownloadNewChapters,
-                        onCheckedChange = { viewModel.setAutoDownloadNewChapters(it) },
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
+                io.grimoire.app.ui.component.sheet.SheetSwitchRow(
+                    title = stringResource(R.string.novel_notify_new),
+                    hint = stringResource(R.string.novel_notify_new_description),
+                    checked = notifyOnNewChapters,
+                    onCheckedChange = { viewModel.setNotifyOnNewChapters(it) },
+                )
+                io.grimoire.app.ui.component.sheet.SheetSwitchRow(
+                    title = stringResource(R.string.novel_notify_locked),
+                    hint = stringResource(R.string.novel_notify_locked_description),
+                    checked = notifyOnNewLockedChapters,
+                    onCheckedChange = { viewModel.setNotifyOnNewLockedChapters(it) },
+                )
+                io.grimoire.app.ui.component.sheet.SheetSwitchRow(
+                    title = stringResource(R.string.novel_auto_download_new),
+                    hint = stringResource(R.string.novel_auto_download_new_description),
+                    checked = autoDownloadNewChapters,
+                    onCheckedChange = { viewModel.setAutoDownloadNewChapters(it) },
+                )
             }
         }
     }
