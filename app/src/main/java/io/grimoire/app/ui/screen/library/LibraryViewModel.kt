@@ -398,17 +398,33 @@ class LibraryViewModel @Inject constructor(
     }
 
     /** Toggles [status] in the active filter set, or clears the set entirely when null. */
-    /** Tri-state status filter: INCLUDE/EXCLUDE membership per status ordinal. */
+    /**
+     * Tri-state status filter: INCLUDE/EXCLUDE membership per status ordinal.
+     *
+     * The two prefs can't be written atomically, so ordering matters: on
+     * INCLUDE → EXCLUDE the exclude-add lands *before* the include-remove.
+     * The UI resolves include first, so the intermediate emission still reads
+     * INCLUDE instead of flickering through ANY. The other transitions only
+     * touch one set (untouched sets are never rewritten).
+     */
     fun setFilterStatusState(status: Int, state: io.grimoire.app.ui.component.sheet.FilterTriState) =
         viewModelScope.launch {
             val inc = filterStatuses.value
             val exc = filterStatusesExclude.value
-            libraryPreferences.filterStatuses.set(
-                if (state == io.grimoire.app.ui.component.sheet.FilterTriState.INCLUDE) inc + status else inc - status,
-            )
-            libraryPreferences.filterStatusesExclude.set(
-                if (state == io.grimoire.app.ui.component.sheet.FilterTriState.EXCLUDE) exc + status else exc - status,
-            )
+            when (state) {
+                io.grimoire.app.ui.component.sheet.FilterTriState.INCLUDE -> {
+                    libraryPreferences.filterStatuses.set(inc + status)
+                    if (status in exc) libraryPreferences.filterStatusesExclude.set(exc - status)
+                }
+                io.grimoire.app.ui.component.sheet.FilterTriState.EXCLUDE -> {
+                    libraryPreferences.filterStatusesExclude.set(exc + status)
+                    if (status in inc) libraryPreferences.filterStatuses.set(inc - status)
+                }
+                io.grimoire.app.ui.component.sheet.FilterTriState.ANY -> {
+                    if (status in inc) libraryPreferences.filterStatuses.set(inc - status)
+                    if (status in exc) libraryPreferences.filterStatusesExclude.set(exc - status)
+                }
+            }
         }
 
     fun clearFilterStatuses() = viewModelScope.launch {
