@@ -223,6 +223,20 @@ fun ReaderScreen(
     val visiblePages = remember(pages) {
         pages.filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
     }
+    // Settings-sheet preview: a snippet of the actual chapter so the sample is in
+    // the novel's language (and its content-derived direction matches the page).
+    val chapterPreviewText = remember(visiblePages) {
+        buildString {
+            for (page in visiblePages) {
+                if (page.isSeparator) continue
+                val t = page.text.trim()
+                if (t.isEmpty()) continue
+                if (isNotEmpty()) append("\n")
+                append(t)
+                if (length >= 160) break
+            }
+        }.take(280)
+    }
     var barsVisible by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var showGrimoirePopup by remember { mutableStateOf(false) }
@@ -371,6 +385,8 @@ fun ReaderScreen(
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = fontFamily,
                                 color = colors.foreground,
+                                textAlign = textLayout.textAlign,
+                                textDirection = textLayout.textDirection,
                             ),
                             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                         )
@@ -671,6 +687,7 @@ fun ReaderScreen(
             sheetState = sheetState,
             colors = colors,
             textStyle = textStyle,
+            previewText = chapterPreviewText.ifBlank { stringResource(R.string.reader_preview_text) },
             fontSize = fontSize,
             lineHeightTimes10 = lineHeightTimes10,
             paragraphSpacing = paragraphSpacing,
