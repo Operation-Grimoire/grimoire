@@ -19,7 +19,7 @@ class ChapterListFetcherTest {
         val src = FakePaginatedSource(totalNonEmptyPages = 7, perPageDelayMs = 0)
         val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
 
-        val result = fetchAllChapters(src, novel, window = 4)
+        val result = fetchAllChapters(src, novel, window = 4, retryDelayMs = 0)
 
         assertEquals(7 * 3, result.size)
         // Verify ordering: page 1 chapters come before page 2 chapters, etc.
@@ -34,7 +34,7 @@ class ChapterListFetcherTest {
         val src = FakePaginatedSource(totalNonEmptyPages = 3, perPageDelayMs = 0, duplicateAcross = true)
         val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
 
-        val result = fetchAllChapters(src, novel, window = 4)
+        val result = fetchAllChapters(src, novel, window = 4, retryDelayMs = 0)
 
         // duplicateAcross means each page returns the same 3 URLs.
         // Page 1 contributes 3; pages 2+ contribute 0 (all dupes) → stop at page 2.
@@ -47,7 +47,7 @@ class ChapterListFetcherTest {
         val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
 
         val start = System.currentTimeMillis()
-        val result = fetchAllChapters(src, novel, window = 4)
+        val result = fetchAllChapters(src, novel, window = 4, retryDelayMs = 0)
         val elapsed = System.currentTimeMillis() - start
 
         assertEquals(8 * 3, result.size)
@@ -65,7 +65,7 @@ class ChapterListFetcherTest {
         val src = FakePaginatedSource(totalNonEmptyPages = Int.MAX_VALUE, perPageDelayMs = 0)
         val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
 
-        val result = fetchAllChapters(src, novel, window = 4, maxPages = 10)
+        val result = fetchAllChapters(src, novel, window = 4, maxPages = 10, retryDelayMs = 0)
 
         // 10 pages walked, 3 chapters each, then the cap stops the walk.
         assertEquals(10 * 3, result.size)
@@ -87,10 +87,50 @@ class ChapterListFetcherTest {
         val src = FakePaginatedSource(totalNonEmptyPages = 5, perPageDelayMs = 0)
         val seen = mutableListOf<Int>()
 
-        fetchAllChapters(src, Novel(url = "n", title = "", language = Language.UNKNOWN), window = 4) { seen += it }
+        fetchAllChapters(src, Novel(url = "n", title = "", language = Language.UNKNOWN), window = 4, retryDelayMs = 0) { seen += it }
 
         // First window reports page 4 (highest in [1,4]); second window reports page 8.
         assertEquals(listOf(4, 8), seen)
+    }
+
+    @Test
+    fun fetchAllChapters_transientEmptyPage_recoversViaRetry() = runBlocking {
+        // Page 2 fails (empty) exactly once; the in-place retry must heal it and
+        // the final list must be complete and in order.
+        val src = FakePaginatedSource(totalNonEmptyPages = 7, perPageDelayMs = 0, failOncePages = setOf(2))
+        val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
+
+        val result = fetchAllChapters(src, novel, window = 4, retryDelayMs = 0)
+
+        assertEquals(7 * 3, result.size)
+        result.forEachIndexed { idx, ch ->
+            val expectedPage = idx / 3 + 1
+            assertTrue(ch.url.startsWith("p$expectedPage-"))
+        }
+    }
+
+    @Test
+    fun fetchAllChapters_persistentEmptyMidList_throwsInsteadOfTruncating() = runBlocking {
+        // Page 2 is empty on every attempt while page 3 still has chapters — the
+        // old behavior silently returned pages 1..1; now it must fail loudly so
+        // the caller keeps the existing chapter list.
+        val src = FakePaginatedSource(totalNonEmptyPages = 7, perPageDelayMs = 0, alwaysEmptyPages = setOf(2))
+        val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
+
+        val thrown = runCatching { fetchAllChapters(src, novel, window = 4, retryDelayMs = 0) }
+        assertTrue(thrown.exceptionOrNull() is TruncatedChapterListException)
+    }
+
+    @Test
+    fun fetchAllChapters_trailingEmptyPage_stillStopsNormally() = runBlocking {
+        // The empty page after the real end of the list is retried once and then
+        // accepted as the end — no exception, complete list.
+        val src = FakePaginatedSource(totalNonEmptyPages = 4, perPageDelayMs = 0)
+        val novel = Novel(url = "n", title = "", language = Language.UNKNOWN)
+
+        val result = fetchAllChapters(src, novel, window = 4, retryDelayMs = 0)
+
+        assertEquals(4 * 3, result.size)
     }
 
     private fun chapter(suffix: String) =
@@ -100,16 +140,23 @@ class ChapterListFetcherTest {
         private val totalNonEmptyPages: Int,
         private val perPageDelayMs: Long,
         private val duplicateAcross: Boolean = false,
+        /** Pages that return empty on their first call only (transient failure). */
+        private val failOncePages: Set<Int> = emptySet(),
+        /** Pages that return empty on every call (persistent failure). */
+        private val alwaysEmptyPages: Set<Int> = emptySet(),
     ) : PaginatedSource {
         override val name: String = "fake"
         override val lang: Language = Language.EN
         val calls = AtomicInteger(0)
+        private val failedOnce = mutableSetOf<Int>()
 
         override suspend fun getNovelDetails(novel: Novel): Novel = novel
 
         override suspend fun getChapterList(novel: Novel, page: Int): List<Chapter> {
             calls.incrementAndGet()
             if (perPageDelayMs > 0) delay(perPageDelayMs)
+            if (page in alwaysEmptyPages) return emptyList()
+            if (page in failOncePages && failedOnce.add(page)) return emptyList()
             if (page > totalNonEmptyPages) return emptyList()
             val prefix = if (duplicateAcross) "p1" else "p$page"
             return listOf(

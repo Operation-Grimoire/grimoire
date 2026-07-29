@@ -93,6 +93,28 @@ internal class ChapterReconcilePlan(
 )
 
 /**
+ * True when a reconcile would delete a suspicious fraction of an established
+ * chapter list — the signature of a silently truncated fetch (a throttled site
+ * serving a partial list) rather than a real mass removal. Callers keep the
+ * existing list and warn instead of deleting. Short lists are exempt: sources
+ * legitimately restructure small catalogs, and the blast radius is tiny.
+ */
+internal fun isSuspectTruncation(existingCount: Int, deleteCount: Int): Boolean =
+    existingCount >= SUSPECT_TRUNCATION_MIN_LIST && deleteCount * 2 > existingCount
+
+internal const val SUSPECT_TRUNCATION_MIN_LIST = 20
+
+/**
+ * Ceiling on how many "new" chapters one sync may log to the updates feed for a
+ * single novel. A count above it is almost always chapters being *re-detected*
+ * after an earlier truncated sync deleted them (no translator drops 150+
+ * chapters of one novel in the hours between syncs), so the feed entries are
+ * suppressed and a warning is recorded instead. The chapters themselves are
+ * still reconciled into the database either way.
+ */
+internal const val MAX_LOGGED_NEW_CHAPTERS = 150
+
+/**
  * Turns a [matchChapters] result into the delete / update / insert sets a refresh
  * applies. Each fetched chapter with a prior becomes an in-place metadata [update]
  * of that row (its read state and downloaded content stay put); each fetched

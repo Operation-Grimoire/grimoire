@@ -3,6 +3,8 @@ package io.grimoire.app.data.libraryupdate
 import io.grimoire.api.model.novel.Chapter
 import io.grimoire.app.data.local.entity.ChapterEntity
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Test
@@ -217,5 +219,20 @@ class ChapterMergeTest {
         assertEquals(listOf(2L), plan.deleteIds)
         assertEquals(listOf(1L), plan.updates.map { it.id })
         assertEquals(emptyList<ChapterEntity>(), plan.inserts)
+    }
+
+    @Test
+    fun `suspect truncation flags deleting most of an established list`() {
+        assertTrue(isSuspectTruncation(existingCount = 2000, deleteCount = 1100))
+        assertTrue(isSuspectTruncation(existingCount = 40, deleteCount = 21))
+    }
+
+    @Test
+    fun `suspect truncation allows small lists and modest removals`() {
+        // Short catalogs restructure legitimately.
+        assertFalse(isSuspectTruncation(existingCount = 19, deleteCount = 19))
+        // Removing under half of a big list is a plausible real change.
+        assertFalse(isSuspectTruncation(existingCount = 2000, deleteCount = 1000))
+        assertFalse(isSuspectTruncation(existingCount = 100, deleteCount = 5))
     }
 }
