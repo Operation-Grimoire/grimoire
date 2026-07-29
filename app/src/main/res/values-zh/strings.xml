@@ -46,7 +46,7 @@
     <string name="language_picker_title">界面语言</string>
     <string name="language_option_system">跟随系统</string>
     <string name="language_option_english">English</string>
-    <string name="language_option_chinese_simplified">简体中文</string>
+    <string name="language_option_chinese_simplified">简体中文 (Chinese)</string>
 
     <!-- 书库 -->
     <string name="library_title">书库</string>
