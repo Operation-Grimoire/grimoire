@@ -48,7 +48,14 @@
     <string name="language_picker_title">App language</string>
     <string name="language_option_system">System default</string>
     <string name="language_option_english">English</string>
-    <string name="language_option_chinese_simplified">Chinese (简体中文)</string>
+<string name="language_option_chinese_simplified">Chinese (简体中文)</string>
+    <string name="reader_text_alignment">Text alignment</string>
+    <string name="reader_text_alignment_hint">Auto follows the novel’s language (right-to-left scripts read right-aligned). Remembered for this novel.</string>
+    <string name="reader_align_auto">Auto</string>
+    <string name="reader_align_left">Left</string>
+    <string name="reader_align_right">Right</string>
+    <string name="reader_align_center">Center</string>
+    <string name="reader_align_justify">Justify</string>
 
     <!-- Library -->
     <string name="library_title">Library</string>

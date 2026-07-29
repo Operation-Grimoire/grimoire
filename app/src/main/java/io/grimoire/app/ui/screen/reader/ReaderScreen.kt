@@ -174,13 +174,19 @@ fun ReaderScreen(
         ttsState != TtsPlaybackState.IDLE && ttsState != TtsPlaybackState.ERROR
     val ttsPlayingThisChapter = ttsActiveForChapter && ttsState == TtsPlaybackState.PLAYING
 
+    val textAlign by viewModel.textAlign.collectAsState()
+    val novelLanguage by viewModel.novelLanguage.collectAsState()
+
     val colors = colorTheme.readerColors
     val fontFamily = readerFont.fontFamily
+    val textLayout = resolveReaderTextLayout(textAlign, novelLanguage)
     val textStyle = TextStyle(
         fontSize = fontSize.sp,
         lineHeight = (fontSize * lineHeightTimes10 / 10f).sp,
         fontFamily = fontFamily,
         color = colors.foreground,
+        textAlign = textLayout.textAlign,
+        textDirection = textLayout.textDirection,
     )
 
     val context = LocalContext.current
@@ -671,6 +677,7 @@ fun ReaderScreen(
             readerFont = readerFont,
             colorTheme = colorTheme,
             orientation = orientation,
+            textAlign = textAlign,
             hideInlineImages = hideInlineImages,
             showChapterProgressPercent = showChapterProgressPercent,
             showNovelProgressPercent = showNovelProgressPercent,
@@ -690,6 +697,7 @@ fun ReaderScreen(
             onFont = viewModel::setReaderFont,
             onColorTheme = viewModel::setColorTheme,
             onOrientation = viewModel::setOrientation,
+            onTextAlign = viewModel::setTextAlign,
             onHideInlineImages = viewModel::setHideInlineImages,
             onShowChapterProgressPercent = viewModel::setShowChapterProgressPercent,
             onShowNovelProgressPercent = viewModel::setShowNovelProgressPercent,

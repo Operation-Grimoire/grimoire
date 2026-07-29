@@ -28,6 +28,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import io.grimoire.app.data.local.entity.ReaderTextAlign
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
@@ -49,6 +50,7 @@ internal fun ReaderSettingsSheet(
     readerFont: ReaderFont,
     colorTheme: ReaderColorTheme,
     orientation: ReaderOrientation,
+    textAlign: ReaderTextAlign,
     hideInlineImages: Boolean,
     showChapterProgressPercent: Boolean,
     showNovelProgressPercent: Boolean,
@@ -68,6 +70,7 @@ internal fun ReaderSettingsSheet(
     onFont: (ReaderFont) -> Unit,
     onColorTheme: (ReaderColorTheme) -> Unit,
     onOrientation: (ReaderOrientation) -> Unit,
+    onTextAlign: (ReaderTextAlign) -> Unit,
     onHideInlineImages: (Boolean) -> Unit,
     onShowChapterProgressPercent: (Boolean) -> Unit,
     onShowNovelProgressPercent: (Boolean) -> Unit,
@@ -106,6 +109,7 @@ internal fun ReaderSettingsSheet(
                 readerFont = readerFont,
                 colorTheme = colorTheme,
                 orientation = orientation,
+                textAlign = textAlign,
                 hideInlineImages = hideInlineImages,
                 showChapterProgressPercent = showChapterProgressPercent,
                 showNovelProgressPercent = showNovelProgressPercent,
@@ -119,6 +123,7 @@ internal fun ReaderSettingsSheet(
                 onFont = onFont,
                 onColorTheme = onColorTheme,
                 onOrientation = onOrientation,
+                onTextAlign = onTextAlign,
                 onHideInlineImages = onHideInlineImages,
                 onShowChapterProgressPercent = onShowChapterProgressPercent,
                 onShowNovelProgressPercent = onShowNovelProgressPercent,
@@ -156,6 +161,7 @@ private fun ReaderDisplaySettings(
     readerFont: ReaderFont,
     colorTheme: ReaderColorTheme,
     orientation: ReaderOrientation,
+    textAlign: ReaderTextAlign,
     hideInlineImages: Boolean,
     showChapterProgressPercent: Boolean,
     showNovelProgressPercent: Boolean,
@@ -169,6 +175,7 @@ private fun ReaderDisplaySettings(
     onFont: (ReaderFont) -> Unit,
     onColorTheme: (ReaderColorTheme) -> Unit,
     onOrientation: (ReaderOrientation) -> Unit,
+    onTextAlign: (ReaderTextAlign) -> Unit,
     onHideInlineImages: (Boolean) -> Unit,
     onShowChapterProgressPercent: (Boolean) -> Unit,
     onShowNovelProgressPercent: (Boolean) -> Unit,
@@ -231,6 +238,14 @@ private fun ReaderDisplaySettings(
             onIncrement = { onParagraphSpacing(paragraphSpacing + 4) },
             decrementEnabled = paragraphSpacing > 0,
             incrementEnabled = paragraphSpacing < 32,
+        )
+
+        SettingsSectionLabel(stringResource(R.string.reader_text_alignment))
+        TextAlignPicker(selected = textAlign, onSelect = onTextAlign)
+        Text(
+            text = stringResource(R.string.reader_text_alignment_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         SettingsSectionLabel(stringResource(R.string.reader_screen_rotation))

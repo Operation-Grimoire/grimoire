@@ -41,6 +41,8 @@ data class NovelEntity(
      *  source [rating], which reflects readers on the source site. */
     val userRating: Int? = null,
     val language: String? = null,
+    /** [ReaderTextAlign] ordinal for this novel's reader text; AUTO by default. */
+    val readerTextAlign: Int = 0,
     val notifyOnNewChapters: Boolean = false,
     val notifyOnNewLockedChapters: Boolean = false,
     val autoDownloadNewChapters: Boolean = false,
