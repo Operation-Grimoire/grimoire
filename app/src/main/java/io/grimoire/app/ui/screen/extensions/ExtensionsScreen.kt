@@ -375,28 +375,10 @@ fun ExtensionsScreen(
                 if (ui.languages.size > 1) {
                     val enabledCodes = enabledLanguages.mapTo(mutableSetOf()) { it.code }
                     SheetSectionLabel(stringResource(R.string.extensions_language))
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.extensions_language)) },
-                        trailingContent = {
-                            Text(
-                                if (enabledCodes.isEmpty()) {
-                                    stringResource(R.string.extensions_all)
-                                } else {
-                                    pluralStringResource(
-                                        R.plurals.source_filter_selected_count,
-                                        enabledCodes.size,
-                                        enabledCodes.size,
-                                    )
-                                },
-                                style = MaterialTheme.typography.labelMedium,
-                                color = if (enabledCodes.isEmpty()) {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                } else {
-                                    MaterialTheme.colorScheme.primary
-                                },
-                            )
-                        },
-                        modifier = Modifier.clickable { showLanguagePicker = true },
+                    io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow(
+                        title = stringResource(R.string.extensions_language),
+                        selectedCount = enabledCodes.size,
+                        onClick = { showLanguagePicker = true },
                     )
                     if (showLanguagePicker) {
                         io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog(

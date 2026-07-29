@@ -8,7 +8,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.R
 
 /**
  * The shared idioms for bottom-sheet content. Every option/filter sheet uses
@@ -34,6 +37,43 @@ fun SheetSectionLabel(text: String, modifier: Modifier = Modifier) {
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.padding(start = 16.dp, top = 12.dp, bottom = 2.dp),
+    )
+}
+
+/**
+ * Entry row for a large multi-select: title left, "All" / "N selected"
+ * summary right (primary-tinted when active). Tap opens the associated
+ * [SearchableMultiSelectDialog].
+ */
+@Composable
+fun MultiSelectSummaryRow(
+    title: String,
+    selectedCount: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ListItem(
+        headlineContent = { Text(title) },
+        trailingContent = {
+            Text(
+                if (selectedCount == 0) {
+                    stringResource(R.string.filter_all)
+                } else {
+                    pluralStringResource(
+                        R.plurals.source_filter_selected_count,
+                        selectedCount,
+                        selectedCount,
+                    )
+                },
+                style = MaterialTheme.typography.labelMedium,
+                color = if (selectedCount == 0) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+            )
+        },
+        modifier = modifier.clickable(onClick = onClick),
     )
 }
 
