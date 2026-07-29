@@ -56,6 +56,12 @@
     <string name="reader_align_right">Right</string>
     <string name="reader_align_center">Center</string>
     <string name="reader_align_justify">Justify</string>
+    <string name="onboarding_welcome_title">Welcome to Grimoire</string>
+    <string name="onboarding_welcome_subtitle">Two quick choices — both can be changed later in Settings › Languages.</string>
+    <string name="onboarding_reading_title">What languages do you read?</string>
+    <string name="onboarding_reading_helper">Sources and multi-language browsing are filtered to these. Leave everything unchecked to show all languages.</string>
+    <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_get_started">Get started</string>
 
     <!-- Library -->
     <string name="library_title">Library</string>
