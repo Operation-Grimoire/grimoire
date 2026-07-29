@@ -82,6 +82,7 @@ import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.PendingAddRepo
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.SearchCancelToolbar
+import io.grimoire.app.ui.component.sheet.LanguageCheckboxRows
 import io.grimoire.app.ui.component.sheet.SheetSectionLabel
 import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
 import io.grimoire.app.ui.component.LinkText
@@ -629,35 +630,6 @@ private fun ExtensionSectionHeader(text: String) {
     )
 }
 
-/**
- * Multi-select language rows over the global content-language set. The leading
- * "All" row is checked while the set is empty (= no filter); checking it clears
- * the selection. Mirrors the chip semantics it replaced: with "All" active,
- * every language reads as selected.
- */
-@Composable
-private fun LanguageCheckboxRows(
-    languages: List<String>,
-    enabledCodes: Set<String>,
-    onToggle: (String) -> Unit,
-    onAll: () -> Unit,
-) {
-    val showAll = enabledCodes.isEmpty()
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.extensions_all)) },
-        leadingContent = { Checkbox(checked = showAll, onCheckedChange = null) },
-        modifier = Modifier.clickable(enabled = !showAll) { onAll() },
-    )
-    languages.forEach { code ->
-        ListItem(
-            headlineContent = { Text(languageLabel(code)) },
-            leadingContent = {
-                Checkbox(checked = showAll || code in enabledCodes, onCheckedChange = null)
-            },
-            modifier = Modifier.clickable { onToggle(code) },
-        )
-    }
-}
 
 @Composable
 private fun ExtensionRow(

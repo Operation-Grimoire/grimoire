@@ -59,6 +59,7 @@ class BrowseViewModel @Inject constructor(
     private val extensionManager: ExtensionManager,
     private val novelDao: NovelDao,
     private val browsePreferences: BrowsePreferences,
+    private val appLanguages: io.grimoire.app.data.preferences.AppLanguagePreferences,
 ) : ViewModel() {
 
     val libraryKeys: StateFlow<Set<Pair<Long, String>>> = novelDao.getFavoriteKeys()
@@ -87,11 +88,31 @@ class BrowseViewModel @Inject constructor(
     private val _nameFilter = MutableStateFlow("")
     val nameFilter: StateFlow<String> = _nameFilter.asStateFlow()
 
-    private val _languageFilter = MutableStateFlow<String?>(null)
-    val languageFilter: StateFlow<String?> = _languageFilter.asStateFlow()
+    /**
+     * The app-wide content-language selection — the same single list the
+     * Extensions filter and the Browse settings picker edit. Empty = show all.
+     */
+    val enabledLanguages: StateFlow<Set<io.grimoire.api.model.lang.Language>> =
+        appLanguages.enabled.stateIn(viewModelScope)
 
     fun setNameFilter(query: String) { _nameFilter.value = query }
-    fun setLanguageFilter(lang: String?) { _languageFilter.value = lang }
+
+    /** Toggle a language in the global set (see ExtensionsViewModel.toggleLanguage). */
+    fun toggleLanguage(lang: String, allLanguages: List<String>) = viewModelScope.launch {
+        val language = io.grimoire.app.util.ContentLanguages.parse(lang) ?: return@launch
+        val current = enabledLanguages.value.ifEmpty {
+            allLanguages.mapNotNullTo(mutableSetOf()) { io.grimoire.app.util.ContentLanguages.parse(it) }
+        }
+        val next = if (language in current) current - language else current + language
+        appLanguages.enabled.set(next)
+        extensionManager.reapplyAllPreferences()
+    }
+
+    /** Reset the global selection to "no filter — every language". */
+    fun clearLanguageFilter() = viewModelScope.launch {
+        appLanguages.enabled.set(emptySet())
+        extensionManager.reapplyAllPreferences()
+    }
 
     /** Pin or unpin a batch of sources at once (used by the selection action bar). */
     fun setPinned(packages: Set<String>, pinned: Boolean) {
@@ -108,15 +129,26 @@ class BrowseViewModel @Inject constructor(
         installed,
         pinnedPackages,
         _nameFilter.debounce(120L),
-        _languageFilter,
+        enabledLanguages,
         duplicatePinned,
-    ) { sources, pinned, query, langFilter, duplicate ->
+    ) { sources, pinned, query, enabledLangs, duplicate ->
         val q = query.trim()
-        val languages = sources.map { it.lang.uppercase() }.distinct().sorted()
+        val languages = sources.map { it.lang.lowercase() }
+            .filter { it != "all" }
+            .distinct()
+            .sorted()
         val nameMatched =
             if (q.isBlank()) sources else sources.filter { it.name.contains(q, ignoreCase = true) }
-        val langMatched =
-            if (langFilter == null) nameMatched else nameMatched.filter { it.lang.uppercase() == langFilter }
+        // Same rule as the Extensions list: multi-language ("all") and
+        // unclassifiable codes always show; hide only positive non-matches.
+        fun matchesLanguage(code: String): Boolean {
+            if (enabledLangs.isEmpty()) return true
+            val lang = io.grimoire.api.model.lang.Language.fromCode(code)
+            return lang == io.grimoire.api.model.lang.Language.MULTI ||
+                lang == io.grimoire.api.model.lang.Language.UNKNOWN ||
+                lang in enabledLangs
+        }
+        val langMatched = nameMatched.filter { matchesLanguage(it.lang) }
         // Pinned honours the active language filter too — derive it from the
         // language-matched set, not just the name-matched one.
         val pinnedList = langMatched
@@ -127,7 +159,7 @@ class BrowseViewModel @Inject constructor(
         val langPool = if (duplicate) langMatched else langMatched.filter { it.packageName !in pinned }
         val byLanguage = langPool
             .sortedBy { it.name.lowercase() }
-            .groupBy { it.lang.uppercase() }
+            .groupBy { it.lang.lowercase() }
             .toSortedMap()
         BrowseSourcesUi(pinned = pinnedList, byLanguage = byLanguage, languages = languages)
     }.flowOn(Dispatchers.Default)

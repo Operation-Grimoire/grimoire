@@ -21,11 +21,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -80,7 +76,7 @@ fun BrowseScreen(
     val installed by viewModel.installed.collectAsState()
     val ui by viewModel.sourcesUi.collectAsState()
     val nameFilter by viewModel.nameFilter.collectAsState()
-    val languageFilter by viewModel.languageFilter.collectAsState()
+    val enabledLanguages by viewModel.enabledLanguages.collectAsState()
     val pinned by viewModel.pinnedPackages.collectAsState()
     val showNovelUpdates by viewModel.showNovelUpdates.collectAsState()
     val context = LocalContext.current
@@ -96,7 +92,7 @@ fun BrowseScreen(
     val listState = viewModel.listState
     var showFilterSheet by remember { mutableStateOf(false) }
     val filterSheetState = rememberModalBottomSheetState()
-    val filterActive = languageFilter != null || nameFilter.isNotBlank()
+    val filterActive = enabledLanguages.isNotEmpty() || nameFilter.isNotBlank()
 
     // Every visible source package (each source appears once per language group),
     // for the select-all toggle.
@@ -271,11 +267,11 @@ fun BrowseScreen(
                     io.grimoire.app.ui.component.sheet.SheetSectionLabel(
                         stringResource(R.string.browse_language),
                     )
-                    LanguageDropdown(
+                    io.grimoire.app.ui.component.sheet.LanguageCheckboxRows(
                         languages = ui.languages,
-                        selected = languageFilter,
-                        onSelect = viewModel::setLanguageFilter,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        enabledCodes = enabledLanguages.mapTo(mutableSetOf()) { it.code },
+                        onToggle = { viewModel.toggleLanguage(it, ui.languages) },
+                        onAll = viewModel::clearLanguageFilter,
                     )
                 }
             }
@@ -459,51 +455,3 @@ private fun BrowseBottomToolbar(
     }
 }
 
-/**
- * Single-select language filter for the source list. Replaces the old chip
- * row: the full option set is in one anchored menu instead of scrolling off
- * the sheet edge. null = all languages.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun LanguageDropdown(
-    languages: List<String>,
-    selected: String?,
-    onSelect: (String?) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        OutlinedTextField(
-            value = selected?.let(::languageLabel) ?: stringResource(R.string.filter_all),
-            onValueChange = {},
-            readOnly = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(androidx.compose.material3.MenuAnchorType.PrimaryNotEditable),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.filter_all)) },
-                onClick = {
-                    onSelect(null)
-                    expanded = false
-                },
-            )
-            languages.forEach { lang ->
-                DropdownMenuItem(
-                    text = { Text(languageLabel(lang)) },
-                    onClick = {
-                        onSelect(lang)
-                        expanded = false
-                    },
-                )
-            }
-        }
-    }
-}
