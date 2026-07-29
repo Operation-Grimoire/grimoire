@@ -35,7 +35,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.tts.TtsEngineType
-import io.grimoire.app.ui.screen.reader.StepperRow
+import io.grimoire.app.ui.component.sheet.StepperRow
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
 import io.grimoire.app.R
 

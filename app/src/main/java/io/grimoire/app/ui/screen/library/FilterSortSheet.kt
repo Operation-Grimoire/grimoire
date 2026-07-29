@@ -154,12 +154,7 @@ private fun FilterTab(
     onToggleFilterSource: (Long?) -> Unit,
 ) {
     Column {
-        Text(
-            stringResource(R.string.library_filter_status),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
-        )
+        io.grimoire.app.ui.component.sheet.SheetSectionLabel(stringResource(R.string.library_filter_status))
         // FlowRow wraps chips onto multiple lines instead of clipping past the
         // edge — a long status/source list stays visible without horizontal
         // scrolling, which is the multi-select pattern most apps use.
@@ -188,12 +183,7 @@ private fun FilterTab(
             }
         }
         if (librarySources.size > 1) {
-            Text(
-                stringResource(R.string.library_filter_source),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
-            )
+            io.grimoire.app.ui.component.sheet.SheetSectionLabel(stringResource(R.string.library_filter_source))
             FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -215,12 +205,7 @@ private fun FilterTab(
                 }
             }
         }
-        Text(
-            stringResource(R.string.library_filter_type),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
-        )
+        io.grimoire.app.ui.component.sheet.SheetSectionLabel(stringResource(R.string.library_filter_type))
         FlowRow(
             modifier = Modifier
                 .fillMaxWidth()

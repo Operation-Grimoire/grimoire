@@ -110,38 +110,15 @@ fun DownloadsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(stringResource(R.string.downloads_settings), style = MaterialTheme.typography.titleMedium)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column {
-                        Text(stringResource(R.string.downloads_parallel), style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            stringResource(R.string.downloads_parallel_summary),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        PlainTooltipIconButton(
-                            onClick = { viewModel.setConcurrency(concurrency - 1) },
-                            enabled = concurrency > 1, tooltip = stringResource(R.string.action_decrease)) {
-                            Icon(AppIcons.Remove, contentDescription = stringResource(R.string.action_decrease))
-                        }
-                        Text(
-                            text = concurrency.toString(),
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.width(32.dp),
-                            textAlign = TextAlign.Center,
-                        )
-                        PlainTooltipIconButton(
-                            onClick = { viewModel.setConcurrency(concurrency + 1) },
-                            enabled = concurrency < 5, tooltip = stringResource(R.string.action_increase)) {
-                            Icon(AppIcons.Add, contentDescription = stringResource(R.string.action_increase))
-                        }
-                    }
-                }
+                io.grimoire.app.ui.component.sheet.StepperRow(
+                    label = stringResource(R.string.downloads_parallel),
+                    hint = stringResource(R.string.downloads_parallel_summary),
+                    value = concurrency.toString(),
+                    onDecrement = { viewModel.setConcurrency(concurrency - 1) },
+                    onIncrement = { viewModel.setConcurrency(concurrency + 1) },
+                    decrementEnabled = concurrency > 1,
+                    incrementEnabled = concurrency < 5,
+                )
                 Spacer(modifier = Modifier.size(8.dp))
             }
         }
@@ -289,32 +266,16 @@ fun DownloadsScreen(
             }
             else -> LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
                 item {
-                    // FlowRow wraps chips onto multiple lines so the full set of
-                    // categories stays visible without horizontal scrolling, and
-                    // tapping a chip toggles it in or out of the selection set.
-                    FlowRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        // "All" is its own chip that clears the selection rather
-                        // than toggling a value — guarantees the unfiltered state
-                        // is always one tap away regardless of what else is on.
-                        FilterChip(
-                            selected = selectedStatusFilters.isEmpty(),
-                            onClick = { viewModel.clearStatusFilters() },
-                            label = { Text(stringResource(R.string.filter_all)) },
-                        )
-                        DownloadStatusFilter.entries.forEach { chip ->
-                            FilterChip(
-                                selected = chip in selectedStatusFilters,
-                                onClick = { viewModel.toggleStatusFilter(chip) },
-                                label = { Text(stringResource(chip.labelRes)) },
-                            )
-                        }
-                    }
+                    // Multi-select status segments; nothing checked = show all
+                    // (the empty-set semantics the chips had, minus the extra
+                    // "All" affordance — unchecking everything is the reset).
+                    io.grimoire.app.ui.component.sheet.MultiChoiceSegmented(
+                        options = DownloadStatusFilter.entries,
+                        isChecked = { it in selectedStatusFilters },
+                        onToggle = { viewModel.toggleStatusFilter(it) },
+                        label = { stringResource(it.labelRes) },
+                        modifier = Modifier.padding(vertical = 4.dp),
+                    )
                 }
 
                 currentDownloads.forEach { novelDownloads ->

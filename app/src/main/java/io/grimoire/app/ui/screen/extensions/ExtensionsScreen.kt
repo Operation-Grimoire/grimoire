@@ -17,7 +17,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +36,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -82,7 +82,8 @@ import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.PendingAddRepo
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.SearchCancelToolbar
-import io.grimoire.app.ui.component.LanguageMultiSelectChips
+import io.grimoire.app.ui.component.sheet.SheetSectionLabel
+import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
 import io.grimoire.app.ui.component.LinkText
 import io.grimoire.app.ui.component.SourceListItem
 import io.grimoire.app.util.ContentLanguages
@@ -349,27 +350,47 @@ fun ExtensionsScreen(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
-                FilterSheetLabel(stringResource(R.string.extensions_show))
-                SectionFilterChips(
-                    section = section,
-                    updateCount = ui.updateCount,
+                SheetSectionLabel(stringResource(R.string.extensions_show))
+                SingleChoiceSegmented(
+                    options = ExtensionSection.entries,
+                    selected = section,
                     onSelect = viewModel::setSection,
+                    label = { value ->
+                        when (value) {
+                            ExtensionSection.ALL -> stringResource(R.string.extensions_all)
+                            ExtensionSection.INSTALLED -> stringResource(R.string.extensions_installed)
+                            ExtensionSection.AVAILABLE -> stringResource(R.string.extensions_available)
+                            ExtensionSection.UPDATES ->
+                                if (ui.updateCount > 0) {
+                                    stringResource(R.string.extensions_updates_count, ui.updateCount)
+                                } else {
+                                    stringResource(R.string.extensions_updates)
+                                }
+                        }
+                    },
                     modifier = Modifier.padding(vertical = 4.dp),
                 )
                 if (ui.languages.size > 1) {
-                    FilterSheetLabel(stringResource(R.string.extensions_language))
-                    LanguageMultiSelectChips(
+                    SheetSectionLabel(stringResource(R.string.extensions_language))
+                    LanguageCheckboxRows(
                         languages = ui.languages,
-                        enabled = enabledLanguages.mapTo(mutableSetOf()) { it.code },
+                        enabledCodes = enabledLanguages.mapTo(mutableSetOf()) { it.code },
                         onToggle = { viewModel.toggleLanguage(it, ui.languages) },
                         onAll = viewModel::clearLanguageFilter,
-                        modifier = Modifier.padding(vertical = 4.dp),
                     )
                 }
-                FilterSheetLabel(stringResource(R.string.extensions_adult_content))
-                AdultFilterChips(
+                SheetSectionLabel(stringResource(R.string.extensions_adult_content))
+                SingleChoiceSegmented(
+                    options = AdultFilter.entries,
                     selected = adultFilter,
                     onSelect = viewModel::setAdultFilter,
+                    label = { value ->
+                        when (value) {
+                            AdultFilter.ALL -> stringResource(R.string.extensions_all)
+                            AdultFilter.HIDE -> stringResource(R.string.extensions_hide_adult)
+                            AdultFilter.ONLY -> stringResource(R.string.extensions_only_adult)
+                        }
+                    },
                     modifier = Modifier.padding(vertical = 4.dp),
                 )
             }
@@ -608,83 +629,32 @@ private fun ExtensionSectionHeader(text: String) {
     )
 }
 
+/**
+ * Multi-select language rows over the global content-language set. The leading
+ * "All" row is checked while the set is empty (= no filter); checking it clears
+ * the selection. Mirrors the chip semantics it replaced: with "All" active,
+ * every language reads as selected.
+ */
 @Composable
-private fun FilterSheetLabel(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 2.dp),
+private fun LanguageCheckboxRows(
+    languages: List<String>,
+    enabledCodes: Set<String>,
+    onToggle: (String) -> Unit,
+    onAll: () -> Unit,
+) {
+    val showAll = enabledCodes.isEmpty()
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.extensions_all)) },
+        leadingContent = { Checkbox(checked = showAll, onCheckedChange = null) },
+        modifier = Modifier.clickable(enabled = !showAll) { onAll() },
     )
-}
-
-@Composable
-private fun SectionFilterChips(
-    section: ExtensionSection,
-    updateCount: Int,
-    onSelect: (ExtensionSection) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        FilterChip(
-            selected = section == ExtensionSection.ALL,
-            onClick = { onSelect(ExtensionSection.ALL) },
-            label = { Text(stringResource(R.string.extensions_all)) },
-        )
-        FilterChip(
-            selected = section == ExtensionSection.INSTALLED,
-            onClick = { onSelect(ExtensionSection.INSTALLED) },
-            label = { Text(stringResource(R.string.extensions_installed)) },
-        )
-        FilterChip(
-            selected = section == ExtensionSection.AVAILABLE,
-            onClick = { onSelect(ExtensionSection.AVAILABLE) },
-            label = { Text(stringResource(R.string.extensions_available)) },
-        )
-        FilterChip(
-            selected = section == ExtensionSection.UPDATES,
-            onClick = { onSelect(ExtensionSection.UPDATES) },
-            label = {
-                Text(
-                    if (updateCount > 0) stringResource(R.string.extensions_updates_count, updateCount)
-                    else stringResource(R.string.extensions_updates),
-                )
+    languages.forEach { code ->
+        ListItem(
+            headlineContent = { Text(languageLabel(code)) },
+            leadingContent = {
+                Checkbox(checked = showAll || code in enabledCodes, onCheckedChange = null)
             },
-        )
-    }
-}
-
-@Composable
-private fun AdultFilterChips(
-    selected: AdultFilter,
-    onSelect: (AdultFilter) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        FilterChip(
-            selected = selected == AdultFilter.ALL,
-            onClick = { onSelect(AdultFilter.ALL) },
-            label = { Text(stringResource(R.string.extensions_all)) },
-        )
-        FilterChip(
-            selected = selected == AdultFilter.HIDE,
-            onClick = { onSelect(AdultFilter.HIDE) },
-            label = { Text(stringResource(R.string.extensions_hide_adult)) },
-        )
-        FilterChip(
-            selected = selected == AdultFilter.ONLY,
-            onClick = { onSelect(AdultFilter.ONLY) },
-            label = { Text(stringResource(R.string.extensions_only_adult)) },
+            modifier = Modifier.clickable { onToggle(code) },
         )
     }
 }

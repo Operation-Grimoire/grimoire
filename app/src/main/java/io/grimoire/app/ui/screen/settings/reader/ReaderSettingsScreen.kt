@@ -24,9 +24,9 @@ import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.ui.screen.reader.ColorThemePicker
 import io.grimoire.app.ui.screen.reader.FontPicker
-import io.grimoire.app.ui.screen.reader.MarkAsReadStrategyPicker
-import io.grimoire.app.ui.screen.reader.OrientationPicker
-import io.grimoire.app.ui.screen.reader.StepperRow
+import io.grimoire.app.data.preferences.ReaderOrientation
+import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
+import io.grimoire.app.ui.component.sheet.StepperRow
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
 import io.grimoire.app.R
@@ -132,9 +132,17 @@ fun ReaderSettingsScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.padding(top = 4.dp),
                         ) {
-                            MarkAsReadStrategyPicker(
+                            SingleChoiceSegmented(
+                                options = MarkAsReadStrategy.entries,
                                 selected = markAsReadStrategy,
                                 onSelect = viewModel::setReaderMarkAsReadStrategy,
+                                label = { value ->
+                                    when (value) {
+                                        MarkAsReadStrategy.PERCENT -> stringResource(R.string.reader_mark_percent)
+                                        MarkAsReadStrategy.PARAGRAPHS_FROM_END -> stringResource(R.string.reader_mark_near_end)
+                                        MarkAsReadStrategy.AT_END -> stringResource(R.string.reader_mark_at_end)
+                                    }
+                                },
                             )
                             when (markAsReadStrategy) {
                                 MarkAsReadStrategy.PERCENT -> StepperRow(
@@ -169,9 +177,17 @@ fun ReaderSettingsScreen(
                     headlineContent = { Text(stringResource(R.string.reader_settings_rotation)) },
                     supportingContent = {
                         Column(modifier = Modifier.padding(top = 4.dp)) {
-                            OrientationPicker(
+                            SingleChoiceSegmented(
+                                options = ReaderOrientation.entries,
                                 selected = orientation,
                                 onSelect = viewModel::setReaderOrientation,
+                                label = { value ->
+                                    when (value) {
+                                        ReaderOrientation.FREE -> stringResource(R.string.reader_orientation_free)
+                                        ReaderOrientation.PORTRAIT -> stringResource(R.string.reader_orientation_vertical)
+                                        ReaderOrientation.LANDSCAPE -> stringResource(R.string.reader_orientation_horizontal)
+                                    }
+                                },
                             )
                         }
                     },

@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.grimoire.api.model.filter.Filter
+import io.grimoire.app.ui.component.sheet.FilterTriState
+import io.grimoire.app.ui.component.sheet.TriStateFilterRow
 import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -228,34 +230,11 @@ private fun FilterItem(
         }
         is Filter.TriState -> {
             val current = state as? Int ?: Filter.TriState.STATE_IGNORE
-            val next = when (current) {
-                Filter.TriState.STATE_IGNORE -> Filter.TriState.STATE_INCLUDE
-                Filter.TriState.STATE_INCLUDE -> Filter.TriState.STATE_EXCLUDE
-                else -> Filter.TriState.STATE_IGNORE
-            }
-            val label = when (current) {
-                Filter.TriState.STATE_INCLUDE -> stringResource(R.string.source_filter_include)
-                Filter.TriState.STATE_EXCLUDE -> stringResource(R.string.source_filter_exclude)
-                else -> stringResource(R.string.source_filter_any)
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onStateChange(next) }
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(filter.name, modifier = Modifier.weight(1f))
-                Text(
-                    label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = when (current) {
-                        Filter.TriState.STATE_INCLUDE -> MaterialTheme.colorScheme.primary
-                        Filter.TriState.STATE_EXCLUDE -> MaterialTheme.colorScheme.error
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                )
-            }
+            TriStateFilterRow(
+                name = filter.name,
+                state = current.toFilterTriState(),
+                onStateChange = { onStateChange(it.toTriStateInt()) },
+            )
         }
         is Filter.Select<*> -> {
             val selected = (state as? Int ?: 0).coerceIn(0, (filter.values.size - 1).coerceAtLeast(0))
@@ -389,3 +368,15 @@ private fun FilterItem(
 /** The live child filters of a [Filter.Group] (shared with the VM — read-only here). */
 private fun Filter.Group<*>.childFilters(): List<Filter<*>> =
     (state as? List<*>).orEmpty().filterIsInstance<Filter<*>>()
+
+internal fun Int.toFilterTriState(): FilterTriState = when (this) {
+    Filter.TriState.STATE_INCLUDE -> FilterTriState.INCLUDE
+    Filter.TriState.STATE_EXCLUDE -> FilterTriState.EXCLUDE
+    else -> FilterTriState.ANY
+}
+
+internal fun FilterTriState.toTriStateInt(): Int = when (this) {
+    FilterTriState.INCLUDE -> Filter.TriState.STATE_INCLUDE
+    FilterTriState.EXCLUDE -> Filter.TriState.STATE_EXCLUDE
+    FilterTriState.ANY -> Filter.TriState.STATE_IGNORE
+}

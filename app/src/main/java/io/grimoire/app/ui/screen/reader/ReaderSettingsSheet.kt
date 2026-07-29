@@ -29,6 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.grimoire.app.data.local.entity.ReaderTextAlign
+import io.grimoire.app.ui.component.sheet.SheetSectionLabel
+import io.grimoire.app.ui.component.sheet.SheetSwitchRow
+import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
+import io.grimoire.app.ui.component.sheet.StepperRow
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
@@ -212,10 +216,10 @@ private fun ReaderDisplaySettings(
             .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        SettingsSectionLabel(stringResource(R.string.reader_color_theme))
+        SheetSectionLabel(stringResource(R.string.reader_color_theme))
         ColorThemePicker(selected = colorTheme, onSelect = onColorTheme)
 
-        SettingsSectionLabel(stringResource(R.string.reader_font))
+        SheetSectionLabel(stringResource(R.string.reader_font))
         FontPicker(selected = readerFont, onSelect = onFont)
 
         StepperRow(
@@ -245,70 +249,73 @@ private fun ReaderDisplaySettings(
             incrementEnabled = paragraphSpacing < 32,
         )
 
-        SettingsSectionLabel(stringResource(R.string.reader_text_alignment))
-        TextAlignPicker(selected = textAlign, onSelect = onTextAlign)
+        SheetSectionLabel(stringResource(R.string.reader_text_alignment))
+        SingleChoiceSegmented(
+            options = ReaderTextAlign.entries,
+            selected = textAlign,
+            onSelect = onTextAlign,
+            label = { value ->
+                when (value) {
+                    ReaderTextAlign.AUTO -> stringResource(R.string.reader_align_auto)
+                    ReaderTextAlign.LEFT -> stringResource(R.string.reader_align_left)
+                    ReaderTextAlign.RIGHT -> stringResource(R.string.reader_align_right)
+                    ReaderTextAlign.CENTER -> stringResource(R.string.reader_align_center)
+                    ReaderTextAlign.JUSTIFY -> stringResource(R.string.reader_align_justify)
+                }
+            },
+        )
         Text(
             text = stringResource(R.string.reader_text_alignment_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        SettingsSectionLabel(stringResource(R.string.reader_screen_rotation))
-        OrientationPicker(selected = orientation, onSelect = onOrientation)
+        SheetSectionLabel(stringResource(R.string.reader_screen_rotation))
+        SingleChoiceSegmented(
+            options = ReaderOrientation.entries,
+            selected = orientation,
+            onSelect = onOrientation,
+            label = { value ->
+                when (value) {
+                    ReaderOrientation.FREE -> stringResource(R.string.reader_orientation_free)
+                    ReaderOrientation.PORTRAIT -> stringResource(R.string.reader_orientation_vertical)
+                    ReaderOrientation.LANDSCAPE -> stringResource(R.string.reader_orientation_horizontal)
+                }
+            },
+        )
 
-        SettingsSectionLabel(stringResource(R.string.reader_privacy))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.reader_hide_images_setting),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = stringResource(R.string.reader_hide_images_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Switch(checked = hideInlineImages, onCheckedChange = onHideInlineImages)
-        }
+        SheetSectionLabel(stringResource(R.string.reader_privacy))
+        SheetSwitchRow(
+            title = stringResource(R.string.reader_hide_images_setting),
+            hint = stringResource(R.string.reader_hide_images_hint),
+            checked = hideInlineImages,
+            onCheckedChange = onHideInlineImages,
+        )
 
-        SettingsSectionLabel(stringResource(R.string.reader_reading_progress))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.reader_show_chapter_percent),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(
-                checked = showChapterProgressPercent,
-                onCheckedChange = onShowChapterProgressPercent,
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.reader_show_book_percent),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(
-                checked = showNovelProgressPercent,
-                onCheckedChange = onShowNovelProgressPercent,
-            )
-        }
+        SheetSectionLabel(stringResource(R.string.reader_reading_progress))
+        SheetSwitchRow(
+            title = stringResource(R.string.reader_show_chapter_percent),
+            checked = showChapterProgressPercent,
+            onCheckedChange = onShowChapterProgressPercent,
+        )
+        SheetSwitchRow(
+            title = stringResource(R.string.reader_show_book_percent),
+            checked = showNovelProgressPercent,
+            onCheckedChange = onShowNovelProgressPercent,
+        )
 
-        SettingsSectionLabel(stringResource(R.string.reader_auto_mark_read))
-        MarkAsReadStrategyPicker(
+        SheetSectionLabel(stringResource(R.string.reader_auto_mark_read))
+        SingleChoiceSegmented(
+            options = MarkAsReadStrategy.entries,
             selected = markAsReadStrategy,
             onSelect = onMarkAsReadStrategy,
+            label = { value ->
+                when (value) {
+                    MarkAsReadStrategy.PERCENT -> stringResource(R.string.reader_mark_percent)
+                    MarkAsReadStrategy.PARAGRAPHS_FROM_END -> stringResource(R.string.reader_mark_near_end)
+                    MarkAsReadStrategy.AT_END -> stringResource(R.string.reader_mark_at_end)
+                }
+            },
         )
         when (markAsReadStrategy) {
             MarkAsReadStrategy.PERCENT -> StepperRow(
@@ -334,27 +341,13 @@ private fun ReaderDisplaySettings(
             MarkAsReadStrategy.AT_END -> Unit
         }
 
-        SettingsSectionLabel(stringResource(R.string.reader_easter_eggs))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.reader_animate_grimoire),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = stringResource(R.string.reader_animate_grimoire_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Switch(
-                checked = grimoireEasterEggEnabled,
-                onCheckedChange = onGrimoireEasterEggEnabled,
-            )
-        }
+        SheetSectionLabel(stringResource(R.string.reader_easter_eggs))
+        SheetSwitchRow(
+            title = stringResource(R.string.reader_animate_grimoire),
+            hint = stringResource(R.string.reader_animate_grimoire_hint),
+            checked = grimoireEasterEggEnabled,
+            onCheckedChange = onGrimoireEasterEggEnabled,
+        )
     }
     }
 }
@@ -381,37 +374,25 @@ private fun ReaderTtsSettings(
             .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.reader_enable_tts),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = stringResource(R.string.reader_enable_tts_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Switch(checked = enabled, onCheckedChange = onEnabled)
-        }
+        SheetSwitchRow(
+            title = stringResource(R.string.reader_enable_tts),
+            hint = stringResource(R.string.reader_enable_tts_hint),
+            checked = enabled,
+            onCheckedChange = onEnabled,
+        )
 
-        SettingsSectionLabel(stringResource(R.string.reader_speech_engine))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = engine == TtsEngineType.DEVICE,
-                onClick = { onEngine(TtsEngineType.DEVICE) },
-                label = { Text(stringResource(R.string.reader_on_device)) },
-            )
-            FilterChip(
-                selected = engine == TtsEngineType.ELEVENLABS,
-                onClick = { onEngine(TtsEngineType.ELEVENLABS) },
-                label = { Text("ElevenLabs") },
-            )
-        }
+        SheetSectionLabel(stringResource(R.string.reader_speech_engine))
+        SingleChoiceSegmented(
+            options = TtsEngineType.entries,
+            selected = engine,
+            onSelect = onEngine,
+            label = { value ->
+                when (value) {
+                    TtsEngineType.DEVICE -> stringResource(R.string.reader_on_device)
+                    TtsEngineType.ELEVENLABS -> "ElevenLabs"
+                }
+            },
+        )
 
         StepperRow(
             label = stringResource(R.string.reader_speech_rate),
@@ -431,17 +412,11 @@ private fun ReaderTtsSettings(
             incrementEnabled = pitch < 200,
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.reader_auto_advance),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(checked = autoAdvance, onCheckedChange = onAutoAdvance)
-        }
+        SheetSwitchRow(
+            title = stringResource(R.string.reader_auto_advance),
+            checked = autoAdvance,
+            onCheckedChange = onAutoAdvance,
+        )
 
         TextButton(onClick = onOpenFullSettings) {
             Text(stringResource(R.string.reader_manage_voices))
