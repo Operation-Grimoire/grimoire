@@ -238,7 +238,7 @@ class ExtensionsViewModel @Inject constructor(
                 .onFailure { e ->
                     val msg = when (e) {
                         is HashMismatchException ->
-                            "Download verification failed — try again or switch networks"
+                            localizedContext.getString(R.string.error_verification_failed)
                         is GitHubRateLimitException -> {
                             _rateLimitPrompt.value = true
                             localizedContext.getString(R.string.extensions_rate_limit_title)

@@ -146,7 +146,7 @@ class NovelUpdatesSeriesViewModel @Inject constructor(
                 .onFailure { e ->
                     val msg = when (e) {
                         is HashMismatchException ->
-                            "Download verification failed — try again or switch networks"
+                            localizedContext.getString(R.string.error_verification_failed)
                         is GitHubRateLimitException ->
                             localizedContext.getString(R.string.extensions_rate_limit_title)
                         else -> e.message

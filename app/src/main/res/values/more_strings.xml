@@ -117,7 +117,7 @@
     <string name="app_update_notification_ready_version">Grimoire %1$s ready</string>
     <string name="app_update_notification_tap_to_install">Tap to install</string>
     <string name="app_update_notification_failed">Update download failed</string>
-    <string name="app_update_verification_failed">Download verification failed — try again or switch networks</string>
+    <string name="error_verification_failed">Download verification failed — try again or switch networks</string>
     <string name="app_update_download_failed">Download failed</string>
 
     <!-- Downloads -->
