@@ -22,8 +22,14 @@ internal enum class TopLevelDestination(
 }
 
 // Subpages nested under a top-level graph that should still hide the bottom navbar.
-internal val routesWithoutBottomBar =
-    setOf("nu_browser?mode={mode}", "nu_search", "nu_series?slug={slug}", "nu_bookmarks")
+internal val routesWithoutBottomBar = setOf(
+    "nu_browser?mode={mode}",
+    "nu_search",
+    "nu_series?slug={slug}",
+    "nu_bookmarks",
+    "global_search",
+    "global_search?q={q}",
+)
 
 internal const val ROUTE_BROWSE_HOME = "browse_home"
 internal const val ROUTE_GLOBAL_SEARCH = "global_search"
