@@ -7,8 +7,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -43,7 +41,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -341,14 +341,26 @@ fun AppNavigation(
                 .weight(1f)
                 .consumeWindowInsets(PaddingValues(top = statusBarTop * bannerP)),
         ) {
+        // Material 3 motion: pushes/pops get a direction-aware shared axis X
+        // slide, while hops between the bottom-nav tabs (lateral peers, not
+        // hierarchy) get a fade-through instead.
+        val slideDistance = with(LocalDensity.current) { 30.dp.roundToPx() }
         NavHost(
             navController = navController,
             startDestination = TopLevelDestination.Library.route,
             modifier = Modifier.fillMaxSize(),
-            enterTransition = { scaleIn(tween(POP_MS), initialScale = 0.92f) + fadeIn(tween(POP_MS)) },
-            exitTransition = { scaleOut(tween(POP_MS), targetScale = 1.08f) + fadeOut(tween(POP_MS)) },
-            popEnterTransition = { scaleIn(tween(POP_MS), initialScale = 0.92f) + fadeIn(tween(POP_MS)) },
-            popExitTransition = { scaleOut(tween(POP_MS), targetScale = 0.92f) + fadeOut(tween(POP_MS)) },
+            enterTransition = {
+                if (isTabSwitch()) fadeThroughIn() else sharedAxisXIn(forward = true, slideDistance)
+            },
+            exitTransition = {
+                if (isTabSwitch()) fadeThroughOut() else sharedAxisXOut(forward = true, slideDistance)
+            },
+            popEnterTransition = {
+                if (isTabSwitch()) fadeThroughIn() else sharedAxisXIn(forward = false, slideDistance)
+            },
+            popExitTransition = {
+                if (isTabSwitch()) fadeThroughOut() else sharedAxisXOut(forward = false, slideDistance)
+            },
         ) {
             libraryDestination(
                 navController = navController,
