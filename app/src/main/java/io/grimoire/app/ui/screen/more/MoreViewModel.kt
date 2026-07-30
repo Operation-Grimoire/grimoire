@@ -68,13 +68,15 @@ class MoreViewModel @Inject constructor(
     val extensionUpdateCount: StateFlow<Int> = extensionRepository.updateCount
 
     /**
-     * Reader route for the most-recently-read library novel, used by the Library
-     * tab's re-tap "continue reading" shortcut. Picks the same chapter the novel
+     * Routes for the Library tab's re-tap "continue reading" shortcut: the
+     * most-recently-read library novel's detail page followed by its reader,
+     * navigated in order so backing out of the reader lands on the novel's
+     * detail rather than the bare library. Picks the same chapter the novel
      * detail "Continue" FAB would: the first unread, unlocked chapter, else the
      * last unlocked, else the last chapter. Returns null when nothing has been
      * read yet, or the novel has no openable chapter / installed source.
      */
-    suspend fun resolveResumeReadingRoute(): String? {
+    suspend fun resolveResumeReadingRoutes(): List<String>? {
         // Locked → skip hidden-category novels, matching the library's own
         // visibility rule so the shortcut can't leak a hidden novel.
         val excludeHidden = !authManager.isUnlocked.value
@@ -92,8 +94,11 @@ class MoreViewModel @Inject constructor(
                 .firstOrNull { it.id == novel.sourceId }
                 ?.info?.packageName ?: return null
         }
-        return "reader?pkg=${Uri.encode(pkg)}" +
-            "&novelUrl=${Uri.encode(novel.url)}" +
-            "&chapterUrl=${Uri.encode(target.url)}"
+        return listOf(
+            "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novel.url)}",
+            "reader?pkg=${Uri.encode(pkg)}" +
+                "&novelUrl=${Uri.encode(novel.url)}" +
+                "&chapterUrl=${Uri.encode(target.url)}",
+        )
     }
 }

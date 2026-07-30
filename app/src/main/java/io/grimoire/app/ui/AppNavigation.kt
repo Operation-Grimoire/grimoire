@@ -243,7 +243,8 @@ fun AppNavigation(
                                 when {
                                     // Re-tapping the active tab is a shortcut, not a no-op:
                                     // Browse jumps to global search, More into settings, and
-                                    // Library resumes the most-recently-read novel's reader.
+                                    // Library resumes the most-recently-read novel's reader
+                                    // (stacked over its detail page so back lands there).
                                     alreadyOnTab && dest == TopLevelDestination.Browse ->
                                         navController.navigate(ROUTE_GLOBAL_SEARCH) {
                                             launchSingleTop = true
@@ -254,7 +255,7 @@ fun AppNavigation(
                                         }
                                     alreadyOnTab && dest == TopLevelDestination.Library ->
                                         scope.launch {
-                                            moreVm.resolveResumeReadingRoute()?.let { route ->
+                                            moreVm.resolveResumeReadingRoutes()?.forEach { route ->
                                                 navController.navigate(route) {
                                                     launchSingleTop = true
                                                 }
