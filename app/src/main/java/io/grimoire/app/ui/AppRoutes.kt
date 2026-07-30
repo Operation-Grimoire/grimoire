@@ -78,8 +78,6 @@ internal const val ROUTE_SETTINGS_GITHUB = "settings/connections/github"
 internal const val ROUTE_READER = "reader?pkg={pkg}&novelUrl={novelUrl}&chapterUrl={chapterUrl}"
 internal const val ROUTE_WEBVIEW = "webview?url={url}"
 
-internal const val POP_MS = 120
-
 /** Incognito banner open/close duration. */
 internal const val BANNER_MS = 220
 
