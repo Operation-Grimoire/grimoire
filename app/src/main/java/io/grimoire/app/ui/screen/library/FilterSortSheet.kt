@@ -4,6 +4,8 @@ import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -23,11 +25,15 @@ import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
@@ -88,6 +94,10 @@ internal fun FilterSortContent(
     onFilterTypeChange: (NovelTypeFilter) -> Unit,
     onToggleFilterSource: (Long?) -> Unit,
 ) {
+    // Dragging the rating slider must not swipe the pager: the slider consumes
+    // its thumb drag, but delta past the value bounds propagates up and scrolls
+    // the tabs (#314). Freeze pager scrolling while a thumb is being dragged.
+    var ratingSliderDragged by remember { mutableStateOf(false) }
     SwipeTabRow(
         tabs = listOf(
             stringResource(R.string.library_filter_tab),
@@ -96,12 +106,14 @@ internal fun FilterSortContent(
         style = SwipeTabStyle.Secondary,
         // Inside a sheet: wrap the page height instead of filling the screen.
         fillHeight = false,
+        userScrollEnabled = !ratingSliderDragged,
     ) { page ->
         // Each page scrolls on its own so a long status/source list (or the
         // sort list on a short screen) is always reachable inside the sheet.
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             when (page) {
                 0 -> FilterTab(
+                    onRatingSliderDragged = { ratingSliderDragged = it },
                     filterStatuses = filterStatuses,
                     filterStatusesExclude = filterStatusesExclude,
                     filterUnreadOnly = filterUnreadOnly,
@@ -135,9 +147,10 @@ internal fun FilterSortContent(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterTab(
+    onRatingSliderDragged: (Boolean) -> Unit,
     filterStatuses: Set<Int>,
     filterStatusesExclude: Set<Int>,
     filterUnreadOnly: Boolean,
@@ -248,9 +261,18 @@ private fun FilterTab(
                 },
             )
         }
+        val startInteraction = remember { MutableInteractionSource() }
+        val endInteraction = remember { MutableInteractionSource() }
+        val startDragged by startInteraction.collectIsDraggedAsState()
+        val endDragged by endInteraction.collectIsDraggedAsState()
+        LaunchedEffect(startDragged, endDragged) {
+            onRatingSliderDragged(startDragged || endDragged)
+        }
         RangeSlider(
             value = range,
             onValueChange = { range = it },
+            startInteractionSource = startInteraction,
+            endInteractionSource = endInteraction,
             onValueChangeFinished = {
                 onUserRatingRangeChange(
                     range.start.roundToInt(),
@@ -259,9 +281,28 @@ private fun FilterTab(
             },
             valueRange = 1f..10f,
             steps = 8, // 10 discrete stops
+            // Wider than the sheet's usual 16dp: a thumb parked at min/max
+            // otherwise sits inside the system back-gesture zone, so grabbing
+            // it triggers a back-swipe instead of a drag.
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 32.dp)
+                // The slider only consumes the horizontal part of a drag; the
+                // vertical remainder of a diagonal gesture propagates up and
+                // drags the sheet / scrolls the page. Swallow whatever the
+                // slider left unconsumed so a gesture that starts here stays
+                // here. Runs in the Main pass after the slider (child-first),
+                // so thumb dragging is unaffected.
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Main)
+                            event.changes.forEach { change ->
+                                if (change.positionChanged()) change.consume()
+                            }
+                        }
+                    }
+                },
         )
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
         ListItem(
