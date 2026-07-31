@@ -291,7 +291,7 @@
     <string name="source_browse_filters">Filters</string>
     <string name="source_browse_source_settings">Source settings</string>
     <string name="source_browse_cloudflare_title">Cloudflare challenge</string>
-    <string name="source_browse_cloudflare_description">%1$s is protected by a Cloudflare challenge that couldn’t be solved automatically. Open it in WebView, solve the challenge there, then come back and retry.</string>
+    <string name="source_browse_cloudflare_description">%1$s is protected by a Cloudflare challenge that couldn’t be solved automatically. Open it in WebView and solve the challenge there — when you come back, it retries automatically.</string>
     <string name="source_browse_type_to_search">Type to search %1$s</string>
 
     <!-- Source filters -->
