@@ -191,6 +191,10 @@
 
     <!-- Browse -->
     <string name="browse_manage_extensions">Manage extensions</string>
+    <plurals name="browse_extension_updates_tooltip">
+        <item quantity="one">%1$d extension update available</item>
+        <item quantity="other">%1$d extension updates available</item>
+    </plurals>
     <string name="browse_source_settings">Settings</string>
     <string name="browse_pin">Pin</string>
     <string name="browse_unpin">Unpin</string>

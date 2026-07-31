@@ -186,6 +186,9 @@
 
     <!-- 浏览 -->
     <string name="browse_manage_extensions">管理扩展</string>
+    <plurals name="browse_extension_updates_tooltip">
+        <item quantity="other">%1$d 个扩展更新可用</item>
+    </plurals>
     <string name="browse_source_settings">设置</string>
     <string name="browse_pin">固定</string>
     <string name="browse_unpin">取消固定</string>
