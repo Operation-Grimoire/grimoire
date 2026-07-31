@@ -16,9 +16,10 @@ internal enum class TopLevelDestination(
     /** Filled [activeIcon] shown while the tab is selected and has something to surface. */
     val activeSelectedIcon: ImageVector = activeIcon,
 ) {
+    // Declaration order is the bottom-nav order: Library holds the centre.
+    More("more", AppIcons.MoreHoriz, R.string.nav_more, activeIcon = AppIcons.NewReleases, activeSelectedIcon = AppIcons.NewReleasesFilled),
     Library("library", AppIcons.LocalLibrary, R.string.nav_library, selectedIcon = AppIcons.LocalLibraryFilled),
     Browse("browse", AppIcons.Explore, R.string.nav_browse, selectedIcon = AppIcons.ExploreFilled),
-    More("more", AppIcons.MoreHoriz, R.string.nav_more, activeIcon = AppIcons.NewReleases, activeSelectedIcon = AppIcons.NewReleasesFilled),
 }
 
 // Subpages nested under a top-level graph that should still hide the bottom navbar.
