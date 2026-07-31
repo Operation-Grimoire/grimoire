@@ -90,7 +90,9 @@ import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.domain.migration.MigrationState
+import io.grimoire.app.ui.component.AutoRetryOnReturn
 import io.grimoire.app.ui.component.ChapterItem
+import io.grimoire.app.ui.component.CloudflareBlockedCard
 import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
@@ -125,6 +127,13 @@ fun NovelDetailScreen(
     val isLoadingChapters by viewModel.isLoadingChapters.collectAsState()
     val novelError by viewModel.novelError.collectAsState()
     val chaptersError by viewModel.chaptersError.collectAsState()
+    val cloudflareBlocked by viewModel.cloudflareBlocked.collectAsState()
+
+    // Coming back from the WebView after a Cloudflare block retries the
+    // interrupted fetch without waiting for the user to press Retry.
+    AutoRetryOnReturn(blocked = { viewModel.cloudflareBlocked.value }) {
+        viewModel.retryAfterCloudflare()
+    }
     val isFavorite by viewModel.isFavorite.collectAsState()
     val novelId by viewModel.novelId.collectAsState()
     val chapterPage by viewModel.chapterPage.collectAsState()
@@ -846,6 +855,12 @@ fun NovelDetailScreen(
                     item(key = "novel_header") {
                         when {
                             isLoadingNovel -> NovelHeaderSkeleton()
+                            novelError != null && cloudflareBlocked -> CloudflareBlockedCard(
+                                sourceName = viewModel.sourceName,
+                                onOpenWebView = { onOpenWebView(viewModel.novelWebUrl) },
+                                onRetry = viewModel::retryNovel,
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            )
                             novelError != null -> Column(
                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -1185,13 +1200,22 @@ fun NovelDetailScreen(
                     // Chapters error
                     if (chaptersError != null) {
                         item(key = "chapters_error") {
-                            Column(
-                                modifier = Modifier.animateItem().fillMaxWidth().padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Text(chaptersError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                                Spacer(Modifier.height(4.dp))
-                                TextButton(onClick = viewModel::retryChapters) { Text(stringResource(R.string.action_retry)) }
+                            if (cloudflareBlocked && novelError == null) {
+                                CloudflareBlockedCard(
+                                    sourceName = viewModel.sourceName,
+                                    onOpenWebView = { onOpenWebView(viewModel.novelWebUrl) },
+                                    onRetry = viewModel::retryChapters,
+                                    modifier = Modifier.animateItem().fillMaxWidth().padding(16.dp),
+                                )
+                            } else {
+                                Column(
+                                    modifier = Modifier.animateItem().fillMaxWidth().padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    Text(chaptersError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                                    Spacer(Modifier.height(4.dp))
+                                    TextButton(onClick = viewModel::retryChapters) { Text(stringResource(R.string.action_retry)) }
+                                }
                             }
                         }
                     }

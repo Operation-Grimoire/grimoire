@@ -56,6 +56,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import io.grimoire.app.ui.component.AppSearchField
+import io.grimoire.app.ui.component.AutoRetryOnReturn
+import io.grimoire.app.ui.component.CloudflareBlockedCard
 import io.grimoire.app.ui.component.NovelQuickViewSheet
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -95,6 +97,10 @@ fun SourceBrowseScreen(
     var showFilters by remember { mutableStateOf(false) }
     var quickView by remember { mutableStateOf<Novel?>(null) }
     val focusRequester = remember { FocusRequester() }
+
+    // Coming back from the WebView after a Cloudflare block retries without
+    // waiting for the user to press Retry.
+    AutoRetryOnReturn(blocked = { viewModel.cloudflareBlocked.value }) { viewModel.retry() }
 
     // Held in the VM so scroll survives navigating to a novel and back; the VM
     // also resets it to the top on real mode changes (Popular / Latest / Search).
@@ -262,33 +268,11 @@ fun SourceBrowseScreen(
                         .padding(24.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            AppIcons.Shield,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(48.dp),
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            stringResource(R.string.source_browse_cloudflare_title),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            stringResource(R.string.source_browse_cloudflare_description, viewModel.sourceName),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Button(onClick = { onOpenWebView(viewModel.sourceBaseUrl) }) {
-                            Icon(AppIcons.Language, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.action_open_in_webview))
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        TextButton(onClick = { viewModel.retry() }) { Text(stringResource(R.string.action_retry)) }
-                    }
+                    CloudflareBlockedCard(
+                        sourceName = viewModel.sourceName,
+                        onOpenWebView = { onOpenWebView(viewModel.sourceBaseUrl) },
+                        onRetry = { viewModel.retry() },
+                    )
                 }
                 error != null && novels.isEmpty() -> Box(
                     Modifier.fillMaxSize(),

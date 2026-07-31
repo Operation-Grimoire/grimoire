@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.lang.Language
+import io.grimoire.api.network.CloudflareException
 import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelStatus
@@ -232,6 +233,15 @@ class NovelDetailViewModel @Inject constructor(
 
     private val _chaptersError = MutableStateFlow<String?>(null)
     val chaptersError: StateFlow<String?> = _chaptersError.asStateFlow()
+
+    /**
+     * True when the most recent details/chapters fetch hit a Cloudflare
+     * challenge the silent interceptor couldn't solve. Surfaced separately
+     * from the error strings so the UI shows the "solve in WebView" CTA, and
+     * so returning from the WebView can auto-retry.
+     */
+    private val _cloudflareBlocked = MutableStateFlow(false)
+    val cloudflareBlocked: StateFlow<Boolean> = _cloudflareBlocked.asStateFlow()
 
     private val _isFavorite = MutableStateFlow(false)
     val isFavorite: StateFlow<Boolean> = _isFavorite.asStateFlow()
@@ -664,6 +674,12 @@ class NovelDetailViewModel @Inject constructor(
         loadJob = viewModelScope.launch { fetchChapters(src, novel) }
     }
 
+    /** Re-run whichever fetch the Cloudflare block interrupted (details, else chapters). */
+    fun retryAfterCloudflare() {
+        if (!_cloudflareBlocked.value) return
+        if (_novelError.value != null) retryNovel() else retryChapters()
+    }
+
     private suspend fun loadNovel(forceRefresh: Boolean) {
         val src = source ?: run {
             _novelError.value = localizedContext.getString(R.string.error_source_not_available)
@@ -723,6 +739,7 @@ class NovelDetailViewModel @Inject constructor(
     private suspend fun fetchFromNetwork(src: Source) {
         _isLoadingNovel.value = true
         _novelError.value = null
+        _cloudflareBlocked.value = false
 
         val full = runCatching {
             src.getNovelDetails(Novel(url = novelUrl, title = "", language = Language.UNKNOWN))
@@ -765,6 +782,7 @@ class NovelDetailViewModel @Inject constructor(
             _chapterSort.value = ChapterSort.entries.getOrElse(existing?.chapterSortOrder ?: 0) { ChapterSort.NUMBER_ASC }
             _categoryId.value = existing?.categoryId
         }.onFailure { e ->
+            if (e is CloudflareException) _cloudflareBlocked.value = true
             _novelError.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
         }.getOrNull()
 
@@ -777,6 +795,7 @@ class NovelDetailViewModel @Inject constructor(
     private suspend fun fetchChapters(src: Source, novel: Novel) {
         _isLoadingChapters.value = true
         _chaptersError.value = null
+        _cloudflareBlocked.value = false
         _chapterPage.value = 0
         _chapterPageTotal.value = null
 
@@ -805,6 +824,7 @@ class NovelDetailViewModel @Inject constructor(
                 updateIssueDao.clearForNovel(cachedNovelId)
             }
         }.onFailure { e ->
+            if (e is CloudflareException) _cloudflareBlocked.value = true
             _chaptersError.value = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
         }
 

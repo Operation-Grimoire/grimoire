@@ -283,7 +283,7 @@
     <string name="source_browse_filters">筛选</string>
     <string name="source_browse_source_settings">书源设置</string>
     <string name="source_browse_cloudflare_title">Cloudflare 验证</string>
-    <string name="source_browse_cloudflare_description">%1$s 受到 Cloudflare 验证保护，应用无法自动完成验证。请在内置网页中打开并完成验证，然后返回重试。</string>
+    <string name="source_browse_cloudflare_description">%1$s 受到 Cloudflare 验证保护，应用无法自动完成验证。请在内置网页中打开并完成验证，返回后将自动重试。</string>
     <string name="source_browse_type_to_search">输入内容以搜索 %1$s</string>
 
     <!-- 书源筛选 -->
