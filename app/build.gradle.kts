@@ -49,7 +49,7 @@ val appGitSha = gitSha()
 
 // Single source of truth for the extensions-api version — used for the Gradle
 // dependency and for the BuildConfig field shown on the About screen.
-val extensionsApiVersion = "1.2.1"
+val extensionsApiVersion = "1.2.2"
 
 // OAuth App client ID — public, ships in the APK. Read from gradle.properties
 // (or env GITHUB_OAUTH_CLIENT_ID) so a fork can substitute its own without
