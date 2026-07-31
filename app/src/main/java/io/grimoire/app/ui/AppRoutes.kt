@@ -16,8 +16,10 @@ internal enum class TopLevelDestination(
     /** Filled [activeIcon] shown while the tab is selected and has something to surface. */
     val activeSelectedIcon: ImageVector = activeIcon,
 ) {
-    Library("library", AppIcons.LocalLibrary, R.string.nav_library, selectedIcon = AppIcons.LocalLibraryFilled),
+    // Declaration order is the bottom-nav order: discover on the left,
+    // Library in the centre, the utility tab last.
     Browse("browse", AppIcons.Explore, R.string.nav_browse, selectedIcon = AppIcons.ExploreFilled),
+    Library("library", AppIcons.LocalLibrary, R.string.nav_library, selectedIcon = AppIcons.LocalLibraryFilled),
     More("more", AppIcons.MoreHoriz, R.string.nav_more, activeIcon = AppIcons.NewReleases, activeSelectedIcon = AppIcons.NewReleasesFilled),
 }
 
