@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
@@ -24,7 +25,10 @@ fun SearchCancelToolbar(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier,
+        // The pill anchors bottom-centre, which the open keyboard covers —
+        // ride above it (imePadding animates with the keyboard) so the search
+        // can be cancelled without closing the keyboard first.
+        modifier = modifier.imePadding(),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceContainer,
         shadowElevation = 3.dp,
