@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.shape.CircleShape
@@ -31,10 +33,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -83,6 +89,7 @@ fun BrowseScreen(
     val languageFilter by viewModel.languageFilter.collectAsState()
     val pinned by viewModel.pinnedPackages.collectAsState()
     val showNovelUpdates by viewModel.showNovelUpdates.collectAsState()
+    val extensionUpdateCount by viewModel.extensionUpdateCount.collectAsState()
     val context = LocalContext.current
 
     var selected by remember { mutableStateOf(emptySet<String>()) }
@@ -240,6 +247,7 @@ fun BrowseScreen(
                     onSearch = onNavigateToGlobalSearch,
                     onFilter = { showFilterSheet = true },
                     filterActive = filterActive,
+                    updateCount = extensionUpdateCount,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 16.dp),
@@ -411,13 +419,19 @@ private fun SectionHeader(text: String) {
  * Filter button (opens the source filter sheet; tinted when a filter is active)
  * and a Search button (global search). Replaces the old search FAB and the
  * inline filter row.
+ *
+ * The manage-extensions button carries a badge with [updateCount], and the
+ * first time updates are seen in a session a tooltip with the count pops up
+ * over it — dismissed by any interaction.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BrowseBottomToolbar(
     onManage: () -> Unit,
     onSearch: () -> Unit,
     onFilter: () -> Unit,
     filterActive: Boolean,
+    updateCount: Int,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -431,12 +445,44 @@ private fun BrowseBottomToolbar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
-            IconButton(onClick = onManage) {
-                Icon(
-                    AppIcons.ExtensionFilled,
-                    contentDescription = stringResource(R.string.browse_manage_extensions),
-                    modifier = Modifier.tourTarget(TourKey.ExtensionManager),
-                )
+            val tooltipState = rememberTooltipState(isPersistent = true)
+            if (updateCount > 0) {
+                LaunchedEffect(Unit) {
+                    if (!updateTooltipAutoShown) {
+                        updateTooltipAutoShown = true
+                        tooltipState.show()
+                    }
+                }
+            }
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                tooltip = {
+                    PlainTooltip {
+                        Text(
+                            pluralStringResource(
+                                R.plurals.browse_extension_updates_tooltip,
+                                updateCount,
+                                updateCount,
+                            ),
+                        )
+                    }
+                },
+                state = tooltipState,
+            ) {
+                IconButton(onClick = onManage) {
+                    val icon = @Composable {
+                        Icon(
+                            AppIcons.ExtensionFilled,
+                            contentDescription = stringResource(R.string.browse_manage_extensions),
+                            modifier = Modifier.tourTarget(TourKey.ExtensionManager),
+                        )
+                    }
+                    if (updateCount > 0) {
+                        BadgedBox(badge = { Badge { Text("$updateCount") } }) { icon() }
+                    } else {
+                        icon()
+                    }
+                }
             }
             IconButton(onClick = onFilter) {
                 Icon(
@@ -458,6 +504,13 @@ private fun BrowseBottomToolbar(
         }
     }
 }
+
+/**
+ * Once-per-process guard for the auto-shown extension-updates tooltip: it
+ * greets the first Browse visit that has updates pending, then stays quiet
+ * for the rest of the session (the badge keeps carrying the count).
+ */
+private var updateTooltipAutoShown = false
 
 /**
  * Single-select language filter for the source list. Replaces the old chip
