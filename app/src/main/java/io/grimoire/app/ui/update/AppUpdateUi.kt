@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -78,7 +79,9 @@ private fun ChangelogDialog(content: ChangelogContent, onDismiss: () -> Unit) {
         title = { Text(stringResource(R.string.update_whats_new, BuildConfig.VERSION_NAME)) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .heightIn(max = 400.dp)
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ParsedReleaseNotes(text)
@@ -194,9 +197,12 @@ private fun UpdateDialog(
                     current = BuildConfig.VERSION_NAME,
                     target = release.displayVersion,
                 )
+                // Cap the notes so the dialog stays glanceable now that the
+                // sections render expanded — the notes scroll inside, and the
+                // Skip/Update controls stay on screen without scrolling.
                 Column(
                     modifier = Modifier
-                        .weight(1f, fill = false)
+                        .heightIn(max = 320.dp)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
