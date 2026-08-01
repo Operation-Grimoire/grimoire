@@ -20,4 +20,10 @@ class UpdatePreferences @Inject constructor(store: PreferenceStore) {
     // Release tag the user chose to skip; the auto popup stays hidden while the
     // latest release still matches this value.
     val skippedVersion = store.getString("update_skipped_version", "")
+
+    // Version (tag without the leading v) whose release notes the user already
+    // saw in the update-available dialog when starting that download. The
+    // post-install "what's new" popup is skipped for this version so a single
+    // update never shows the same notes twice.
+    val changelogSeenVersion = store.getString("update_changelog_seen_version", "")
 }
