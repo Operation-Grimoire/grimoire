@@ -232,7 +232,6 @@
     <string name="action_search">搜索</string>
     <string name="action_share">分享</string>
     <string name="share_copy_link">复制链接</string>
-    <string name="share_image_action">分享图片</string>
     <string name="share_link_copied">已复制链接</string>
     <string name="share_preview_content_description">分享卡片预览</string>
     <string name="share_build_failed">无法生成图片</string>
