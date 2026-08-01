@@ -71,7 +71,14 @@ class AppUpdateViewModel @Inject constructor(
                 appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
             } else if (BuildConfig.VERSION_CODE > lastSeen) {
                 val autoChangelogEnabled = updatePreferences.autoChangelogEnabled.changes().first()
-                if (autoChangelogEnabled) {
+                // The user already read these notes in the update-available
+                // dialog when they started this update — don't repeat them.
+                val alreadySeen =
+                    updatePreferences.changelogSeenVersion.changes().first() == BuildConfig.VERSION_NAME
+                if (alreadySeen) {
+                    appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
+                    appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
+                } else if (autoChangelogEnabled) {
                     val prevName = appPreferences.lastSeenVersionName.changes().first()
                     val hasPrev = prevName.isNotBlank() && prevName != BuildConfig.VERSION_NAME
                     val remote: String? = when (channel) {
@@ -165,6 +172,11 @@ class AppUpdateViewModel @Inject constructor(
     fun startDownload() {
         val release = _availableRelease.value ?: return
         if (downloadState.value is DownloadState.Downloading) return
+        // The update dialog is showing this release's notes right now — record
+        // that so the post-install "what's new" popup doesn't repeat them.
+        viewModelScope.launch {
+            updatePreferences.changelogSeenVersion.set(release.tagName.removePrefix("v"))
+        }
         downloadStore.set(DownloadState.Downloading(0L, 0L))
         AppUpdateService.start(context, release)
     }

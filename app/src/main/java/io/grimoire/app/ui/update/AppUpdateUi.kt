@@ -1,15 +1,13 @@
 package io.grimoire.app.ui.update
 
 import io.grimoire.app.ui.icon.*
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -26,13 +24,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -84,7 +79,9 @@ private fun ChangelogDialog(content: ChangelogContent, onDismiss: () -> Unit) {
         title = { Text(stringResource(R.string.update_whats_new, BuildConfig.VERSION_NAME)) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .heightIn(max = 400.dp)
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ParsedReleaseNotes(text)
@@ -111,68 +108,34 @@ private fun ParsedReleaseNotes(text: String) {
 
 @Composable
 private fun ChangelogSectionCard(section: ChangelogSection) {
-    // Start collapsed so the dialog opens at a glanceable height — section
-    // headers + counts read as a summary, taps reveal the individual items.
-    var expanded by remember { mutableStateOf(false) }
-    val chevronRotation by animateFloatAsState(
-        targetValue = if (expanded) 180f else 0f,
-        label = "changelog-chevron",
-    )
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-    ) {
+    // Flat and always expanded: a small header and plain bullets. The old
+    // collapsed cards with counts and chevrons read as clutter and hid the
+    // actual changes behind taps (#329).
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = !expanded }
-                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(
                 imageVector = section.category.icon(),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(18.dp),
             )
             Text(
                 text = section.category.localizedDisplayName(),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = section.items.size.toString(),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Icon(
-                imageVector = AppIcons.KeyboardArrowDown,
-                contentDescription = stringResource(
-                    if (expanded) R.string.action_collapse else R.string.action_expand,
-                ),
-                modifier = Modifier
-                    .size(20.dp)
-                    .rotate(chevronRotation),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        AnimatedVisibility(visible = expanded) {
-            Column(
-                modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                section.items.forEach { item -> ChangelogItemRow(item) }
-            }
-        }
+        section.items.forEach { item -> ChangelogItemRow(item) }
     }
 }
 
 @Composable
 private fun ChangelogItemRow(item: ChangelogItem) {
+    // Just the change text — PR numbers and author handles are repository
+    // noise, not release notes.
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -185,24 +148,11 @@ private fun ChangelogItemRow(item: ChangelogItem) {
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primary),
         )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = item.text,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            val meta = buildString {
-                item.prNumber?.let { append("#").append(it) }
-                if (item.prNumber != null && item.author != null) append(" · ")
-                item.author?.let { append("@").append(it) }
-            }
-            if (meta.isNotEmpty()) {
-                Text(
-                    text = meta,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
+        Text(
+            text = item.text,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -247,9 +197,12 @@ private fun UpdateDialog(
                     current = BuildConfig.VERSION_NAME,
                     target = release.displayVersion,
                 )
+                // Cap the notes so the dialog stays glanceable now that the
+                // sections render expanded — the notes scroll inside, and the
+                // Skip/Update controls stay on screen without scrolling.
                 Column(
                     modifier = Modifier
-                        .weight(1f, fill = false)
+                        .heightIn(max = 320.dp)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
