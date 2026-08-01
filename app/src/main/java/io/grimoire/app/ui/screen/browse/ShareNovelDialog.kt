@@ -6,23 +6,22 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,25 +31,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.grimoire.app.R
+import io.grimoire.app.ui.component.dialog.FullScreenDialog
 import io.grimoire.app.ui.icon.AppIcons
 import io.grimoire.app.ui.icon.ContentCopy
 import io.grimoire.app.ui.icon.Share
 
 /**
- * Bottom sheet that renders a share card for the novel (cover + reading-progress stats over a
- * cover-derived gradient) and offers to share the image or copy the novel's link as full-width
- * action rows — narrow screens can't clip them like the old dialog's side-by-side buttons did.
- * The card is rendered off the UI thread once when the sheet opens; [data] is a stable snapshot
- * so the render fires only once.
+ * Full-screen share surface: the rendered card takes the page, with the share
+ * and copy-link actions as a fixed row at the bottom. Replaces the old popup
+ * dialog whose side-by-side buttons clipped on narrow screens. The card is
+ * rendered off the UI thread once when the dialog opens; [data] is a stable
+ * snapshot so the render fires only once.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ShareNovelDialog(
     data: io.grimoire.app.util.NovelShareData,
@@ -59,9 +57,6 @@ internal fun ShareNovelDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    // Fully expanded from the start — the action rows sit under the tall
-    // preview and must be visible without a drag.
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var previewUri by remember { mutableStateOf<Uri?>(null) }
     var rendering by remember { mutableStateOf(true) }
 
@@ -71,14 +66,22 @@ internal fun ShareNovelDialog(
         rendering = false
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(modifier = Modifier.padding(bottom = 8.dp)) {
+    FullScreenDialog(
+        title = stringResource(R.string.action_share),
+        onDismiss = onDismiss,
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 20.dp),
+        ) {
+            // The preview owns all the space above the action row.
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.55f)
-                    .align(Alignment.CenterHorizontally)
-                    .aspectRatio(1080f / 1620f)
-                    .clip(MaterialTheme.shapes.large),
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 val uri = previewUri
@@ -87,7 +90,9 @@ internal fun ShareNovelDialog(
                         model = uri,
                         contentDescription = stringResource(R.string.share_preview_content_description),
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .aspectRatio(1080f / 1620f)
+                            .clip(MaterialTheme.shapes.large),
                     )
                 } else if (rendering) {
                     CircularProgressIndicator()
@@ -100,51 +105,49 @@ internal fun ShareNovelDialog(
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
-
-            ShareAction(
-                icon = AppIcons.Share,
-                label = stringResource(R.string.share_image_action),
-                enabled = previewUri != null,
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                previewUri?.let { shareImage(context, it) }
-            }
-            if (showCopyLink) {
-                ShareAction(
-                    icon = AppIcons.ContentCopy,
-                    label = stringResource(R.string.share_copy_link),
-                    enabled = true,
+                if (showCopyLink) {
+                    OutlinedButton(
+                        onClick = {
+                            copyToClipboard(context, novelUrl)
+                            Toast.makeText(context, context.getString(R.string.share_link_copied), Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(52.dp),
+                    ) {
+                        Icon(AppIcons.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(
+                            stringResource(R.string.share_copy_link),
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+                Button(
+                    onClick = { previewUri?.let { shareImage(context, it) } },
+                    enabled = previewUri != null,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
                 ) {
-                    copyToClipboard(context, novelUrl)
-                    Toast.makeText(context, context.getString(R.string.share_link_copied), Toast.LENGTH_SHORT).show()
+                    Icon(AppIcons.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(
+                        stringResource(R.string.action_share),
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
             }
         }
     }
-}
-
-@Composable
-private fun ShareAction(
-    icon: ImageVector,
-    label: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    val color = if (enabled) {
-        MaterialTheme.colorScheme.onSurface
-    } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-    }
-    ListItem(
-        modifier = Modifier.clickable(enabled = enabled, onClick = onClick),
-        colors = ListItemDefaults.colors(
-            containerColor = androidx.compose.ui.graphics.Color.Transparent,
-            headlineColor = color,
-            leadingIconColor = color,
-        ),
-        leadingContent = { Icon(icon, contentDescription = null) },
-        headlineContent = { Text(label) },
-    )
 }
 
 private fun copyToClipboard(context: Context, text: String) {
