@@ -16,12 +16,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,7 +40,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.grimoire.app.R
-import io.grimoire.app.ui.component.dialog.FullScreenDialog
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import io.grimoire.app.ui.icon.AppIcons
 import io.grimoire.app.ui.icon.ContentCopy
 import io.grimoire.app.ui.icon.Share
@@ -66,14 +70,17 @@ internal fun ShareNovelDialog(
         rendering = false
     }
 
-    FullScreenDialog(
-        title = stringResource(R.string.action_share),
-        onDismiss = onDismiss,
-    ) { padding ->
+    // Chromeless full-screen page: no top bar — the close action lives with
+    // the other buttons at the bottom, inside thumb reach.
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .systemBarsPadding()
                 .padding(horizontal = 20.dp),
         ) {
             // The preview owns all the space above the action row.
@@ -106,9 +113,7 @@ internal fun ShareNovelDialog(
             }
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (showCopyLink) {
@@ -146,6 +151,15 @@ internal fun ShareNovelDialog(
                     )
                 }
             }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 4.dp, bottom = 12.dp),
+            ) {
+                Text(stringResource(R.string.action_close))
+            }
+        }
         }
     }
 }
