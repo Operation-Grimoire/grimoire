@@ -2,11 +2,10 @@ package io.grimoire.app.ui.screen.browse
 
 import io.grimoire.app.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.pager.rememberPagerState
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -47,7 +45,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.NovelQuickViewSheet
@@ -75,8 +72,6 @@ fun GlobalSearchScreen(
     val isSearching by viewModel.isSearching.collectAsState()
     val libraryKeys by viewModel.libraryKeys.collectAsState()
     val pinned by viewModel.pinnedPackages.collectAsState()
-    val includeAllSources by viewModel.includeAllSources.collectAsState()
-    val pinnedOnly = pinned.isNotEmpty() && !includeAllSources
 
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -101,10 +96,7 @@ fun GlobalSearchScreen(
                     AppSearchField(
                         value = searchQuery,
                         onValueChange = viewModel::setQuery,
-                        placeholder = stringResource(
-                            if (pinnedOnly) R.string.global_search_pinned_placeholder
-                            else R.string.global_search_all_placeholder,
-                        ),
+                        placeholder = stringResource(R.string.global_search_all_placeholder),
                         modifier = Modifier
                             .fillMaxWidth()
                             .focusRequester(focusRequester),
@@ -115,29 +107,40 @@ fun GlobalSearchScreen(
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            SearchScopeBar(
-                pinnedCount = pinned.size,
-                includeAll = includeAllSources,
-                onSelectScope = viewModel::setIncludeAllSources,
-            )
             Box(Modifier.fillMaxSize()) {
                 when {
-                    // Two swipeable views over the same sorted results: every
-                    // source in scope, or just the ones that returned hits.
+                    // Three swipeable views over the same sorted results:
+                    // pinned sources, sources that returned hits, everything.
                     searchResults.isNotEmpty() -> SwipeTabRow(
                         tabs = listOf(
-                            stringResource(R.string.global_search_tab_all),
+                            stringResource(R.string.global_search_tab_pinned),
                             stringResource(R.string.global_search_tab_results),
+                            stringResource(R.string.global_search_tab_all),
+                        ),
+                        // Land on Pinned when the user curates pins; otherwise
+                        // With results is the useful default.
+                        pagerState = rememberPagerState(
+                            initialPage = if (pinned.isEmpty()) 1 else 0,
+                            pageCount = { 3 },
                         ),
                         style = SwipeTabStyle.Secondary,
                     ) { page ->
-                        val pageResults = if (page == 0) searchResults else withResultsOnly(searchResults)
+                        val pageResults = when (page) {
+                            0 -> searchResults.filter { it.packageName in pinned }
+                            1 -> withResultsOnly(searchResults)
+                            else -> searchResults
+                        }
                         if (pageResults.isEmpty()) {
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                if (isSearching) {
-                                    CircularProgressIndicator()
-                                } else {
-                                    Text(
+                                when {
+                                    page == 0 && pinned.isEmpty() -> Text(
+                                        stringResource(R.string.global_search_scope_tip),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 32.dp),
+                                    )
+                                    isSearching -> CircularProgressIndicator()
+                                    else -> Text(
                                         stringResource(R.string.global_search_no_results_found),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -169,10 +172,7 @@ fun GlobalSearchScreen(
                     }
                     else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            stringResource(
-                                if (pinnedOnly) R.string.global_search_type_pinned
-                                else R.string.global_search_type_all,
-                            ),
+                            stringResource(R.string.global_search_type_all),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -189,46 +189,6 @@ fun GlobalSearchScreen(
             onOpenDetails = { onNovelClick(novel, pkg) },
             onChapterClick = { chapterUrl -> onChapterClick(pkg, novel.url, chapterUrl) },
             onDismiss = { quickView = null },
-        )
-    }
-}
-
-/**
- * Scope selector shown under the search bar. With pinned sources, two chips
- * toggle between pinned-only (default) and all sources. With none pinned, it
- * instead shows a tip on how to pin so future searches can be narrowed.
- */
-@Composable
-private fun SearchScopeBar(
-    pinnedCount: Int,
-    includeAll: Boolean,
-    onSelectScope: (includeAll: Boolean) -> Unit,
-) {
-    if (pinnedCount > 0) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            FilterChip(
-                selected = !includeAll,
-                onClick = { onSelectScope(false) },
-                label = { Text(pluralStringResource(R.plurals.global_search_pinned_count, pinnedCount, pinnedCount)) },
-            )
-            FilterChip(
-                selected = includeAll,
-                onClick = { onSelectScope(true) },
-                label = { Text(stringResource(R.string.global_search_all_sources)) },
-            )
-        }
-    } else {
-        Text(
-            stringResource(R.string.global_search_scope_tip),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
     }
 }
