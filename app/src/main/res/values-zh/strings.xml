@@ -268,15 +268,12 @@
     <string name="privacy_image_hint">点按显示 · 长按预览</string>
 
     <!-- 全局搜索与书源浏览 -->
-    <string name="global_search_pinned_placeholder">搜索已固定书源…</string>
     <string name="global_search_all_placeholder">搜索全部书源…</string>
     <string name="global_search_no_results_found">未找到结果</string>
-    <string name="global_search_type_pinned">输入内容以搜索已固定书源</string>
     <string name="global_search_type_all">输入内容以搜索全部书源</string>
-    <string name="global_search_all_sources">全部书源</string>
-    <plurals name="global_search_pinned_count">
-        <item quantity="other">已固定（%1$d）</item>
-    </plurals>
+    <string name="global_search_tab_all">全部</string>
+    <string name="global_search_tab_pinned">置顶</string>
+    <string name="global_search_tab_results">有结果</string>
     <string name="global_search_scope_tip">正在搜索全部书源。提示：长按“浏览”页中的书源并点按“固定”，以后即可只搜索常用书源。</string>
     <string name="global_search_see_all">查看全部</string>
     <string name="global_search_no_results">无结果</string>

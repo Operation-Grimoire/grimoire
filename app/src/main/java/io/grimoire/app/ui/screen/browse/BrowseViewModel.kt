@@ -150,47 +150,32 @@ class BrowseViewModel @Inject constructor(
     private val _searchResults = MutableStateFlow<List<GlobalSearchResult>>(emptyList())
     val searchResults: StateFlow<List<GlobalSearchResult>> = _searchResults.asStateFlow()
 
+    /**
+     * Results ordered for display: sources with hits first (most relevant on
+     * top), loading next, empty and failed last. Recomputed off the main
+     * thread as per-source responses fold in.
+     */
+    val sortedSearchResults: StateFlow<List<GlobalSearchResult>> =
+        combine(_searchResults, _searchQuery) { results, query ->
+            sortGlobalSearchResults(results, query)
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
 
-    /**
-     * When false (default), global search only queries pinned sources — unless
-     * nothing is pinned, in which case every source is searched. Toggling this
-     * to true forces all sources regardless of pins.
-     */
-    private val _includeAllSources = MutableStateFlow(false)
-    val includeAllSources: StateFlow<Boolean> = _includeAllSources.asStateFlow()
-
-    fun setIncludeAllSources(value: Boolean) {
-        if (_includeAllSources.value == value) return
-        _includeAllSources.value = value
-        val q = _searchQuery.value.trim()
-        if (q.isBlank()) return
-
-        val desired = sourcesForScope()
-        val desiredPkgs = desired.mapTo(HashSet()) { it.second }
-        // Keep results already loaded for sources still in scope; only query the
-        // newly-added ones. Narrowing (all → pinned) just trims, no re-query.
-        val kept = _searchResults.value.filter { it.packageName in desiredPkgs }
-        val keptPkgs = kept.mapTo(HashSet()) { it.packageName }
-        val toQuery = desired.filter { it.second !in keptPkgs }
-
-        if (toQuery.isEmpty()) {
-            _searchResults.value = kept
-            return
-        }
-
-        searchJob = viewModelScope.launch {
-            _isSearching.value = true
-            _searchResults.value = kept + toQuery.map { (name, pkg, src) ->
-                GlobalSearchResult(sourceName = name, packageName = pkg, sourceId = sourceIdFor(pkg), isLoading = true)
-            }
-            runQueries(q, toQuery)
-            _isSearching.value = false
-        }
-    }
-
     private var searchJob: Job? = null
+    private var extendJob: Job? = null
+
+    /**
+     * True once the current query has been sent to every source, not just the
+     * pinned ones. A search submitted from the Pinned tab stays pinned-only
+     * until the user visits a wider tab (the screen then calls
+     * [extendSearchToAllSources]) — no background traffic for tabs never seen.
+     */
+    private val _searchedAllSources = MutableStateFlow(false)
+    val searchedAllSources: StateFlow<Boolean> = _searchedAllSources.asStateFlow()
 
     init {
         viewModelScope.launch { repository.refresh() }
@@ -199,18 +184,27 @@ class BrowseViewModel @Inject constructor(
     fun setQuery(q: String) {
         _searchQuery.value = q
         if (q.isBlank()) {
-            searchJob?.cancel()
+            cancelSearches()
             _searchResults.value = emptyList()
             _isSearching.value = false
+            _searchedAllSources.value = false
         }
     }
 
-    fun submitSearch() {
+    /**
+     * Runs the query against the current tab's scope: only pinned sources when
+     * submitted from the Pinned tab, every source otherwise.
+     */
+    fun submitSearch(pinnedOnly: Boolean) {
         val q = _searchQuery.value.trim()
         if (q.isBlank()) return
-        searchJob?.cancel()
+        cancelSearches()
+        val scopePinned = pinnedOnly && pinnedPackages.value.isNotEmpty()
+        _searchedAllSources.value = !scopePinned
         searchJob = viewModelScope.launch {
-            val sources = sourcesForScope()
+            val sources = searchableSources().let { all ->
+                if (scopePinned) all.filter { it.second in pinnedPackages.value } else all
+            }
             if (sources.isEmpty()) {
                 _searchResults.value = emptyList()
                 _isSearching.value = false
@@ -232,21 +226,46 @@ class BrowseViewModel @Inject constructor(
     }
 
     /**
-     * Installed catalogue sources currently in search scope: pinned-only by
-     * default, or all sources when nothing is pinned or [includeAllSources] is on.
-     * Each entry is (display name, package, source).
+     * Extends a pinned-only search to the remaining sources — fired when the
+     * user first visits the With results / All tab. Loaded results are kept;
+     * only the not-yet-queried sources go out.
      */
-    private fun sourcesForScope(): List<Triple<String, String, SearchSource>> {
-        val pinned = pinnedPackages.value
-        val pinnedOnly = pinned.isNotEmpty() && !_includeAllSources.value
-        return extensionManager.extensions.value.mapNotNull { loaded ->
-            val pkg = loaded.info.packageName
-            if (pinnedOnly && pkg !in pinned) return@mapNotNull null
-            val src = loaded.source as? SearchSource ?: return@mapNotNull null
-            val name = loaded.info.label.substringAfter(": ", loaded.info.label)
-            Triple(name, pkg, src)
+    fun extendSearchToAllSources() {
+        if (_searchedAllSources.value) return
+        val q = _searchQuery.value.trim()
+        if (q.isBlank() || _searchResults.value.isEmpty()) return
+        _searchedAllSources.value = true
+
+        val queriedPkgs = _searchResults.value.mapTo(HashSet()) { it.packageName }
+        val toQuery = searchableSources().filter { it.second !in queriedPkgs }
+        if (toQuery.isEmpty()) return
+
+        extendJob = viewModelScope.launch {
+            _isSearching.value = true
+            _searchResults.value = _searchResults.value + toQuery.map { (name, pkg, src) ->
+                GlobalSearchResult(sourceName = name, packageName = pkg, sourceId = sourceIdFor(pkg), isLoading = true)
+            }
+            runQueries(q, toQuery)
+            _isSearching.value = false
         }
     }
+
+    private fun cancelSearches() {
+        searchJob?.cancel()
+        extendJob?.cancel()
+    }
+
+    /**
+     * Every installed catalogue source. Global search always queries them all;
+     * the screen's tabs (Pinned / With results / All) narrow the view instead
+     * of the query. Each entry is (display name, package, source).
+     */
+    private fun searchableSources(): List<Triple<String, String, SearchSource>> =
+        extensionManager.extensions.value.mapNotNull { loaded ->
+            val src = loaded.source as? SearchSource ?: return@mapNotNull null
+            val name = loaded.info.label.substringAfter(": ", loaded.info.label)
+            Triple(name, loaded.info.packageName, src)
+        }
 
     /** Search each source in parallel, folding each result into its entry by package. */
     private suspend fun runQueries(
@@ -260,7 +279,16 @@ class BrowseViewModel @Inject constructor(
                     current.map { entry ->
                         if (entry.packageName != pkg) return@map entry
                         result.fold(
-                            onSuccess = { novels -> entry.copy(novels = novels, isLoading = false) },
+                            // A source with rotted selectors can answer with
+                            // blank entries — invisible cards that still count
+                            // as "results". Keep only renderable novels, and
+                            // dedupe by url (the lazy-row key).
+                            onSuccess = { novels ->
+                                val cleaned = novels
+                                    .filter { it.url.isNotBlank() && it.title.isNotBlank() }
+                                    .distinctBy { it.url }
+                                entry.copy(novels = cleaned, isLoading = false)
+                            },
                             onFailure = { e -> entry.copy(
                                     isLoading = false,
                                     error = e.message
@@ -274,11 +302,10 @@ class BrowseViewModel @Inject constructor(
     }
 
     fun clearSearch() {
-        searchJob?.cancel()
+        cancelSearches()
         _searchQuery.value = ""
         _searchResults.value = emptyList()
         _isSearching.value = false
-        // Reset scope so reopening global search defaults back to pinned-only.
-        _includeAllSources.value = false
+        _searchedAllSources.value = false
     }
 }

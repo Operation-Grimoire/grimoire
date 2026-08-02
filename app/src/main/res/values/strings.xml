@@ -276,16 +276,12 @@
     <string name="privacy_image_hint">Tap to reveal · hold to peek</string>
 
     <!-- Global search and source browsing -->
-    <string name="global_search_pinned_placeholder">Search pinned sources…</string>
     <string name="global_search_all_placeholder">Search all sources…</string>
     <string name="global_search_no_results_found">No results found</string>
-    <string name="global_search_type_pinned">Type to search your pinned sources</string>
     <string name="global_search_type_all">Type to search all sources</string>
-    <string name="global_search_all_sources">All sources</string>
-    <plurals name="global_search_pinned_count">
-        <item quantity="one">Pinned (%1$d)</item>
-        <item quantity="other">Pinned (%1$d)</item>
-    </plurals>
+    <string name="global_search_tab_all">All</string>
+    <string name="global_search_tab_pinned">Pinned</string>
+    <string name="global_search_tab_results">With results</string>
     <string name="global_search_scope_tip">Searching all sources. Tip: long-press a source on Browse and tap Pin to search just your favorites.</string>
     <string name="global_search_see_all">See all</string>
     <string name="global_search_no_results">No results</string>
