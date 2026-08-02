@@ -4,6 +4,7 @@ import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.preferences.AdultFilter
 import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
@@ -84,6 +85,8 @@ class LibraryFilterTest {
         filterMaxUserRating: Int = 10,
         filterType: NovelTypeFilter = NovelTypeFilter.ALL,
         epubSourceIds: Set<Long> = emptySet(),
+        filterAdult: AdultFilter = AdultFilter.ANY,
+        adultSourceIds: Set<Long> = emptySet(),
         filterSourceIds: Set<Long> = emptySet(),
         isUnlocked: Boolean = true,
         hiddenCategoryIds: Set<Long> = emptySet(),
@@ -108,6 +111,8 @@ class LibraryFilterTest {
         filterType = filterType,
         epubSourceIds = epubSourceIds,
         filterSourceIds = filterSourceIds,
+        filterAdult = filterAdult,
+        adultSourceIds = adultSourceIds,
         isUnlocked = isUnlocked,
         hiddenCategoryIds = hiddenCategoryIds,
         includeHiddenInAll = includeHiddenInAll,
@@ -586,5 +591,29 @@ class LibraryFilterTest {
                 tabCategoryIds = listOf(-1L, 5L, 7L),
             ),
         )
+    }
+
+    @Test
+    fun `adult filter ONLY_ADULT keeps novels from adult sources`() {
+        val novels = listOf(
+            novel(id = 1, title = "Adult", sourceId = 100L),
+            novel(id = 2, title = "Safe", sourceId = 200L),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterAdult = AdultFilter.ONLY_ADULT, adultSourceIds = setOf(100L)),
+        )
+        assertEquals(listOf(1L), tabs.first().novels!!.map { it.id })
+    }
+
+    @Test
+    fun `adult filter HIDE_ADULT drops novels from adult sources`() {
+        val novels = listOf(
+            novel(id = 1, title = "Adult", sourceId = 100L),
+            novel(id = 2, title = "Safe", sourceId = 200L),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterAdult = AdultFilter.HIDE_ADULT, adultSourceIds = setOf(100L)),
+        )
+        assertEquals(listOf(2L), tabs.first().novels!!.map { it.id })
     }
 }

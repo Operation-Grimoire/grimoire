@@ -119,6 +119,7 @@
     <string name="library_filter_status">状态</string>
     <string name="library_filter_source">书源</string>
     <string name="library_filter_type">类型</string>
+    <string name="library_filter_adult">18+ 内容</string>
     <string name="library_status_ongoing">连载中</string>
     <string name="library_status_completed">已完结</string>
     <string name="library_status_hiatus">暂停更新</string>
