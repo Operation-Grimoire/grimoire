@@ -155,6 +155,21 @@ class LibraryUpdater @Inject constructor(
         else favorites.filter { it.categoryId == categoryId }
     }
 
+    /**
+     * Refreshes a single novel — the retry action on the update-warnings page.
+     * A clean refresh clears the novel's issue row; a failing one re-records
+     * it with the fresh error. Returns false when the refresh failed outright.
+     */
+    suspend fun updateNovel(novelId: Long): Boolean {
+        // Full rescan, not just awaitReady: a "source not installed" issue is
+        // retried right after the user installs the extension, and the retry
+        // must see the fresh package set. Cheap at single-novel scale.
+        extensionManager.refresh()
+        val novel = novelDao.getById(novelId) ?: return false
+        val result = refreshNovel(novel, extensionManager.extensions.value)
+        return result !is NovelRefreshResult.Failed
+    }
+
     private suspend fun refreshNovel(
         novel: NovelEntity,
         extensions: List<LoadedExtension>,

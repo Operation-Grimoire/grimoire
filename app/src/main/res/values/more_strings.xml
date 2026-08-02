@@ -224,6 +224,10 @@
     <string name="update_issue_source_missing">Source not installed — skipped</string>
     <string name="update_issue_no_chapters">Source returned no chapters — kept the existing list</string>
     <string name="update_issue_incomplete_data">Source returned incomplete data — kept the previous title/cover</string>
+    <string name="update_issues_retry_all">Retry all</string>
+    <string name="update_issues_dismiss_all">Dismiss all</string>
+    <string name="update_issue_dismiss">Dismiss</string>
+    <string name="update_issue_install_source">Install source</string>
 
     <!-- Crash report -->
     <string name="crash_title">App crashed</string>
