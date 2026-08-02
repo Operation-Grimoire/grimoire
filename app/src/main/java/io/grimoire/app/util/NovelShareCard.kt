@@ -96,7 +96,9 @@ object NovelShareCardRenderer {
         val coverAspect = if (cover != null && cover.width > 0) {
             cover.height.toFloat() / cover.width.toFloat()
         } else 1.5f
-        val coverH = coverW * coverAspect.coerceIn(1.2f, 1.45f)
+        // Aspect cap keeps the tallest cover + a two-line title + author clear
+        // of the bottom-anchored percent row.
+        val coverH = coverW * coverAspect.coerceIn(1.2f, 1.38f)
         val coverLeft = (W - coverW) / 2f
         val coverTop = 80f
         val coverRect = RectF(coverLeft, coverTop, coverLeft + coverW, coverTop + coverH)
@@ -119,6 +121,11 @@ object NovelShareCardRenderer {
             canvas.drawRoundRect(coverRect, 28f, 28f, ph)
         }
 
+        // The title/author flow top-down under the cover; the progress block
+        // (percent, bar, stat line) is anchored to the bottom instead of
+        // flowing after them, so a title that wraps to a second line can never
+        // push the stats into the footer (#318 — the "stacked" text).
+
         var y = coverRect.bottom + 48f
 
         // Title (up to two lines, ellipsized).
@@ -139,62 +146,10 @@ object NovelShareCardRenderer {
             }
             val authorLayout = ellipsizedLayout("by ${data.author}", authorPaint, (W - margin * 2).toInt(), maxLines = 1)
             canvas.withTranslation(margin, y) { authorLayout.draw(this) }
-            y += authorLayout.height + 8f
         }
 
-        y += 28f
-
-        // Big percentage.
-        val percentPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = onColor
-            textSize = 130f
-            isFakeBoldText = true
-        }
-        val percentText = "${data.percent}%"
-        canvas.drawText(percentText, margin, y + percentPaint.textSize * 0.75f, percentPaint)
-
-        val labelPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = onMuted
-            textSize = 34f
-        }
-        canvas.drawText(
-            context.getString(R.string.share_card_read),
-            margin + percentPaint.measureText(percentText) + 24f,
-            y + percentPaint.textSize * 0.65f,
-            labelPaint,
-        )
-
-        // Big user rating on the right of the same row (only when the user has rated it).
-        data.userRating?.let { rating ->
-            val baseY = y + percentPaint.textSize * 0.75f
-            val starPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = palette.accent; textSize = 84f }
-            val numPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = onColor; textSize = 130f; isFakeBoldText = true }
-            val ofPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = onMuted; textSize = 40f }
-            val star = "★ "
-            val num = rating.toString()
-            val of = "/10"
-            val total = starPaint.measureText(star) + numPaint.measureText(num) + ofPaint.measureText(of)
-            var x = W - margin - total
-            canvas.drawText(star, x, baseY, starPaint); x += starPaint.measureText(star)
-            canvas.drawText(num, x, baseY, numPaint); x += numPaint.measureText(num)
-            canvas.drawText(of, x, baseY, ofPaint)
-        }
-        y += percentPaint.textSize + 16f
-
-        // Progress bar.
-        val barLeft = margin
-        val barRight = W - margin
-        val barH = 22f
-        val track = RectF(barLeft, y, barRight, y + barH)
-        canvas.drawRoundRect(track, barH / 2f, barH / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = withAlpha(onColor, 0.18f) })
-        val fillW = (barRight - barLeft) * (data.percent / 100f)
-        if (fillW > 0f) {
-            val fill = RectF(barLeft, y, barLeft + fillW.coerceAtLeast(barH), y + barH)
-            canvas.drawRoundRect(fill, barH / 2f, barH / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = palette.accent })
-        }
-        y += barH + 24f
-
-        // Stat line: chapters (+ words when available).
+        // Stat line: chapters (+ words when available). Sized first so the
+        // bar and percent row can stack above it.
         val statPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             color = onColor
             textSize = 40f
@@ -214,7 +169,59 @@ object NovelShareCardRenderer {
             chapterStat
         }
         val statLayout = ellipsizedLayout(stat, statPaint, (W - margin * 2).toInt(), maxLines = 1)
-        canvas.withTranslation(margin, y) { statLayout.draw(this) }
+        val statTop = H - 132f - statLayout.height
+
+        // Progress bar above the stat line.
+        val barLeft = margin
+        val barRight = W - margin
+        val barH = 22f
+        val barTop = statTop - 24f - barH
+        val track = RectF(barLeft, barTop, barRight, barTop + barH)
+        canvas.drawRoundRect(track, barH / 2f, barH / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = withAlpha(onColor, 0.18f) })
+        val fillW = (barRight - barLeft) * (data.percent / 100f)
+        if (fillW > 0f) {
+            val fill = RectF(barLeft, barTop, barLeft + fillW.coerceAtLeast(barH), barTop + barH)
+            canvas.drawRoundRect(fill, barH / 2f, barH / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = palette.accent })
+        }
+
+        // Big percentage row above the bar.
+        val percentPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = onColor
+            textSize = 130f
+            isFakeBoldText = true
+        }
+        val percentTop = barTop - 16f - percentPaint.textSize
+        val percentText = "${data.percent}%"
+        canvas.drawText(percentText, margin, percentTop + percentPaint.textSize * 0.75f, percentPaint)
+
+        val labelPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = onMuted
+            textSize = 34f
+        }
+        canvas.drawText(
+            context.getString(R.string.share_card_read),
+            margin + percentPaint.measureText(percentText) + 24f,
+            percentTop + percentPaint.textSize * 0.65f,
+            labelPaint,
+        )
+
+        // Big user rating on the right of the same row (only when the user has rated it).
+        data.userRating?.let { rating ->
+            val baseY = percentTop + percentPaint.textSize * 0.75f
+            val starPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = palette.accent; textSize = 84f }
+            val numPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = onColor; textSize = 130f; isFakeBoldText = true }
+            val ofPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = onMuted; textSize = 40f }
+            val star = "★ "
+            val num = rating.toString()
+            val of = "/10"
+            val total = starPaint.measureText(star) + numPaint.measureText(num) + ofPaint.measureText(of)
+            var x = W - margin - total
+            canvas.drawText(star, x, baseY, starPaint); x += starPaint.measureText(star)
+            canvas.drawText(num, x, baseY, numPaint); x += numPaint.measureText(num)
+            canvas.drawText(of, x, baseY, ofPaint)
+        }
+
+        canvas.withTranslation(margin, statTop) { statLayout.draw(this) }
 
         // Footer: app wordmark.
         val footPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {

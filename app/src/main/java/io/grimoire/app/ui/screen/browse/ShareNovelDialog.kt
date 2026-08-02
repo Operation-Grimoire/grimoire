@@ -11,17 +11,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,18 +38,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import io.grimoire.app.R
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import io.grimoire.app.ui.icon.AppIcons
 import io.grimoire.app.ui.icon.ContentCopy
 import io.grimoire.app.ui.icon.Share
 
 /**
- * Popup dialog that renders a share card for the novel (cover + reading-progress stats over a
- * cover-derived gradient) and offers to share the image or copy the novel's link. The card is
- * rendered off the UI thread once when the dialog opens; [data] is a stable snapshot so the
- * render fires only once.
+ * Full-screen share surface: the rendered card takes the page, with the share
+ * and copy-link actions as a fixed row at the bottom. Replaces the old popup
+ * dialog whose side-by-side buttons clipped on narrow screens. The card is
+ * rendered off the UI thread once when the dialog opens; [data] is a stable
+ * snapshot so the render fires only once.
  */
 @Composable
 internal fun ShareNovelDialog(
@@ -65,92 +70,96 @@ internal fun ShareNovelDialog(
         rendering = false
     }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
+    // Chromeless full-screen page: no top bar — the close action lives with
+    // the other buttons at the bottom, inside thumb reach.
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+                .padding(horizontal = 20.dp),
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            // The preview owns all the space above the action row.
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    stringResource(R.string.action_share),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                )
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.88f)
-                        .aspectRatio(1080f / 1620f)
-                        .clip(MaterialTheme.shapes.large),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val uri = previewUri
-                    if (uri != null) {
-                        AsyncImage(
-                            model = uri,
-                            contentDescription = stringResource(R.string.share_preview_content_description),
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    } else if (rendering) {
-                        CircularProgressIndicator()
-                    } else {
-                        Text(
-                            stringResource(R.string.share_build_failed),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                val uri = previewUri
+                if (uri != null) {
+                    AsyncImage(
+                        model = uri,
+                        contentDescription = stringResource(R.string.share_preview_content_description),
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .aspectRatio(1080f / 1620f)
+                            .clip(MaterialTheme.shapes.large),
+                    )
+                } else if (rendering) {
+                    CircularProgressIndicator()
+                } else {
+                    Text(
+                        stringResource(R.string.share_build_failed),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
+            }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    if (showCopyLink) {
-                        OutlinedButton(
-                            onClick = {
-                                copyToClipboard(context, novelUrl)
-                                Toast.makeText(context, context.getString(R.string.share_link_copied), Toast.LENGTH_SHORT).show()
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(52.dp),
-                        ) {
-                            Icon(AppIcons.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text(
-                                stringResource(R.string.share_copy_link),
-                                maxLines = 1,
-                                softWrap = false,
-                                modifier = Modifier.padding(start = 8.dp),
-                            )
-                        }
-                    }
-                    Button(
-                        onClick = { previewUri?.let { shareImage(context, it) } },
-                        enabled = previewUri != null,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (showCopyLink) {
+                    OutlinedButton(
+                        onClick = {
+                            copyToClipboard(context, novelUrl)
+                            Toast.makeText(context, context.getString(R.string.share_link_copied), Toast.LENGTH_SHORT).show()
+                        },
                         modifier = Modifier
                             .weight(1f)
                             .height(52.dp),
                     ) {
-                        Icon(AppIcons.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(AppIcons.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(
-                            stringResource(R.string.action_share),
+                            stringResource(R.string.share_copy_link),
                             maxLines = 1,
                             softWrap = false,
                             modifier = Modifier.padding(start = 8.dp),
                         )
                     }
                 }
+                Button(
+                    onClick = { previewUri?.let { shareImage(context, it) } },
+                    enabled = previewUri != null,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                ) {
+                    Icon(AppIcons.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(
+                        stringResource(R.string.action_share),
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
             }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 4.dp, bottom = 12.dp),
+            ) {
+                Text(stringResource(R.string.action_close))
+            }
+        }
         }
     }
 }
