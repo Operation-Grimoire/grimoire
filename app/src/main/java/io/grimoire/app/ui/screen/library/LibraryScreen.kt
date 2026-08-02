@@ -3,6 +3,8 @@ package io.grimoire.app.ui.screen.library
 import io.grimoire.app.ui.icon.*
 import android.net.Uri
 import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.app.ui.component.ScrollToTopButton
+import io.grimoire.app.ui.component.showScrollToTop
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,6 +34,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -601,7 +605,11 @@ fun LibraryScreen(
                     }
                     else -> {
                         if (displayMode == LibraryDisplayMode.GRID) {
+                            val gridState = rememberLazyGridState()
+                            val showToTop by gridState.showScrollToTop()
+                            Box(Modifier.fillMaxSize()) {
                             LazyVerticalGrid(
+                                state = gridState,
                                 columns = GridCells.Fixed(gridColumns),
                                 contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 88.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -628,8 +636,18 @@ fun LibraryScreen(
                                     )
                                 }
                             }
+                            ScrollToTopButton(
+                                visible = showToTop,
+                                onClick = { scope.launch { gridState.animateScrollToItem(0) } },
+                                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+                            )
+                            }
                         } else {
+                            val listState = rememberLazyListState()
+                            val showToTop by listState.showScrollToTop()
+                            Box(Modifier.fillMaxSize()) {
                             LazyColumn(
+                                state = listState,
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(bottom = 88.dp),
                             ) {
@@ -652,6 +670,12 @@ fun LibraryScreen(
                                         onLongClick = { toggleSelect(novel.id) },
                                     )
                                 }
+                            }
+                            ScrollToTopButton(
+                                visible = showToTop,
+                                onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+                            )
                             }
                         }
                     }

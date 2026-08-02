@@ -94,6 +94,7 @@ import io.grimoire.app.ui.component.AutoRetryOnReturn
 import io.grimoire.app.ui.component.ChapterItem
 import io.grimoire.app.ui.component.CloudflareBlockedCard
 import io.grimoire.app.ui.component.FastScroller
+import io.grimoire.app.ui.component.showScrollToTop
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.MoveToCategorySheet
@@ -835,6 +836,8 @@ fun NovelDetailScreen(
         },
     ) { padding ->
         val detailBody = @Composable {
+            val showToTop by listState.showScrollToTop()
+            Box(Modifier.fillMaxSize()) {
             FastScroller(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
@@ -1282,6 +1285,16 @@ fun NovelDetailScreen(
                         }
                     }
                 }
+            }
+        
+            io.grimoire.app.ui.component.ScrollToTopButton(
+                visible = showToTop,
+                onClick = { coroutineScope.launch { listState.animateScrollToItem(0) } },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    // Clear the Continue FAB when it's showing.
+                    .padding(end = 16.dp, bottom = if (continueChapter != null && !selectionMode) 88.dp else 16.dp),
+            )
             }
         }
         if (viewModel.isLocal || sourceMissing) {

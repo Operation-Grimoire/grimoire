@@ -209,65 +209,67 @@ fun HistoryScreen(
                 if (reading.isEmpty()) {
                     EmptyHistory(stringResource(R.string.history_reading_empty))
                 } else {
-                    LazyColumn {
-                        readingDays.forEach { (dayKeyValue, dayEntries) ->
-                            item(key = "r-day-$dayKeyValue") { DayHeader(dayEntries.first().openedAt) }
-                            // Consecutive chapters of the same novel within a day collapse into
-                            // one expandable group (newest-first), so a reading session reads as
-                            // a single entry rather than a stack of near-identical rows.
-                            groupConsecutiveByNovel(dayEntries).forEach { group ->
-                                if (group.size == 1) {
-                                    val entry = group[0]
-                                    item(key = "r-${entry.id}") {
-                                        HistoryRow(
-                                            thumbnailUrl = entry.novelThumbnailUrl,
-                                            title = entry.novelTitle,
-                                            subtitle = entry.chapterName,
-                                            openedAt = entry.openedAt,
-                                            selected = entry.id in selectedIds,
-                                            onClick = {
-                                                if (selectionMode) toggle(entry.id)
-                                                else onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
-                                            },
-                                            onLongClick = { toggle(entry.id) },
-                                        )
-                                    }
-                                } else {
-                                    val groupKey = group.first().id
-                                    val collapsed = groupKey !in expandedGroups
-                                    val ids = group.map { it.id }
-                                    val toggleCollapse = {
-                                        expandedGroups = if (collapsed) expandedGroups + groupKey
-                                        else expandedGroups - groupKey
-                                    }
-                                    item(key = "r-group-$groupKey") {
-                                        ReadingGroupHeader(
-                                            group = group,
-                                            collapsed = collapsed,
-                                            selected = ids.all { it in selectedIds },
-                                            onClick = {
-                                                if (selectionMode) toggleAll(ids) else toggleCollapse()
-                                            },
-                                            onLongClick = {
-                                                if (selectionMode) toggleCollapse() else toggleAll(ids)
-                                            },
-                                            onToggleCollapse = toggleCollapse,
-                                        )
-                                    }
-                                    if (!collapsed) {
-                                        items(group.size, key = { "r-ch-${group[it].id}" }) { i ->
-                                            val entry = group[i]
-                                            ChildRail {
-                                                ReadingChildRow(
-                                                    chapterName = entry.chapterName,
-                                                    openedAt = entry.openedAt,
-                                                    selected = entry.id in selectedIds,
-                                                    onClick = {
-                                                        if (selectionMode) toggle(entry.id)
-                                                        else onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
-                                                    },
-                                                    onLongClick = { toggle(entry.id) },
-                                                )
+                    io.grimoire.app.ui.component.ScrollToTopBox { listState ->
+                        LazyColumn(state = listState) {
+                            readingDays.forEach { (dayKeyValue, dayEntries) ->
+                                item(key = "r-day-$dayKeyValue") { DayHeader(dayEntries.first().openedAt) }
+                                // Consecutive chapters of the same novel within a day collapse into
+                                // one expandable group (newest-first), so a reading session reads as
+                                // a single entry rather than a stack of near-identical rows.
+                                groupConsecutiveByNovel(dayEntries).forEach { group ->
+                                    if (group.size == 1) {
+                                        val entry = group[0]
+                                        item(key = "r-${entry.id}") {
+                                            HistoryRow(
+                                                thumbnailUrl = entry.novelThumbnailUrl,
+                                                title = entry.novelTitle,
+                                                subtitle = entry.chapterName,
+                                                openedAt = entry.openedAt,
+                                                selected = entry.id in selectedIds,
+                                                onClick = {
+                                                    if (selectionMode) toggle(entry.id)
+                                                    else onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
+                                                },
+                                                onLongClick = { toggle(entry.id) },
+                                            )
+                                        }
+                                    } else {
+                                        val groupKey = group.first().id
+                                        val collapsed = groupKey !in expandedGroups
+                                        val ids = group.map { it.id }
+                                        val toggleCollapse = {
+                                            expandedGroups = if (collapsed) expandedGroups + groupKey
+                                            else expandedGroups - groupKey
+                                        }
+                                        item(key = "r-group-$groupKey") {
+                                            ReadingGroupHeader(
+                                                group = group,
+                                                collapsed = collapsed,
+                                                selected = ids.all { it in selectedIds },
+                                                onClick = {
+                                                    if (selectionMode) toggleAll(ids) else toggleCollapse()
+                                                },
+                                                onLongClick = {
+                                                    if (selectionMode) toggleCollapse() else toggleAll(ids)
+                                                },
+                                                onToggleCollapse = toggleCollapse,
+                                            )
+                                        }
+                                        if (!collapsed) {
+                                            items(group.size, key = { "r-ch-${group[it].id}" }) { i ->
+                                                val entry = group[i]
+                                                ChildRail {
+                                                    ReadingChildRow(
+                                                        chapterName = entry.chapterName,
+                                                        openedAt = entry.openedAt,
+                                                        selected = entry.id in selectedIds,
+                                                        onClick = {
+                                                            if (selectionMode) toggle(entry.id)
+                                                            else onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
+                                                        },
+                                                        onLongClick = { toggle(entry.id) },
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -280,23 +282,25 @@ fun HistoryScreen(
                 if (browsing.isEmpty()) {
                     EmptyHistory(stringResource(R.string.history_browsing_empty))
                 } else {
-                    LazyColumn {
-                        browsingDays.forEach { (dayKeyValue, entries) ->
-                            item(key = "b-day-$dayKeyValue") { DayHeader(entries.first().openedAt) }
-                            items(entries.size, key = { "b-${entries[it].id}" }) { i ->
-                                val entry = entries[i]
-                                HistoryRow(
-                                    thumbnailUrl = entry.novelThumbnailUrl,
-                                    title = entry.novelTitle,
-                                    subtitle = null,
-                                    openedAt = entry.openedAt,
-                                    selected = entry.id in selectedIds,
-                                    onClick = {
-                                        if (selectionMode) toggle(entry.id)
-                                        else onOpenNovel(entry.sourcePackage, entry.novelUrl)
-                                    },
-                                    onLongClick = { toggle(entry.id) },
-                                )
+                    io.grimoire.app.ui.component.ScrollToTopBox { listState ->
+                        LazyColumn(state = listState) {
+                            browsingDays.forEach { (dayKeyValue, entries) ->
+                                item(key = "b-day-$dayKeyValue") { DayHeader(entries.first().openedAt) }
+                                items(entries.size, key = { "b-${entries[it].id}" }) { i ->
+                                    val entry = entries[i]
+                                    HistoryRow(
+                                        thumbnailUrl = entry.novelThumbnailUrl,
+                                        title = entry.novelTitle,
+                                        subtitle = null,
+                                        openedAt = entry.openedAt,
+                                        selected = entry.id in selectedIds,
+                                        onClick = {
+                                            if (selectionMode) toggle(entry.id)
+                                            else onOpenNovel(entry.sourcePackage, entry.novelUrl)
+                                        },
+                                        onLongClick = { toggle(entry.id) },
+                                    )
+                                }
                             }
                         }
                     }

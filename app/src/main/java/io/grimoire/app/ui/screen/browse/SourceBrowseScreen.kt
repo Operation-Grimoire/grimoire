@@ -47,6 +47,8 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -56,6 +58,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import io.grimoire.app.ui.component.AppSearchField
+import io.grimoire.app.ui.component.ScrollToTopButton
+import io.grimoire.app.ui.component.showScrollToTop
 import io.grimoire.app.ui.component.AutoRetryOnReturn
 import io.grimoire.app.ui.component.CloudflareBlockedCard
 import io.grimoire.app.ui.component.NovelQuickViewSheet
@@ -97,6 +101,7 @@ fun SourceBrowseScreen(
     var showFilters by remember { mutableStateOf(false) }
     var quickView by remember { mutableStateOf<Novel?>(null) }
     val focusRequester = remember { FocusRequester() }
+    val scope = rememberCoroutineScope()
 
     // Coming back from the WebView after a Cloudflare block retries without
     // waiting for the user to press Retry.
@@ -301,7 +306,9 @@ fun SourceBrowseScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                else -> LazyVerticalGrid(
+                else -> Box(Modifier.fillMaxSize()) {
+                    val showToTop by gridState.showScrollToTop()
+                    LazyVerticalGrid(
                     columns = if (displayMode == BrowseDisplayMode.GRID) GridCells.Fixed(gridColumns) else GridCells.Fixed(1),
                     state = gridState,
                     contentPadding = PaddingValues(8.dp),
@@ -338,6 +345,12 @@ fun SourceBrowseScreen(
                             }
                         }
                     }
+                }
+                    ScrollToTopButton(
+                        visible = showToTop,
+                        onClick = { scope.launch { gridState.animateScrollToItem(0) } },
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+                    )
                 }
             }
         }
