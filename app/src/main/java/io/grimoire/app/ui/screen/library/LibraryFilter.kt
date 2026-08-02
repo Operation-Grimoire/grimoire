@@ -6,6 +6,7 @@ import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.effectiveTotal
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
+import io.grimoire.app.data.preferences.AdultFilter
 import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
@@ -28,6 +29,9 @@ internal data class LibraryFilterInputs(
     val filterType: NovelTypeFilter,
     val epubSourceIds: Set<Long>,
     val filterSourceIds: Set<Long>,
+    val filterAdult: AdultFilter,
+    /** Source ids whose installed extension declares adult content (PARTIAL/FULL). */
+    val adultSourceIds: Set<Long>,
     val isUnlocked: Boolean,
     val hiddenCategoryIds: Set<Long>,
     val includeHiddenInAll: Boolean,
@@ -158,6 +162,11 @@ internal fun computeTabNovels(
                 NovelTypeFilter.WEB -> !novel.isEpubType(epubSourceIds)
             }) &&
             (filterSourceIds.isEmpty() || novel.sourceId in filterSourceIds) &&
+            (when (filterAdult) {
+                AdultFilter.ANY -> true
+                AdultFilter.ONLY_ADULT -> novel.sourceId in adultSourceIds
+                AdultFilter.HIDE_ADULT -> novel.sourceId !in adultSourceIds
+            }) &&
             (trimmedQuery.isEmpty() ||
                 novel.effectiveTitle.contains(trimmedQuery, ignoreCase = true) ||
                 (novel.effectiveAuthor?.contains(trimmedQuery, ignoreCase = true) == true))

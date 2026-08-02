@@ -123,6 +123,7 @@
     <string name="library_filter_status">Status</string>
     <string name="library_filter_source">Source</string>
     <string name="library_filter_type">Type</string>
+    <string name="library_filter_adult">18+ content</string>
     <string name="library_status_ongoing">Ongoing</string>
     <string name="library_status_completed">Completed</string>
     <string name="library_status_hiatus">Hiatus</string>

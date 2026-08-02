@@ -82,6 +82,7 @@ import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
 import io.grimoire.app.data.preferences.LibraryDisplayMode
+import io.grimoire.app.data.preferences.AdultFilter
 import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.MoveToCategorySheet
@@ -132,6 +133,7 @@ fun LibraryScreen(
     val filterMinUserRating by viewModel.filterMinUserRating.collectAsState()
     val filterMaxUserRating by viewModel.filterMaxUserRating.collectAsState()
     val filterType by viewModel.filterType.collectAsState()
+    val filterAdult by viewModel.filterAdult.collectAsState()
     val filterSourceIds by viewModel.filterSourceIds.collectAsState()
     val librarySourceOptions by viewModel.librarySources.collectAsState()
     val isUnlocked by viewModel.isUnlocked.collectAsState()
@@ -233,7 +235,8 @@ fun LibraryScreen(
     val isFilterActive = filterStatuses.isNotEmpty() || filterStatusesExclude.isNotEmpty() || filterUnreadOnly || filterDownloadedOnly ||
         filterNotifyEnabled || filterAutoDownloadEnabled ||
         filterMinUserRating > 1 || filterMaxUserRating < 10 ||
-        filterType != NovelTypeFilter.ALL || filterSourceIds.isNotEmpty()
+        filterType != NovelTypeFilter.ALL || filterSourceIds.isNotEmpty() ||
+        filterAdult != AdultFilter.ANY
 
     val allCategoryLabel = stringResource(R.string.library_all)
     val tabs = displayedTabs.map {
@@ -540,7 +543,9 @@ fun LibraryScreen(
                         Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (searchQuery.isNotBlank()) {
+                        // An active search *or* filter emptied the page — say
+                        // "no matches" instead of the empty-library onboarding.
+                        if (searchQuery.isNotBlank() || isFilterActive) {
                             Text(
                                 stringResource(R.string.library_no_matches),
                                 style = MaterialTheme.typography.bodyLarge,
@@ -703,6 +708,7 @@ fun LibraryScreen(
                 filterMinUserRating = filterMinUserRating,
                 filterMaxUserRating = filterMaxUserRating,
                 filterType = filterType,
+                filterAdult = filterAdult,
                 filterSourceIds = filterSourceIds,
                 librarySources = librarySources,
                 onSortFieldChange = viewModel::setSortField,
@@ -715,6 +721,7 @@ fun LibraryScreen(
                 onAutoDownloadEnabledChange = viewModel::setFilterAutoDownloadEnabled,
                 onUserRatingRangeChange = viewModel::setFilterUserRatingRange,
                 onFilterTypeChange = viewModel::setFilterType,
+                onFilterAdultChange = viewModel::setFilterAdult,
                 onToggleFilterSource = viewModel::toggleFilterSource,
             )
         }

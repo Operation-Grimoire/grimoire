@@ -21,6 +21,8 @@ import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
+import io.grimoire.api.source.AdultContent
+import io.grimoire.app.data.preferences.AdultFilter
 import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
@@ -190,6 +192,7 @@ class LibraryViewModel @Inject constructor(
     val filterMinUserRating: StateFlow<Int> = libraryPreferences.filterMinUserRating.stateIn(viewModelScope)
     val filterMaxUserRating: StateFlow<Int> = libraryPreferences.filterMaxUserRating.stateIn(viewModelScope)
     val filterType: StateFlow<NovelTypeFilter> = libraryPreferences.filterType.stateIn(viewModelScope)
+    val filterAdult: StateFlow<AdultFilter> = libraryPreferences.filterAdult.stateIn(viewModelScope)
     val filterSourceIds: StateFlow<Set<Long>> = libraryPreferences.filterSourceIds.stateIn(viewModelScope)
 
     /**
@@ -218,6 +221,17 @@ class LibraryViewModel @Inject constructor(
      */
     val epubSourceIds: StateFlow<Set<Long>> = extensionManager.extensions
         .map { exts -> exts.filter { it.source is EpubSource }.map { it.id }.toSet() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+
+    /**
+     * Source ids whose installed extension declares adult content — the 18+
+     * filter's notion of adult. Novels from uninstalled sources count as
+     * non-adult (nothing to read them with anyway).
+     */
+    val adultSourceIds: StateFlow<Set<Long>> = extensionManager.extensions
+        .map { exts ->
+            exts.filter { it.adultContent != AdultContent.NONE }.map { it.id }.toSet()
+        }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
     val includeHiddenInAll: StateFlow<Boolean> = libraryPreferences.includeHiddenInAll.stateIn(viewModelScope)
     val includeLockedInTotals: StateFlow<Boolean> = libraryPreferences.includeLockedInTotals.stateIn(viewModelScope)
@@ -278,6 +292,8 @@ class LibraryViewModel @Inject constructor(
             filterMinUserRating,
             filterMaxUserRating,
             filterStatusesExclude,
+            filterAdult,
+            adultSourceIds,
         ),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
@@ -309,6 +325,8 @@ class LibraryViewModel @Inject constructor(
             filterMinUserRating = values[19] as Int,
             filterMaxUserRating = values[20] as Int,
             filterStatusesExclude = values[21] as Set<Int>,
+            filterAdult = values[22] as AdultFilter,
+            adultSourceIds = values[23] as Set<Long>,
         )
     }
 
@@ -450,6 +468,10 @@ class LibraryViewModel @Inject constructor(
 
     fun setFilterType(value: NovelTypeFilter) = viewModelScope.launch {
         libraryPreferences.filterType.set(value)
+    }
+
+    fun setFilterAdult(value: AdultFilter) = viewModelScope.launch {
+        libraryPreferences.filterAdult.set(value)
     }
 
     /** Sets the inclusive user-rating range (1–10) a novel must fall in; the full 1..10 clears it. */

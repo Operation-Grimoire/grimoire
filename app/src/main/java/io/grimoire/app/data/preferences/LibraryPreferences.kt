@@ -23,6 +23,13 @@ enum class SortDirection { ASC, DESC }
 enum class NovelTypeFilter { ALL, EPUB, WEB }
 
 /**
+ * 18+ library filter. Adultness comes from the novel's source: any installed
+ * extension declaring PARTIAL or FULL adult content counts. ANY is off,
+ * ONLY_ADULT keeps just those novels, HIDE_ADULT drops them.
+ */
+enum class AdultFilter { ANY, ONLY_ADULT, HIDE_ADULT }
+
+/**
  * Translates a legacy `library_sort_order` enum name (e.g. "LAST_READ_DESC") into the
  * new (field, direction) split. Returns null for unrecognized values so reads fall back
  * to the new defaults instead of silently picking the wrong sort.
@@ -81,6 +88,7 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
     val filterNotifyEnabled = store.getBoolean("library_filter_notify_enabled", false)
     val filterAutoDownloadEnabled = store.getBoolean("library_filter_auto_download_enabled", false)
     val filterType = store.getEnum("library_filter_type", NovelTypeFilter.ALL)
+    val filterAdult = store.getEnum("library_filter_adult", AdultFilter.ANY)
 
     // User-rating range filter (1–10, inclusive). The full 1..10 range means "no
     // restriction". Once narrowed, only novels whose rating falls inside the range

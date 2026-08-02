@@ -38,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
 import kotlin.math.roundToInt
+import io.grimoire.app.data.preferences.AdultFilter
 import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
@@ -80,6 +81,7 @@ internal fun FilterSortContent(
     filterMinUserRating: Int,
     filterMaxUserRating: Int,
     filterType: NovelTypeFilter,
+    filterAdult: AdultFilter,
     filterSourceIds: Set<Long>,
     librarySources: List<Pair<Long, String>>,
     onSortFieldChange: (SortField) -> Unit,
@@ -92,6 +94,7 @@ internal fun FilterSortContent(
     onAutoDownloadEnabledChange: (Boolean) -> Unit,
     onUserRatingRangeChange: (Int, Int) -> Unit,
     onFilterTypeChange: (NovelTypeFilter) -> Unit,
+    onFilterAdultChange: (AdultFilter) -> Unit,
     onToggleFilterSource: (Long?) -> Unit,
 ) {
     // Dragging the rating slider must not swipe the pager: the slider consumes
@@ -123,6 +126,7 @@ internal fun FilterSortContent(
                     filterMinUserRating = filterMinUserRating,
                     filterMaxUserRating = filterMaxUserRating,
                     filterType = filterType,
+                    filterAdult = filterAdult,
                     filterSourceIds = filterSourceIds,
                     librarySources = librarySources,
                     onStatusStateChange = onStatusStateChange,
@@ -133,6 +137,7 @@ internal fun FilterSortContent(
                     onAutoDownloadEnabledChange = onAutoDownloadEnabledChange,
                     onUserRatingRangeChange = onUserRatingRangeChange,
                     onFilterTypeChange = onFilterTypeChange,
+                    onFilterAdultChange = onFilterAdultChange,
                     onToggleFilterSource = onToggleFilterSource,
                 )
                 1 -> SortTab(
@@ -160,6 +165,7 @@ private fun FilterTab(
     filterMinUserRating: Int,
     filterMaxUserRating: Int,
     filterType: NovelTypeFilter,
+    filterAdult: AdultFilter,
     filterSourceIds: Set<Long>,
     librarySources: List<Pair<Long, String>>,
     onStatusStateChange: (Int, io.grimoire.app.ui.component.sheet.FilterTriState) -> Unit,
@@ -170,6 +176,7 @@ private fun FilterTab(
     onAutoDownloadEnabledChange: (Boolean) -> Unit,
     onUserRatingRangeChange: (Int, Int) -> Unit,
     onFilterTypeChange: (NovelTypeFilter) -> Unit,
+    onFilterAdultChange: (AdultFilter) -> Unit,
     onToggleFilterSource: (Long?) -> Unit,
 ) {
     Column {
@@ -231,6 +238,24 @@ private fun FilterTab(
                 stringResource(NOVEL_TYPE_OPTIONS.first { it.first == option }.second)
             },
             modifier = Modifier.padding(vertical = 4.dp),
+        )
+        // 18+ tri-state: include-only or exclude novels from adult sources.
+        io.grimoire.app.ui.component.sheet.TriStateFilterRow(
+            name = stringResource(R.string.library_filter_adult),
+            state = when (filterAdult) {
+                AdultFilter.ONLY_ADULT -> io.grimoire.app.ui.component.sheet.FilterTriState.INCLUDE
+                AdultFilter.HIDE_ADULT -> io.grimoire.app.ui.component.sheet.FilterTriState.EXCLUDE
+                AdultFilter.ANY -> io.grimoire.app.ui.component.sheet.FilterTriState.ANY
+            },
+            onStateChange = { state ->
+                onFilterAdultChange(
+                    when (state) {
+                        io.grimoire.app.ui.component.sheet.FilterTriState.INCLUDE -> AdultFilter.ONLY_ADULT
+                        io.grimoire.app.ui.component.sheet.FilterTriState.EXCLUDE -> AdultFilter.HIDE_ADULT
+                        io.grimoire.app.ui.component.sheet.FilterTriState.ANY -> AdultFilter.ANY
+                    },
+                )
+            },
         )
         // Local drag state so the pref is written once per gesture (on release), not on
         // every frame. Re-seeded whenever the persisted values change.
