@@ -230,7 +230,16 @@ class BrowseViewModel @Inject constructor(
                     current.map { entry ->
                         if (entry.packageName != pkg) return@map entry
                         result.fold(
-                            onSuccess = { novels -> entry.copy(novels = novels, isLoading = false) },
+                            // A source with rotted selectors can answer with
+                            // blank entries — invisible cards that still count
+                            // as "results". Keep only renderable novels, and
+                            // dedupe by url (the lazy-row key).
+                            onSuccess = { novels ->
+                                val cleaned = novels
+                                    .filter { it.url.isNotBlank() && it.title.isNotBlank() }
+                                    .distinctBy { it.url }
+                                entry.copy(novels = cleaned, isLoading = false)
+                            },
                             onFailure = { e -> entry.copy(
                                     isLoading = false,
                                     error = e.message
