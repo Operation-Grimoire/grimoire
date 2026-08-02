@@ -285,6 +285,10 @@ internal fun NavGraphBuilder.moreDestinations(navController: NavHostController) 
                     "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novelUrl)}"
                 )
             },
+            onOpenExtensions = { navController.navigate(extensionManageRoute()) },
+            onOpenWebView = { url ->
+                navController.navigate("webview?url=${Uri.encode(url)}")
+            },
         )
     }
     composable(route = ROUTE_ABOUT) {

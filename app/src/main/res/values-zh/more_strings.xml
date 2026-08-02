@@ -209,6 +209,10 @@
     <string name="update_issue_source_missing">未安装对应书源 — 已跳过</string>
     <string name="update_issue_no_chapters">书源未返回章节 — 已保留现有列表</string>
     <string name="update_issue_incomplete_data">书源返回的数据不完整 — 已保留原有标题和封面</string>
+    <string name="update_issues_retry_all">全部重试</string>
+    <string name="update_issues_dismiss_all">全部忽略</string>
+    <string name="update_issue_dismiss">忽略</string>
+    <string name="update_issue_install_source">安装书源</string>
 
     <!-- 崩溃报告 -->
     <string name="crash_title">应用崩溃</string>
