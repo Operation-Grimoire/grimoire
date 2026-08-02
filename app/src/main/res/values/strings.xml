@@ -4,6 +4,7 @@
     <!-- Common actions -->
     <string name="action_back">Back</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_scroll_to_top">Scroll to top</string>
 
     <!-- Bottom navigation -->
     <string name="nav_library">Library</string>
