@@ -302,7 +302,8 @@ fun DownloadsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                } else LazyColumn(modifier = Modifier.fillMaxSize()) {
+                } else io.grimoire.app.ui.component.ScrollToTopBox { listState ->
+                LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
 
                 state.novels.forEach { novelDownloads ->
                     // Already filtered by the ViewModel — novels with no matching chapters
@@ -359,6 +360,7 @@ fun DownloadsScreen(
                     }
                 }
                 }
+            }
             }
         }
     }
