@@ -140,7 +140,9 @@ internal fun NavGraphBuilder.browseGraph(
             LaunchedEffect(q) {
                 if (!q.isNullOrBlank()) {
                     vm.setQuery(q)
-                    vm.submitSearch()
+                    // Matches the screen's initial tab: pinned-only when pins
+                    // exist (the VM widens automatically when none do).
+                    vm.submitSearch(pinnedOnly = true)
                 }
             }
             GlobalSearchScreen(

@@ -72,12 +72,29 @@ fun GlobalSearchScreen(
     val isSearching by viewModel.isSearching.collectAsState()
     val libraryKeys by viewModel.libraryKeys.collectAsState()
     val pinned by viewModel.pinnedPackages.collectAsState()
+    val searchedAll by viewModel.searchedAllSources.collectAsState()
 
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     var quickView by remember { mutableStateOf<Pair<Novel, String>?>(null) }
 
+    // Hoisted so the submit scope and the lazy widening below can read the
+    // active tab. Land on Pinned when the user curates pins; otherwise With
+    // results is the useful default.
+    val pagerState = rememberPagerState(
+        initialPage = if (pinned.isEmpty()) 1 else 0,
+        pageCount = { 3 },
+    )
+
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
+    // A search submitted from the Pinned tab only queried pinned sources; the
+    // first visit to a wider tab sends the query to the rest.
+    LaunchedEffect(pagerState.currentPage, searchResults.isNotEmpty()) {
+        if (pagerState.currentPage >= 1 && searchResults.isNotEmpty()) {
+            viewModel.extendSearchToAllSources()
+        }
+    }
 
     Scaffold(
         modifier = modifier,
@@ -100,7 +117,7 @@ fun GlobalSearchScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .focusRequester(focusRequester),
-                        onSearch = { viewModel.submitSearch() },
+                        onSearch = { viewModel.submitSearch(pinnedOnly = pagerState.currentPage == 0) },
                     )
                 },
             )
@@ -117,12 +134,18 @@ fun GlobalSearchScreen(
                             stringResource(R.string.global_search_tab_results),
                             stringResource(R.string.global_search_tab_all),
                         ),
-                        // Land on Pinned when the user curates pins; otherwise
-                        // With results is the useful default.
-                        pagerState = rememberPagerState(
-                            initialPage = if (pinned.isEmpty()) 1 else 0,
-                            pageCount = { 3 },
-                        ),
+                        // Sources-with-hits counts; the wider tabs only earn a
+                        // badge once their scope has actually been searched.
+                        badges = run {
+                            val hits = withResultsOnly(searchResults)
+                            val pinnedHits = hits.count { it.packageName in pinned }
+                            listOf(
+                                if (pinned.isEmpty()) null else "$pinnedHits",
+                                if (searchedAll) "${hits.size}" else null,
+                                if (searchedAll) "${hits.size}" else null,
+                            )
+                        },
+                        pagerState = pagerState,
                         style = SwipeTabStyle.Secondary,
                     ) { page ->
                         val pageResults = when (page) {
