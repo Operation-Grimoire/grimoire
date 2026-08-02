@@ -150,6 +150,18 @@ class BrowseViewModel @Inject constructor(
     private val _searchResults = MutableStateFlow<List<GlobalSearchResult>>(emptyList())
     val searchResults: StateFlow<List<GlobalSearchResult>> = _searchResults.asStateFlow()
 
+    /**
+     * Results ordered for display: sources with hits first (most relevant on
+     * top), loading next, empty and failed last. Recomputed off the main
+     * thread as per-source responses fold in.
+     */
+    val sortedSearchResults: StateFlow<List<GlobalSearchResult>> =
+        combine(_searchResults, _searchQuery) { results, query ->
+            sortGlobalSearchResults(results, query)
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
 

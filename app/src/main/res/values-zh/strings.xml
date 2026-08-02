@@ -274,6 +274,8 @@
     <string name="global_search_type_pinned">输入内容以搜索已固定书源</string>
     <string name="global_search_type_all">输入内容以搜索全部书源</string>
     <string name="global_search_all_sources">全部书源</string>
+    <string name="global_search_tab_all">全部</string>
+    <string name="global_search_tab_results">有结果</string>
     <plurals name="global_search_pinned_count">
         <item quantity="other">已固定（%1$d）</item>
     </plurals>

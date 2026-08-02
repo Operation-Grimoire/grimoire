@@ -51,6 +51,8 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.NovelQuickViewSheet
+import io.grimoire.app.ui.component.SwipeTabRow
+import io.grimoire.app.ui.component.SwipeTabStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -69,7 +71,7 @@ fun GlobalSearchScreen(
     viewModel: BrowseViewModel,
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
-    val searchResults by viewModel.searchResults.collectAsState()
+    val searchResults by viewModel.sortedSearchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
     val libraryKeys by viewModel.libraryKeys.collectAsState()
     val pinned by viewModel.pinnedPackages.collectAsState()
@@ -120,13 +122,38 @@ fun GlobalSearchScreen(
             )
             Box(Modifier.fillMaxSize()) {
                 when {
-                    searchResults.isNotEmpty() -> GlobalSearchResults(
-                        results = searchResults,
-                        libraryKeys = libraryKeys,
-                        onNovelClick = onNovelClick,
-                        onNovelLongClick = { novel, pkg -> quickView = novel to pkg },
-                        onSeeAll = { pkg -> onNavigateToSourceSearch(pkg, searchQuery) },
-                    )
+                    // Two swipeable views over the same sorted results: every
+                    // source in scope, or just the ones that returned hits.
+                    searchResults.isNotEmpty() -> SwipeTabRow(
+                        tabs = listOf(
+                            stringResource(R.string.global_search_tab_all),
+                            stringResource(R.string.global_search_tab_results),
+                        ),
+                        style = SwipeTabStyle.Secondary,
+                    ) { page ->
+                        val pageResults = if (page == 0) searchResults else withResultsOnly(searchResults)
+                        if (pageResults.isEmpty()) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                if (isSearching) {
+                                    CircularProgressIndicator()
+                                } else {
+                                    Text(
+                                        stringResource(R.string.global_search_no_results_found),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        } else {
+                            GlobalSearchResults(
+                                results = pageResults,
+                                libraryKeys = libraryKeys,
+                                onNovelClick = onNovelClick,
+                                onNovelLongClick = { novel, pkg -> quickView = novel to pkg },
+                                onSeeAll = { pkg -> onNavigateToSourceSearch(pkg, searchQuery) },
+                            )
+                        }
+                    }
                     isSearching -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
