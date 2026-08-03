@@ -167,7 +167,11 @@ class NovelDetailViewModel @Inject constructor(
         else items.firstOrNull { sourceIdFor(it.packageName) == canonicalSourceId }?.name
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    /** Diff produced by the most recent user-triggered [refresh]; the screen shows a modal while non-null. */
+    /**
+     * Diff produced by the most recent user-triggered [refresh]; the screen shows a
+     * modal while non-null. Only chapters covered by the novel's notification
+     * toggles are included — with both toggles off no summary is emitted.
+     */
     private val _refreshSummary = MutableStateFlow<RefreshSummary?>(null)
     val refreshSummary: StateFlow<RefreshSummary?> = _refreshSummary.asStateFlow()
 
@@ -494,27 +498,37 @@ class NovelDetailViewModel @Inject constructor(
             loadNovel(forceRefresh = true)
             refreshLoginState()
 
-            // Only emit a summary when the novel already had a chapter list — otherwise
-            // a first-time fetch would flag every chapter as "new".
+            // Only diff when the novel already had a chapter list — otherwise a
+            // first-time fetch would flag every chapter as "new".
             if (before.isNotEmpty() && cachedNovelId > 0L) {
                 val after = chapterDao.getChaptersOnce(cachedNovelId)
-                val newChapters = after.filter { ch ->
-                    val prev = before[ch.url]
-                    prev == null || (prev.locked && !ch.locked)
-                }
+                val newChapters = diffNewChapters(before, after)
                 if (newChapters.isNotEmpty()) {
-                    _refreshSummary.value = RefreshSummary(
-                        chapters = newChapters
-                            .sortedByDescending { it.chapterNumber }
-                            .map { ch ->
-                                RefreshedChapter(
-                                    name = ch.name,
-                                    chapterNumber = ch.chapterNumber,
-                                    locked = ch.locked,
-                                    unlockedFromLocked = before[ch.url]?.locked == true,
-                                )
-                            },
+                    // A manual refresh honours the novel's auto-download toggle just
+                    // like the background sync. Locked chapters can't be fetched.
+                    if (_autoDownloadNewChapters.value) {
+                        val downloadable = newChapters.filterNot { it.locked }
+                        if (downloadable.isNotEmpty()) downloadManager.enqueue(downloadable)
+                    }
+                    val notifiable = filterNotifiableChapters(
+                        newChapters,
+                        notifyOnNewChapters = _notifyOnNewChapters.value,
+                        notifyOnNewLockedChapters = _notifyOnNewLockedChapters.value,
                     )
+                    if (notifiable.isNotEmpty()) {
+                        _refreshSummary.value = RefreshSummary(
+                            chapters = notifiable
+                                .sortedByDescending { it.chapterNumber }
+                                .map { ch ->
+                                    RefreshedChapter(
+                                        name = ch.name,
+                                        chapterNumber = ch.chapterNumber,
+                                        locked = ch.locked,
+                                        unlockedFromLocked = before[ch.url]?.locked == true,
+                                    )
+                                },
+                        )
+                    }
                 }
             }
         }
