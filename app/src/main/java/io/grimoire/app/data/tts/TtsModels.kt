@@ -34,12 +34,19 @@ data class TtsVoice(
     /** Stable id: [android.speech.tts.Voice.getName] for device, voice id for ElevenLabs. */
     val id: String,
     val displayName: String,
-    val detail: String? = null,
+    /** Device voices only; the picker turns it into a localized label. */
+    val quality: TtsVoiceQuality? = null,
+    /** ElevenLabs voices only; the picker turns it into a localized label. */
+    val category: ElevenLabsVoiceCategory? = null,
     val engine: TtsEngineType,
     val localeTag: String? = null,
     val needsNetwork: Boolean = false,
     val notInstalled: Boolean = false,
 )
+
+enum class TtsVoiceQuality { VERY_HIGH, HIGH, NORMAL, LOW }
+
+enum class ElevenLabsVoiceCategory { DEFAULT, PERSONAL, WORKSPACE, COMMUNITY }
 
 /** ElevenLabs character-quota usage for the current billing period. */
 data class ElevenLabsUsage(

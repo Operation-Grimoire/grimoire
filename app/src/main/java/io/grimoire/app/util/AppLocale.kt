@@ -1,7 +1,10 @@
 package io.grimoire.app.util
 
+import android.app.LocaleManager
 import android.content.Context
 import android.content.res.Configuration
+import android.os.Build
+import android.os.LocaleList
 import java.util.Locale
 
 /**
@@ -15,6 +18,10 @@ import java.util.Locale
  * Callers apply it by wrapping the base context ([wrap]) and, after a change, recreating the
  * activity so every resource re-resolves in the new language. This intentionally avoids pulling in
  * `androidx.appcompat` (the app is Compose + [androidx.fragment.app.FragmentActivity] only).
+ *
+ * On Android 13+ the system's per-app language ([LocaleManager]) is the source of truth instead,
+ * so the choice also shows up in system settings. The SharedPreferences tag is then only a
+ * one-time migration source ([migrateToSystem]).
  */
 object AppLocale {
     private const val PREFS = "app_locale"
@@ -27,11 +34,50 @@ object AppLocale {
     val supported: List<String> = listOf(SYSTEM, "en", "zh")
 
     /** The persisted tag, or [SYSTEM] when the user follows the system language. */
-    fun storedTag(context: Context): String =
-        prefs(context).getString(KEY_TAG, SYSTEM).orEmpty()
+    fun storedTag(context: Context): String {
+        val legacy = prefs(context).getString(KEY_TAG, SYSTEM).orEmpty()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return legacy
+        // Before migrateToSystem has run, fall back to the legacy tag.
+        return systemTag(context).ifBlank { legacy }
+    }
 
-    fun setTag(context: Context, tag: String) {
-        prefs(context).edit().putString(KEY_TAG, tag).apply()
+    /**
+     * Stores [tag]. Returns true when the caller must recreate the activity itself; on Android 13+
+     * the system recreates it.
+     */
+    fun setTag(context: Context, tag: String): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            prefs(context).edit().putString(KEY_TAG, tag).apply()
+            return true
+        }
+        prefs(context).edit().remove(KEY_TAG).apply()
+        context.getSystemService(LocaleManager::class.java).applicationLocales =
+            if (tag.isBlank()) LocaleList.getEmptyLocaleList() else LocaleList.forLanguageTags(tag)
+        return false
+    }
+
+    /**
+     * Moves a tag saved before Android 13 support into the system per-app language, unless one was
+     * already picked in system settings.
+     */
+    fun migrateToSystem(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val legacy = prefs(context).getString(KEY_TAG, SYSTEM).orEmpty()
+        if (legacy.isBlank()) return
+        if (systemTag(context).isBlank()) {
+            setTag(context, legacy)
+        } else {
+            prefs(context).edit().remove(KEY_TAG).apply()
+        }
+    }
+
+    /** The system per-app language, mapped onto [supported] so regional picks (zh-CN, en-GB) match. */
+    private fun systemTag(context: Context): String {
+        val locales = systemLocales(context)
+        if (locales == null || locales.isEmpty) return SYSTEM
+        val picked = locales[0]
+        return supported.firstOrNull { it != SYSTEM && Locale.forLanguageTag(it).language == picked.language }
+            ?: picked.toLanguageTag()
     }
 
     /**
@@ -39,6 +85,8 @@ object AppLocale {
      * follows the system language.
      */
     fun wrap(base: Context): Context {
+        // The system already applies its per-app language, region included.
+        if (systemLocales(base)?.isEmpty == false) return base
         val tag = storedTag(base)
         if (tag.isBlank()) return base
         val locale = Locale.forLanguageTag(tag)
@@ -48,6 +96,13 @@ object AppLocale {
         config.setLayoutDirection(locale)
         return base.createConfigurationContext(config)
     }
+
+    private fun systemLocales(context: Context): LocaleList? =
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            null
+        } else {
+            context.getSystemService(LocaleManager::class.java).applicationLocales
+        }
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

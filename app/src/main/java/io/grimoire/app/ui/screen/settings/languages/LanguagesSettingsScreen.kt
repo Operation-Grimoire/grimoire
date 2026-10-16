@@ -99,10 +99,9 @@ fun LanguagesSettingsScreen(
             onSelect = { tag ->
                 pickerOpen = false
                 if (tag != currentTag) {
-                    AppLocale.setTag(context, tag)
                     // Recreate the activity so every resource re-resolves in the
                     // newly-chosen language. attachBaseContext picks up the new tag.
-                    context.findActivity()?.recreate()
+                    if (AppLocale.setTag(context, tag)) context.findActivity()?.recreate()
                 }
             },
         )

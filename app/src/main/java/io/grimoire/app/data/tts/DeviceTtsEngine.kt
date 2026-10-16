@@ -6,6 +6,8 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.grimoire.app.R
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.Locale
 import javax.inject.Inject
@@ -24,6 +26,9 @@ class DeviceTtsEngine @Inject constructor(
     override val canResumeMidUtterance = false
 
     override var listener: TtsEngine.Listener? = null
+
+    // Resolved per use: these singletons outlive an in-app language change.
+    private val localizedContext get() = AppLocale.wrap(context)
 
     private var tts: TextToSpeech? = null
     private var ready = false
@@ -56,7 +61,7 @@ class DeviceTtsEngine @Inject constructor(
         val voices = tts?.voices ?: return emptyList()
         return voices
             .filter { target == null || it.locale.language == target.language }
-            .sortedBy { it.locale.getDisplayName(Locale.ENGLISH) }
+            .sortedBy { it.locale.displayName }
             .map { it.toTtsVoice() }
     }
 
@@ -103,32 +108,30 @@ class DeviceTtsEngine @Inject constructor(
 
         @Deprecated("Deprecated in Java")
         override fun onError(utteranceId: String) {
-            listener?.onError(utteranceId, "Device speech engine error")
+            listener?.onError(utteranceId, localizedContext.getString(R.string.tts_error_device_engine))
         }
 
         override fun onError(utteranceId: String, errorCode: Int) {
-            listener?.onError(utteranceId, "Device speech engine error ($errorCode)")
+            listener?.onError(
+                utteranceId,
+                localizedContext.getString(R.string.tts_error_device_engine_code, errorCode),
+            )
         }
     }
 }
 
 private fun Voice.toTtsVoice(): TtsVoice {
-    val qualityLabel = when {
-        quality >= Voice.QUALITY_VERY_HIGH -> "Very high quality"
-        quality >= Voice.QUALITY_HIGH -> "High quality"
-        quality >= Voice.QUALITY_NORMAL -> "Normal quality"
-        else -> "Low quality"
+    val voiceQuality = when {
+        quality >= Voice.QUALITY_VERY_HIGH -> TtsVoiceQuality.VERY_HIGH
+        quality >= Voice.QUALITY_HIGH -> TtsVoiceQuality.HIGH
+        quality >= Voice.QUALITY_NORMAL -> TtsVoiceQuality.NORMAL
+        else -> TtsVoiceQuality.LOW
     }
     val notInstalled = features?.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED) == true
-    val detail = buildString {
-        append(qualityLabel)
-        if (isNetworkConnectionRequired) append(" · online")
-        if (notInstalled) append(" · not installed")
-    }
     return TtsVoice(
         id = name,
-        displayName = locale.getDisplayName(Locale.ENGLISH).ifBlank { name },
-        detail = detail,
+        displayName = locale.displayName.ifBlank { name },
+        quality = voiceQuality,
         engine = TtsEngineType.DEVICE,
         localeTag = locale.toLanguageTag(),
         needsNetwork = isNetworkConnectionRequired,

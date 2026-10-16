@@ -2,7 +2,9 @@ package io.grimoire.app.extension.repo
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.grimoire.app.R
 import io.grimoire.app.di.GitHubAuthorized
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -52,7 +54,10 @@ class ExtensionInstaller @Inject constructor(
                 }
                 .build()
             client.newCall(req).execute().use { response ->
-                if (!response.isSuccessful) failResponse(response, "Download failed")
+                if (!response.isSuccessful) failResponse(
+                    response,
+                    AppLocale.wrap(context).getString(R.string.extension_download_failed_http, response.code),
+                )
                 val body = response.body!!
                 val total = body.contentLength().coerceAtLeast(0L)
                 var read = 0L
@@ -104,7 +109,7 @@ class ExtensionInstaller @Inject constructor(
      * prompt the user to connect GitHub (or wait) instead of showing a raw HTTP
      * code; everything else falls back to a generic failure.
      */
-    private fun failResponse(resp: Response, fallback: String): Nothing {
+    private fun failResponse(resp: Response, message: String): Nothing {
         val host = resp.request.url.host
         val isGitHub = host == "github.com" || host == "api.github.com"
         val rateLimited = resp.header("X-RateLimit-Remaining") == "0" ||
@@ -112,7 +117,7 @@ class ExtensionInstaller @Inject constructor(
         if (isGitHub && resp.code == 403 && rateLimited) {
             throw GitHubRateLimitException("GitHub rate limit reached.")
         }
-        error("$fallback: HTTP ${resp.code}")
+        error(message)
     }
 
     @Serializable

@@ -63,9 +63,7 @@ class GitHubAuthRepository @Inject constructor(
     fun connect() {
         if (connectJob?.isActive == true) return
         if (!isClientConfigured()) {
-            _transient.value = TransientState.Failed(
-                AuthFailure.Unexpected("GitHub OAuth client ID is not configured in this build."),
-            )
+            _transient.value = TransientState.Failed(AuthFailure.MissingClientId)
             return
         }
         connectJob = scope.launch { runConnect() }

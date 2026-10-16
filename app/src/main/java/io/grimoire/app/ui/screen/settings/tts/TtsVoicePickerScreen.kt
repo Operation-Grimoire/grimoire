@@ -36,8 +36,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import io.grimoire.app.data.tts.ElevenLabsVoiceCategory
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsPreviewManager
+import io.grimoire.app.data.tts.TtsVoice
+import io.grimoire.app.data.tts.TtsVoiceQuality
 import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,7 +125,7 @@ fun TtsVoicePickerScreen(
                     items(s.voices, key = { it.id }) { voice ->
                         VoiceRow(
                             title = voice.displayName,
-                            subtitle = voice.detail,
+                            subtitle = voiceDetail(voice),
                             selected = selectedId == voice.id,
                             previewState = previewStateFor(preview, viewModel.previewKey(voice.id)),
                             onClick = { viewModel.selectVoice(voice.id) },
@@ -231,4 +234,29 @@ private fun CenteredMessage(text: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+@Composable
+private fun voiceDetail(voice: TtsVoice): String? {
+    val parts = buildList {
+        when (voice.quality) {
+            TtsVoiceQuality.VERY_HIGH -> add(stringResource(R.string.tts_voice_quality_very_high))
+            TtsVoiceQuality.HIGH -> add(stringResource(R.string.tts_voice_quality_high))
+            TtsVoiceQuality.NORMAL -> add(stringResource(R.string.tts_voice_quality_normal))
+            TtsVoiceQuality.LOW -> add(stringResource(R.string.tts_voice_quality_low))
+            null -> Unit
+        }
+        when (voice.category) {
+            ElevenLabsVoiceCategory.DEFAULT -> add(stringResource(R.string.tts_voice_category_default))
+            ElevenLabsVoiceCategory.PERSONAL -> add(stringResource(R.string.tts_voice_category_personal))
+            ElevenLabsVoiceCategory.WORKSPACE -> add(stringResource(R.string.tts_voice_category_workspace))
+            ElevenLabsVoiceCategory.COMMUNITY -> add(stringResource(R.string.tts_voice_category_community))
+            null -> Unit
+        }
+        if (voice.engine == TtsEngineType.DEVICE) {
+            if (voice.needsNetwork) add(stringResource(R.string.tts_voice_online))
+            if (voice.notInstalled) add(stringResource(R.string.tts_voice_not_installed))
+        }
+    }
+    return parts.joinToString(" · ").ifEmpty { null }
 }

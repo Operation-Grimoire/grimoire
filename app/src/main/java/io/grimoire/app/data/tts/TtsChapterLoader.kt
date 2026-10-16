@@ -1,12 +1,16 @@
 package io.grimoire.app.data.tts
 
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.source.web.PageListSource
+import io.grimoire.app.R
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.app.util.AppLocale
 import io.grimoire.app.util.text
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,9 +23,13 @@ import javax.inject.Singleton
  */
 @Singleton
 class TtsChapterLoader @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
 ) {
+
+    // Resolved per use: these singletons outlive an in-app language change.
+    private val localizedContext get() = AppLocale.wrap(context)
 
     suspend fun loadChapterList(novelId: Long): List<ChapterEntity> =
         chapterDao.getChapterMetadataOnce(novelId)
@@ -39,9 +47,13 @@ class TtsChapterLoader @Inject constructor(
         val source = extensionManager.extensions.value
             .firstOrNull { it.info.packageName == pkg }
             ?.source
-            ?: throw IllegalStateException("Source unavailable — download the chapter to listen offline")
+            ?: throw IllegalStateException(
+                localizedContext.getString(R.string.tts_error_source_unavailable),
+            )
         val pageSource = source as? PageListSource
-            ?: throw IllegalStateException("This source can't read chapter text — download to listen offline")
+            ?: throw IllegalStateException(
+                localizedContext.getString(R.string.tts_error_source_no_text),
+            )
         return pageSource.getPageList(full.toChapter()).filter { it.text.isNotBlank() }
     }
 }

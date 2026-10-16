@@ -32,7 +32,8 @@ class ElevenLabsTtsEngine @Inject constructor(
 ) : TtsEngine {
 
     /** Resources in the in-app UI language, for error text surfaced to the screen. */
-    private val localizedContext = AppLocale.wrap(context)
+    // Resolved per use: these singletons outlive an in-app language change.
+    private val localizedContext get() = AppLocale.wrap(context)
 
     override val type = TtsEngineType.ELEVENLABS
     override val canResumeMidUtterance = true
@@ -114,9 +115,7 @@ class ElevenLabsTtsEngine @Inject constructor(
         cfg.voiceId?.takeIf { it.isNotBlank() }?.let { return it }
         resolvedDefaultVoiceId?.let { return it }
         val id = api.defaultVoiceId(cfg.elevenLabsApiKey)
-            ?: throw IOException(
-                "No default ElevenLabs voice is available — pick one in Text-to-speech settings",
-            )
+            ?: throw IOException(localizedContext.getString(R.string.tts_error_no_default_voice))
         resolvedDefaultVoiceId = id
         return id
     }
@@ -145,7 +144,10 @@ class ElevenLabsTtsEngine @Inject constructor(
         }
         mp.setOnErrorListener { _, what, _ ->
             file.delete()
-            listener?.onError(utteranceId, "Audio playback error ($what)")
+            listener?.onError(
+                utteranceId,
+                localizedContext.getString(R.string.tts_error_audio_playback_code, what),
+            )
             true
         }
         player = mp

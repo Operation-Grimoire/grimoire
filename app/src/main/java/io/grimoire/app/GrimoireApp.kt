@@ -112,6 +112,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         installCrashHandler()
+        AppLocale.migrateToSystem(this)
         // Keep the analytics enabled-flag in sync with the opt-in preference.
         ProcessLifecycleOwner.get().lifecycleScope.launch {
             analyticsPreferences.usageAnalyticsEnabled.changes().collect {
@@ -123,9 +124,9 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         extensionRepository.checkForUpdatesOnLaunch()
         val channel = NotificationChannel(
             DOWNLOAD_CHANNEL_ID,
-            "Chapter Downloads",
+            getString(R.string.notification_channel_downloads),
             NotificationManager.IMPORTANCE_LOW,
-        ).apply { description = "Background chapter downloads" }
+        ).apply { description = getString(R.string.notification_channel_downloads_desc) }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
@@ -166,30 +167,30 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
 
         val backupChannel = NotificationChannel(
             BACKUP_CHANNEL_ID,
-            "Backups",
+            getString(R.string.notification_channel_backups),
             NotificationManager.IMPORTANCE_LOW,
-        ).apply { description = "Scheduled local backups" }
+        ).apply { description = getString(R.string.notification_channel_backups_desc) }
         getSystemService(NotificationManager::class.java).createNotificationChannel(backupChannel)
 
         val appUpdateChannel = NotificationChannel(
             APP_UPDATE_CHANNEL_ID,
-            "App Updates",
+            getString(R.string.notification_channel_app_updates),
             NotificationManager.IMPORTANCE_DEFAULT,
-        ).apply { description = "Background app update downloads" }
+        ).apply { description = getString(R.string.notification_channel_app_updates_desc) }
         getSystemService(NotificationManager::class.java).createNotificationChannel(appUpdateChannel)
 
         val libraryUpdateChannel = NotificationChannel(
             LIBRARY_UPDATE_CHANNEL_ID,
-            "Library updates",
+            getString(R.string.notification_channel_library_updates),
             NotificationManager.IMPORTANCE_LOW,
-        ).apply { description = "Background library refresh progress and results" }
+        ).apply { description = getString(R.string.notification_channel_library_updates_desc) }
         getSystemService(NotificationManager::class.java).createNotificationChannel(libraryUpdateChannel)
 
         val ttsChannel = NotificationChannel(
             TTS_CHANNEL_ID,
-            "Text-to-speech",
+            getString(R.string.notification_channel_tts),
             NotificationManager.IMPORTANCE_LOW,
-        ).apply { description = "Read-aloud playback controls" }
+        ).apply { description = getString(R.string.notification_channel_tts_desc) }
         getSystemService(NotificationManager::class.java).createNotificationChannel(ttsChannel)
 
         // Carry old fixed-frequency prefs into the new count + unit model before

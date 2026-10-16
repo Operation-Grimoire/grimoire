@@ -39,9 +39,8 @@ import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.ui.theme.premiumGold
 import io.grimoire.app.R
-import java.text.SimpleDateFormat
+import java.text.DateFormat
 import java.util.Date
-import java.util.Locale
 
 /**
  * Standard chapter row used by Novel Details and Updates. Renders the chapter
@@ -320,4 +319,4 @@ private fun BoxScope.RefreshBadgeSpinner() {
 }
 
 private fun formatChapterDate(millis: Long): String =
-    SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(millis))
+    DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(millis))
