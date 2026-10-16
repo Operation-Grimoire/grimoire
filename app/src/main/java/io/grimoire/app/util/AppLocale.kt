@@ -110,7 +110,12 @@ object AppLocale {
 
     private fun matchSupported(picked: Locale): String {
         if (picked.language == "zh") {
-            val traditional = picked.script == "Hant" || picked.country in setOf("TW", "HK", "MO")
+            // An explicit script wins; otherwise the region implies it (zh-HK is Traditional).
+            val traditional = when (picked.script) {
+                "Hant" -> true
+                "Hans" -> false
+                else -> picked.country in setOf("TW", "HK", "MO")
+            }
             return if (traditional) "zh-TW" else "zh"
         }
         val sameLanguage = nativeNames.keys.filter { Locale.forLanguageTag(it).language == picked.language }
