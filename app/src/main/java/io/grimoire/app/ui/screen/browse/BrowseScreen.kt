@@ -346,7 +346,7 @@ private fun NovelUpdatesCard(
     onLatest: () -> Unit,
     onBookmarks: () -> Unit,
 ) {
-    Column {
+    Column(Modifier.tourTarget(TourKey.BrowseNovelUpdates)) {
         SectionHeader(stringResource(R.string.browse_novelupdates_title))
         Row(
             modifier = Modifier
@@ -490,7 +490,7 @@ private fun BrowseBottomToolbar(
                     }
                 }
             }
-            IconButton(onClick = onFilter) {
+            IconButton(onClick = onFilter, modifier = Modifier.tourTarget(TourKey.BrowseFilter)) {
                 Icon(
                     AppIcons.FilterList,
                     contentDescription = stringResource(R.string.browse_filter),
@@ -501,7 +501,7 @@ private fun BrowseBottomToolbar(
                     },
                 )
             }
-            IconButton(onClick = onSearch) {
+            IconButton(onClick = onSearch, modifier = Modifier.tourTarget(TourKey.BrowseSearch)) {
                 Icon(
                     AppIcons.Search,
                     contentDescription = stringResource(R.string.browse_search),

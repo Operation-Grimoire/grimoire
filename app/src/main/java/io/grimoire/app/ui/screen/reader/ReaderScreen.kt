@@ -1,5 +1,7 @@
 package io.grimoire.app.ui.screen.reader
 
+import io.grimoire.app.ui.tour.tourTarget
+import io.grimoire.app.ui.tour.TourKey
 import io.grimoire.app.ui.icon.*
 import android.app.Activity
 import io.grimoire.app.ui.component.PlainTooltipIconButton
@@ -580,7 +582,11 @@ fun ReaderScreen(
                             )
                         }
                     }
-                    PlainTooltipIconButton(onClick = { onOpenWebView(viewModel.chapterWebUrl) }, tooltip = stringResource(R.string.action_open_in_webview)) {
+                    PlainTooltipIconButton(
+                        onClick = { onOpenWebView(viewModel.chapterWebUrl) },
+                        tooltip = stringResource(R.string.action_open_in_webview),
+                        modifier = Modifier.tourTarget(TourKey.ReaderWebView),
+                    ) {
                         Icon(
                             AppIcons.Language,
                             contentDescription = stringResource(R.string.action_open_in_webview),
@@ -589,6 +595,7 @@ fun ReaderScreen(
                     }
                     PlainTooltipIconButton(
                         onClick = viewModel::toggleRead,
+                        modifier = Modifier.tourTarget(TourKey.ReaderMarkRead),
                         tooltip = stringResource(
                             if (currentChapter?.read == true) R.string.reader_mark_unread
                             else R.string.reader_mark_read,
@@ -653,6 +660,8 @@ fun ReaderScreen(
                     if (ttsPlayingThisChapter) R.string.reader_pause else R.string.reader_read_aloud,
                 ),
                 onClick = viewModel::toggleTts,
+                // Hidden buttons stay in the row at zero width; don't point at one.
+                modifier = if (ttsEnabled) Modifier.tourTarget(TourKey.ReaderReadAloud) else Modifier,
             )
             TooltipIconButton(
                 visible = ttsEnabled && ttsActiveForChapter,
@@ -664,11 +673,13 @@ fun ReaderScreen(
                 icon = AppIcons.Settings,
                 label = stringResource(R.string.reader_settings),
                 onClick = { showSettings = true },
+                modifier = Modifier.tourTarget(TourKey.ReaderSettings),
             )
             TooltipIconButton(
                 icon = AppIcons.NavigateNext,
                 label = stringResource(R.string.reader_next),
                 onClick = viewModel::navigateNext,
+                modifier = Modifier.tourTarget(TourKey.ReaderNextChapter),
                 enabled = hasNext,
             )
         }

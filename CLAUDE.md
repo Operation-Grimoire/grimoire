@@ -120,6 +120,7 @@ CI lives in `.github/workflows/release.yml` and builds signed release APKs from 
 |-------------|------|
 | Icons (Material Symbols registry) | `ui/icon/AppIcons.<Name>.kt` (one per icon) |
 | Swipeable tabs (any screen/sheet) | `ui/component/SwipeTabRow.kt` |
+| Guided tours | `ui/tour/TourSteps.kt` (the catalog) + `TourController.kt`; tag an anchor with `Modifier.tourTarget(TourKey.X)`. Tours for screens that need a novel (detail, reader) use `TourTrigger.FirstVisit` and never navigate. Rules in `TourRulesTest` |
 | Rich synopsis rendering (HTML + auto-linked URLs) | `ui/component/RichSynopsis.kt` (+ `RichSynopsisTest`), consumed by `ExpandableText.kt`; link toggle via `LocalSynopsisRenderLinks` / `UiPreferences.renderSynopsisLinks` |
 | Top-level navigation | `ui/AppNavigation.kt`, `ui/AppNavGraphs.kt`, `ui/AppRoutes.kt` |
 | Library projection (pure) | `ui/screen/library/LibraryFilter.kt` + `LibraryFilterTest` |

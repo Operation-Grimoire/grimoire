@@ -1,5 +1,7 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.app.ui.tour.tourTarget
+import io.grimoire.app.ui.tour.TourKey
 import io.grimoire.app.ui.icon.*
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -542,6 +544,7 @@ fun NovelDetailScreen(
                         Text(stringResource(if (chapters.none { it.read }) R.string.novel_start else R.string.novel_continue))
                     },
                     expanded = fabExpanded,
+                    modifier = Modifier.tourTarget(TourKey.NovelRead),
                 )
             }
         },
@@ -614,7 +617,11 @@ fun NovelDetailScreen(
                             notificationsOn -> AppIcons.Notifications
                             else -> AppIcons.NotificationsNone
                         }
-                        PlainTooltipIconButton(onClick = { showNotifSheet = true }, tooltip = tooltip) {
+                        PlainTooltipIconButton(
+                            onClick = { showNotifSheet = true },
+                            tooltip = tooltip,
+                            modifier = Modifier.tourTarget(TourKey.NovelNotifications),
+                        ) {
                             Icon(
                                 icon,
                                 contentDescription = tooltip,
@@ -626,6 +633,7 @@ fun NovelDetailScreen(
                         val downloading = chapters.any { it.downloadStatus in ChapterDownloadStatus.DOWNLOADING_ORDINALS }
                         PlainTooltipIconButton(
                             onClick = { showDownloadsSheet = true },
+                            modifier = Modifier.tourTarget(TourKey.NovelDownloads),
                             tooltip = stringResource(
                                 if (downloading) R.string.novel_downloading else R.string.novel_downloads_title,
                             ),
@@ -1071,7 +1079,11 @@ fun NovelDetailScreen(
                                         )
                                     }
                                     Box {
-                                        PlainTooltipIconButton(onClick = { sortMenuExpanded = true }, tooltip = stringResource(R.string.novel_sort_options)) {
+                                        PlainTooltipIconButton(
+                                            onClick = { sortMenuExpanded = true },
+                                            tooltip = stringResource(R.string.novel_sort_options),
+                                            modifier = Modifier.tourTarget(TourKey.NovelChapterTools),
+                                        ) {
                                             Icon(AppIcons.SwapVert, contentDescription = stringResource(R.string.novel_sort_options))
                                         }
                                         DropdownMenu(
