@@ -41,6 +41,12 @@ class TourController @Inject constructor(
     /** Latest route from [onRouteChanged], so a first-visit tour can't start after the user left. */
     private var currentRoute: String? = null
 
+    /**
+     * Completion markers this session wrote, read ahead of the store so a
+     * check never sees a value that's still being saved.
+     */
+    private val writtenVersions = mutableMapOf<TourId, Int>()
+
     /** Auto-starts the first eligible launch tour the user hasn't finished. */
     fun maybeStartOnLaunch() {
         scope.launch {
@@ -59,9 +65,7 @@ class TourController @Inject constructor(
     }
 
     /** Clears a first-visit tour's completion so it runs again on its screen. */
-    fun rearm(tourId: TourId) {
-        scope.launch { tourPreferences.completedVersion(tourId.key).set(0) }
-    }
+    fun rearm(tourId: TourId) = saveCompleted(tourId, 0)
 
     fun next() {
         val s = _state.value
@@ -79,10 +83,14 @@ class TourController @Inject constructor(
     private fun finish() {
         val tourId = _state.value.tourId
         setState(TourState(running = false))
-        if (tourId != null) {
-            val version = tourById(tourId).version
-            scope.launch { tourPreferences.completedVersion(tourId.key).set(version) }
-        }
+        if (tourId != null) saveCompleted(tourId, tourById(tourId).version)
+        // A first visit made while this tour ran gets its tour now.
+        maybeStartFirstVisit(currentRoute)
+    }
+
+    private fun saveCompleted(tourId: TourId, version: Int) {
+        writtenVersions[tourId] = version
+        scope.launch { tourPreferences.completedVersion(tourId.key).set(version) }
     }
 
     private fun setState(state: TourState) {
@@ -90,8 +98,11 @@ class TourController @Inject constructor(
         revealWatch = currentStep?.advanceWhenShown?.let(::RevealWatch)
     }
 
-    private suspend fun isFinished(tour: Tour): Boolean =
-        tourPreferences.completedVersion(tour.id.key).changes().first() >= tour.version
+    private suspend fun isFinished(tour: Tour): Boolean {
+        val version = writtenVersions[tour.id]
+            ?: tourPreferences.completedVersion(tour.id.key).changes().first()
+        return version >= tour.version
+    }
 
     /**
      * Reacts to navigation: advances an interactive ([TourStep.advanceOnReach])
@@ -102,15 +113,18 @@ class TourController @Inject constructor(
         currentRoute = route
         val s = _state.value
         val running = s.tourId?.takeIf { s.running }?.let(::tourById)
-        if (running != null && running.leftItsScreen(route)) finish()
-
-        if (_state.value.running) {
-            val step = currentStep ?: return
-            val want = step.route ?: return
-            if (step.advanceOnReach && route != null && route.startsWith(want)) next()
-            return
+        when {
+            running == null -> maybeStartFirstVisit(route)
+            running.leftItsScreen(route) -> finish()
+            else -> {
+                val step = currentStep ?: return
+                val want = step.route ?: return
+                if (step.advanceOnReach && route != null && route.startsWith(want)) next()
+            }
         }
+    }
 
+    private fun maybeStartFirstVisit(route: String?) {
         val visitTour = tours.firstVisitTourFor(route) ?: return
         scope.launch {
             if (isFinished(visitTour)) return@launch
