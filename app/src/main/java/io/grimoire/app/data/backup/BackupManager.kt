@@ -68,7 +68,8 @@ class BackupManager @Inject constructor(
     private val dataStore: DataStore<Preferences>,
 ) {
 
-    private val localizedContext = AppLocale.wrap(context)
+    // Resolved per use: these singletons outlive an in-app language change.
+    private val localizedContext get() = AppLocale.wrap(context)
 
     private val json = Json {
         prettyPrint = false

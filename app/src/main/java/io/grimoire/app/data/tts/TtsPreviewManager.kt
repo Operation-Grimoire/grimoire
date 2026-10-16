@@ -44,7 +44,8 @@ class TtsPreviewManager @Inject constructor(
 ) {
 
     /** Resources in the in-app UI language, for error text surfaced to the screen. */
-    private val localizedContext = AppLocale.wrap(context)
+    // Resolved per use: these singletons outlive an in-app language change.
+    private val localizedContext get() = AppLocale.wrap(context)
 
     /** Where a preview is in its lifecycle once a row is active. */
     enum class Phase { LOADING, PLAYING }

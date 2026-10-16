@@ -21,10 +21,11 @@ import javax.inject.Singleton
 /** Thin client for the ElevenLabs Text-to-Speech REST API. */
 @Singleton
 class ElevenLabsApi @Inject constructor(
-    @ApplicationContext context: Context,
+    @ApplicationContext private val context: Context,
 ) {
 
-    private val localizedContext = AppLocale.wrap(context)
+    // Resolved per use: these singletons outlive an in-app language change.
+    private val localizedContext get() = AppLocale.wrap(context)
 
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()

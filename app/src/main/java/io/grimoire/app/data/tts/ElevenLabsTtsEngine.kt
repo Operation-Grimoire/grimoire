@@ -32,7 +32,8 @@ class ElevenLabsTtsEngine @Inject constructor(
 ) : TtsEngine {
 
     /** Resources in the in-app UI language, for error text surfaced to the screen. */
-    private val localizedContext = AppLocale.wrap(context)
+    // Resolved per use: these singletons outlive an in-app language change.
+    private val localizedContext get() = AppLocale.wrap(context)
 
     override val type = TtsEngineType.ELEVENLABS
     override val canResumeMidUtterance = true

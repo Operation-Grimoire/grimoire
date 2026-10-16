@@ -23,12 +23,13 @@ import javax.inject.Singleton
  */
 @Singleton
 class TtsChapterLoader @Inject constructor(
-    @ApplicationContext context: Context,
+    @ApplicationContext private val context: Context,
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
 ) {
 
-    private val localizedContext = AppLocale.wrap(context)
+    // Resolved per use: these singletons outlive an in-app language change.
+    private val localizedContext get() = AppLocale.wrap(context)
 
     suspend fun loadChapterList(novelId: Long): List<ChapterEntity> =
         chapterDao.getChapterMetadataOnce(novelId)

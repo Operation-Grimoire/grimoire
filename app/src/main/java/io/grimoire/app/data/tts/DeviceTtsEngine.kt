@@ -27,7 +27,8 @@ class DeviceTtsEngine @Inject constructor(
 
     override var listener: TtsEngine.Listener? = null
 
-    private val localizedContext = AppLocale.wrap(context)
+    // Resolved per use: these singletons outlive an in-app language change.
+    private val localizedContext get() = AppLocale.wrap(context)
 
     private var tts: TextToSpeech? = null
     private var ready = false
