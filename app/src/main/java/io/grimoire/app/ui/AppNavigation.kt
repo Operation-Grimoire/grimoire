@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -202,6 +203,12 @@ fun AppNavigation(
                 launchSingleTop = true
             }
         }
+    }
+    // Report which targets are on screen, for steps that advance when one appears.
+    // Restarting per step makes the first emission the step's starting state.
+    LaunchedEffect(tourState.running, tourState.index) {
+        if (!tourState.running) return@LaunchedEffect
+        snapshotFlow { tourRegistry.bounds.keys.toSet() }.collect(tourController::onTargetsChanged)
     }
     val onTourAction: (TourActionId) -> Unit = { action ->
         when (action) {

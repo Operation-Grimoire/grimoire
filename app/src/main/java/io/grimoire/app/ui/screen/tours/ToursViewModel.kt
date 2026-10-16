@@ -7,6 +7,7 @@ import io.grimoire.app.data.preferences.TourPreferences
 import io.grimoire.app.ui.tour.Tour
 import io.grimoire.app.ui.tour.TourController
 import io.grimoire.app.ui.tour.TourId
+import io.grimoire.app.ui.tour.TourTrigger
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -32,6 +33,12 @@ class ToursViewModel @Inject constructor(
     ) { pairs -> pairs.filter { it.second }.map { it.first }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
-    /** Starts a tour; the engine navigates away from this screen to run it. */
-    fun replay(id: TourId) = controller.start(id)
+    /**
+     * Starts a tour; the engine navigates away from this screen to run it. A
+     * first-visit tour can't be opened from here, so it's re-armed to run the
+     * next time the user reaches its screen.
+     */
+    fun replay(tour: Tour) {
+        if (tour.trigger is TourTrigger.FirstVisit) controller.rearm(tour.id) else controller.start(tour.id)
+    }
 }

@@ -35,13 +35,24 @@ class TourController @Inject constructor(
 
     private val currentStep: TourStep? get() = activeSteps.getOrNull(_state.value.index)
 
-    /** Auto-starts the first eligible auto-run tour the user hasn't finished. */
+    /** Watches the current step's [TourStep.advanceWhenShown] target, if it has one. */
+    private var revealWatch: RevealWatch? = null
+
+    /** Latest route from [onRouteChanged], so a first-visit tour can't start after the user left. */
+    private var currentRoute: String? = null
+
+    /**
+     * Completion markers this session wrote, read ahead of the store so a
+     * check never sees a value that's still being saved.
+     */
+    private val writtenVersions = mutableMapOf<TourId, Int>()
+
+    /** Auto-starts the first eligible launch tour the user hasn't finished. */
     fun maybeStartOnLaunch() {
         scope.launch {
             if (_state.value.running) return@launch
             val due = tours.firstOrNull { tour ->
-                tour.autoRun &&
-                    tourPreferences.completedVersion(tour.id.key).changes().first() < tour.version
+                tour.trigger == TourTrigger.FirstLaunch && !isFinished(tour)
             }
             if (due != null) start(due.id)
         }
@@ -50,39 +61,79 @@ class TourController @Inject constructor(
     /** Starts (or restarts) a tour from its first step. Used by launch + replay. */
     fun start(tourId: TourId) {
         if (tourById(tourId).steps.isEmpty()) return
-        _state.value = TourState(running = true, tourId = tourId, index = 0)
+        setState(TourState(running = true, tourId = tourId, index = 0))
     }
+
+    /** Clears a first-visit tour's completion so it runs again on its screen. */
+    fun rearm(tourId: TourId) = saveCompleted(tourId, 0)
 
     fun next() {
         val s = _state.value
         if (!s.running) return
-        if (s.index >= activeSteps.lastIndex) finish() else _state.value = s.copy(index = s.index + 1)
+        if (s.index >= activeSteps.lastIndex) finish() else setState(s.copy(index = s.index + 1))
     }
 
     fun back() {
         val s = _state.value
-        if (s.running && s.index > 0) _state.value = s.copy(index = s.index - 1)
+        if (s.running && s.index > 0) setState(s.copy(index = s.index - 1))
     }
 
     fun skip() = finish()
 
     private fun finish() {
         val tourId = _state.value.tourId
-        _state.value = TourState(running = false)
-        if (tourId != null) {
-            val version = tourById(tourId).version
-            scope.launch { tourPreferences.completedVersion(tourId.key).set(version) }
-        }
+        setState(TourState(running = false))
+        if (tourId != null) saveCompleted(tourId, tourById(tourId).version)
+        // A first visit made while this tour ran gets its tour now.
+        maybeStartFirstVisit(currentRoute)
+    }
+
+    private fun saveCompleted(tourId: TourId, version: Int) {
+        writtenVersions[tourId] = version
+        scope.launch { tourPreferences.completedVersion(tourId.key).set(version) }
+    }
+
+    private fun setState(state: TourState) {
+        _state.value = state
+        revealWatch = currentStep?.advanceWhenShown?.let(::RevealWatch)
+    }
+
+    private suspend fun isFinished(tour: Tour): Boolean {
+        val version = writtenVersions[tour.id]
+            ?: tourPreferences.completedVersion(tour.id.key).changes().first()
+        return version >= tour.version
     }
 
     /**
-     * Advances an interactive ([TourStep.advanceOnReach]) step once the user
-     * reaches its route themselves.
+     * Reacts to navigation: advances an interactive ([TourStep.advanceOnReach])
+     * step once the user reaches its route, ends a screen-bound tour when the
+     * user leaves its screen, and starts a first-visit tour on its screen.
      */
     fun onRouteChanged(route: String?) {
-        val step = currentStep ?: return
-        if (!_state.value.running || !step.advanceOnReach) return
-        val want = step.route ?: return
-        if (route != null && route.startsWith(want)) next()
+        currentRoute = route
+        val s = _state.value
+        val running = s.tourId?.takeIf { s.running }?.let(::tourById)
+        when {
+            running == null -> maybeStartFirstVisit(route)
+            running.leftItsScreen(route) -> finish()
+            else -> {
+                val step = currentStep ?: return
+                val want = step.route ?: return
+                if (step.advanceOnReach && route != null && route.startsWith(want)) next()
+            }
+        }
+    }
+
+    private fun maybeStartFirstVisit(route: String?) {
+        val visitTour = tours.firstVisitTourFor(route) ?: return
+        scope.launch {
+            if (isFinished(visitTour)) return@launch
+            if (!_state.value.running && currentRoute == route) start(visitTour.id)
+        }
+    }
+
+    /** Feeds the targets currently on screen, for [TourStep.advanceWhenShown] steps. */
+    fun onTargetsChanged(visible: Set<TourKey>) {
+        if (revealWatch?.update(visible) == true) next()
     }
 }

@@ -1,5 +1,7 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.app.ui.tour.tourTarget
+import io.grimoire.app.ui.tour.TourKey
 import io.grimoire.app.ui.icon.*
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
@@ -86,7 +88,7 @@ internal fun NovelActionRow(
             )
         }
         NovelActionButton(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).tourTarget(TourKey.NovelAddToLibrary),
             icon = if (inLibrary) AppIcons.Bookmark else AppIcons.BookmarkBorder,
             label = stringResource(
                 if (inLibrary) R.string.novel_action_in_library

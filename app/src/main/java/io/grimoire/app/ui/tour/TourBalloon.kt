@@ -163,6 +163,7 @@ private fun BalloonContent(
         when (step.art) {
             TourArt.Welcome -> Icon(AppIcons.AutoStories, contentDescription = null)
             TourArt.Done -> Icon(AppIcons.Celebration, contentDescription = null)
+            TourArt.Tap -> Icon(AppIcons.TouchApp, contentDescription = null)
             TourArt.None -> Unit
         }
         Text(stringResource(step.titleRes), style = MaterialTheme.typography.titleMedium)

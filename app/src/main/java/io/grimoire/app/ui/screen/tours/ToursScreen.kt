@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.app.ui.tour.TourTrigger
 import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,21 +47,30 @@ fun ToursScreen(
         LazyColumn(Modifier.padding(padding)) {
             items(viewModel.tours, key = { it.id }) { tour ->
                 val done = tour.id in completed
+                // A first-visit tour that isn't done is waiting for its screen.
+                val pendingHint = (tour.trigger as? TourTrigger.FirstVisit)
+                    ?.takeIf { !done }
+                    ?.let { stringResource(it.hintRes) }
                 ListItem(
                     headlineContent = { Text(stringResource(tour.titleRes)) },
-                    supportingContent = { Text(stringResource(tour.descriptionRes)) },
+                    supportingContent = {
+                        Text(
+                            listOfNotNull(stringResource(tour.descriptionRes), pendingHint)
+                                .joinToString("\n"),
+                        )
+                    },
                     trailingContent = {
-                        if (done) {
-                            Icon(
+                        when {
+                            done -> Icon(
                                 AppIcons.CheckCircle,
                                 contentDescription = stringResource(R.string.status_completed),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
-                        } else {
-                            Icon(AppIcons.PlayArrow, contentDescription = stringResource(R.string.tour_start))
+                            pendingHint != null -> Icon(AppIcons.Schedule, contentDescription = pendingHint)
+                            else -> Icon(AppIcons.PlayArrow, contentDescription = stringResource(R.string.tour_start))
                         }
                     },
-                    modifier = Modifier.clickable { viewModel.replay(tour.id) },
+                    modifier = Modifier.clickable { viewModel.replay(tour) },
                 )
             }
         }
