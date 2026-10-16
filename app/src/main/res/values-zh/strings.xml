@@ -48,8 +48,6 @@
     <string name="languages_source_language_subtitle">选择多语言书源默认显示哪些语言</string>
     <string name="language_picker_title">界面语言</string>
     <string name="language_option_system">跟随系统</string>
-    <string name="language_option_english">English</string>
-<string name="language_option_chinese_simplified">简体中文 (Chinese)</string>
     <string name="reader_text_alignment">文字对齐</string>
     <string name="reader_text_alignment_hint">自动模式跟随小说语言（从右到左的文字靠右对齐）。按小说记忆。</string>
     <string name="reader_align_auto">自动</string>
@@ -203,9 +201,8 @@
     <plurals name="browse_uninstall_title">
         <item quantity="other">卸载 %1$d 个扩展？</item>
     </plurals>
-    <plurals name="browse_uninstall_description">
-        <item quantity="other">Android 会要求你依次确认卸载。</item>
-    </plurals>
+    <string name="browse_uninstall_description_single">Android 会要求你确认卸载。</string>
+    <string name="browse_uninstall_description_multiple">Android 会要求你依次确认卸载。</string>
     <string name="browse_novelupdates_search">搜索</string>
     <string name="browse_novelupdates_title">NovelUpdates</string>
     <string name="browse_novelupdates_rankings">排行榜</string>

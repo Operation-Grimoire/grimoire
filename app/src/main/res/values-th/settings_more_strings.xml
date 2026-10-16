@@ -1,0 +1,323 @@
+<resources>
+    <!-- Appearance -->
+    <string name="appearance_theme">ธีม</string>
+    <string name="appearance_theme_system">ตามระบบ</string>
+    <string name="appearance_theme_light">สว่าง</string>
+    <string name="appearance_theme_dark">มืด</string>
+    <string name="appearance_dynamic_color">สีไดนามิก</string>
+    <string name="appearance_dynamic_color_summary">ปรับสีให้เข้ากับวอลเปเปอร์ของคุณ</string>
+    <string name="appearance_synopsis_links">ลิงก์ในเรื่องย่อ</string>
+    <string name="appearance_synopsis_links_summary">แสดงลิงก์เว็บในคำอธิบายนิยายเป็นลิงก์ที่แตะได้</string>
+    <string name="appearance_color_palette">ชุดสี</string>
+    <string name="appearance_color_palette_summary">เลือกชุดสีเน้นที่ใช้ทั่วทั้งแอป</string>
+    <string name="appearance_color_palette_disabled">ปิดสีไดนามิกเพื่อเลือกชุดสีเอง</string>
+    <string name="color_theme_default">ค่าเริ่มต้น</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">มหาสมุทร</string>
+    <string name="color_theme_sunset">อาทิตย์อัสดง</string>
+    <string name="color_theme_forest">ป่าไม้</string>
+    <string name="color_theme_rose">กุหลาบ</string>
+    <string name="color_theme_midnight">เที่ยงคืน</string>
+
+    <!-- Behavior -->
+    <string name="behavior_haptics">การสั่นตอบสนอง</string>
+    <string name="behavior_haptics_summary">สั่นเมื่อกดค้าง สลับแท็บ และเลือกรายการ</string>
+
+    <!-- Library settings -->
+    <string name="settings_section_display">การแสดงผล</string>
+    <string name="settings_display_mode">การแสดงผล</string>
+    <string name="settings_display_grid">ตาราง</string>
+    <string name="settings_display_list">รายการ</string>
+    <string name="settings_columns">คอลัมน์</string>
+    <string name="settings_section_organization">การจัดระเบียบ</string>
+    <string name="library_settings_show_all">แสดงแท็บ “ทั้งหมด”</string>
+    <string name="library_settings_show_all_summary">แสดงแท็บที่รวมทุกหมวดหมู่</string>
+    <string name="library_settings_hidden">หมวดหมู่ที่ซ่อน</string>
+    <string name="library_settings_hidden_summary">ตั้ง PIN และจัดการหมวดหมู่ที่จะซ่อน</string>
+    <string name="library_settings_section_counts">จำนวนตอน</string>
+    <string name="library_settings_locked_totals">นับตอนที่ถูกล็อกในยอดรวม</string>
+    <string name="library_settings_locked_totals_summary">นับตอนที่ถูกล็อกรวมในจำนวนทั้งหมดและเปอร์เซ็นต์การอ่านที่แสดงบนป้ายในคลังและหน้ารายละเอียดนิยาย</string>
+    <string name="library_settings_section_badges">ป้ายบนปก</string>
+    <string name="library_settings_read_badge">แสดงป้ายความคืบหน้าการอ่าน</string>
+    <string name="library_settings_read_badge_summary">แสดงจำนวนและเปอร์เซ็นต์ที่อ่านแล้วบนปกในคลัง</string>
+    <string name="library_settings_downloaded_badge">แสดงป้ายดาวน์โหลด</string>
+    <string name="library_settings_downloaded_badge_summary">แสดงจำนวนตอนที่ดาวน์โหลดแล้วบนปกในคลัง</string>
+    <string name="library_settings_locked_badge">แสดงป้ายตอนที่ถูกล็อก</string>
+    <string name="library_settings_locked_badge_summary">แสดงป้ายแม่กุญแจสีทองพร้อมจำนวนตอนที่ถูกล็อกบนปกในคลัง</string>
+    <string name="library_settings_rating_badge">แสดงป้ายคะแนน</string>
+    <string name="library_settings_rating_badge_summary">แสดงคะแนนของคุณเองบนปกในคลัง</string>
+    <string name="library_settings_epub_badge">แสดงป้าย EPUB</string>
+    <string name="library_settings_epub_badge_summary">ติดป้ายนิยาย EPUB ที่นำเข้าไว้บนปกในคลัง</string>
+
+    <!-- Browse settings and content languages -->
+    <string name="browse_settings_nu_shortcuts">ทางลัด NovelUpdates</string>
+    <string name="browse_settings_nu_shortcuts_summary">แสดงลิงก์ค้นหา อันดับ และล่าสุดของ NovelUpdates ในหน้าเรียกดู</string>
+    <string name="browse_settings_pinned_groups">แสดงที่ปักหมุดในกลุ่มภาษา</string>
+    <string name="browse_settings_pinned_groups_summary">แสดงแหล่งที่มาที่ปักหมุดไว้ใต้ภาษาของแหล่งนั้นด้วย ไม่ใช่แค่ในส่วนที่ปักหมุด</string>
+    <string name="content_languages_title">ภาษาของเนื้อหา</string>
+    <string name="content_languages_helper">ภาษาที่เลือกที่นี่จะใช้กับแหล่งที่มาแบบหลายภาษาทุกแหล่ง เว้นแต่จะกำหนดเองไว้ในการตั้งค่าของแหล่งที่มานั้น หากไม่เลือกเลยจะแสดงทุกภาษา</string>
+
+    <!-- Reader settings -->
+    <string name="settings_section_appearance">รูปลักษณ์</string>
+    <string name="reader_settings_color_theme">ธีมสี</string>
+    <string name="reader_settings_font_size">ขนาดตัวอักษร</string>
+    <string name="reader_settings_line_height">ระยะห่างบรรทัด</string>
+    <string name="reader_settings_paragraph_spacing">ระยะห่างย่อหน้า</string>
+    <string name="settings_section_reading">การอ่าน</string>
+    <string name="reader_settings_auto_mark">ทำเครื่องหมายว่าอ่านแล้วอัตโนมัติ</string>
+    <string name="reader_settings_within_last">ภายใน</string>
+    <plurals name="reader_settings_paragraph_count"><item quantity="other">%1$d ย่อหน้าสุดท้าย</item></plurals>
+    <string name="reader_settings_rotation">การหมุนหน้าจอ</string>
+    <string name="reader_settings_hide_status_bar">ซ่อนแถบการแจ้งเตือน</string>
+    <string name="reader_settings_hide_status_bar_summary">ซ่อนแถบสถานะด้านบนของหน้าจอขณะอ่าน</string>
+    <string name="settings_section_privacy">ความเป็นส่วนตัว</string>
+    <string name="reader_settings_hide_images">ซ่อนรูปภาพ</string>
+    <string name="reader_settings_hide_images_summary">ซ่อนรูปภาพในเนื้อหาจนกว่าคุณจะแตะเพื่อแสดงหรือกดค้างเพื่อแอบดู</string>
+
+    <!-- NovelUpdates and connections -->
+    <string name="nu_settings_show_section">แสดงส่วน NovelUpdates</string>
+    <string name="nu_settings_show_section_summary">เพิ่มแผง NovelUpdates ในหน้ารายละเอียดนิยาย พร้อมชื่ออื่น คะแนน และเรื่องแนะนำ</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">ยังไม่ได้เชื่อมต่อ</string>
+    <string name="connections_signing_in">กำลังเข้าสู่ระบบ…</string>
+    <string name="connections_error">การเชื่อมต่อผิดพลาด</string>
+
+    <!-- Shared schedule controls -->
+    <string name="schedule_every">ทุก</string>
+    <plurals name="schedule_hours"><item quantity="other">%1$d ชั่วโมง</item></plurals>
+    <plurals name="schedule_days"><item quantity="other">%1$d วัน</item></plurals>
+    <plurals name="schedule_weeks"><item quantity="other">%1$d สัปดาห์</item></plurals>
+    <string name="schedule_unit_hour">ชั่วโมง</string>
+    <string name="schedule_unit_day">วัน</string>
+    <string name="schedule_unit_week">สัปดาห์</string>
+    <string name="schedule_time_of_day">เวลาของวัน</string>
+    <string name="schedule_off">ปิด</string>
+    <string name="schedule_runs_every">ทำงานทุก %1$s</string>
+    <string name="schedule_runs_around">ทำงานประมาณ %1$s</string>
+    <string name="schedule_run_around">ทำงานประมาณ %1$s</string>
+    <string name="schedule_runs_around_when_scheduled">ทำงานประมาณ %1$s เมื่อตั้งเวลาไว้</string>
+    <string name="schedule_never">ไม่เคย</string>
+    <string name="schedule_completed_at">%1$s — เสร็จสิ้น</string>
+    <string name="schedule_failed_at">%1$s — ล้มเหลว</string>
+
+    <!-- Hidden categories -->
+    <string name="hidden_title">หมวดหมู่ที่ซ่อน</string>
+    <string name="hidden_setup_pin">ตั้ง PIN</string>
+    <string name="hidden_setup_pin_summary">ต้องมี PIN เพื่อซ่อนหมวดหมู่และปลดล็อกภายหลัง</string>
+    <string name="hidden_setup_pin_action">ตั้ง PIN</string>
+    <string name="hidden_locked">ล็อกอยู่</string>
+    <string name="hidden_locked_summary">ปลดล็อกเพื่อจัดการหมวดหมู่ที่ซ่อน</string>
+    <string name="hidden_change_pin">เปลี่ยน PIN</string>
+    <string name="hidden_change">เปลี่ยน</string>
+    <string name="hidden_biometric">ปลดล็อกด้วยไบโอเมตริก</string>
+    <string name="hidden_biometric_available">ปลดล็อกด้วยลายนิ้วมือหรือใบหน้าแทน PIN</string>
+    <string name="hidden_biometric_unavailable">ใช้ไม่ได้ — ยังไม่ได้ลงทะเบียนไบโอเมตริก</string>
+    <string name="hidden_show_in_all">แสดงที่ซ่อนในแท็บ “ทั้งหมด”</string>
+    <string name="hidden_show_in_all_summary">เมื่อปลดล็อก ให้แสดงนิยายที่ซ่อนในแท็บทั้งหมดด้วย</string>
+    <string name="hidden_categories_section">หมวดหมู่</string>
+    <string name="hidden_default_category">ค่าเริ่มต้น — ซ่อนไม่ได้</string>
+    <string name="hidden_remove_pin_action">ลบ PIN และเลิกซ่อนทั้งหมด</string>
+    <string name="hidden_remove_pin_title">ลบ PIN ไหม?</string>
+    <string name="hidden_remove_pin_message">หมวดหมู่ที่ซ่อนทั้งหมดจะมองเห็นได้สำหรับทุกคนที่ใช้แอป</string>
+    <string name="hidden_pin_label">PIN (4–8 หลัก)</string>
+    <string name="hidden_confirm_pin">ยืนยัน PIN</string>
+    <string name="hidden_pin_mismatch">PIN ไม่ตรงกัน</string>
+
+    <!-- Backup and restore -->
+    <string name="backup_section_backup">สำรองข้อมูล</string>
+    <string name="backup_description">ข้อมูลสำรองจะบันทึกเป็นไฟล์ JSON แบบ gzip ลงในโฟลเดอร์ที่คุณเลือกบนอุปกรณ์นี้ เลือกโฟลเดอร์ที่หาเจอได้ง่ายภายหลัง (เช่น Downloads หรือ Documents)</string>
+    <string name="backup_folder">โฟลเดอร์สำรองข้อมูล</string>
+    <string name="backup_folder_not_selected">ยังไม่ได้เลือก</string>
+    <string name="backup_no_folder_selected">ยังไม่ได้เลือกโฟลเดอร์สำรองข้อมูล</string>
+    <plurals name="backup_novels_backed_up"><item quantity="other">สำรองนิยายแล้ว %1$d เรื่อง</item></plurals>
+    <string name="backup_now">สำรองข้อมูลเดี๋ยวนี้</string>
+    <string name="backup_restore_ellipsis">กู้คืน…</string>
+    <string name="backup_scheduled">สำรองข้อมูลตามกำหนดเวลา</string>
+    <string name="backup_scheduled_description">ทำงานในเบื้องหลังบนอุปกรณ์นี้ ไม่จำเป็นต้องเปิดแอปไว้</string>
+    <string name="backup_automatic">สำรองข้อมูลอัตโนมัติ</string>
+    <string name="backup_wifi_only">เฉพาะเมื่อใช้ Wi-Fi</string>
+    <string name="backup_wifi_only_summary">ข้ามการสำรองอัตโนมัติเมื่อใช้เครือข่ายมือถือ</string>
+    <string name="backup_charging_only">เฉพาะขณะชาร์จ</string>
+    <string name="backup_run_scheduled">เรียกใช้การสำรองตามกำหนดเวลาเดี๋ยวนี้</string>
+    <string name="backup_run_scheduled_summary">ใช้โฟลเดอร์และเงื่อนไขกำหนดเวลาที่เลือกไว้</string>
+    <string name="backup_last_automatic">การสำรองอัตโนมัติล่าสุด</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">สำเร็จ</string>
+    <string name="backup_restore_title">กู้คืนข้อมูลสำรองไหม?</string>
+    <string name="backup_restore_message">ข้อมูลสำรองจะถูกรวมเข้ากับคลังปัจจุบันของคุณ รายการที่มีอยู่จะยังคงอยู่ รายการใหม่จะถูกเพิ่ม และความคืบหน้าการอ่านจะถูกรวมเข้าด้วยกัน</string>
+    <string name="backup_created">สร้างข้อมูลสำรองแล้ว: %1$s</string>
+    <plurals name="backup_saved"><item quantity="other">บันทึก %1$s แล้ว (นิยาย %2$d เรื่อง)</item></plurals>
+    <plurals name="backup_restored"><item quantity="other">กู้คืนนิยาย %1$d เรื่อง %2$d ตอน</item></plurals>
+    <string name="backup_queued">เพิ่มการสำรองข้อมูลเข้าคิวแล้ว</string>
+    <string name="backup_folder_inaccessible">เข้าถึงโฟลเดอร์สำรองข้อมูลไม่ได้</string>
+    <string name="backup_folder_not_writable">เขียนลงโฟลเดอร์สำรองข้อมูลไม่ได้</string>
+    <string name="backup_create_file_failed">สร้างไฟล์สำรองข้อมูลไม่ได้</string>
+    <string name="backup_open_output_failed">เปิดสตรีมเอาต์พุตไม่ได้</string>
+    <string name="backup_read_file_failed">อ่านไฟล์สำรองข้อมูลไม่ได้</string>
+    <string name="backup_failed">สำรองข้อมูลไม่สำเร็จ</string>
+    <string name="backup_newer_version">ไฟล์สำรองข้อมูลมาจากแอปเวอร์ชันที่ใหม่กว่า (v%1$d)</string>
+    <string name="restore_failed">กู้คืนไม่สำเร็จ</string>
+
+    <!-- Data management -->
+    <string name="data_storage">พื้นที่จัดเก็บ</string>
+    <string name="data_storage_summary">Grimoire ใช้ %1$s · ว่าง %2$s จาก %3$s</string>
+    <string name="data_your_data">ข้อมูลของคุณ</string>
+    <plurals name="data_library_novels"><item quantity="other">%1$d เรื่อง · %2$d ตอน</item></plurals>
+    <string name="data_browse">ข้อมูลการเรียกดู</string>
+    <plurals name="data_browse_count"><item quantity="other">นิยายในแคช %1$d เรื่องที่คุณยังไม่ได้บันทึกหรืออ่าน</item></plurals>
+    <string name="data_downloads">ดาวน์โหลด</string>
+    <string name="data_chapter_text">ข้อความของตอน</string>
+    <plurals name="data_chapter_text_summary"><item quantity="other">%1$s · %2$d ตอน</item></plurals>
+    <string name="data_chapter_images">รูปภาพในตอน</string>
+    <plurals name="data_chapter_images_summary"><item quantity="other">%1$s · %2$d รูป</item></plurals>
+    <string name="data_caches">แคช</string>
+    <string name="data_cover_cache">แคชรูปปก</string>
+    <string name="data_database">ฐานข้อมูล</string>
+    <string name="data_installer_files">ไฟล์ติดตั้ง</string>
+    <string name="data_installer_summary">%1$s · แพ็กเกจอัปเดตแอปและส่วนขยายที่ค้างอยู่</string>
+    <string name="data_clear_cover_title">ล้างแคชรูปปกไหม?</string>
+    <string name="data_clear_cover_message">รูปปกจะถูกดาวน์โหลดใหม่เมื่อแสดงครั้งถัดไป</string>
+    <string name="data_clear_browse_title">ล้างข้อมูลการเรียกดูไหม?</string>
+    <string name="data_clear_browse_message">ลบนิยายในแคชที่คุณยังไม่ได้บันทึกลงคลังหรืออ่าน นิยายเหล่านี้จะถูกดึงจากแหล่งที่มาอีกครั้งเมื่อคุณเปิด ประวัติการอ่านและการดาวน์โหลดจะยังคงอยู่</string>
+    <string name="data_clear_installer_title">ล้างไฟล์ติดตั้งไหม?</string>
+    <string name="data_clear_installer_message">ลบไฟล์ .apk ที่ค้างอยู่จากการอัปเดตแอปและส่วนขยาย ไฟล์จะถูกดาวน์โหลดใหม่ในการอัปเดตครั้งถัดไป อย่าล้างขณะที่การติดตั้งยังดำเนินอยู่</string>
+    <string name="data_cover_cache_cleared">ล้างแคชรูปปกแล้ว</string>
+    <plurals name="data_browse_cleared"><item quantity="other">ล้างนิยายจากการเรียกดูแล้ว %1$d เรื่อง</item></plurals>
+    <plurals name="data_installers_cleared"><item quantity="other">ล้างไฟล์ติดตั้งแล้ว %1$d ไฟล์</item></plurals>
+
+    <!-- Library update settings -->
+    <string name="library_update_scheduled">อัปเดตตามกำหนดเวลา</string>
+    <string name="library_update_scheduled_description">รีเฟรชคลังของคุณในเบื้องหลังและดึงตอนใหม่ ไม่จำเป็นต้องเปิดแอปไว้</string>
+    <string name="library_update_automatic">อัปเดตอัตโนมัติ</string>
+    <string name="library_update_wifi_only">เฉพาะเมื่อใช้ Wi-Fi</string>
+    <string name="library_update_wifi_only_summary">ข้ามการอัปเดตตามกำหนดเวลาเมื่อใช้เครือข่ายมือถือ</string>
+    <string name="library_update_charging_only">เฉพาะขณะชาร์จ</string>
+    <string name="library_update_sync_scope">ขอบเขตการซิงค์</string>
+    <string name="library_update_include_epubs">รวม EPUB</string>
+    <string name="library_update_include_epubs_summary">รีเฟรชนิยาย EPUB (ไฟล์ที่นำเข้าในเครื่องและแหล่งที่มา EPUB เช่น Z-Library) ระหว่างการอัปเดตคลัง นิยายเหล่านี้ไม่มีตอนใหม่ให้ดึง จึงปิดไว้เป็นค่าเริ่มต้น</string>
+    <string name="library_update_performance">ประสิทธิภาพ</string>
+    <string name="library_update_concurrency">จำนวนการซิงค์พร้อมกัน: %1$d</string>
+    <string name="library_update_concurrency_summary">จำนวนนิยายที่จะรีเฟรชพร้อมกัน ยิ่งมากยิ่งเร็ว แต่อาจทำให้บางแหล่งที่มาจำกัดอัตราคำขอ</string>
+    <string name="library_update_now">อัปเดตคลังเดี๋ยวนี้</string>
+    <string name="library_update_now_summary">รีเฟรชนิยายทุกเรื่องในคลังของคุณในเบื้องหลัง</string>
+    <string name="library_update_last">อัปเดตล่าสุด</string>
+
+    <!-- Text-to-speech -->
+    <string name="tts_enable">เปิดใช้การอ่านออกเสียง</string>
+    <string name="tts_enable_summary">แสดงปุ่มควบคุมการอ่านออกเสียงในตัวอ่าน</string>
+    <string name="tts_speech_engine">เอนจินเสียงพูด</string>
+    <string name="tts_on_device">ในอุปกรณ์</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">อ่านออกเสียงด้วยเสียงที่มีในอุปกรณ์ ใช้งานแบบออฟไลน์ได้</string>
+    <string name="tts_elevenlabs_summary">สตรีมเสียงคลาวด์ที่เป็นธรรมชาติจาก ElevenLabs ต้องเชื่อมต่อเครือข่าย และคิดค่าบริการตามจำนวนตัวอักษรในบัญชีของคุณ</string>
+    <string name="tts_elevenlabs_account">บัญชี ElevenLabs</string>
+    <string name="tts_api_key">API key</string>
+    <string name="tts_playback">การเล่น</string>
+    <string name="tts_speech_rate">ความเร็วในการพูด</string>
+    <string name="tts_pitch">ระดับเสียง (เฉพาะในอุปกรณ์)</string>
+    <string name="tts_auto_advance">ไปยังตอนถัดไปอัตโนมัติ</string>
+    <string name="tts_auto_advance_summary">อ่านต่อในตอนถัดไปเมื่ออ่านตอนปัจจุบันจบ</string>
+    <string name="tts_voices">เสียง</string>
+    <string name="tts_voices_summary">เลือกเสียงที่ใช้อ่านแต่ละภาษา นิยายจะจับคู่ตามภาษาของเนื้อหา</string>
+    <string name="tts_custom_voice">เลือกเสียงที่กำหนดเองแล้ว</string>
+    <string name="tts_system_default">ค่าเริ่มต้นของระบบ</string>
+    <string name="tts_credit_usage">การใช้เครดิต</string>
+    <string name="tts_refresh_usage">รีเฟรชการใช้งาน</string>
+    <string name="tts_usage_api_key_hint">ใส่ API key ด้านบนเพื่อดูจำนวนตัวอักษรที่เหลือ</string>
+    <string name="tts_loading">กำลังโหลด…</string>
+    <string name="tts_usage_summary">ใช้ไปแล้ว %1$,d / %2$,d ตัวอักษร</string>
+    <string name="tts_quota_reset">โควตารีเซ็ต %1$s</string>
+    <string name="tts_voice_title">เสียง</string>
+    <string name="tts_voice_needs_key">เพิ่ม API key ของ ElevenLabs ในการตั้งค่าอ่านออกเสียงเพื่อเลือกเสียงคลาวด์</string>
+    <string name="tts_elevenlabs_plan_note">แพ็กเกจฟรีของ ElevenLabs มีขีดจำกัด (~10,000 ตัวอักษร/เดือน) และเสียงจำนวนมาก — รวมถึงเสียงเริ่มต้นบางเสียง — ต้องใช้แพ็กเกจแบบชำระเงิน หากเสียงใดเล่นไม่ได้ ลองเสียงอื่น หรือใช้เอนจินในอุปกรณ์เพื่ออ่านแบบออฟไลน์ได้ไม่จำกัด</string>
+    <string name="tts_system_default_summary">ให้เอนจินเลือกเสียงสำหรับภาษานี้</string>
+    <string name="tts_install_voices">ติดตั้งเสียงเพิ่มเติม…</string>
+    <string name="tts_install_voices_summary">ดาวน์โหลดข้อมูลเสียงเพิ่มเติมสำหรับเอนจินของอุปกรณ์</string>
+    <string name="tts_stop_preview">หยุดฟังตัวอย่าง</string>
+    <string name="tts_preview_voice">ฟังตัวอย่างเสียง</string>
+    <string name="tts_load_usage_failed">โหลดข้อมูลการใช้งานไม่ได้</string>
+    <string name="tts_load_voices_failed">โหลดรายการเสียงไม่ได้</string>
+
+    <!-- GitHub connection -->
+    <string name="github_account_title">บัญชี GitHub</string>
+    <string name="github_privacy_note">เชื่อมต่อบัญชี GitHub เพื่อติดตั้งส่วนขยายจากรีโพสิทอรีส่วนตัวของคุณ โทเค็นการเข้าถึงจะเก็บไว้บนอุปกรณ์นี้เท่านั้น และส่งไปที่ github.com เท่านั้น เพิกถอนได้ทุกเมื่อที่ github.com/settings/applications</string>
+    <string name="github_not_connected">ยังไม่ได้เชื่อมต่อ</string>
+    <string name="github_connect">เชื่อมต่อ GitHub</string>
+    <string name="github_enter_code">ใส่รหัสนี้ที่ github.com</string>
+    <string name="github_open_device_page">เปิด github.com/login/device</string>
+    <string name="github_copy_code">คัดลอกรหัส</string>
+    <string name="github_waiting">กำลังรอให้คุณดำเนินการในเบราว์เซอร์ให้เสร็จ…</string>
+    <string name="github_connected">เชื่อมต่อแล้ว</string>
+    <string name="github_authorization_failed">การอนุญาตล้มเหลว</string>
+    <string name="github_no_client_id">บิลด์นี้ไม่มี OAuth client ID</string>
+    <string name="github_no_client_id_summary">ตั้งค่า GITHUB_OAUTH_CLIENT_ID ใน gradle.properties (หรือเป็นตัวแปรสภาพแวดล้อม) แล้วบิลด์ใหม่</string>
+
+    <!-- About and updater -->
+    <string name="about_title">เกี่ยวกับ</string>
+    <string name="about_version">เวอร์ชัน</string>
+    <string name="about_version_summary">Grimoire %1$s (บิลด์ %2$d)\nคอมมิต %3$s · Extensions API %4$s</string>
+    <string name="about_check_updates">ตรวจหาอัปเดต</string>
+    <string name="about_check_updates_idle">แตะเพื่อตรวจหาเวอร์ชันใหม่</string>
+    <string name="about_checking">กำลังตรวจสอบ…</string>
+    <string name="about_latest_version">คุณใช้เวอร์ชันล่าสุดแล้ว</string>
+    <string name="about_up_to_date">เป็นเวอร์ชันล่าสุด</string>
+    <string name="about_show_changelog">แสดงบันทึกการเปลี่ยนแปลง</string>
+    <string name="about_show_changelog_summary">เปิดบันทึกประจำรุ่นของ %1$s</string>
+    <string name="about_updates_section">อัปเดต</string>
+    <string name="about_update_popups">ป๊อปอัปแจ้งอัปเดตอัตโนมัติ</string>
+    <string name="about_update_popups_summary">แสดงกล่องโต้ตอบเมื่อเปิดแอปหากมีอัปเดต</string>
+    <string name="about_changelog_after_update">บันทึกการเปลี่ยนแปลงหลังอัปเดต</string>
+    <string name="about_changelog_after_update_summary">แสดงบันทึกประจำรุ่นเมื่อเปิดเวอร์ชันใหม่ครั้งแรก</string>
+    <string name="about_build_section">บิลด์</string>
+    <string name="about_build_details">รายละเอียดบิลด์</string>
+    <string name="about_build_details_summary">บิลด์ %1$d · คอมมิต %2$s · Extensions API %3$s</string>
+    <string name="about_build_copied">คัดลอกข้อมูลบิลด์แล้ว</string>
+    <string name="about_channel_stable">เสถียร</string>
+    <string name="about_channel_beta">เบต้า</string>
+    <string name="about_channel_stable_summary">เฉพาะรุ่นที่ติดแท็กแล้ว แนะนำ</string>
+    <string name="about_channel_beta_summary">บิลด์ใหม่จาก main ทุกคอมมิต อาจไม่เสถียร</string>
+    <string name="update_whats_new">มีอะไรใหม่ใน %1$s</string>
+    <string name="update_got_it">เข้าใจแล้ว</string>
+    <string name="update_ready">อัปเดตพร้อมแล้ว</string>
+    <string name="update_available">มีอัปเดต</string>
+    <string name="update_unknown_error">ข้อผิดพลาดที่ไม่รู้จัก</string>
+    <string name="update_no_changelog">ไม่มีบันทึกการเปลี่ยนแปลงสำหรับ %1$s</string>
+    <string name="action_update">อัปเดต</string>
+    <string name="update_download_complete">ดาวน์โหลดเสร็จแล้ว — แตะติดตั้งเพื่ออัปเดตให้เสร็จ</string>
+    <string name="update_skip_version">ข้ามเวอร์ชันนี้</string>
+    <string name="update_downloading_background">กำลังดาวน์โหลดในเบื้องหลัง — คุณปิดแอปได้</string>
+    <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
+    <string name="update_download_size">%1$s MB</string>
+    <string name="changelog_features">ฟีเจอร์</string>
+    <string name="changelog_bug_fixes">แก้ไขข้อบกพร่อง</string>
+    <string name="changelog_sources">แหล่งที่มา</string>
+    <string name="changelog_documentation">เอกสาร</string>
+    <string name="changelog_other">การเปลี่ยนแปลงอื่น ๆ</string>
+    <string name="changelog_changes">การเปลี่ยนแปลง</string>
+
+    <!-- Shared language picker -->
+    <string name="language_override_global">กำหนดภาษาของเนื้อหาแทนค่าส่วนกลาง</string>
+    <string name="language_override_on_helper">เลือกภาษาที่ต้องการสำหรับแหล่งที่มานี้เท่านั้น</string>
+    <string name="language_override_off_helper">แหล่งที่มานี้ใช้ภาษาของเนื้อหาตามค่าส่วนกลาง เปิดตัวเลือกนี้เพื่อเลือกชุดภาษาอื่นสำหรับแหล่งที่มานี้โดยเฉพาะ</string>
+    <string name="language_global_all">ส่วนกลาง: ไม่กรอง (แสดงทุกภาษา)</string>
+    <plurals name="language_global_selected"><item quantity="other">ส่วนกลาง: เลือกแล้ว %1$d ภาษา</item></plurals>
+    <string name="language_saved">บันทึกแล้ว</string>
+    <string name="language_global">ส่วนกลาง</string>
+    <string name="language_added_here">เพิ่มที่นี่</string>
+    <string name="language_hidden_here">ซ่อนที่นี่</string>
+    <string name="tts_voice_quality_very_high">คุณภาพสูงมาก</string>
+    <string name="tts_voice_quality_high">คุณภาพสูง</string>
+    <string name="tts_voice_quality_normal">คุณภาพปกติ</string>
+    <string name="tts_voice_quality_low">คุณภาพต่ำ</string>
+    <string name="tts_voice_online">ออนไลน์</string>
+    <string name="tts_voice_not_installed">ยังไม่ได้ติดตั้ง</string>
+    <string name="tts_voice_category_default">เสียงเริ่มต้น</string>
+    <string name="tts_voice_category_personal">เสียงที่คุณโคลน</string>
+    <string name="tts_voice_category_workspace">เสียงของเวิร์กสเปซ</string>
+    <string name="tts_voice_category_community">Voice Library · เฉพาะแพ็กเกจแบบชำระเงิน</string>
+    <string name="github_error_access_denied">การอนุญาตถูกปฏิเสธ</string>
+    <string name="github_error_expired">รหัสหมดอายุก่อนการอนุญาตจะเสร็จสิ้น</string>
+    <string name="github_error_cancelled">ยกเลิกแล้ว</string>
+    <string name="github_error_network">ข้อผิดพลาดเครือข่าย: %1$s</string>
+    <string name="github_error_unexpected">ข้อผิดพลาดที่ไม่คาดคิด: %1$s</string>
+</resources>

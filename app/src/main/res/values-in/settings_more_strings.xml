@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Appearance -->
+    <string name="appearance_theme">Tema</string>
+    <string name="appearance_theme_system">Sistem</string>
+    <string name="appearance_theme_light">Terang</string>
+    <string name="appearance_theme_dark">Gelap</string>
+    <string name="appearance_dynamic_color">Warna Dinamis</string>
+    <string name="appearance_dynamic_color_summary">Sesuaikan warna dengan wallpaper Anda</string>
+    <string name="appearance_synopsis_links">Tautan di sinopsis</string>
+    <string name="appearance_synopsis_links_summary">Tampilkan tautan web di deskripsi novel sebagai tautan yang bisa diketuk</string>
+    <string name="appearance_color_palette">Palet warna</string>
+    <string name="appearance_color_palette_summary">Pilih palet aksen yang dipakai di seluruh aplikasi.</string>
+    <string name="appearance_color_palette_disabled">Matikan Warna Dinamis untuk memilih palet kustom.</string>
+    <string name="color_theme_default">Default</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">Samudra</string>
+    <string name="color_theme_sunset">Senja</string>
+    <string name="color_theme_forest">Hutan</string>
+    <string name="color_theme_rose">Mawar</string>
+    <string name="color_theme_midnight">Tengah Malam</string>
+
+    <!-- Behavior -->
+    <string name="behavior_haptics">Umpan balik haptik</string>
+    <string name="behavior_haptics_summary">Bergetar saat tekan lama, berpindah tab, dan tindakan pemilihan.</string>
+
+    <!-- Library settings -->
+    <string name="settings_section_display">Tampilan</string>
+    <string name="settings_display_mode">Tampilan</string>
+    <string name="settings_display_grid">Grid</string>
+    <string name="settings_display_list">Daftar</string>
+    <string name="settings_columns">Kolom</string>
+    <string name="settings_section_organization">Pengaturan kategori</string>
+    <string name="library_settings_show_all">Tampilkan tab “Semua”</string>
+    <string name="library_settings_show_all_summary">Tampilkan tab yang menggabungkan semua kategori</string>
+    <string name="library_settings_hidden">Kategori tersembunyi</string>
+    <string name="library_settings_hidden_summary">Atur PIN dan kelola kategori mana yang disembunyikan</string>
+    <string name="library_settings_section_counts">Jumlah bab</string>
+    <string name="library_settings_locked_totals">Sertakan bab terkunci dalam total</string>
+    <string name="library_settings_locked_totals_summary">Hitung bab terkunci dalam total dan persentase baca yang ditampilkan di lencana pustaka dan halaman detail novel</string>
+    <string name="library_settings_section_badges">Lencana sampul</string>
+    <string name="library_settings_read_badge">Tampilkan lencana progres baca</string>
+    <string name="library_settings_read_badge_summary">Tampilkan jumlah dan persentase baca di sampul pustaka</string>
+    <string name="library_settings_downloaded_badge">Tampilkan lencana unduhan</string>
+    <string name="library_settings_downloaded_badge_summary">Tampilkan jumlah bab yang diunduh di sampul pustaka</string>
+    <string name="library_settings_locked_badge">Tampilkan lencana bab terkunci</string>
+    <string name="library_settings_locked_badge_summary">Tampilkan lencana gembok emas dengan jumlah bab terkunci di sampul pustaka</string>
+    <string name="library_settings_rating_badge">Tampilkan lencana rating</string>
+    <string name="library_settings_rating_badge_summary">Tampilkan rating Anda sendiri di sampul pustaka</string>
+    <string name="library_settings_epub_badge">Tampilkan lencana EPUB</string>
+    <string name="library_settings_epub_badge_summary">Tandai novel EPUB yang diimpor dengan lencana di sampul pustaka</string>
+
+    <!-- Browse settings and content languages -->
+    <string name="browse_settings_nu_shortcuts">Pintasan NovelUpdates</string>
+    <string name="browse_settings_nu_shortcuts_summary">Tampilkan tautan pencarian, peringkat, dan terbaru NovelUpdates di Jelajahi.</string>
+    <string name="browse_settings_pinned_groups">Tampilkan yang disematkan di grup bahasa</string>
+    <string name="browse_settings_pinned_groups_summary">Tampilkan juga sumber yang disematkan di bawah bahasanya, tidak hanya di Disematkan.</string>
+    <string name="content_languages_title">Bahasa konten</string>
+    <string name="content_languages_helper">Bahasa yang dipilih di sini berlaku untuk setiap sumber multibahasa, kecuali diganti di setelan sumber tersebut. Biarkan semua tidak dicentang untuk menampilkan semua bahasa.</string>
+
+    <!-- Reader settings -->
+    <string name="settings_section_appearance">Tampilan</string>
+    <string name="reader_settings_color_theme">Tema warna</string>
+    <string name="reader_settings_font_size">Ukuran font</string>
+    <string name="reader_settings_line_height">Tinggi baris</string>
+    <string name="reader_settings_paragraph_spacing">Jarak paragraf</string>
+    <string name="settings_section_reading">Membaca</string>
+    <string name="reader_settings_auto_mark">Tandai dibaca otomatis</string>
+    <string name="reader_settings_within_last">Dalam</string>
+    <plurals name="reader_settings_paragraph_count"><item quantity="other">%1$d paragraf terakhir</item></plurals>
+    <string name="reader_settings_rotation">Rotasi layar</string>
+    <string name="reader_settings_hide_status_bar">Sembunyikan bilah notifikasi</string>
+    <string name="reader_settings_hide_status_bar_summary">Sembunyikan bilah status di bagian atas layar saat membaca</string>
+    <string name="settings_section_privacy">Privasi</string>
+    <string name="reader_settings_hide_images">Sembunyikan gambar</string>
+    <string name="reader_settings_hide_images_summary">Sembunyikan gambar dalam teks sampai Anda mengetuk untuk menampilkan atau menahan untuk mengintip</string>
+
+    <!-- NovelUpdates and connections -->
+    <string name="nu_settings_show_section">Tampilkan bagian NovelUpdates</string>
+    <string name="nu_settings_show_section_summary">Menambahkan panel NovelUpdates ke detail novel dengan judul alternatif, rating, dan rekomendasi.</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">Tidak terhubung</string>
+    <string name="connections_signing_in">Sedang masuk…</string>
+    <string name="connections_error">Error koneksi</string>
+
+    <!-- Shared schedule controls -->
+    <string name="schedule_every">Setiap</string>
+    <plurals name="schedule_hours"><item quantity="other">%1$d jam</item></plurals>
+    <plurals name="schedule_days"><item quantity="other">%1$d hari</item></plurals>
+    <plurals name="schedule_weeks"><item quantity="other">%1$d minggu</item></plurals>
+    <string name="schedule_unit_hour">jam</string>
+    <string name="schedule_unit_day">hari</string>
+    <string name="schedule_unit_week">minggu</string>
+    <string name="schedule_time_of_day">Waktu</string>
+    <string name="schedule_off">Nonaktif</string>
+    <string name="schedule_runs_every">Berjalan setiap %1$s</string>
+    <string name="schedule_runs_around">Berjalan sekitar pukul %1$s</string>
+    <string name="schedule_run_around">Jalankan sekitar pukul %1$s</string>
+    <string name="schedule_runs_around_when_scheduled">Berjalan sekitar pukul %1$s jika dijadwalkan</string>
+    <string name="schedule_never">Tidak pernah</string>
+    <string name="schedule_completed_at">%1$s — selesai</string>
+    <string name="schedule_failed_at">%1$s — gagal</string>
+
+    <!-- Hidden categories -->
+    <string name="hidden_title">Kategori tersembunyi</string>
+    <string name="hidden_setup_pin">Atur PIN</string>
+    <string name="hidden_setup_pin_summary">PIN diperlukan untuk menyembunyikan kategori dan membukanya nanti.</string>
+    <string name="hidden_setup_pin_action">Atur PIN</string>
+    <string name="hidden_locked">Terkunci</string>
+    <string name="hidden_locked_summary">Buka kunci untuk mengelola kategori tersembunyi.</string>
+    <string name="hidden_change_pin">Ubah PIN</string>
+    <string name="hidden_change">Ubah</string>
+    <string name="hidden_biometric">Gunakan buka kunci biometrik</string>
+    <string name="hidden_biometric_available">Buka kunci dengan sidik jari atau wajah, bukan PIN</string>
+    <string name="hidden_biometric_unavailable">Tidak tersedia — belum ada biometrik yang didaftarkan</string>
+    <string name="hidden_show_in_all">Tampilkan yang tersembunyi di tab “Semua”</string>
+    <string name="hidden_show_in_all_summary">Saat tidak terkunci, tampilkan juga novel tersembunyi di tab Semua</string>
+    <string name="hidden_categories_section">Kategori</string>
+    <string name="hidden_default_category">Default — tidak dapat disembunyikan</string>
+    <string name="hidden_remove_pin_action">Hapus PIN dan tampilkan semua</string>
+    <string name="hidden_remove_pin_title">Hapus PIN?</string>
+    <string name="hidden_remove_pin_message">Semua kategori tersembunyi akan terlihat oleh siapa pun yang menggunakan aplikasi.</string>
+    <string name="hidden_pin_label">PIN (4–8 digit)</string>
+    <string name="hidden_confirm_pin">Konfirmasi PIN</string>
+    <string name="hidden_pin_mismatch">PIN tidak cocok</string>
+
+    <!-- Backup and restore -->
+    <string name="backup_section_backup">Cadangan</string>
+    <string name="backup_description">Cadangan disimpan sebagai file JSON terkompresi gzip ke folder yang Anda pilih di perangkat ini. Pilih folder yang mudah ditemukan nanti (misalnya Download atau Documents).</string>
+    <string name="backup_folder">Folder cadangan</string>
+    <string name="backup_folder_not_selected">Belum dipilih</string>
+    <string name="backup_no_folder_selected">Belum ada folder cadangan yang dipilih</string>
+    <plurals name="backup_novels_backed_up"><item quantity="other">%1$d novel dicadangkan</item></plurals>
+    <string name="backup_now">Cadangkan sekarang</string>
+    <string name="backup_restore_ellipsis">Pulihkan…</string>
+    <string name="backup_scheduled">Pencadangan terjadwal</string>
+    <string name="backup_scheduled_description">Berjalan di latar belakang pada perangkat ini. Aplikasi tidak perlu dibuka.</string>
+    <string name="backup_automatic">Cadangkan otomatis</string>
+    <string name="backup_wifi_only">Hanya lewat Wi-Fi</string>
+    <string name="backup_wifi_only_summary">Lewati pencadangan otomatis saat memakai data seluler</string>
+    <string name="backup_charging_only">Hanya saat mengisi daya</string>
+    <string name="backup_run_scheduled">Jalankan pencadangan terjadwal sekarang</string>
+    <string name="backup_run_scheduled_summary">Memakai folder yang dipilih dan batasan jadwal</string>
+    <string name="backup_last_automatic">Pencadangan otomatis terakhir</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">berhasil</string>
+    <string name="backup_restore_title">Pulihkan cadangan?</string>
+    <string name="backup_restore_message">Cadangan akan digabungkan ke pustaka Anda saat ini. Entri yang ada tetap disimpan; entri baru ditambahkan dan progres baca digabungkan.</string>
+    <string name="backup_created">Cadangan dibuat: %1$s</string>
+    <plurals name="backup_saved"><item quantity="other">%1$s disimpan (%2$d novel)</item></plurals>
+    <plurals name="backup_restored"><item quantity="other">%1$d novel, %2$d bab dipulihkan</item></plurals>
+    <string name="backup_queued">Pencadangan diantrekan</string>
+    <string name="backup_folder_inaccessible">Folder cadangan tidak dapat diakses</string>
+    <string name="backup_folder_not_writable">Folder cadangan tidak dapat ditulisi</string>
+    <string name="backup_create_file_failed">Tidak dapat membuat file cadangan</string>
+    <string name="backup_open_output_failed">Tidak dapat membuka aliran output</string>
+    <string name="backup_read_file_failed">Tidak dapat membaca file cadangan</string>
+    <string name="backup_failed">Pencadangan gagal</string>
+    <string name="backup_newer_version">File cadangan berasal dari versi aplikasi yang lebih baru (v%1$d)</string>
+    <string name="restore_failed">Pemulihan gagal</string>
+
+    <!-- Data management -->
+    <string name="data_storage">Penyimpanan</string>
+    <string name="data_storage_summary">Grimoire memakai %1$s · %2$s kosong dari %3$s</string>
+    <string name="data_your_data">Data Anda</string>
+    <plurals name="data_library_novels"><item quantity="other">%1$d novel · %2$d bab</item></plurals>
+    <string name="data_browse">Data jelajah</string>
+    <plurals name="data_browse_count"><item quantity="other">%1$d novel dalam cache yang belum Anda simpan atau baca</item></plurals>
+    <string name="data_downloads">Unduhan</string>
+    <string name="data_chapter_text">Teks bab</string>
+    <plurals name="data_chapter_text_summary"><item quantity="other">%1$s · %2$d bab</item></plurals>
+    <string name="data_chapter_images">Gambar bab</string>
+    <plurals name="data_chapter_images_summary"><item quantity="other">%1$s · %2$d gambar</item></plurals>
+    <string name="data_caches">Cache</string>
+    <string name="data_cover_cache">Cache sampul</string>
+    <string name="data_database">Database</string>
+    <string name="data_installer_files">File penginstal</string>
+    <string name="data_installer_summary">%1$s · sisa paket pembaruan aplikasi &amp; ekstensi</string>
+    <string name="data_clear_cover_title">Hapus cache sampul?</string>
+    <string name="data_clear_cover_message">Gambar sampul akan diunduh ulang saat ditampilkan berikutnya.</string>
+    <string name="data_clear_browse_title">Hapus data jelajah?</string>
+    <string name="data_clear_browse_message">Menghapus novel dalam cache yang belum Anda simpan ke pustaka atau baca. Novel tersebut akan diambil ulang dari sumber saat Anda membukanya lagi. Riwayat baca dan unduhan tetap disimpan.</string>
+    <string name="data_clear_installer_title">Hapus file penginstal?</string>
+    <string name="data_clear_installer_message">Menghapus sisa file .apk dari pembaruan aplikasi dan ekstensi. File tersebut akan diunduh ulang saat Anda memperbarui berikutnya. Jangan dihapus saat pemasangan masih berlangsung.</string>
+    <string name="data_cover_cache_cleared">Cache sampul dihapus</string>
+    <plurals name="data_browse_cleared"><item quantity="other">%1$d novel jelajah dihapus</item></plurals>
+    <plurals name="data_installers_cleared"><item quantity="other">%1$d file penginstal dihapus</item></plurals>
+
+    <!-- Library update settings -->
+    <string name="library_update_scheduled">Pembaruan terjadwal</string>
+    <string name="library_update_scheduled_description">Menyegarkan pustaka Anda di latar belakang dan mengambil bab baru. Aplikasi tidak perlu dibuka.</string>
+    <string name="library_update_automatic">Perbarui otomatis</string>
+    <string name="library_update_wifi_only">Hanya lewat Wi-Fi</string>
+    <string name="library_update_wifi_only_summary">Lewati pembaruan terjadwal saat memakai data seluler</string>
+    <string name="library_update_charging_only">Hanya saat mengisi daya</string>
+    <string name="library_update_sync_scope">Cakupan sinkronisasi</string>
+    <string name="library_update_include_epubs">Sertakan EPUB</string>
+    <string name="library_update_include_epubs_summary">Segarkan novel EPUB (impor lokal dan sumber EPUB seperti Z-Library) saat pembaruan pustaka. Novel ini tidak punya bab baru untuk diambil, jadi opsi ini nonaktif secara default.</string>
+    <string name="library_update_performance">Performa</string>
+    <string name="library_update_concurrency">Sinkronisasi bersamaan: %1$d</string>
+    <string name="library_update_concurrency_summary">Jumlah novel yang disegarkan secara paralel. Makin tinggi makin cepat, tetapi dapat memicu pembatasan dari beberapa sumber.</string>
+    <string name="library_update_now">Perbarui pustaka sekarang</string>
+    <string name="library_update_now_summary">Segarkan setiap novel di pustaka Anda di latar belakang</string>
+    <string name="library_update_last">Pembaruan terakhir</string>
+
+    <!-- Text-to-speech -->
+    <string name="tts_enable">Aktifkan teks ke ucapan</string>
+    <string name="tts_enable_summary">Tampilkan kontrol bacakan di pembaca</string>
+    <string name="tts_speech_engine">Mesin ucapan</string>
+    <string name="tts_on_device">Di perangkat</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">Membacakan dengan suara bawaan perangkat. Bisa offline.</string>
+    <string name="tts_elevenlabs_summary">Memutar suara cloud yang natural dari ElevenLabs. Memerlukan koneksi jaringan dan ditagih per karakter ke akun Anda.</string>
+    <string name="tts_elevenlabs_account">Akun ElevenLabs</string>
+    <string name="tts_api_key">Kunci API</string>
+    <string name="tts_playback">Pemutaran</string>
+    <string name="tts_speech_rate">Kecepatan bicara</string>
+    <string name="tts_pitch">Nada (hanya di perangkat)</string>
+    <string name="tts_auto_advance">Lanjut otomatis ke bab berikutnya</string>
+    <string name="tts_auto_advance_summary">Terus membacakan bab berikutnya setelah satu bab selesai</string>
+    <string name="tts_voices">Suara</string>
+    <string name="tts_voices_summary">Pilih suara yang membacakan setiap bahasa. Novel dicocokkan berdasarkan bahasa kontennya.</string>
+    <string name="tts_custom_voice">Suara kustom dipilih</string>
+    <string name="tts_system_default">Default sistem</string>
+    <string name="tts_credit_usage">Penggunaan kredit</string>
+    <string name="tts_refresh_usage">Segarkan penggunaan</string>
+    <string name="tts_usage_api_key_hint">Masukkan kunci API di atas untuk melihat sisa karakter Anda.</string>
+    <string name="tts_loading">Memuat…</string>
+    <string name="tts_usage_summary">%1$,d / %2$,d karakter terpakai</string>
+    <string name="tts_quota_reset">Kuota direset %1$s</string>
+    <string name="tts_voice_title">Suara</string>
+    <string name="tts_voice_needs_key">Tambahkan kunci API ElevenLabs di setelan Teks ke ucapan untuk memilih suara cloud.</string>
+    <string name="tts_elevenlabs_plan_note">Paket gratis ElevenLabs terbatas (~10.000 karakter/bulan) dan banyak suara — bahkan sebagian suara Default — memerlukan paket berbayar. Jika suara tidak mau diputar, coba suara lain, atau gunakan mesin Di perangkat untuk membaca offline tanpa batas.</string>
+    <string name="tts_system_default_summary">Biarkan mesin memilih suara untuk bahasa ini</string>
+    <string name="tts_install_voices">Pasang suara lainnya…</string>
+    <string name="tts_install_voices_summary">Unduh data suara tambahan untuk mesin perangkat</string>
+    <string name="tts_stop_preview">Hentikan pratinjau</string>
+    <string name="tts_preview_voice">Pratinjau suara</string>
+    <string name="tts_load_usage_failed">Tidak dapat memuat penggunaan</string>
+    <string name="tts_load_voices_failed">Tidak dapat memuat suara</string>
+
+    <!-- GitHub connection -->
+    <string name="github_account_title">Akun GitHub</string>
+    <string name="github_privacy_note">Hubungkan akun GitHub untuk memasang ekstensi dari repositori privat Anda sendiri. Token akses Anda hanya disimpan di perangkat ini dan hanya dikirim ke github.com. Cabut kapan saja di github.com/settings/applications.</string>
+    <string name="github_not_connected">Tidak terhubung.</string>
+    <string name="github_connect">Hubungkan GitHub</string>
+    <string name="github_enter_code">Masukkan kode ini di github.com</string>
+    <string name="github_open_device_page">Buka github.com/login/device</string>
+    <string name="github_copy_code">Salin kode</string>
+    <string name="github_waiting">Menunggu Anda menyelesaikan di browser…</string>
+    <string name="github_connected">Terhubung</string>
+    <string name="github_authorization_failed">Otorisasi gagal</string>
+    <string name="github_no_client_id">Build ini tidak memiliki client ID OAuth</string>
+    <string name="github_no_client_id_summary">Setel GITHUB_OAUTH_CLIENT_ID di gradle.properties (atau sebagai variabel lingkungan) lalu build ulang.</string>
+
+    <!-- About and updater -->
+    <string name="about_title">Tentang</string>
+    <string name="about_version">Versi</string>
+    <string name="about_version_summary">Grimoire %1$s (build %2$d)\nCommit %3$s · Extensions API %4$s</string>
+    <string name="about_check_updates">Periksa pembaruan</string>
+    <string name="about_check_updates_idle">Ketuk untuk memeriksa versi baru</string>
+    <string name="about_checking">Memeriksa…</string>
+    <string name="about_latest_version">Anda memakai versi terbaru</string>
+    <string name="about_up_to_date">Sudah terbaru</string>
+    <string name="about_show_changelog">Tampilkan log perubahan</string>
+    <string name="about_show_changelog_summary">Buka catatan rilis untuk %1$s</string>
+    <string name="about_updates_section">Pembaruan</string>
+    <string name="about_update_popups">Pop-up pembaruan otomatis</string>
+    <string name="about_update_popups_summary">Tampilkan dialog saat aplikasi dibuka jika ada pembaruan</string>
+    <string name="about_changelog_after_update">Log perubahan setelah pembaruan</string>
+    <string name="about_changelog_after_update_summary">Tampilkan catatan rilis saat pertama kali membuka versi baru</string>
+    <string name="about_build_section">Build</string>
+    <string name="about_build_details">Detail build</string>
+    <string name="about_build_details_summary">Build %1$d · commit %2$s · Extensions API %3$s</string>
+    <string name="about_build_copied">Info build disalin</string>
+    <string name="about_channel_stable">Stabil</string>
+    <string name="about_channel_beta">Beta</string>
+    <string name="about_channel_stable_summary">Hanya rilis bertag. Direkomendasikan.</string>
+    <string name="about_channel_beta_summary">Build terbaru dari main di setiap commit. Mungkin tidak stabil.</string>
+    <string name="update_whats_new">Yang baru di %1$s</string>
+    <string name="update_got_it">Mengerti</string>
+    <string name="update_ready">Pembaruan siap</string>
+    <string name="update_available">Pembaruan tersedia</string>
+    <string name="update_unknown_error">Error tidak diketahui</string>
+    <string name="update_no_changelog">Tidak ada log perubahan untuk %1$s.</string>
+    <string name="action_update">Perbarui</string>
+    <string name="update_download_complete">Unduhan selesai — ketuk Pasang untuk menyelesaikan pembaruan.</string>
+    <string name="update_skip_version">Lewati versi ini</string>
+    <string name="update_downloading_background">Mengunduh di latar belakang — Anda bisa menutup aplikasi.</string>
+    <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
+    <string name="update_download_size">%1$s MB</string>
+    <string name="changelog_features">Fitur</string>
+    <string name="changelog_bug_fixes">Perbaikan bug</string>
+    <string name="changelog_sources">Sumber</string>
+    <string name="changelog_documentation">Dokumentasi</string>
+    <string name="changelog_other">Perubahan lainnya</string>
+    <string name="changelog_changes">Perubahan</string>
+
+    <!-- Shared language picker -->
+    <string name="language_override_global">Ganti bahasa konten global</string>
+    <string name="language_override_on_helper">Pilih bahasa yang Anda inginkan khusus untuk sumber ini.</string>
+    <string name="language_override_off_helper">Sumber ini memakai pilihan bahasa konten global. Aktifkan untuk memilih kombinasi lain khusus untuk sumber ini.</string>
+    <string name="language_global_all">Global: tanpa filter (semua bahasa ditampilkan)</string>
+    <plurals name="language_global_selected"><item quantity="other">Global: %1$d bahasa dipilih</item></plurals>
+    <string name="language_saved">Tersimpan</string>
+    <string name="language_global">Global</string>
+    <string name="language_added_here">Ditambahkan di sini</string>
+    <string name="language_hidden_here">Disembunyikan di sini</string>
+    <string name="tts_voice_quality_very_high">Kualitas sangat tinggi</string>
+    <string name="tts_voice_quality_high">Kualitas tinggi</string>
+    <string name="tts_voice_quality_normal">Kualitas normal</string>
+    <string name="tts_voice_quality_low">Kualitas rendah</string>
+    <string name="tts_voice_online">online</string>
+    <string name="tts_voice_not_installed">tidak terpasang</string>
+    <string name="tts_voice_category_default">Suara default</string>
+    <string name="tts_voice_category_personal">Suara kloning Anda</string>
+    <string name="tts_voice_category_workspace">Suara workspace</string>
+    <string name="tts_voice_category_community">Voice Library · hanya paket berbayar</string>
+    <string name="github_error_access_denied">Otorisasi ditolak</string>
+    <string name="github_error_expired">Kode kedaluwarsa sebelum otorisasi selesai</string>
+    <string name="github_error_cancelled">Dibatalkan</string>
+    <string name="github_error_network">Error jaringan: %1$s</string>
+    <string name="github_error_unexpected">Error tak terduga: %1$s</string>
+</resources>

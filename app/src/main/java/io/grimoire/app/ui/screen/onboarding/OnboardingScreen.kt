@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -92,28 +94,29 @@ private fun WelcomeStep(
             stringResource(R.string.languages_app_language_title),
             style = MaterialTheme.typography.titleMedium,
         )
-        AppLocale.supported.forEach { tag ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectable(
-                        selected = tag == currentTag,
-                        onClick = {
-                            if (tag != currentTag) {
-                                if (AppLocale.setTag(context, tag)) {
-                                    context.findActivity()?.recreate()
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            AppLocale.supported.forEach { tag ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = tag == currentTag,
+                            onClick = {
+                                if (tag != currentTag) {
+                                    if (AppLocale.setTag(context, tag)) {
+                                        context.findActivity()?.recreate()
+                                    }
                                 }
-                            }
-                        },
-                    )
-                    .padding(vertical = 4.dp),
-            ) {
-                RadioButton(selected = tag == currentTag, onClick = null)
-                Text(appLanguageLabel(tag))
+                            },
+                        )
+                        .padding(vertical = 4.dp),
+                ) {
+                    RadioButton(selected = tag == currentTag, onClick = null)
+                    Text(appLanguageLabel(tag))
+                }
             }
         }
-        Spacer(Modifier.weight(1f))
         Button(
             onClick = onContinue,
             modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
@@ -185,8 +188,7 @@ private fun LanguageRow(
 @Composable
 private fun appLanguageLabel(tag: String): String = when (tag) {
     AppLocale.SYSTEM -> stringResource(R.string.language_option_system)
-    "zh" -> stringResource(R.string.language_option_chinese_simplified)
-    else -> stringResource(R.string.language_option_english)
+    else -> AppLocale.nativeName(tag) ?: tag
 }
 
 /** Walks the ContextWrapper chain to the hosting Activity so we can recreate it. */

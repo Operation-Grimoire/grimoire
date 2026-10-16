@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">Hôm nay</string>
+    <string name="common_yesterday">Hôm qua</string>
+    <string name="action_pause">Tạm dừng</string>
+    <string name="action_resume">Tiếp tục</string>
+    <string name="action_expand">Mở rộng</string>
+    <string name="action_collapse">Thu gọn</string>
+    <string name="action_clear_log">Xóa nhật ký</string>
+    <string name="action_set">Đặt</string>
+    <string name="action_choose">Chọn</string>
+    <string name="action_restore">Khôi phục</string>
+    <string name="action_disconnect">Ngắt kết nối</string>
+    <string name="action_dismiss">Bỏ qua</string>
+    <string name="action_try_again">Thử lại</string>
+    <string name="action_skip">Bỏ qua</string>
+    <string name="action_next">Tiếp</string>
+    <string name="status_error">Lỗi</string>
+    <string name="status_warning">Cảnh báo</string>
+    <string name="status_completed">Hoàn thành</string>
+    <string name="status_queued">Đang chờ</string>
+    <string name="status_downloaded">Đã tải</string>
+    <string name="chapter_cancel_download">Hủy tải xuống</string>
+    <string name="chapter_downloaded_refresh_queued">Đã tải · đang chờ làm mới</string>
+    <string name="chapter_cancel_refresh">Hủy làm mới</string>
+    <string name="chapter_downloaded_refreshing">Đã tải · đang làm mới</string>
+    <string name="chapter_downloaded_refresh_failed">Đã tải · làm mới thất bại</string>
+
+    <!-- More -->
+    <string name="more_title">Thêm</string>
+    <string name="more_incognito">Ẩn danh</string>
+    <string name="more_incognito_enabled">Không ghi lịch sử trong phiên này</string>
+    <string name="more_incognito_disabled">Tạm dừng lịch sử đọc &amp; duyệt</string>
+    <string name="incognito_banner">Ẩn danh · đã tạm dừng lịch sử</string>
+    <string name="more_updates">Cập nhật</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="other">%1$d chương mới từ các truyện đã theo dõi</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="other">%1$d chương mới trong thư viện của bạn</item>
+    </plurals>
+    <string name="more_no_new_chapters">Không có chương mới</string>
+    <string name="more_history">Lịch sử</string>
+    <string name="more_history_summary">Chương đã đọc và truyện đã duyệt gần đây</string>
+    <string name="more_downloads">Tải xuống</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="other">%1$d đang tải</item>
+    </plurals>
+    <string name="more_downloads_summary">Chương đã tải và hàng chờ</string>
+    <string name="more_tasks">Tác vụ</string>
+    <string name="more_tasks_summary">Các lượt tải xuống và đồng bộ đang chạy, kèm lịch sử</string>
+    <string name="more_update_warnings">Cảnh báo cập nhật</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="other">%1$d truyện cần chú ý</item>
+    </plurals>
+    <string name="more_no_refresh_problems">Không có lỗi làm mới</string>
+    <string name="more_statistics">Thống kê</string>
+    <string name="more_statistics_summary">Hoạt động đọc của bạn</string>
+    <string name="more_settings_summary">Giao diện, thư viện, trình đọc, sao lưu</string>
+    <string name="more_tours">Hướng dẫn</string>
+    <string name="more_tours_summary">Xem lại các hướng dẫn trong ứng dụng</string>
+    <string name="more_about">Giới thiệu</string>
+    <string name="more_about_summary">Phiên bản, kênh cập nhật, giấy phép</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">Bắt đầu</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">Hướng dẫn chào mừng</string>
+    <string name="tour_welcome_description">Những điều cơ bản: thư viện, duyệt truyện, nguồn và cài đặt.</string>
+    <string name="tour_step_welcome_title">Chào mừng đến với Grimoire</string>
+    <string name="tour_step_welcome_body">Hướng dẫn nhanh những điều cơ bản — chỉ mất khoảng 20 giây.</string>
+    <string name="tour_step_library_title">Thư viện của bạn</string>
+    <string name="tour_step_library_body">Truyện bạn thêm sẽ nằm ở đây, được sắp xếp theo danh mục.</string>
+    <string name="tour_step_browse_title">Duyệt</string>
+    <string name="tour_step_browse_body">Chạm vào Duyệt để tìm truyện trên các nguồn của bạn.</string>
+    <string name="tour_step_extensions_title">Nguồn &amp; tiện ích</string>
+    <string name="tour_step_extensions_body">Cài nguồn từ đây. Mở ra để xem những gì có sẵn.</string>
+    <string name="tour_open_extensions">Mở tiện ích</string>
+    <string name="tour_step_repositories_title">Kho tiện ích</string>
+    <string name="tour_step_repositories_body">Nguồn đến từ các kho. Kho chính thức đã được thêm sẵn — chạm vào đây để quản lý hoặc thêm kho của riêng bạn.</string>
+    <string name="tour_step_more_title">Mọi thứ khác</string>
+    <string name="tour_step_more_body">Tải xuống, thống kê, sao lưu và cài đặt nằm trong mục Thêm.</string>
+    <string name="tour_step_done_title">Bạn đã sẵn sàng</string>
+    <string name="tour_step_done_body">Xem lại bất kỳ hướng dẫn nào trong Thêm → Hướng dẫn.</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">Chẩn đoán</string>
+    <string name="privacy_diagnostics_note">Dữ liệu chẩn đoán là ẩn danh và không bao giờ chứa dữ liệu cá nhân, tên truyện hay liên kết. Mọi thứ đều tắt cho đến khi bạn bật.</string>
+    <string name="privacy_crash_reports">Gửi báo cáo sự cố</string>
+    <string name="privacy_crash_reports_summary">Dấu vết ngăn xếp ẩn danh khi ứng dụng gặp sự cố</string>
+    <string name="privacy_usage_analytics">Gửi phân tích sử dụng ẩn danh</string>
+    <string name="privacy_usage_analytics_summary">Những tính năng nào được dùng, để định hướng phát triển</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">Đang tải chương</string>
+    <string name="download_notification_starting">Đang bắt đầu…</string>
+    <string name="download_notification_working">Đang tải xuống…</string>
+    <string name="download_notification_queued">+%1$d đang chờ</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d đang chờ)</string>
+    <string name="download_notification_complete_title">Đã tải xong</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="other">Đã tải %1$d chương</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">Đang tải bản cập nhật</string>
+    <string name="app_update_notification_downloading_version">Đang tải bản cập nhật %1$s</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">Đang bắt đầu…</string>
+    <string name="app_update_notification_ready">Bản cập nhật đã sẵn sàng để cài</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s đã sẵn sàng</string>
+    <string name="app_update_notification_tap_to_install">Chạm để cài đặt</string>
+    <string name="app_update_notification_failed">Tải bản cập nhật thất bại</string>
+    <string name="error_verification_failed">Xác minh bản tải xuống thất bại — hãy thử lại hoặc đổi mạng</string>
+    <string name="app_update_download_failed">Tải xuống thất bại</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">Tải xuống</string>
+    <string name="downloads_settings">Cài đặt tải xuống</string>
+    <string name="downloads_no_filter_matches">Không có bản tải xuống nào khớp với bộ lọc đã chọn.</string>
+    <string name="downloads_parallel">Tải song song</string>
+    <string name="downloads_parallel_summary">Số chương được tải cùng lúc</string>
+    <string name="downloads_move_to_top">Chuyển lên đầu</string>
+    <string name="downloads_cancel_failed">Hủy các bản bị lỗi</string>
+    <string name="downloads_redownload">Tải lại</string>
+    <string name="downloads_delete_download">Xóa bản tải xuống</string>
+    <string name="downloads_delete_options">Tùy chọn tải xuống</string>
+    <string name="downloads_empty">Không có bản tải xuống</string>
+    <string name="downloads_filter_downloading">Đang tải</string>
+    <string name="downloads_filter_queued">Đang chờ</string>
+    <string name="downloads_filter_done">Xong</string>
+    <string name="downloads_filter_failed">Thất bại</string>
+    <plurals name="downloads_count_downloaded"><item quantity="other">%1$d đã tải</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="other">%1$d đang chờ</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="other">%1$d đang tải</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="other">%1$d thất bại</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">Thống kê</string>
+    <string name="statistics_reading">Đọc</string>
+    <string name="statistics_chapters_read">Số chương đã đọc</string>
+    <string name="statistics_words_read">Số từ đã đọc</string>
+    <string name="statistics_novels_completed">Truyện đã đọc xong</string>
+    <string name="statistics_novels_started">Truyện đã bắt đầu</string>
+    <string name="statistics_average_words">Số từ TB / chương</string>
+    <string name="statistics_last_read">Đọc gần nhất</string>
+    <string name="statistics_library">Thư viện</string>
+    <string name="statistics_library_novels">Truyện trong thư viện</string>
+    <string name="statistics_library_chapters">Chương trong thư viện</string>
+    <string name="statistics_library_unread">Chưa đọc trong thư viện</string>
+    <string name="statistics_downloaded">Đã tải</string>
+    <string name="statistics_empty_hint">Hãy đọc vài chương để bắt đầu theo dõi thống kê.</string>
+    <string name="statistics_counting_hint">Mỗi chương chỉ được tính một lần — đánh dấu chưa đọc không làm giảm số liệu.</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Tác vụ</string>
+    <string name="tasks_empty">Chưa có tác vụ nào.\nCác lượt tải xuống và đồng bộ thư viện sẽ hiện ở đây khi đang chạy,\nvà kết quả được lưu lại bên dưới.</string>
+    <string name="tasks_running">Đang chạy</string>
+    <string name="tasks_history">Lịch sử</string>
+    <string name="tasks_clear_title">Xóa nhật ký tác vụ?</string>
+    <string name="tasks_clear_message">Xóa lịch sử các lượt đồng bộ thư viện và tải xuống đã hoàn tất. Các tác vụ đang chạy không bị ảnh hưởng.</string>
+    <string name="tasks_cancel_named">Hủy %1$s</string>
+    <string name="tasks_finished_with_errors">Đã xong nhưng có lỗi</string>
+    <string name="tasks_updating_library">Đang cập nhật thư viện</string>
+    <string name="tasks_starting">Đang bắt đầu…</string>
+    <plurals name="tasks_novels_progress"><item quantity="other">%1$d / %2$d truyện</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">Đang tải chương</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="other">Còn %1$d chương</item></plurals>
+    <string name="tasks_downloads">Tải xuống</string>
+    <string name="tasks_library_sync">Đồng bộ thư viện</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="other">Đã tải %1$d chương</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="other">%1$d thất bại</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="other">Đã kiểm tra %1$d truyện</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="other">%1$d chương mới</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="other">%1$d cảnh báo</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="other">%1$d lỗi</item></plurals>
+    <string name="tasks_sync_failed">Đồng bộ thư viện thất bại · %1$s</string>
+    <string name="library_update_downloading_new">Đang tải chương mới</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d đang chờ</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="other">%1$d chương bị khóa mới</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · %2$d bị khóa</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">Cập nhật</string>
+    <string name="updates_open_novel">Mở truyện</string>
+    <string name="updates_delete_from_log">Xóa khỏi nhật ký</string>
+    <string name="updates_empty">Chưa có cập nhật nào.\nChương mới được tìm thấy khi làm mới thư viện sẽ hiện ở đây.</string>
+    <string name="updates_tab_subscribed">Đang theo dõi</string>
+    <string name="updates_tab_all">Tất cả</string>
+    <string name="updates_subscribed_empty">Chưa có cập nhật nào từ các truyện đang theo dõi.</string>
+    <string name="updates_clear_title">Xóa nhật ký cập nhật?</string>
+    <string name="updates_clear_message">Thao tác này sẽ xóa vĩnh viễn mọi mục trong nhật ký cập nhật. Thư viện và các chương của bạn không bị ảnh hưởng.</string>
+    <plurals name="updates_count_new"><item quantity="other">%1$d mới</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="other">%1$d bị khóa</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="other">%1$d đã tải</item></plurals>
+    <string name="updates_all_downloaded">Đã tải hết</string>
+    <string name="updates_unlocked">Đã mở khóa</string>
+    <plurals name="updates_count_unlocked"><item quantity="other">%1$d đã mở khóa</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">Lịch sử</string>
+    <string name="history_reading">Đọc</string>
+    <string name="history_browsing">Duyệt</string>
+    <string name="history_clear_reading">Xóa lịch sử đọc</string>
+    <string name="history_clear_browsing">Xóa lịch sử duyệt</string>
+    <string name="history_reading_empty">Chưa có lịch sử đọc.\nCác chương bạn mở trong trình đọc sẽ hiện ở đây.</string>
+    <string name="history_browsing_empty">Chưa có lịch sử duyệt.\nCác truyện bạn mở trong Duyệt (và chưa thêm vào thư viện) sẽ hiện ở đây.</string>
+    <string name="history_clear_reading_title">Xóa lịch sử đọc?</string>
+    <string name="history_clear_browsing_title">Xóa lịch sử duyệt?</string>
+    <string name="history_clear_reading_message">Thao tác này sẽ xóa vĩnh viễn mọi mục trong lịch sử đọc. Thư viện và các chương của bạn không bị ảnh hưởng.</string>
+    <string name="history_clear_browsing_message">Thao tác này sẽ xóa vĩnh viễn mọi mục trong lịch sử duyệt. Thư viện của bạn không bị ảnh hưởng.</string>
+    <plurals name="history_chapter_count"><item quantity="other">%1$d chương</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">Cảnh báo cập nhật</string>
+    <string name="update_issues_empty">Không có lỗi.\nCác truyện làm mới thất bại sẽ hiện ở đây.</string>
+    <string name="update_issue_source_missing">Chưa cài nguồn — đã bỏ qua</string>
+    <string name="update_issue_no_chapters">Nguồn không trả về chương nào — đã giữ danh sách hiện có</string>
+    <string name="update_issue_incomplete_data">Nguồn trả về dữ liệu không đầy đủ — đã giữ tiêu đề/ảnh bìa trước đó</string>
+    <string name="update_issues_retry_all">Thử lại tất cả</string>
+    <string name="update_issues_dismiss_all">Bỏ qua tất cả</string>
+    <string name="update_issue_dismiss">Bỏ qua</string>
+    <string name="update_issue_install_source">Cài nguồn</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">Ứng dụng gặp sự cố</string>
+    <string name="crash_empty">Không có báo cáo sự cố.</string>
+    <string name="crash_description">Lần chạy trước, ứng dụng đã đóng đột ngột. Gửi báo cáo sẽ giúp khắc phục lỗi — thông tin sự cố bên dưới đã được điền sẵn. Bạn cũng có thể sao chép để chia sẻ ở nơi khác.</string>
+    <string name="crash_no_browser">Không có trình duyệt để mở GitHub.</string>
+    <string name="crash_report_github">Báo cáo trên GitHub</string>
+    <string name="crash_details_copied">Đã sao chép thông tin sự cố.</string>
+    <string name="crash_copy_details">Sao chép thông tin</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">Trước</string>
+    <string name="action_play">Phát</string>
+    <string name="action_stop">Dừng</string>
+    <string name="tts_notification_title">Chuyển văn bản thành giọng nói</string>
+    <string name="tts_error_request_failed">Yêu cầu ElevenLabs thất bại</string>
+    <string name="tts_error_play_audio">Không thể phát âm thanh</string>
+    <string name="tts_error_play_preview">Không thể phát âm thanh xem trước</string>
+    <string name="tts_error_start_playback">Không thể bắt đầu phát</string>
+    <string name="notification_channel_downloads">Tải chương</string>
+    <string name="notification_channel_downloads_desc">Tải chương trong nền</string>
+    <string name="notification_channel_backups">Sao lưu</string>
+    <string name="notification_channel_backups_desc">Sao lưu cục bộ theo lịch</string>
+    <string name="notification_channel_app_updates">Cập nhật ứng dụng</string>
+    <string name="notification_channel_app_updates_desc">Tải bản cập nhật ứng dụng trong nền</string>
+    <string name="notification_channel_library_updates">Cập nhật thư viện</string>
+    <string name="notification_channel_library_updates_desc">Tiến trình và kết quả làm mới thư viện trong nền</string>
+    <string name="notification_channel_tts">Chuyển văn bản thành giọng nói</string>
+    <string name="notification_channel_tts_desc">Điều khiển phát khi đọc to</string>
+    <string name="tts_error_no_chapters">Truyện này không có chương nào để đọc</string>
+    <string name="tts_error_missing_api_key">Hãy thêm khóa API ElevenLabs trong Cài đặt → Chuyển văn bản thành giọng nói</string>
+    <string name="tts_error_device_unavailable">Công cụ giọng nói của thiết bị không khả dụng</string>
+    <string name="tts_error_chapter_not_found">Không tìm thấy chương</string>
+    <string name="tts_error_no_readable_text">Chương này không có văn bản để đọc</string>
+    <string name="tts_error_audio_focus">Không thể giành quyền phát âm thanh</string>
+    <string name="tts_error_device_engine">Lỗi công cụ giọng nói của thiết bị</string>
+    <string name="tts_error_device_engine_code">Lỗi công cụ giọng nói của thiết bị (%1$d)</string>
+    <string name="extension_download_failed_http">Tải xuống thất bại: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">Lỗi công cụ giọng nói trên thiết bị</string>
+    <string name="tts_error_preview_engine_code">Lỗi công cụ giọng nói trên thiết bị (%1$d)</string>
+    <string name="tts_error_audio_playback_code">Lỗi phát âm thanh (%1$d)</string>
+    <string name="tts_error_no_default_voice">Không có giọng ElevenLabs mặc định — hãy chọn một giọng trong cài đặt Chuyển văn bản thành giọng nói</string>
+    <string name="tts_error_no_default_voice_preview">Không có giọng ElevenLabs mặc định — hãy chọn một giọng để nghe thử</string>
+    <string name="tts_error_source_unavailable">Nguồn không khả dụng — hãy tải chương xuống để nghe ngoại tuyến</string>
+    <string name="tts_error_source_no_text">Nguồn này không đọc được văn bản chương — hãy tải xuống để nghe ngoại tuyến</string>
+    <string name="tts_error_api_key_first">Hãy thêm khóa API ElevenLabs trước.</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: khóa API không hợp lệ, hoặc quyền truy cập API của gói miễn phí đã bị tắt</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: gói của bạn không cho phép thao tác này — xem cài đặt Chuyển văn bản thành giọng nói</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: vượt quá giới hạn yêu cầu hoặc hạn mức ký tự</string>
+    <string name="tts_error_elevenlabs_code">Yêu cầu ElevenLabs thất bại (%1$d)</string>
+</resources>

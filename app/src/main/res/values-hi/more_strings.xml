@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">आज</string>
+    <string name="common_yesterday">कल</string>
+    <string name="action_pause">रोकें</string>
+    <string name="action_resume">फिर शुरू करें</string>
+    <string name="action_expand">फैलाएँ</string>
+    <string name="action_collapse">समेटें</string>
+    <string name="action_clear_log">लॉग साफ़ करें</string>
+    <string name="action_set">सेट करें</string>
+    <string name="action_choose">चुनें</string>
+    <string name="action_restore">रीस्टोर करें</string>
+    <string name="action_disconnect">डिस्कनेक्ट करें</string>
+    <string name="action_dismiss">ख़ारिज करें</string>
+    <string name="action_try_again">फिर से कोशिश करें</string>
+    <string name="action_skip">छोड़ें</string>
+    <string name="action_next">अगला</string>
+    <string name="status_error">त्रुटि</string>
+    <string name="status_warning">चेतावनी</string>
+    <string name="status_completed">पूरा हुआ</string>
+    <string name="status_queued">कतार में</string>
+    <string name="status_downloaded">डाउनलोड हो गया</string>
+    <string name="chapter_cancel_download">डाउनलोड रद्द करें</string>
+    <string name="chapter_downloaded_refresh_queued">डाउनलोड हो गया · रीफ़्रेश कतार में</string>
+    <string name="chapter_cancel_refresh">रीफ़्रेश रद्द करें</string>
+    <string name="chapter_downloaded_refreshing">डाउनलोड हो गया · रीफ़्रेश हो रहा है</string>
+    <string name="chapter_downloaded_refresh_failed">डाउनलोड हो गया · रीफ़्रेश विफल</string>
+
+    <!-- More -->
+    <string name="more_title">और</string>
+    <string name="more_incognito">इनकॉग्निटो</string>
+    <string name="more_incognito_enabled">इस सत्र में इतिहास सेव नहीं हो रहा</string>
+    <string name="more_incognito_disabled">पढ़ने और ब्राउज़िंग का इतिहास रोकें</string>
+    <string name="incognito_banner">इनकॉग्निटो · इतिहास रुका है</string>
+    <string name="more_updates">अपडेट</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="one">सब्सक्राइब किए गए उपन्यासों से %1$d नया अध्याय</item>
+        <item quantity="other">सब्सक्राइब किए गए उपन्यासों से %1$d नए अध्याय</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="one">आपकी लाइब्रेरी में %1$d नया अध्याय</item>
+        <item quantity="other">आपकी लाइब्रेरी में %1$d नए अध्याय</item>
+    </plurals>
+    <string name="more_no_new_chapters">कोई नया अध्याय नहीं</string>
+    <string name="more_history">इतिहास</string>
+    <string name="more_history_summary">हाल में पढ़े गए अध्याय और ब्राउज़ किए गए उपन्यास</string>
+    <string name="more_downloads">डाउनलोड</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="one">%1$d जारी है</item>
+        <item quantity="other">%1$d जारी हैं</item>
+    </plurals>
+    <string name="more_downloads_summary">डाउनलोड किए गए अध्याय और कतार</string>
+    <string name="more_tasks">टास्क</string>
+    <string name="more_tasks_summary">चल रहे डाउनलोड और सिंक, उनके इतिहास के साथ</string>
+    <string name="more_update_warnings">अपडेट चेतावनियाँ</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="one">%1$d उपन्यास पर ध्यान देना ज़रूरी है</item>
+        <item quantity="other">%1$d उपन्यासों पर ध्यान देना ज़रूरी है</item>
+    </plurals>
+    <string name="more_no_refresh_problems">रीफ़्रेश में कोई समस्या नहीं</string>
+    <string name="more_statistics">आँकड़े</string>
+    <string name="more_statistics_summary">आपकी पढ़ने की गतिविधि</string>
+    <string name="more_settings_summary">दिखावट, लाइब्रेरी, रीडर, बैकअप</string>
+    <string name="more_tours">टूर</string>
+    <string name="more_tours_summary">ऐप के गाइडेड टूर फिर से देखें</string>
+    <string name="more_about">जानकारी</string>
+    <string name="more_about_summary">वर्शन, अपडेट चैनल, लाइसेंस</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">शुरू करें</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">स्वागत टूर</string>
+    <string name="tour_welcome_description">ज़रूरी बातें: लाइब्रेरी, ब्राउज़िंग, स्रोत और सेटिंग्स।</string>
+    <string name="tour_step_welcome_title">Grimoire में आपका स्वागत है</string>
+    <string name="tour_step_welcome_body">ज़रूरी बातों का एक छोटा-सा टूर — लगभग 20 सेकंड लगेंगे।</string>
+    <string name="tour_step_library_title">आपकी लाइब्रेरी</string>
+    <string name="tour_step_library_body">आपके जोड़े गए उपन्यास यहाँ श्रेणियों में व्यवस्थित रहते हैं।</string>
+    <string name="tour_step_browse_title">ब्राउज़</string>
+    <string name="tour_step_browse_body">अपने स्रोतों में उपन्यास ढूँढने के लिए ब्राउज़ पर टैप करें।</string>
+    <string name="tour_step_extensions_title">स्रोत और एक्सटेंशन</string>
+    <string name="tour_step_extensions_body">स्रोत यहाँ से इंस्टॉल होते हैं। क्या-क्या उपलब्ध है, देखने के लिए इसे खोलें।</string>
+    <string name="tour_open_extensions">एक्सटेंशन खोलें</string>
+    <string name="tour_step_repositories_title">रिपॉज़िटरी</string>
+    <string name="tour_step_repositories_body">स्रोत रिपॉज़िटरी से आते हैं। आधिकारिक रिपॉज़िटरी पहले से जुड़ी है — उन्हें प्रबंधित करने या अपनी रिपॉज़िटरी जोड़ने के लिए यहाँ टैप करें।</string>
+    <string name="tour_step_more_title">बाकी सब कुछ</string>
+    <string name="tour_step_more_body">डाउनलोड, आँकड़े, बैकअप और सेटिंग्स “और” में हैं।</string>
+    <string name="tour_step_done_title">सब तैयार है</string>
+    <string name="tour_step_done_body">कोई भी टूर और → टूर से फिर से देखें।</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">डायग्नोस्टिक्स</string>
+    <string name="privacy_diagnostics_note">डायग्नोस्टिक्स गुमनाम होते हैं और इनमें कभी भी निजी डेटा, उपन्यासों के शीर्षक या लिंक शामिल नहीं होते। जब तक आप चालू न करें, सब कुछ बंद रहता है।</string>
+    <string name="privacy_crash_reports">क्रैश रिपोर्ट भेजें</string>
+    <string name="privacy_crash_reports_summary">ऐप क्रैश होने पर गुमनाम स्टैक ट्रेस</string>
+    <string name="privacy_usage_analytics">गुमनाम उपयोग एनालिटिक्स भेजें</string>
+    <string name="privacy_usage_analytics_summary">कौन-सी सुविधाएँ इस्तेमाल होती हैं, ताकि तय हो सके कि आगे क्या बनाना है</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">अध्याय डाउनलोड हो रहे हैं</string>
+    <string name="download_notification_starting">शुरू हो रहा है…</string>
+    <string name="download_notification_working">डाउनलोड हो रहा है…</string>
+    <string name="download_notification_queued">+%1$d कतार में</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d कतार में)</string>
+    <string name="download_notification_complete_title">डाउनलोड पूरे हुए</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="one">%1$d अध्याय डाउनलोड हुआ</item>
+        <item quantity="other">%1$d अध्याय डाउनलोड हुए</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">अपडेट डाउनलोड हो रहा है</string>
+    <string name="app_update_notification_downloading_version">अपडेट %1$s डाउनलोड हो रहा है</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">शुरू हो रहा है…</string>
+    <string name="app_update_notification_ready">अपडेट इंस्टॉल के लिए तैयार है</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s तैयार है</string>
+    <string name="app_update_notification_tap_to_install">इंस्टॉल करने के लिए टैप करें</string>
+    <string name="app_update_notification_failed">अपडेट डाउनलोड विफल</string>
+    <string name="error_verification_failed">डाउनलोड की पुष्टि विफल — फिर से कोशिश करें या नेटवर्क बदलें</string>
+    <string name="app_update_download_failed">डाउनलोड विफल</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">डाउनलोड</string>
+    <string name="downloads_settings">डाउनलोड सेटिंग्स</string>
+    <string name="downloads_no_filter_matches">चुने गए फ़िल्टर से कोई डाउनलोड मेल नहीं खाता।</string>
+    <string name="downloads_parallel">एक साथ डाउनलोड</string>
+    <string name="downloads_parallel_summary">एक साथ डाउनलोड होने वाले अध्यायों की संख्या</string>
+    <string name="downloads_move_to_top">सबसे ऊपर ले जाएँ</string>
+    <string name="downloads_cancel_failed">विफल डाउनलोड रद्द करें</string>
+    <string name="downloads_redownload">फिर से डाउनलोड करें</string>
+    <string name="downloads_delete_download">डाउनलोड मिटाएँ</string>
+    <string name="downloads_delete_options">डाउनलोड विकल्प</string>
+    <string name="downloads_empty">कोई डाउनलोड नहीं</string>
+    <string name="downloads_filter_downloading">डाउनलोड हो रहे</string>
+    <string name="downloads_filter_queued">कतार में</string>
+    <string name="downloads_filter_done">पूरे हुए</string>
+    <string name="downloads_filter_failed">विफल</string>
+    <plurals name="downloads_count_downloaded"><item quantity="one">%1$d डाउनलोड हुआ</item><item quantity="other">%1$d डाउनलोड हुए</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="one">%1$d कतार में</item><item quantity="other">%1$d कतार में</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="one">%1$d डाउनलोड हो रहा है</item><item quantity="other">%1$d डाउनलोड हो रहे हैं</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="one">%1$d विफल</item><item quantity="other">%1$d विफल</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">आँकड़े</string>
+    <string name="statistics_reading">पढ़ाई</string>
+    <string name="statistics_chapters_read">पढ़े गए अध्याय</string>
+    <string name="statistics_words_read">पढ़े गए शब्द</string>
+    <string name="statistics_novels_completed">पूरे किए गए उपन्यास</string>
+    <string name="statistics_novels_started">शुरू किए गए उपन्यास</string>
+    <string name="statistics_average_words">औसत शब्द / अध्याय</string>
+    <string name="statistics_last_read">आख़िरी बार पढ़ा</string>
+    <string name="statistics_library">लाइब्रेरी</string>
+    <string name="statistics_library_novels">लाइब्रेरी में उपन्यास</string>
+    <string name="statistics_library_chapters">लाइब्रेरी के अध्याय</string>
+    <string name="statistics_library_unread">लाइब्रेरी में अनपढ़े</string>
+    <string name="statistics_downloaded">डाउनलोड किए गए</string>
+    <string name="statistics_empty_hint">आँकड़े ट्रैक करना शुरू करने के लिए कुछ अध्याय पढ़ें।</string>
+    <string name="statistics_counting_hint">आँकड़ों में हर अध्याय एक ही बार गिना जाता है — अनपढ़ा मार्क करने से संख्या कम नहीं होती।</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">टास्क</string>
+    <string name="tasks_empty">अभी तक कोई टास्क नहीं।\nडाउनलोड और लाइब्रेरी सिंक चलते समय यहाँ दिखते हैं,\nऔर उनके नतीजे नीचे रखे जाते हैं।</string>
+    <string name="tasks_running">चल रहे हैं</string>
+    <string name="tasks_history">इतिहास</string>
+    <string name="tasks_clear_title">टास्क लॉग साफ़ करें?</string>
+    <string name="tasks_clear_message">पूरे हो चुके लाइब्रेरी सिंक और डाउनलोड का इतिहास हटाता है। चल रहे टास्क पर कोई असर नहीं पड़ता।</string>
+    <string name="tasks_cancel_named">%1$s रद्द करें</string>
+    <string name="tasks_finished_with_errors">त्रुटियों के साथ पूरा हुआ</string>
+    <string name="tasks_updating_library">लाइब्रेरी अपडेट हो रही है</string>
+    <string name="tasks_starting">शुरू हो रहा है…</string>
+    <plurals name="tasks_novels_progress"><item quantity="one">%1$d / %2$d उपन्यास</item><item quantity="other">%1$d / %2$d उपन्यास</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">अध्याय डाउनलोड हो रहे हैं</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="one">%1$d अध्याय बाकी</item><item quantity="other">%1$d अध्याय बाकी</item></plurals>
+    <string name="tasks_downloads">डाउनलोड</string>
+    <string name="tasks_library_sync">लाइब्रेरी सिंक</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="one">%1$d अध्याय डाउनलोड हुआ</item><item quantity="other">%1$d अध्याय डाउनलोड हुए</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="one">%1$d विफल</item><item quantity="other">%1$d विफल</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="one">%1$d उपन्यास जाँचा गया</item><item quantity="other">%1$d उपन्यास जाँचे गए</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="one">%1$d नया अध्याय</item><item quantity="other">%1$d नए अध्याय</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="one">%1$d चेतावनी</item><item quantity="other">%1$d चेतावनियाँ</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="one">%1$d त्रुटि</item><item quantity="other">%1$d त्रुटियाँ</item></plurals>
+    <string name="tasks_sync_failed">लाइब्रेरी सिंक विफल · %1$s</string>
+    <string name="library_update_downloading_new">नए अध्याय डाउनलोड हो रहे हैं</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d कतार में</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="one">%1$d नया लॉक अध्याय</item><item quantity="other">%1$d नए लॉक अध्याय</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · %2$d लॉक</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">अपडेट</string>
+    <string name="updates_open_novel">उपन्यास खोलें</string>
+    <string name="updates_delete_from_log">लॉग से मिटाएँ</string>
+    <string name="updates_empty">अभी तक कोई अपडेट नहीं।\nलाइब्रेरी रीफ़्रेश में मिले नए अध्याय यहाँ दिखते हैं।</string>
+    <string name="updates_tab_subscribed">सब्सक्राइब किए गए</string>
+    <string name="updates_tab_all">सभी</string>
+    <string name="updates_subscribed_empty">सब्सक्राइब किए गए उपन्यासों से अभी तक कोई अपडेट नहीं।</string>
+    <string name="updates_clear_title">अपडेट लॉग साफ़ करें?</string>
+    <string name="updates_clear_message">इससे अपडेट लॉग की हर एंट्री हमेशा के लिए हट जाएगी। आपकी लाइब्रेरी और अध्यायों पर कोई असर नहीं पड़ेगा।</string>
+    <plurals name="updates_count_new"><item quantity="one">%1$d नया</item><item quantity="other">%1$d नए</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="one">%1$d लॉक</item><item quantity="other">%1$d लॉक</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="one">%1$d डाउनलोड हुआ</item><item quantity="other">%1$d डाउनलोड हुए</item></plurals>
+    <string name="updates_all_downloaded">सभी डाउनलोड हो गए</string>
+    <string name="updates_unlocked">अनलॉक हुआ</string>
+    <plurals name="updates_count_unlocked"><item quantity="one">%1$d अनलॉक हुआ</item><item quantity="other">%1$d अनलॉक हुए</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">इतिहास</string>
+    <string name="history_reading">पढ़ाई</string>
+    <string name="history_browsing">ब्राउज़िंग</string>
+    <string name="history_clear_reading">पढ़ने का इतिहास साफ़ करें</string>
+    <string name="history_clear_browsing">ब्राउज़िंग इतिहास साफ़ करें</string>
+    <string name="history_reading_empty">अभी तक पढ़ने का कोई इतिहास नहीं।\nरीडर में खोले गए अध्याय यहाँ दिखते हैं।</string>
+    <string name="history_browsing_empty">अभी तक ब्राउज़िंग का कोई इतिहास नहीं।\nब्राउज़ में खोले गए उपन्यास (जिन्हें आपने लाइब्रेरी में नहीं जोड़ा) यहाँ दिखते हैं।</string>
+    <string name="history_clear_reading_title">पढ़ने का इतिहास साफ़ करें?</string>
+    <string name="history_clear_browsing_title">ब्राउज़िंग इतिहास साफ़ करें?</string>
+    <string name="history_clear_reading_message">इससे आपके पढ़ने के इतिहास की हर एंट्री हमेशा के लिए हट जाएगी। आपकी लाइब्रेरी और अध्यायों पर कोई असर नहीं पड़ेगा।</string>
+    <string name="history_clear_browsing_message">इससे आपके ब्राउज़िंग इतिहास की हर एंट्री हमेशा के लिए हट जाएगी। आपकी लाइब्रेरी पर कोई असर नहीं पड़ेगा।</string>
+    <plurals name="history_chapter_count"><item quantity="one">%1$d अध्याय</item><item quantity="other">%1$d अध्याय</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">अपडेट चेतावनियाँ</string>
+    <string name="update_issues_empty">कोई समस्या नहीं।\nजो उपन्यास रीफ़्रेश नहीं हो पाते, वे यहाँ दिखते हैं।</string>
+    <string name="update_issue_source_missing">स्रोत इंस्टॉल नहीं है — छोड़ दिया गया</string>
+    <string name="update_issue_no_chapters">स्रोत ने कोई अध्याय नहीं लौटाया — मौजूदा सूची रखी गई</string>
+    <string name="update_issue_incomplete_data">स्रोत ने अधूरा डेटा लौटाया — पिछला शीर्षक/कवर रखा गया</string>
+    <string name="update_issues_retry_all">सभी फिर से आज़माएँ</string>
+    <string name="update_issues_dismiss_all">सभी ख़ारिज करें</string>
+    <string name="update_issue_dismiss">ख़ारिज करें</string>
+    <string name="update_issue_install_source">स्रोत इंस्टॉल करें</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">ऐप क्रैश हो गया</string>
+    <string name="crash_empty">कोई क्रैश रिपोर्ट उपलब्ध नहीं है।</string>
+    <string name="crash_description">पिछली बार चलते समय ऐप अचानक बंद हो गया था। रिपोर्ट दर्ज करने से इसे ठीक करने में मदद मिलती है — नीचे क्रैश की जानकारी आपके लिए भर दी गई है। आप इसे कहीं और शेयर करने के लिए कॉपी भी कर सकते हैं।</string>
+    <string name="crash_no_browser">GitHub खोलने के लिए कोई ब्राउज़र उपलब्ध नहीं है।</string>
+    <string name="crash_report_github">GitHub पर रिपोर्ट करें</string>
+    <string name="crash_details_copied">क्रैश की जानकारी कॉपी हो गई।</string>
+    <string name="crash_copy_details">जानकारी कॉपी करें</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">पिछला</string>
+    <string name="action_play">चलाएँ</string>
+    <string name="action_stop">बंद करें</string>
+    <string name="tts_notification_title">टेक्स्ट-टू-स्पीच</string>
+    <string name="tts_error_request_failed">ElevenLabs अनुरोध विफल</string>
+    <string name="tts_error_play_audio">ऑडियो नहीं चल सका</string>
+    <string name="tts_error_play_preview">प्रीव्यू ऑडियो नहीं चल सका</string>
+    <string name="tts_error_start_playback">प्लेबैक शुरू नहीं हो सका</string>
+    <string name="notification_channel_downloads">अध्याय डाउनलोड</string>
+    <string name="notification_channel_downloads_desc">बैकग्राउंड में अध्याय डाउनलोड</string>
+    <string name="notification_channel_backups">बैकअप</string>
+    <string name="notification_channel_backups_desc">शेड्यूल किए गए लोकल बैकअप</string>
+    <string name="notification_channel_app_updates">ऐप अपडेट</string>
+    <string name="notification_channel_app_updates_desc">बैकग्राउंड में ऐप अपडेट डाउनलोड</string>
+    <string name="notification_channel_library_updates">लाइब्रेरी अपडेट</string>
+    <string name="notification_channel_library_updates_desc">बैकग्राउंड लाइब्रेरी रीफ़्रेश की प्रगति और नतीजे</string>
+    <string name="notification_channel_tts">टेक्स्ट-टू-स्पीच</string>
+    <string name="notification_channel_tts_desc">पढ़कर सुनाने के प्लेबैक कंट्रोल</string>
+    <string name="tts_error_no_chapters">इस उपन्यास में पढ़ने के लिए कोई अध्याय नहीं है</string>
+    <string name="tts_error_missing_api_key">सेटिंग्स → टेक्स्ट-टू-स्पीच में ElevenLabs API कुंजी जोड़ें</string>
+    <string name="tts_error_device_unavailable">डिवाइस का स्पीच इंजन उपलब्ध नहीं है</string>
+    <string name="tts_error_chapter_not_found">अध्याय नहीं मिला</string>
+    <string name="tts_error_no_readable_text">इस अध्याय में पढ़ने लायक टेक्स्ट नहीं है</string>
+    <string name="tts_error_audio_focus">ऑडियो फ़ोकस नहीं मिल सका</string>
+    <string name="tts_error_device_engine">डिवाइस स्पीच इंजन त्रुटि</string>
+    <string name="tts_error_device_engine_code">डिवाइस स्पीच इंजन त्रुटि (%1$d)</string>
+    <string name="extension_download_failed_http">डाउनलोड विफल: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">ऑन-डिवाइस स्पीच इंजन त्रुटि</string>
+    <string name="tts_error_preview_engine_code">ऑन-डिवाइस स्पीच इंजन त्रुटि (%1$d)</string>
+    <string name="tts_error_audio_playback_code">ऑडियो प्लेबैक त्रुटि (%1$d)</string>
+    <string name="tts_error_no_default_voice">कोई डिफ़ॉल्ट ElevenLabs आवाज़ उपलब्ध नहीं है — टेक्स्ट-टू-स्पीच सेटिंग्स में एक चुनें</string>
+    <string name="tts_error_no_default_voice_preview">कोई डिफ़ॉल्ट ElevenLabs आवाज़ उपलब्ध नहीं है — प्रीव्यू के लिए एक चुनें</string>
+    <string name="tts_error_source_unavailable">स्रोत उपलब्ध नहीं है — ऑफ़लाइन सुनने के लिए अध्याय डाउनलोड करें</string>
+    <string name="tts_error_source_no_text">यह स्रोत अध्याय का टेक्स्ट नहीं पढ़ सकता — ऑफ़लाइन सुनने के लिए डाउनलोड करें</string>
+    <string name="tts_error_api_key_first">पहले ElevenLabs API कुंजी जोड़ें।</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: अमान्य API कुंजी, या फ़्री-टियर API एक्सेस बंद है</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: आपका प्लान इसकी अनुमति नहीं देता — टेक्स्ट-टू-स्पीच सेटिंग्स देखें</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: रेट लिमिट या कैरेक्टर कोटा पार हो गया</string>
+    <string name="tts_error_elevenlabs_code">ElevenLabs अनुरोध विफल (%1$d)</string>
+</resources>

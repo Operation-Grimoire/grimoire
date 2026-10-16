@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Appearance -->
+    <string name="appearance_theme">Тема</string>
+    <string name="appearance_theme_system">Системна</string>
+    <string name="appearance_theme_light">Світла</string>
+    <string name="appearance_theme_dark">Темна</string>
+    <string name="appearance_dynamic_color">Динамічний колір</string>
+    <string name="appearance_dynamic_color_summary">Підлаштовувати кольори під шпалери</string>
+    <string name="appearance_synopsis_links">Посилання в анотаціях</string>
+    <string name="appearance_synopsis_links_summary">Показувати вебпосилання в описах новел як активні</string>
+    <string name="appearance_color_palette">Колірна палітра</string>
+    <string name="appearance_color_palette_summary">Виберіть акцентну палітру для всього застосунку.</string>
+    <string name="appearance_color_palette_disabled">Вимкніть динамічний колір, щоб вибрати власну палітру.</string>
+    <string name="color_theme_default">Типова</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">Океан</string>
+    <string name="color_theme_sunset">Захід сонця</string>
+    <string name="color_theme_forest">Ліс</string>
+    <string name="color_theme_rose">Троянда</string>
+    <string name="color_theme_midnight">Північ</string>
+
+    <!-- Behavior -->
+    <string name="behavior_haptics">Тактильний відгук</string>
+    <string name="behavior_haptics_summary">Вібрація під час довгого натискання, перемикання вкладок і вибору.</string>
+
+    <!-- Library settings -->
+    <string name="settings_section_display">Відображення</string>
+    <string name="settings_display_mode">Відображення</string>
+    <string name="settings_display_grid">Сітка</string>
+    <string name="settings_display_list">Список</string>
+    <string name="settings_columns">Стовпці</string>
+    <string name="settings_section_organization">Упорядкування</string>
+    <string name="library_settings_show_all">Показувати вкладку «Усі»</string>
+    <string name="library_settings_show_all_summary">Показувати вкладку, що об’єднує всі категорії</string>
+    <string name="library_settings_hidden">Приховані категорії</string>
+    <string name="library_settings_hidden_summary">Задайте PIN-код і виберіть, які категорії приховати</string>
+    <string name="library_settings_section_counts">Кількість розділів</string>
+    <string name="library_settings_locked_totals">Враховувати заблоковані розділи</string>
+    <string name="library_settings_locked_totals_summary">Враховувати заблоковані розділи в загальній кількості й відсотку прочитаного на значках бібліотеки та сторінці новели</string>
+    <string name="library_settings_section_badges">Значки на обкладинках</string>
+    <string name="library_settings_read_badge">Значок прогресу читання</string>
+    <string name="library_settings_read_badge_summary">Показувати кількість і відсоток прочитаного на обкладинках у бібліотеці</string>
+    <string name="library_settings_downloaded_badge">Значок завантажень</string>
+    <string name="library_settings_downloaded_badge_summary">Показувати кількість завантажених розділів на обкладинках у бібліотеці</string>
+    <string name="library_settings_locked_badge">Значок заблокованих розділів</string>
+    <string name="library_settings_locked_badge_summary">Показувати золотий значок замка з кількістю заблокованих розділів на обкладинках у бібліотеці</string>
+    <string name="library_settings_rating_badge">Значок оцінки</string>
+    <string name="library_settings_rating_badge_summary">Показувати вашу оцінку на обкладинках у бібліотеці</string>
+    <string name="library_settings_epub_badge">Значок EPUB</string>
+    <string name="library_settings_epub_badge_summary">Позначати імпортовані EPUB-новели значком на обкладинках у бібліотеці</string>
+
+    <!-- Browse settings and content languages -->
+    <string name="browse_settings_nu_shortcuts">Ярлики NovelUpdates</string>
+    <string name="browse_settings_nu_shortcuts_summary">Показувати в Огляді посилання на пошук, рейтинги й новинки NovelUpdates.</string>
+    <string name="browse_settings_pinned_groups">Закріплені в мовних групах</string>
+    <string name="browse_settings_pinned_groups_summary">Показувати закріплені джерела також у їхній мовній групі, а не лише в «Закріплених».</string>
+    <string name="content_languages_title">Мови вмісту</string>
+    <string name="content_languages_helper">Вибрані тут мови застосовуються до кожного багатомовного джерела, якщо їх не перевизначено в налаштуваннях цього джерела. Не вибирайте нічого, щоб показувати всі мови.</string>
+
+    <!-- Reader settings -->
+    <string name="settings_section_appearance">Вигляд</string>
+    <string name="reader_settings_color_theme">Колірна тема</string>
+    <string name="reader_settings_font_size">Розмір шрифту</string>
+    <string name="reader_settings_line_height">Міжрядковий інтервал</string>
+    <string name="reader_settings_paragraph_spacing">Відступ між абзацами</string>
+    <string name="settings_section_reading">Читання</string>
+    <string name="reader_settings_auto_mark">Автоматично позначати прочитаним</string>
+    <string name="reader_settings_within_last">У межах останніх</string>
+    <plurals name="reader_settings_paragraph_count">
+        <item quantity="one">%1$d абзац</item>
+        <item quantity="few">%1$d абзаци</item>
+        <item quantity="many">%1$d абзаців</item>
+        <item quantity="other">%1$d абзацу</item>
+    </plurals>
+    <string name="reader_settings_rotation">Обертання екрана</string>
+    <string name="reader_settings_hide_status_bar">Приховувати рядок сповіщень</string>
+    <string name="reader_settings_hide_status_bar_summary">Приховувати рядок стану вгорі екрана під час читання</string>
+    <string name="settings_section_privacy">Конфіденційність</string>
+    <string name="reader_settings_hide_images">Приховувати зображення</string>
+    <string name="reader_settings_hide_images_summary">Приховувати зображення в тексті, доки ви не торкнетеся, щоб показати, або не утримаєте, щоб підглянути</string>
+
+    <!-- NovelUpdates and connections -->
+    <string name="nu_settings_show_section">Показувати розділ NovelUpdates</string>
+    <string name="nu_settings_show_section_summary">Додає на сторінку новели панель NovelUpdates з альтернативними назвами, рейтингом і рекомендаціями.</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">Не під’єднано</string>
+    <string name="connections_signing_in">Вхід…</string>
+    <string name="connections_error">Помилка підключення</string>
+
+    <!-- Shared schedule controls -->
+    <string name="schedule_every">Інтервал</string>
+    <plurals name="schedule_hours">
+        <item quantity="one">%1$d година</item>
+        <item quantity="few">%1$d години</item>
+        <item quantity="many">%1$d годин</item>
+        <item quantity="other">%1$d години</item>
+    </plurals>
+    <plurals name="schedule_days">
+        <item quantity="one">%1$d день</item>
+        <item quantity="few">%1$d дні</item>
+        <item quantity="many">%1$d днів</item>
+        <item quantity="other">%1$d дня</item>
+    </plurals>
+    <plurals name="schedule_weeks">
+        <item quantity="one">%1$d тиждень</item>
+        <item quantity="few">%1$d тижні</item>
+        <item quantity="many">%1$d тижнів</item>
+        <item quantity="other">%1$d тижня</item>
+    </plurals>
+    <string name="schedule_unit_hour">год</string>
+    <string name="schedule_unit_day">дн.</string>
+    <string name="schedule_unit_week">тиж.</string>
+    <string name="schedule_time_of_day">Час доби</string>
+    <string name="schedule_off">Вимкнено</string>
+    <string name="schedule_runs_every">Інтервал: %1$s</string>
+    <string name="schedule_runs_around">Запуск близько %1$s</string>
+    <string name="schedule_run_around">Запускати близько %1$s</string>
+    <string name="schedule_runs_around_when_scheduled">Запуск близько %1$s, якщо ввімкнено розклад</string>
+    <string name="schedule_never">Ніколи</string>
+    <string name="schedule_completed_at">%1$s — завершено</string>
+    <string name="schedule_failed_at">%1$s — помилка</string>
+
+    <!-- Hidden categories -->
+    <string name="hidden_title">Приховані категорії</string>
+    <string name="hidden_setup_pin">Налаштуйте PIN-код</string>
+    <string name="hidden_setup_pin_summary">PIN-код потрібен, щоб приховувати категорії й потім розблоковувати їх.</string>
+    <string name="hidden_setup_pin_action">Налаштувати PIN-код</string>
+    <string name="hidden_locked">Заблоковано</string>
+    <string name="hidden_locked_summary">Розблокуйте, щоб керувати прихованими категоріями.</string>
+    <string name="hidden_change_pin">Змінити PIN-код</string>
+    <string name="hidden_change">Змінити</string>
+    <string name="hidden_biometric">Біометричне розблокування</string>
+    <string name="hidden_biometric_available">Відбиток пальця або обличчя замість PIN-коду</string>
+    <string name="hidden_biometric_unavailable">Недоступно — біометричні дані не додано</string>
+    <string name="hidden_show_in_all">Приховані у вкладці «Усі»</string>
+    <string name="hidden_show_in_all_summary">Після розблокування також показувати приховані новели у вкладці «Усі»</string>
+    <string name="hidden_categories_section">Категорії</string>
+    <string name="hidden_default_category">Типова — не можна приховати</string>
+    <string name="hidden_remove_pin_action">Вилучити PIN-код і показати всі</string>
+    <string name="hidden_remove_pin_title">Вилучити PIN-код?</string>
+    <string name="hidden_remove_pin_message">Усі приховані категорії стануть видимими для будь-кого, хто користується застосунком.</string>
+    <string name="hidden_pin_label">PIN-код (4–8 цифр)</string>
+    <string name="hidden_confirm_pin">Підтвердьте PIN-код</string>
+    <string name="hidden_pin_mismatch">PIN-коди не збігаються</string>
+
+    <!-- Backup and restore -->
+    <string name="backup_section_backup">Резервне копіювання</string>
+    <string name="backup_description">Резервні копії зберігаються як стиснений gzip файл JSON у вибрану вами папку на цьому пристрої. Виберіть папку, яку легко знайти пізніше (наприклад, Downloads або Documents).</string>
+    <string name="backup_folder">Папка резервних копій</string>
+    <string name="backup_folder_not_selected">Не вибрано</string>
+    <string name="backup_no_folder_selected">Папку резервних копій не вибрано</string>
+    <plurals name="backup_novels_backed_up">
+        <item quantity="one">Створено резервну копію: %1$d новела</item>
+        <item quantity="few">Створено резервну копію: %1$d новели</item>
+        <item quantity="many">Створено резервну копію: %1$d новел</item>
+        <item quantity="other">Створено резервну копію: %1$d новели</item>
+    </plurals>
+    <string name="backup_now">Створити копію зараз</string>
+    <string name="backup_restore_ellipsis">Відновити…</string>
+    <string name="backup_scheduled">Резервне копіювання за розкладом</string>
+    <string name="backup_scheduled_description">Виконується у фоновому режимі на цьому пристрої. Застосунок не обов’язково має бути відкритим.</string>
+    <string name="backup_automatic">Створювати копії автоматично</string>
+    <string name="backup_wifi_only">Лише через Wi-Fi</string>
+    <string name="backup_wifi_only_summary">Пропускати автокопіювання в мобільній мережі</string>
+    <string name="backup_charging_only">Лише під час заряджання</string>
+    <string name="backup_run_scheduled">Запустити копіювання за розкладом зараз</string>
+    <string name="backup_run_scheduled_summary">Використовує вибрану папку й умови розкладу</string>
+    <string name="backup_last_automatic">Остання автоматична копія</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">успішно</string>
+    <string name="backup_restore_title">Відновити резервну копію?</string>
+    <string name="backup_restore_message">Резервну копію буде об’єднано з вашою поточною бібліотекою. Наявні записи збережуться, нові буде додано, а прогрес читання — об’єднано.</string>
+    <string name="backup_created">Резервну копію створено: %1$s</string>
+    <plurals name="backup_saved">
+        <item quantity="one">Збережено %1$s (%2$d новела)</item>
+        <item quantity="few">Збережено %1$s (%2$d новели)</item>
+        <item quantity="many">Збережено %1$s (%2$d новел)</item>
+        <item quantity="other">Збережено %1$s (%2$d новели)</item>
+    </plurals>
+    <plurals name="backup_restored">
+        <item quantity="one">Відновлено %1$d новелу, розділів: %2$d</item>
+        <item quantity="few">Відновлено %1$d новели, розділів: %2$d</item>
+        <item quantity="many">Відновлено %1$d новел, розділів: %2$d</item>
+        <item quantity="other">Відновлено %1$d новели, розділів: %2$d</item>
+    </plurals>
+    <string name="backup_queued">Резервне копіювання в черзі</string>
+    <string name="backup_folder_inaccessible">Папка резервних копій недоступна</string>
+    <string name="backup_folder_not_writable">Немає дозволу на запис у папку резервних копій</string>
+    <string name="backup_create_file_failed">Не вдалося створити файл резервної копії</string>
+    <string name="backup_open_output_failed">Не вдалося відкрити потік запису</string>
+    <string name="backup_read_file_failed">Не вдалося прочитати файл резервної копії</string>
+    <string name="backup_failed">Не вдалося створити резервну копію</string>
+    <string name="backup_newer_version">Файл резервної копії створено новішою версією застосунку (v%1$d)</string>
+    <string name="restore_failed">Не вдалося відновити</string>
+
+    <!-- Data management -->
+    <string name="data_storage">Пам’ять</string>
+    <string name="data_storage_summary">Grimoire використовує %1$s · вільно %2$s з %3$s</string>
+    <string name="data_your_data">Ваші дані</string>
+    <plurals name="data_library_novels">
+        <item quantity="one">%1$d новела · %2$d розд.</item>
+        <item quantity="few">%1$d новели · %2$d розд.</item>
+        <item quantity="many">%1$d новел · %2$d розд.</item>
+        <item quantity="other">%1$d новели · %2$d розд.</item>
+    </plurals>
+    <string name="data_browse">Дані огляду</string>
+    <plurals name="data_browse_count">
+        <item quantity="one">%1$d кешована новела, яку ви не зберегли й не читали</item>
+        <item quantity="few">%1$d кешовані новели, які ви не зберегли й не читали</item>
+        <item quantity="many">%1$d кешованих новел, які ви не зберегли й не читали</item>
+        <item quantity="other">%1$d кешованої новели, які ви не зберегли й не читали</item>
+    </plurals>
+    <string name="data_downloads">Завантаження</string>
+    <string name="data_chapter_text">Текст розділів</string>
+    <plurals name="data_chapter_text_summary">
+        <item quantity="one">%1$s · %2$d розділ</item>
+        <item quantity="few">%1$s · %2$d розділи</item>
+        <item quantity="many">%1$s · %2$d розділів</item>
+        <item quantity="other">%1$s · %2$d розділу</item>
+    </plurals>
+    <string name="data_chapter_images">Зображення розділів</string>
+    <plurals name="data_chapter_images_summary">
+        <item quantity="one">%1$s · %2$d зображення</item>
+        <item quantity="few">%1$s · %2$d зображення</item>
+        <item quantity="many">%1$s · %2$d зображень</item>
+        <item quantity="other">%1$s · %2$d зображення</item>
+    </plurals>
+    <string name="data_caches">Кеш</string>
+    <string name="data_cover_cache">Кеш обкладинок</string>
+    <string name="data_database">База даних</string>
+    <string name="data_installer_files">Інсталяційні файли</string>
+    <string name="data_installer_summary">%1$s · залишки пакетів оновлень застосунку й розширень</string>
+    <string name="data_clear_cover_title">Очистити кеш обкладинок?</string>
+    <string name="data_clear_cover_message">Обкладинки буде завантажено знову, коли вони наступного разу з’являться на екрані.</string>
+    <string name="data_clear_browse_title">Очистити дані огляду?</string>
+    <string name="data_clear_browse_message">Видаляє кешовані новели, які ви не зберегли в бібліотеку й не читали. Їх буде знову отримано з джерела, коли ви їх відкриєте. Історія читання й завантаження збережуться.</string>
+    <string name="data_clear_installer_title">Очистити інсталяційні файли?</string>
+    <string name="data_clear_installer_message">Видаляє залишкові файли .apk від оновлень застосунку й розширень. Їх буде завантажено знову під час наступного оновлення. Не очищуйте, поки встановлення ще триває.</string>
+    <string name="data_cover_cache_cleared">Кеш обкладинок очищено</string>
+    <plurals name="data_browse_cleared">
+        <item quantity="one">Очищено %1$d новелу з огляду</item>
+        <item quantity="few">Очищено %1$d новели з огляду</item>
+        <item quantity="many">Очищено %1$d новел з огляду</item>
+        <item quantity="other">Очищено %1$d новели з огляду</item>
+    </plurals>
+    <plurals name="data_installers_cleared">
+        <item quantity="one">Видалено %1$d інсталяційний файл</item>
+        <item quantity="few">Видалено %1$d інсталяційні файли</item>
+        <item quantity="many">Видалено %1$d інсталяційних файлів</item>
+        <item quantity="other">Видалено %1$d інсталяційного файлу</item>
+    </plurals>
+
+    <!-- Library update settings -->
+    <string name="library_update_scheduled">Оновлення за розкладом</string>
+    <string name="library_update_scheduled_description">Оновлює вашу бібліотеку у фоновому режимі й отримує нові розділи. Застосунок не обов’язково має бути відкритим.</string>
+    <string name="library_update_automatic">Оновлювати автоматично</string>
+    <string name="library_update_wifi_only">Лише через Wi-Fi</string>
+    <string name="library_update_wifi_only_summary">Пропускати оновлення за розкладом у мобільній мережі</string>
+    <string name="library_update_charging_only">Лише під час заряджання</string>
+    <string name="library_update_sync_scope">Обсяг синхронізації</string>
+    <string name="library_update_include_epubs">Включати EPUB</string>
+    <string name="library_update_include_epubs_summary">Оновлювати EPUB-новели (локальні імпорти й EPUB-джерела на кшталт Z-Library) під час оновлення бібліотеки. Нових розділів у них немає, тому типово вимкнено.</string>
+    <string name="library_update_performance">Продуктивність</string>
+    <string name="library_update_concurrency">Паралельна синхронізація: %1$d</string>
+    <string name="library_update_concurrency_summary">Скільки новел оновлювати одночасно. Більше — швидше, але деякі джерела можуть обмежити кількість запитів.</string>
+    <string name="library_update_now">Оновити бібліотеку зараз</string>
+    <string name="library_update_now_summary">Оновити всі новели в бібліотеці у фоновому режимі</string>
+    <string name="library_update_last">Останнє оновлення</string>
+
+    <!-- Text-to-speech -->
+    <string name="tts_enable">Увімкнути озвучування тексту</string>
+    <string name="tts_enable_summary">Показувати елементи керування читанням уголос у читалці</string>
+    <string name="tts_speech_engine">Рушій мовлення</string>
+    <string name="tts_on_device">На пристрої</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">Читає вголос вбудованими голосами пристрою. Працює офлайн.</string>
+    <string name="tts_elevenlabs_summary">Транслює природні хмарні голоси від ElevenLabs. Потрібне підключення до мережі; оплата за кожен символ із вашого облікового запису.</string>
+    <string name="tts_elevenlabs_account">Обліковий запис ElevenLabs</string>
+    <string name="tts_api_key">Ключ API</string>
+    <string name="tts_playback">Відтворення</string>
+    <string name="tts_speech_rate">Швидкість мовлення</string>
+    <string name="tts_pitch">Тон (лише на пристрої)</string>
+    <string name="tts_auto_advance">Автоперехід до наступного розділу</string>
+    <string name="tts_auto_advance_summary">Продовжувати читання з наступного розділу, коли поточний закінчиться</string>
+    <string name="tts_voices">Голоси</string>
+    <string name="tts_voices_summary">Виберіть голос для кожної мови. Новели зіставляються за мовою вмісту.</string>
+    <string name="tts_custom_voice">Вибрано власний голос</string>
+    <string name="tts_system_default">Як у системі</string>
+    <string name="tts_credit_usage">Використання кредитів</string>
+    <string name="tts_refresh_usage">Оновити використання</string>
+    <string name="tts_usage_api_key_hint">Введіть ключ API вище, щоб побачити кількість символів, що залишилися.</string>
+    <string name="tts_loading">Завантаження…</string>
+    <string name="tts_usage_summary">Використано символів: %1$,d / %2$,d</string>
+    <string name="tts_quota_reset">Квота оновиться %1$s</string>
+    <string name="tts_voice_title">Голос</string>
+    <string name="tts_voice_needs_key">Додайте ключ API ElevenLabs у налаштуваннях озвучування тексту, щоб вибрати хмарний голос.</string>
+    <string name="tts_elevenlabs_plan_note">Безкоштовний тариф ElevenLabs обмежений (~10 000 символів на місяць), а багато голосів — навіть деякі типові — потребують платного тарифу. Якщо голос не відтворюється, спробуйте інший або скористайтеся рушієм на пристрої для необмеженого офлайн-читання.</string>
+    <string name="tts_system_default_summary">Рушій сам вибере голос для цієї мови</string>
+    <string name="tts_install_voices">Установити інші голоси…</string>
+    <string name="tts_install_voices_summary">Завантажити додаткові голосові дані для рушія пристрою</string>
+    <string name="tts_stop_preview">Зупинити прослуховування</string>
+    <string name="tts_preview_voice">Прослухати голос</string>
+    <string name="tts_load_usage_failed">Не вдалося завантажити дані про використання</string>
+    <string name="tts_load_voices_failed">Не вдалося завантажити голоси</string>
+
+    <!-- GitHub connection -->
+    <string name="github_account_title">Обліковий запис GitHub</string>
+    <string name="github_privacy_note">Під’єднайте обліковий запис GitHub, щоб установлювати розширення з власних приватних репозиторіїв. Токен доступу зберігається лише на цьому пристрої й надсилається лише на github.com. Відкликати доступ можна будь-коли на github.com/settings/applications.</string>
+    <string name="github_not_connected">Не під’єднано.</string>
+    <string name="github_connect">Під’єднати GitHub</string>
+    <string name="github_enter_code">Введіть цей код на github.com</string>
+    <string name="github_open_device_page">Відкрити github.com/login/device</string>
+    <string name="github_copy_code">Копіювати код</string>
+    <string name="github_waiting">Очікуємо, поки ви завершите в браузері…</string>
+    <string name="github_connected">Під’єднано</string>
+    <string name="github_authorization_failed">Не вдалося авторизуватися</string>
+    <string name="github_no_client_id">У цій збірці немає ID клієнта OAuth</string>
+    <string name="github_no_client_id_summary">Задайте GITHUB_OAUTH_CLIENT_ID у gradle.properties (або як змінну середовища) і перезберіть.</string>
+
+    <!-- About and updater -->
+    <string name="about_title">Про застосунок</string>
+    <string name="about_version">Версія</string>
+    <string name="about_version_summary">Grimoire %1$s (збірка %2$d)\nКоміт %3$s · Extensions API %4$s</string>
+    <string name="about_check_updates">Перевірити оновлення</string>
+    <string name="about_check_updates_idle">Торкніться, щоб перевірити наявність нової версії</string>
+    <string name="about_checking">Перевірка…</string>
+    <string name="about_latest_version">У вас найновіша версія</string>
+    <string name="about_up_to_date">Оновлено</string>
+    <string name="about_show_changelog">Показати список змін</string>
+    <string name="about_show_changelog_summary">Відкрити примітки до випуску %1$s</string>
+    <string name="about_updates_section">Оновлення</string>
+    <string name="about_update_popups">Спливні вікна оновлень</string>
+    <string name="about_update_popups_summary">Показувати діалог під час запуску, коли доступне оновлення</string>
+    <string name="about_changelog_after_update">Список змін після оновлення</string>
+    <string name="about_changelog_after_update_summary">Показувати примітки до випуску під час першого запуску нової версії</string>
+    <string name="about_build_section">Збірка</string>
+    <string name="about_build_details">Відомості про збірку</string>
+    <string name="about_build_details_summary">Збірка %1$d · коміт %2$s · Extensions API %3$s</string>
+    <string name="about_build_copied">Відомості про збірку скопійовано</string>
+    <string name="about_channel_stable">Стабільний</string>
+    <string name="about_channel_beta">Бета</string>
+    <string name="about_channel_stable_summary">Лише позначені тегами випуски. Рекомендовано.</string>
+    <string name="about_channel_beta_summary">Свіжі збірки з main після кожного коміту. Можуть бути нестабільними.</string>
+    <string name="update_whats_new">Що нового в %1$s</string>
+    <string name="update_got_it">Зрозуміло</string>
+    <string name="update_ready">Оновлення готове</string>
+    <string name="update_available">Доступне оновлення</string>
+    <string name="update_unknown_error">Невідома помилка</string>
+    <string name="update_no_changelog">Список змін для %1$s недоступний.</string>
+    <string name="action_update">Оновити</string>
+    <string name="update_download_complete">Завантаження завершено — торкніться «Установити», щоб завершити оновлення.</string>
+    <string name="update_skip_version">Пропустити цю версію</string>
+    <string name="update_downloading_background">Завантаження у фоновому режимі — застосунок можна закрити.</string>
+    <string name="update_download_progress">%1$s / %2$s МБ · %3$d%%</string>
+    <string name="update_download_size">%1$s МБ</string>
+    <string name="changelog_features">Нові функції</string>
+    <string name="changelog_bug_fixes">Виправлення помилок</string>
+    <string name="changelog_sources">Джерела</string>
+    <string name="changelog_documentation">Документація</string>
+    <string name="changelog_other">Інші зміни</string>
+    <string name="changelog_changes">Зміни</string>
+
+    <!-- Shared language picker -->
+    <string name="language_override_global">Перевизначити глобальні мови вмісту</string>
+    <string name="language_override_on_helper">Виберіть мови лише для цього джерела.</string>
+    <string name="language_override_off_helper">Це джерело використовує глобальний вибір мов вмісту. Увімкніть, щоб вибрати інший набір мов саме для цього джерела.</string>
+    <string name="language_global_all">Глобально: без фільтра (показано всі мови)</string>
+    <plurals name="language_global_selected">
+        <item quantity="one">Глобально: вибрано %1$d мову</item>
+        <item quantity="few">Глобально: вибрано %1$d мови</item>
+        <item quantity="many">Глобально: вибрано %1$d мов</item>
+        <item quantity="other">Глобально: вибрано %1$d мови</item>
+    </plurals>
+    <string name="language_saved">Збережено</string>
+    <string name="language_global">Глобальні</string>
+    <string name="language_added_here">Додано тут</string>
+    <string name="language_hidden_here">Приховано тут</string>
+    <string name="tts_voice_quality_very_high">Дуже висока якість</string>
+    <string name="tts_voice_quality_high">Висока якість</string>
+    <string name="tts_voice_quality_normal">Звичайна якість</string>
+    <string name="tts_voice_quality_low">Низька якість</string>
+    <string name="tts_voice_online">онлайн</string>
+    <string name="tts_voice_not_installed">не встановлено</string>
+    <string name="tts_voice_category_default">Типовий голос</string>
+    <string name="tts_voice_category_personal">Ваш клонований голос</string>
+    <string name="tts_voice_category_workspace">Голос робочого простору</string>
+    <string name="tts_voice_category_community">Voice Library · лише платні тарифи</string>
+    <string name="github_error_access_denied">Авторизацію відхилено</string>
+    <string name="github_error_expired">Термін дії коду минув до завершення авторизації</string>
+    <string name="github_error_cancelled">Скасовано</string>
+    <string name="github_error_network">Помилка мережі: %1$s</string>
+    <string name="github_error_unexpected">Неочікувана помилка: %1$s</string>
+</resources>

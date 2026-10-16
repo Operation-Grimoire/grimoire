@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">Bugün</string>
+    <string name="common_yesterday">Dün</string>
+    <string name="action_pause">Duraklat</string>
+    <string name="action_resume">Sürdür</string>
+    <string name="action_expand">Genişlet</string>
+    <string name="action_collapse">Daralt</string>
+    <string name="action_clear_log">Günlüğü temizle</string>
+    <string name="action_set">Ayarla</string>
+    <string name="action_choose">Seç</string>
+    <string name="action_restore">Geri yükle</string>
+    <string name="action_disconnect">Bağlantıyı kes</string>
+    <string name="action_dismiss">Kapat</string>
+    <string name="action_try_again">Tekrar dene</string>
+    <string name="action_skip">Atla</string>
+    <string name="action_next">İleri</string>
+    <string name="status_error">Hata</string>
+    <string name="status_warning">Uyarı</string>
+    <string name="status_completed">Tamamlandı</string>
+    <string name="status_queued">Sırada</string>
+    <string name="status_downloaded">İndirildi</string>
+    <string name="chapter_cancel_download">İndirmeyi iptal et</string>
+    <string name="chapter_downloaded_refresh_queued">İndirildi · yenileme sırada</string>
+    <string name="chapter_cancel_refresh">Yenilemeyi iptal et</string>
+    <string name="chapter_downloaded_refreshing">İndirildi · yenileniyor</string>
+    <string name="chapter_downloaded_refresh_failed">İndirildi · yenileme başarısız</string>
+
+    <!-- More -->
+    <string name="more_title">Daha fazla</string>
+    <string name="more_incognito">Gizli mod</string>
+    <string name="more_incognito_enabled">Bu oturumda geçmiş kaydedilmiyor</string>
+    <string name="more_incognito_disabled">Okuma ve göz atma geçmişini duraklat</string>
+    <string name="incognito_banner">Gizli mod · geçmiş duraklatıldı</string>
+    <string name="more_updates">Güncellemeler</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="one">Abone olunan romanlardan %1$d yeni bölüm</item>
+        <item quantity="other">Abone olunan romanlardan %1$d yeni bölüm</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="one">Kitaplığınızda %1$d yeni bölüm</item>
+        <item quantity="other">Kitaplığınızda %1$d yeni bölüm</item>
+    </plurals>
+    <string name="more_no_new_chapters">Yeni bölüm yok</string>
+    <string name="more_history">Geçmiş</string>
+    <string name="more_history_summary">Son okunan bölümler ve göz atılan romanlar</string>
+    <string name="more_downloads">İndirmeler</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="one">%1$d devam ediyor</item>
+        <item quantity="other">%1$d devam ediyor</item>
+    </plurals>
+    <string name="more_downloads_summary">İndirilen bölümler ve indirme sırası</string>
+    <string name="more_tasks">Görevler</string>
+    <string name="more_tasks_summary">Süren indirmeler ve eşitlemeler ile geçmişleri</string>
+    <string name="more_update_warnings">Güncelleme uyarıları</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="one">%1$d roman ilgi bekliyor</item>
+        <item quantity="other">%1$d roman ilgi bekliyor</item>
+    </plurals>
+    <string name="more_no_refresh_problems">Yenileme sorunu yok</string>
+    <string name="more_statistics">İstatistikler</string>
+    <string name="more_statistics_summary">Okuma etkinliğiniz</string>
+    <string name="more_settings_summary">Görünüm, kitaplık, okuyucu, yedekler</string>
+    <string name="more_tours">Turlar</string>
+    <string name="more_tours_summary">Uygulama içi rehberli turları yeniden oynat</string>
+    <string name="more_about">Hakkında</string>
+    <string name="more_about_summary">Sürüm, güncelleme kanalı, lisanslar</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">Başla</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">Hoş geldiniz turu</string>
+    <string name="tour_welcome_description">Temel bilgiler: kitaplık, göz atma, kaynaklar ve ayarlar.</string>
+    <string name="tour_step_welcome_title">Grimoire’a hoş geldiniz</string>
+    <string name="tour_step_welcome_body">Temel özelliklerin kısa bir turu — yaklaşık 20 saniye sürer.</string>
+    <string name="tour_step_library_title">Kitaplığınız</string>
+    <string name="tour_step_library_body">Eklediğiniz romanlar burada, kategorilere ayrılmış olarak durur.</string>
+    <string name="tour_step_browse_title">Göz at</string>
+    <string name="tour_step_browse_body">Kaynaklarınızdaki romanları bulmak için Göz at’a dokunun.</string>
+    <string name="tour_step_extensions_title">Kaynaklar ve uzantılar</string>
+    <string name="tour_step_extensions_body">Kaynaklar buradan yüklenir. Neler olduğunu görmek için açın.</string>
+    <string name="tour_open_extensions">Uzantıları aç</string>
+    <string name="tour_step_repositories_title">Depolar</string>
+    <string name="tour_step_repositories_body">Kaynaklar depolardan gelir. Resmî depo zaten ekli — depoları yönetmek veya kendi deponuzu eklemek için buraya dokunun.</string>
+    <string name="tour_step_more_title">Diğer her şey</string>
+    <string name="tour_step_more_body">İndirmeler, istatistikler, yedekler ve ayarlar Daha fazla altında.</string>
+    <string name="tour_step_done_title">Her şey hazır</string>
+    <string name="tour_step_done_body">Herhangi bir turu Daha fazla → Turlar bölümünden yeniden oynatabilirsiniz.</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">Tanılama</string>
+    <string name="privacy_diagnostics_note">Tanılama verileri anonimdir; kişisel veri, roman başlığı veya bağlantı içermez. Siz açmadıkça hepsi kapalıdır.</string>
+    <string name="privacy_crash_reports">Çökme raporları gönder</string>
+    <string name="privacy_crash_reports_summary">Uygulama çöktüğünde anonim yığın izleri</string>
+    <string name="privacy_usage_analytics">Anonim kullanım analizi gönder</string>
+    <string name="privacy_usage_analytics_summary">Neyin geliştirileceğine yön vermek için hangi özelliklerin kullanıldığı</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">Bölümler indiriliyor</string>
+    <string name="download_notification_starting">Başlatılıyor…</string>
+    <string name="download_notification_working">İndiriliyor…</string>
+    <string name="download_notification_queued">+%1$d sırada</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d sırada)</string>
+    <string name="download_notification_complete_title">İndirmeler tamamlandı</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="one">%1$d bölüm indirildi</item>
+        <item quantity="other">%1$d bölüm indirildi</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">Güncelleme indiriliyor</string>
+    <string name="app_update_notification_downloading_version">%1$s güncellemesi indiriliyor</string>
+    <string name="app_update_notification_progress">%%%1$d  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">Başlatılıyor…</string>
+    <string name="app_update_notification_ready">Güncelleme yüklenmeye hazır</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s hazır</string>
+    <string name="app_update_notification_tap_to_install">Yüklemek için dokunun</string>
+    <string name="app_update_notification_failed">Güncelleme indirilemedi</string>
+    <string name="error_verification_failed">İndirme doğrulanamadı — tekrar deneyin veya ağ değiştirin</string>
+    <string name="app_update_download_failed">İndirme başarısız</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">İndirmeler</string>
+    <string name="downloads_settings">İndirme ayarları</string>
+    <string name="downloads_no_filter_matches">Seçili filtrelerle eşleşen indirme yok.</string>
+    <string name="downloads_parallel">Paralel indirmeler</string>
+    <string name="downloads_parallel_summary">Aynı anda indirilecek bölüm sayısı</string>
+    <string name="downloads_move_to_top">En üste taşı</string>
+    <string name="downloads_cancel_failed">Başarısızları iptal et</string>
+    <string name="downloads_redownload">Yeniden indir</string>
+    <string name="downloads_delete_download">İndirmeyi sil</string>
+    <string name="downloads_delete_options">İndirme seçenekleri</string>
+    <string name="downloads_empty">İndirme yok</string>
+    <string name="downloads_filter_downloading">İndiriliyor</string>
+    <string name="downloads_filter_queued">Sırada</string>
+    <string name="downloads_filter_done">Bitti</string>
+    <string name="downloads_filter_failed">Başarısız</string>
+    <plurals name="downloads_count_downloaded"><item quantity="one">%1$d indirildi</item><item quantity="other">%1$d indirildi</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="one">%1$d sırada</item><item quantity="other">%1$d sırada</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="one">%1$d indiriliyor</item><item quantity="other">%1$d indiriliyor</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="one">%1$d başarısız</item><item quantity="other">%1$d başarısız</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">İstatistikler</string>
+    <string name="statistics_reading">Okuma</string>
+    <string name="statistics_chapters_read">Okunan bölümler</string>
+    <string name="statistics_words_read">Okunan kelimeler</string>
+    <string name="statistics_novels_completed">Bitirilen romanlar</string>
+    <string name="statistics_novels_started">Başlanan romanlar</string>
+    <string name="statistics_average_words">Ort. kelime / bölüm</string>
+    <string name="statistics_last_read">Son okuma</string>
+    <string name="statistics_library">Kitaplık</string>
+    <string name="statistics_library_novels">Kitaplıktaki romanlar</string>
+    <string name="statistics_library_chapters">Kitaplıktaki bölümler</string>
+    <string name="statistics_library_unread">Kitaplıkta okunmamış</string>
+    <string name="statistics_downloaded">İndirilen</string>
+    <string name="statistics_empty_hint">İstatistikleri izlemeye başlamak için birkaç bölüm okuyun.</string>
+    <string name="statistics_counting_hint">İstatistikler her bölümü bir kez sayar — okunmadı işaretlemek sayıdan düşmez.</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Görevler</string>
+    <string name="tasks_empty">Henüz görev yok.\nİndirmeler ve kitaplık eşitlemeleri çalışırken burada görünür,\nsonuçları da aşağıda saklanır.</string>
+    <string name="tasks_running">Çalışıyor</string>
+    <string name="tasks_history">Geçmiş</string>
+    <string name="tasks_clear_title">Görev günlüğü temizlensin mi?</string>
+    <string name="tasks_clear_message">Tamamlanan kitaplık eşitlemelerinin ve indirmelerin geçmişini kaldırır. Çalışan görevler etkilenmez.</string>
+    <string name="tasks_cancel_named">İptal et: %1$s</string>
+    <string name="tasks_finished_with_errors">Hatalarla tamamlandı</string>
+    <string name="tasks_updating_library">Kitaplık güncelleniyor</string>
+    <string name="tasks_starting">Başlatılıyor…</string>
+    <plurals name="tasks_novels_progress"><item quantity="one">%1$d / %2$d roman</item><item quantity="other">%1$d / %2$d roman</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">Bölümler indiriliyor</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="one">%1$d bölüm kaldı</item><item quantity="other">%1$d bölüm kaldı</item></plurals>
+    <string name="tasks_downloads">İndirmeler</string>
+    <string name="tasks_library_sync">Kitaplık eşitlemesi</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="one">%1$d bölüm indirildi</item><item quantity="other">%1$d bölüm indirildi</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="one">%1$d başarısız</item><item quantity="other">%1$d başarısız</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="one">%1$d roman denetlendi</item><item quantity="other">%1$d roman denetlendi</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="one">%1$d yeni bölüm</item><item quantity="other">%1$d yeni bölüm</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="one">%1$d uyarı</item><item quantity="other">%1$d uyarı</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="one">%1$d hata</item><item quantity="other">%1$d hata</item></plurals>
+    <string name="tasks_sync_failed">Kitaplık eşitlemesi başarısız · %1$s</string>
+    <string name="library_update_downloading_new">Yeni bölümler indiriliyor</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d sırada</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="one">%1$d yeni kilitli bölüm</item><item quantity="other">%1$d yeni kilitli bölüm</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · %2$d kilitli</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">Güncellemeler</string>
+    <string name="updates_open_novel">Romanı aç</string>
+    <string name="updates_delete_from_log">Günlükten sil</string>
+    <string name="updates_empty">Henüz güncelleme yok.\nKitaplık yenilemesinde bulunan yeni bölümler burada görünür.</string>
+    <string name="updates_tab_subscribed">Abone olunanlar</string>
+    <string name="updates_tab_all">Tümü</string>
+    <string name="updates_subscribed_empty">Abone olunan romanlardan henüz güncelleme yok.</string>
+    <string name="updates_clear_title">Güncelleme günlüğü temizlensin mi?</string>
+    <string name="updates_clear_message">Bu işlem güncelleme günlüğündeki tüm kayıtları kalıcı olarak kaldırır. Kitaplığınız ve bölümleriniz etkilenmez.</string>
+    <plurals name="updates_count_new"><item quantity="one">%1$d yeni</item><item quantity="other">%1$d yeni</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="one">%1$d kilitli</item><item quantity="other">%1$d kilitli</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="one">%1$d indirildi</item><item quantity="other">%1$d indirildi</item></plurals>
+    <string name="updates_all_downloaded">Tümü indirildi</string>
+    <string name="updates_unlocked">Kilidi açıldı</string>
+    <plurals name="updates_count_unlocked"><item quantity="one">%1$d kilidi açıldı</item><item quantity="other">%1$d kilidi açıldı</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">Geçmiş</string>
+    <string name="history_reading">Okuma</string>
+    <string name="history_browsing">Göz atma</string>
+    <string name="history_clear_reading">Okuma geçmişini temizle</string>
+    <string name="history_clear_browsing">Göz atma geçmişini temizle</string>
+    <string name="history_reading_empty">Henüz okuma geçmişi yok.\nOkuyucuda açtığınız bölümler burada görünür.</string>
+    <string name="history_browsing_empty">Henüz göz atma geçmişi yok.\nGöz at’ta açtığınız (ve kitaplığınıza eklemediğiniz) romanlar burada görünür.</string>
+    <string name="history_clear_reading_title">Okuma geçmişi temizlensin mi?</string>
+    <string name="history_clear_browsing_title">Göz atma geçmişi temizlensin mi?</string>
+    <string name="history_clear_reading_message">Bu işlem okuma geçmişinizdeki tüm kayıtları kalıcı olarak kaldırır. Kitaplığınız ve bölümleriniz etkilenmez.</string>
+    <string name="history_clear_browsing_message">Bu işlem göz atma geçmişinizdeki tüm kayıtları kalıcı olarak kaldırır. Kitaplığınız etkilenmez.</string>
+    <plurals name="history_chapter_count"><item quantity="one">%1$d bölüm</item><item quantity="other">%1$d bölüm</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">Güncelleme uyarıları</string>
+    <string name="update_issues_empty">Sorun yok.\nYenilenemeyen romanlar burada görünür.</string>
+    <string name="update_issue_source_missing">Kaynak yüklü değil — atlandı</string>
+    <string name="update_issue_no_chapters">Kaynak bölüm döndürmedi — mevcut liste korundu</string>
+    <string name="update_issue_incomplete_data">Kaynak eksik veri döndürdü — önceki başlık/kapak korundu</string>
+    <string name="update_issues_retry_all">Tümünü yeniden dene</string>
+    <string name="update_issues_dismiss_all">Tümünü kapat</string>
+    <string name="update_issue_dismiss">Kapat</string>
+    <string name="update_issue_install_source">Kaynağı yükle</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">Uygulama çöktü</string>
+    <string name="crash_empty">Çökme raporu yok.</string>
+    <string name="crash_description">Uygulama son çalıştığında beklenmedik şekilde kapandı. Rapor göndermek sorunun düzeltilmesine yardımcı olur — aşağıdaki çökme ayrıntıları sizin için dolduruldu. Başka bir yerde paylaşmak için bunları kopyalayabilirsiniz.</string>
+    <string name="crash_no_browser">GitHub’ı açacak bir tarayıcı yok.</string>
+    <string name="crash_report_github">GitHub’da bildir</string>
+    <string name="crash_details_copied">Çökme ayrıntıları kopyalandı.</string>
+    <string name="crash_copy_details">Ayrıntıları kopyala</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">Önceki</string>
+    <string name="action_play">Oynat</string>
+    <string name="action_stop">Durdur</string>
+    <string name="tts_notification_title">Metin okuma</string>
+    <string name="tts_error_request_failed">ElevenLabs isteği başarısız</string>
+    <string name="tts_error_play_audio">Ses oynatılamadı</string>
+    <string name="tts_error_play_preview">Önizleme sesi oynatılamadı</string>
+    <string name="tts_error_start_playback">Oynatma başlatılamadı</string>
+    <string name="notification_channel_downloads">Bölüm indirmeleri</string>
+    <string name="notification_channel_downloads_desc">Arka planda bölüm indirmeleri</string>
+    <string name="notification_channel_backups">Yedekler</string>
+    <string name="notification_channel_backups_desc">Planlı yerel yedekler</string>
+    <string name="notification_channel_app_updates">Uygulama güncellemeleri</string>
+    <string name="notification_channel_app_updates_desc">Arka planda uygulama güncellemesi indirmeleri</string>
+    <string name="notification_channel_library_updates">Kitaplık güncellemeleri</string>
+    <string name="notification_channel_library_updates_desc">Arka plandaki kitaplık yenilemesinin ilerlemesi ve sonuçları</string>
+    <string name="notification_channel_tts">Metin okuma</string>
+    <string name="notification_channel_tts_desc">Sesli okuma oynatma denetimleri</string>
+    <string name="tts_error_no_chapters">Bu romanda okunacak bölüm yok</string>
+    <string name="tts_error_missing_api_key">Ayarlar → Metin okuma bölümünden bir ElevenLabs API anahtarı ekleyin</string>
+    <string name="tts_error_device_unavailable">Cihazın konuşma motoru kullanılamıyor</string>
+    <string name="tts_error_chapter_not_found">Bölüm bulunamadı</string>
+    <string name="tts_error_no_readable_text">Bu bölümde okunabilir metin yok</string>
+    <string name="tts_error_audio_focus">Ses odağı alınamadı</string>
+    <string name="tts_error_device_engine">Cihaz konuşma motoru hatası</string>
+    <string name="tts_error_device_engine_code">Cihaz konuşma motoru hatası (%1$d)</string>
+    <string name="extension_download_failed_http">İndirme başarısız: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">Cihazdaki konuşma motoru hatası</string>
+    <string name="tts_error_preview_engine_code">Cihazdaki konuşma motoru hatası (%1$d)</string>
+    <string name="tts_error_audio_playback_code">Ses oynatma hatası (%1$d)</string>
+    <string name="tts_error_no_default_voice">Varsayılan ElevenLabs sesi yok — Metin okuma ayarlarından bir ses seçin</string>
+    <string name="tts_error_no_default_voice_preview">Varsayılan ElevenLabs sesi yok — önizlemek için bir ses seçin</string>
+    <string name="tts_error_source_unavailable">Kaynak kullanılamıyor — çevrimdışı dinlemek için bölümü indirin</string>
+    <string name="tts_error_source_no_text">Bu kaynak bölüm metnini okuyamıyor — çevrimdışı dinlemek için indirin</string>
+    <string name="tts_error_api_key_first">Önce bir ElevenLabs API anahtarı ekleyin.</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: geçersiz API anahtarı veya ücretsiz katmanda API erişimi devre dışı</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: planınız buna izin vermiyor — Metin okuma ayarlarına bakın</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: istek sınırı veya karakter kotası aşıldı</string>
+    <string name="tts_error_elevenlabs_code">ElevenLabs isteği başarısız (%1$d)</string>
+</resources>

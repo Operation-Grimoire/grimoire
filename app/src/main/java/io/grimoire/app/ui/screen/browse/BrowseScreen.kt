@@ -305,7 +305,13 @@ fun BrowseScreen(
             },
             text = {
                 Text(
-                    pluralStringResource(R.plurals.browse_uninstall_description, count),
+                    stringResource(
+                        if (count == 1) {
+                            R.string.browse_uninstall_description_single
+                        } else {
+                            R.string.browse_uninstall_description_multiple
+                        },
+                    ),
                 )
             },
             confirmButton = {

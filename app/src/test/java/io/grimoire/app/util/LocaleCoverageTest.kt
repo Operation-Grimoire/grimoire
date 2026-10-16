@@ -40,7 +40,7 @@ class LocaleCoverageTest {
 
     @Test
     fun `locale config and AppLocale list every shipped language`() {
-        val shipped = setOf("en") + translations.map { it.name.removePrefix("values-") }
+        val shipped = setOf("en") + translations.map { folderTag(it.name) }
         val config = DocumentBuilderFactory.newInstance().newDocumentBuilder()
             .parse(File(res, "xml/locales_config.xml"))
             .getElementsByTagName("locale")
@@ -73,6 +73,9 @@ class LocaleCoverageTest {
         }
         return out
     }
+
+    /** `values-pt-rBR` → `pt-BR`. */
+    private fun folderTag(folder: String): String = folder.removePrefix("values-").replace("-r", "-")
 
     private fun formatArgs(text: String): List<String> =
         FORMAT_ARG.findAll(text).map { it.value }.sorted().toList()

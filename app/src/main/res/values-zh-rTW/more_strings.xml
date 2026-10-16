@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">今天</string>
+    <string name="common_yesterday">昨天</string>
+    <string name="action_pause">暫停</string>
+    <string name="action_resume">繼續</string>
+    <string name="action_expand">展開</string>
+    <string name="action_collapse">收合</string>
+    <string name="action_clear_log">清除紀錄</string>
+    <string name="action_set">設定</string>
+    <string name="action_choose">選擇</string>
+    <string name="action_restore">還原</string>
+    <string name="action_disconnect">中斷連結</string>
+    <string name="action_dismiss">關閉</string>
+    <string name="action_try_again">再試一次</string>
+    <string name="action_skip">略過</string>
+    <string name="action_next">下一步</string>
+    <string name="status_error">錯誤</string>
+    <string name="status_warning">警告</string>
+    <string name="status_completed">已完成</string>
+    <string name="status_queued">已排入佇列</string>
+    <string name="status_downloaded">已下載</string>
+    <string name="chapter_cancel_download">取消下載</string>
+    <string name="chapter_downloaded_refresh_queued">已下載 · 已排入重新整理</string>
+    <string name="chapter_cancel_refresh">取消重新整理</string>
+    <string name="chapter_downloaded_refreshing">已下載 · 重新整理中</string>
+    <string name="chapter_downloaded_refresh_failed">已下載 · 重新整理失敗</string>
+
+    <!-- More -->
+    <string name="more_title">更多</string>
+    <string name="more_incognito">無痕模式</string>
+    <string name="more_incognito_enabled">本次工作階段不會記錄歷史紀錄</string>
+    <string name="more_incognito_disabled">暫停記錄閱讀與瀏覽紀錄</string>
+    <string name="incognito_banner">無痕模式 · 已暫停記錄</string>
+    <string name="more_updates">更新</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="other">已訂閱的小說有 %1$d 個新章節</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="other">書櫃中共有 %1$d 個新章節</item>
+    </plurals>
+    <string name="more_no_new_chapters">沒有新章節</string>
+    <string name="more_history">歷史紀錄</string>
+    <string name="more_history_summary">最近閱讀的章節和瀏覽過的小說</string>
+    <string name="more_downloads">下載</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="other">%1$d 項進行中</item>
+    </plurals>
+    <string name="more_downloads_summary">已下載的章節和下載佇列</string>
+    <string name="more_tasks">工作</string>
+    <string name="more_tasks_summary">執行中的下載和同步，以及其歷史紀錄</string>
+    <string name="more_update_warnings">更新警告</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="other">%1$d 本小說需要處理</item>
+    </plurals>
+    <string name="more_no_refresh_problems">重新整理沒有問題</string>
+    <string name="more_statistics">統計資料</string>
+    <string name="more_statistics_summary">你的閱讀活動</string>
+    <string name="more_settings_summary">外觀、書櫃、閱讀器、備份</string>
+    <string name="more_tours">導覽</string>
+    <string name="more_tours_summary">重新播放應用程式內的導覽</string>
+    <string name="more_about">關於</string>
+    <string name="more_about_summary">版本、更新管道、授權</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">開始</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">歡迎導覽</string>
+    <string name="tour_welcome_description">基本功能：書櫃、瀏覽、來源和設定。</string>
+    <string name="tour_step_welcome_title">歡迎使用 Grimoire</string>
+    <string name="tour_step_welcome_body">快速認識基本功能，大約只需 20 秒。</string>
+    <string name="tour_step_library_title">你的書櫃</string>
+    <string name="tour_step_library_body">你加入的小說都會放在這裡，並依分類整理。</string>
+    <string name="tour_step_browse_title">瀏覽</string>
+    <string name="tour_step_browse_body">輕觸「瀏覽」即可在你的來源中尋找小說。</string>
+    <string name="tour_step_extensions_title">來源與擴充功能</string>
+    <string name="tour_step_extensions_body">來源從這裡安裝。開啟後即可查看有哪些可用。</string>
+    <string name="tour_open_extensions">開啟擴充功能</string>
+    <string name="tour_step_repositories_title">存放庫</string>
+    <string name="tour_step_repositories_body">來源來自存放庫。官方存放庫已預先加入，輕觸這裡即可管理或新增你自己的存放庫。</string>
+    <string name="tour_step_more_title">其他功能</string>
+    <string name="tour_step_more_body">下載、統計資料、備份和設定都在「更多」裡。</string>
+    <string name="tour_step_done_title">一切就緒</string>
+    <string name="tour_step_done_body">可隨時在「更多 → 導覽」重新播放任何導覽。</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">診斷</string>
+    <string name="privacy_diagnostics_note">診斷資料皆為匿名，絕不包含個人資料、小說標題或連結。除非你主動開啟，否則所有項目皆為關閉。</string>
+    <string name="privacy_crash_reports">傳送當機報告</string>
+    <string name="privacy_crash_reports_summary">應用程式當機時傳送匿名的堆疊追蹤</string>
+    <string name="privacy_usage_analytics">傳送匿名使用情形分析</string>
+    <string name="privacy_usage_analytics_summary">了解哪些功能較常使用，作為後續開發的參考</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">正在下載章節</string>
+    <string name="download_notification_starting">正在開始…</string>
+    <string name="download_notification_working">下載中…</string>
+    <string name="download_notification_queued">+%1$d 個已排入佇列</string>
+    <string name="download_notification_chapter_queued">%1$s（+%2$d 個已排入佇列）</string>
+    <string name="download_notification_complete_title">下載完成</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="other">已下載 %1$d 章</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">正在下載更新</string>
+    <string name="app_update_notification_downloading_version">正在下載更新 %1$s</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">正在開始…</string>
+    <string name="app_update_notification_ready">更新已可安裝</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s 已準備就緒</string>
+    <string name="app_update_notification_tap_to_install">輕觸以安裝</string>
+    <string name="app_update_notification_failed">更新下載失敗</string>
+    <string name="error_verification_failed">下載驗證失敗，請再試一次或切換網路</string>
+    <string name="app_update_download_failed">下載失敗</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">下載</string>
+    <string name="downloads_settings">下載設定</string>
+    <string name="downloads_no_filter_matches">沒有符合所選篩選條件的下載項目。</string>
+    <string name="downloads_parallel">同時下載數</string>
+    <string name="downloads_parallel_summary">同時下載的章節數量</string>
+    <string name="downloads_move_to_top">移至頂端</string>
+    <string name="downloads_cancel_failed">取消失敗項目</string>
+    <string name="downloads_redownload">重新下載</string>
+    <string name="downloads_delete_download">刪除下載內容</string>
+    <string name="downloads_delete_options">下載選項</string>
+    <string name="downloads_empty">沒有下載項目</string>
+    <string name="downloads_filter_downloading">下載中</string>
+    <string name="downloads_filter_queued">佇列中</string>
+    <string name="downloads_filter_done">已完成</string>
+    <string name="downloads_filter_failed">失敗</string>
+    <plurals name="downloads_count_downloaded"><item quantity="other">%1$d 個已下載</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="other">%1$d 個佇列中</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="other">%1$d 個下載中</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="other">%1$d 個失敗</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">統計資料</string>
+    <string name="statistics_reading">閱讀</string>
+    <string name="statistics_chapters_read">已讀章節</string>
+    <string name="statistics_words_read">已讀字數</string>
+    <string name="statistics_novels_completed">已讀完的小說</string>
+    <string name="statistics_novels_started">已開始的小說</string>
+    <string name="statistics_average_words">平均字數 / 章</string>
+    <string name="statistics_last_read">最後閱讀</string>
+    <string name="statistics_library">書櫃</string>
+    <string name="statistics_library_novels">書櫃中的小說</string>
+    <string name="statistics_library_chapters">書櫃章節</string>
+    <string name="statistics_library_unread">書櫃中未讀</string>
+    <string name="statistics_downloaded">已下載</string>
+    <string name="statistics_empty_hint">讀幾章後就會開始記錄統計資料。</string>
+    <string name="statistics_counting_hint">每個章節只計算一次，標為未讀不會扣除。</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">工作</string>
+    <string name="tasks_empty">尚無工作。\n下載和書櫃同步執行時會顯示在這裡，\n結果會保留在下方。</string>
+    <string name="tasks_running">執行中</string>
+    <string name="tasks_history">歷史紀錄</string>
+    <string name="tasks_clear_title">要清除工作紀錄嗎？</string>
+    <string name="tasks_clear_message">移除已完成的書櫃同步和下載的歷史紀錄。執行中的工作不受影響。</string>
+    <string name="tasks_cancel_named">取消%1$s</string>
+    <string name="tasks_finished_with_errors">已完成，但發生錯誤</string>
+    <string name="tasks_updating_library">正在更新書櫃</string>
+    <string name="tasks_starting">正在開始…</string>
+    <plurals name="tasks_novels_progress"><item quantity="other">%1$d / %2$d 本小說</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">正在下載章節</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="other">剩餘 %1$d 章</item></plurals>
+    <string name="tasks_downloads">下載</string>
+    <string name="tasks_library_sync">書櫃同步</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="other">已下載 %1$d 章</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="other">%1$d 個失敗</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="other">已檢查 %1$d 本小說</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="other">%1$d 個新章節</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="other">%1$d 個警告</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="other">%1$d 個錯誤</item></plurals>
+    <string name="tasks_sync_failed">書櫃同步失敗 · %1$s</string>
+    <string name="library_update_downloading_new">正在下載新章節</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d 個已排入佇列</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="other">%1$d 個新的鎖定章節</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · %2$d 個已鎖定</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">更新</string>
+    <string name="updates_open_novel">開啟小說</string>
+    <string name="updates_delete_from_log">從紀錄中刪除</string>
+    <string name="updates_empty">尚無更新。\n書櫃重新整理找到的新章節會顯示在這裡。</string>
+    <string name="updates_tab_subscribed">已訂閱</string>
+    <string name="updates_tab_all">全部</string>
+    <string name="updates_subscribed_empty">已訂閱的小說尚無更新。</string>
+    <string name="updates_clear_title">要清除更新紀錄嗎？</string>
+    <string name="updates_clear_message">這會永久移除更新紀錄中的所有項目。你的書櫃和章節不受影響。</string>
+    <plurals name="updates_count_new"><item quantity="other">%1$d 個新章節</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="other">%1$d 個已鎖定</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="other">%1$d 個已下載</item></plurals>
+    <string name="updates_all_downloaded">全部已下載</string>
+    <string name="updates_unlocked">已解鎖</string>
+    <plurals name="updates_count_unlocked"><item quantity="other">%1$d 個已解鎖</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">歷史紀錄</string>
+    <string name="history_reading">閱讀</string>
+    <string name="history_browsing">瀏覽</string>
+    <string name="history_clear_reading">清除閱讀紀錄</string>
+    <string name="history_clear_browsing">清除瀏覽紀錄</string>
+    <string name="history_reading_empty">尚無閱讀紀錄。\n你在閱讀器中開啟的章節會顯示在這裡。</string>
+    <string name="history_browsing_empty">尚無瀏覽紀錄。\n你在「瀏覽」中開啟（且尚未加入書櫃）的小說會顯示在這裡。</string>
+    <string name="history_clear_reading_title">要清除閱讀紀錄嗎？</string>
+    <string name="history_clear_browsing_title">要清除瀏覽紀錄嗎？</string>
+    <string name="history_clear_reading_message">這會永久移除閱讀紀錄中的所有項目。你的書櫃和章節不受影響。</string>
+    <string name="history_clear_browsing_message">這會永久移除瀏覽紀錄中的所有項目。你的書櫃不受影響。</string>
+    <plurals name="history_chapter_count"><item quantity="other">%1$d 章</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">更新警告</string>
+    <string name="update_issues_empty">沒有問題。\n重新整理失敗的小說會顯示在這裡。</string>
+    <string name="update_issue_source_missing">未安裝來源，已略過</string>
+    <string name="update_issue_no_chapters">來源未傳回任何章節，已保留現有清單</string>
+    <string name="update_issue_incomplete_data">來源傳回的資料不完整，已保留先前的標題/封面</string>
+    <string name="update_issues_retry_all">全部重試</string>
+    <string name="update_issues_dismiss_all">全部關閉</string>
+    <string name="update_issue_dismiss">關閉</string>
+    <string name="update_issue_install_source">安裝來源</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">應用程式已當機</string>
+    <string name="crash_empty">沒有可用的當機報告。</string>
+    <string name="crash_description">應用程式上次執行時意外關閉。回報問題有助於修正，下方已為你填入當機詳細資料。你也可以複製這些資料分享到其他地方。</string>
+    <string name="crash_no_browser">沒有可用來開啟 GitHub 的瀏覽器。</string>
+    <string name="crash_report_github">在 GitHub 上回報</string>
+    <string name="crash_details_copied">已複製當機詳細資料。</string>
+    <string name="crash_copy_details">複製詳細資料</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">上一個</string>
+    <string name="action_play">播放</string>
+    <string name="action_stop">停止</string>
+    <string name="tts_notification_title">文字轉語音</string>
+    <string name="tts_error_request_failed">ElevenLabs 請求失敗</string>
+    <string name="tts_error_play_audio">無法播放音訊</string>
+    <string name="tts_error_play_preview">無法播放預覽音訊</string>
+    <string name="tts_error_start_playback">無法開始播放</string>
+    <string name="notification_channel_downloads">章節下載</string>
+    <string name="notification_channel_downloads_desc">在背景下載章節</string>
+    <string name="notification_channel_backups">備份</string>
+    <string name="notification_channel_backups_desc">排程的本機備份</string>
+    <string name="notification_channel_app_updates">應用程式更新</string>
+    <string name="notification_channel_app_updates_desc">在背景下載應用程式更新</string>
+    <string name="notification_channel_library_updates">書櫃更新</string>
+    <string name="notification_channel_library_updates_desc">背景書櫃重新整理的進度與結果</string>
+    <string name="notification_channel_tts">文字轉語音</string>
+    <string name="notification_channel_tts_desc">朗讀播放控制項</string>
+    <string name="tts_error_no_chapters">這本小說沒有可朗讀的章節</string>
+    <string name="tts_error_missing_api_key">請在「設定 → 文字轉語音」中新增 ElevenLabs API 金鑰</string>
+    <string name="tts_error_device_unavailable">無法使用裝置的語音引擎</string>
+    <string name="tts_error_chapter_not_found">找不到章節</string>
+    <string name="tts_error_no_readable_text">此章節沒有可朗讀的文字</string>
+    <string name="tts_error_audio_focus">無法取得音訊焦點</string>
+    <string name="tts_error_device_engine">裝置語音引擎發生錯誤</string>
+    <string name="tts_error_device_engine_code">裝置語音引擎發生錯誤（%1$d）</string>
+    <string name="extension_download_failed_http">下載失敗：HTTP %1$d</string>
+    <string name="tts_error_preview_engine">裝置內建語音引擎發生錯誤</string>
+    <string name="tts_error_preview_engine_code">裝置內建語音引擎發生錯誤（%1$d）</string>
+    <string name="tts_error_audio_playback_code">音訊播放錯誤（%1$d）</string>
+    <string name="tts_error_no_default_voice">沒有可用的 ElevenLabs 預設語音，請在文字轉語音設定中選擇一個</string>
+    <string name="tts_error_no_default_voice_preview">沒有可用的 ElevenLabs 預設語音，請選擇一個來預覽</string>
+    <string name="tts_error_source_unavailable">無法使用來源，請下載章節以離線收聽</string>
+    <string name="tts_error_source_no_text">此來源無法讀取章節文字，請下載後離線收聽</string>
+    <string name="tts_error_api_key_first">請先新增 ElevenLabs API 金鑰。</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs：%1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs：API 金鑰無效，或免費方案的 API 存取權已停用</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs：你的方案不允許此操作，請查看文字轉語音設定</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs：已超過速率限制或字元配額</string>
+    <string name="tts_error_elevenlabs_code">ElevenLabs 請求失敗（%1$d）</string>
+</resources>
