@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Appearance -->
+    <string name="appearance_theme">テーマ</string>
+    <string name="appearance_theme_system">システム</string>
+    <string name="appearance_theme_light">ライト</string>
+    <string name="appearance_theme_dark">ダーク</string>
+    <string name="appearance_dynamic_color">ダイナミックカラー</string>
+    <string name="appearance_dynamic_color_summary">壁紙に合わせて色を調整します</string>
+    <string name="appearance_synopsis_links">あらすじ内のリンク</string>
+    <string name="appearance_synopsis_links_summary">小説の説明に含まれるウェブリンクをタップできるリンクとして表示します</string>
+    <string name="appearance_color_palette">カラーパレット</string>
+    <string name="appearance_color_palette_summary">アプリ全体で使うアクセントカラーのパレットを選択します。</string>
+    <string name="appearance_color_palette_disabled">カスタムパレットを選ぶには、ダイナミックカラーをオフにしてください。</string>
+    <string name="color_theme_default">デフォルト</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">オーシャン</string>
+    <string name="color_theme_sunset">サンセット</string>
+    <string name="color_theme_forest">フォレスト</string>
+    <string name="color_theme_rose">ローズ</string>
+    <string name="color_theme_midnight">ミッドナイト</string>
+
+    <!-- Behavior -->
+    <string name="behavior_haptics">触覚フィードバック</string>
+    <string name="behavior_haptics_summary">長押し、タブの切り替え、選択操作の際に振動します。</string>
+
+    <!-- Library settings -->
+    <string name="settings_section_display">表示</string>
+    <string name="settings_display_mode">表示</string>
+    <string name="settings_display_grid">グリッド</string>
+    <string name="settings_display_list">リスト</string>
+    <string name="settings_columns">列数</string>
+    <string name="settings_section_organization">整理</string>
+    <string name="library_settings_show_all">「すべて」タブを表示</string>
+    <string name="library_settings_show_all_summary">すべてのカテゴリをまとめたタブを表示します</string>
+    <string name="library_settings_hidden">非表示カテゴリ</string>
+    <string name="library_settings_hidden_summary">PIN を設定し、非表示にするカテゴリを管理します</string>
+    <string name="library_settings_section_counts">章数</string>
+    <string name="library_settings_locked_totals">ロックされた章を合計に含める</string>
+    <string name="library_settings_locked_totals_summary">ライブラリのバッジと小説の詳細ページに表示される合計と既読率に、ロックされた章を含めます</string>
+    <string name="library_settings_section_badges">表紙のバッジ</string>
+    <string name="library_settings_read_badge">既読の進捗バッジを表示</string>
+    <string name="library_settings_read_badge_summary">ライブラリの表紙に既読数と割合を表示します</string>
+    <string name="library_settings_downloaded_badge">ダウンロード済みバッジを表示</string>
+    <string name="library_settings_downloaded_badge_summary">ライブラリの表紙にダウンロード済みの章数を表示します</string>
+    <string name="library_settings_locked_badge">ロックされた章のバッジを表示</string>
+    <string name="library_settings_locked_badge_summary">ライブラリの表紙に、ロックされた章の数を示す金色の鍵バッジを表示します</string>
+    <string name="library_settings_rating_badge">評価バッジを表示</string>
+    <string name="library_settings_rating_badge_summary">ライブラリの表紙に自分の評価を表示します</string>
+    <string name="library_settings_epub_badge">EPUB バッジを表示</string>
+    <string name="library_settings_epub_badge_summary">インポートした EPUB の小説に、ライブラリの表紙でバッジを付けます</string>
+
+    <!-- Browse settings and content languages -->
+    <string name="browse_settings_nu_shortcuts">NovelUpdates のショートカット</string>
+    <string name="browse_settings_nu_shortcuts_summary">ブラウズに NovelUpdates の検索、ランキング、最新へのリンクを表示します。</string>
+    <string name="browse_settings_pinned_groups">言語グループにもピン留めを表示</string>
+    <string name="browse_settings_pinned_groups_summary">ピン留めしたソースを「ピン留め」だけでなく、それぞれの言語の下にも表示します。</string>
+    <string name="content_languages_title">コンテンツの言語</string>
+    <string name="content_languages_helper">ここで選択した言語は、ソースの設定で上書きしない限り、すべての多言語ソースに適用されます。すべての言語を表示するには、何もチェックしないでください。</string>
+
+    <!-- Reader settings -->
+    <string name="settings_section_appearance">外観</string>
+    <string name="reader_settings_color_theme">カラーテーマ</string>
+    <string name="reader_settings_font_size">文字サイズ</string>
+    <string name="reader_settings_line_height">行間</string>
+    <string name="reader_settings_paragraph_spacing">段落の間隔</string>
+    <string name="settings_section_reading">読書</string>
+    <string name="reader_settings_auto_mark">自動で既読にする</string>
+    <string name="reader_settings_within_last">最後から</string>
+    <plurals name="reader_settings_paragraph_count"><item quantity="other">%1$d段落</item></plurals>
+    <string name="reader_settings_rotation">画面の向き</string>
+    <string name="reader_settings_hide_status_bar">通知バーを非表示</string>
+    <string name="reader_settings_hide_status_bar_summary">読書中は画面上部のステータスバーを非表示にします</string>
+    <string name="settings_section_privacy">プライバシー</string>
+    <string name="reader_settings_hide_images">画像を隠す</string>
+    <string name="reader_settings_hide_images_summary">本文中の画像を、タップで表示するか長押しでのぞき見するまで隠します</string>
+
+    <!-- NovelUpdates and connections -->
+    <string name="nu_settings_show_section">NovelUpdates セクションを表示</string>
+    <string name="nu_settings_show_section_summary">小説の詳細に、別タイトル、評価、おすすめを含む NovelUpdates パネルを追加します。</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">未連携</string>
+    <string name="connections_signing_in">ログイン中…</string>
+    <string name="connections_error">接続エラー</string>
+
+    <!-- Shared schedule controls -->
+    <string name="schedule_every">間隔</string>
+    <plurals name="schedule_hours"><item quantity="other">%1$d時間</item></plurals>
+    <plurals name="schedule_days"><item quantity="other">%1$d日</item></plurals>
+    <plurals name="schedule_weeks"><item quantity="other">%1$d週間</item></plurals>
+    <string name="schedule_unit_hour">時間</string>
+    <string name="schedule_unit_day">日</string>
+    <string name="schedule_unit_week">週</string>
+    <string name="schedule_time_of_day">時刻</string>
+    <string name="schedule_off">オフ</string>
+    <string name="schedule_runs_every">%1$sごとに実行</string>
+    <string name="schedule_runs_around">%1$s頃に実行</string>
+    <string name="schedule_run_around">%1$s頃に実行</string>
+    <string name="schedule_runs_around_when_scheduled">スケジュール設定時は%1$s頃に実行</string>
+    <string name="schedule_never">なし</string>
+    <string name="schedule_completed_at">%1$s — 完了</string>
+    <string name="schedule_failed_at">%1$s — 失敗</string>
+
+    <!-- Hidden categories -->
+    <string name="hidden_title">非表示カテゴリ</string>
+    <string name="hidden_setup_pin">PIN を設定</string>
+    <string name="hidden_setup_pin_summary">カテゴリを非表示にしたり、後でロックを解除したりするには PIN が必要です。</string>
+    <string name="hidden_setup_pin_action">PIN を設定</string>
+    <string name="hidden_locked">ロック中</string>
+    <string name="hidden_locked_summary">非表示カテゴリを管理するにはロックを解除してください。</string>
+    <string name="hidden_change_pin">PIN を変更</string>
+    <string name="hidden_change">変更</string>
+    <string name="hidden_biometric">生体認証でロック解除</string>
+    <string name="hidden_biometric_available">PIN の代わりに指紋認証または顔認証でロックを解除します</string>
+    <string name="hidden_biometric_unavailable">利用できません — 生体情報が登録されていません</string>
+    <string name="hidden_show_in_all">「すべて」タブに非表示カテゴリを表示</string>
+    <string name="hidden_show_in_all_summary">ロック解除中は、非表示の小説も「すべて」タブに表示します</string>
+    <string name="hidden_categories_section">カテゴリ</string>
+    <string name="hidden_default_category">デフォルト — 非表示にできません</string>
+    <string name="hidden_remove_pin_action">PIN を削除してすべて再表示</string>
+    <string name="hidden_remove_pin_title">PIN を削除しますか？</string>
+    <string name="hidden_remove_pin_message">すべての非表示カテゴリが、アプリを使う誰にでも見えるようになります。</string>
+    <string name="hidden_pin_label">PIN（4〜8桁）</string>
+    <string name="hidden_confirm_pin">PIN を確認</string>
+    <string name="hidden_pin_mismatch">PIN が一致しません</string>
+
+    <!-- Backup and restore -->
+    <string name="backup_section_backup">バックアップ</string>
+    <string name="backup_description">バックアップは、この端末上で選んだフォルダに gzip 圧縮した JSON ファイルとして保存されます。後で見つけやすいフォルダ（Download や Documents など）を選んでください。</string>
+    <string name="backup_folder">バックアップフォルダ</string>
+    <string name="backup_folder_not_selected">未選択</string>
+    <string name="backup_no_folder_selected">バックアップフォルダが選択されていません</string>
+    <plurals name="backup_novels_backed_up"><item quantity="other">%1$d作品をバックアップしました</item></plurals>
+    <string name="backup_now">今すぐバックアップ</string>
+    <string name="backup_restore_ellipsis">復元…</string>
+    <string name="backup_scheduled">定期バックアップ</string>
+    <string name="backup_scheduled_description">この端末上でバックグラウンドで実行されます。アプリを開いておく必要はありません。</string>
+    <string name="backup_automatic">自動でバックアップ</string>
+    <string name="backup_wifi_only">Wi-Fi 接続時のみ</string>
+    <string name="backup_wifi_only_summary">モバイルデータ通信では自動バックアップをスキップします</string>
+    <string name="backup_charging_only">充電中のみ</string>
+    <string name="backup_run_scheduled">定期バックアップを今すぐ実行</string>
+    <string name="backup_run_scheduled_summary">選択したフォルダとスケジュールの条件を使用します</string>
+    <string name="backup_last_automatic">前回の自動バックアップ</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">成功</string>
+    <string name="backup_restore_title">バックアップを復元しますか？</string>
+    <string name="backup_restore_message">バックアップを現在のライブラリに統合します。既存の項目は保持され、新しい項目が追加され、読書の進捗は統合されます。</string>
+    <string name="backup_created">バックアップを作成しました: %1$s</string>
+    <plurals name="backup_saved"><item quantity="other">%1$s を保存しました（%2$d作品）</item></plurals>
+    <plurals name="backup_restored"><item quantity="other">%1$d作品、%2$d章を復元しました</item></plurals>
+    <string name="backup_queued">バックアップをキューに追加しました</string>
+    <string name="backup_folder_inaccessible">バックアップフォルダにアクセスできません</string>
+    <string name="backup_folder_not_writable">バックアップフォルダに書き込めません</string>
+    <string name="backup_create_file_failed">バックアップファイルを作成できませんでした</string>
+    <string name="backup_open_output_failed">出力ストリームを開けませんでした</string>
+    <string name="backup_read_file_failed">バックアップファイルを読み込めませんでした</string>
+    <string name="backup_failed">バックアップに失敗しました</string>
+    <string name="backup_newer_version">バックアップファイルは新しいバージョンのアプリで作成されています（v%1$d）</string>
+    <string name="restore_failed">復元に失敗しました</string>
+
+    <!-- Data management -->
+    <string name="data_storage">ストレージ</string>
+    <string name="data_storage_summary">Grimoire の使用量 %1$s · 空き容量 %2$s / %3$s</string>
+    <string name="data_your_data">あなたのデータ</string>
+    <plurals name="data_library_novels"><item quantity="other">%1$d作品 · %2$d章</item></plurals>
+    <string name="data_browse">ブラウズデータ</string>
+    <plurals name="data_browse_count"><item quantity="other">保存も閲覧もしていないキャッシュ済みの小説 %1$d作品</item></plurals>
+    <string name="data_downloads">ダウンロード</string>
+    <string name="data_chapter_text">章のテキスト</string>
+    <plurals name="data_chapter_text_summary"><item quantity="other">%1$s · %2$d章</item></plurals>
+    <string name="data_chapter_images">章の画像</string>
+    <plurals name="data_chapter_images_summary"><item quantity="other">%1$s · 画像%2$d件</item></plurals>
+    <string name="data_caches">キャッシュ</string>
+    <string name="data_cover_cache">表紙のキャッシュ</string>
+    <string name="data_database">データベース</string>
+    <string name="data_installer_files">インストーラファイル</string>
+    <string name="data_installer_summary">%1$s · アプリと拡張機能のアップデートパッケージの残り</string>
+    <string name="data_clear_cover_title">表紙のキャッシュを消去しますか？</string>
+    <string name="data_clear_cover_message">表紙画像は次に表示されるときに再ダウンロードされます。</string>
+    <string name="data_clear_browse_title">ブラウズデータを消去しますか？</string>
+    <string name="data_clear_browse_message">ライブラリに保存しておらず、読んでもいないキャッシュ済みの小説を削除します。もう一度開くとソースから再取得されます。読書履歴とダウンロードは保持されます。</string>
+    <string name="data_clear_installer_title">インストーラファイルを消去しますか？</string>
+    <string name="data_clear_installer_message">アプリと拡張機能のアップデートで残った .apk ファイルを削除します。次回のアップデート時に再ダウンロードされます。インストールの進行中は消去しないでください。</string>
+    <string name="data_cover_cache_cleared">表紙のキャッシュを消去しました</string>
+    <plurals name="data_browse_cleared"><item quantity="other">ブラウズした小説 %1$d作品を消去しました</item></plurals>
+    <plurals name="data_installers_cleared"><item quantity="other">インストーラファイル %1$d件を消去しました</item></plurals>
+
+    <!-- Library update settings -->
+    <string name="library_update_scheduled">定期更新</string>
+    <string name="library_update_scheduled_description">バックグラウンドでライブラリを更新し、新しい章を取得します。アプリを開いておく必要はありません。</string>
+    <string name="library_update_automatic">自動で更新</string>
+    <string name="library_update_wifi_only">Wi-Fi 接続時のみ</string>
+    <string name="library_update_wifi_only_summary">モバイルデータ通信では定期更新をスキップします</string>
+    <string name="library_update_charging_only">充電中のみ</string>
+    <string name="library_update_sync_scope">同期の対象</string>
+    <string name="library_update_include_epubs">EPUB を含める</string>
+    <string name="library_update_include_epubs_summary">ライブラリの更新時に EPUB の小説（ローカルでインポートしたものや Z-Library などの EPUB ソース）も更新します。取得する新しい章がないため、デフォルトではオフです。</string>
+    <string name="library_update_performance">パフォーマンス</string>
+    <string name="library_update_concurrency">同時同期数: %1$d</string>
+    <string name="library_update_concurrency_summary">同時に更新する小説の数です。多いほど速くなりますが、一部のソースでレート制限がかかる場合があります。</string>
+    <string name="library_update_now">今すぐライブラリを更新</string>
+    <string name="library_update_now_summary">ライブラリのすべての小説をバックグラウンドで更新します</string>
+    <string name="library_update_last">前回の更新</string>
+
+    <!-- Text-to-speech -->
+    <string name="tts_enable">読み上げを有効にする</string>
+    <string name="tts_enable_summary">リーダーに読み上げのコントロールを表示します</string>
+    <string name="tts_speech_engine">音声エンジン</string>
+    <string name="tts_on_device">端末内</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">端末に内蔵された音声で読み上げます。オフラインでも使えます。</string>
+    <string name="tts_elevenlabs_summary">ElevenLabs の自然なクラウド音声をストリーミングします。ネットワーク接続が必要で、アカウントで文字数に応じて課金されます。</string>
+    <string name="tts_elevenlabs_account">ElevenLabs アカウント</string>
+    <string name="tts_api_key">API キー</string>
+    <string name="tts_playback">再生</string>
+    <string name="tts_speech_rate">読み上げ速度</string>
+    <string name="tts_pitch">ピッチ（端末内のみ）</string>
+    <string name="tts_auto_advance">次の章へ自動で進む</string>
+    <string name="tts_auto_advance_summary">章を読み終えたら、続けて次の章を読み上げます</string>
+    <string name="tts_voices">音声</string>
+    <string name="tts_voices_summary">言語ごとに読み上げる音声を選択します。小説はコンテンツの言語で照合されます。</string>
+    <string name="tts_custom_voice">カスタム音声を選択中</string>
+    <string name="tts_system_default">システムのデフォルト</string>
+    <string name="tts_credit_usage">クレジットの使用量</string>
+    <string name="tts_refresh_usage">使用量を更新</string>
+    <string name="tts_usage_api_key_hint">上で API キーを入力すると、残りの文字数を確認できます。</string>
+    <string name="tts_loading">読み込み中…</string>
+    <string name="tts_usage_summary">%1$,d / %2$,d 文字使用済み</string>
+    <string name="tts_quota_reset">上限のリセット: %1$s</string>
+    <string name="tts_voice_title">音声</string>
+    <string name="tts_voice_needs_key">クラウド音声を選ぶには、読み上げ設定で ElevenLabs の API キーを追加してください。</string>
+    <string name="tts_elevenlabs_plan_note">ElevenLabs の無料プランには制限があり（月約10,000文字）、多くの音声（一部のデフォルト音声も含む）は有料プランが必要です。音声が再生されない場合は別の音声を試すか、端末内エンジンを使えばオフラインで無制限に読み上げられます。</string>
+    <string name="tts_system_default_summary">この言語の音声をエンジンに任せます</string>
+    <string name="tts_install_voices">音声を追加でインストール…</string>
+    <string name="tts_install_voices_summary">端末のエンジン用の追加音声データをダウンロードします</string>
+    <string name="tts_stop_preview">プレビューを停止</string>
+    <string name="tts_preview_voice">音声をプレビュー</string>
+    <string name="tts_load_usage_failed">使用量を読み込めませんでした</string>
+    <string name="tts_load_voices_failed">音声を読み込めませんでした</string>
+
+    <!-- GitHub connection -->
+    <string name="github_account_title">GitHub アカウント</string>
+    <string name="github_privacy_note">GitHub アカウントを連携すると、自分の非公開リポジトリから拡張機能をインストールできます。アクセストークンはこの端末にのみ保存され、github.com にのみ送信されます。github.com/settings/applications からいつでも取り消せます。</string>
+    <string name="github_not_connected">未連携です。</string>
+    <string name="github_connect">GitHub を連携</string>
+    <string name="github_enter_code">github.com でこのコードを入力してください</string>
+    <string name="github_open_device_page">github.com/login/device を開く</string>
+    <string name="github_copy_code">コードをコピー</string>
+    <string name="github_waiting">ブラウザでの操作が完了するのを待っています…</string>
+    <string name="github_connected">連携済み</string>
+    <string name="github_authorization_failed">認証に失敗しました</string>
+    <string name="github_no_client_id">このビルドには OAuth クライアント ID がありません</string>
+    <string name="github_no_client_id_summary">gradle.properties（または環境変数）で GITHUB_OAUTH_CLIENT_ID を設定してから再ビルドしてください。</string>
+
+    <!-- About and updater -->
+    <string name="about_title">このアプリについて</string>
+    <string name="about_version">バージョン</string>
+    <string name="about_version_summary">Grimoire %1$s（ビルド %2$d）\nコミット %3$s · Extensions API %4$s</string>
+    <string name="about_check_updates">アップデートを確認</string>
+    <string name="about_check_updates_idle">タップして新しいバージョンを確認</string>
+    <string name="about_checking">確認中…</string>
+    <string name="about_latest_version">最新バージョンを使用しています</string>
+    <string name="about_up_to_date">最新です</string>
+    <string name="about_show_changelog">変更履歴を表示</string>
+    <string name="about_show_changelog_summary">%1$s のリリースノートを開く</string>
+    <string name="about_updates_section">アップデート</string>
+    <string name="about_update_popups">アップデートの自動通知</string>
+    <string name="about_update_popups_summary">アップデートがあるときは起動時にダイアログを表示します</string>
+    <string name="about_changelog_after_update">アップデート後に変更履歴を表示</string>
+    <string name="about_changelog_after_update_summary">新しいバージョンを初めて起動したときにリリースノートを表示します</string>
+    <string name="about_build_section">ビルド</string>
+    <string name="about_build_details">ビルドの詳細</string>
+    <string name="about_build_details_summary">ビルド %1$d · コミット %2$s · Extensions API %3$s</string>
+    <string name="about_build_copied">ビルド情報をコピーしました</string>
+    <string name="about_channel_stable">安定版</string>
+    <string name="about_channel_beta">ベータ版</string>
+    <string name="about_channel_stable_summary">タグ付きのリリースのみ。おすすめです。</string>
+    <string name="about_channel_beta_summary">main へのコミットごとの最新ビルド。不安定な場合があります。</string>
+    <string name="update_whats_new">%1$s の新機能</string>
+    <string name="update_got_it">了解</string>
+    <string name="update_ready">アップデートの準備完了</string>
+    <string name="update_available">アップデートがあります</string>
+    <string name="update_unknown_error">不明なエラー</string>
+    <string name="update_no_changelog">%1$s の変更履歴はありません。</string>
+    <string name="action_update">アップデート</string>
+    <string name="update_download_complete">ダウンロードが完了しました — 「インストール」をタップしてアップデートを完了してください。</string>
+    <string name="update_skip_version">このバージョンをスキップ</string>
+    <string name="update_downloading_background">バックグラウンドでダウンロード中です — アプリを閉じても問題ありません。</string>
+    <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
+    <string name="update_download_size">%1$s MB</string>
+    <string name="changelog_features">新機能</string>
+    <string name="changelog_bug_fixes">バグ修正</string>
+    <string name="changelog_sources">ソース</string>
+    <string name="changelog_documentation">ドキュメント</string>
+    <string name="changelog_other">その他の変更</string>
+    <string name="changelog_changes">変更点</string>
+
+    <!-- Shared language picker -->
+    <string name="language_override_global">全体のコンテンツ言語を上書き</string>
+    <string name="language_override_on_helper">このソースだけで使う言語を選択します。</string>
+    <string name="language_override_off_helper">このソースは全体のコンテンツ言語の設定を使用しています。このソースだけ別の組み合わせにするには、オンにしてください。</string>
+    <string name="language_global_all">全体: フィルタなし（すべての言語を表示）</string>
+    <plurals name="language_global_selected"><item quantity="other">全体: %1$d言語を選択中</item></plurals>
+    <string name="language_saved">保存しました</string>
+    <string name="language_global">全体</string>
+    <string name="language_added_here">ここで追加</string>
+    <string name="language_hidden_here">ここで非表示</string>
+    <string name="tts_voice_quality_very_high">最高品質</string>
+    <string name="tts_voice_quality_high">高品質</string>
+    <string name="tts_voice_quality_normal">標準品質</string>
+    <string name="tts_voice_quality_low">低品質</string>
+    <string name="tts_voice_online">オンライン</string>
+    <string name="tts_voice_not_installed">未インストール</string>
+    <string name="tts_voice_category_default">デフォルト音声</string>
+    <string name="tts_voice_category_personal">あなたのクローン音声</string>
+    <string name="tts_voice_category_workspace">ワークスペースの音声</string>
+    <string name="tts_voice_category_community">Voice Library · 有料プランのみ</string>
+    <string name="github_error_access_denied">認証が拒否されました</string>
+    <string name="github_error_expired">認証が完了する前にコードの有効期限が切れました</string>
+    <string name="github_error_cancelled">キャンセルしました</string>
+    <string name="github_error_network">ネットワークエラー: %1$s</string>
+    <string name="github_error_unexpected">予期しないエラー: %1$s</string>
+</resources>

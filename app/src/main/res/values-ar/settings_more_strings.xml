@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Appearance -->
+    <string name="appearance_theme">السمة</string>
+    <string name="appearance_theme_system">النظام</string>
+    <string name="appearance_theme_light">فاتحة</string>
+    <string name="appearance_theme_dark">داكنة</string>
+    <string name="appearance_dynamic_color">الألوان الديناميكية</string>
+    <string name="appearance_dynamic_color_summary">مواءمة الألوان مع خلفية الشاشة</string>
+    <string name="appearance_synopsis_links">الروابط في الملخصات</string>
+    <string name="appearance_synopsis_links_summary">عرض روابط الويب في أوصاف الروايات كروابط قابلة للنقر</string>
+    <string name="appearance_color_palette">لوحة الألوان</string>
+    <string name="appearance_color_palette_summary">اختر لوحة الألوان المميزة المستخدمة في التطبيق.</string>
+    <string name="appearance_color_palette_disabled">أوقف الألوان الديناميكية لاختيار لوحة مخصصة.</string>
+    <string name="color_theme_default">الافتراضية</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">المحيط</string>
+    <string name="color_theme_sunset">الغروب</string>
+    <string name="color_theme_forest">الغابة</string>
+    <string name="color_theme_rose">الوردي</string>
+    <string name="color_theme_midnight">منتصف الليل</string>
+
+    <!-- Behavior -->
+    <string name="behavior_haptics">الاهتزاز اللمسي</string>
+    <string name="behavior_haptics_summary">الاهتزاز عند الضغط المطوّل وتبديل علامات التبويب وإجراءات التحديد.</string>
+
+    <!-- Library settings -->
+    <string name="settings_section_display">العرض</string>
+    <string name="settings_display_mode">العرض</string>
+    <string name="settings_display_grid">شبكة</string>
+    <string name="settings_display_list">قائمة</string>
+    <string name="settings_columns">الأعمدة</string>
+    <string name="settings_section_organization">التنظيم</string>
+    <string name="library_settings_show_all">إظهار علامة التبويب «الكل»</string>
+    <string name="library_settings_show_all_summary">إظهار علامة تبويب تجمع كل الفئات</string>
+    <string name="library_settings_hidden">الفئات المخفية</string>
+    <string name="library_settings_hidden_summary">عيّن رمز PIN وحدّد الفئات المخفية</string>
+    <string name="library_settings_section_counts">أعداد الفصول</string>
+    <string name="library_settings_locked_totals">تضمين الفصول المقفلة في الإجماليات</string>
+    <string name="library_settings_locked_totals_summary">احتساب الفصول المقفلة في الإجمالي ونسبة القراءة المعروضة على شارات المكتبة وصفحة تفاصيل الرواية</string>
+    <string name="library_settings_section_badges">شارات الغلاف</string>
+    <string name="library_settings_read_badge">إظهار شارة تقدّم القراءة</string>
+    <string name="library_settings_read_badge_summary">إظهار عدد المقروء ونسبته على أغلفة المكتبة</string>
+    <string name="library_settings_downloaded_badge">إظهار شارة التنزيل</string>
+    <string name="library_settings_downloaded_badge_summary">إظهار عدد الفصول المنزّلة على أغلفة المكتبة</string>
+    <string name="library_settings_locked_badge">إظهار شارة الفصول المقفلة</string>
+    <string name="library_settings_locked_badge_summary">إظهار شارة قفل ذهبية بعدد الفصول المقفلة على أغلفة المكتبة</string>
+    <string name="library_settings_rating_badge">إظهار شارة التقييم</string>
+    <string name="library_settings_rating_badge_summary">إظهار تقييمك الشخصي على أغلفة المكتبة</string>
+    <string name="library_settings_epub_badge">إظهار شارة EPUB</string>
+    <string name="library_settings_epub_badge_summary">تمييز روايات EPUB المستوردة بشارة على أغلفة المكتبة</string>
+
+    <!-- Browse settings and content languages -->
+    <string name="browse_settings_nu_shortcuts">اختصارات NovelUpdates</string>
+    <string name="browse_settings_nu_shortcuts_summary">إظهار روابط البحث والتصنيفات والأحدث من NovelUpdates في «تصفّح».</string>
+    <string name="browse_settings_pinned_groups">إظهار المثبّتة ضمن مجموعات اللغات</string>
+    <string name="browse_settings_pinned_groups_summary">عرض المصادر المثبّتة تحت لغتها أيضًا، لا في «المثبّتة» فقط.</string>
+    <string name="content_languages_title">لغات المحتوى</string>
+    <string name="content_languages_helper">تنطبق اللغات المحددة هنا على كل مصدر متعدد اللغات ما لم تُتجاوز في إعدادات ذلك المصدر. اترك الكل دون تحديد لإظهار جميع اللغات.</string>
+
+    <!-- Reader settings -->
+    <string name="settings_section_appearance">المظهر</string>
+    <string name="reader_settings_color_theme">سمة الألوان</string>
+    <string name="reader_settings_font_size">حجم الخط</string>
+    <string name="reader_settings_line_height">ارتفاع السطر</string>
+    <string name="reader_settings_paragraph_spacing">التباعد بين الفقرات</string>
+    <string name="settings_section_reading">القراءة</string>
+    <string name="reader_settings_auto_mark">التعليم كمقروء تلقائيًا</string>
+    <string name="reader_settings_within_last">ضمن آخر</string>
+    <plurals name="reader_settings_paragraph_count">
+        <item quantity="zero">%1$d فقرة</item>
+        <item quantity="one">%1$d فقرة</item>
+        <item quantity="two">%1$d فقرتان</item>
+        <item quantity="few">%1$d فقرات</item>
+        <item quantity="many">%1$d فقرةً</item>
+        <item quantity="other">%1$d فقرة</item>
+    </plurals>
+    <string name="reader_settings_rotation">تدوير الشاشة</string>
+    <string name="reader_settings_hide_status_bar">إخفاء شريط الإشعارات</string>
+    <string name="reader_settings_hide_status_bar_summary">إخفاء شريط الحالة أعلى الشاشة أثناء القراءة</string>
+    <string name="settings_section_privacy">الخصوصية</string>
+    <string name="reader_settings_hide_images">إخفاء الصور</string>
+    <string name="reader_settings_hide_images_summary">إخفاء الصور المضمّنة حتى تنقر لكشفها أو تضغط مطولًا لإلقاء نظرة</string>
+
+    <!-- NovelUpdates and connections -->
+    <string name="nu_settings_show_section">إظهار قسم NovelUpdates</string>
+    <string name="nu_settings_show_section_summary">يضيف لوحة NovelUpdates إلى تفاصيل الرواية تتضمن العناوين البديلة والتقييم والتوصيات.</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">غير متصل</string>
+    <string name="connections_signing_in">جارٍ تسجيل الدخول…</string>
+    <string name="connections_error">خطأ في الاتصال</string>
+
+    <!-- Shared schedule controls -->
+    <string name="schedule_every">كل</string>
+    <plurals name="schedule_hours">
+        <item quantity="zero">%1$d ساعة</item>
+        <item quantity="one">%1$d ساعة</item>
+        <item quantity="two">%1$d ساعتين</item>
+        <item quantity="few">%1$d ساعات</item>
+        <item quantity="many">%1$d ساعةً</item>
+        <item quantity="other">%1$d ساعة</item>
+    </plurals>
+    <plurals name="schedule_days">
+        <item quantity="zero">%1$d يوم</item>
+        <item quantity="one">%1$d يوم</item>
+        <item quantity="two">%1$d يومين</item>
+        <item quantity="few">%1$d أيام</item>
+        <item quantity="many">%1$d يومًا</item>
+        <item quantity="other">%1$d يوم</item>
+    </plurals>
+    <plurals name="schedule_weeks">
+        <item quantity="zero">%1$d أسبوع</item>
+        <item quantity="one">%1$d أسبوع</item>
+        <item quantity="two">%1$d أسبوعين</item>
+        <item quantity="few">%1$d أسابيع</item>
+        <item quantity="many">%1$d أسبوعًا</item>
+        <item quantity="other">%1$d أسبوع</item>
+    </plurals>
+    <string name="schedule_unit_hour">ساعة</string>
+    <string name="schedule_unit_day">يوم</string>
+    <string name="schedule_unit_week">أسبوع</string>
+    <string name="schedule_time_of_day">وقت التشغيل</string>
+    <string name="schedule_off">إيقاف</string>
+    <string name="schedule_runs_every">يعمل كل %1$s</string>
+    <string name="schedule_runs_around">يعمل نحو الساعة %1$s</string>
+    <string name="schedule_run_around">التشغيل نحو الساعة %1$s</string>
+    <string name="schedule_runs_around_when_scheduled">يعمل نحو الساعة %1$s عند جدولته</string>
+    <string name="schedule_never">أبدًا</string>
+    <string name="schedule_completed_at">%1$s — اكتمل</string>
+    <string name="schedule_failed_at">%1$s — فشل</string>
+
+    <!-- Hidden categories -->
+    <string name="hidden_title">الفئات المخفية</string>
+    <string name="hidden_setup_pin">إعداد رمز PIN</string>
+    <string name="hidden_setup_pin_summary">يلزم رمز PIN لإخفاء الفئات وفتح قفلها لاحقًا.</string>
+    <string name="hidden_setup_pin_action">إعداد رمز PIN</string>
+    <string name="hidden_locked">مقفلة</string>
+    <string name="hidden_locked_summary">افتح القفل لإدارة الفئات المخفية.</string>
+    <string name="hidden_change_pin">تغيير رمز PIN</string>
+    <string name="hidden_change">تغيير</string>
+    <string name="hidden_biometric">استخدام فتح القفل بالمقاييس الحيوية</string>
+    <string name="hidden_biometric_available">بصمة الإصبع أو الوجه بدلًا من رمز PIN</string>
+    <string name="hidden_biometric_unavailable">غير متاح — لا توجد مقاييس حيوية مسجّلة</string>
+    <string name="hidden_show_in_all">إظهار المخفية في علامة التبويب «الكل»</string>
+    <string name="hidden_show_in_all_summary">عند فتح القفل، اعرض الروايات المخفية أيضًا ضمن «الكل»</string>
+    <string name="hidden_categories_section">الفئات</string>
+    <string name="hidden_default_category">الافتراضية — لا يمكن إخفاؤها</string>
+    <string name="hidden_remove_pin_action">إزالة رمز PIN وإظهار الكل</string>
+    <string name="hidden_remove_pin_title">هل تريد إزالة رمز PIN؟</string>
+    <string name="hidden_remove_pin_message">ستصبح كل الفئات المخفية مرئية لأي شخص يستخدم التطبيق.</string>
+    <string name="hidden_pin_label">رمز PIN (4–8 أرقام)</string>
+    <string name="hidden_confirm_pin">تأكيد رمز PIN</string>
+    <string name="hidden_pin_mismatch">رمزا PIN غير متطابقين</string>
+
+    <!-- Backup and restore -->
+    <string name="backup_section_backup">النسخ الاحتياطي</string>
+    <string name="backup_description">تُحفظ النسخ الاحتياطية كملف JSON مضغوط بصيغة gzip في مجلد تختاره على هذا الجهاز. اختر مجلدًا يسهل العثور عليه لاحقًا (مثل Downloads أو Documents).</string>
+    <string name="backup_folder">مجلد النسخ الاحتياطي</string>
+    <string name="backup_folder_not_selected">غير محدد</string>
+    <string name="backup_no_folder_selected">لم يُحدَّد مجلد للنسخ الاحتياطي</string>
+    <plurals name="backup_novels_backed_up">
+        <item quantity="zero">تم نسخ %1$d رواية احتياطيًا</item>
+        <item quantity="one">تم نسخ %1$d رواية احتياطيًا</item>
+        <item quantity="two">تم نسخ %1$d روايتين احتياطيًا</item>
+        <item quantity="few">تم نسخ %1$d روايات احتياطيًا</item>
+        <item quantity="many">تم نسخ %1$d روايةً احتياطيًا</item>
+        <item quantity="other">تم نسخ %1$d رواية احتياطيًا</item>
+    </plurals>
+    <string name="backup_now">نسخ احتياطي الآن</string>
+    <string name="backup_restore_ellipsis">استعادة…</string>
+    <string name="backup_scheduled">النسخ الاحتياطي المجدول</string>
+    <string name="backup_scheduled_description">يعمل في الخلفية على هذا الجهاز. لا حاجة إلى فتح التطبيق.</string>
+    <string name="backup_automatic">النسخ الاحتياطي تلقائيًا</string>
+    <string name="backup_wifi_only">عبر Wi-Fi فقط</string>
+    <string name="backup_wifi_only_summary">تخطي النسخ الاحتياطي التلقائي عبر بيانات الجوال</string>
+    <string name="backup_charging_only">أثناء الشحن فقط</string>
+    <string name="backup_run_scheduled">تشغيل النسخ الاحتياطي المجدول الآن</string>
+    <string name="backup_run_scheduled_summary">يستخدم المجلد المحدد وشروط الجدولة</string>
+    <string name="backup_last_automatic">آخر نسخة احتياطية تلقائية</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">نجحت</string>
+    <string name="backup_restore_title">هل تريد استعادة النسخة الاحتياطية؟</string>
+    <string name="backup_restore_message">سيتم دمج النسخة الاحتياطية في مكتبتك الحالية. تُحفظ الإدخالات الموجودة، وتُضاف الجديدة، ويُدمج تقدّم القراءة.</string>
+    <string name="backup_created">تم إنشاء النسخة الاحتياطية: %1$s</string>
+    <plurals name="backup_saved">
+        <item quantity="zero">تم حفظ %1$s (%2$d رواية)</item>
+        <item quantity="one">تم حفظ %1$s (%2$d رواية)</item>
+        <item quantity="two">تم حفظ %1$s (%2$d روايتان)</item>
+        <item quantity="few">تم حفظ %1$s (%2$d روايات)</item>
+        <item quantity="many">تم حفظ %1$s (%2$d روايةً)</item>
+        <item quantity="other">تم حفظ %1$s (%2$d رواية)</item>
+    </plurals>
+    <plurals name="backup_restored">
+        <item quantity="zero">تمت استعادة %1$d رواية، و%2$d من الفصول</item>
+        <item quantity="one">تمت استعادة %1$d رواية، و%2$d من الفصول</item>
+        <item quantity="two">تمت استعادة %1$d روايتين، و%2$d من الفصول</item>
+        <item quantity="few">تمت استعادة %1$d روايات، و%2$d من الفصول</item>
+        <item quantity="many">تمت استعادة %1$d روايةً، و%2$d من الفصول</item>
+        <item quantity="other">تمت استعادة %1$d رواية، و%2$d من الفصول</item>
+    </plurals>
+    <string name="backup_queued">أُضيف النسخ الاحتياطي إلى قائمة الانتظار</string>
+    <string name="backup_folder_inaccessible">يتعذّر الوصول إلى مجلد النسخ الاحتياطي</string>
+    <string name="backup_folder_not_writable">لا يمكن الكتابة في مجلد النسخ الاحتياطي</string>
+    <string name="backup_create_file_failed">تعذّر إنشاء ملف النسخة الاحتياطية</string>
+    <string name="backup_open_output_failed">تعذّر فتح مجرى الإخراج</string>
+    <string name="backup_read_file_failed">تعذّرت قراءة ملف النسخة الاحتياطية</string>
+    <string name="backup_failed">فشل النسخ الاحتياطي</string>
+    <string name="backup_newer_version">ملف النسخة الاحتياطية من إصدار أحدث من التطبيق (v%1$d)</string>
+    <string name="restore_failed">فشلت الاستعادة</string>
+
+    <!-- Data management -->
+    <string name="data_storage">التخزين</string>
+    <string name="data_storage_summary">يستخدم Grimoire %1$s · %2$s متاحة من أصل %3$s</string>
+    <string name="data_your_data">بياناتك</string>
+    <plurals name="data_library_novels">
+        <item quantity="zero">%1$d رواية · %2$d من الفصول</item>
+        <item quantity="one">%1$d رواية · %2$d من الفصول</item>
+        <item quantity="two">%1$d روايتان · %2$d من الفصول</item>
+        <item quantity="few">%1$d روايات · %2$d من الفصول</item>
+        <item quantity="many">%1$d روايةً · %2$d من الفصول</item>
+        <item quantity="other">%1$d رواية · %2$d من الفصول</item>
+    </plurals>
+    <string name="data_browse">بيانات التصفّح</string>
+    <plurals name="data_browse_count">
+        <item quantity="zero">%1$d رواية مخزّنة مؤقتًا لم تحفظها أو تقرأها</item>
+        <item quantity="one">%1$d رواية مخزّنة مؤقتًا لم تحفظها أو تقرأها</item>
+        <item quantity="two">%1$d روايتان مخزّنتان مؤقتًا لم تحفظهما أو تقرأهما</item>
+        <item quantity="few">%1$d روايات مخزّنة مؤقتًا لم تحفظها أو تقرأها</item>
+        <item quantity="many">%1$d روايةً مخزّنة مؤقتًا لم تحفظها أو تقرأها</item>
+        <item quantity="other">%1$d رواية مخزّنة مؤقتًا لم تحفظها أو تقرأها</item>
+    </plurals>
+    <string name="data_downloads">التنزيلات</string>
+    <string name="data_chapter_text">نص الفصول</string>
+    <plurals name="data_chapter_text_summary">
+        <item quantity="zero">%1$s · %2$d فصل</item>
+        <item quantity="one">%1$s · %2$d فصل</item>
+        <item quantity="two">%1$s · %2$d فصلان</item>
+        <item quantity="few">%1$s · %2$d فصول</item>
+        <item quantity="many">%1$s · %2$d فصلًا</item>
+        <item quantity="other">%1$s · %2$d فصل</item>
+    </plurals>
+    <string name="data_chapter_images">صور الفصول</string>
+    <plurals name="data_chapter_images_summary">
+        <item quantity="zero">%1$s · %2$d صورة</item>
+        <item quantity="one">%1$s · %2$d صورة</item>
+        <item quantity="two">%1$s · %2$d صورتان</item>
+        <item quantity="few">%1$s · %2$d صور</item>
+        <item quantity="many">%1$s · %2$d صورةً</item>
+        <item quantity="other">%1$s · %2$d صورة</item>
+    </plurals>
+    <string name="data_caches">ذاكرة التخزين المؤقت</string>
+    <string name="data_cover_cache">ذاكرة تخزين الأغلفة المؤقتة</string>
+    <string name="data_database">قاعدة البيانات</string>
+    <string name="data_installer_files">ملفات التثبيت</string>
+    <string name="data_installer_summary">%1$s · حزم تحديث متبقية للتطبيق والإضافات</string>
+    <string name="data_clear_cover_title">هل تريد مسح ذاكرة تخزين الأغلفة المؤقتة؟</string>
+    <string name="data_clear_cover_message">ستُنزَّل صور الأغلفة مجددًا في المرة التالية التي تُعرض فيها.</string>
+    <string name="data_clear_browse_title">هل تريد مسح بيانات التصفّح؟</string>
+    <string name="data_clear_browse_message">يزيل الروايات المخزّنة مؤقتًا التي لم تحفظها في مكتبتك أو تقرأها. ستُجلب مجددًا من المصدر عند فتحها مرة أخرى. يُحتفظ بسجل القراءة والتنزيلات.</string>
+    <string name="data_clear_installer_title">هل تريد مسح ملفات التثبيت؟</string>
+    <string name="data_clear_installer_message">يحذف ملفات .apk المتبقية من تحديثات التطبيق والإضافات. ستُنزَّل مجددًا في المرة التالية التي تحدّث فيها. لا تمسحها أثناء وجود عملية تثبيت جارية.</string>
+    <string name="data_cover_cache_cleared">تم مسح ذاكرة تخزين الأغلفة المؤقتة</string>
+    <plurals name="data_browse_cleared">
+        <item quantity="zero">تم مسح %1$d رواية من بيانات التصفّح</item>
+        <item quantity="one">تم مسح %1$d رواية من بيانات التصفّح</item>
+        <item quantity="two">تم مسح %1$d روايتين من بيانات التصفّح</item>
+        <item quantity="few">تم مسح %1$d روايات من بيانات التصفّح</item>
+        <item quantity="many">تم مسح %1$d روايةً من بيانات التصفّح</item>
+        <item quantity="other">تم مسح %1$d رواية من بيانات التصفّح</item>
+    </plurals>
+    <plurals name="data_installers_cleared">
+        <item quantity="zero">تم مسح %1$d ملف تثبيت</item>
+        <item quantity="one">تم مسح %1$d ملف تثبيت</item>
+        <item quantity="two">تم مسح %1$d ملفَي تثبيت</item>
+        <item quantity="few">تم مسح %1$d ملفات تثبيت</item>
+        <item quantity="many">تم مسح %1$d ملفًا من ملفات التثبيت</item>
+        <item quantity="other">تم مسح %1$d ملف تثبيت</item>
+    </plurals>
+
+    <!-- Library update settings -->
+    <string name="library_update_scheduled">التحديث المجدول</string>
+    <string name="library_update_scheduled_description">يحدّث مكتبتك في الخلفية ويجلب الفصول الجديدة. لا حاجة إلى فتح التطبيق.</string>
+    <string name="library_update_automatic">التحديث تلقائيًا</string>
+    <string name="library_update_wifi_only">عبر Wi-Fi فقط</string>
+    <string name="library_update_wifi_only_summary">تخطي التحديث المجدول عبر بيانات الجوال</string>
+    <string name="library_update_charging_only">أثناء الشحن فقط</string>
+    <string name="library_update_sync_scope">نطاق المزامنة</string>
+    <string name="library_update_include_epubs">تضمين ملفات EPUB</string>
+    <string name="library_update_include_epubs_summary">تحديث روايات EPUB (المستوردة محليًا ومن مصادر EPUB مثل Z-Library) أثناء تحديثات المكتبة. لا توجد لها فصول جديدة لجلبها، لذا يكون هذا الخيار متوقفًا افتراضيًا.</string>
+    <string name="library_update_performance">الأداء</string>
+    <string name="library_update_concurrency">عدد المزامنات المتزامنة: %1$d</string>
+    <string name="library_update_concurrency_summary">عدد الروايات التي تُحدَّث بالتوازي. القيمة الأعلى أسرع، لكنها قد تؤدي إلى تقييد الطلبات من بعض المصادر.</string>
+    <string name="library_update_now">تحديث المكتبة الآن</string>
+    <string name="library_update_now_summary">تحديث كل الروايات في مكتبتك في الخلفية</string>
+    <string name="library_update_last">آخر تحديث</string>
+
+    <!-- Text-to-speech -->
+    <string name="tts_enable">تفعيل تحويل النص إلى كلام</string>
+    <string name="tts_enable_summary">إظهار عناصر التحكم في القراءة بصوت عالٍ داخل القارئ</string>
+    <string name="tts_speech_engine">محرّك الكلام</string>
+    <string name="tts_on_device">على الجهاز</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">يقرأ بصوت عالٍ باستخدام الأصوات المدمجة في الجهاز. يعمل دون اتصال.</string>
+    <string name="tts_elevenlabs_summary">يبث أصواتًا سحابية طبيعية من ElevenLabs. يتطلب اتصالًا بالشبكة ويُحتسب على حسابك لكل حرف.</string>
+    <string name="tts_elevenlabs_account">حساب ElevenLabs</string>
+    <string name="tts_api_key">مفتاح API</string>
+    <string name="tts_playback">التشغيل</string>
+    <string name="tts_speech_rate">سرعة الكلام</string>
+    <string name="tts_pitch">طبقة الصوت (على الجهاز فقط)</string>
+    <string name="tts_auto_advance">الانتقال تلقائيًا إلى الفصل التالي</string>
+    <string name="tts_auto_advance_summary">متابعة القراءة في الفصل التالي عند انتهاء الفصل الحالي</string>
+    <string name="tts_voices">الأصوات</string>
+    <string name="tts_voices_summary">اختر الصوت الذي يقرأ كل لغة. تُطابَق الروايات حسب لغة محتواها.</string>
+    <string name="tts_custom_voice">تم اختيار صوت مخصص</string>
+    <string name="tts_system_default">الإعداد الافتراضي للنظام</string>
+    <string name="tts_credit_usage">استهلاك الرصيد</string>
+    <string name="tts_refresh_usage">تحديث الاستهلاك</string>
+    <string name="tts_usage_api_key_hint">أدخل مفتاح API أعلاه لمعرفة الأحرف المتبقية لديك.</string>
+    <string name="tts_loading">جارٍ التحميل…</string>
+    <string name="tts_usage_summary">تم استخدام %1$,d / %2$,d حرف</string>
+    <string name="tts_quota_reset">تتجدد الحصة %1$s</string>
+    <string name="tts_voice_title">الصوت</string>
+    <string name="tts_voice_needs_key">أضف مفتاح API لـ ElevenLabs في إعدادات تحويل النص إلى كلام لاختيار صوت سحابي.</string>
+    <string name="tts_elevenlabs_plan_note">الخطة المجانية في ElevenLabs محدودة (نحو 10000 حرف شهريًا)، وكثير من الأصوات — حتى بعض الأصوات الافتراضية — يتطلب خطة مدفوعة. إن لم يعمل صوت ما، فجرّب صوتًا آخر، أو استخدم محرّك «على الجهاز» لقراءة غير محدودة دون اتصال.</string>
+    <string name="tts_system_default_summary">دع المحرّك يختار صوتًا لهذه اللغة</string>
+    <string name="tts_install_voices">تثبيت مزيد من الأصوات…</string>
+    <string name="tts_install_voices_summary">تنزيل بيانات أصوات إضافية لمحرّك الجهاز</string>
+    <string name="tts_stop_preview">إيقاف المعاينة</string>
+    <string name="tts_preview_voice">معاينة الصوت</string>
+    <string name="tts_load_usage_failed">تعذّر تحميل الاستهلاك</string>
+    <string name="tts_load_voices_failed">تعذّر تحميل الأصوات</string>
+
+    <!-- GitHub connection -->
+    <string name="github_account_title">حساب GitHub</string>
+    <string name="github_privacy_note">اربط حساب GitHub لتثبيت الإضافات من مستودعاتك الخاصة. يُخزَّن رمز الوصول على هذا الجهاز فقط ولا يُرسل إلا إلى github.com. يمكنك إلغاؤه في أي وقت من github.com/settings/applications.</string>
+    <string name="github_not_connected">غير متصل.</string>
+    <string name="github_connect">ربط GitHub</string>
+    <string name="github_enter_code">أدخل هذا الرمز على github.com</string>
+    <string name="github_open_device_page">فتح github.com/login/device</string>
+    <string name="github_copy_code">نسخ الرمز</string>
+    <string name="github_waiting">في انتظار إكمالك للخطوات في المتصفح…</string>
+    <string name="github_connected">متصل</string>
+    <string name="github_authorization_failed">فشل التفويض</string>
+    <string name="github_no_client_id">لا يحتوي هذا الإصدار على معرّف عميل OAuth</string>
+    <string name="github_no_client_id_summary">عيّن GITHUB_OAUTH_CLIENT_ID في gradle.properties (أو كمتغير بيئة) ثم أعد البناء.</string>
+
+    <!-- About and updater -->
+    <string name="about_title">حول</string>
+    <string name="about_version">الإصدار</string>
+    <string name="about_version_summary">Grimoire %1$s (البنية %2$d)\nالإيداع %3$s · Extensions API %4$s</string>
+    <string name="about_check_updates">التحقق من وجود تحديثات</string>
+    <string name="about_check_updates_idle">انقر للتحقق من وجود إصدار جديد</string>
+    <string name="about_checking">جارٍ التحقق…</string>
+    <string name="about_latest_version">أنت تستخدم أحدث إصدار</string>
+    <string name="about_up_to_date">محدَّث</string>
+    <string name="about_show_changelog">عرض سجل التغييرات</string>
+    <string name="about_show_changelog_summary">فتح ملاحظات إصدار %1$s</string>
+    <string name="about_updates_section">التحديثات</string>
+    <string name="about_update_popups">نوافذ التحديث التلقائية</string>
+    <string name="about_update_popups_summary">إظهار نافذة عند التشغيل إذا توفّر تحديث</string>
+    <string name="about_changelog_after_update">سجل التغييرات بعد التحديثات</string>
+    <string name="about_changelog_after_update_summary">إظهار ملاحظات الإصدار عند أول تشغيل لإصدار جديد</string>
+    <string name="about_build_section">البنية</string>
+    <string name="about_build_details">تفاصيل البنية</string>
+    <string name="about_build_details_summary">البنية %1$d · الإيداع %2$s · Extensions API %3$s</string>
+    <string name="about_build_copied">تم نسخ معلومات البنية</string>
+    <string name="about_channel_stable">مستقر</string>
+    <string name="about_channel_beta">تجريبي</string>
+    <string name="about_channel_stable_summary">الإصدارات الموسومة فقط. موصى به.</string>
+    <string name="about_channel_beta_summary">بنيات جديدة من main مع كل إيداع. قد تكون غير مستقرة.</string>
+    <string name="update_whats_new">ما الجديد في %1$s</string>
+    <string name="update_got_it">فهمت</string>
+    <string name="update_ready">التحديث جاهز</string>
+    <string name="update_available">يتوفر تحديث</string>
+    <string name="update_unknown_error">خطأ غير معروف</string>
+    <string name="update_no_changelog">لا يتوفر سجل تغييرات للإصدار %1$s.</string>
+    <string name="action_update">تحديث</string>
+    <string name="update_download_complete">اكتمل التنزيل — انقر «تثبيت» لإنهاء التحديث.</string>
+    <string name="update_skip_version">تخطي هذا الإصدار</string>
+    <string name="update_downloading_background">جارٍ التنزيل في الخلفية — يمكنك إغلاق التطبيق.</string>
+    <string name="update_download_progress">%1$s / %2$s ميغابايت · %3$d%%</string>
+    <string name="update_download_size">%1$s ميغابايت</string>
+    <string name="changelog_features">الميزات</string>
+    <string name="changelog_bug_fixes">إصلاحات الأخطاء</string>
+    <string name="changelog_sources">المصادر</string>
+    <string name="changelog_documentation">التوثيق</string>
+    <string name="changelog_other">تغييرات أخرى</string>
+    <string name="changelog_changes">التغييرات</string>
+
+    <!-- Shared language picker -->
+    <string name="language_override_global">تجاوز لغات المحتوى العامة</string>
+    <string name="language_override_on_helper">اختر اللغات التي تريدها لهذا المصدر فقط.</string>
+    <string name="language_override_off_helper">يستخدم هذا المصدر اختيار لغات المحتوى العام. فعّل هذا الخيار لاختيار مزيج مختلف لهذا المصدر وحده.</string>
+    <string name="language_global_all">عام: دون تصفية (تظهر كل اللغات)</string>
+    <plurals name="language_global_selected">
+        <item quantity="zero">عام: %1$d لغة محددة</item>
+        <item quantity="one">عام: %1$d لغة محددة</item>
+        <item quantity="two">عام: %1$d لغتان محددتان</item>
+        <item quantity="few">عام: %1$d لغات محددة</item>
+        <item quantity="many">عام: %1$d لغةً محددة</item>
+        <item quantity="other">عام: %1$d لغة محددة</item>
+    </plurals>
+    <string name="language_saved">تم الحفظ</string>
+    <string name="language_global">عام</string>
+    <string name="language_added_here">مضافة هنا</string>
+    <string name="language_hidden_here">مخفية هنا</string>
+    <string name="tts_voice_quality_very_high">جودة عالية جدًا</string>
+    <string name="tts_voice_quality_high">جودة عالية</string>
+    <string name="tts_voice_quality_normal">جودة عادية</string>
+    <string name="tts_voice_quality_low">جودة منخفضة</string>
+    <string name="tts_voice_online">عبر الإنترنت</string>
+    <string name="tts_voice_not_installed">غير مثبّت</string>
+    <string name="tts_voice_category_default">صوت افتراضي</string>
+    <string name="tts_voice_category_personal">صوتك المستنسخ</string>
+    <string name="tts_voice_category_workspace">صوت مساحة العمل</string>
+    <string name="tts_voice_category_community">مكتبة الأصوات · للخطط المدفوعة فقط</string>
+    <string name="github_error_access_denied">تم رفض التفويض</string>
+    <string name="github_error_expired">انتهت صلاحية الرمز قبل اكتمال التفويض</string>
+    <string name="github_error_cancelled">تم الإلغاء</string>
+    <string name="github_error_network">خطأ في الشبكة: %1$s</string>
+    <string name="github_error_unexpected">خطأ غير متوقع: %1$s</string>
+</resources>

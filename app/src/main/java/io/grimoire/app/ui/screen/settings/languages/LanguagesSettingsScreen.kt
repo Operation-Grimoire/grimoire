@@ -5,6 +5,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.selection.selectable
 import io.grimoire.app.ui.component.PlainTooltipIconButton
@@ -118,7 +120,7 @@ private fun AppLanguageDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.language_picker_title)) },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 AppLocale.supported.forEach { tag ->
                     Row(
                         selected = tag == selectedTag,
@@ -155,8 +157,7 @@ private fun Row(selected: Boolean, label: String, onClick: () -> Unit) {
 @Composable
 private fun languageLabel(tag: String): String = when (tag) {
     AppLocale.SYSTEM -> stringResource(R.string.language_option_system)
-    "zh" -> stringResource(R.string.language_option_chinese_simplified)
-    else -> stringResource(R.string.language_option_english)
+    else -> AppLocale.nativeName(tag) ?: tag
 }
 
 /** Walks the ContextWrapper chain to the hosting Activity so we can recreate it. */

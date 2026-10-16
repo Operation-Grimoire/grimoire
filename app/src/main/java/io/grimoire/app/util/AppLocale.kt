@@ -30,8 +30,38 @@ object AppLocale {
     /** Sentinel tag meaning "follow the system language". */
     const val SYSTEM = ""
 
-    /** UI languages we ship translations for, in menu order. [SYSTEM] first. */
-    val supported: List<String> = listOf(SYSTEM, "en", "zh")
+    /**
+     * UI languages we ship translations for, in menu order, with the name each language uses for
+     * itself. Keep in sync with `res/xml/locales_config.xml` (LocaleCoverageTest checks it).
+     */
+    private val nativeNames: Map<String, String> = linkedMapOf(
+        "en" to "English",
+        // Android's legacy code for Indonesian, matching values-in.
+        "in" to "Bahasa Indonesia",
+        "de" to "Deutsch",
+        "es" to "Español",
+        "fr" to "Français",
+        "it" to "Italiano",
+        "pl" to "Polski",
+        "pt-BR" to "Português (Brasil)",
+        "vi" to "Tiếng Việt",
+        "tr" to "Türkçe",
+        "ru" to "Русский",
+        "uk" to "Українська",
+        "ar" to "العربية",
+        "hi" to "हिन्दी",
+        "th" to "ไทย",
+        "ja" to "日本語",
+        "ko" to "한국어",
+        "zh" to "简体中文",
+        "zh-TW" to "繁體中文",
+    )
+
+    /** [SYSTEM] first, then [nativeNames] order. */
+    val supported: List<String> = listOf(SYSTEM) + nativeNames.keys
+
+    /** The language's own name for a supported tag; null for [SYSTEM] or an unknown tag. */
+    fun nativeName(tag: String): String? = nativeNames[tag]
 
     /** The persisted tag, or [SYSTEM] when the user follows the system language. */
     fun storedTag(context: Context): String {
@@ -75,8 +105,22 @@ object AppLocale {
     private fun systemTag(context: Context): String {
         val locales = systemLocales(context)
         if (locales == null || locales.isEmpty) return SYSTEM
-        val picked = locales[0]
-        return supported.firstOrNull { it != SYSTEM && Locale.forLanguageTag(it).language == picked.language }
+        return matchSupported(locales[0])
+    }
+
+    private fun matchSupported(picked: Locale): String {
+        if (picked.language == "zh") {
+            // An explicit script wins; otherwise the region implies it (zh-HK is Traditional).
+            val traditional = when (picked.script) {
+                "Hant" -> true
+                "Hans" -> false
+                else -> picked.country in setOf("TW", "HK", "MO")
+            }
+            return if (traditional) "zh-TW" else "zh"
+        }
+        val sameLanguage = nativeNames.keys.filter { Locale.forLanguageTag(it).language == picked.language }
+        return sameLanguage.firstOrNull { Locale.forLanguageTag(it).country == picked.country }
+            ?: sameLanguage.firstOrNull()
             ?: picked.toLanguageTag()
     }
 

@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Appearance -->
+    <string name="appearance_theme">थीम</string>
+    <string name="appearance_theme_system">सिस्टम</string>
+    <string name="appearance_theme_light">हल्की</string>
+    <string name="appearance_theme_dark">गहरी</string>
+    <string name="appearance_dynamic_color">डायनैमिक कलर</string>
+    <string name="appearance_dynamic_color_summary">रंगों को अपने वॉलपेपर के अनुसार ढालें</string>
+    <string name="appearance_synopsis_links">सारांश में लिंक</string>
+    <string name="appearance_synopsis_links_summary">उपन्यास के विवरण में वेब लिंक को टैप करने लायक लिंक के रूप में दिखाएँ</string>
+    <string name="appearance_color_palette">रंग पैलेट</string>
+    <string name="appearance_color_palette_summary">पूरे ऐप में इस्तेमाल होने वाला एक्सेंट पैलेट चुनें।</string>
+    <string name="appearance_color_palette_disabled">अपना पैलेट चुनने के लिए डायनैमिक कलर बंद करें।</string>
+    <string name="color_theme_default">डिफ़ॉल्ट</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">सागर</string>
+    <string name="color_theme_sunset">सूर्यास्त</string>
+    <string name="color_theme_forest">जंगल</string>
+    <string name="color_theme_rose">गुलाब</string>
+    <string name="color_theme_midnight">आधी रात</string>
+
+    <!-- Behavior -->
+    <string name="behavior_haptics">हैप्टिक फ़ीडबैक</string>
+    <string name="behavior_haptics_summary">देर तक दबाने, टैब बदलने और चयन करने पर वाइब्रेट करें।</string>
+
+    <!-- Library settings -->
+    <string name="settings_section_display">डिस्प्ले</string>
+    <string name="settings_display_mode">डिस्प्ले</string>
+    <string name="settings_display_grid">ग्रिड</string>
+    <string name="settings_display_list">सूची</string>
+    <string name="settings_columns">कॉलम</string>
+    <string name="settings_section_organization">व्यवस्था</string>
+    <string name="library_settings_show_all">“सभी” टैब दिखाएँ</string>
+    <string name="library_settings_show_all_summary">सभी श्रेणियों को मिलाकर एक टैब दिखाएँ</string>
+    <string name="library_settings_hidden">छिपी श्रेणियाँ</string>
+    <string name="library_settings_hidden_summary">PIN सेट करें और तय करें कि कौन-सी श्रेणियाँ छिपी रहें</string>
+    <string name="library_settings_section_counts">अध्यायों की गिनती</string>
+    <string name="library_settings_locked_totals">कुल में लॉक अध्याय शामिल करें</string>
+    <string name="library_settings_locked_totals_summary">लाइब्रेरी बैज और उपन्यास विवरण पेज पर दिखने वाले कुल और पढ़े गए प्रतिशत में लॉक अध्याय भी गिनें</string>
+    <string name="library_settings_section_badges">कवर बैज</string>
+    <string name="library_settings_read_badge">पढ़ने की प्रगति का बैज दिखाएँ</string>
+    <string name="library_settings_read_badge_summary">लाइब्रेरी कवर पर पढ़े गए अध्यायों की संख्या और प्रतिशत दिखाएँ</string>
+    <string name="library_settings_downloaded_badge">डाउनलोड बैज दिखाएँ</string>
+    <string name="library_settings_downloaded_badge_summary">लाइब्रेरी कवर पर डाउनलोड किए गए अध्यायों की संख्या दिखाएँ</string>
+    <string name="library_settings_locked_badge">लॉक अध्याय बैज दिखाएँ</string>
+    <string name="library_settings_locked_badge_summary">लाइब्रेरी कवर पर लॉक अध्यायों की संख्या के साथ सुनहरा लॉक बैज दिखाएँ</string>
+    <string name="library_settings_rating_badge">रेटिंग बैज दिखाएँ</string>
+    <string name="library_settings_rating_badge_summary">लाइब्रेरी कवर पर अपनी रेटिंग दिखाएँ</string>
+    <string name="library_settings_epub_badge">EPUB बैज दिखाएँ</string>
+    <string name="library_settings_epub_badge_summary">इंपोर्ट किए गए EPUB उपन्यासों के लाइब्रेरी कवर पर बैज लगाएँ</string>
+
+    <!-- Browse settings and content languages -->
+    <string name="browse_settings_nu_shortcuts">NovelUpdates शॉर्टकट</string>
+    <string name="browse_settings_nu_shortcuts_summary">ब्राउज़ में NovelUpdates खोज, रैंकिंग और नवीनतम के लिंक दिखाएँ।</string>
+    <string name="browse_settings_pinned_groups">भाषा समूहों में पिन किए गए दिखाएँ</string>
+    <string name="browse_settings_pinned_groups_summary">पिन किए गए स्रोतों को केवल “पिन किए गए” में ही नहीं, उनकी भाषा के अंतर्गत भी दिखाएँ।</string>
+    <string name="content_languages_title">सामग्री की भाषाएँ</string>
+    <string name="content_languages_helper">यहाँ चुनी गई भाषाएँ हर उस स्रोत पर लागू होती हैं जिसमें कई भाषाएँ हैं, जब तक उस स्रोत की सेटिंग्स में इन्हें ओवरराइड न किया जाए। हर भाषा दिखाने के लिए कुछ भी न चुनें।</string>
+
+    <!-- Reader settings -->
+    <string name="settings_section_appearance">दिखावट</string>
+    <string name="reader_settings_color_theme">रंग थीम</string>
+    <string name="reader_settings_font_size">फ़ॉन्ट साइज़</string>
+    <string name="reader_settings_line_height">पंक्ति की ऊँचाई</string>
+    <string name="reader_settings_paragraph_spacing">पैराग्राफ़ के बीच की दूरी</string>
+    <string name="settings_section_reading">पढ़ाई</string>
+    <string name="reader_settings_auto_mark">अपने-आप पढ़ा हुआ मार्क करें</string>
+    <string name="reader_settings_within_last">अंत से</string>
+    <plurals name="reader_settings_paragraph_count"><item quantity="one">%1$d पैराग्राफ़</item><item quantity="other">%1$d पैराग्राफ़</item></plurals>
+    <string name="reader_settings_rotation">स्क्रीन रोटेशन</string>
+    <string name="reader_settings_hide_status_bar">नोटिफ़िकेशन बार छिपाएँ</string>
+    <string name="reader_settings_hide_status_bar_summary">पढ़ते समय स्क्रीन के ऊपर का स्टेटस बार छिपाएँ</string>
+    <string name="settings_section_privacy">निजता</string>
+    <string name="reader_settings_hide_images">इमेज छिपाएँ</string>
+    <string name="reader_settings_hide_images_summary">टेक्स्ट के बीच की इमेज तब तक छिपाएँ जब तक आप दिखाने के लिए टैप न करें या झलक के लिए दबाकर न रखें</string>
+
+    <!-- NovelUpdates and connections -->
+    <string name="nu_settings_show_section">NovelUpdates सेक्शन दिखाएँ</string>
+    <string name="nu_settings_show_section_summary">उपन्यास के विवरण में अन्य शीर्षकों, रेटिंग और सुझावों के साथ एक NovelUpdates पैनल जोड़ता है।</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">कनेक्ट नहीं है</string>
+    <string name="connections_signing_in">साइन इन हो रहा है…</string>
+    <string name="connections_error">कनेक्शन त्रुटि</string>
+
+    <!-- Shared schedule controls -->
+    <string name="schedule_every">हर</string>
+    <plurals name="schedule_hours"><item quantity="one">%1$d घंटा</item><item quantity="other">%1$d घंटे</item></plurals>
+    <plurals name="schedule_days"><item quantity="one">%1$d दिन</item><item quantity="other">%1$d दिन</item></plurals>
+    <plurals name="schedule_weeks"><item quantity="one">%1$d हफ़्ता</item><item quantity="other">%1$d हफ़्ते</item></plurals>
+    <string name="schedule_unit_hour">घंटा</string>
+    <string name="schedule_unit_day">दिन</string>
+    <string name="schedule_unit_week">हफ़्ता</string>
+    <string name="schedule_time_of_day">दिन का समय</string>
+    <string name="schedule_off">बंद</string>
+    <string name="schedule_runs_every">हर %1$s चलता है</string>
+    <string name="schedule_runs_around">लगभग %1$s पर चलता है</string>
+    <string name="schedule_run_around">लगभग %1$s पर चलाएँ</string>
+    <string name="schedule_runs_around_when_scheduled">शेड्यूल होने पर लगभग %1$s पर चलता है</string>
+    <string name="schedule_never">कभी नहीं</string>
+    <string name="schedule_completed_at">%1$s — पूरा हुआ</string>
+    <string name="schedule_failed_at">%1$s — विफल</string>
+
+    <!-- Hidden categories -->
+    <string name="hidden_title">छिपी श्रेणियाँ</string>
+    <string name="hidden_setup_pin">PIN सेट करें</string>
+    <string name="hidden_setup_pin_summary">श्रेणियाँ छिपाने और बाद में उन्हें अनलॉक करने के लिए PIN ज़रूरी है।</string>
+    <string name="hidden_setup_pin_action">PIN सेट करें</string>
+    <string name="hidden_locked">लॉक है</string>
+    <string name="hidden_locked_summary">छिपी श्रेणियाँ प्रबंधित करने के लिए अनलॉक करें।</string>
+    <string name="hidden_change_pin">PIN बदलें</string>
+    <string name="hidden_change">बदलें</string>
+    <string name="hidden_biometric">बायोमेट्रिक अनलॉक इस्तेमाल करें</string>
+    <string name="hidden_biometric_available">PIN की जगह फ़िंगरप्रिंट या फ़ेस अनलॉक</string>
+    <string name="hidden_biometric_unavailable">उपलब्ध नहीं — कोई बायोमेट्रिक दर्ज नहीं है</string>
+    <string name="hidden_show_in_all">“सभी” टैब में छिपे हुए दिखाएँ</string>
+    <string name="hidden_show_in_all_summary">अनलॉक होने पर, छिपे हुए उपन्यास भी “सभी” टैब में दिखाएँ</string>
+    <string name="hidden_categories_section">श्रेणियाँ</string>
+    <string name="hidden_default_category">डिफ़ॉल्ट — छिपाई नहीं जा सकती</string>
+    <string name="hidden_remove_pin_action">PIN हटाएँ और सब दिखाएँ</string>
+    <string name="hidden_remove_pin_title">PIN हटाएँ?</string>
+    <string name="hidden_remove_pin_message">सभी छिपी श्रेणियाँ ऐप इस्तेमाल करने वाले हर व्यक्ति को दिखने लगेंगी।</string>
+    <string name="hidden_pin_label">PIN (4–8 अंक)</string>
+    <string name="hidden_confirm_pin">PIN की पुष्टि करें</string>
+    <string name="hidden_pin_mismatch">PIN मेल नहीं खाते</string>
+
+    <!-- Backup and restore -->
+    <string name="backup_section_backup">बैकअप</string>
+    <string name="backup_description">बैकअप इस डिवाइस पर आपके चुने गए फ़ोल्डर में gzip की गई JSON फ़ाइल के रूप में सेव होते हैं। ऐसा फ़ोल्डर चुनें जिसे आप बाद में ढूँढ सकें (जैसे Downloads या Documents)।</string>
+    <string name="backup_folder">बैकअप फ़ोल्डर</string>
+    <string name="backup_folder_not_selected">चुना नहीं गया</string>
+    <string name="backup_no_folder_selected">कोई बैकअप फ़ोल्डर नहीं चुना गया</string>
+    <plurals name="backup_novels_backed_up"><item quantity="one">%1$d उपन्यास का बैकअप लिया गया</item><item quantity="other">%1$d उपन्यासों का बैकअप लिया गया</item></plurals>
+    <string name="backup_now">अभी बैकअप लें</string>
+    <string name="backup_restore_ellipsis">रीस्टोर करें…</string>
+    <string name="backup_scheduled">शेड्यूल किया गया बैकअप</string>
+    <string name="backup_scheduled_description">इस डिवाइस पर बैकग्राउंड में चलता है। ऐप खुला होना ज़रूरी नहीं है।</string>
+    <string name="backup_automatic">अपने-आप बैकअप लें</string>
+    <string name="backup_wifi_only">केवल Wi-Fi पर</string>
+    <string name="backup_wifi_only_summary">मोबाइल डेटा पर ऑटो बैकअप न लें</string>
+    <string name="backup_charging_only">केवल चार्जिंग के दौरान</string>
+    <string name="backup_run_scheduled">शेड्यूल किया गया बैकअप अभी चलाएँ</string>
+    <string name="backup_run_scheduled_summary">चुने गए फ़ोल्डर और शेड्यूल की शर्तों का इस्तेमाल करता है</string>
+    <string name="backup_last_automatic">आख़िरी ऑटो बैकअप</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">सफल</string>
+    <string name="backup_restore_title">बैकअप रीस्टोर करें?</string>
+    <string name="backup_restore_message">इससे बैकअप आपकी मौजूदा लाइब्रेरी में मिला दिया जाएगा। मौजूदा एंट्री बनी रहेंगी; नई एंट्री जोड़ी जाएँगी और पढ़ने की प्रगति मिला दी जाएगी।</string>
+    <string name="backup_created">बैकअप बनाया गया: %1$s</string>
+    <plurals name="backup_saved"><item quantity="one">%1$s सेव किया गया (%2$d उपन्यास)</item><item quantity="other">%1$s सेव किया गया (%2$d उपन्यास)</item></plurals>
+    <plurals name="backup_restored"><item quantity="one">%1$d उपन्यास, %2$d अध्याय रीस्टोर किए गए</item><item quantity="other">%1$d उपन्यास, %2$d अध्याय रीस्टोर किए गए</item></plurals>
+    <string name="backup_queued">बैकअप कतार में है</string>
+    <string name="backup_folder_inaccessible">बैकअप फ़ोल्डर तक पहुँच नहीं है</string>
+    <string name="backup_folder_not_writable">बैकअप फ़ोल्डर में लिखा नहीं जा सकता</string>
+    <string name="backup_create_file_failed">बैकअप फ़ाइल नहीं बन सकी</string>
+    <string name="backup_open_output_failed">आउटपुट स्ट्रीम नहीं खुल सकी</string>
+    <string name="backup_read_file_failed">बैकअप फ़ाइल पढ़ी नहीं जा सकी</string>
+    <string name="backup_failed">बैकअप विफल</string>
+    <string name="backup_newer_version">बैकअप फ़ाइल ऐप के नए वर्शन (v%1$d) की है</string>
+    <string name="restore_failed">रीस्टोर विफल</string>
+
+    <!-- Data management -->
+    <string name="data_storage">स्टोरेज</string>
+    <string name="data_storage_summary">Grimoire %1$s इस्तेमाल कर रहा है · %3$s में से %2$s खाली</string>
+    <string name="data_your_data">आपका डेटा</string>
+    <plurals name="data_library_novels"><item quantity="one">%1$d उपन्यास · %2$d अध्याय</item><item quantity="other">%1$d उपन्यास · %2$d अध्याय</item></plurals>
+    <string name="data_browse">ब्राउज़ डेटा</string>
+    <plurals name="data_browse_count"><item quantity="one">%1$d कैश किया गया उपन्यास जिसे आपने न सेव किया न पढ़ा</item><item quantity="other">%1$d कैश किए गए उपन्यास जिन्हें आपने न सेव किया न पढ़ा</item></plurals>
+    <string name="data_downloads">डाउनलोड</string>
+    <string name="data_chapter_text">अध्यायों का टेक्स्ट</string>
+    <plurals name="data_chapter_text_summary"><item quantity="one">%1$s · %2$d अध्याय</item><item quantity="other">%1$s · %2$d अध्याय</item></plurals>
+    <string name="data_chapter_images">अध्यायों की इमेज</string>
+    <plurals name="data_chapter_images_summary"><item quantity="one">%1$s · %2$d इमेज</item><item quantity="other">%1$s · %2$d इमेज</item></plurals>
+    <string name="data_caches">कैश</string>
+    <string name="data_cover_cache">कवर कैश</string>
+    <string name="data_database">डेटाबेस</string>
+    <string name="data_installer_files">इंस्टॉलर फ़ाइलें</string>
+    <string name="data_installer_summary">%1$s · ऐप और एक्सटेंशन अपडेट के बचे हुए पैकेज</string>
+    <string name="data_clear_cover_title">कवर कैश साफ़ करें?</string>
+    <string name="data_clear_cover_message">कवर इमेज अगली बार दिखने पर फिर से डाउनलोड होंगी।</string>
+    <string name="data_clear_browse_title">ब्राउज़ डेटा साफ़ करें?</string>
+    <string name="data_clear_browse_message">ऐसे कैश किए गए उपन्यास हटाता है जिन्हें आपने लाइब्रेरी में सेव नहीं किया या पढ़ा नहीं। दोबारा खोलने पर वे स्रोत से फिर से लाए जाएँगे। पढ़ने का इतिहास और डाउनलोड बने रहेंगे।</string>
+    <string name="data_clear_installer_title">इंस्टॉलर फ़ाइलें साफ़ करें?</string>
+    <string name="data_clear_installer_message">ऐप और एक्सटेंशन अपडेट की बची हुई .apk फ़ाइलें मिटाता है। अगली बार अपडेट करने पर वे फिर से डाउनलोड होंगी। कोई इंस्टॉल चल रहा हो तो साफ़ न करें।</string>
+    <string name="data_cover_cache_cleared">कवर कैश साफ़ हो गया</string>
+    <plurals name="data_browse_cleared"><item quantity="one">%1$d ब्राउज़ उपन्यास साफ़ किया गया</item><item quantity="other">%1$d ब्राउज़ उपन्यास साफ़ किए गए</item></plurals>
+    <plurals name="data_installers_cleared"><item quantity="one">%1$d इंस्टॉलर फ़ाइल साफ़ की गई</item><item quantity="other">%1$d इंस्टॉलर फ़ाइलें साफ़ की गईं</item></plurals>
+
+    <!-- Library update settings -->
+    <string name="library_update_scheduled">शेड्यूल किया गया अपडेट</string>
+    <string name="library_update_scheduled_description">बैकग्राउंड में आपकी लाइब्रेरी रीफ़्रेश करता है और नए अध्याय लाता है। ऐप खुला होना ज़रूरी नहीं है।</string>
+    <string name="library_update_automatic">अपने-आप अपडेट करें</string>
+    <string name="library_update_wifi_only">केवल Wi-Fi पर</string>
+    <string name="library_update_wifi_only_summary">मोबाइल डेटा पर शेड्यूल किया गया अपडेट न चलाएँ</string>
+    <string name="library_update_charging_only">केवल चार्जिंग के दौरान</string>
+    <string name="library_update_sync_scope">सिंक का दायरा</string>
+    <string name="library_update_include_epubs">EPUB शामिल करें</string>
+    <string name="library_update_include_epubs_summary">लाइब्रेरी अपडेट के दौरान EPUB उपन्यास (लोकल इंपोर्ट और Z-Library जैसे EPUB स्रोत) भी रीफ़्रेश करें। इनमें लाने के लिए नए अध्याय नहीं होते, इसलिए यह डिफ़ॉल्ट रूप से बंद है।</string>
+    <string name="library_update_performance">परफ़ॉर्मेंस</string>
+    <string name="library_update_concurrency">एक साथ सिंक: %1$d</string>
+    <string name="library_update_concurrency_summary">एक साथ कितने उपन्यास रीफ़्रेश हों। ज़्यादा संख्या तेज़ है, लेकिन कुछ स्रोतों पर रेट लिमिट लग सकती है।</string>
+    <string name="library_update_now">लाइब्रेरी अभी अपडेट करें</string>
+    <string name="library_update_now_summary">बैकग्राउंड में आपकी लाइब्रेरी का हर उपन्यास रीफ़्रेश करें</string>
+    <string name="library_update_last">आख़िरी अपडेट</string>
+
+    <!-- Text-to-speech -->
+    <string name="tts_enable">टेक्स्ट-टू-स्पीच चालू करें</string>
+    <string name="tts_enable_summary">रीडर में पढ़कर सुनाने के कंट्रोल दिखाएँ</string>
+    <string name="tts_speech_engine">स्पीच इंजन</string>
+    <string name="tts_on_device">डिवाइस पर</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">डिवाइस की बिल्ट-इन आवाज़ों से पढ़कर सुनाता है। ऑफ़लाइन काम करता है।</string>
+    <string name="tts_elevenlabs_summary">ElevenLabs से स्वाभाविक क्लाउड आवाज़ें स्ट्रीम करता है। नेटवर्क कनेक्शन चाहिए और आपके खाते पर प्रति कैरेक्टर शुल्क लगता है।</string>
+    <string name="tts_elevenlabs_account">ElevenLabs खाता</string>
+    <string name="tts_api_key">API कुंजी</string>
+    <string name="tts_playback">प्लेबैक</string>
+    <string name="tts_speech_rate">बोलने की गति</string>
+    <string name="tts_pitch">पिच (केवल डिवाइस पर)</string>
+    <string name="tts_auto_advance">अगले अध्याय पर अपने-आप जाएँ</string>
+    <string name="tts_auto_advance_summary">एक अध्याय ख़त्म होने पर अगला अध्याय पढ़ते रहें</string>
+    <string name="tts_voices">आवाज़ें</string>
+    <string name="tts_voices_summary">चुनें कि हर भाषा कौन-सी आवाज़ पढ़े। उपन्यासों का मिलान उनकी सामग्री की भाषा से होता है।</string>
+    <string name="tts_custom_voice">कस्टम आवाज़ चुनी गई</string>
+    <string name="tts_system_default">सिस्टम डिफ़ॉल्ट</string>
+    <string name="tts_credit_usage">क्रेडिट उपयोग</string>
+    <string name="tts_refresh_usage">उपयोग रीफ़्रेश करें</string>
+    <string name="tts_usage_api_key_hint">बचे हुए कैरेक्टर देखने के लिए ऊपर API कुंजी डालें।</string>
+    <string name="tts_loading">लोड हो रहा है…</string>
+    <string name="tts_usage_summary">%1$,d / %2$,d कैरेक्टर इस्तेमाल हुए</string>
+    <string name="tts_quota_reset">कोटा रीसेट: %1$s</string>
+    <string name="tts_voice_title">आवाज़</string>
+    <string name="tts_voice_needs_key">क्लाउड आवाज़ चुनने के लिए टेक्स्ट-टू-स्पीच सेटिंग्स में ElevenLabs API कुंजी जोड़ें।</string>
+    <string name="tts_elevenlabs_plan_note">ElevenLabs का फ़्री प्लान सीमित है (~10,000 कैरेक्टर/महीना) और कई आवाज़ों — कुछ डिफ़ॉल्ट आवाज़ों के लिए भी — पेड प्लान चाहिए। अगर कोई आवाज़ न चले, तो दूसरी आज़माएँ, या असीमित ऑफ़लाइन पढ़ने के लिए डिवाइस वाला इंजन इस्तेमाल करें।</string>
+    <string name="tts_system_default_summary">इस भाषा के लिए आवाज़ इंजन को चुनने दें</string>
+    <string name="tts_install_voices">और आवाज़ें इंस्टॉल करें…</string>
+    <string name="tts_install_voices_summary">डिवाइस इंजन के लिए अतिरिक्त आवाज़ डेटा डाउनलोड करें</string>
+    <string name="tts_stop_preview">प्रीव्यू बंद करें</string>
+    <string name="tts_preview_voice">आवाज़ का प्रीव्यू सुनें</string>
+    <string name="tts_load_usage_failed">उपयोग लोड नहीं हो सका</string>
+    <string name="tts_load_voices_failed">आवाज़ें लोड नहीं हो सकीं</string>
+
+    <!-- GitHub connection -->
+    <string name="github_account_title">GitHub खाता</string>
+    <string name="github_privacy_note">अपनी प्राइवेट रिपॉज़िटरी से एक्सटेंशन इंस्टॉल करने के लिए GitHub खाता कनेक्ट करें। आपका एक्सेस टोकन केवल इसी डिवाइस पर रखा जाता है और केवल github.com को भेजा जाता है। इसे कभी भी github.com/settings/applications पर रद्द करें।</string>
+    <string name="github_not_connected">कनेक्ट नहीं है।</string>
+    <string name="github_connect">GitHub कनेक्ट करें</string>
+    <string name="github_enter_code">यह कोड github.com पर डालें</string>
+    <string name="github_open_device_page">github.com/login/device खोलें</string>
+    <string name="github_copy_code">कोड कॉपी करें</string>
+    <string name="github_waiting">ब्राउज़र में आपके पूरा करने का इंतज़ार है…</string>
+    <string name="github_connected">कनेक्ट है</string>
+    <string name="github_authorization_failed">ऑथराइज़ेशन विफल</string>
+    <string name="github_no_client_id">इस बिल्ड में OAuth क्लाइंट ID नहीं है</string>
+    <string name="github_no_client_id_summary">gradle.properties में (या एनवायरनमेंट वेरिएबल के रूप में) GITHUB_OAUTH_CLIENT_ID सेट करें और फिर से बिल्ड करें।</string>
+
+    <!-- About and updater -->
+    <string name="about_title">जानकारी</string>
+    <string name="about_version">वर्शन</string>
+    <string name="about_version_summary">Grimoire %1$s (बिल्ड %2$d)\nकमिट %3$s · Extensions API %4$s</string>
+    <string name="about_check_updates">अपडेट जाँचें</string>
+    <string name="about_check_updates_idle">नया वर्शन जाँचने के लिए टैप करें</string>
+    <string name="about_checking">जाँच हो रही है…</string>
+    <string name="about_latest_version">आप नवीनतम वर्शन पर हैं</string>
+    <string name="about_up_to_date">अप टू डेट</string>
+    <string name="about_show_changelog">चेंजलॉग दिखाएँ</string>
+    <string name="about_show_changelog_summary">%1$s के रिलीज़ नोट्स खोलें</string>
+    <string name="about_updates_section">अपडेट</string>
+    <string name="about_update_popups">अपडेट के ऑटो पॉपअप</string>
+    <string name="about_update_popups_summary">अपडेट उपलब्ध होने पर ऐप खोलते समय डायलॉग दिखाएँ</string>
+    <string name="about_changelog_after_update">अपडेट के बाद चेंजलॉग</string>
+    <string name="about_changelog_after_update_summary">नया वर्शन पहली बार खोलने पर रिलीज़ नोट्स दिखाएँ</string>
+    <string name="about_build_section">बिल्ड</string>
+    <string name="about_build_details">बिल्ड विवरण</string>
+    <string name="about_build_details_summary">बिल्ड %1$d · कमिट %2$s · Extensions API %3$s</string>
+    <string name="about_build_copied">बिल्ड जानकारी कॉपी हो गई</string>
+    <string name="about_channel_stable">स्टेबल</string>
+    <string name="about_channel_beta">बीटा</string>
+    <string name="about_channel_stable_summary">केवल टैग की गई रिलीज़। सुझाया गया।</string>
+    <string name="about_channel_beta_summary">main से हर कमिट पर ताज़ा बिल्ड। अस्थिर हो सकते हैं।</string>
+    <string name="update_whats_new">%1$s में नया क्या है</string>
+    <string name="update_got_it">समझ गया</string>
+    <string name="update_ready">अपडेट तैयार है</string>
+    <string name="update_available">अपडेट उपलब्ध है</string>
+    <string name="update_unknown_error">अज्ञात त्रुटि</string>
+    <string name="update_no_changelog">%1$s के लिए कोई चेंजलॉग उपलब्ध नहीं है।</string>
+    <string name="action_update">अपडेट करें</string>
+    <string name="update_download_complete">डाउनलोड पूरा हुआ — अपडेट पूरा करने के लिए इंस्टॉल करें पर टैप करें।</string>
+    <string name="update_skip_version">यह वर्शन छोड़ें</string>
+    <string name="update_downloading_background">बैकग्राउंड में डाउनलोड हो रहा है — आप ऐप बंद कर सकते हैं।</string>
+    <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
+    <string name="update_download_size">%1$s MB</string>
+    <string name="changelog_features">सुविधाएँ</string>
+    <string name="changelog_bug_fixes">बग फ़िक्स</string>
+    <string name="changelog_sources">स्रोत</string>
+    <string name="changelog_documentation">दस्तावेज़</string>
+    <string name="changelog_other">अन्य बदलाव</string>
+    <string name="changelog_changes">बदलाव</string>
+
+    <!-- Shared language picker -->
+    <string name="language_override_global">ग्लोबल सामग्री भाषाओं को ओवरराइड करें</string>
+    <string name="language_override_on_helper">केवल इस स्रोत के लिए अपनी भाषाएँ चुनें।</string>
+    <string name="language_override_off_helper">यह स्रोत ग्लोबल सामग्री-भाषा चयन इस्तेमाल करता है। केवल इस स्रोत के लिए अलग भाषाएँ चुनने के लिए इसे चालू करें।</string>
+    <string name="language_global_all">ग्लोबल: कोई फ़िल्टर नहीं (सभी भाषाएँ दिखती हैं)</string>
+    <plurals name="language_global_selected"><item quantity="one">ग्लोबल: %1$d भाषा चुनी गई</item><item quantity="other">ग्लोबल: %1$d भाषाएँ चुनी गईं</item></plurals>
+    <string name="language_saved">सेव हो गया</string>
+    <string name="language_global">ग्लोबल</string>
+    <string name="language_added_here">यहाँ जोड़ी गई</string>
+    <string name="language_hidden_here">यहाँ छिपाई गई</string>
+    <string name="tts_voice_quality_very_high">बहुत उच्च गुणवत्ता</string>
+    <string name="tts_voice_quality_high">उच्च गुणवत्ता</string>
+    <string name="tts_voice_quality_normal">सामान्य गुणवत्ता</string>
+    <string name="tts_voice_quality_low">कम गुणवत्ता</string>
+    <string name="tts_voice_online">ऑनलाइन</string>
+    <string name="tts_voice_not_installed">इंस्टॉल नहीं है</string>
+    <string name="tts_voice_category_default">डिफ़ॉल्ट आवाज़</string>
+    <string name="tts_voice_category_personal">आपकी क्लोन की गई आवाज़</string>
+    <string name="tts_voice_category_workspace">वर्कस्पेस आवाज़</string>
+    <string name="tts_voice_category_community">Voice Library · केवल पेड प्लान</string>
+    <string name="github_error_access_denied">ऑथराइज़ेशन अस्वीकार कर दिया गया</string>
+    <string name="github_error_expired">ऑथराइज़ेशन पूरा होने से पहले कोड की समय-सीमा ख़त्म हो गई</string>
+    <string name="github_error_cancelled">रद्द किया गया</string>
+    <string name="github_error_network">नेटवर्क त्रुटि: %1$s</string>
+    <string name="github_error_unexpected">अनपेक्षित त्रुटि: %1$s</string>
+</resources>

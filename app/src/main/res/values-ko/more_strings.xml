@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">오늘</string>
+    <string name="common_yesterday">어제</string>
+    <string name="action_pause">일시정지</string>
+    <string name="action_resume">재개</string>
+    <string name="action_expand">펼치기</string>
+    <string name="action_collapse">접기</string>
+    <string name="action_clear_log">기록 지우기</string>
+    <string name="action_set">설정</string>
+    <string name="action_choose">선택</string>
+    <string name="action_restore">복원</string>
+    <string name="action_disconnect">연결 해제</string>
+    <string name="action_dismiss">닫기</string>
+    <string name="action_try_again">다시 시도</string>
+    <string name="action_skip">건너뛰기</string>
+    <string name="action_next">다음</string>
+    <string name="status_error">오류</string>
+    <string name="status_warning">경고</string>
+    <string name="status_completed">완료됨</string>
+    <string name="status_queued">대기 중</string>
+    <string name="status_downloaded">다운로드됨</string>
+    <string name="chapter_cancel_download">다운로드 취소</string>
+    <string name="chapter_downloaded_refresh_queued">다운로드됨 · 새로고침 대기 중</string>
+    <string name="chapter_cancel_refresh">새로고침 취소</string>
+    <string name="chapter_downloaded_refreshing">다운로드됨 · 새로고침 중</string>
+    <string name="chapter_downloaded_refresh_failed">다운로드됨 · 새로고침 실패</string>
+
+    <!-- More -->
+    <string name="more_title">더보기</string>
+    <string name="more_incognito">시크릿 모드</string>
+    <string name="more_incognito_enabled">이번 세션에서는 기록이 남지 않아요</string>
+    <string name="more_incognito_disabled">읽기 및 탐색 기록 일시정지</string>
+    <string name="incognito_banner">시크릿 모드 · 기록 일시정지됨</string>
+    <string name="more_updates">업데이트</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="other">구독한 소설의 새 챕터 %1$d개</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="other">서재 전체에 새 챕터 %1$d개</item>
+    </plurals>
+    <string name="more_no_new_chapters">새 챕터 없음</string>
+    <string name="more_history">기록</string>
+    <string name="more_history_summary">최근 읽은 챕터와 둘러본 소설</string>
+    <string name="more_downloads">다운로드</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="other">%1$d개 진행 중</item>
+    </plurals>
+    <string name="more_downloads_summary">다운로드한 챕터와 대기열</string>
+    <string name="more_tasks">작업</string>
+    <string name="more_tasks_summary">실행 중인 다운로드와 동기화, 그리고 그 기록</string>
+    <string name="more_update_warnings">업데이트 경고</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="other">확인이 필요한 소설 %1$d편</item>
+    </plurals>
+    <string name="more_no_refresh_problems">새로고침 문제 없음</string>
+    <string name="more_statistics">통계</string>
+    <string name="more_statistics_summary">나의 읽기 활동</string>
+    <string name="more_settings_summary">화면, 서재, 뷰어, 백업</string>
+    <string name="more_tours">둘러보기</string>
+    <string name="more_tours_summary">앱 안내 둘러보기 다시 보기</string>
+    <string name="more_about">정보</string>
+    <string name="more_about_summary">버전, 업데이트 채널, 라이선스</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">시작</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">시작 둘러보기</string>
+    <string name="tour_welcome_description">핵심 기능: 서재, 탐색, 소스, 설정</string>
+    <string name="tour_step_welcome_title">Grimoire에 오신 것을 환영해요</string>
+    <string name="tour_step_welcome_body">핵심 기능을 빠르게 둘러볼게요. 20초 정도 걸려요.</string>
+    <string name="tour_step_library_title">내 서재</string>
+    <string name="tour_step_library_body">추가한 소설은 여기에 카테고리별로 정리돼요.</string>
+    <string name="tour_step_browse_title">탐색</string>
+    <string name="tour_step_browse_body">탐색을 탭하면 여러 소스에서 소설을 찾을 수 있어요.</string>
+    <string name="tour_step_extensions_title">소스 및 확장 기능</string>
+    <string name="tour_step_extensions_body">소스는 여기서 설치해요. 열어서 어떤 소스가 있는지 확인해 보세요.</string>
+    <string name="tour_open_extensions">확장 기능 열기</string>
+    <string name="tour_step_repositories_title">저장소</string>
+    <string name="tour_step_repositories_body">소스는 저장소에서 제공돼요. 공식 저장소는 이미 추가되어 있어요. 여기를 탭해서 저장소를 관리하거나 직접 추가하세요.</string>
+    <string name="tour_step_more_title">그 밖의 모든 것</string>
+    <string name="tour_step_more_body">다운로드, 통계, 백업, 설정은 더보기에 있어요.</string>
+    <string name="tour_step_done_title">준비가 끝났어요</string>
+    <string name="tour_step_done_body">둘러보기는 더보기 → 둘러보기에서 언제든 다시 볼 수 있어요.</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">진단</string>
+    <string name="privacy_diagnostics_note">진단 정보는 익명이며 개인 데이터, 소설 제목, 링크를 절대 포함하지 않아요. 직접 켜기 전까지는 모두 꺼져 있어요.</string>
+    <string name="privacy_crash_reports">오류 보고서 보내기</string>
+    <string name="privacy_crash_reports_summary">앱이 비정상 종료되면 익명 스택 트레이스 전송</string>
+    <string name="privacy_usage_analytics">익명 사용 통계 보내기</string>
+    <string name="privacy_usage_analytics_summary">어떤 기능이 쓰이는지 파악해 개발 방향을 정하는 데 활용</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">챕터 다운로드 중</string>
+    <string name="download_notification_starting">시작하는 중…</string>
+    <string name="download_notification_working">다운로드 중…</string>
+    <string name="download_notification_queued">+%1$d개 대기 중</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d개 대기 중)</string>
+    <string name="download_notification_complete_title">다운로드 완료</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="other">챕터 %1$d개 다운로드됨</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">업데이트 다운로드 중</string>
+    <string name="app_update_notification_downloading_version">업데이트 %1$s 다운로드 중</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">시작하는 중…</string>
+    <string name="app_update_notification_ready">업데이트 설치 준비 완료</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s 준비 완료</string>
+    <string name="app_update_notification_tap_to_install">탭하여 설치</string>
+    <string name="app_update_notification_failed">업데이트 다운로드 실패</string>
+    <string name="error_verification_failed">다운로드 검증에 실패했어요. 다시 시도하거나 다른 네트워크로 바꿔 보세요</string>
+    <string name="app_update_download_failed">다운로드 실패</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">다운로드</string>
+    <string name="downloads_settings">다운로드 설정</string>
+    <string name="downloads_no_filter_matches">선택한 필터와 일치하는 다운로드가 없어요.</string>
+    <string name="downloads_parallel">동시 다운로드</string>
+    <string name="downloads_parallel_summary">한 번에 다운로드할 챕터 수</string>
+    <string name="downloads_move_to_top">맨 위로 이동</string>
+    <string name="downloads_cancel_failed">실패한 항목 취소</string>
+    <string name="downloads_redownload">다시 다운로드</string>
+    <string name="downloads_delete_download">다운로드 삭제</string>
+    <string name="downloads_delete_options">다운로드 옵션</string>
+    <string name="downloads_empty">다운로드 없음</string>
+    <string name="downloads_filter_downloading">다운로드 중</string>
+    <string name="downloads_filter_queued">대기 중</string>
+    <string name="downloads_filter_done">완료</string>
+    <string name="downloads_filter_failed">실패</string>
+    <plurals name="downloads_count_downloaded"><item quantity="other">%1$d개 다운로드됨</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="other">%1$d개 대기 중</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="other">%1$d개 다운로드 중</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="other">%1$d개 실패</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">통계</string>
+    <string name="statistics_reading">읽기</string>
+    <string name="statistics_chapters_read">읽은 챕터</string>
+    <string name="statistics_words_read">읽은 단어</string>
+    <string name="statistics_novels_completed">다 읽은 소설</string>
+    <string name="statistics_novels_started">읽기 시작한 소설</string>
+    <string name="statistics_average_words">챕터당 평균 단어 수</string>
+    <string name="statistics_last_read">마지막으로 읽음</string>
+    <string name="statistics_library">서재</string>
+    <string name="statistics_library_novels">서재의 소설</string>
+    <string name="statistics_library_chapters">서재의 챕터</string>
+    <string name="statistics_library_unread">서재의 안 읽은 챕터</string>
+    <string name="statistics_downloaded">다운로드됨</string>
+    <string name="statistics_empty_hint">챕터를 읽으면 통계가 기록되기 시작해요.</string>
+    <string name="statistics_counting_hint">통계는 챕터마다 한 번만 집계해요. 안 읽음으로 표시해도 줄어들지 않아요.</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">작업</string>
+    <string name="tasks_empty">아직 작업이 없어요.\n다운로드와 서재 동기화가 실행되는 동안 여기에 표시되고,\n결과는 아래에 남아요.</string>
+    <string name="tasks_running">실행 중</string>
+    <string name="tasks_history">기록</string>
+    <string name="tasks_clear_title">작업 기록을 지울까요?</string>
+    <string name="tasks_clear_message">완료된 서재 동기화와 다운로드 기록이 삭제돼요. 실행 중인 작업에는 영향이 없어요.</string>
+    <string name="tasks_cancel_named">%1$s 취소</string>
+    <string name="tasks_finished_with_errors">오류와 함께 완료됨</string>
+    <string name="tasks_updating_library">서재 업데이트 중</string>
+    <string name="tasks_starting">시작하는 중…</string>
+    <plurals name="tasks_novels_progress"><item quantity="other">소설 %1$d / %2$d편</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">챕터 다운로드 중</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="other">챕터 %1$d개 남음</item></plurals>
+    <string name="tasks_downloads">다운로드</string>
+    <string name="tasks_library_sync">서재 동기화</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="other">챕터 %1$d개 다운로드됨</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="other">%1$d개 실패</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="other">소설 %1$d편 확인함</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="other">새 챕터 %1$d개</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="other">경고 %1$d개</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="other">오류 %1$d개</item></plurals>
+    <string name="tasks_sync_failed">서재 동기화 실패 · %1$s</string>
+    <string name="library_update_downloading_new">새 챕터 다운로드 중</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d개 대기 중</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="other">새 잠긴 챕터 %1$d개</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · %2$d개 잠김</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">업데이트</string>
+    <string name="updates_open_novel">소설 열기</string>
+    <string name="updates_delete_from_log">기록에서 삭제</string>
+    <string name="updates_empty">아직 업데이트가 없어요.\n서재 새로고침으로 찾은 새 챕터가 여기에 표시돼요.</string>
+    <string name="updates_tab_subscribed">구독</string>
+    <string name="updates_tab_all">전체</string>
+    <string name="updates_subscribed_empty">구독한 소설의 업데이트가 아직 없어요.</string>
+    <string name="updates_clear_title">업데이트 기록을 지울까요?</string>
+    <string name="updates_clear_message">업데이트 기록의 모든 항목이 영구적으로 삭제돼요. 서재와 챕터에는 영향이 없어요.</string>
+    <plurals name="updates_count_new"><item quantity="other">%1$d개 새로 나옴</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="other">%1$d개 잠김</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="other">%1$d개 다운로드됨</item></plurals>
+    <string name="updates_all_downloaded">모두 다운로드됨</string>
+    <string name="updates_unlocked">잠금 해제됨</string>
+    <plurals name="updates_count_unlocked"><item quantity="other">%1$d개 잠금 해제됨</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">기록</string>
+    <string name="history_reading">읽기</string>
+    <string name="history_browsing">탐색</string>
+    <string name="history_clear_reading">읽기 기록 지우기</string>
+    <string name="history_clear_browsing">탐색 기록 지우기</string>
+    <string name="history_reading_empty">아직 읽기 기록이 없어요.\n뷰어에서 연 챕터가 여기에 표시돼요.</string>
+    <string name="history_browsing_empty">아직 탐색 기록이 없어요.\n탐색에서 열어 본 소설(서재에 추가하지 않은 소설)이 여기에 표시돼요.</string>
+    <string name="history_clear_reading_title">읽기 기록을 지울까요?</string>
+    <string name="history_clear_browsing_title">탐색 기록을 지울까요?</string>
+    <string name="history_clear_reading_message">읽기 기록의 모든 항목이 영구적으로 삭제돼요. 서재와 챕터에는 영향이 없어요.</string>
+    <string name="history_clear_browsing_message">탐색 기록의 모든 항목이 영구적으로 삭제돼요. 서재에는 영향이 없어요.</string>
+    <plurals name="history_chapter_count"><item quantity="other">챕터 %1$d개</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">업데이트 경고</string>
+    <string name="update_issues_empty">문제가 없어요.\n새로고침에 실패한 소설이 여기에 표시돼요.</string>
+    <string name="update_issue_source_missing">소스가 설치되지 않아 건너뜀</string>
+    <string name="update_issue_no_chapters">소스에서 챕터를 반환하지 않아 기존 목록을 유지함</string>
+    <string name="update_issue_incomplete_data">소스에서 불완전한 데이터를 반환해 이전 제목/표지를 유지함</string>
+    <string name="update_issues_retry_all">모두 다시 시도</string>
+    <string name="update_issues_dismiss_all">모두 닫기</string>
+    <string name="update_issue_dismiss">닫기</string>
+    <string name="update_issue_install_source">소스 설치</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">앱이 비정상 종료됨</string>
+    <string name="crash_empty">오류 보고서가 없어요.</string>
+    <string name="crash_description">지난번 실행 중에 앱이 예기치 않게 종료됐어요. 보고서를 제출해 주시면 문제를 고치는 데 도움이 돼요. 아래 오류 정보는 자동으로 채워져 있어요. 복사해서 다른 곳에 공유할 수도 있어요.</string>
+    <string name="crash_no_browser">GitHub를 열 수 있는 브라우저가 없어요.</string>
+    <string name="crash_report_github">GitHub에 보고</string>
+    <string name="crash_details_copied">오류 정보를 복사했어요.</string>
+    <string name="crash_copy_details">정보 복사</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">이전</string>
+    <string name="action_play">재생</string>
+    <string name="action_stop">중지</string>
+    <string name="tts_notification_title">텍스트 음성 변환</string>
+    <string name="tts_error_request_failed">ElevenLabs 요청 실패</string>
+    <string name="tts_error_play_audio">오디오를 재생할 수 없어요</string>
+    <string name="tts_error_play_preview">미리 듣기 오디오를 재생할 수 없어요</string>
+    <string name="tts_error_start_playback">재생을 시작할 수 없어요</string>
+    <string name="notification_channel_downloads">챕터 다운로드</string>
+    <string name="notification_channel_downloads_desc">백그라운드 챕터 다운로드</string>
+    <string name="notification_channel_backups">백업</string>
+    <string name="notification_channel_backups_desc">예약된 로컬 백업</string>
+    <string name="notification_channel_app_updates">앱 업데이트</string>
+    <string name="notification_channel_app_updates_desc">백그라운드 앱 업데이트 다운로드</string>
+    <string name="notification_channel_library_updates">서재 업데이트</string>
+    <string name="notification_channel_library_updates_desc">백그라운드 서재 새로고침 진행 상황 및 결과</string>
+    <string name="notification_channel_tts">텍스트 음성 변환</string>
+    <string name="notification_channel_tts_desc">읽어주기 재생 컨트롤</string>
+    <string name="tts_error_no_chapters">이 소설에는 읽을 챕터가 없어요</string>
+    <string name="tts_error_missing_api_key">설정 → 텍스트 음성 변환에서 ElevenLabs API 키를 추가하세요</string>
+    <string name="tts_error_device_unavailable">기기 음성 엔진을 사용할 수 없어요</string>
+    <string name="tts_error_chapter_not_found">챕터를 찾을 수 없어요</string>
+    <string name="tts_error_no_readable_text">이 챕터에는 읽을 수 있는 텍스트가 없어요</string>
+    <string name="tts_error_audio_focus">오디오 포커스를 가져올 수 없어요</string>
+    <string name="tts_error_device_engine">기기 음성 엔진 오류</string>
+    <string name="tts_error_device_engine_code">기기 음성 엔진 오류 (%1$d)</string>
+    <string name="extension_download_failed_http">다운로드 실패: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">기기 내장 음성 엔진 오류</string>
+    <string name="tts_error_preview_engine_code">기기 내장 음성 엔진 오류 (%1$d)</string>
+    <string name="tts_error_audio_playback_code">오디오 재생 오류 (%1$d)</string>
+    <string name="tts_error_no_default_voice">사용할 수 있는 ElevenLabs 기본 음성이 없어요. 텍스트 음성 변환 설정에서 음성을 선택하세요</string>
+    <string name="tts_error_no_default_voice_preview">사용할 수 있는 ElevenLabs 기본 음성이 없어요. 미리 들을 음성을 선택하세요</string>
+    <string name="tts_error_source_unavailable">소스를 사용할 수 없어요. 오프라인으로 들으려면 챕터를 다운로드하세요</string>
+    <string name="tts_error_source_no_text">이 소스는 챕터 텍스트를 읽을 수 없어요. 오프라인으로 들으려면 다운로드하세요</string>
+    <string name="tts_error_api_key_first">먼저 ElevenLabs API 키를 추가하세요.</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: API 키가 잘못됐거나 무료 요금제의 API 접근이 비활성화되어 있어요</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: 현재 요금제에서는 사용할 수 없어요. 텍스트 음성 변환 설정을 확인하세요</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: 요청 한도 또는 글자 수 할당량을 초과했어요</string>
+    <string name="tts_error_elevenlabs_code">ElevenLabs 요청 실패 (%1$d)</string>
+</resources>

@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Appearance -->
+    <string name="appearance_theme">테마</string>
+    <string name="appearance_theme_system">시스템</string>
+    <string name="appearance_theme_light">밝게</string>
+    <string name="appearance_theme_dark">어둡게</string>
+    <string name="appearance_dynamic_color">동적 색상</string>
+    <string name="appearance_dynamic_color_summary">배경화면에 맞춰 색상 조정</string>
+    <string name="appearance_synopsis_links">줄거리의 링크</string>
+    <string name="appearance_synopsis_links_summary">소설 설명에 있는 웹 링크를 탭할 수 있는 링크로 표시</string>
+    <string name="appearance_color_palette">색상 팔레트</string>
+    <string name="appearance_color_palette_summary">앱 전체에 사용할 강조 색상 팔레트를 선택하세요.</string>
+    <string name="appearance_color_palette_disabled">사용자 지정 팔레트를 선택하려면 동적 색상을 끄세요.</string>
+    <string name="color_theme_default">기본</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">바다</string>
+    <string name="color_theme_sunset">노을</string>
+    <string name="color_theme_forest">숲</string>
+    <string name="color_theme_rose">장미</string>
+    <string name="color_theme_midnight">한밤</string>
+
+    <!-- Behavior -->
+    <string name="behavior_haptics">햅틱 피드백</string>
+    <string name="behavior_haptics_summary">길게 누르기, 탭 전환, 선택 동작 시 진동해요.</string>
+
+    <!-- Library settings -->
+    <string name="settings_section_display">표시</string>
+    <string name="settings_display_mode">표시</string>
+    <string name="settings_display_grid">그리드</string>
+    <string name="settings_display_list">목록</string>
+    <string name="settings_columns">열</string>
+    <string name="settings_section_organization">정리</string>
+    <string name="library_settings_show_all">“전체” 탭 표시</string>
+    <string name="library_settings_show_all_summary">모든 카테고리를 합친 탭 표시</string>
+    <string name="library_settings_hidden">숨긴 카테고리</string>
+    <string name="library_settings_hidden_summary">PIN을 설정하고 숨길 카테고리 관리</string>
+    <string name="library_settings_section_counts">챕터 수</string>
+    <string name="library_settings_locked_totals">잠긴 챕터를 합계에 포함</string>
+    <string name="library_settings_locked_totals_summary">서재 배지와 소설 상세 페이지에 표시되는 전체 수와 읽은 비율에 잠긴 챕터를 포함해요</string>
+    <string name="library_settings_section_badges">표지 배지</string>
+    <string name="library_settings_read_badge">읽기 진행도 배지 표시</string>
+    <string name="library_settings_read_badge_summary">서재 표지에 읽은 수와 비율 표시</string>
+    <string name="library_settings_downloaded_badge">다운로드 배지 표시</string>
+    <string name="library_settings_downloaded_badge_summary">서재 표지에 다운로드한 챕터 수 표시</string>
+    <string name="library_settings_locked_badge">잠긴 챕터 배지 표시</string>
+    <string name="library_settings_locked_badge_summary">서재 표지에 잠긴 챕터 수와 함께 금색 자물쇠 배지 표시</string>
+    <string name="library_settings_rating_badge">평점 배지 표시</string>
+    <string name="library_settings_rating_badge_summary">서재 표지에 내 평점 표시</string>
+    <string name="library_settings_epub_badge">EPUB 배지 표시</string>
+    <string name="library_settings_epub_badge_summary">가져온 EPUB 소설의 서재 표지에 배지 표시</string>
+
+    <!-- Browse settings and content languages -->
+    <string name="browse_settings_nu_shortcuts">NovelUpdates 바로가기</string>
+    <string name="browse_settings_nu_shortcuts_summary">탐색에 NovelUpdates 검색, 순위, 최신 링크를 표시해요.</string>
+    <string name="browse_settings_pinned_groups">언어 그룹에 고정 항목 표시</string>
+    <string name="browse_settings_pinned_groups_summary">고정된 소스를 고정됨뿐 아니라 해당 언어 아래에도 표시해요.</string>
+    <string name="content_languages_title">콘텐츠 언어</string>
+    <string name="content_languages_helper">여기서 선택한 언어는 소스 설정에서 따로 지정하지 않는 한 모든 다국어 소스에 적용돼요. 모든 언어를 표시하려면 전부 선택 해제하세요.</string>
+
+    <!-- Reader settings -->
+    <string name="settings_section_appearance">화면</string>
+    <string name="reader_settings_color_theme">색상 테마</string>
+    <string name="reader_settings_font_size">글꼴 크기</string>
+    <string name="reader_settings_line_height">줄 간격</string>
+    <string name="reader_settings_paragraph_spacing">문단 간격</string>
+    <string name="settings_section_reading">읽기</string>
+    <string name="reader_settings_auto_mark">자동으로 읽음 표시</string>
+    <string name="reader_settings_within_last">마지막 범위</string>
+    <plurals name="reader_settings_paragraph_count"><item quantity="other">문단 %1$d개</item></plurals>
+    <string name="reader_settings_rotation">화면 회전</string>
+    <string name="reader_settings_hide_status_bar">알림 표시줄 숨기기</string>
+    <string name="reader_settings_hide_status_bar_summary">읽는 동안 화면 상단의 상태 표시줄 숨기기</string>
+    <string name="settings_section_privacy">개인정보 보호</string>
+    <string name="reader_settings_hide_images">이미지 숨기기</string>
+    <string name="reader_settings_hide_images_summary">탭해서 보거나 길게 눌러 살짝 볼 때까지 본문 이미지 숨기기</string>
+
+    <!-- NovelUpdates and connections -->
+    <string name="nu_settings_show_section">NovelUpdates 섹션 표시</string>
+    <string name="nu_settings_show_section_summary">소설 상세 정보에 다른 제목, 평점, 추천작이 담긴 NovelUpdates 패널을 추가해요.</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">연결 안 됨</string>
+    <string name="connections_signing_in">로그인하는 중…</string>
+    <string name="connections_error">연결 오류</string>
+
+    <!-- Shared schedule controls -->
+    <string name="schedule_every">주기</string>
+    <plurals name="schedule_hours"><item quantity="other">%1$d시간</item></plurals>
+    <plurals name="schedule_days"><item quantity="other">%1$d일</item></plurals>
+    <plurals name="schedule_weeks"><item quantity="other">%1$d주</item></plurals>
+    <string name="schedule_unit_hour">시간</string>
+    <string name="schedule_unit_day">일</string>
+    <string name="schedule_unit_week">주</string>
+    <string name="schedule_time_of_day">실행 시각</string>
+    <string name="schedule_off">끔</string>
+    <string name="schedule_runs_every">%1$s마다 실행</string>
+    <string name="schedule_runs_around">%1$s쯤 실행</string>
+    <string name="schedule_run_around">%1$s쯤 실행</string>
+    <string name="schedule_runs_around_when_scheduled">예약 시 %1$s쯤 실행</string>
+    <string name="schedule_never">없음</string>
+    <string name="schedule_completed_at">%1$s — 완료</string>
+    <string name="schedule_failed_at">%1$s — 실패</string>
+
+    <!-- Hidden categories -->
+    <string name="hidden_title">숨긴 카테고리</string>
+    <string name="hidden_setup_pin">PIN 설정</string>
+    <string name="hidden_setup_pin_summary">카테고리를 숨기고 나중에 잠금 해제하려면 PIN이 필요해요.</string>
+    <string name="hidden_setup_pin_action">PIN 설정</string>
+    <string name="hidden_locked">잠김</string>
+    <string name="hidden_locked_summary">숨긴 카테고리를 관리하려면 잠금 해제하세요.</string>
+    <string name="hidden_change_pin">PIN 변경</string>
+    <string name="hidden_change">변경</string>
+    <string name="hidden_biometric">생체 인증 잠금 해제 사용</string>
+    <string name="hidden_biometric_available">PIN 대신 지문 또는 얼굴 인식으로 잠금 해제</string>
+    <string name="hidden_biometric_unavailable">사용할 수 없음 · 등록된 생체 정보가 없어요</string>
+    <string name="hidden_show_in_all">“전체” 탭에 숨긴 항목 표시</string>
+    <string name="hidden_show_in_all_summary">잠금 해제 상태일 때 숨긴 소설도 전체 탭에 표시</string>
+    <string name="hidden_categories_section">카테고리</string>
+    <string name="hidden_default_category">기본 · 숨길 수 없음</string>
+    <string name="hidden_remove_pin_action">PIN 삭제 및 모두 숨기기 해제</string>
+    <string name="hidden_remove_pin_title">PIN을 삭제할까요?</string>
+    <string name="hidden_remove_pin_message">숨긴 카테고리가 모두 앱을 사용하는 누구에게나 보이게 돼요.</string>
+    <string name="hidden_pin_label">PIN (4–8자리)</string>
+    <string name="hidden_confirm_pin">PIN 확인</string>
+    <string name="hidden_pin_mismatch">PIN이 일치하지 않아요</string>
+
+    <!-- Backup and restore -->
+    <string name="backup_section_backup">백업</string>
+    <string name="backup_description">백업은 이 기기에서 선택한 폴더에 gzip으로 압축된 JSON 파일로 저장돼요. 나중에 찾기 쉬운 폴더(다운로드, 문서 등)를 선택하세요.</string>
+    <string name="backup_folder">백업 폴더</string>
+    <string name="backup_folder_not_selected">선택 안 됨</string>
+    <string name="backup_no_folder_selected">선택된 백업 폴더가 없어요</string>
+    <plurals name="backup_novels_backed_up"><item quantity="other">소설 %1$d편을 백업했어요</item></plurals>
+    <string name="backup_now">지금 백업</string>
+    <string name="backup_restore_ellipsis">복원…</string>
+    <string name="backup_scheduled">예약 백업</string>
+    <string name="backup_scheduled_description">이 기기에서 백그라운드로 실행돼요. 앱을 열어 둘 필요가 없어요.</string>
+    <string name="backup_automatic">자동 백업</string>
+    <string name="backup_wifi_only">Wi-Fi에서만</string>
+    <string name="backup_wifi_only_summary">모바일 데이터에서는 자동 백업 건너뛰기</string>
+    <string name="backup_charging_only">충전 중일 때만</string>
+    <string name="backup_run_scheduled">지금 예약 백업 실행</string>
+    <string name="backup_run_scheduled_summary">선택한 폴더와 예약 조건을 사용해요</string>
+    <string name="backup_last_automatic">마지막 자동 백업</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">성공</string>
+    <string name="backup_restore_title">백업을 복원할까요?</string>
+    <string name="backup_restore_message">백업이 현재 서재에 병합돼요. 기존 항목은 유지되고, 새 항목이 추가되며, 읽기 진행도는 병합돼요.</string>
+    <string name="backup_created">백업 생성됨: %1$s</string>
+    <plurals name="backup_saved"><item quantity="other">%1$s 저장됨 (소설 %2$d편)</item></plurals>
+    <plurals name="backup_restored"><item quantity="other">소설 %1$d편, 챕터 %2$d개 복원됨</item></plurals>
+    <string name="backup_queued">백업이 대기열에 추가됐어요</string>
+    <string name="backup_folder_inaccessible">백업 폴더에 접근할 수 없어요</string>
+    <string name="backup_folder_not_writable">백업 폴더에 쓸 수 없어요</string>
+    <string name="backup_create_file_failed">백업 파일을 만들 수 없어요</string>
+    <string name="backup_open_output_failed">출력 스트림을 열 수 없어요</string>
+    <string name="backup_read_file_failed">백업 파일을 읽을 수 없어요</string>
+    <string name="backup_failed">백업 실패</string>
+    <string name="backup_newer_version">더 최신 버전의 앱에서 만든 백업 파일이에요 (v%1$d)</string>
+    <string name="restore_failed">복원 실패</string>
+
+    <!-- Data management -->
+    <string name="data_storage">저장 공간</string>
+    <string name="data_storage_summary">Grimoire 사용량 %1$s · 전체 %3$s 중 %2$s 사용 가능</string>
+    <string name="data_your_data">내 데이터</string>
+    <plurals name="data_library_novels"><item quantity="other">소설 %1$d편 · 챕터 %2$d개</item></plurals>
+    <string name="data_browse">탐색 데이터</string>
+    <plurals name="data_browse_count"><item quantity="other">저장하거나 읽지 않은 캐시된 소설 %1$d편</item></plurals>
+    <string name="data_downloads">다운로드</string>
+    <string name="data_chapter_text">챕터 텍스트</string>
+    <plurals name="data_chapter_text_summary"><item quantity="other">%1$s · 챕터 %2$d개</item></plurals>
+    <string name="data_chapter_images">챕터 이미지</string>
+    <plurals name="data_chapter_images_summary"><item quantity="other">%1$s · 이미지 %2$d개</item></plurals>
+    <string name="data_caches">캐시</string>
+    <string name="data_cover_cache">표지 캐시</string>
+    <string name="data_database">데이터베이스</string>
+    <string name="data_installer_files">설치 파일</string>
+    <string name="data_installer_summary">%1$s · 남아 있는 앱 및 확장 기능 업데이트 패키지</string>
+    <string name="data_clear_cover_title">표지 캐시를 지울까요?</string>
+    <string name="data_clear_cover_message">표지 이미지는 다음에 표시될 때 다시 다운로드돼요.</string>
+    <string name="data_clear_browse_title">탐색 데이터를 지울까요?</string>
+    <string name="data_clear_browse_message">서재에 저장하지 않았거나 읽지 않은 캐시된 소설을 삭제해요. 다시 열면 소스에서 새로 가져와요. 읽기 기록과 다운로드는 유지돼요.</string>
+    <string name="data_clear_installer_title">설치 파일을 지울까요?</string>
+    <string name="data_clear_installer_message">앱 및 확장 기능 업데이트에서 남은 .apk 파일을 삭제해요. 다음에 업데이트할 때 다시 다운로드돼요. 설치가 진행 중일 때는 지우지 마세요.</string>
+    <string name="data_cover_cache_cleared">표지 캐시를 지웠어요</string>
+    <plurals name="data_browse_cleared"><item quantity="other">탐색한 소설 %1$d편을 지웠어요</item></plurals>
+    <plurals name="data_installers_cleared"><item quantity="other">설치 파일 %1$d개를 지웠어요</item></plurals>
+
+    <!-- Library update settings -->
+    <string name="library_update_scheduled">예약 업데이트</string>
+    <string name="library_update_scheduled_description">백그라운드에서 서재를 새로고침해 새 챕터를 가져와요. 앱을 열어 둘 필요가 없어요.</string>
+    <string name="library_update_automatic">자동 업데이트</string>
+    <string name="library_update_wifi_only">Wi-Fi에서만</string>
+    <string name="library_update_wifi_only_summary">모바일 데이터에서는 예약 업데이트 건너뛰기</string>
+    <string name="library_update_charging_only">충전 중일 때만</string>
+    <string name="library_update_sync_scope">동기화 범위</string>
+    <string name="library_update_include_epubs">EPUB 포함</string>
+    <string name="library_update_include_epubs_summary">서재 업데이트 시 EPUB 소설(로컬로 가져온 파일과 Z-Library 같은 EPUB 소스)도 새로고침해요. 가져올 새 챕터가 없으므로 기본값은 꺼짐이에요.</string>
+    <string name="library_update_performance">성능</string>
+    <string name="library_update_concurrency">동시 동기화: %1$d</string>
+    <string name="library_update_concurrency_summary">동시에 새로고침할 소설 수예요. 높을수록 빠르지만 일부 소스에서 요청 제한이 걸릴 수 있어요.</string>
+    <string name="library_update_now">지금 서재 업데이트</string>
+    <string name="library_update_now_summary">서재의 모든 소설을 백그라운드에서 새로고침</string>
+    <string name="library_update_last">마지막 업데이트</string>
+
+    <!-- Text-to-speech -->
+    <string name="tts_enable">텍스트 음성 변환 사용</string>
+    <string name="tts_enable_summary">뷰어에 읽어주기 컨트롤 표시</string>
+    <string name="tts_speech_engine">음성 엔진</string>
+    <string name="tts_on_device">기기 내장</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">기기에 내장된 음성으로 읽어줘요. 오프라인에서도 작동해요.</string>
+    <string name="tts_elevenlabs_summary">ElevenLabs의 자연스러운 클라우드 음성을 스트리밍해요. 네트워크 연결이 필요하며 계정에서 글자 수에 따라 요금이 청구돼요.</string>
+    <string name="tts_elevenlabs_account">ElevenLabs 계정</string>
+    <string name="tts_api_key">API 키</string>
+    <string name="tts_playback">재생</string>
+    <string name="tts_speech_rate">말하기 속도</string>
+    <string name="tts_pitch">음높이 (기기 내장 엔진 전용)</string>
+    <string name="tts_auto_advance">다음 챕터로 자동 넘기기</string>
+    <string name="tts_auto_advance_summary">챕터가 끝나면 다음 챕터를 이어서 읽어요</string>
+    <string name="tts_voices">음성</string>
+    <string name="tts_voices_summary">언어별로 읽어줄 음성을 선택하세요. 소설은 콘텐츠 언어에 따라 매칭돼요.</string>
+    <string name="tts_custom_voice">사용자 지정 음성 선택됨</string>
+    <string name="tts_system_default">시스템 기본값</string>
+    <string name="tts_credit_usage">크레딧 사용량</string>
+    <string name="tts_refresh_usage">사용량 새로고침</string>
+    <string name="tts_usage_api_key_hint">남은 글자 수를 보려면 위에 API 키를 입력하세요.</string>
+    <string name="tts_loading">불러오는 중…</string>
+    <string name="tts_usage_summary">%1$,d / %2$,d자 사용</string>
+    <string name="tts_quota_reset">할당량 초기화: %1$s</string>
+    <string name="tts_voice_title">음성</string>
+    <string name="tts_voice_needs_key">클라우드 음성을 선택하려면 텍스트 음성 변환 설정에서 ElevenLabs API 키를 추가하세요.</string>
+    <string name="tts_elevenlabs_plan_note">ElevenLabs 무료 요금제는 제한이 있으며(월 약 10,000자), 많은 음성이(일부 기본 음성 포함) 유료 요금제를 필요로 해요. 음성이 재생되지 않으면 다른 음성을 사용하거나, 무제한 오프라인 읽기가 가능한 기기 내장 엔진을 사용하세요.</string>
+    <string name="tts_system_default_summary">엔진이 이 언어에 맞는 음성을 고르게 하기</string>
+    <string name="tts_install_voices">음성 더 설치하기…</string>
+    <string name="tts_install_voices_summary">기기 엔진용 추가 음성 데이터 다운로드</string>
+    <string name="tts_stop_preview">미리 듣기 중지</string>
+    <string name="tts_preview_voice">음성 미리 듣기</string>
+    <string name="tts_load_usage_failed">사용량을 불러올 수 없어요</string>
+    <string name="tts_load_voices_failed">음성을 불러올 수 없어요</string>
+
+    <!-- GitHub connection -->
+    <string name="github_account_title">GitHub 계정</string>
+    <string name="github_privacy_note">GitHub 계정을 연결하면 내 비공개 저장소에서 확장 기능을 설치할 수 있어요. 액세스 토큰은 이 기기에만 저장되고 github.com으로만 전송돼요. github.com/settings/applications에서 언제든 권한을 취소할 수 있어요.</string>
+    <string name="github_not_connected">연결되지 않았어요.</string>
+    <string name="github_connect">GitHub 연결</string>
+    <string name="github_enter_code">github.com에서 이 코드를 입력하세요</string>
+    <string name="github_open_device_page">github.com/login/device 열기</string>
+    <string name="github_copy_code">코드 복사</string>
+    <string name="github_waiting">브라우저에서 완료하기를 기다리는 중…</string>
+    <string name="github_connected">연결됨</string>
+    <string name="github_authorization_failed">인증 실패</string>
+    <string name="github_no_client_id">이 빌드에는 OAuth 클라이언트 ID가 없어요</string>
+    <string name="github_no_client_id_summary">gradle.properties(또는 환경 변수)에 GITHUB_OAUTH_CLIENT_ID를 설정한 뒤 다시 빌드하세요.</string>
+
+    <!-- About and updater -->
+    <string name="about_title">정보</string>
+    <string name="about_version">버전</string>
+    <string name="about_version_summary">Grimoire %1$s (빌드 %2$d)\n커밋 %3$s · 확장 기능 API %4$s</string>
+    <string name="about_check_updates">업데이트 확인</string>
+    <string name="about_check_updates_idle">탭하여 새 버전 확인</string>
+    <string name="about_checking">확인 중…</string>
+    <string name="about_latest_version">최신 버전을 사용 중이에요</string>
+    <string name="about_up_to_date">최신 상태</string>
+    <string name="about_show_changelog">변경 사항 보기</string>
+    <string name="about_show_changelog_summary">%1$s 릴리스 노트 열기</string>
+    <string name="about_updates_section">업데이트</string>
+    <string name="about_update_popups">자동 업데이트 팝업</string>
+    <string name="about_update_popups_summary">업데이트가 있으면 실행 시 대화상자 표시</string>
+    <string name="about_changelog_after_update">업데이트 후 변경 사항</string>
+    <string name="about_changelog_after_update_summary">새 버전을 처음 실행할 때 릴리스 노트 표시</string>
+    <string name="about_build_section">빌드</string>
+    <string name="about_build_details">빌드 정보</string>
+    <string name="about_build_details_summary">빌드 %1$d · 커밋 %2$s · 확장 기능 API %3$s</string>
+    <string name="about_build_copied">빌드 정보를 복사했어요</string>
+    <string name="about_channel_stable">안정</string>
+    <string name="about_channel_beta">베타</string>
+    <string name="about_channel_stable_summary">태그된 릴리스만 받아요. 권장해요.</string>
+    <string name="about_channel_beta_summary">커밋할 때마다 main에서 만든 최신 빌드를 받아요. 불안정할 수 있어요.</string>
+    <string name="update_whats_new">%1$s의 새로운 기능</string>
+    <string name="update_got_it">확인</string>
+    <string name="update_ready">업데이트 준비 완료</string>
+    <string name="update_available">업데이트 가능</string>
+    <string name="update_unknown_error">알 수 없는 오류</string>
+    <string name="update_no_changelog">%1$s의 변경 사항이 없어요.</string>
+    <string name="action_update">업데이트</string>
+    <string name="update_download_complete">다운로드 완료. 설치를 탭해서 업데이트를 마치세요.</string>
+    <string name="update_skip_version">이 버전 건너뛰기</string>
+    <string name="update_downloading_background">백그라운드에서 다운로드 중이에요. 앱을 닫아도 돼요.</string>
+    <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
+    <string name="update_download_size">%1$s MB</string>
+    <string name="changelog_features">기능</string>
+    <string name="changelog_bug_fixes">버그 수정</string>
+    <string name="changelog_sources">소스</string>
+    <string name="changelog_documentation">문서</string>
+    <string name="changelog_other">기타 변경 사항</string>
+    <string name="changelog_changes">변경 사항</string>
+
+    <!-- Shared language picker -->
+    <string name="language_override_global">전역 콘텐츠 언어 대신 개별 설정</string>
+    <string name="language_override_on_helper">이 소스에서만 사용할 언어를 선택하세요.</string>
+    <string name="language_override_off_helper">이 소스는 전역 콘텐츠 언어 설정을 사용해요. 이 소스에만 다른 언어 조합을 쓰려면 켜세요.</string>
+    <string name="language_global_all">전역: 필터 없음 (모든 언어 표시)</string>
+    <plurals name="language_global_selected"><item quantity="other">전역: 언어 %1$d개 선택됨</item></plurals>
+    <string name="language_saved">저장됨</string>
+    <string name="language_global">전역</string>
+    <string name="language_added_here">여기서 추가됨</string>
+    <string name="language_hidden_here">여기서 숨김</string>
+    <string name="tts_voice_quality_very_high">매우 높은 품질</string>
+    <string name="tts_voice_quality_high">높은 품질</string>
+    <string name="tts_voice_quality_normal">보통 품질</string>
+    <string name="tts_voice_quality_low">낮은 품질</string>
+    <string name="tts_voice_online">온라인</string>
+    <string name="tts_voice_not_installed">설치 안 됨</string>
+    <string name="tts_voice_category_default">기본 음성</string>
+    <string name="tts_voice_category_personal">내 복제 음성</string>
+    <string name="tts_voice_category_workspace">워크스페이스 음성</string>
+    <string name="tts_voice_category_community">Voice Library · 유료 요금제 전용</string>
+    <string name="github_error_access_denied">인증이 거부됐어요</string>
+    <string name="github_error_expired">인증이 완료되기 전에 코드가 만료됐어요</string>
+    <string name="github_error_cancelled">취소됨</string>
+    <string name="github_error_network">네트워크 오류: %1$s</string>
+    <string name="github_error_unexpected">예기치 않은 오류: %1$s</string>
+</resources>

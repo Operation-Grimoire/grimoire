@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">Hari ini</string>
+    <string name="common_yesterday">Kemarin</string>
+    <string name="action_pause">Jeda</string>
+    <string name="action_resume">Lanjutkan</string>
+    <string name="action_expand">Luaskan</string>
+    <string name="action_collapse">Ciutkan</string>
+    <string name="action_clear_log">Hapus log</string>
+    <string name="action_set">Setel</string>
+    <string name="action_choose">Pilih</string>
+    <string name="action_restore">Pulihkan</string>
+    <string name="action_disconnect">Putuskan</string>
+    <string name="action_dismiss">Tutup</string>
+    <string name="action_try_again">Coba lagi</string>
+    <string name="action_skip">Lewati</string>
+    <string name="action_next">Berikutnya</string>
+    <string name="status_error">Error</string>
+    <string name="status_warning">Peringatan</string>
+    <string name="status_completed">Selesai</string>
+    <string name="status_queued">Dalam antrean</string>
+    <string name="status_downloaded">Diunduh</string>
+    <string name="chapter_cancel_download">Batalkan unduhan</string>
+    <string name="chapter_downloaded_refresh_queued">Diunduh · penyegaran diantrekan</string>
+    <string name="chapter_cancel_refresh">Batalkan penyegaran</string>
+    <string name="chapter_downloaded_refreshing">Diunduh · menyegarkan</string>
+    <string name="chapter_downloaded_refresh_failed">Diunduh · penyegaran gagal</string>
+
+    <!-- More -->
+    <string name="more_title">Lainnya</string>
+    <string name="more_incognito">Penyamaran</string>
+    <string name="more_incognito_enabled">Riwayat tidak dicatat di sesi ini</string>
+    <string name="more_incognito_disabled">Jeda riwayat baca &amp; jelajah</string>
+    <string name="incognito_banner">Penyamaran · riwayat dijeda</string>
+    <string name="more_updates">Pembaruan</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="other">%1$d bab baru dari novel yang diikuti</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="other">%1$d bab baru di seluruh pustaka Anda</item>
+    </plurals>
+    <string name="more_no_new_chapters">Tidak ada bab baru</string>
+    <string name="more_history">Riwayat</string>
+    <string name="more_history_summary">Bab yang baru dibaca dan novel yang dijelajahi</string>
+    <string name="more_downloads">Unduhan</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="other">%1$d sedang berjalan</item>
+    </plurals>
+    <string name="more_downloads_summary">Bab yang diunduh dan antrean</string>
+    <string name="more_tasks">Tugas</string>
+    <string name="more_tasks_summary">Unduhan dan sinkronisasi yang berjalan, beserta riwayatnya</string>
+    <string name="more_update_warnings">Peringatan pembaruan</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="other">%1$d novel perlu diperhatikan</item>
+    </plurals>
+    <string name="more_no_refresh_problems">Tidak ada masalah penyegaran</string>
+    <string name="more_statistics">Statistik</string>
+    <string name="more_statistics_summary">Aktivitas membaca Anda</string>
+    <string name="more_settings_summary">Tampilan, pustaka, pembaca, cadangan</string>
+    <string name="more_tours">Tur</string>
+    <string name="more_tours_summary">Putar ulang tur panduan dalam aplikasi</string>
+    <string name="more_about">Tentang</string>
+    <string name="more_about_summary">Versi, kanal pembaruan, lisensi</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">Mulai</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">Tur sambutan</string>
+    <string name="tour_welcome_description">Hal-hal penting: pustaka, penjelajahan, sumber, dan setelan.</string>
+    <string name="tour_step_welcome_title">Selamat datang di Grimoire</string>
+    <string name="tour_step_welcome_body">Tur singkat hal-hal penting — hanya sekitar 20 detik.</string>
+    <string name="tour_step_library_title">Pustaka Anda</string>
+    <string name="tour_step_library_body">Novel yang Anda tambahkan tersimpan di sini, tertata dalam kategori.</string>
+    <string name="tour_step_browse_title">Jelajahi</string>
+    <string name="tour_step_browse_body">Ketuk Jelajahi untuk menemukan novel dari sumber-sumber Anda.</string>
+    <string name="tour_step_extensions_title">Sumber &amp; ekstensi</string>
+    <string name="tour_step_extensions_body">Sumber dipasang dari sini. Buka untuk melihat apa saja yang tersedia.</string>
+    <string name="tour_open_extensions">Buka ekstensi</string>
+    <string name="tour_step_repositories_title">Repositori</string>
+    <string name="tour_step_repositories_body">Sumber berasal dari repositori. Repositori resmi sudah ditambahkan — ketuk di sini untuk mengelolanya atau menambahkan milik Anda sendiri.</string>
+    <string name="tour_step_more_title">Semua yang lain</string>
+    <string name="tour_step_more_body">Unduhan, statistik, cadangan, dan setelan ada di Lainnya.</string>
+    <string name="tour_step_done_title">Semua siap</string>
+    <string name="tour_step_done_body">Putar ulang tur apa pun dari Lainnya → Tur.</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">Diagnostik</string>
+    <string name="privacy_diagnostics_note">Diagnostik bersifat anonim dan tidak pernah menyertakan data pribadi, judul novel, atau tautan. Semuanya nonaktif kecuali Anda mengaktifkannya.</string>
+    <string name="privacy_crash_reports">Kirim laporan crash</string>
+    <string name="privacy_crash_reports_summary">Stack trace anonim saat aplikasi crash</string>
+    <string name="privacy_usage_analytics">Kirim analitik penggunaan anonim</string>
+    <string name="privacy_usage_analytics_summary">Fitur mana yang dipakai, untuk menentukan apa yang dibangun</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">Mengunduh bab</string>
+    <string name="download_notification_starting">Memulai…</string>
+    <string name="download_notification_working">Mengunduh…</string>
+    <string name="download_notification_queued">+%1$d dalam antrean</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d dalam antrean)</string>
+    <string name="download_notification_complete_title">Unduhan selesai</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="other">%1$d bab diunduh</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">Mengunduh pembaruan</string>
+    <string name="app_update_notification_downloading_version">Mengunduh pembaruan %1$s</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">Memulai…</string>
+    <string name="app_update_notification_ready">Pembaruan siap dipasang</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s siap</string>
+    <string name="app_update_notification_tap_to_install">Ketuk untuk memasang</string>
+    <string name="app_update_notification_failed">Unduhan pembaruan gagal</string>
+    <string name="error_verification_failed">Verifikasi unduhan gagal — coba lagi atau ganti jaringan</string>
+    <string name="app_update_download_failed">Unduhan gagal</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">Unduhan</string>
+    <string name="downloads_settings">Setelan unduhan</string>
+    <string name="downloads_no_filter_matches">Tidak ada unduhan yang cocok dengan filter yang dipilih.</string>
+    <string name="downloads_parallel">Unduhan paralel</string>
+    <string name="downloads_parallel_summary">Jumlah bab yang diunduh sekaligus</string>
+    <string name="downloads_move_to_top">Pindahkan ke atas</string>
+    <string name="downloads_cancel_failed">Batalkan yang gagal</string>
+    <string name="downloads_redownload">Unduh ulang</string>
+    <string name="downloads_delete_download">Hapus unduhan</string>
+    <string name="downloads_delete_options">Opsi unduhan</string>
+    <string name="downloads_empty">Tidak ada unduhan</string>
+    <string name="downloads_filter_downloading">Mengunduh</string>
+    <string name="downloads_filter_queued">Dalam antrean</string>
+    <string name="downloads_filter_done">Selesai</string>
+    <string name="downloads_filter_failed">Gagal</string>
+    <plurals name="downloads_count_downloaded"><item quantity="other">%1$d diunduh</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="other">%1$d dalam antrean</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="other">%1$d sedang diunduh</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="other">%1$d gagal</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">Statistik</string>
+    <string name="statistics_reading">Membaca</string>
+    <string name="statistics_chapters_read">Bab dibaca</string>
+    <string name="statistics_words_read">Kata dibaca</string>
+    <string name="statistics_novels_completed">Novel selesai</string>
+    <string name="statistics_novels_started">Novel dimulai</string>
+    <string name="statistics_average_words">Rata-rata kata / bab</string>
+    <string name="statistics_last_read">Terakhir dibaca</string>
+    <string name="statistics_library">Pustaka</string>
+    <string name="statistics_library_novels">Novel di pustaka</string>
+    <string name="statistics_library_chapters">Bab di pustaka</string>
+    <string name="statistics_library_unread">Belum dibaca di pustaka</string>
+    <string name="statistics_downloaded">Diunduh</string>
+    <string name="statistics_empty_hint">Baca beberapa bab untuk mulai mencatat statistik.</string>
+    <string name="statistics_counting_hint">Statistik menghitung setiap bab sekali — menandai belum dibaca tidak mengurangi hitungan.</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Tugas</string>
+    <string name="tasks_empty">Belum ada tugas.\nUnduhan dan sinkronisasi pustaka muncul di sini saat berjalan,\ndan hasilnya disimpan di bawah.</string>
+    <string name="tasks_running">Berjalan</string>
+    <string name="tasks_history">Riwayat</string>
+    <string name="tasks_clear_title">Hapus log tugas?</string>
+    <string name="tasks_clear_message">Menghapus riwayat sinkronisasi pustaka dan unduhan yang telah selesai. Tugas yang sedang berjalan tidak terpengaruh.</string>
+    <string name="tasks_cancel_named">Batalkan %1$s</string>
+    <string name="tasks_finished_with_errors">Selesai dengan error</string>
+    <string name="tasks_updating_library">Memperbarui pustaka</string>
+    <string name="tasks_starting">Memulai…</string>
+    <plurals name="tasks_novels_progress"><item quantity="other">%1$d / %2$d novel</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">Mengunduh bab</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="other">%1$d bab tersisa</item></plurals>
+    <string name="tasks_downloads">Unduhan</string>
+    <string name="tasks_library_sync">Sinkronisasi pustaka</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="other">%1$d bab diunduh</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="other">%1$d gagal</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="other">%1$d novel diperiksa</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="other">%1$d bab baru</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="other">%1$d peringatan</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="other">%1$d error</item></plurals>
+    <string name="tasks_sync_failed">Sinkronisasi pustaka gagal · %1$s</string>
+    <string name="library_update_downloading_new">Mengunduh bab baru</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d dalam antrean</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="other">%1$d bab terkunci baru</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · %2$d terkunci</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">Pembaruan</string>
+    <string name="updates_open_novel">Buka novel</string>
+    <string name="updates_delete_from_log">Hapus dari log</string>
+    <string name="updates_empty">Belum ada pembaruan.\nBab baru yang ditemukan saat penyegaran pustaka muncul di sini.</string>
+    <string name="updates_tab_subscribed">Diikuti</string>
+    <string name="updates_tab_all">Semua</string>
+    <string name="updates_subscribed_empty">Belum ada pembaruan dari novel yang diikuti.</string>
+    <string name="updates_clear_title">Hapus log pembaruan?</string>
+    <string name="updates_clear_message">Tindakan ini menghapus permanen semua entri dari log pembaruan. Pustaka dan bab Anda tidak terpengaruh.</string>
+    <plurals name="updates_count_new"><item quantity="other">%1$d baru</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="other">%1$d terkunci</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="other">%1$d diunduh</item></plurals>
+    <string name="updates_all_downloaded">Semua diunduh</string>
+    <string name="updates_unlocked">Terbuka</string>
+    <plurals name="updates_count_unlocked"><item quantity="other">%1$d terbuka</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">Riwayat</string>
+    <string name="history_reading">Bacaan</string>
+    <string name="history_browsing">Jelajah</string>
+    <string name="history_clear_reading">Hapus riwayat baca</string>
+    <string name="history_clear_browsing">Hapus riwayat jelajah</string>
+    <string name="history_reading_empty">Belum ada riwayat baca.\nBab yang Anda buka di pembaca muncul di sini.</string>
+    <string name="history_browsing_empty">Belum ada riwayat jelajah.\nNovel yang Anda buka di Jelajahi (dan belum ditambahkan ke pustaka) muncul di sini.</string>
+    <string name="history_clear_reading_title">Hapus riwayat baca?</string>
+    <string name="history_clear_browsing_title">Hapus riwayat jelajah?</string>
+    <string name="history_clear_reading_message">Tindakan ini menghapus permanen semua entri dari riwayat baca Anda. Pustaka dan bab Anda tidak terpengaruh.</string>
+    <string name="history_clear_browsing_message">Tindakan ini menghapus permanen semua entri dari riwayat jelajah Anda. Pustaka Anda tidak terpengaruh.</string>
+    <plurals name="history_chapter_count"><item quantity="other">%1$d bab</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">Peringatan pembaruan</string>
+    <string name="update_issues_empty">Tidak ada masalah.\nNovel yang gagal disegarkan muncul di sini.</string>
+    <string name="update_issue_source_missing">Sumber tidak terpasang — dilewati</string>
+    <string name="update_issue_no_chapters">Sumber tidak mengembalikan bab — daftar lama dipertahankan</string>
+    <string name="update_issue_incomplete_data">Sumber mengembalikan data tidak lengkap — judul/sampul sebelumnya dipertahankan</string>
+    <string name="update_issues_retry_all">Coba lagi semua</string>
+    <string name="update_issues_dismiss_all">Tutup semua</string>
+    <string name="update_issue_dismiss">Tutup</string>
+    <string name="update_issue_install_source">Pasang sumber</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">Aplikasi crash</string>
+    <string name="crash_empty">Tidak ada laporan crash.</string>
+    <string name="crash_description">Aplikasi tertutup secara tiba-tiba saat terakhir dijalankan. Mengirim laporan membantu memperbaikinya — detail crash di bawah sudah diisi untuk Anda. Anda juga bisa menyalinnya untuk dibagikan di tempat lain.</string>
+    <string name="crash_no_browser">Tidak ada browser untuk membuka GitHub.</string>
+    <string name="crash_report_github">Laporkan di GitHub</string>
+    <string name="crash_details_copied">Detail crash disalin.</string>
+    <string name="crash_copy_details">Salin detail</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">Sebelumnya</string>
+    <string name="action_play">Putar</string>
+    <string name="action_stop">Berhenti</string>
+    <string name="tts_notification_title">Teks ke ucapan</string>
+    <string name="tts_error_request_failed">Permintaan ElevenLabs gagal</string>
+    <string name="tts_error_play_audio">Tidak dapat memutar audio</string>
+    <string name="tts_error_play_preview">Tidak dapat memutar audio pratinjau</string>
+    <string name="tts_error_start_playback">Tidak dapat memulai pemutaran</string>
+    <string name="notification_channel_downloads">Unduhan bab</string>
+    <string name="notification_channel_downloads_desc">Unduhan bab di latar belakang</string>
+    <string name="notification_channel_backups">Cadangan</string>
+    <string name="notification_channel_backups_desc">Pencadangan lokal terjadwal</string>
+    <string name="notification_channel_app_updates">Pembaruan aplikasi</string>
+    <string name="notification_channel_app_updates_desc">Unduhan pembaruan aplikasi di latar belakang</string>
+    <string name="notification_channel_library_updates">Pembaruan pustaka</string>
+    <string name="notification_channel_library_updates_desc">Progres dan hasil penyegaran pustaka di latar belakang</string>
+    <string name="notification_channel_tts">Teks ke ucapan</string>
+    <string name="notification_channel_tts_desc">Kontrol pemutaran bacakan</string>
+    <string name="tts_error_no_chapters">Novel ini tidak memiliki bab untuk dibacakan</string>
+    <string name="tts_error_missing_api_key">Tambahkan kunci API ElevenLabs di Setelan → Teks ke ucapan</string>
+    <string name="tts_error_device_unavailable">Mesin ucapan perangkat tidak tersedia</string>
+    <string name="tts_error_chapter_not_found">Bab tidak ditemukan</string>
+    <string name="tts_error_no_readable_text">Bab ini tidak memiliki teks yang bisa dibaca</string>
+    <string name="tts_error_audio_focus">Tidak dapat memperoleh fokus audio</string>
+    <string name="tts_error_device_engine">Error mesin ucapan perangkat</string>
+    <string name="tts_error_device_engine_code">Error mesin ucapan perangkat (%1$d)</string>
+    <string name="extension_download_failed_http">Unduhan gagal: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">Error mesin ucapan di perangkat</string>
+    <string name="tts_error_preview_engine_code">Error mesin ucapan di perangkat (%1$d)</string>
+    <string name="tts_error_audio_playback_code">Error pemutaran audio (%1$d)</string>
+    <string name="tts_error_no_default_voice">Tidak ada suara default ElevenLabs yang tersedia — pilih satu di setelan Teks ke ucapan</string>
+    <string name="tts_error_no_default_voice_preview">Tidak ada suara default ElevenLabs yang tersedia — pilih satu untuk pratinjau</string>
+    <string name="tts_error_source_unavailable">Sumber tidak tersedia — unduh bab untuk mendengarkan secara offline</string>
+    <string name="tts_error_source_no_text">Sumber ini tidak dapat membaca teks bab — unduh untuk mendengarkan secara offline</string>
+    <string name="tts_error_api_key_first">Tambahkan kunci API ElevenLabs terlebih dahulu.</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: kunci API tidak valid, atau akses API paket gratis dinonaktifkan</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: paket Anda tidak mengizinkan ini — lihat setelan Teks ke ucapan</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: batas permintaan atau kuota karakter terlampaui</string>
+    <string name="tts_error_elevenlabs_code">Permintaan ElevenLabs gagal (%1$d)</string>
+</resources>

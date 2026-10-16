@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Appearance -->
+    <string name="appearance_theme">Chủ đề</string>
+    <string name="appearance_theme_system">Hệ thống</string>
+    <string name="appearance_theme_light">Sáng</string>
+    <string name="appearance_theme_dark">Tối</string>
+    <string name="appearance_dynamic_color">Màu động</string>
+    <string name="appearance_dynamic_color_summary">Điều chỉnh màu theo hình nền của bạn</string>
+    <string name="appearance_synopsis_links">Liên kết trong tóm tắt</string>
+    <string name="appearance_synopsis_links_summary">Hiển thị liên kết web trong phần mô tả truyện dưới dạng liên kết có thể chạm</string>
+    <string name="appearance_color_palette">Bảng màu</string>
+    <string name="appearance_color_palette_summary">Chọn bảng màu nhấn dùng trong toàn ứng dụng.</string>
+    <string name="appearance_color_palette_disabled">Tắt Màu động để chọn bảng màu tùy chỉnh.</string>
+    <string name="color_theme_default">Mặc định</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">Đại dương</string>
+    <string name="color_theme_sunset">Hoàng hôn</string>
+    <string name="color_theme_forest">Rừng xanh</string>
+    <string name="color_theme_rose">Hoa hồng</string>
+    <string name="color_theme_midnight">Nửa đêm</string>
+
+    <!-- Behavior -->
+    <string name="behavior_haptics">Phản hồi xúc giác</string>
+    <string name="behavior_haptics_summary">Rung khi nhấn giữ, chuyển tab và thao tác chọn.</string>
+
+    <!-- Library settings -->
+    <string name="settings_section_display">Hiển thị</string>
+    <string name="settings_display_mode">Hiển thị</string>
+    <string name="settings_display_grid">Lưới</string>
+    <string name="settings_display_list">Danh sách</string>
+    <string name="settings_columns">Số cột</string>
+    <string name="settings_section_organization">Sắp xếp</string>
+    <string name="library_settings_show_all">Hiện tab “Tất cả”</string>
+    <string name="library_settings_show_all_summary">Hiện một tab gộp tất cả danh mục</string>
+    <string name="library_settings_hidden">Danh mục ẩn</string>
+    <string name="library_settings_hidden_summary">Đặt mã PIN và quản lý những danh mục bị ẩn</string>
+    <string name="library_settings_section_counts">Số chương</string>
+    <string name="library_settings_locked_totals">Tính cả chương bị khóa vào tổng</string>
+    <string name="library_settings_locked_totals_summary">Tính chương bị khóa vào tổng số và phần trăm đã đọc hiển thị trên huy hiệu thư viện và trang chi tiết truyện</string>
+    <string name="library_settings_section_badges">Huy hiệu ảnh bìa</string>
+    <string name="library_settings_read_badge">Hiện huy hiệu tiến độ đọc</string>
+    <string name="library_settings_read_badge_summary">Hiện số chương đã đọc và phần trăm trên ảnh bìa trong thư viện</string>
+    <string name="library_settings_downloaded_badge">Hiện huy hiệu đã tải</string>
+    <string name="library_settings_downloaded_badge_summary">Hiện số chương đã tải trên ảnh bìa trong thư viện</string>
+    <string name="library_settings_locked_badge">Hiện huy hiệu chương bị khóa</string>
+    <string name="library_settings_locked_badge_summary">Hiện huy hiệu ổ khóa vàng kèm số chương bị khóa trên ảnh bìa trong thư viện</string>
+    <string name="library_settings_rating_badge">Hiện huy hiệu đánh giá</string>
+    <string name="library_settings_rating_badge_summary">Hiện đánh giá của riêng bạn trên ảnh bìa trong thư viện</string>
+    <string name="library_settings_epub_badge">Hiện huy hiệu EPUB</string>
+    <string name="library_settings_epub_badge_summary">Đánh dấu truyện EPUB đã nhập bằng huy hiệu trên ảnh bìa trong thư viện</string>
+
+    <!-- Browse settings and content languages -->
+    <string name="browse_settings_nu_shortcuts">Lối tắt NovelUpdates</string>
+    <string name="browse_settings_nu_shortcuts_summary">Hiện các lối tắt tìm kiếm, bảng xếp hạng và mới nhất của NovelUpdates trong Duyệt.</string>
+    <string name="browse_settings_pinned_groups">Hiện nguồn đã ghim trong nhóm ngôn ngữ</string>
+    <string name="browse_settings_pinned_groups_summary">Liệt kê nguồn đã ghim cả trong nhóm ngôn ngữ của nguồn, không chỉ trong mục Đã ghim.</string>
+    <string name="content_languages_title">Ngôn ngữ nội dung</string>
+    <string name="content_languages_helper">Các ngôn ngữ chọn ở đây áp dụng cho mọi nguồn đa ngôn ngữ, trừ khi được tùy chỉnh riêng trong cài đặt của nguồn đó. Bỏ chọn tất cả để hiện mọi ngôn ngữ.</string>
+
+    <!-- Reader settings -->
+    <string name="settings_section_appearance">Giao diện</string>
+    <string name="reader_settings_color_theme">Chủ đề màu</string>
+    <string name="reader_settings_font_size">Cỡ chữ</string>
+    <string name="reader_settings_line_height">Giãn dòng</string>
+    <string name="reader_settings_paragraph_spacing">Khoảng cách đoạn</string>
+    <string name="settings_section_reading">Đọc</string>
+    <string name="reader_settings_auto_mark">Tự động đánh dấu đã đọc</string>
+    <string name="reader_settings_within_last">Trong khoảng cuối</string>
+    <plurals name="reader_settings_paragraph_count"><item quantity="other">%1$d đoạn</item></plurals>
+    <string name="reader_settings_rotation">Xoay màn hình</string>
+    <string name="reader_settings_hide_status_bar">Ẩn thanh thông báo</string>
+    <string name="reader_settings_hide_status_bar_summary">Ẩn thanh trạng thái ở đầu màn hình khi đang đọc</string>
+    <string name="settings_section_privacy">Quyền riêng tư</string>
+    <string name="reader_settings_hide_images">Ẩn ảnh</string>
+    <string name="reader_settings_hide_images_summary">Ẩn ảnh trong chương cho đến khi bạn chạm để hiện hoặc giữ để xem nhanh</string>
+
+    <!-- NovelUpdates and connections -->
+    <string name="nu_settings_show_section">Hiện mục NovelUpdates</string>
+    <string name="nu_settings_show_section_summary">Thêm bảng NovelUpdates vào trang chi tiết truyện, gồm tên khác, đánh giá và đề xuất.</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">Chưa kết nối</string>
+    <string name="connections_signing_in">Đang đăng nhập…</string>
+    <string name="connections_error">Lỗi kết nối</string>
+
+    <!-- Shared schedule controls -->
+    <string name="schedule_every">Mỗi</string>
+    <plurals name="schedule_hours"><item quantity="other">%1$d giờ</item></plurals>
+    <plurals name="schedule_days"><item quantity="other">%1$d ngày</item></plurals>
+    <plurals name="schedule_weeks"><item quantity="other">%1$d tuần</item></plurals>
+    <string name="schedule_unit_hour">giờ</string>
+    <string name="schedule_unit_day">ngày</string>
+    <string name="schedule_unit_week">tuần</string>
+    <string name="schedule_time_of_day">Thời điểm trong ngày</string>
+    <string name="schedule_off">Tắt</string>
+    <string name="schedule_runs_every">Chạy mỗi %1$s</string>
+    <string name="schedule_runs_around">Chạy vào khoảng %1$s</string>
+    <string name="schedule_run_around">Chạy vào khoảng %1$s</string>
+    <string name="schedule_runs_around_when_scheduled">Chạy vào khoảng %1$s khi đã lên lịch</string>
+    <string name="schedule_never">Chưa bao giờ</string>
+    <string name="schedule_completed_at">%1$s — hoàn thành</string>
+    <string name="schedule_failed_at">%1$s — thất bại</string>
+
+    <!-- Hidden categories -->
+    <string name="hidden_title">Danh mục ẩn</string>
+    <string name="hidden_setup_pin">Thiết lập mã PIN</string>
+    <string name="hidden_setup_pin_summary">Cần có mã PIN để ẩn danh mục và mở khóa chúng sau này.</string>
+    <string name="hidden_setup_pin_action">Thiết lập PIN</string>
+    <string name="hidden_locked">Đã khóa</string>
+    <string name="hidden_locked_summary">Mở khóa để quản lý danh mục ẩn.</string>
+    <string name="hidden_change_pin">Đổi mã PIN</string>
+    <string name="hidden_change">Đổi</string>
+    <string name="hidden_biometric">Mở khóa bằng sinh trắc học</string>
+    <string name="hidden_biometric_available">Mở khóa bằng vân tay hoặc khuôn mặt thay cho mã PIN</string>
+    <string name="hidden_biometric_unavailable">Không khả dụng — chưa đăng ký sinh trắc học</string>
+    <string name="hidden_show_in_all">Hiện mục ẩn trong tab “Tất cả”</string>
+    <string name="hidden_show_in_all_summary">Khi đã mở khóa, liệt kê cả truyện ẩn trong tab Tất cả</string>
+    <string name="hidden_categories_section">Danh mục</string>
+    <string name="hidden_default_category">Mặc định — không thể ẩn</string>
+    <string name="hidden_remove_pin_action">Xóa mã PIN và bỏ ẩn tất cả</string>
+    <string name="hidden_remove_pin_title">Xóa mã PIN?</string>
+    <string name="hidden_remove_pin_message">Mọi danh mục ẩn sẽ hiển thị với bất kỳ ai dùng ứng dụng.</string>
+    <string name="hidden_pin_label">Mã PIN (4–8 chữ số)</string>
+    <string name="hidden_confirm_pin">Xác nhận mã PIN</string>
+    <string name="hidden_pin_mismatch">Mã PIN không khớp</string>
+
+    <!-- Backup and restore -->
+    <string name="backup_section_backup">Sao lưu</string>
+    <string name="backup_description">Bản sao lưu được lưu dưới dạng tệp JSON nén gzip vào thư mục bạn chọn trên thiết bị này. Hãy chọn thư mục dễ tìm lại sau (như Downloads hoặc Documents).</string>
+    <string name="backup_folder">Thư mục sao lưu</string>
+    <string name="backup_folder_not_selected">Chưa chọn</string>
+    <string name="backup_no_folder_selected">Chưa chọn thư mục sao lưu</string>
+    <plurals name="backup_novels_backed_up"><item quantity="other">Đã sao lưu %1$d truyện</item></plurals>
+    <string name="backup_now">Sao lưu ngay</string>
+    <string name="backup_restore_ellipsis">Khôi phục…</string>
+    <string name="backup_scheduled">Sao lưu theo lịch</string>
+    <string name="backup_scheduled_description">Chạy trong nền trên thiết bị này. Không cần mở ứng dụng.</string>
+    <string name="backup_automatic">Tự động sao lưu</string>
+    <string name="backup_wifi_only">Chỉ khi có Wi-Fi</string>
+    <string name="backup_wifi_only_summary">Bỏ qua sao lưu tự động khi dùng dữ liệu di động</string>
+    <string name="backup_charging_only">Chỉ khi đang sạc</string>
+    <string name="backup_run_scheduled">Chạy sao lưu theo lịch ngay</string>
+    <string name="backup_run_scheduled_summary">Dùng thư mục đã chọn và các điều kiện của lịch</string>
+    <string name="backup_last_automatic">Lần sao lưu tự động gần nhất</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">thành công</string>
+    <string name="backup_restore_title">Khôi phục bản sao lưu?</string>
+    <string name="backup_restore_message">Bản sao lưu sẽ được gộp vào thư viện hiện tại. Các mục đã có được giữ nguyên; mục mới sẽ được thêm vào và tiến độ đọc được gộp lại.</string>
+    <string name="backup_created">Đã tạo bản sao lưu: %1$s</string>
+    <plurals name="backup_saved"><item quantity="other">Đã lưu %1$s (%2$d truyện)</item></plurals>
+    <plurals name="backup_restored"><item quantity="other">Đã khôi phục %1$d truyện, %2$d chương</item></plurals>
+    <string name="backup_queued">Đã thêm sao lưu vào hàng chờ</string>
+    <string name="backup_folder_inaccessible">Không thể truy cập thư mục sao lưu</string>
+    <string name="backup_folder_not_writable">Không thể ghi vào thư mục sao lưu</string>
+    <string name="backup_create_file_failed">Không thể tạo tệp sao lưu</string>
+    <string name="backup_open_output_failed">Không thể mở luồng ghi</string>
+    <string name="backup_read_file_failed">Không thể đọc tệp sao lưu</string>
+    <string name="backup_failed">Sao lưu thất bại</string>
+    <string name="backup_newer_version">Tệp sao lưu đến từ phiên bản ứng dụng mới hơn (v%1$d)</string>
+    <string name="restore_failed">Khôi phục thất bại</string>
+
+    <!-- Data management -->
+    <string name="data_storage">Bộ nhớ</string>
+    <string name="data_storage_summary">Grimoire đang dùng %1$s · còn trống %2$s / %3$s</string>
+    <string name="data_your_data">Dữ liệu của bạn</string>
+    <plurals name="data_library_novels"><item quantity="other">%1$d truyện · %2$d chương</item></plurals>
+    <string name="data_browse">Dữ liệu duyệt</string>
+    <plurals name="data_browse_count"><item quantity="other">%1$d truyện trong bộ nhớ đệm mà bạn chưa lưu hoặc chưa đọc</item></plurals>
+    <string name="data_downloads">Tải xuống</string>
+    <string name="data_chapter_text">Văn bản chương</string>
+    <plurals name="data_chapter_text_summary"><item quantity="other">%1$s · %2$d chương</item></plurals>
+    <string name="data_chapter_images">Ảnh trong chương</string>
+    <plurals name="data_chapter_images_summary"><item quantity="other">%1$s · %2$d ảnh</item></plurals>
+    <string name="data_caches">Bộ nhớ đệm</string>
+    <string name="data_cover_cache">Bộ nhớ đệm ảnh bìa</string>
+    <string name="data_database">Cơ sở dữ liệu</string>
+    <string name="data_installer_files">Tệp cài đặt</string>
+    <string name="data_installer_summary">%1$s · gói cập nhật ứng dụng &amp; tiện ích còn sót lại</string>
+    <string name="data_clear_cover_title">Xóa bộ nhớ đệm ảnh bìa?</string>
+    <string name="data_clear_cover_message">Ảnh bìa sẽ được tải lại vào lần hiển thị tiếp theo.</string>
+    <string name="data_clear_browse_title">Xóa dữ liệu duyệt?</string>
+    <string name="data_clear_browse_message">Xóa các truyện trong bộ nhớ đệm mà bạn chưa lưu vào thư viện hoặc chưa đọc. Chúng sẽ được tải lại từ nguồn khi bạn mở lại. Lịch sử đọc và các bản tải xuống được giữ nguyên.</string>
+    <string name="data_clear_installer_title">Xóa tệp cài đặt?</string>
+    <string name="data_clear_installer_message">Xóa các tệp .apk còn sót lại từ những lần cập nhật ứng dụng và tiện ích. Chúng sẽ được tải lại vào lần cập nhật tiếp theo. Đừng xóa khi đang cài đặt.</string>
+    <string name="data_cover_cache_cleared">Đã xóa bộ nhớ đệm ảnh bìa</string>
+    <plurals name="data_browse_cleared"><item quantity="other">Đã xóa %1$d truyện đã duyệt</item></plurals>
+    <plurals name="data_installers_cleared"><item quantity="other">Đã xóa %1$d tệp cài đặt</item></plurals>
+
+    <!-- Library update settings -->
+    <string name="library_update_scheduled">Cập nhật theo lịch</string>
+    <string name="library_update_scheduled_description">Làm mới thư viện trong nền và tải chương mới. Không cần mở ứng dụng.</string>
+    <string name="library_update_automatic">Tự động cập nhật</string>
+    <string name="library_update_wifi_only">Chỉ khi có Wi-Fi</string>
+    <string name="library_update_wifi_only_summary">Bỏ qua cập nhật theo lịch khi dùng dữ liệu di động</string>
+    <string name="library_update_charging_only">Chỉ khi đang sạc</string>
+    <string name="library_update_sync_scope">Phạm vi đồng bộ</string>
+    <string name="library_update_include_epubs">Bao gồm EPUB</string>
+    <string name="library_update_include_epubs_summary">Làm mới truyện EPUB (tệp nhập cục bộ và các nguồn EPUB như Z-Library) khi cập nhật thư viện. Chúng không có chương mới để tải, nên tùy chọn này tắt theo mặc định.</string>
+    <string name="library_update_performance">Hiệu năng</string>
+    <string name="library_update_concurrency">Số luồng đồng bộ: %1$d</string>
+    <string name="library_update_concurrency_summary">Số truyện được làm mới song song. Càng cao càng nhanh nhưng có thể bị một số nguồn giới hạn tốc độ.</string>
+    <string name="library_update_now">Cập nhật thư viện ngay</string>
+    <string name="library_update_now_summary">Làm mới mọi truyện trong thư viện ở chế độ nền</string>
+    <string name="library_update_last">Lần cập nhật gần nhất</string>
+
+    <!-- Text-to-speech -->
+    <string name="tts_enable">Bật chuyển văn bản thành giọng nói</string>
+    <string name="tts_enable_summary">Hiện nút điều khiển đọc to trong trình đọc</string>
+    <string name="tts_speech_engine">Công cụ giọng nói</string>
+    <string name="tts_on_device">Trên thiết bị</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">Đọc to bằng giọng có sẵn trên thiết bị. Hoạt động ngoại tuyến.</string>
+    <string name="tts_elevenlabs_summary">Phát trực tuyến giọng đọc tự nhiên trên đám mây từ ElevenLabs. Cần kết nối mạng và tính phí theo ký tự trên tài khoản của bạn.</string>
+    <string name="tts_elevenlabs_account">Tài khoản ElevenLabs</string>
+    <string name="tts_api_key">Khóa API</string>
+    <string name="tts_playback">Phát</string>
+    <string name="tts_speech_rate">Tốc độ đọc</string>
+    <string name="tts_pitch">Cao độ (chỉ trên thiết bị)</string>
+    <string name="tts_auto_advance">Tự động chuyển sang chương tiếp theo</string>
+    <string name="tts_auto_advance_summary">Tiếp tục đọc sang chương sau khi một chương kết thúc</string>
+    <string name="tts_voices">Giọng đọc</string>
+    <string name="tts_voices_summary">Chọn giọng đọc cho từng ngôn ngữ. Truyện được ghép theo ngôn ngữ nội dung.</string>
+    <string name="tts_custom_voice">Đã chọn giọng tùy chỉnh</string>
+    <string name="tts_system_default">Mặc định của hệ thống</string>
+    <string name="tts_credit_usage">Lượng tín dụng đã dùng</string>
+    <string name="tts_refresh_usage">Làm mới mức sử dụng</string>
+    <string name="tts_usage_api_key_hint">Nhập khóa API ở trên để xem số ký tự còn lại.</string>
+    <string name="tts_loading">Đang tải…</string>
+    <string name="tts_usage_summary">Đã dùng %1$,d / %2$,d ký tự</string>
+    <string name="tts_quota_reset">Hạn mức đặt lại vào %1$s</string>
+    <string name="tts_voice_title">Giọng đọc</string>
+    <string name="tts_voice_needs_key">Thêm khóa API ElevenLabs trong cài đặt Chuyển văn bản thành giọng nói để chọn giọng đám mây.</string>
+    <string name="tts_elevenlabs_plan_note">Gói miễn phí của ElevenLabs có giới hạn (~10.000 ký tự/tháng) và nhiều giọng — kể cả một số giọng Mặc định — yêu cầu gói trả phí. Nếu một giọng không phát được, hãy thử giọng khác, hoặc dùng công cụ Trên thiết bị để đọc ngoại tuyến không giới hạn.</string>
+    <string name="tts_system_default_summary">Để công cụ tự chọn giọng cho ngôn ngữ này</string>
+    <string name="tts_install_voices">Cài thêm giọng đọc…</string>
+    <string name="tts_install_voices_summary">Tải thêm dữ liệu giọng cho công cụ của thiết bị</string>
+    <string name="tts_stop_preview">Dừng nghe thử</string>
+    <string name="tts_preview_voice">Nghe thử giọng</string>
+    <string name="tts_load_usage_failed">Không thể tải mức sử dụng</string>
+    <string name="tts_load_voices_failed">Không thể tải giọng đọc</string>
+
+    <!-- GitHub connection -->
+    <string name="github_account_title">Tài khoản GitHub</string>
+    <string name="github_privacy_note">Kết nối tài khoản GitHub để cài tiện ích từ các kho riêng tư của bạn. Mã truy cập chỉ được lưu trên thiết bị này và chỉ được gửi đến github.com. Có thể thu hồi bất cứ lúc nào tại github.com/settings/applications.</string>
+    <string name="github_not_connected">Chưa kết nối.</string>
+    <string name="github_connect">Kết nối GitHub</string>
+    <string name="github_enter_code">Nhập mã này trên github.com</string>
+    <string name="github_open_device_page">Mở github.com/login/device</string>
+    <string name="github_copy_code">Sao chép mã</string>
+    <string name="github_waiting">Đang chờ bạn hoàn tất trong trình duyệt…</string>
+    <string name="github_connected">Đã kết nối</string>
+    <string name="github_authorization_failed">Ủy quyền thất bại</string>
+    <string name="github_no_client_id">Bản dựng này không có OAuth client ID</string>
+    <string name="github_no_client_id_summary">Đặt GITHUB_OAUTH_CLIENT_ID trong gradle.properties (hoặc dưới dạng biến môi trường) rồi dựng lại.</string>
+
+    <!-- About and updater -->
+    <string name="about_title">Giới thiệu</string>
+    <string name="about_version">Phiên bản</string>
+    <string name="about_version_summary">Grimoire %1$s (bản dựng %2$d)\nCommit %3$s · Extensions API %4$s</string>
+    <string name="about_check_updates">Kiểm tra cập nhật</string>
+    <string name="about_check_updates_idle">Chạm để kiểm tra phiên bản mới</string>
+    <string name="about_checking">Đang kiểm tra…</string>
+    <string name="about_latest_version">Bạn đang dùng phiên bản mới nhất</string>
+    <string name="about_up_to_date">Đã cập nhật</string>
+    <string name="about_show_changelog">Xem nhật ký thay đổi</string>
+    <string name="about_show_changelog_summary">Mở ghi chú phát hành của %1$s</string>
+    <string name="about_updates_section">Cập nhật</string>
+    <string name="about_update_popups">Tự động thông báo cập nhật</string>
+    <string name="about_update_popups_summary">Hiện hộp thoại khi khởi động nếu có bản cập nhật</string>
+    <string name="about_changelog_after_update">Nhật ký thay đổi sau khi cập nhật</string>
+    <string name="about_changelog_after_update_summary">Hiện ghi chú phát hành vào lần đầu mở phiên bản mới</string>
+    <string name="about_build_section">Bản dựng</string>
+    <string name="about_build_details">Chi tiết bản dựng</string>
+    <string name="about_build_details_summary">Bản dựng %1$d · commit %2$s · Extensions API %3$s</string>
+    <string name="about_build_copied">Đã sao chép thông tin bản dựng</string>
+    <string name="about_channel_stable">Ổn định</string>
+    <string name="about_channel_beta">Thử nghiệm</string>
+    <string name="about_channel_stable_summary">Chỉ các bản phát hành chính thức. Khuyên dùng.</string>
+    <string name="about_channel_beta_summary">Bản dựng mới từ nhánh main sau mỗi commit. Có thể không ổn định.</string>
+    <string name="update_whats_new">Có gì mới trong %1$s</string>
+    <string name="update_got_it">Đã hiểu</string>
+    <string name="update_ready">Bản cập nhật đã sẵn sàng</string>
+    <string name="update_available">Có bản cập nhật</string>
+    <string name="update_unknown_error">Lỗi không xác định</string>
+    <string name="update_no_changelog">Không có nhật ký thay đổi cho %1$s.</string>
+    <string name="action_update">Cập nhật</string>
+    <string name="update_download_complete">Đã tải xong — chạm Cài đặt để hoàn tất cập nhật.</string>
+    <string name="update_skip_version">Bỏ qua phiên bản này</string>
+    <string name="update_downloading_background">Đang tải trong nền — bạn có thể đóng ứng dụng.</string>
+    <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
+    <string name="update_download_size">%1$s MB</string>
+    <string name="changelog_features">Tính năng</string>
+    <string name="changelog_bug_fixes">Sửa lỗi</string>
+    <string name="changelog_sources">Nguồn</string>
+    <string name="changelog_documentation">Tài liệu</string>
+    <string name="changelog_other">Thay đổi khác</string>
+    <string name="changelog_changes">Thay đổi</string>
+
+    <!-- Shared language picker -->
+    <string name="language_override_global">Tùy chỉnh riêng ngôn ngữ nội dung</string>
+    <string name="language_override_on_helper">Chọn các ngôn ngữ bạn muốn chỉ cho nguồn này.</string>
+    <string name="language_override_off_helper">Nguồn này đang dùng lựa chọn ngôn ngữ nội dung chung. Bật tùy chọn này để chọn tổ hợp khác chỉ cho nguồn này.</string>
+    <string name="language_global_all">Chung: không lọc (hiện mọi ngôn ngữ)</string>
+    <plurals name="language_global_selected"><item quantity="other">Chung: đã chọn %1$d ngôn ngữ</item></plurals>
+    <string name="language_saved">Đã lưu</string>
+    <string name="language_global">Chung</string>
+    <string name="language_added_here">Đã thêm ở đây</string>
+    <string name="language_hidden_here">Đã ẩn ở đây</string>
+    <string name="tts_voice_quality_very_high">Chất lượng rất cao</string>
+    <string name="tts_voice_quality_high">Chất lượng cao</string>
+    <string name="tts_voice_quality_normal">Chất lượng thường</string>
+    <string name="tts_voice_quality_low">Chất lượng thấp</string>
+    <string name="tts_voice_online">trực tuyến</string>
+    <string name="tts_voice_not_installed">chưa cài</string>
+    <string name="tts_voice_category_default">Giọng mặc định</string>
+    <string name="tts_voice_category_personal">Giọng nhân bản của bạn</string>
+    <string name="tts_voice_category_workspace">Giọng của không gian làm việc</string>
+    <string name="tts_voice_category_community">Voice Library · chỉ gói trả phí</string>
+    <string name="github_error_access_denied">Yêu cầu ủy quyền đã bị từ chối</string>
+    <string name="github_error_expired">Mã đã hết hạn trước khi ủy quyền hoàn tất</string>
+    <string name="github_error_cancelled">Đã hủy</string>
+    <string name="github_error_network">Lỗi mạng: %1$s</string>
+    <string name="github_error_unexpected">Lỗi không mong muốn: %1$s</string>
+</resources>

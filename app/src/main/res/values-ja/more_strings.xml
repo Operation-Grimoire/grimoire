@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">今日</string>
+    <string name="common_yesterday">昨日</string>
+    <string name="action_pause">一時停止</string>
+    <string name="action_resume">再開</string>
+    <string name="action_expand">展開</string>
+    <string name="action_collapse">折りたたむ</string>
+    <string name="action_clear_log">ログを消去</string>
+    <string name="action_set">設定</string>
+    <string name="action_choose">選択</string>
+    <string name="action_restore">復元</string>
+    <string name="action_disconnect">連携を解除</string>
+    <string name="action_dismiss">閉じる</string>
+    <string name="action_try_again">もう一度試す</string>
+    <string name="action_skip">スキップ</string>
+    <string name="action_next">次へ</string>
+    <string name="status_error">エラー</string>
+    <string name="status_warning">警告</string>
+    <string name="status_completed">完了</string>
+    <string name="status_queued">待機中</string>
+    <string name="status_downloaded">ダウンロード済み</string>
+    <string name="chapter_cancel_download">ダウンロードをキャンセル</string>
+    <string name="chapter_downloaded_refresh_queued">ダウンロード済み · 再取得待ち</string>
+    <string name="chapter_cancel_refresh">再取得をキャンセル</string>
+    <string name="chapter_downloaded_refreshing">ダウンロード済み · 再取得中</string>
+    <string name="chapter_downloaded_refresh_failed">ダウンロード済み · 再取得に失敗</string>
+
+    <!-- More -->
+    <string name="more_title">その他</string>
+    <string name="more_incognito">シークレット</string>
+    <string name="more_incognito_enabled">このセッションでは履歴を記録しません</string>
+    <string name="more_incognito_disabled">読書と閲覧の履歴を一時停止</string>
+    <string name="incognito_banner">シークレット · 履歴を一時停止中</string>
+    <string name="more_updates">更新</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="other">購読中の小説に新しい章が%1$d件</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="other">ライブラリに新しい章が%1$d件</item>
+    </plurals>
+    <string name="more_no_new_chapters">新しい章はありません</string>
+    <string name="more_history">履歴</string>
+    <string name="more_history_summary">最近読んだ章と閲覧した小説</string>
+    <string name="more_downloads">ダウンロード</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="other">%1$d件を処理中</item>
+    </plurals>
+    <string name="more_downloads_summary">ダウンロード済みの章とキュー</string>
+    <string name="more_tasks">タスク</string>
+    <string name="more_tasks_summary">実行中のダウンロードと同期、およびその履歴</string>
+    <string name="more_update_warnings">更新の警告</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="other">%1$d作品の確認が必要です</item>
+    </plurals>
+    <string name="more_no_refresh_problems">更新の問題はありません</string>
+    <string name="more_statistics">統計</string>
+    <string name="more_statistics_summary">あなたの読書状況</string>
+    <string name="more_settings_summary">外観、ライブラリ、リーダー、バックアップ</string>
+    <string name="more_tours">ツアー</string>
+    <string name="more_tours_summary">アプリ内のガイドツアーをもう一度見る</string>
+    <string name="more_about">このアプリについて</string>
+    <string name="more_about_summary">バージョン、アップデートチャンネル、ライセンス</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">開始</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">ウェルカムツアー</string>
+    <string name="tour_welcome_description">基本の使い方: ライブラリ、ブラウズ、ソース、設定。</string>
+    <string name="tour_step_welcome_title">Grimoire へようこそ</string>
+    <string name="tour_step_welcome_body">基本をざっと紹介します。20秒ほどで終わります。</string>
+    <string name="tour_step_library_title">ライブラリ</string>
+    <string name="tour_step_library_body">追加した小説はここに、カテゴリ別に整理されて並びます。</string>
+    <string name="tour_step_browse_title">ブラウズ</string>
+    <string name="tour_step_browse_body">「ブラウズ」をタップすると、ソース全体から小説を探せます。</string>
+    <string name="tour_step_extensions_title">ソースと拡張機能</string>
+    <string name="tour_step_extensions_body">ソースはここからインストールします。開いて利用できるものを確認しましょう。</string>
+    <string name="tour_open_extensions">拡張機能を開く</string>
+    <string name="tour_step_repositories_title">リポジトリ</string>
+    <string name="tour_step_repositories_body">ソースはリポジトリから提供されます。公式リポジトリは追加済みです。ここをタップすると、リポジトリの管理や独自のリポジトリの追加ができます。</string>
+    <string name="tour_step_more_title">その他の機能</string>
+    <string name="tour_step_more_body">ダウンロード、統計、バックアップ、設定は「その他」にあります。</string>
+    <string name="tour_step_done_title">準備完了です</string>
+    <string name="tour_step_done_body">ツアーは「その他 → ツアー」からいつでも見直せます。</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">診断</string>
+    <string name="privacy_diagnostics_note">診断データは匿名で、個人データ、小説のタイトル、リンクは一切含まれません。オンにしない限り、すべてオフのままです。</string>
+    <string name="privacy_crash_reports">クラッシュレポートを送信</string>
+    <string name="privacy_crash_reports_summary">アプリがクラッシュしたときの匿名のスタックトレース</string>
+    <string name="privacy_usage_analytics">匿名の利用状況データを送信</string>
+    <string name="privacy_usage_analytics_summary">どの機能が使われているかを、今後の開発の参考にします</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">章をダウンロード中</string>
+    <string name="download_notification_starting">開始しています…</string>
+    <string name="download_notification_working">ダウンロード中…</string>
+    <string name="download_notification_queued">+%1$d件待機中</string>
+    <string name="download_notification_chapter_queued">%1$s（+%2$d件待機中）</string>
+    <string name="download_notification_complete_title">ダウンロード完了</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="other">%1$d章をダウンロードしました</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">アップデートをダウンロード中</string>
+    <string name="app_update_notification_downloading_version">アップデート %1$s をダウンロード中</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">開始しています…</string>
+    <string name="app_update_notification_ready">アップデートをインストールできます</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s の準備ができました</string>
+    <string name="app_update_notification_tap_to_install">タップしてインストール</string>
+    <string name="app_update_notification_failed">アップデートのダウンロードに失敗しました</string>
+    <string name="error_verification_failed">ダウンロードの検証に失敗しました — もう一度試すか、ネットワークを切り替えてください</string>
+    <string name="app_update_download_failed">ダウンロードに失敗しました</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">ダウンロード</string>
+    <string name="downloads_settings">ダウンロード設定</string>
+    <string name="downloads_no_filter_matches">選択したフィルタに一致するダウンロードはありません。</string>
+    <string name="downloads_parallel">同時ダウンロード</string>
+    <string name="downloads_parallel_summary">同時にダウンロードする章の数</string>
+    <string name="downloads_move_to_top">先頭に移動</string>
+    <string name="downloads_cancel_failed">失敗分をキャンセル</string>
+    <string name="downloads_redownload">再ダウンロード</string>
+    <string name="downloads_delete_download">ダウンロードを削除</string>
+    <string name="downloads_delete_options">ダウンロードのオプション</string>
+    <string name="downloads_empty">ダウンロードはありません</string>
+    <string name="downloads_filter_downloading">ダウンロード中</string>
+    <string name="downloads_filter_queued">待機中</string>
+    <string name="downloads_filter_done">完了</string>
+    <string name="downloads_filter_failed">失敗</string>
+    <plurals name="downloads_count_downloaded"><item quantity="other">%1$d件ダウンロード済み</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="other">%1$d件待機中</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="other">%1$d件ダウンロード中</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="other">%1$d件失敗</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">統計</string>
+    <string name="statistics_reading">読書</string>
+    <string name="statistics_chapters_read">読んだ章</string>
+    <string name="statistics_words_read">読んだ語数</string>
+    <string name="statistics_novels_completed">読了した小説</string>
+    <string name="statistics_novels_started">読み始めた小説</string>
+    <string name="statistics_average_words">1章あたりの平均語数</string>
+    <string name="statistics_last_read">最後に読んだ日</string>
+    <string name="statistics_library">ライブラリ</string>
+    <string name="statistics_library_novels">ライブラリの小説</string>
+    <string name="statistics_library_chapters">ライブラリの章</string>
+    <string name="statistics_library_unread">ライブラリの未読</string>
+    <string name="statistics_downloaded">ダウンロード済み</string>
+    <string name="statistics_empty_hint">章を読むと統計の記録が始まります。</string>
+    <string name="statistics_counting_hint">統計は各章を1回だけ数えます。未読に戻しても減りません。</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">タスク</string>
+    <string name="tasks_empty">タスクはまだありません。\nダウンロードやライブラリの同期は実行中にここに表示され、\n結果は下に残ります。</string>
+    <string name="tasks_running">実行中</string>
+    <string name="tasks_history">履歴</string>
+    <string name="tasks_clear_title">タスクログを消去しますか？</string>
+    <string name="tasks_clear_message">完了したライブラリの同期とダウンロードの履歴を削除します。実行中のタスクには影響しません。</string>
+    <string name="tasks_cancel_named">%1$s をキャンセル</string>
+    <string name="tasks_finished_with_errors">エラーありで完了</string>
+    <string name="tasks_updating_library">ライブラリを更新中</string>
+    <string name="tasks_starting">開始しています…</string>
+    <plurals name="tasks_novels_progress"><item quantity="other">%1$d / %2$d作品</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">章をダウンロード中</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="other">残り%1$d章</item></plurals>
+    <string name="tasks_downloads">ダウンロード</string>
+    <string name="tasks_library_sync">ライブラリの同期</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="other">%1$d章をダウンロードしました</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="other">%1$d件失敗</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="other">%1$d作品を確認しました</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="other">新しい章 %1$d件</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="other">警告 %1$d件</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="other">エラー %1$d件</item></plurals>
+    <string name="tasks_sync_failed">ライブラリの同期に失敗しました · %1$s</string>
+    <string name="library_update_downloading_new">新しい章をダウンロード中</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d件待機中</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="other">ロックされた新しい章 %1$d件</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · ロック %2$d件</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">更新</string>
+    <string name="updates_open_novel">小説を開く</string>
+    <string name="updates_delete_from_log">ログから削除</string>
+    <string name="updates_empty">更新はまだありません。\nライブラリの更新で見つかった新しい章がここに表示されます。</string>
+    <string name="updates_tab_subscribed">購読中</string>
+    <string name="updates_tab_all">すべて</string>
+    <string name="updates_subscribed_empty">購読中の小説の更新はまだありません。</string>
+    <string name="updates_clear_title">更新ログを消去しますか？</string>
+    <string name="updates_clear_message">更新ログのすべての項目を完全に削除します。ライブラリと章には影響しません。</string>
+    <plurals name="updates_count_new"><item quantity="other">新着 %1$d件</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="other">ロック %1$d件</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="other">%1$d件ダウンロード済み</item></plurals>
+    <string name="updates_all_downloaded">すべてダウンロード済み</string>
+    <string name="updates_unlocked">ロック解除済み</string>
+    <plurals name="updates_count_unlocked"><item quantity="other">%1$d件ロック解除済み</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">履歴</string>
+    <string name="history_reading">読書</string>
+    <string name="history_browsing">閲覧</string>
+    <string name="history_clear_reading">読書履歴を消去</string>
+    <string name="history_clear_browsing">閲覧履歴を消去</string>
+    <string name="history_reading_empty">読書履歴はまだありません。\nリーダーで開いた章がここに表示されます。</string>
+    <string name="history_browsing_empty">閲覧履歴はまだありません。\nブラウズで開いた小説（ライブラリに追加していないもの）がここに表示されます。</string>
+    <string name="history_clear_reading_title">読書履歴を消去しますか？</string>
+    <string name="history_clear_browsing_title">閲覧履歴を消去しますか？</string>
+    <string name="history_clear_reading_message">読書履歴のすべての項目を完全に削除します。ライブラリと章には影響しません。</string>
+    <string name="history_clear_browsing_message">閲覧履歴のすべての項目を完全に削除します。ライブラリには影響しません。</string>
+    <plurals name="history_chapter_count"><item quantity="other">%1$d章</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">更新の警告</string>
+    <string name="update_issues_empty">問題はありません。\n更新に失敗した小説がここに表示されます。</string>
+    <string name="update_issue_source_missing">ソースがインストールされていません — スキップしました</string>
+    <string name="update_issue_no_chapters">ソースから章が返されませんでした — 既存のリストを保持しました</string>
+    <string name="update_issue_incomplete_data">ソースから不完全なデータが返されました — 以前のタイトルと表紙を保持しました</string>
+    <string name="update_issues_retry_all">すべて再試行</string>
+    <string name="update_issues_dismiss_all">すべて閉じる</string>
+    <string name="update_issue_dismiss">閉じる</string>
+    <string name="update_issue_install_source">ソースをインストール</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">アプリがクラッシュしました</string>
+    <string name="crash_empty">クラッシュレポートはありません。</string>
+    <string name="crash_description">前回の実行時にアプリが予期せず終了しました。報告していただくと修正に役立ちます。下のクラッシュ詳細は自動で入力されます。コピーして他の場所で共有することもできます。</string>
+    <string name="crash_no_browser">GitHub を開けるブラウザがありません。</string>
+    <string name="crash_report_github">GitHub で報告</string>
+    <string name="crash_details_copied">クラッシュの詳細をコピーしました。</string>
+    <string name="crash_copy_details">詳細をコピー</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">前へ</string>
+    <string name="action_play">再生</string>
+    <string name="action_stop">停止</string>
+    <string name="tts_notification_title">読み上げ</string>
+    <string name="tts_error_request_failed">ElevenLabs へのリクエストに失敗しました</string>
+    <string name="tts_error_play_audio">音声を再生できませんでした</string>
+    <string name="tts_error_play_preview">プレビュー音声を再生できませんでした</string>
+    <string name="tts_error_start_playback">再生を開始できませんでした</string>
+    <string name="notification_channel_downloads">章のダウンロード</string>
+    <string name="notification_channel_downloads_desc">バックグラウンドでの章のダウンロード</string>
+    <string name="notification_channel_backups">バックアップ</string>
+    <string name="notification_channel_backups_desc">ローカルへの定期バックアップ</string>
+    <string name="notification_channel_app_updates">アプリのアップデート</string>
+    <string name="notification_channel_app_updates_desc">バックグラウンドでのアプリのアップデートのダウンロード</string>
+    <string name="notification_channel_library_updates">ライブラリの更新</string>
+    <string name="notification_channel_library_updates_desc">バックグラウンドでのライブラリ更新の進捗と結果</string>
+    <string name="notification_channel_tts">読み上げ</string>
+    <string name="notification_channel_tts_desc">読み上げの再生コントロール</string>
+    <string name="tts_error_no_chapters">この小説には読み上げる章がありません</string>
+    <string name="tts_error_missing_api_key">「設定 → 読み上げ」で ElevenLabs の API キーを追加してください</string>
+    <string name="tts_error_device_unavailable">端末の音声エンジンを利用できません</string>
+    <string name="tts_error_chapter_not_found">章が見つかりません</string>
+    <string name="tts_error_no_readable_text">この章には読み上げられるテキストがありません</string>
+    <string name="tts_error_audio_focus">オーディオフォーカスを取得できませんでした</string>
+    <string name="tts_error_device_engine">端末の音声エンジンのエラー</string>
+    <string name="tts_error_device_engine_code">端末の音声エンジンのエラー（%1$d）</string>
+    <string name="extension_download_failed_http">ダウンロードに失敗しました: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">端末内の音声エンジンのエラー</string>
+    <string name="tts_error_preview_engine_code">端末内の音声エンジンのエラー（%1$d）</string>
+    <string name="tts_error_audio_playback_code">音声再生エラー（%1$d）</string>
+    <string name="tts_error_no_default_voice">ElevenLabs のデフォルト音声がありません — 読み上げ設定で選択してください</string>
+    <string name="tts_error_no_default_voice_preview">ElevenLabs のデフォルト音声がありません — プレビューする音声を選択してください</string>
+    <string name="tts_error_source_unavailable">ソースを利用できません — オフラインで聴くには章をダウンロードしてください</string>
+    <string name="tts_error_source_no_text">このソースでは章のテキストを読み込めません — オフラインで聴くにはダウンロードしてください</string>
+    <string name="tts_error_api_key_first">先に ElevenLabs の API キーを追加してください。</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: API キーが無効か、無料プランでの API アクセスが無効になっています</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: ご利用のプランではこの操作はできません — 読み上げ設定を確認してください</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: レート制限または文字数の上限を超えました</string>
+    <string name="tts_error_elevenlabs_code">ElevenLabs へのリクエストに失敗しました（%1$d）</string>
+</resources>

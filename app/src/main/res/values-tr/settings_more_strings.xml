@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Appearance -->
+    <string name="appearance_theme">Tema</string>
+    <string name="appearance_theme_system">Sistem</string>
+    <string name="appearance_theme_light">Açık</string>
+    <string name="appearance_theme_dark">Koyu</string>
+    <string name="appearance_dynamic_color">Dinamik Renk</string>
+    <string name="appearance_dynamic_color_summary">Renkleri duvar kâğıdınıza uyarla</string>
+    <string name="appearance_synopsis_links">Özetlerdeki bağlantılar</string>
+    <string name="appearance_synopsis_links_summary">Roman açıklamalarındaki web bağlantılarını dokunulabilir bağlantı olarak göster</string>
+    <string name="appearance_color_palette">Renk paleti</string>
+    <string name="appearance_color_palette_summary">Uygulama genelinde kullanılan vurgu paletini seçin.</string>
+    <string name="appearance_color_palette_disabled">Özel bir palet seçmek için Dinamik Renk’i kapatın.</string>
+    <string name="color_theme_default">Varsayılan</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">Okyanus</string>
+    <string name="color_theme_sunset">Gün batımı</string>
+    <string name="color_theme_forest">Orman</string>
+    <string name="color_theme_rose">Gül</string>
+    <string name="color_theme_midnight">Gece yarısı</string>
+
+    <!-- Behavior -->
+    <string name="behavior_haptics">Dokunsal geri bildirim</string>
+    <string name="behavior_haptics_summary">Uzun basma, sekme geçişleri ve seçim işlemlerinde titreşim.</string>
+
+    <!-- Library settings -->
+    <string name="settings_section_display">Görünüm</string>
+    <string name="settings_display_mode">Görünüm</string>
+    <string name="settings_display_grid">Izgara</string>
+    <string name="settings_display_list">Liste</string>
+    <string name="settings_columns">Sütunlar</string>
+    <string name="settings_section_organization">Düzen</string>
+    <string name="library_settings_show_all">“Tümü” sekmesini göster</string>
+    <string name="library_settings_show_all_summary">Tüm kategorileri birleştiren bir sekme göster</string>
+    <string name="library_settings_hidden">Gizli kategoriler</string>
+    <string name="library_settings_hidden_summary">PIN belirleyin ve hangi kategorilerin gizli olacağını yönetin</string>
+    <string name="library_settings_section_counts">Bölüm sayıları</string>
+    <string name="library_settings_locked_totals">Kilitli bölümleri toplama dahil et</string>
+    <string name="library_settings_locked_totals_summary">Kitaplık rozetlerinde ve roman ayrıntıları sayfasında gösterilen toplam ve okuma yüzdesine kilitli bölümleri de say</string>
+    <string name="library_settings_section_badges">Kapak rozetleri</string>
+    <string name="library_settings_read_badge">Okuma ilerlemesi rozetini göster</string>
+    <string name="library_settings_read_badge_summary">Kitaplık kapaklarında okunan sayısını ve yüzdesini göster</string>
+    <string name="library_settings_downloaded_badge">İndirildi rozetini göster</string>
+    <string name="library_settings_downloaded_badge_summary">Kitaplık kapaklarında indirilen bölüm sayısını göster</string>
+    <string name="library_settings_locked_badge">Kilitli bölümler rozetini göster</string>
+    <string name="library_settings_locked_badge_summary">Kitaplık kapaklarında kilitli bölüm sayısıyla altın renkli bir kilit rozeti göster</string>
+    <string name="library_settings_rating_badge">Puan rozetini göster</string>
+    <string name="library_settings_rating_badge_summary">Kitaplık kapaklarında kendi puanınızı göster</string>
+    <string name="library_settings_epub_badge">EPUB rozetini göster</string>
+    <string name="library_settings_epub_badge_summary">İçe aktarılan EPUB romanları kitaplık kapaklarında bir rozetle belirt</string>
+
+    <!-- Browse settings and content languages -->
+    <string name="browse_settings_nu_shortcuts">NovelUpdates kısayolları</string>
+    <string name="browse_settings_nu_shortcuts_summary">Göz at ekranında NovelUpdates arama, sıralama ve en yeniler bağlantılarını göster.</string>
+    <string name="browse_settings_pinned_groups">Sabitlenenleri dil gruplarında göster</string>
+    <string name="browse_settings_pinned_groups_summary">Sabitlenen kaynakları yalnızca Sabitlenmiş altında değil, kendi dillerinin altında da listele.</string>
+    <string name="content_languages_title">İçerik dilleri</string>
+    <string name="content_languages_helper">Burada seçilen diller, o kaynağın ayarlarında geçersiz kılınmadıkça tüm çok dilli kaynaklara uygulanır. Tüm dilleri göstermek için hiçbirini işaretlemeyin.</string>
+
+    <!-- Reader settings -->
+    <string name="settings_section_appearance">Görünüm</string>
+    <string name="reader_settings_color_theme">Renk teması</string>
+    <string name="reader_settings_font_size">Yazı boyutu</string>
+    <string name="reader_settings_line_height">Satır yüksekliği</string>
+    <string name="reader_settings_paragraph_spacing">Paragraf aralığı</string>
+    <string name="settings_section_reading">Okuma</string>
+    <string name="reader_settings_auto_mark">Otomatik okundu işaretle</string>
+    <string name="reader_settings_within_last">Sona kalan</string>
+    <plurals name="reader_settings_paragraph_count"><item quantity="one">%1$d paragraf</item><item quantity="other">%1$d paragraf</item></plurals>
+    <string name="reader_settings_rotation">Ekran döndürme</string>
+    <string name="reader_settings_hide_status_bar">Bildirim çubuğunu gizle</string>
+    <string name="reader_settings_hide_status_bar_summary">Okurken ekranın üstündeki durum çubuğunu gizle</string>
+    <string name="settings_section_privacy">Gizlilik</string>
+    <string name="reader_settings_hide_images">Görselleri gizle</string>
+    <string name="reader_settings_hide_images_summary">Satır içi görselleri, göstermek için dokunana veya göz atmak için basılı tutana kadar gizle</string>
+
+    <!-- NovelUpdates and connections -->
+    <string name="nu_settings_show_section">NovelUpdates bölümünü göster</string>
+    <string name="nu_settings_show_section_summary">Roman ayrıntılarına alternatif başlıklar, puan ve önerilerle bir NovelUpdates paneli ekler.</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">Bağlı değil</string>
+    <string name="connections_signing_in">Giriş yapılıyor…</string>
+    <string name="connections_error">Bağlantı hatası</string>
+
+    <!-- Shared schedule controls -->
+    <string name="schedule_every">Sıklık</string>
+    <plurals name="schedule_hours"><item quantity="one">%1$d saat</item><item quantity="other">%1$d saat</item></plurals>
+    <plurals name="schedule_days"><item quantity="one">%1$d gün</item><item quantity="other">%1$d gün</item></plurals>
+    <plurals name="schedule_weeks"><item quantity="one">%1$d hafta</item><item quantity="other">%1$d hafta</item></plurals>
+    <string name="schedule_unit_hour">saat</string>
+    <string name="schedule_unit_day">gün</string>
+    <string name="schedule_unit_week">hafta</string>
+    <string name="schedule_time_of_day">Saat</string>
+    <string name="schedule_off">Kapalı</string>
+    <string name="schedule_runs_every">%1$s arayla çalışır</string>
+    <string name="schedule_runs_around">%1$s civarında çalışır</string>
+    <string name="schedule_run_around">%1$s civarında çalıştır</string>
+    <string name="schedule_runs_around_when_scheduled">Planlandığında %1$s civarında çalışır</string>
+    <string name="schedule_never">Hiçbir zaman</string>
+    <string name="schedule_completed_at">%1$s — tamamlandı</string>
+    <string name="schedule_failed_at">%1$s — başarısız</string>
+
+    <!-- Hidden categories -->
+    <string name="hidden_title">Gizli kategoriler</string>
+    <string name="hidden_setup_pin">PIN belirleyin</string>
+    <string name="hidden_setup_pin_summary">Kategorileri gizlemek ve daha sonra kilidini açmak için PIN gerekir.</string>
+    <string name="hidden_setup_pin_action">PIN belirle</string>
+    <string name="hidden_locked">Kilitli</string>
+    <string name="hidden_locked_summary">Gizli kategorileri yönetmek için kilidi açın.</string>
+    <string name="hidden_change_pin">PIN’i değiştir</string>
+    <string name="hidden_change">Değiştir</string>
+    <string name="hidden_biometric">Biyometrik kilit açmayı kullan</string>
+    <string name="hidden_biometric_available">PIN yerine parmak izi veya yüz ile kilit açma</string>
+    <string name="hidden_biometric_unavailable">Kullanılamıyor — kayıtlı biyometrik veri yok</string>
+    <string name="hidden_show_in_all">Gizlileri “Tümü” sekmesinde göster</string>
+    <string name="hidden_show_in_all_summary">Kilit açıkken gizli romanları Tümü sekmesinde de listele</string>
+    <string name="hidden_categories_section">Kategoriler</string>
+    <string name="hidden_default_category">Varsayılan — gizlenemez</string>
+    <string name="hidden_remove_pin_action">PIN’i kaldır ve tümünü göster</string>
+    <string name="hidden_remove_pin_title">PIN kaldırılsın mı?</string>
+    <string name="hidden_remove_pin_message">Tüm gizli kategoriler, uygulamayı kullanan herkese görünür hâle gelecek.</string>
+    <string name="hidden_pin_label">PIN (4–8 hane)</string>
+    <string name="hidden_confirm_pin">PIN’i onayla</string>
+    <string name="hidden_pin_mismatch">PIN’ler eşleşmiyor</string>
+
+    <!-- Backup and restore -->
+    <string name="backup_section_backup">Yedekleme</string>
+    <string name="backup_description">Yedekler, bu cihazda seçtiğiniz bir klasöre gzip ile sıkıştırılmış JSON dosyası olarak kaydedilir. Daha sonra bulabileceğiniz bir klasör seçin (ör. Downloads veya Documents).</string>
+    <string name="backup_folder">Yedekleme klasörü</string>
+    <string name="backup_folder_not_selected">Seçilmedi</string>
+    <string name="backup_no_folder_selected">Yedekleme klasörü seçilmedi</string>
+    <plurals name="backup_novels_backed_up"><item quantity="one">%1$d roman yedeklendi</item><item quantity="other">%1$d roman yedeklendi</item></plurals>
+    <string name="backup_now">Şimdi yedekle</string>
+    <string name="backup_restore_ellipsis">Geri yükle…</string>
+    <string name="backup_scheduled">Planlı yedekleme</string>
+    <string name="backup_scheduled_description">Bu cihazda arka planda çalışır. Uygulamanın açık olması gerekmez.</string>
+    <string name="backup_automatic">Otomatik yedekle</string>
+    <string name="backup_wifi_only">Yalnızca Wi-Fi’da</string>
+    <string name="backup_wifi_only_summary">Mobil veride otomatik yedeklemeyi atla</string>
+    <string name="backup_charging_only">Yalnızca şarj olurken</string>
+    <string name="backup_run_scheduled">Planlı yedeklemeyi şimdi çalıştır</string>
+    <string name="backup_run_scheduled_summary">Seçili klasörü ve plan koşullarını kullanır</string>
+    <string name="backup_last_automatic">Son otomatik yedekleme</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">başarılı</string>
+    <string name="backup_restore_title">Yedek geri yüklensin mi?</string>
+    <string name="backup_restore_message">Yedek mevcut kitaplığınızla birleştirilecek. Mevcut kayıtlar korunur; yeni kayıtlar eklenir ve okuma ilerlemesi birleştirilir.</string>
+    <string name="backup_created">Yedek oluşturuldu: %1$s</string>
+    <plurals name="backup_saved"><item quantity="one">%1$s kaydedildi (%2$d roman)</item><item quantity="other">%1$s kaydedildi (%2$d roman)</item></plurals>
+    <plurals name="backup_restored"><item quantity="one">%1$d roman, %2$d bölüm geri yüklendi</item><item quantity="other">%1$d roman, %2$d bölüm geri yüklendi</item></plurals>
+    <string name="backup_queued">Yedekleme sıraya alındı</string>
+    <string name="backup_folder_inaccessible">Yedekleme klasörüne erişilemiyor</string>
+    <string name="backup_folder_not_writable">Yedekleme klasörüne yazılamıyor</string>
+    <string name="backup_create_file_failed">Yedek dosyası oluşturulamadı</string>
+    <string name="backup_open_output_failed">Çıkış akışı açılamadı</string>
+    <string name="backup_read_file_failed">Yedek dosyası okunamadı</string>
+    <string name="backup_failed">Yedekleme başarısız</string>
+    <string name="backup_newer_version">Yedek dosyası daha yeni bir uygulama sürümüne ait (v%1$d)</string>
+    <string name="restore_failed">Geri yükleme başarısız</string>
+
+    <!-- Data management -->
+    <string name="data_storage">Depolama</string>
+    <string name="data_storage_summary">Grimoire %1$s kullanıyor · %3$s alanın %2$s kadarı boş</string>
+    <string name="data_your_data">Verileriniz</string>
+    <plurals name="data_library_novels"><item quantity="one">%1$d roman · %2$d bölüm</item><item quantity="other">%1$d roman · %2$d bölüm</item></plurals>
+    <string name="data_browse">Göz atma verileri</string>
+    <plurals name="data_browse_count"><item quantity="one">Kaydetmediğiniz veya okumadığınız %1$d önbellekteki roman</item><item quantity="other">Kaydetmediğiniz veya okumadığınız %1$d önbellekteki roman</item></plurals>
+    <string name="data_downloads">İndirmeler</string>
+    <string name="data_chapter_text">Bölüm metni</string>
+    <plurals name="data_chapter_text_summary"><item quantity="one">%1$s · %2$d bölüm</item><item quantity="other">%1$s · %2$d bölüm</item></plurals>
+    <string name="data_chapter_images">Bölüm görselleri</string>
+    <plurals name="data_chapter_images_summary"><item quantity="one">%1$s · %2$d görsel</item><item quantity="other">%1$s · %2$d görsel</item></plurals>
+    <string name="data_caches">Önbellekler</string>
+    <string name="data_cover_cache">Kapak önbelleği</string>
+    <string name="data_database">Veritabanı</string>
+    <string name="data_installer_files">Yükleyici dosyaları</string>
+    <string name="data_installer_summary">%1$s · artakalan uygulama ve uzantı güncelleme paketleri</string>
+    <string name="data_clear_cover_title">Kapak önbelleği temizlensin mi?</string>
+    <string name="data_clear_cover_message">Kapak görselleri bir sonraki gösterimde yeniden indirilecek.</string>
+    <string name="data_clear_browse_title">Göz atma verileri temizlensin mi?</string>
+    <string name="data_clear_browse_message">Kitaplığınıza kaydetmediğiniz veya okumadığınız önbellekteki romanları kaldırır. Yeniden açtığınızda kaynaktan tekrar alınırlar. Okuma geçmişi ve indirmeler korunur.</string>
+    <string name="data_clear_installer_title">Yükleyici dosyaları temizlensin mi?</string>
+    <string name="data_clear_installer_message">Uygulama ve uzantı güncellemelerinden artakalan .apk dosyalarını siler. Bir sonraki güncellemede yeniden indirilirler. Bir yükleme sürerken temizlemeyin.</string>
+    <string name="data_cover_cache_cleared">Kapak önbelleği temizlendi</string>
+    <plurals name="data_browse_cleared"><item quantity="one">%1$d göz atma romanı temizlendi</item><item quantity="other">%1$d göz atma romanı temizlendi</item></plurals>
+    <plurals name="data_installers_cleared"><item quantity="one">%1$d yükleyici dosyası temizlendi</item><item quantity="other">%1$d yükleyici dosyası temizlendi</item></plurals>
+
+    <!-- Library update settings -->
+    <string name="library_update_scheduled">Planlı güncelleme</string>
+    <string name="library_update_scheduled_description">Kitaplığınızı arka planda yeniler ve yeni bölümleri getirir. Uygulamanın açık olması gerekmez.</string>
+    <string name="library_update_automatic">Otomatik güncelle</string>
+    <string name="library_update_wifi_only">Yalnızca Wi-Fi’da</string>
+    <string name="library_update_wifi_only_summary">Mobil veride planlı güncellemeyi atla</string>
+    <string name="library_update_charging_only">Yalnızca şarj olurken</string>
+    <string name="library_update_sync_scope">Eşitleme kapsamı</string>
+    <string name="library_update_include_epubs">EPUB’ları dahil et</string>
+    <string name="library_update_include_epubs_summary">Kitaplık güncellemelerinde EPUB romanları da yenile (yerel içe aktarmalar ve Z-Library gibi EPUB kaynakları). Bunların getirilecek yeni bölümü olmadığından varsayılan olarak kapalıdır.</string>
+    <string name="library_update_performance">Performans</string>
+    <string name="library_update_concurrency">Eşitleme eşzamanlılığı: %1$d</string>
+    <string name="library_update_concurrency_summary">Aynı anda kaç romanın yenileneceği. Yüksek değer daha hızlıdır ancak bazı kaynaklarda istek sınırlamasına yol açabilir.</string>
+    <string name="library_update_now">Kitaplığı şimdi güncelle</string>
+    <string name="library_update_now_summary">Kitaplığınızdaki tüm romanları arka planda yenile</string>
+    <string name="library_update_last">Son güncelleme</string>
+
+    <!-- Text-to-speech -->
+    <string name="tts_enable">Metin okumayı etkinleştir</string>
+    <string name="tts_enable_summary">Okuyucuda sesli okuma denetimlerini göster</string>
+    <string name="tts_speech_engine">Konuşma motoru</string>
+    <string name="tts_on_device">Cihazda</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">Cihazın yerleşik sesleriyle okur. Çevrimdışı çalışır.</string>
+    <string name="tts_elevenlabs_summary">ElevenLabs’ten doğal bulut seslerini akış olarak alır. İnternet bağlantısı gerekir ve hesabınızdan karakter başına ücretlendirilir.</string>
+    <string name="tts_elevenlabs_account">ElevenLabs hesabı</string>
+    <string name="tts_api_key">API anahtarı</string>
+    <string name="tts_playback">Oynatma</string>
+    <string name="tts_speech_rate">Konuşma hızı</string>
+    <string name="tts_pitch">Ses perdesi (yalnızca cihazda)</string>
+    <string name="tts_auto_advance">Sonraki bölüme otomatik geç</string>
+    <string name="tts_auto_advance_summary">Bir bölüm bittiğinde sonraki bölümden okumaya devam et</string>
+    <string name="tts_voices">Sesler</string>
+    <string name="tts_voices_summary">Her dili hangi sesin okuyacağını seçin. Romanlar içerik dillerine göre eşleştirilir.</string>
+    <string name="tts_custom_voice">Özel ses seçildi</string>
+    <string name="tts_system_default">Sistem varsayılanı</string>
+    <string name="tts_credit_usage">Kredi kullanımı</string>
+    <string name="tts_refresh_usage">Kullanımı yenile</string>
+    <string name="tts_usage_api_key_hint">Kalan karakterlerinizi görmek için yukarıya bir API anahtarı girin.</string>
+    <string name="tts_loading">Yükleniyor…</string>
+    <string name="tts_usage_summary">%1$,d / %2$,d karakter kullanıldı</string>
+    <string name="tts_quota_reset">Kota sıfırlanma tarihi: %1$s</string>
+    <string name="tts_voice_title">Ses</string>
+    <string name="tts_voice_needs_key">Bulut sesi seçmek için Metin okuma ayarlarından bir ElevenLabs API anahtarı ekleyin.</string>
+    <string name="tts_elevenlabs_plan_note">ElevenLabs ücretsiz planı sınırlıdır (ayda ~10.000 karakter) ve birçok ses — bazı Varsayılan sesler bile — ücretli plan gerektirir. Bir ses çalmazsa başka birini deneyin veya sınırsız çevrimdışı okuma için Cihazda motorunu kullanın.</string>
+    <string name="tts_system_default_summary">Bu dil için sesi motor seçsin</string>
+    <string name="tts_install_voices">Daha fazla ses yükle…</string>
+    <string name="tts_install_voices_summary">Cihaz motoru için ek ses verileri indir</string>
+    <string name="tts_stop_preview">Önizlemeyi durdur</string>
+    <string name="tts_preview_voice">Sesi önizle</string>
+    <string name="tts_load_usage_failed">Kullanım bilgisi yüklenemedi</string>
+    <string name="tts_load_voices_failed">Sesler yüklenemedi</string>
+
+    <!-- GitHub connection -->
+    <string name="github_account_title">GitHub hesabı</string>
+    <string name="github_privacy_note">Kendi özel depolarınızdan uzantı yüklemek için bir GitHub hesabı bağlayın. Erişim belirteciniz yalnızca bu cihazda saklanır ve yalnızca github.com’a gönderilir. İstediğiniz zaman github.com/settings/applications adresinden iptal edebilirsiniz.</string>
+    <string name="github_not_connected">Bağlı değil.</string>
+    <string name="github_connect">GitHub’ı bağla</string>
+    <string name="github_enter_code">Bu kodu github.com’da girin</string>
+    <string name="github_open_device_page">github.com/login/device adresini aç</string>
+    <string name="github_copy_code">Kodu kopyala</string>
+    <string name="github_waiting">Tarayıcıda işlemi tamamlamanız bekleniyor…</string>
+    <string name="github_connected">Bağlandı</string>
+    <string name="github_authorization_failed">Yetkilendirme başarısız</string>
+    <string name="github_no_client_id">Bu derlemede OAuth istemci kimliği yok</string>
+    <string name="github_no_client_id_summary">gradle.properties içinde (veya ortam değişkeni olarak) GITHUB_OAUTH_CLIENT_ID ayarlayıp yeniden derleyin.</string>
+
+    <!-- About and updater -->
+    <string name="about_title">Hakkında</string>
+    <string name="about_version">Sürüm</string>
+    <string name="about_version_summary">Grimoire %1$s (derleme %2$d)\nCommit %3$s · Uzantı API’si %4$s</string>
+    <string name="about_check_updates">Güncellemeleri denetle</string>
+    <string name="about_check_updates_idle">Yeni sürümü denetlemek için dokunun</string>
+    <string name="about_checking">Denetleniyor…</string>
+    <string name="about_latest_version">En son sürümü kullanıyorsunuz</string>
+    <string name="about_up_to_date">Güncel</string>
+    <string name="about_show_changelog">Değişiklik günlüğünü göster</string>
+    <string name="about_show_changelog_summary">%1$s sürüm notlarını aç</string>
+    <string name="about_updates_section">Güncellemeler</string>
+    <string name="about_update_popups">Otomatik güncelleme açılır pencereleri</string>
+    <string name="about_update_popups_summary">Güncelleme mevcut olduğunda açılışta bir iletişim kutusu göster</string>
+    <string name="about_changelog_after_update">Güncellemelerden sonra değişiklik günlüğü</string>
+    <string name="about_changelog_after_update_summary">Yeni bir sürümü ilk açtığınızda sürüm notlarını göster</string>
+    <string name="about_build_section">Derleme</string>
+    <string name="about_build_details">Derleme ayrıntıları</string>
+    <string name="about_build_details_summary">Derleme %1$d · commit %2$s · Uzantı API’si %3$s</string>
+    <string name="about_build_copied">Derleme bilgisi kopyalandı</string>
+    <string name="about_channel_stable">Kararlı</string>
+    <string name="about_channel_beta">Beta</string>
+    <string name="about_channel_stable_summary">Yalnızca etiketli sürümler. Önerilir.</string>
+    <string name="about_channel_beta_summary">Her commit’te main dalından yeni derlemeler. Kararsız olabilir.</string>
+    <string name="update_whats_new">%1$s sürümündeki yenilikler</string>
+    <string name="update_got_it">Anladım</string>
+    <string name="update_ready">Güncelleme hazır</string>
+    <string name="update_available">Güncelleme mevcut</string>
+    <string name="update_unknown_error">Bilinmeyen hata</string>
+    <string name="update_no_changelog">%1$s için değişiklik günlüğü yok.</string>
+    <string name="action_update">Güncelle</string>
+    <string name="update_download_complete">İndirme tamamlandı — güncellemeyi bitirmek için Yükle’ye dokunun.</string>
+    <string name="update_skip_version">Bu sürümü atla</string>
+    <string name="update_downloading_background">Arka planda indiriliyor — uygulamayı kapatabilirsiniz.</string>
+    <string name="update_download_progress">%1$s / %2$s MB · %%%3$d</string>
+    <string name="update_download_size">%1$s MB</string>
+    <string name="changelog_features">Özellikler</string>
+    <string name="changelog_bug_fixes">Hata düzeltmeleri</string>
+    <string name="changelog_sources">Kaynaklar</string>
+    <string name="changelog_documentation">Belgeler</string>
+    <string name="changelog_other">Diğer değişiklikler</string>
+    <string name="changelog_changes">Değişiklikler</string>
+
+    <!-- Shared language picker -->
+    <string name="language_override_global">Genel içerik dillerini geçersiz kıl</string>
+    <string name="language_override_on_helper">Yalnızca bu kaynak için istediğiniz dilleri seçin.</string>
+    <string name="language_override_off_helper">Bu kaynak genel içerik dili seçimini kullanıyor. Yalnızca bu kaynak için farklı bir dil karışımı seçmek için bunu açın.</string>
+    <string name="language_global_all">Genel: filtre yok (tüm diller gösteriliyor)</string>
+    <plurals name="language_global_selected"><item quantity="one">Genel: %1$d dil seçili</item><item quantity="other">Genel: %1$d dil seçili</item></plurals>
+    <string name="language_saved">Kaydedildi</string>
+    <string name="language_global">Genel</string>
+    <string name="language_added_here">Burada eklendi</string>
+    <string name="language_hidden_here">Burada gizlendi</string>
+    <string name="tts_voice_quality_very_high">Çok yüksek kalite</string>
+    <string name="tts_voice_quality_high">Yüksek kalite</string>
+    <string name="tts_voice_quality_normal">Normal kalite</string>
+    <string name="tts_voice_quality_low">Düşük kalite</string>
+    <string name="tts_voice_online">çevrimiçi</string>
+    <string name="tts_voice_not_installed">yüklü değil</string>
+    <string name="tts_voice_category_default">Varsayılan ses</string>
+    <string name="tts_voice_category_personal">Klonlanmış sesiniz</string>
+    <string name="tts_voice_category_workspace">Çalışma alanı sesi</string>
+    <string name="tts_voice_category_community">Ses Kütüphanesi · yalnızca ücretli planlar</string>
+    <string name="github_error_access_denied">Yetkilendirme reddedildi</string>
+    <string name="github_error_expired">Kodun süresi yetkilendirme tamamlanmadan doldu</string>
+    <string name="github_error_cancelled">İptal edildi</string>
+    <string name="github_error_network">Ağ hatası: %1$s</string>
+    <string name="github_error_unexpected">Beklenmeyen hata: %1$s</string>
+</resources>

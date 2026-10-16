@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">Сьогодні</string>
+    <string name="common_yesterday">Учора</string>
+    <string name="action_pause">Призупинити</string>
+    <string name="action_resume">Відновити</string>
+    <string name="action_expand">Розгорнути</string>
+    <string name="action_collapse">Згорнути</string>
+    <string name="action_clear_log">Очистити журнал</string>
+    <string name="action_set">Задати</string>
+    <string name="action_choose">Вибрати</string>
+    <string name="action_restore">Відновити</string>
+    <string name="action_disconnect">Від’єднати</string>
+    <string name="action_dismiss">Закрити</string>
+    <string name="action_try_again">Спробувати ще раз</string>
+    <string name="action_skip">Пропустити</string>
+    <string name="action_next">Далі</string>
+    <string name="status_error">Помилка</string>
+    <string name="status_warning">Попередження</string>
+    <string name="status_completed">Завершено</string>
+    <string name="status_queued">У черзі</string>
+    <string name="status_downloaded">Завантажено</string>
+    <string name="chapter_cancel_download">Скасувати завантаження</string>
+    <string name="chapter_downloaded_refresh_queued">Завантажено · оновлення в черзі</string>
+    <string name="chapter_cancel_refresh">Скасувати оновлення</string>
+    <string name="chapter_downloaded_refreshing">Завантажено · оновлюється</string>
+    <string name="chapter_downloaded_refresh_failed">Завантажено · не вдалося оновити</string>
+
+    <!-- More -->
+    <string name="more_title">Більше</string>
+    <string name="more_incognito">Інкогніто</string>
+    <string name="more_incognito_enabled">Історія цього сеансу не записується</string>
+    <string name="more_incognito_disabled">Призупинити історію читання й перегляду</string>
+    <string name="incognito_banner">Інкогніто · історію призупинено</string>
+    <string name="more_updates">Оновлення</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="one">%1$d новий розділ у новелах із підпискою</item>
+        <item quantity="few">%1$d нові розділи в новелах із підпискою</item>
+        <item quantity="many">%1$d нових розділів у новелах із підпискою</item>
+        <item quantity="other">%1$d нового розділу в новелах із підпискою</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="one">%1$d новий розділ у вашій бібліотеці</item>
+        <item quantity="few">%1$d нові розділи у вашій бібліотеці</item>
+        <item quantity="many">%1$d нових розділів у вашій бібліотеці</item>
+        <item quantity="other">%1$d нового розділу у вашій бібліотеці</item>
+    </plurals>
+    <string name="more_no_new_chapters">Немає нових розділів</string>
+    <string name="more_history">Історія</string>
+    <string name="more_history_summary">Нещодавно прочитані розділи й переглянуті новели</string>
+    <string name="more_downloads">Завантаження</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="one">Виконується: %1$d</item>
+        <item quantity="few">Виконується: %1$d</item>
+        <item quantity="many">Виконується: %1$d</item>
+        <item quantity="other">Виконується: %1$d</item>
+    </plurals>
+    <string name="more_downloads_summary">Завантажені розділи й черга</string>
+    <string name="more_tasks">Завдання</string>
+    <string name="more_tasks_summary">Поточні завантаження й синхронізації та їхня історія</string>
+    <string name="more_update_warnings">Попередження оновлень</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="one">%1$d новела потребує уваги</item>
+        <item quantity="few">%1$d новели потребують уваги</item>
+        <item quantity="many">%1$d новел потребують уваги</item>
+        <item quantity="other">%1$d новели потребують уваги</item>
+    </plurals>
+    <string name="more_no_refresh_problems">Проблем з оновленням немає</string>
+    <string name="more_statistics">Статистика</string>
+    <string name="more_statistics_summary">Ваша читацька активність</string>
+    <string name="more_settings_summary">Вигляд, бібліотека, читалка, резервні копії</string>
+    <string name="more_tours">Тури</string>
+    <string name="more_tours_summary">Повторити ознайомчі тури застосунком</string>
+    <string name="more_about">Про застосунок</string>
+    <string name="more_about_summary">Версія, канал оновлень, ліцензії</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">Почати</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">Вітальний тур</string>
+    <string name="tour_welcome_description">Головне: бібліотека, огляд, джерела й налаштування.</string>
+    <string name="tour_step_welcome_title">Вітаємо в Grimoire</string>
+    <string name="tour_step_welcome_body">Короткий огляд головного — займе близько 20 секунд.</string>
+    <string name="tour_step_library_title">Ваша бібліотека</string>
+    <string name="tour_step_library_body">Тут зберігаються додані новели, упорядковані за категоріями.</string>
+    <string name="tour_step_browse_title">Огляд</string>
+    <string name="tour_step_browse_body">Торкніться «Огляд», щоб шукати новели у ваших джерелах.</string>
+    <string name="tour_step_extensions_title">Джерела й розширення</string>
+    <string name="tour_step_extensions_body">Джерела встановлюються звідси. Відкрийте, щоб побачити, що доступно.</string>
+    <string name="tour_open_extensions">Відкрити розширення</string>
+    <string name="tour_step_repositories_title">Репозиторії</string>
+    <string name="tour_step_repositories_body">Джерела надходять із репозиторіїв. Офіційний уже додано — торкніться тут, щоб керувати ними або додати власний.</string>
+    <string name="tour_step_more_title">Усе інше</string>
+    <string name="tour_step_more_body">Завантаження, статистика, резервні копії й налаштування — у розділі «Більше».</string>
+    <string name="tour_step_done_title">Усе готово</string>
+    <string name="tour_step_done_body">Будь-який тур можна повторити в «Більше» → «Тури».</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">Діагностика</string>
+    <string name="privacy_diagnostics_note">Діагностика анонімна й ніколи не містить особистих даних, назв новел чи посилань. Усе вимкнено, доки ви самі не ввімкнете.</string>
+    <string name="privacy_crash_reports">Надсилати звіти про збої</string>
+    <string name="privacy_crash_reports_summary">Анонімні трасування стека під час збою застосунку</string>
+    <string name="privacy_usage_analytics">Надсилати анонімну аналітику використання</string>
+    <string name="privacy_usage_analytics_summary">Які функції використовуються — щоб знати, що розвивати далі</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">Завантаження розділів</string>
+    <string name="download_notification_starting">Запуск…</string>
+    <string name="download_notification_working">Завантаження…</string>
+    <string name="download_notification_queued">+%1$d у черзі</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d у черзі)</string>
+    <string name="download_notification_complete_title">Завантаження завершено</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="one">Завантажено %1$d розділ</item>
+        <item quantity="few">Завантажено %1$d розділи</item>
+        <item quantity="many">Завантажено %1$d розділів</item>
+        <item quantity="other">Завантажено %1$d розділу</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">Завантаження оновлення</string>
+    <string name="app_update_notification_downloading_version">Завантаження оновлення %1$s</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s МБ</string>
+    <string name="app_update_notification_size">%1$s МБ</string>
+    <string name="app_update_notification_starting">Запуск…</string>
+    <string name="app_update_notification_ready">Оновлення готове до встановлення</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s готовий</string>
+    <string name="app_update_notification_tap_to_install">Торкніться, щоб установити</string>
+    <string name="app_update_notification_failed">Не вдалося завантажити оновлення</string>
+    <string name="error_verification_failed">Не вдалося перевірити завантаження — спробуйте ще раз або змініть мережу</string>
+    <string name="app_update_download_failed">Не вдалося завантажити</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">Завантаження</string>
+    <string name="downloads_settings">Налаштування завантажень</string>
+    <string name="downloads_no_filter_matches">Немає завантажень, що відповідають вибраним фільтрам.</string>
+    <string name="downloads_parallel">Паралельні завантаження</string>
+    <string name="downloads_parallel_summary">Кількість розділів, що завантажуються одночасно</string>
+    <string name="downloads_move_to_top">Перемістити на початок</string>
+    <string name="downloads_cancel_failed">Скасувати невдалі</string>
+    <string name="downloads_redownload">Завантажити знову</string>
+    <string name="downloads_delete_download">Видалити завантаження</string>
+    <string name="downloads_delete_options">Параметри завантаження</string>
+    <string name="downloads_empty">Немає завантажень</string>
+    <string name="downloads_filter_downloading">Завантажуються</string>
+    <string name="downloads_filter_queued">У черзі</string>
+    <string name="downloads_filter_done">Готові</string>
+    <string name="downloads_filter_failed">Невдалі</string>
+    <plurals name="downloads_count_downloaded">
+        <item quantity="one">Завантажено: %1$d</item>
+        <item quantity="few">Завантажено: %1$d</item>
+        <item quantity="many">Завантажено: %1$d</item>
+        <item quantity="other">Завантажено: %1$d</item>
+    </plurals>
+    <plurals name="downloads_count_queued">
+        <item quantity="one">У черзі: %1$d</item>
+        <item quantity="few">У черзі: %1$d</item>
+        <item quantity="many">У черзі: %1$d</item>
+        <item quantity="other">У черзі: %1$d</item>
+    </plurals>
+    <plurals name="downloads_count_downloading">
+        <item quantity="one">Завантажується: %1$d</item>
+        <item quantity="few">Завантажується: %1$d</item>
+        <item quantity="many">Завантажується: %1$d</item>
+        <item quantity="other">Завантажується: %1$d</item>
+    </plurals>
+    <plurals name="downloads_count_failed">
+        <item quantity="one">Невдалих: %1$d</item>
+        <item quantity="few">Невдалих: %1$d</item>
+        <item quantity="many">Невдалих: %1$d</item>
+        <item quantity="other">Невдалих: %1$d</item>
+    </plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">Статистика</string>
+    <string name="statistics_reading">Читання</string>
+    <string name="statistics_chapters_read">Прочитано розділів</string>
+    <string name="statistics_words_read">Прочитано слів</string>
+    <string name="statistics_novels_completed">Завершено новел</string>
+    <string name="statistics_novels_started">Розпочато новел</string>
+    <string name="statistics_average_words">Сер. слів / розділ</string>
+    <string name="statistics_last_read">Останнє читання</string>
+    <string name="statistics_library">Бібліотека</string>
+    <string name="statistics_library_novels">Новел у бібліотеці</string>
+    <string name="statistics_library_chapters">Розділів у бібліотеці</string>
+    <string name="statistics_library_unread">Непрочитаних у бібліотеці</string>
+    <string name="statistics_downloaded">Завантажено</string>
+    <string name="statistics_empty_hint">Прочитайте кілька розділів, щоб почати збирати статистику.</string>
+    <string name="statistics_counting_hint">Кожен розділ рахується лише раз — позначення непрочитаним нічого не віднімає.</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Завдання</string>
+    <string name="tasks_empty">Завдань поки немає.\nЗавантаження й синхронізації бібліотеки з’являються тут під час виконання,\nа їхні результати зберігаються нижче.</string>
+    <string name="tasks_running">Виконуються</string>
+    <string name="tasks_history">Історія</string>
+    <string name="tasks_clear_title">Очистити журнал завдань?</string>
+    <string name="tasks_clear_message">Видаляє історію завершених синхронізацій бібліотеки й завантажень. Поточні завдання не зачіпаються.</string>
+    <string name="tasks_cancel_named">Скасувати %1$s</string>
+    <string name="tasks_finished_with_errors">Завершено з помилками</string>
+    <string name="tasks_updating_library">Оновлення бібліотеки</string>
+    <string name="tasks_starting">Запуск…</string>
+    <plurals name="tasks_novels_progress">
+        <item quantity="one">Новели: %1$d / %2$d</item>
+        <item quantity="few">Новели: %1$d / %2$d</item>
+        <item quantity="many">Новели: %1$d / %2$d</item>
+        <item quantity="other">Новели: %1$d / %2$d</item>
+    </plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">Завантаження розділів</string>
+    <plurals name="tasks_chapters_remaining">
+        <item quantity="one">Залишився %1$d розділ</item>
+        <item quantity="few">Залишилося %1$d розділи</item>
+        <item quantity="many">Залишилося %1$d розділів</item>
+        <item quantity="other">Залишилося %1$d розділу</item>
+    </plurals>
+    <string name="tasks_downloads">Завантаження</string>
+    <string name="tasks_library_sync">Синхронізація бібліотеки</string>
+    <plurals name="tasks_downloaded_summary">
+        <item quantity="one">Завантажено %1$d розділ</item>
+        <item quantity="few">Завантажено %1$d розділи</item>
+        <item quantity="many">Завантажено %1$d розділів</item>
+        <item quantity="other">Завантажено %1$d розділу</item>
+    </plurals>
+    <plurals name="tasks_failed_count">
+        <item quantity="one">Невдалих: %1$d</item>
+        <item quantity="few">Невдалих: %1$d</item>
+        <item quantity="many">Невдалих: %1$d</item>
+        <item quantity="other">Невдалих: %1$d</item>
+    </plurals>
+    <plurals name="tasks_checked_novels">
+        <item quantity="one">Перевірено %1$d новелу</item>
+        <item quantity="few">Перевірено %1$d новели</item>
+        <item quantity="many">Перевірено %1$d новел</item>
+        <item quantity="other">Перевірено %1$d новели</item>
+    </plurals>
+    <plurals name="tasks_new_chapters">
+        <item quantity="one">%1$d новий розділ</item>
+        <item quantity="few">%1$d нові розділи</item>
+        <item quantity="many">%1$d нових розділів</item>
+        <item quantity="other">%1$d нового розділу</item>
+    </plurals>
+    <plurals name="tasks_warning_count">
+        <item quantity="one">%1$d попередження</item>
+        <item quantity="few">%1$d попередження</item>
+        <item quantity="many">%1$d попереджень</item>
+        <item quantity="other">%1$d попередження</item>
+    </plurals>
+    <plurals name="tasks_error_count">
+        <item quantity="one">%1$d помилка</item>
+        <item quantity="few">%1$d помилки</item>
+        <item quantity="many">%1$d помилок</item>
+        <item quantity="other">%1$d помилки</item>
+    </plurals>
+    <string name="tasks_sync_failed">Не вдалося синхронізувати бібліотеку · %1$s</string>
+    <string name="library_update_downloading_new">Завантаження нових розділів</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d у черзі</string>
+    <plurals name="library_update_new_locked_chapters">
+        <item quantity="one">%1$d новий заблокований розділ</item>
+        <item quantity="few">%1$d нові заблоковані розділи</item>
+        <item quantity="many">%1$d нових заблокованих розділів</item>
+        <item quantity="other">%1$d нового заблокованого розділу</item>
+    </plurals>
+    <string name="library_update_new_with_locked">%1$s · заблоковано: %2$d</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">Оновлення</string>
+    <string name="updates_open_novel">Відкрити новелу</string>
+    <string name="updates_delete_from_log">Видалити з журналу</string>
+    <string name="updates_empty">Оновлень поки немає.\nТут з’являтимуться нові розділи, знайдені під час оновлення бібліотеки.</string>
+    <string name="updates_tab_subscribed">Підписки</string>
+    <string name="updates_tab_all">Усі</string>
+    <string name="updates_subscribed_empty">Поки немає оновлень у новелах із підпискою.</string>
+    <string name="updates_clear_title">Очистити журнал оновлень?</string>
+    <string name="updates_clear_message">Усі записи журналу оновлень буде видалено назавжди. Бібліотека й розділи не зачіпаються.</string>
+    <plurals name="updates_count_new">
+        <item quantity="one">Нових: %1$d</item>
+        <item quantity="few">Нових: %1$d</item>
+        <item quantity="many">Нових: %1$d</item>
+        <item quantity="other">Нових: %1$d</item>
+    </plurals>
+    <plurals name="updates_count_locked">
+        <item quantity="one">Заблоковано: %1$d</item>
+        <item quantity="few">Заблоковано: %1$d</item>
+        <item quantity="many">Заблоковано: %1$d</item>
+        <item quantity="other">Заблоковано: %1$d</item>
+    </plurals>
+    <plurals name="updates_count_downloaded">
+        <item quantity="one">Завантажено: %1$d</item>
+        <item quantity="few">Завантажено: %1$d</item>
+        <item quantity="many">Завантажено: %1$d</item>
+        <item quantity="other">Завантажено: %1$d</item>
+    </plurals>
+    <string name="updates_all_downloaded">Усе завантажено</string>
+    <string name="updates_unlocked">Розблоковано</string>
+    <plurals name="updates_count_unlocked">
+        <item quantity="one">Розблоковано: %1$d</item>
+        <item quantity="few">Розблоковано: %1$d</item>
+        <item quantity="many">Розблоковано: %1$d</item>
+        <item quantity="other">Розблоковано: %1$d</item>
+    </plurals>
+
+    <!-- History -->
+    <string name="history_title">Історія</string>
+    <string name="history_reading">Читання</string>
+    <string name="history_browsing">Перегляд</string>
+    <string name="history_clear_reading">Очистити історію читання</string>
+    <string name="history_clear_browsing">Очистити історію перегляду</string>
+    <string name="history_reading_empty">Історії читання поки немає.\nТут з’являтимуться розділи, які ви відкриваєте в читалці.</string>
+    <string name="history_browsing_empty">Історії перегляду поки немає.\nТут з’являтимуться новели, які ви відкриваєте в Огляді (і ще не додали до бібліотеки).</string>
+    <string name="history_clear_reading_title">Очистити історію читання?</string>
+    <string name="history_clear_browsing_title">Очистити історію перегляду?</string>
+    <string name="history_clear_reading_message">Усі записи історії читання буде видалено назавжди. Бібліотека й розділи не зачіпаються.</string>
+    <string name="history_clear_browsing_message">Усі записи історії перегляду буде видалено назавжди. Бібліотека не зачіпається.</string>
+    <plurals name="history_chapter_count">
+        <item quantity="one">%1$d розділ</item>
+        <item quantity="few">%1$d розділи</item>
+        <item quantity="many">%1$d розділів</item>
+        <item quantity="other">%1$d розділу</item>
+    </plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">Попередження оновлень</string>
+    <string name="update_issues_empty">Проблем немає.\nТут з’являтимуться новели, які не вдалося оновити.</string>
+    <string name="update_issue_source_missing">Джерело не встановлено — пропущено</string>
+    <string name="update_issue_no_chapters">Джерело не повернуло розділів — збережено наявний список</string>
+    <string name="update_issue_incomplete_data">Джерело повернуло неповні дані — збережено попередні назву й обкладинку</string>
+    <string name="update_issues_retry_all">Повторити всі</string>
+    <string name="update_issues_dismiss_all">Закрити всі</string>
+    <string name="update_issue_dismiss">Закрити</string>
+    <string name="update_issue_install_source">Установити джерело</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">Збій застосунку</string>
+    <string name="crash_empty">Звіт про збій недоступний.</string>
+    <string name="crash_description">Минулого разу застосунок неочікувано закрився. Звіт допоможе виправити проблему — подробиці збою нижче вже заповнено. Ви також можете скопіювати їх, щоб поділитися деінде.</string>
+    <string name="crash_no_browser">Немає браузера, щоб відкрити GitHub.</string>
+    <string name="crash_report_github">Повідомити на GitHub</string>
+    <string name="crash_details_copied">Подробиці збою скопійовано.</string>
+    <string name="crash_copy_details">Копіювати подробиці</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">Попередній</string>
+    <string name="action_play">Відтворити</string>
+    <string name="action_stop">Зупинити</string>
+    <string name="tts_notification_title">Озвучування тексту</string>
+    <string name="tts_error_request_failed">Помилка запиту до ElevenLabs</string>
+    <string name="tts_error_play_audio">Не вдалося відтворити аудіо</string>
+    <string name="tts_error_play_preview">Не вдалося відтворити зразок</string>
+    <string name="tts_error_start_playback">Не вдалося почати відтворення</string>
+    <string name="notification_channel_downloads">Завантаження розділів</string>
+    <string name="notification_channel_downloads_desc">Фонове завантаження розділів</string>
+    <string name="notification_channel_backups">Резервні копії</string>
+    <string name="notification_channel_backups_desc">Локальні резервні копії за розкладом</string>
+    <string name="notification_channel_app_updates">Оновлення застосунку</string>
+    <string name="notification_channel_app_updates_desc">Фонове завантаження оновлень застосунку</string>
+    <string name="notification_channel_library_updates">Оновлення бібліотеки</string>
+    <string name="notification_channel_library_updates_desc">Перебіг і результати фонового оновлення бібліотеки</string>
+    <string name="notification_channel_tts">Озвучування тексту</string>
+    <string name="notification_channel_tts_desc">Керування читанням уголос</string>
+    <string name="tts_error_no_chapters">У цій новелі немає розділів для читання</string>
+    <string name="tts_error_missing_api_key">Додайте ключ API ElevenLabs у Налаштування → Озвучування тексту</string>
+    <string name="tts_error_device_unavailable">Рушій мовлення пристрою недоступний</string>
+    <string name="tts_error_chapter_not_found">Розділ не знайдено</string>
+    <string name="tts_error_no_readable_text">У цьому розділі немає тексту для читання</string>
+    <string name="tts_error_audio_focus">Не вдалося отримати аудіофокус</string>
+    <string name="tts_error_device_engine">Помилка рушія мовлення пристрою</string>
+    <string name="tts_error_device_engine_code">Помилка рушія мовлення пристрою (%1$d)</string>
+    <string name="extension_download_failed_http">Не вдалося завантажити: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">Помилка рушія мовлення на пристрої</string>
+    <string name="tts_error_preview_engine_code">Помилка рушія мовлення на пристрої (%1$d)</string>
+    <string name="tts_error_audio_playback_code">Помилка відтворення аудіо (%1$d)</string>
+    <string name="tts_error_no_default_voice">Типовий голос ElevenLabs недоступний — виберіть голос у налаштуваннях озвучування тексту</string>
+    <string name="tts_error_no_default_voice_preview">Типовий голос ElevenLabs недоступний — виберіть голос для прослуховування</string>
+    <string name="tts_error_source_unavailable">Джерело недоступне — завантажте розділ, щоб слухати офлайн</string>
+    <string name="tts_error_source_no_text">Це джерело не може прочитати текст розділу — завантажте його, щоб слухати офлайн</string>
+    <string name="tts_error_api_key_first">Спершу додайте ключ API ElevenLabs.</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: недійсний ключ API або доступ до API на безкоштовному тарифі вимкнено</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: ваш тариф цього не дозволяє — див. налаштування озвучування тексту</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: перевищено ліміт запитів або квоту символів</string>
+    <string name="tts_error_elevenlabs_code">Помилка запиту до ElevenLabs (%1$d)</string>
+</resources>

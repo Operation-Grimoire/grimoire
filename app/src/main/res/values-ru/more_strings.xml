@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">Сегодня</string>
+    <string name="common_yesterday">Вчера</string>
+    <string name="action_pause">Пауза</string>
+    <string name="action_resume">Продолжить</string>
+    <string name="action_expand">Развернуть</string>
+    <string name="action_collapse">Свернуть</string>
+    <string name="action_clear_log">Очистить журнал</string>
+    <string name="action_set">Установить</string>
+    <string name="action_choose">Выбрать</string>
+    <string name="action_restore">Восстановить</string>
+    <string name="action_disconnect">Отключить</string>
+    <string name="action_dismiss">Скрыть</string>
+    <string name="action_try_again">Повторить</string>
+    <string name="action_skip">Пропустить</string>
+    <string name="action_next">Далее</string>
+    <string name="status_error">Ошибка</string>
+    <string name="status_warning">Предупреждение</string>
+    <string name="status_completed">Завершено</string>
+    <string name="status_queued">В очереди</string>
+    <string name="status_downloaded">Скачано</string>
+    <string name="chapter_cancel_download">Отменить загрузку</string>
+    <string name="chapter_downloaded_refresh_queued">Скачано · обновление в очереди</string>
+    <string name="chapter_cancel_refresh">Отменить обновление</string>
+    <string name="chapter_downloaded_refreshing">Скачано · обновляется</string>
+    <string name="chapter_downloaded_refresh_failed">Скачано · не удалось обновить</string>
+
+    <!-- More -->
+    <string name="more_title">Ещё</string>
+    <string name="more_incognito">Инкогнито</string>
+    <string name="more_incognito_enabled">История в этом сеансе не записывается</string>
+    <string name="more_incognito_disabled">Приостановить историю чтения и обзора</string>
+    <string name="incognito_banner">Инкогнито · история приостановлена</string>
+    <string name="more_updates">Обновления</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="one">%1$d новая глава в отслеживаемых новеллах</item>
+        <item quantity="few">%1$d новые главы в отслеживаемых новеллах</item>
+        <item quantity="many">%1$d новых глав в отслеживаемых новеллах</item>
+        <item quantity="other">%1$d новой главы в отслеживаемых новеллах</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="one">%1$d новая глава в вашей библиотеке</item>
+        <item quantity="few">%1$d новые главы в вашей библиотеке</item>
+        <item quantity="many">%1$d новых глав в вашей библиотеке</item>
+        <item quantity="other">%1$d новой главы в вашей библиотеке</item>
+    </plurals>
+    <string name="more_no_new_chapters">Нет новых глав</string>
+    <string name="more_history">История</string>
+    <string name="more_history_summary">Недавно прочитанные главы и просмотренные новеллы</string>
+    <string name="more_downloads">Загрузки</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="one">В процессе: %1$d</item>
+        <item quantity="few">В процессе: %1$d</item>
+        <item quantity="many">В процессе: %1$d</item>
+        <item quantity="other">В процессе: %1$d</item>
+    </plurals>
+    <string name="more_downloads_summary">Скачанные главы и очередь</string>
+    <string name="more_tasks">Задачи</string>
+    <string name="more_tasks_summary">Текущие загрузки и синхронизации, а также их история</string>
+    <string name="more_update_warnings">Предупреждения обновлений</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="one">%1$d новелла требует внимания</item>
+        <item quantity="few">%1$d новеллы требуют внимания</item>
+        <item quantity="many">%1$d новелл требуют внимания</item>
+        <item quantity="other">%1$d новеллы требуют внимания</item>
+    </plurals>
+    <string name="more_no_refresh_problems">Проблем с обновлением нет</string>
+    <string name="more_statistics">Статистика</string>
+    <string name="more_statistics_summary">Ваша читательская активность</string>
+    <string name="more_settings_summary">Оформление, библиотека, читалка, резервные копии</string>
+    <string name="more_tours">Обучение</string>
+    <string name="more_tours_summary">Повторить обучающие туры по приложению</string>
+    <string name="more_about">О приложении</string>
+    <string name="more_about_summary">Версия, канал обновлений, лицензии</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">Начать</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">Знакомство</string>
+    <string name="tour_welcome_description">Самое главное: библиотека, обзор, источники и настройки.</string>
+    <string name="tour_step_welcome_title">Добро пожаловать в Grimoire</string>
+    <string name="tour_step_welcome_body">Короткий обзор самого главного — займёт около 20 секунд.</string>
+    <string name="tour_step_library_title">Ваша библиотека</string>
+    <string name="tour_step_library_body">Здесь хранятся добавленные новеллы, разложенные по категориям.</string>
+    <string name="tour_step_browse_title">Обзор</string>
+    <string name="tour_step_browse_body">Нажмите «Обзор», чтобы искать новеллы в ваших источниках.</string>
+    <string name="tour_step_extensions_title">Источники и расширения</string>
+    <string name="tour_step_extensions_body">Источники устанавливаются отсюда. Откройте, чтобы посмотреть, что доступно.</string>
+    <string name="tour_open_extensions">Открыть расширения</string>
+    <string name="tour_step_repositories_title">Репозитории</string>
+    <string name="tour_step_repositories_body">Источники берутся из репозиториев. Официальный уже добавлен — нажмите здесь, чтобы управлять ими или добавить свой.</string>
+    <string name="tour_step_more_title">Всё остальное</string>
+    <string name="tour_step_more_body">Загрузки, статистика, резервные копии и настройки находятся в разделе «Ещё».</string>
+    <string name="tour_step_done_title">Всё готово</string>
+    <string name="tour_step_done_body">Любой тур можно повторить в разделе Ещё → Обучение.</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">Диагностика</string>
+    <string name="privacy_diagnostics_note">Диагностика анонимна и никогда не включает личные данные, названия новелл или ссылки. Всё выключено, пока вы сами это не включите.</string>
+    <string name="privacy_crash_reports">Отправлять отчёты о сбоях</string>
+    <string name="privacy_crash_reports_summary">Анонимные трассировки стека при сбоях приложения</string>
+    <string name="privacy_usage_analytics">Отправлять анонимную статистику</string>
+    <string name="privacy_usage_analytics_summary">Какие функции используются — чтобы понимать, что развивать</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">Загрузка глав</string>
+    <string name="download_notification_starting">Запуск…</string>
+    <string name="download_notification_working">Загрузка…</string>
+    <string name="download_notification_queued">+%1$d в очереди</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d в очереди)</string>
+    <string name="download_notification_complete_title">Загрузки завершены</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="one">%1$d глава скачана</item>
+        <item quantity="few">%1$d главы скачаны</item>
+        <item quantity="many">%1$d глав скачано</item>
+        <item quantity="other">%1$d главы скачано</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">Загрузка обновления</string>
+    <string name="app_update_notification_downloading_version">Загрузка обновления %1$s</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s МБ</string>
+    <string name="app_update_notification_size">%1$s МБ</string>
+    <string name="app_update_notification_starting">Запуск…</string>
+    <string name="app_update_notification_ready">Обновление готово к установке</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s готов</string>
+    <string name="app_update_notification_tap_to_install">Нажмите, чтобы установить</string>
+    <string name="app_update_notification_failed">Не удалось загрузить обновление</string>
+    <string name="error_verification_failed">Не удалось проверить загрузку — повторите попытку или смените сеть</string>
+    <string name="app_update_download_failed">Ошибка загрузки</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">Загрузки</string>
+    <string name="downloads_settings">Настройки загрузок</string>
+    <string name="downloads_no_filter_matches">Нет загрузок, подходящих под выбранные фильтры.</string>
+    <string name="downloads_parallel">Параллельные загрузки</string>
+    <string name="downloads_parallel_summary">Сколько глав скачивать одновременно</string>
+    <string name="downloads_move_to_top">Переместить в начало</string>
+    <string name="downloads_cancel_failed">Отменить неудачные</string>
+    <string name="downloads_redownload">Скачать заново</string>
+    <string name="downloads_delete_download">Удалить загрузку</string>
+    <string name="downloads_delete_options">Параметры загрузки</string>
+    <string name="downloads_empty">Нет загрузок</string>
+    <string name="downloads_filter_downloading">Загружаются</string>
+    <string name="downloads_filter_queued">В очереди</string>
+    <string name="downloads_filter_done">Готово</string>
+    <string name="downloads_filter_failed">С ошибкой</string>
+    <plurals name="downloads_count_downloaded"><item quantity="one">Скачано: %1$d</item><item quantity="few">Скачано: %1$d</item><item quantity="many">Скачано: %1$d</item><item quantity="other">Скачано: %1$d</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="one">В очереди: %1$d</item><item quantity="few">В очереди: %1$d</item><item quantity="many">В очереди: %1$d</item><item quantity="other">В очереди: %1$d</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="one">Загружается: %1$d</item><item quantity="few">Загружается: %1$d</item><item quantity="many">Загружается: %1$d</item><item quantity="other">Загружается: %1$d</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="one">С ошибкой: %1$d</item><item quantity="few">С ошибкой: %1$d</item><item quantity="many">С ошибкой: %1$d</item><item quantity="other">С ошибкой: %1$d</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">Статистика</string>
+    <string name="statistics_reading">Чтение</string>
+    <string name="statistics_chapters_read">Прочитано глав</string>
+    <string name="statistics_words_read">Прочитано слов</string>
+    <string name="statistics_novels_completed">Дочитано новелл</string>
+    <string name="statistics_novels_started">Начато новелл</string>
+    <string name="statistics_average_words">Слов в главе (в среднем)</string>
+    <string name="statistics_last_read">Последнее чтение</string>
+    <string name="statistics_library">Библиотека</string>
+    <string name="statistics_library_novels">Новелл в библиотеке</string>
+    <string name="statistics_library_chapters">Глав в библиотеке</string>
+    <string name="statistics_library_unread">Непрочитанных в библиотеке</string>
+    <string name="statistics_downloaded">Скачано</string>
+    <string name="statistics_empty_hint">Прочитайте несколько глав, чтобы начать собирать статистику.</string>
+    <string name="statistics_counting_hint">Каждая глава учитывается один раз — отметка «не прочитано» не уменьшает счёт.</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Задачи</string>
+    <string name="tasks_empty">Задач пока нет.\nЗдесь отображаются загрузки и синхронизации библиотеки во время выполнения,\nа их результаты сохраняются ниже.</string>
+    <string name="tasks_running">Выполняются</string>
+    <string name="tasks_history">История</string>
+    <string name="tasks_clear_title">Очистить журнал задач?</string>
+    <string name="tasks_clear_message">История завершённых синхронизаций библиотеки и загрузок будет удалена. Выполняющиеся задачи не затрагиваются.</string>
+    <string name="tasks_cancel_named">Отменить %1$s</string>
+    <string name="tasks_finished_with_errors">Завершено с ошибками</string>
+    <string name="tasks_updating_library">Обновление библиотеки</string>
+    <string name="tasks_starting">Запуск…</string>
+    <plurals name="tasks_novels_progress"><item quantity="one">Новеллы: %1$d / %2$d</item><item quantity="few">Новеллы: %1$d / %2$d</item><item quantity="many">Новеллы: %1$d / %2$d</item><item quantity="other">Новеллы: %1$d / %2$d</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">Загрузка глав</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="one">Осталась %1$d глава</item><item quantity="few">Осталось %1$d главы</item><item quantity="many">Осталось %1$d глав</item><item quantity="other">Осталось %1$d главы</item></plurals>
+    <string name="tasks_downloads">Загрузки</string>
+    <string name="tasks_library_sync">Синхронизация библиотеки</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="one">%1$d глава скачана</item><item quantity="few">%1$d главы скачаны</item><item quantity="many">%1$d глав скачано</item><item quantity="other">%1$d главы скачано</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="one">С ошибкой: %1$d</item><item quantity="few">С ошибкой: %1$d</item><item quantity="many">С ошибкой: %1$d</item><item quantity="other">С ошибкой: %1$d</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="one">Проверена %1$d новелла</item><item quantity="few">Проверено %1$d новеллы</item><item quantity="many">Проверено %1$d новелл</item><item quantity="other">Проверено %1$d новеллы</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="one">%1$d новая глава</item><item quantity="few">%1$d новые главы</item><item quantity="many">%1$d новых глав</item><item quantity="other">%1$d новой главы</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="one">%1$d предупреждение</item><item quantity="few">%1$d предупреждения</item><item quantity="many">%1$d предупреждений</item><item quantity="other">%1$d предупреждения</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="one">%1$d ошибка</item><item quantity="few">%1$d ошибки</item><item quantity="many">%1$d ошибок</item><item quantity="other">%1$d ошибки</item></plurals>
+    <string name="tasks_sync_failed">Не удалось синхронизировать библиотеку · %1$s</string>
+    <string name="library_update_downloading_new">Загрузка новых глав</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d в очереди</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="one">%1$d новая закрытая глава</item><item quantity="few">%1$d новые закрытые главы</item><item quantity="many">%1$d новых закрытых глав</item><item quantity="other">%1$d новой закрытой главы</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · закрытых: %2$d</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">Обновления</string>
+    <string name="updates_open_novel">Открыть новеллу</string>
+    <string name="updates_delete_from_log">Удалить из журнала</string>
+    <string name="updates_empty">Обновлений пока нет.\nЗдесь появятся новые главы, найденные при обновлении библиотеки.</string>
+    <string name="updates_tab_subscribed">Отслеживаемые</string>
+    <string name="updates_tab_all">Все</string>
+    <string name="updates_subscribed_empty">Обновлений отслеживаемых новелл пока нет.</string>
+    <string name="updates_clear_title">Очистить журнал обновлений?</string>
+    <string name="updates_clear_message">Все записи журнала обновлений будут удалены без возможности восстановления. Библиотека и главы не затрагиваются.</string>
+    <plurals name="updates_count_new"><item quantity="one">Новых: %1$d</item><item quantity="few">Новых: %1$d</item><item quantity="many">Новых: %1$d</item><item quantity="other">Новых: %1$d</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="one">Закрытых: %1$d</item><item quantity="few">Закрытых: %1$d</item><item quantity="many">Закрытых: %1$d</item><item quantity="other">Закрытых: %1$d</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="one">Скачано: %1$d</item><item quantity="few">Скачано: %1$d</item><item quantity="many">Скачано: %1$d</item><item quantity="other">Скачано: %1$d</item></plurals>
+    <string name="updates_all_downloaded">Всё скачано</string>
+    <string name="updates_unlocked">Открыто</string>
+    <plurals name="updates_count_unlocked"><item quantity="one">Открыто: %1$d</item><item quantity="few">Открыто: %1$d</item><item quantity="many">Открыто: %1$d</item><item quantity="other">Открыто: %1$d</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">История</string>
+    <string name="history_reading">Чтение</string>
+    <string name="history_browsing">Обзор</string>
+    <string name="history_clear_reading">Очистить историю чтения</string>
+    <string name="history_clear_browsing">Очистить историю обзора</string>
+    <string name="history_reading_empty">История чтения пуста.\nЗдесь появятся главы, открытые в читалке.</string>
+    <string name="history_browsing_empty">История обзора пуста.\nЗдесь появятся новеллы, открытые в Обзоре (и не добавленные в библиотеку).</string>
+    <string name="history_clear_reading_title">Очистить историю чтения?</string>
+    <string name="history_clear_browsing_title">Очистить историю обзора?</string>
+    <string name="history_clear_reading_message">Все записи истории чтения будут удалены без возможности восстановления. Библиотека и главы не затрагиваются.</string>
+    <string name="history_clear_browsing_message">Все записи истории обзора будут удалены без возможности восстановления. Библиотека не затрагивается.</string>
+    <plurals name="history_chapter_count"><item quantity="one">%1$d глава</item><item quantity="few">%1$d главы</item><item quantity="many">%1$d глав</item><item quantity="other">%1$d главы</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">Предупреждения обновлений</string>
+    <string name="update_issues_empty">Проблем нет.\nЗдесь появятся новеллы, которые не удалось обновить.</string>
+    <string name="update_issue_source_missing">Источник не установлен — пропущено</string>
+    <string name="update_issue_no_chapters">Источник не вернул глав — оставлен прежний список</string>
+    <string name="update_issue_incomplete_data">Источник вернул неполные данные — оставлены прежние название и обложка</string>
+    <string name="update_issues_retry_all">Повторить все</string>
+    <string name="update_issues_dismiss_all">Скрыть все</string>
+    <string name="update_issue_dismiss">Скрыть</string>
+    <string name="update_issue_install_source">Установить источник</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">Сбой приложения</string>
+    <string name="crash_empty">Отчёт о сбое недоступен.</string>
+    <string name="crash_description">При прошлом запуске приложение неожиданно закрылось. Отправка отчёта поможет исправить ошибку — подробности сбоя ниже уже заполнены. Их также можно скопировать, чтобы поделиться в другом месте.</string>
+    <string name="crash_no_browser">Нет браузера, чтобы открыть GitHub.</string>
+    <string name="crash_report_github">Сообщить на GitHub</string>
+    <string name="crash_details_copied">Подробности сбоя скопированы.</string>
+    <string name="crash_copy_details">Копировать подробности</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">Назад</string>
+    <string name="action_play">Воспроизвести</string>
+    <string name="action_stop">Стоп</string>
+    <string name="tts_notification_title">Синтез речи</string>
+    <string name="tts_error_request_failed">Ошибка запроса к ElevenLabs</string>
+    <string name="tts_error_play_audio">Не удалось воспроизвести аудио</string>
+    <string name="tts_error_play_preview">Не удалось воспроизвести образец</string>
+    <string name="tts_error_start_playback">Не удалось начать воспроизведение</string>
+    <string name="notification_channel_downloads">Загрузка глав</string>
+    <string name="notification_channel_downloads_desc">Фоновая загрузка глав</string>
+    <string name="notification_channel_backups">Резервные копии</string>
+    <string name="notification_channel_backups_desc">Локальные резервные копии по расписанию</string>
+    <string name="notification_channel_app_updates">Обновления приложения</string>
+    <string name="notification_channel_app_updates_desc">Фоновая загрузка обновлений приложения</string>
+    <string name="notification_channel_library_updates">Обновления библиотеки</string>
+    <string name="notification_channel_library_updates_desc">Ход и результаты фонового обновления библиотеки</string>
+    <string name="notification_channel_tts">Синтез речи</string>
+    <string name="notification_channel_tts_desc">Управление чтением вслух</string>
+    <string name="tts_error_no_chapters">В этой новелле нет глав для чтения</string>
+    <string name="tts_error_missing_api_key">Добавьте API-ключ ElevenLabs в разделе Настройки → Синтез речи</string>
+    <string name="tts_error_device_unavailable">Движок речи на устройстве недоступен</string>
+    <string name="tts_error_chapter_not_found">Глава не найдена</string>
+    <string name="tts_error_no_readable_text">В этой главе нет текста для чтения</string>
+    <string name="tts_error_audio_focus">Не удалось получить аудиофокус</string>
+    <string name="tts_error_device_engine">Ошибка движка речи на устройстве</string>
+    <string name="tts_error_device_engine_code">Ошибка движка речи на устройстве (%1$d)</string>
+    <string name="extension_download_failed_http">Ошибка загрузки: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">Ошибка движка речи на устройстве</string>
+    <string name="tts_error_preview_engine_code">Ошибка движка речи на устройстве (%1$d)</string>
+    <string name="tts_error_audio_playback_code">Ошибка воспроизведения аудио (%1$d)</string>
+    <string name="tts_error_no_default_voice">Нет доступного голоса ElevenLabs по умолчанию — выберите голос в настройках синтеза речи</string>
+    <string name="tts_error_no_default_voice_preview">Нет доступного голоса ElevenLabs по умолчанию — выберите голос для прослушивания</string>
+    <string name="tts_error_source_unavailable">Источник недоступен — скачайте главу, чтобы слушать офлайн</string>
+    <string name="tts_error_source_no_text">Этот источник не отдаёт текст глав — скачайте главу, чтобы слушать офлайн</string>
+    <string name="tts_error_api_key_first">Сначала добавьте API-ключ ElevenLabs.</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: неверный API-ключ или доступ к API на бесплатном тарифе отключён</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: ваш тариф этого не позволяет — см. настройки синтеза речи</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: превышен лимит запросов или квота символов</string>
+    <string name="tts_error_elevenlabs_code">Ошибка запроса к ElevenLabs (%1$d)</string>
+</resources>

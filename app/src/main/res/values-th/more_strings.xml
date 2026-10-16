@@ -1,0 +1,277 @@
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">วันนี้</string>
+    <string name="common_yesterday">เมื่อวาน</string>
+    <string name="action_pause">หยุดชั่วคราว</string>
+    <string name="action_resume">ดำเนินการต่อ</string>
+    <string name="action_expand">ขยาย</string>
+    <string name="action_collapse">ยุบ</string>
+    <string name="action_clear_log">ล้างบันทึก</string>
+    <string name="action_set">ตั้งค่า</string>
+    <string name="action_choose">เลือก</string>
+    <string name="action_restore">กู้คืน</string>
+    <string name="action_disconnect">ยกเลิกการเชื่อมต่อ</string>
+    <string name="action_dismiss">ปิด</string>
+    <string name="action_try_again">ลองอีกครั้ง</string>
+    <string name="action_skip">ข้าม</string>
+    <string name="action_next">ถัดไป</string>
+    <string name="status_error">ข้อผิดพลาด</string>
+    <string name="status_warning">คำเตือน</string>
+    <string name="status_completed">เสร็จสมบูรณ์</string>
+    <string name="status_queued">อยู่ในคิว</string>
+    <string name="status_downloaded">ดาวน์โหลดแล้ว</string>
+    <string name="chapter_cancel_download">ยกเลิกการดาวน์โหลด</string>
+    <string name="chapter_downloaded_refresh_queued">ดาวน์โหลดแล้ว · รอรีเฟรช</string>
+    <string name="chapter_cancel_refresh">ยกเลิกการรีเฟรช</string>
+    <string name="chapter_downloaded_refreshing">ดาวน์โหลดแล้ว · กำลังรีเฟรช</string>
+    <string name="chapter_downloaded_refresh_failed">ดาวน์โหลดแล้ว · รีเฟรชไม่สำเร็จ</string>
+
+    <!-- More -->
+    <string name="more_title">เพิ่มเติม</string>
+    <string name="more_incognito">โหมดไม่ระบุตัวตน</string>
+    <string name="more_incognito_enabled">ไม่บันทึกประวัติในเซสชันนี้</string>
+    <string name="more_incognito_disabled">หยุดบันทึกประวัติการอ่านและการเรียกดูชั่วคราว</string>
+    <string name="incognito_banner">โหมดไม่ระบุตัวตน · หยุดบันทึกประวัติ</string>
+    <string name="more_updates">อัปเดต</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="other">ตอนใหม่ %1$d ตอนจากนิยายที่ติดตาม</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="other">ตอนใหม่ %1$d ตอนในคลังของคุณ</item>
+    </plurals>
+    <string name="more_no_new_chapters">ไม่มีตอนใหม่</string>
+    <string name="more_history">ประวัติ</string>
+    <string name="more_history_summary">ตอนที่อ่านล่าสุดและนิยายที่เรียกดู</string>
+    <string name="more_downloads">ดาวน์โหลด</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="other">กำลังดำเนินการ %1$d รายการ</item>
+    </plurals>
+    <string name="more_downloads_summary">ตอนที่ดาวน์โหลดแล้วและคิว</string>
+    <string name="more_tasks">งาน</string>
+    <string name="more_tasks_summary">การดาวน์โหลดและการซิงค์ที่กำลังทำงาน พร้อมประวัติ</string>
+    <string name="more_update_warnings">คำเตือนการอัปเดต</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="other">นิยาย %1$d เรื่องต้องตรวจสอบ</item>
+    </plurals>
+    <string name="more_no_refresh_problems">ไม่มีปัญหาการรีเฟรช</string>
+    <string name="more_statistics">สถิติ</string>
+    <string name="more_statistics_summary">กิจกรรมการอ่านของคุณ</string>
+    <string name="more_settings_summary">รูปลักษณ์, คลัง, ตัวอ่าน, การสำรองข้อมูล</string>
+    <string name="more_tours">ทัวร์แนะนำ</string>
+    <string name="more_tours_summary">ดูทัวร์แนะนำการใช้งานในแอปอีกครั้ง</string>
+    <string name="more_about">เกี่ยวกับ</string>
+    <string name="more_about_summary">เวอร์ชัน, ช่องทางอัปเดต, สัญญาอนุญาต</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">เริ่ม</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">ทัวร์ต้อนรับ</string>
+    <string name="tour_welcome_description">สิ่งสำคัญ: คลัง, การเรียกดู, แหล่งที่มา และการตั้งค่า</string>
+    <string name="tour_step_welcome_title">ยินดีต้อนรับสู่ Grimoire</string>
+    <string name="tour_step_welcome_body">ทัวร์สั้น ๆ แนะนำสิ่งสำคัญ — ใช้เวลาประมาณ 20 วินาที</string>
+    <string name="tour_step_library_title">คลังของคุณ</string>
+    <string name="tour_step_library_body">นิยายที่คุณเพิ่มจะอยู่ที่นี่ จัดเป็นหมวดหมู่</string>
+    <string name="tour_step_browse_title">เรียกดู</string>
+    <string name="tour_step_browse_body">แตะเรียกดูเพื่อค้นหานิยายจากแหล่งที่มาของคุณ</string>
+    <string name="tour_step_extensions_title">แหล่งที่มาและส่วนขยาย</string>
+    <string name="tour_step_extensions_body">ติดตั้งแหล่งที่มาได้จากที่นี่ เปิดเพื่อดูว่ามีอะไรให้ใช้บ้าง</string>
+    <string name="tour_open_extensions">เปิดส่วนขยาย</string>
+    <string name="tour_step_repositories_title">รีโพสิทอรี</string>
+    <string name="tour_step_repositories_body">แหล่งที่มามาจากรีโพสิทอรี รีโพสิทอรีทางการถูกเพิ่มไว้แล้ว — แตะที่นี่เพื่อจัดการหรือเพิ่มของคุณเอง</string>
+    <string name="tour_step_more_title">อื่น ๆ ทั้งหมด</string>
+    <string name="tour_step_more_body">การดาวน์โหลด, สถิติ, การสำรองข้อมูล และการตั้งค่าอยู่ในเมนูเพิ่มเติม</string>
+    <string name="tour_step_done_title">พร้อมแล้ว</string>
+    <string name="tour_step_done_body">ดูทัวร์ใดก็ได้อีกครั้งที่ เพิ่มเติม → ทัวร์แนะนำ</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">การวินิจฉัย</string>
+    <string name="privacy_diagnostics_note">ข้อมูลการวินิจฉัยเป็นแบบไม่ระบุตัวตน และไม่มีข้อมูลส่วนบุคคล ชื่อนิยาย หรือลิงก์ ทุกอย่างปิดอยู่จนกว่าคุณจะเปิดเอง</string>
+    <string name="privacy_crash_reports">ส่งรายงานข้อขัดข้อง</string>
+    <string name="privacy_crash_reports_summary">ส่ง stack trace แบบไม่ระบุตัวตนเมื่อแอปขัดข้อง</string>
+    <string name="privacy_usage_analytics">ส่งสถิติการใช้งานแบบไม่ระบุตัวตน</string>
+    <string name="privacy_usage_analytics_summary">ฟีเจอร์ใดถูกใช้บ้าง เพื่อช่วยกำหนดสิ่งที่จะพัฒนาต่อ</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">กำลังดาวน์โหลดตอน</string>
+    <string name="download_notification_starting">กำลังเริ่ม…</string>
+    <string name="download_notification_working">กำลังดาวน์โหลด…</string>
+    <string name="download_notification_queued">+%1$d อยู่ในคิว</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d อยู่ในคิว)</string>
+    <string name="download_notification_complete_title">ดาวน์โหลดเสร็จแล้ว</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="other">ดาวน์โหลดแล้ว %1$d ตอน</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">กำลังดาวน์โหลดอัปเดต</string>
+    <string name="app_update_notification_downloading_version">กำลังดาวน์โหลดอัปเดต %1$s</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">กำลังเริ่ม…</string>
+    <string name="app_update_notification_ready">อัปเดตพร้อมติดตั้งแล้ว</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s พร้อมแล้ว</string>
+    <string name="app_update_notification_tap_to_install">แตะเพื่อติดตั้ง</string>
+    <string name="app_update_notification_failed">ดาวน์โหลดอัปเดตไม่สำเร็จ</string>
+    <string name="error_verification_failed">ตรวจสอบไฟล์ที่ดาวน์โหลดไม่ผ่าน — ลองอีกครั้งหรือเปลี่ยนเครือข่าย</string>
+    <string name="app_update_download_failed">ดาวน์โหลดไม่สำเร็จ</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">ดาวน์โหลด</string>
+    <string name="downloads_settings">การตั้งค่าการดาวน์โหลด</string>
+    <string name="downloads_no_filter_matches">ไม่มีการดาวน์โหลดที่ตรงกับตัวกรองที่เลือก</string>
+    <string name="downloads_parallel">ดาวน์โหลดพร้อมกัน</string>
+    <string name="downloads_parallel_summary">จำนวนตอนที่ดาวน์โหลดพร้อมกัน</string>
+    <string name="downloads_move_to_top">ย้ายขึ้นบนสุด</string>
+    <string name="downloads_cancel_failed">ยกเลิกรายการที่ล้มเหลว</string>
+    <string name="downloads_redownload">ดาวน์โหลดใหม่</string>
+    <string name="downloads_delete_download">ลบการดาวน์โหลด</string>
+    <string name="downloads_delete_options">ตัวเลือกการดาวน์โหลด</string>
+    <string name="downloads_empty">ไม่มีการดาวน์โหลด</string>
+    <string name="downloads_filter_downloading">กำลังดาวน์โหลด</string>
+    <string name="downloads_filter_queued">อยู่ในคิว</string>
+    <string name="downloads_filter_done">เสร็จแล้ว</string>
+    <string name="downloads_filter_failed">ล้มเหลว</string>
+    <plurals name="downloads_count_downloaded"><item quantity="other">ดาวน์โหลดแล้ว %1$d</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="other">อยู่ในคิว %1$d</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="other">กำลังดาวน์โหลด %1$d</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="other">ล้มเหลว %1$d</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">สถิติ</string>
+    <string name="statistics_reading">การอ่าน</string>
+    <string name="statistics_chapters_read">ตอนที่อ่านแล้ว</string>
+    <string name="statistics_words_read">คำที่อ่านแล้ว</string>
+    <string name="statistics_novels_completed">นิยายที่อ่านจบ</string>
+    <string name="statistics_novels_started">นิยายที่เริ่มอ่าน</string>
+    <string name="statistics_average_words">คำเฉลี่ย / ตอน</string>
+    <string name="statistics_last_read">อ่านล่าสุด</string>
+    <string name="statistics_library">คลัง</string>
+    <string name="statistics_library_novels">นิยายในคลัง</string>
+    <string name="statistics_library_chapters">ตอนในคลัง</string>
+    <string name="statistics_library_unread">ยังไม่อ่านในคลัง</string>
+    <string name="statistics_downloaded">ดาวน์โหลดแล้ว</string>
+    <string name="statistics_empty_hint">อ่านสักสองสามตอนเพื่อเริ่มเก็บสถิติ</string>
+    <string name="statistics_counting_hint">สถิตินับแต่ละตอนเพียงครั้งเดียว — การทำเครื่องหมายว่ายังไม่อ่านจะไม่หักออก</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">งาน</string>
+    <string name="tasks_empty">ยังไม่มีงาน\nการดาวน์โหลดและการซิงค์คลังจะแสดงที่นี่ขณะทำงาน\nและผลลัพธ์จะเก็บไว้ด้านล่าง</string>
+    <string name="tasks_running">กำลังทำงาน</string>
+    <string name="tasks_history">ประวัติ</string>
+    <string name="tasks_clear_title">ล้างบันทึกงานไหม?</string>
+    <string name="tasks_clear_message">ลบประวัติการซิงค์คลังและการดาวน์โหลดที่เสร็จแล้ว งานที่กำลังทำงานอยู่จะไม่ได้รับผลกระทบ</string>
+    <string name="tasks_cancel_named">ยกเลิก %1$s</string>
+    <string name="tasks_finished_with_errors">เสร็จสิ้นแต่มีข้อผิดพลาด</string>
+    <string name="tasks_updating_library">กำลังอัปเดตคลัง</string>
+    <string name="tasks_starting">กำลังเริ่ม…</string>
+    <plurals name="tasks_novels_progress"><item quantity="other">%1$d / %2$d เรื่อง</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">กำลังดาวน์โหลดตอน</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="other">เหลืออีก %1$d ตอน</item></plurals>
+    <string name="tasks_downloads">ดาวน์โหลด</string>
+    <string name="tasks_library_sync">ซิงค์คลัง</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="other">ดาวน์โหลดแล้ว %1$d ตอน</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="other">ล้มเหลว %1$d</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="other">ตรวจสอบแล้ว %1$d เรื่อง</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="other">ตอนใหม่ %1$d ตอน</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="other">คำเตือน %1$d รายการ</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="other">ข้อผิดพลาด %1$d รายการ</item></plurals>
+    <string name="tasks_sync_failed">ซิงค์คลังไม่สำเร็จ · %1$s</string>
+    <string name="library_update_downloading_new">กำลังดาวน์โหลดตอนใหม่</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d อยู่ในคิว</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="other">ตอนใหม่ที่ถูกล็อก %1$d ตอน</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · ถูกล็อก %2$d</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">อัปเดต</string>
+    <string name="updates_open_novel">เปิดนิยาย</string>
+    <string name="updates_delete_from_log">ลบออกจากบันทึก</string>
+    <string name="updates_empty">ยังไม่มีอัปเดต\nตอนใหม่ที่พบจากการรีเฟรชคลังจะแสดงที่นี่</string>
+    <string name="updates_tab_subscribed">ที่ติดตาม</string>
+    <string name="updates_tab_all">ทั้งหมด</string>
+    <string name="updates_subscribed_empty">ยังไม่มีอัปเดตจากนิยายที่ติดตาม</string>
+    <string name="updates_clear_title">ล้างบันทึกอัปเดตไหม?</string>
+    <string name="updates_clear_message">การดำเนินการนี้จะลบทุกรายการในบันทึกอัปเดตอย่างถาวร คลังและตอนของคุณจะไม่ได้รับผลกระทบ</string>
+    <plurals name="updates_count_new"><item quantity="other">ใหม่ %1$d</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="other">ถูกล็อก %1$d</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="other">ดาวน์โหลดแล้ว %1$d</item></plurals>
+    <string name="updates_all_downloaded">ดาวน์โหลดครบแล้ว</string>
+    <string name="updates_unlocked">ปลดล็อกแล้ว</string>
+    <plurals name="updates_count_unlocked"><item quantity="other">ปลดล็อกแล้ว %1$d</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">ประวัติ</string>
+    <string name="history_reading">การอ่าน</string>
+    <string name="history_browsing">การเรียกดู</string>
+    <string name="history_clear_reading">ล้างประวัติการอ่าน</string>
+    <string name="history_clear_browsing">ล้างประวัติการเรียกดู</string>
+    <string name="history_reading_empty">ยังไม่มีประวัติการอ่าน\nตอนที่คุณเปิดในตัวอ่านจะแสดงที่นี่</string>
+    <string name="history_browsing_empty">ยังไม่มีประวัติการเรียกดู\nนิยายที่คุณเปิดในหน้าเรียกดู (และยังไม่ได้เพิ่มลงคลัง) จะแสดงที่นี่</string>
+    <string name="history_clear_reading_title">ล้างประวัติการอ่านไหม?</string>
+    <string name="history_clear_browsing_title">ล้างประวัติการเรียกดูไหม?</string>
+    <string name="history_clear_reading_message">การดำเนินการนี้จะลบทุกรายการในประวัติการอ่านอย่างถาวร คลังและตอนของคุณจะไม่ได้รับผลกระทบ</string>
+    <string name="history_clear_browsing_message">การดำเนินการนี้จะลบทุกรายการในประวัติการเรียกดูอย่างถาวร คลังของคุณจะไม่ได้รับผลกระทบ</string>
+    <plurals name="history_chapter_count"><item quantity="other">%1$d ตอน</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">คำเตือนการอัปเดต</string>
+    <string name="update_issues_empty">ไม่มีปัญหา\nนิยายที่รีเฟรชไม่สำเร็จจะแสดงที่นี่</string>
+    <string name="update_issue_source_missing">ไม่ได้ติดตั้งแหล่งที่มา — ข้ามไป</string>
+    <string name="update_issue_no_chapters">แหล่งที่มาไม่ส่งตอนกลับมา — คงรายการเดิมไว้</string>
+    <string name="update_issue_incomplete_data">แหล่งที่มาส่งข้อมูลไม่ครบ — คงชื่อเรื่อง/ปกเดิมไว้</string>
+    <string name="update_issues_retry_all">ลองใหม่ทั้งหมด</string>
+    <string name="update_issues_dismiss_all">ปิดทั้งหมด</string>
+    <string name="update_issue_dismiss">ปิด</string>
+    <string name="update_issue_install_source">ติดตั้งแหล่งที่มา</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">แอปขัดข้อง</string>
+    <string name="crash_empty">ไม่มีรายงานข้อขัดข้อง</string>
+    <string name="crash_description">แอปปิดไปโดยไม่คาดคิดในครั้งที่แล้ว การส่งรายงานจะช่วยให้แก้ไขได้ — รายละเอียดข้อขัดข้องด้านล่างกรอกไว้ให้แล้ว คุณยังคัดลอกไปแชร์ที่อื่นได้ด้วย</string>
+    <string name="crash_no_browser">ไม่มีเบราว์เซอร์สำหรับเปิด GitHub</string>
+    <string name="crash_report_github">รายงานบน GitHub</string>
+    <string name="crash_details_copied">คัดลอกรายละเอียดข้อขัดข้องแล้ว</string>
+    <string name="crash_copy_details">คัดลอกรายละเอียด</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">ก่อนหน้า</string>
+    <string name="action_play">เล่น</string>
+    <string name="action_stop">หยุด</string>
+    <string name="tts_notification_title">อ่านออกเสียง</string>
+    <string name="tts_error_request_failed">คำขอ ElevenLabs ล้มเหลว</string>
+    <string name="tts_error_play_audio">เล่นเสียงไม่ได้</string>
+    <string name="tts_error_play_preview">เล่นเสียงตัวอย่างไม่ได้</string>
+    <string name="tts_error_start_playback">เริ่มเล่นไม่ได้</string>
+    <string name="notification_channel_downloads">การดาวน์โหลดตอน</string>
+    <string name="notification_channel_downloads_desc">ดาวน์โหลดตอนในเบื้องหลัง</string>
+    <string name="notification_channel_backups">การสำรองข้อมูล</string>
+    <string name="notification_channel_backups_desc">สำรองข้อมูลในเครื่องตามกำหนดเวลา</string>
+    <string name="notification_channel_app_updates">อัปเดตแอป</string>
+    <string name="notification_channel_app_updates_desc">ดาวน์โหลดอัปเดตแอปในเบื้องหลัง</string>
+    <string name="notification_channel_library_updates">การอัปเดตคลัง</string>
+    <string name="notification_channel_library_updates_desc">ความคืบหน้าและผลลัพธ์การรีเฟรชคลังในเบื้องหลัง</string>
+    <string name="notification_channel_tts">อ่านออกเสียง</string>
+    <string name="notification_channel_tts_desc">ปุ่มควบคุมการเล่นเสียงอ่าน</string>
+    <string name="tts_error_no_chapters">นิยายเรื่องนี้ไม่มีตอนให้อ่าน</string>
+    <string name="tts_error_missing_api_key">เพิ่ม API key ของ ElevenLabs ได้ที่ การตั้งค่า → อ่านออกเสียง</string>
+    <string name="tts_error_device_unavailable">เอนจินเสียงพูดของอุปกรณ์ใช้งานไม่ได้</string>
+    <string name="tts_error_chapter_not_found">ไม่พบตอน</string>
+    <string name="tts_error_no_readable_text">ตอนนี้ไม่มีข้อความที่อ่านได้</string>
+    <string name="tts_error_audio_focus">ไม่สามารถรับโฟกัสเสียงได้</string>
+    <string name="tts_error_device_engine">เอนจินเสียงพูดของอุปกรณ์เกิดข้อผิดพลาด</string>
+    <string name="tts_error_device_engine_code">เอนจินเสียงพูดของอุปกรณ์เกิดข้อผิดพลาด (%1$d)</string>
+    <string name="extension_download_failed_http">ดาวน์โหลดไม่สำเร็จ: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">เอนจินเสียงพูดในอุปกรณ์เกิดข้อผิดพลาด</string>
+    <string name="tts_error_preview_engine_code">เอนจินเสียงพูดในอุปกรณ์เกิดข้อผิดพลาด (%1$d)</string>
+    <string name="tts_error_audio_playback_code">เล่นเสียงผิดพลาด (%1$d)</string>
+    <string name="tts_error_no_default_voice">ไม่มีเสียงเริ่มต้นของ ElevenLabs — เลือกเสียงในการตั้งค่าอ่านออกเสียง</string>
+    <string name="tts_error_no_default_voice_preview">ไม่มีเสียงเริ่มต้นของ ElevenLabs — เลือกเสียงเพื่อฟังตัวอย่าง</string>
+    <string name="tts_error_source_unavailable">ใช้งานแหล่งที่มาไม่ได้ — ดาวน์โหลดตอนเพื่อฟังแบบออฟไลน์</string>
+    <string name="tts_error_source_no_text">แหล่งที่มานี้อ่านข้อความของตอนไม่ได้ — ดาวน์โหลดเพื่อฟังแบบออฟไลน์</string>
+    <string name="tts_error_api_key_first">เพิ่ม API key ของ ElevenLabs ก่อน</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: API key ไม่ถูกต้อง หรือแพ็กเกจฟรีถูกปิดการเข้าถึง API</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: แพ็กเกจของคุณไม่รองรับการใช้งานนี้ — ดูการตั้งค่าอ่านออกเสียง</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: เกินขีดจำกัดคำขอหรือโควตาตัวอักษร</string>
+    <string name="tts_error_elevenlabs_code">คำขอ ElevenLabs ล้มเหลว (%1$d)</string>
+</resources>

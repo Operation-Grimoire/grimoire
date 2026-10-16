@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Appearance -->
+    <string name="appearance_theme">Motyw</string>
+    <string name="appearance_theme_system">Systemowy</string>
+    <string name="appearance_theme_light">Jasny</string>
+    <string name="appearance_theme_dark">Ciemny</string>
+    <string name="appearance_dynamic_color">Kolory dynamiczne</string>
+    <string name="appearance_dynamic_color_summary">Dopasuj kolory do tapety</string>
+    <string name="appearance_synopsis_links">Linki w opisach</string>
+    <string name="appearance_synopsis_links_summary">Wyświetlaj adresy internetowe w opisach powieści jako klikalne linki</string>
+    <string name="appearance_color_palette">Paleta kolorów</string>
+    <string name="appearance_color_palette_summary">Wybierz paletę akcentów używaną w całej aplikacji.</string>
+    <string name="appearance_color_palette_disabled">Wyłącz kolory dynamiczne, aby wybrać własną paletę.</string>
+    <string name="color_theme_default">Domyślna</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">Ocean</string>
+    <string name="color_theme_sunset">Zachód słońca</string>
+    <string name="color_theme_forest">Las</string>
+    <string name="color_theme_rose">Róża</string>
+    <string name="color_theme_midnight">Północ</string>
+
+    <!-- Behavior -->
+    <string name="behavior_haptics">Wibracje dotykowe</string>
+    <string name="behavior_haptics_summary">Wibruj przy długim naciśnięciu, przełączaniu kart i zaznaczaniu.</string>
+
+    <!-- Library settings -->
+    <string name="settings_section_display">Wyświetlanie</string>
+    <string name="settings_display_mode">Wyświetlanie</string>
+    <string name="settings_display_grid">Siatka</string>
+    <string name="settings_display_list">Lista</string>
+    <string name="settings_columns">Kolumny</string>
+    <string name="settings_section_organization">Organizacja</string>
+    <string name="library_settings_show_all">Pokaż kartę „Wszystkie”</string>
+    <string name="library_settings_show_all_summary">Pokaż kartę łączącą wszystkie kategorie</string>
+    <string name="library_settings_hidden">Ukryte kategorie</string>
+    <string name="library_settings_hidden_summary">Ustaw PIN i wybierz, które kategorie są ukryte</string>
+    <string name="library_settings_section_counts">Liczba rozdziałów</string>
+    <string name="library_settings_locked_totals">Uwzględniaj zablokowane rozdziały w sumach</string>
+    <string name="library_settings_locked_totals_summary">Wliczaj zablokowane rozdziały do sumy i procentu przeczytania na plakietkach w bibliotece i na stronie szczegółów powieści</string>
+    <string name="library_settings_section_badges">Plakietki na okładkach</string>
+    <string name="library_settings_read_badge">Pokaż plakietkę postępu</string>
+    <string name="library_settings_read_badge_summary">Pokazuj liczbę i procent przeczytanych rozdziałów na okładkach w bibliotece</string>
+    <string name="library_settings_downloaded_badge">Pokaż plakietkę pobranych</string>
+    <string name="library_settings_downloaded_badge_summary">Pokazuj liczbę pobranych rozdziałów na okładkach w bibliotece</string>
+    <string name="library_settings_locked_badge">Pokaż plakietkę zablokowanych</string>
+    <string name="library_settings_locked_badge_summary">Pokazuj złotą kłódkę z liczbą zablokowanych rozdziałów na okładkach w bibliotece</string>
+    <string name="library_settings_rating_badge">Pokaż plakietkę oceny</string>
+    <string name="library_settings_rating_badge_summary">Pokazuj własną ocenę na okładkach w bibliotece</string>
+    <string name="library_settings_epub_badge">Pokaż plakietkę EPUB</string>
+    <string name="library_settings_epub_badge_summary">Oznaczaj zaimportowane powieści EPUB plakietką na okładkach w bibliotece</string>
+
+    <!-- Browse settings and content languages -->
+    <string name="browse_settings_nu_shortcuts">Skróty NovelUpdates</string>
+    <string name="browse_settings_nu_shortcuts_summary">Pokazuj w Przeglądaj linki do wyszukiwania, rankingów i najnowszych w NovelUpdates.</string>
+    <string name="browse_settings_pinned_groups">Pokazuj przypięte w grupach językowych</string>
+    <string name="browse_settings_pinned_groups_summary">Wyświetlaj przypięte źródła także pod ich językiem, nie tylko w Przypiętych.</string>
+    <string name="content_languages_title">Języki treści</string>
+    <string name="content_languages_helper">Wybrane tutaj języki dotyczą wszystkich źródeł wielojęzycznych, chyba że zmienisz to w ustawieniach danego źródła. Nie zaznaczaj niczego, aby pokazywać wszystkie języki.</string>
+
+    <!-- Reader settings -->
+    <string name="settings_section_appearance">Wygląd</string>
+    <string name="reader_settings_color_theme">Motyw kolorystyczny</string>
+    <string name="reader_settings_font_size">Rozmiar czcionki</string>
+    <string name="reader_settings_line_height">Wysokość linii</string>
+    <string name="reader_settings_paragraph_spacing">Odstęp między akapitami</string>
+    <string name="settings_section_reading">Czytanie</string>
+    <string name="reader_settings_auto_mark">Automatycznie oznaczaj jako przeczytane</string>
+    <string name="reader_settings_within_last">Przed końcem</string>
+    <plurals name="reader_settings_paragraph_count">
+        <item quantity="one">%1$d akapit</item>
+        <item quantity="few">%1$d akapity</item>
+        <item quantity="many">%1$d akapitów</item>
+        <item quantity="other">%1$d akapitu</item>
+    </plurals>
+    <string name="reader_settings_rotation">Obrót ekranu</string>
+    <string name="reader_settings_hide_status_bar">Ukryj pasek powiadomień</string>
+    <string name="reader_settings_hide_status_bar_summary">Ukrywaj pasek stanu u góry ekranu podczas czytania</string>
+    <string name="settings_section_privacy">Prywatność</string>
+    <string name="reader_settings_hide_images">Ukryj obrazy</string>
+    <string name="reader_settings_hide_images_summary">Ukrywaj obrazy w tekście, dopóki nie dotkniesz, aby je odkryć, lub nie przytrzymasz, aby podejrzeć</string>
+
+    <!-- NovelUpdates and connections -->
+    <string name="nu_settings_show_section">Pokaż sekcję NovelUpdates</string>
+    <string name="nu_settings_show_section_summary">Dodaje do szczegółów powieści panel NovelUpdates z alternatywnymi tytułami, oceną i rekomendacjami.</string>
+    <string name="connections_github">GitHub</string>
+    <string name="connections_not_connected">Nie połączono</string>
+    <string name="connections_signing_in">Logowanie…</string>
+    <string name="connections_error">Błąd połączenia</string>
+
+    <!-- Shared schedule controls -->
+    <string name="schedule_every">Co</string>
+    <plurals name="schedule_hours">
+        <item quantity="one">%1$d godzinę</item>
+        <item quantity="few">%1$d godziny</item>
+        <item quantity="many">%1$d godzin</item>
+        <item quantity="other">%1$d godziny</item>
+    </plurals>
+    <plurals name="schedule_days">
+        <item quantity="one">%1$d dzień</item>
+        <item quantity="few">%1$d dni</item>
+        <item quantity="many">%1$d dni</item>
+        <item quantity="other">%1$d dnia</item>
+    </plurals>
+    <plurals name="schedule_weeks">
+        <item quantity="one">%1$d tydzień</item>
+        <item quantity="few">%1$d tygodnie</item>
+        <item quantity="many">%1$d tygodni</item>
+        <item quantity="other">%1$d tygodnia</item>
+    </plurals>
+    <string name="schedule_unit_hour">godziny</string>
+    <string name="schedule_unit_day">dni</string>
+    <string name="schedule_unit_week">tygodnie</string>
+    <string name="schedule_time_of_day">Pora dnia</string>
+    <string name="schedule_off">Wył.</string>
+    <string name="schedule_runs_every">Uruchamiane co %1$s</string>
+    <string name="schedule_runs_around">Uruchamiane około %1$s</string>
+    <string name="schedule_run_around">Uruchom około %1$s</string>
+    <string name="schedule_runs_around_when_scheduled">Uruchamiane około %1$s, gdy zaplanowane</string>
+    <string name="schedule_never">Nigdy</string>
+    <string name="schedule_completed_at">%1$s — ukończono</string>
+    <string name="schedule_failed_at">%1$s — niepowodzenie</string>
+
+    <!-- Hidden categories -->
+    <string name="hidden_title">Ukryte kategorie</string>
+    <string name="hidden_setup_pin">Ustaw PIN</string>
+    <string name="hidden_setup_pin_summary">PIN jest wymagany, aby ukrywać kategorie i później je odblokowywać.</string>
+    <string name="hidden_setup_pin_action">Ustaw PIN</string>
+    <string name="hidden_locked">Zablokowane</string>
+    <string name="hidden_locked_summary">Odblokuj, aby zarządzać ukrytymi kategoriami.</string>
+    <string name="hidden_change_pin">Zmień PIN</string>
+    <string name="hidden_change">Zmień</string>
+    <string name="hidden_biometric">Odblokowanie biometryczne</string>
+    <string name="hidden_biometric_available">Odcisk palca lub twarz zamiast PIN-u</string>
+    <string name="hidden_biometric_unavailable">Niedostępne — brak zarejestrowanej biometrii</string>
+    <string name="hidden_show_in_all">Pokazuj ukryte w karcie „Wszystkie”</string>
+    <string name="hidden_show_in_all_summary">Po odblokowaniu wyświetlaj ukryte powieści także w karcie Wszystkie</string>
+    <string name="hidden_categories_section">Kategorie</string>
+    <string name="hidden_default_category">Domyślna — nie można jej ukryć</string>
+    <string name="hidden_remove_pin_action">Usuń PIN i odkryj wszystkie</string>
+    <string name="hidden_remove_pin_title">Usunąć PIN?</string>
+    <string name="hidden_remove_pin_message">Wszystkie ukryte kategorie staną się widoczne dla każdego, kto używa aplikacji.</string>
+    <string name="hidden_pin_label">PIN (4–8 cyfr)</string>
+    <string name="hidden_confirm_pin">Potwierdź PIN</string>
+    <string name="hidden_pin_mismatch">Kody PIN się nie zgadzają</string>
+
+    <!-- Backup and restore -->
+    <string name="backup_section_backup">Kopia zapasowa</string>
+    <string name="backup_description">Kopie zapasowe są zapisywane jako skompresowany (gzip) plik JSON w wybranym folderze na tym urządzeniu. Wybierz folder, który łatwo później znajdziesz (np. Pobrane lub Dokumenty).</string>
+    <string name="backup_folder">Folder kopii zapasowych</string>
+    <string name="backup_folder_not_selected">Nie wybrano</string>
+    <string name="backup_no_folder_selected">Nie wybrano folderu kopii zapasowych</string>
+    <plurals name="backup_novels_backed_up">
+        <item quantity="one">Zapisano kopię %1$d powieści</item>
+        <item quantity="few">Zapisano kopię %1$d powieści</item>
+        <item quantity="many">Zapisano kopię %1$d powieści</item>
+        <item quantity="other">Zapisano kopię %1$d powieści</item>
+    </plurals>
+    <string name="backup_now">Utwórz kopię teraz</string>
+    <string name="backup_restore_ellipsis">Przywróć…</string>
+    <string name="backup_scheduled">Zaplanowana kopia zapasowa</string>
+    <string name="backup_scheduled_description">Działa w tle na tym urządzeniu. Aplikacja nie musi być otwarta.</string>
+    <string name="backup_automatic">Twórz kopie automatycznie</string>
+    <string name="backup_wifi_only">Tylko przez Wi-Fi</string>
+    <string name="backup_wifi_only_summary">Pomijaj automatyczną kopię przy danych komórkowych</string>
+    <string name="backup_charging_only">Tylko podczas ładowania</string>
+    <string name="backup_run_scheduled">Uruchom zaplanowaną kopię teraz</string>
+    <string name="backup_run_scheduled_summary">Używa wybranego folderu i warunków harmonogramu</string>
+    <string name="backup_last_automatic">Ostatnia automatyczna kopia</string>
+    <string name="backup_succeeded_at">%1$s — %2$s</string>
+    <string name="backup_succeeded">powodzenie</string>
+    <string name="backup_restore_title">Przywrócić kopię zapasową?</string>
+    <string name="backup_restore_message">Kopia zostanie scalona z obecną biblioteką. Istniejące wpisy zostaną zachowane, nowe zostaną dodane, a postęp czytania zostanie scalony.</string>
+    <string name="backup_created">Utworzono kopię zapasową: %1$s</string>
+    <plurals name="backup_saved">
+        <item quantity="one">Zapisano %1$s (%2$d powieść)</item>
+        <item quantity="few">Zapisano %1$s (%2$d powieści)</item>
+        <item quantity="many">Zapisano %1$s (%2$d powieści)</item>
+        <item quantity="other">Zapisano %1$s (%2$d powieści)</item>
+    </plurals>
+    <plurals name="backup_restored">
+        <item quantity="one">Przywrócono %1$d powieść, rozdziały: %2$d</item>
+        <item quantity="few">Przywrócono %1$d powieści, rozdziały: %2$d</item>
+        <item quantity="many">Przywrócono %1$d powieści, rozdziały: %2$d</item>
+        <item quantity="other">Przywrócono %1$d powieści, rozdziały: %2$d</item>
+    </plurals>
+    <string name="backup_queued">Kopia zapasowa dodana do kolejki</string>
+    <string name="backup_folder_inaccessible">Folder kopii zapasowych jest niedostępny</string>
+    <string name="backup_folder_not_writable">Brak uprawnień do zapisu w folderze kopii zapasowych</string>
+    <string name="backup_create_file_failed">Nie udało się utworzyć pliku kopii zapasowej</string>
+    <string name="backup_open_output_failed">Nie udało się otworzyć strumienia wyjściowego</string>
+    <string name="backup_read_file_failed">Nie udało się odczytać pliku kopii zapasowej</string>
+    <string name="backup_failed">Tworzenie kopii zapasowej nie powiodło się</string>
+    <string name="backup_newer_version">Plik kopii pochodzi z nowszej wersji aplikacji (v%1$d)</string>
+    <string name="restore_failed">Przywracanie nie powiodło się</string>
+
+    <!-- Data management -->
+    <string name="data_storage">Pamięć</string>
+    <string name="data_storage_summary">Grimoire używa %1$s · wolne %2$s z %3$s</string>
+    <string name="data_your_data">Twoje dane</string>
+    <plurals name="data_library_novels">
+        <item quantity="one">%1$d powieść · rozdziały: %2$d</item>
+        <item quantity="few">%1$d powieści · rozdziały: %2$d</item>
+        <item quantity="many">%1$d powieści · rozdziały: %2$d</item>
+        <item quantity="other">%1$d powieści · rozdziały: %2$d</item>
+    </plurals>
+    <string name="data_browse">Dane przeglądania</string>
+    <plurals name="data_browse_count">
+        <item quantity="one">%1$d powieść w pamięci podręcznej, niezapisana i nieczytana</item>
+        <item quantity="few">%1$d powieści w pamięci podręcznej, niezapisane i nieczytane</item>
+        <item quantity="many">%1$d powieści w pamięci podręcznej, niezapisanych i nieczytanych</item>
+        <item quantity="other">%1$d powieści w pamięci podręcznej, niezapisanej i nieczytanej</item>
+    </plurals>
+    <string name="data_downloads">Pobrane</string>
+    <string name="data_chapter_text">Tekst rozdziałów</string>
+    <plurals name="data_chapter_text_summary">
+        <item quantity="one">%1$s · %2$d rozdział</item>
+        <item quantity="few">%1$s · %2$d rozdziały</item>
+        <item quantity="many">%1$s · %2$d rozdziałów</item>
+        <item quantity="other">%1$s · %2$d rozdziału</item>
+    </plurals>
+    <string name="data_chapter_images">Obrazy w rozdziałach</string>
+    <plurals name="data_chapter_images_summary">
+        <item quantity="one">%1$s · %2$d obraz</item>
+        <item quantity="few">%1$s · %2$d obrazy</item>
+        <item quantity="many">%1$s · %2$d obrazów</item>
+        <item quantity="other">%1$s · %2$d obrazu</item>
+    </plurals>
+    <string name="data_caches">Pamięć podręczna</string>
+    <string name="data_cover_cache">Pamięć podręczna okładek</string>
+    <string name="data_database">Baza danych</string>
+    <string name="data_installer_files">Pliki instalacyjne</string>
+    <string name="data_installer_summary">%1$s · pozostałe pakiety aktualizacji aplikacji i rozszerzeń</string>
+    <string name="data_clear_cover_title">Wyczyścić pamięć podręczną okładek?</string>
+    <string name="data_clear_cover_message">Okładki zostaną ponownie pobrane przy następnym wyświetleniu.</string>
+    <string name="data_clear_browse_title">Wyczyścić dane przeglądania?</string>
+    <string name="data_clear_browse_message">Usuwa z pamięci podręcznej powieści, których nie zapisano w bibliotece ani nie czytano. Zostaną ponownie pobrane ze źródła przy następnym otwarciu. Historia czytania i pobrane pliki zostaną zachowane.</string>
+    <string name="data_clear_installer_title">Wyczyścić pliki instalacyjne?</string>
+    <string name="data_clear_installer_message">Usuwa pozostałe pliki .apk z aktualizacji aplikacji i rozszerzeń. Zostaną ponownie pobrane przy następnej aktualizacji. Nie czyść, gdy instalacja jest jeszcze w toku.</string>
+    <string name="data_cover_cache_cleared">Wyczyszczono pamięć podręczną okładek</string>
+    <plurals name="data_browse_cleared">
+        <item quantity="one">Wyczyszczono %1$d powieść z danych przeglądania</item>
+        <item quantity="few">Wyczyszczono %1$d powieści z danych przeglądania</item>
+        <item quantity="many">Wyczyszczono %1$d powieści z danych przeglądania</item>
+        <item quantity="other">Wyczyszczono %1$d powieści z danych przeglądania</item>
+    </plurals>
+    <plurals name="data_installers_cleared">
+        <item quantity="one">Usunięto %1$d plik instalacyjny</item>
+        <item quantity="few">Usunięto %1$d pliki instalacyjne</item>
+        <item quantity="many">Usunięto %1$d plików instalacyjnych</item>
+        <item quantity="other">Usunięto %1$d pliku instalacyjnego</item>
+    </plurals>
+
+    <!-- Library update settings -->
+    <string name="library_update_scheduled">Zaplanowana aktualizacja</string>
+    <string name="library_update_scheduled_description">Odświeża bibliotekę w tle i pobiera nowe rozdziały. Aplikacja nie musi być otwarta.</string>
+    <string name="library_update_automatic">Aktualizuj automatycznie</string>
+    <string name="library_update_wifi_only">Tylko przez Wi-Fi</string>
+    <string name="library_update_wifi_only_summary">Pomijaj zaplanowaną aktualizację przy danych komórkowych</string>
+    <string name="library_update_charging_only">Tylko podczas ładowania</string>
+    <string name="library_update_sync_scope">Zakres synchronizacji</string>
+    <string name="library_update_include_epubs">Uwzględniaj EPUB-y</string>
+    <string name="library_update_include_epubs_summary">Odświeżaj powieści EPUB (lokalne importy i źródła EPUB, takie jak Z-Library) podczas aktualizacji biblioteki. Nie mają nowych rozdziałów do pobrania, więc domyślnie jest to wyłączone.</string>
+    <string name="library_update_performance">Wydajność</string>
+    <string name="library_update_concurrency">Równoległa synchronizacja: %1$d</string>
+    <string name="library_update_concurrency_summary">Ile powieści odświeżać jednocześnie. Więcej oznacza szybciej, ale niektóre źródła mogą ograniczyć liczbę zapytań.</string>
+    <string name="library_update_now">Aktualizuj bibliotekę teraz</string>
+    <string name="library_update_now_summary">Odśwież w tle wszystkie powieści w bibliotece</string>
+    <string name="library_update_last">Ostatnia aktualizacja</string>
+
+    <!-- Text-to-speech -->
+    <string name="tts_enable">Włącz syntezę mowy</string>
+    <string name="tts_enable_summary">Pokazuj w czytniku sterowanie czytaniem na głos</string>
+    <string name="tts_speech_engine">Silnik mowy</string>
+    <string name="tts_on_device">Na urządzeniu</string>
+    <string name="tts_elevenlabs">ElevenLabs</string>
+    <string name="tts_device_summary">Czyta na głos wbudowanymi głosami urządzenia. Działa offline.</string>
+    <string name="tts_elevenlabs_summary">Strumieniuje naturalne głosy z chmury ElevenLabs. Wymaga połączenia z siecią, a opłata jest naliczana za każdy znak na Twoim koncie.</string>
+    <string name="tts_elevenlabs_account">Konto ElevenLabs</string>
+    <string name="tts_api_key">Klucz API</string>
+    <string name="tts_playback">Odtwarzanie</string>
+    <string name="tts_speech_rate">Tempo mowy</string>
+    <string name="tts_pitch">Wysokość głosu (tylko na urządzeniu)</string>
+    <string name="tts_auto_advance">Automatycznie przechodź do następnego rozdziału</string>
+    <string name="tts_auto_advance_summary">Czytaj dalej następny rozdział, gdy bieżący się skończy</string>
+    <string name="tts_voices">Głosy</string>
+    <string name="tts_voices_summary">Wybierz, który głos czyta dany język. Powieści są dopasowywane według języka treści.</string>
+    <string name="tts_custom_voice">Wybrano własny głos</string>
+    <string name="tts_system_default">Domyślny systemowy</string>
+    <string name="tts_credit_usage">Wykorzystanie kredytów</string>
+    <string name="tts_refresh_usage">Odśwież wykorzystanie</string>
+    <string name="tts_usage_api_key_hint">Wpisz powyżej klucz API, aby zobaczyć pozostałe znaki.</string>
+    <string name="tts_loading">Wczytywanie…</string>
+    <string name="tts_usage_summary">Wykorzystano %1$,d / %2$,d znaków</string>
+    <string name="tts_quota_reset">Limit odnowi się %1$s</string>
+    <string name="tts_voice_title">Głos</string>
+    <string name="tts_voice_needs_key">Dodaj klucz API ElevenLabs w ustawieniach syntezy mowy, aby wybrać głos z chmury.</string>
+    <string name="tts_elevenlabs_plan_note">Darmowy plan ElevenLabs jest ograniczony (~10 000 znaków/miesiąc), a wiele głosów — nawet niektóre domyślne — wymaga płatnego planu. Jeśli głos się nie odtwarza, wypróbuj inny lub użyj silnika na urządzeniu do nieograniczonego czytania offline.</string>
+    <string name="tts_system_default_summary">Pozwól silnikowi wybrać głos dla tego języka</string>
+    <string name="tts_install_voices">Zainstaluj więcej głosów…</string>
+    <string name="tts_install_voices_summary">Pobierz dodatkowe dane głosowe dla silnika urządzenia</string>
+    <string name="tts_stop_preview">Zatrzymaj podgląd</string>
+    <string name="tts_preview_voice">Odsłuchaj głos</string>
+    <string name="tts_load_usage_failed">Nie udało się wczytać wykorzystania</string>
+    <string name="tts_load_voices_failed">Nie udało się wczytać głosów</string>
+
+    <!-- GitHub connection -->
+    <string name="github_account_title">Konto GitHub</string>
+    <string name="github_privacy_note">Połącz konto GitHub, aby instalować rozszerzenia z własnych prywatnych repozytoriów. Token dostępu jest przechowywany tylko na tym urządzeniu i wysyłany wyłącznie do github.com. Możesz go w każdej chwili unieważnić na github.com/settings/applications.</string>
+    <string name="github_not_connected">Nie połączono.</string>
+    <string name="github_connect">Połącz z GitHub</string>
+    <string name="github_enter_code">Wpisz ten kod na github.com</string>
+    <string name="github_open_device_page">Otwórz github.com/login/device</string>
+    <string name="github_copy_code">Kopiuj kod</string>
+    <string name="github_waiting">Czekam, aż dokończysz w przeglądarce…</string>
+    <string name="github_connected">Połączono</string>
+    <string name="github_authorization_failed">Autoryzacja nie powiodła się</string>
+    <string name="github_no_client_id">Ta kompilacja nie ma identyfikatora klienta OAuth</string>
+    <string name="github_no_client_id_summary">Ustaw GITHUB_OAUTH_CLIENT_ID w gradle.properties (lub jako zmienną środowiskową) i skompiluj ponownie.</string>
+
+    <!-- About and updater -->
+    <string name="about_title">O aplikacji</string>
+    <string name="about_version">Wersja</string>
+    <string name="about_version_summary">Grimoire %1$s (kompilacja %2$d)\nCommit %3$s · Extensions API %4$s</string>
+    <string name="about_check_updates">Sprawdź aktualizacje</string>
+    <string name="about_check_updates_idle">Dotknij, aby sprawdzić, czy jest nowa wersja</string>
+    <string name="about_checking">Sprawdzanie…</string>
+    <string name="about_latest_version">Masz najnowszą wersję</string>
+    <string name="about_up_to_date">Aktualna</string>
+    <string name="about_show_changelog">Pokaż listę zmian</string>
+    <string name="about_show_changelog_summary">Otwórz informacje o wydaniu %1$s</string>
+    <string name="about_updates_section">Aktualizacje</string>
+    <string name="about_update_popups">Automatyczne powiadomienia o aktualizacjach</string>
+    <string name="about_update_popups_summary">Pokazuj okno po uruchomieniu, gdy dostępna jest aktualizacja</string>
+    <string name="about_changelog_after_update">Lista zmian po aktualizacji</string>
+    <string name="about_changelog_after_update_summary">Pokazuj informacje o wydaniu przy pierwszym uruchomieniu nowej wersji</string>
+    <string name="about_build_section">Kompilacja</string>
+    <string name="about_build_details">Szczegóły kompilacji</string>
+    <string name="about_build_details_summary">Kompilacja %1$d · commit %2$s · Extensions API %3$s</string>
+    <string name="about_build_copied">Skopiowano informacje o kompilacji</string>
+    <string name="about_channel_stable">Stabilny</string>
+    <string name="about_channel_beta">Beta</string>
+    <string name="about_channel_stable_summary">Tylko oznaczone wydania. Zalecane.</string>
+    <string name="about_channel_beta_summary">Świeże kompilacje z gałęzi main po każdym commicie. Mogą być niestabilne.</string>
+    <string name="update_whats_new">Co nowego w %1$s</string>
+    <string name="update_got_it">Rozumiem</string>
+    <string name="update_ready">Aktualizacja gotowa</string>
+    <string name="update_available">Dostępna aktualizacja</string>
+    <string name="update_unknown_error">Nieznany błąd</string>
+    <string name="update_no_changelog">Brak listy zmian dla %1$s.</string>
+    <string name="action_update">Aktualizuj</string>
+    <string name="update_download_complete">Pobieranie zakończone — dotknij Zainstaluj, aby dokończyć aktualizację.</string>
+    <string name="update_skip_version">Pomiń tę wersję</string>
+    <string name="update_downloading_background">Pobieranie w tle — możesz zamknąć aplikację.</string>
+    <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
+    <string name="update_download_size">%1$s MB</string>
+    <string name="changelog_features">Nowe funkcje</string>
+    <string name="changelog_bug_fixes">Poprawki błędów</string>
+    <string name="changelog_sources">Źródła</string>
+    <string name="changelog_documentation">Dokumentacja</string>
+    <string name="changelog_other">Inne zmiany</string>
+    <string name="changelog_changes">Zmiany</string>
+
+    <!-- Shared language picker -->
+    <string name="language_override_global">Zastąp globalne języki treści</string>
+    <string name="language_override_on_helper">Wybierz języki tylko dla tego źródła.</string>
+    <string name="language_override_off_helper">To źródło używa globalnego wyboru języków treści. Włącz tę opcję, aby wybrać inne języki tylko dla tego źródła.</string>
+    <string name="language_global_all">Globalnie: bez filtra (wszystkie języki)</string>
+    <plurals name="language_global_selected">
+        <item quantity="one">Globalnie: wybrano %1$d język</item>
+        <item quantity="few">Globalnie: wybrano %1$d języki</item>
+        <item quantity="many">Globalnie: wybrano %1$d języków</item>
+        <item quantity="other">Globalnie: wybrano %1$d języka</item>
+    </plurals>
+    <string name="language_saved">Zapisano</string>
+    <string name="language_global">Globalnie</string>
+    <string name="language_added_here">Dodany tutaj</string>
+    <string name="language_hidden_here">Ukryty tutaj</string>
+    <string name="tts_voice_quality_very_high">Bardzo wysoka jakość</string>
+    <string name="tts_voice_quality_high">Wysoka jakość</string>
+    <string name="tts_voice_quality_normal">Normalna jakość</string>
+    <string name="tts_voice_quality_low">Niska jakość</string>
+    <string name="tts_voice_online">online</string>
+    <string name="tts_voice_not_installed">niezainstalowany</string>
+    <string name="tts_voice_category_default">Głos domyślny</string>
+    <string name="tts_voice_category_personal">Twój sklonowany głos</string>
+    <string name="tts_voice_category_workspace">Głos z obszaru roboczego</string>
+    <string name="tts_voice_category_community">Voice Library · tylko płatne plany</string>
+    <string name="github_error_access_denied">Odmówiono autoryzacji</string>
+    <string name="github_error_expired">Kod wygasł przed zakończeniem autoryzacji</string>
+    <string name="github_error_cancelled">Anulowano</string>
+    <string name="github_error_network">Błąd sieci: %1$s</string>
+    <string name="github_error_unexpected">Nieoczekiwany błąd: %1$s</string>
+</resources>

@@ -1,0 +1,282 @@
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">Heute</string>
+    <string name="common_yesterday">Gestern</string>
+    <string name="action_pause">Pausieren</string>
+    <string name="action_resume">Fortsetzen</string>
+    <string name="action_expand">Ausklappen</string>
+    <string name="action_collapse">Einklappen</string>
+    <string name="action_clear_log">Protokoll leeren</string>
+    <string name="action_set">Festlegen</string>
+    <string name="action_choose">Auswählen</string>
+    <string name="action_restore">Wiederherstellen</string>
+    <string name="action_disconnect">Trennen</string>
+    <string name="action_dismiss">Verwerfen</string>
+    <string name="action_try_again">Erneut versuchen</string>
+    <string name="action_skip">Überspringen</string>
+    <string name="action_next">Weiter</string>
+    <string name="status_error">Fehler</string>
+    <string name="status_warning">Warnung</string>
+    <string name="status_completed">Abgeschlossen</string>
+    <string name="status_queued">Eingereiht</string>
+    <string name="status_downloaded">Heruntergeladen</string>
+    <string name="chapter_cancel_download">Download abbrechen</string>
+    <string name="chapter_downloaded_refresh_queued">Heruntergeladen · Aktualisierung eingereiht</string>
+    <string name="chapter_cancel_refresh">Aktualisierung abbrechen</string>
+    <string name="chapter_downloaded_refreshing">Heruntergeladen · wird aktualisiert</string>
+    <string name="chapter_downloaded_refresh_failed">Heruntergeladen · Aktualisierung fehlgeschlagen</string>
+
+    <!-- More -->
+    <string name="more_title">Mehr</string>
+    <string name="more_incognito">Inkognito</string>
+    <string name="more_incognito_enabled">In dieser Sitzung wird kein Verlauf gespeichert</string>
+    <string name="more_incognito_disabled">Lese- &amp; Entdecken-Verlauf pausieren</string>
+    <string name="incognito_banner">Inkognito · Verlauf pausiert</string>
+    <string name="more_updates">Updates</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="one">%1$d neues Kapitel aus abonnierten Romanen</item>
+        <item quantity="other">%1$d neue Kapitel aus abonnierten Romanen</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="one">%1$d neues Kapitel in deiner Bibliothek</item>
+        <item quantity="other">%1$d neue Kapitel in deiner Bibliothek</item>
+    </plurals>
+    <string name="more_no_new_chapters">Keine neuen Kapitel</string>
+    <string name="more_history">Verlauf</string>
+    <string name="more_history_summary">Zuletzt gelesene Kapitel und angesehene Romane</string>
+    <string name="more_downloads">Downloads</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="one">%1$d läuft</item>
+        <item quantity="other">%1$d laufen</item>
+    </plurals>
+    <string name="more_downloads_summary">Heruntergeladene Kapitel und Warteschlange</string>
+    <string name="more_tasks">Aufgaben</string>
+    <string name="more_tasks_summary">Laufende Downloads und Synchronisierungen samt Verlauf</string>
+    <string name="more_update_warnings">Update-Warnungen</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="one">%1$d Roman braucht Aufmerksamkeit</item>
+        <item quantity="other">%1$d Romane brauchen Aufmerksamkeit</item>
+    </plurals>
+    <string name="more_no_refresh_problems">Keine Probleme beim Aktualisieren</string>
+    <string name="more_statistics">Statistiken</string>
+    <string name="more_statistics_summary">Deine Leseaktivität</string>
+    <string name="more_settings_summary">Darstellung, Bibliothek, Leseansicht, Backups</string>
+    <string name="more_tours">Touren</string>
+    <string name="more_tours_summary">Die geführten Touren in der App erneut ansehen</string>
+    <string name="more_about">Über</string>
+    <string name="more_about_summary">Version, Update-Kanal, Lizenzen</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">Starten</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">Willkommenstour</string>
+    <string name="tour_welcome_description">Das Wichtigste: Bibliothek, Entdecken, Quellen und Einstellungen.</string>
+    <string name="tour_step_welcome_title">Willkommen bei Grimoire</string>
+    <string name="tour_step_welcome_body">Eine kurze Tour durch das Wichtigste – dauert etwa 20 Sekunden.</string>
+    <string name="tour_step_library_title">Deine Bibliothek</string>
+    <string name="tour_step_library_body">Hier landen die Romane, die du hinzufügst, sortiert in Kategorien.</string>
+    <string name="tour_step_browse_title">Entdecken</string>
+    <string name="tour_step_browse_body">Tippe auf Entdecken, um Romane in deinen Quellen zu finden.</string>
+    <string name="tour_step_extensions_title">Quellen &amp; Erweiterungen</string>
+    <string name="tour_step_extensions_body">Quellen installierst du hier. Öffne es, um zu sehen, was verfügbar ist.</string>
+    <string name="tour_open_extensions">Erweiterungen öffnen</string>
+    <string name="tour_step_repositories_title">Repositorys</string>
+    <string name="tour_step_repositories_body">Quellen stammen aus Repositorys. Das offizielle ist schon hinzugefügt – tippe hier, um sie zu verwalten oder eigene hinzuzufügen.</string>
+    <string name="tour_step_more_title">Alles andere</string>
+    <string name="tour_step_more_body">Downloads, Statistiken, Backups und Einstellungen findest du unter Mehr.</string>
+    <string name="tour_step_done_title">Alles bereit</string>
+    <string name="tour_step_done_body">Jede Tour kannst du unter Mehr → Touren erneut ansehen.</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">Diagnose</string>
+    <string name="privacy_diagnostics_note">Diagnosedaten sind anonym und enthalten nie persönliche Daten, Romantitel oder Links. Alles ist aus, bis du es einschaltest.</string>
+    <string name="privacy_crash_reports">Absturzberichte senden</string>
+    <string name="privacy_crash_reports_summary">Anonyme Stacktraces, wenn die App abstürzt</string>
+    <string name="privacy_usage_analytics">Anonyme Nutzungsstatistiken senden</string>
+    <string name="privacy_usage_analytics_summary">Welche Funktionen genutzt werden, damit wir wissen, was wir entwickeln sollen</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">Kapitel werden heruntergeladen</string>
+    <string name="download_notification_starting">Wird gestartet…</string>
+    <string name="download_notification_working">Wird heruntergeladen…</string>
+    <string name="download_notification_queued">+%1$d eingereiht</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d eingereiht)</string>
+    <string name="download_notification_complete_title">Downloads abgeschlossen</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="one">%1$d Kapitel heruntergeladen</item>
+        <item quantity="other">%1$d Kapitel heruntergeladen</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">Update wird heruntergeladen</string>
+    <string name="app_update_notification_downloading_version">Update %1$s wird heruntergeladen</string>
+    <string name="app_update_notification_progress">%1$d %%  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">Wird gestartet…</string>
+    <string name="app_update_notification_ready">Update bereit zur Installation</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s ist bereit</string>
+    <string name="app_update_notification_tap_to_install">Zum Installieren tippen</string>
+    <string name="app_update_notification_failed">Update-Download fehlgeschlagen</string>
+    <string name="error_verification_failed">Überprüfung des Downloads fehlgeschlagen – versuch es erneut oder wechsle das Netzwerk</string>
+    <string name="app_update_download_failed">Download fehlgeschlagen</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">Downloads</string>
+    <string name="downloads_settings">Download-Einstellungen</string>
+    <string name="downloads_no_filter_matches">Keine Downloads entsprechen den gewählten Filtern.</string>
+    <string name="downloads_parallel">Parallele Downloads</string>
+    <string name="downloads_parallel_summary">Anzahl der gleichzeitig heruntergeladenen Kapitel</string>
+    <string name="downloads_move_to_top">Nach oben verschieben</string>
+    <string name="downloads_cancel_failed">Fehlgeschlagene abbrechen</string>
+    <string name="downloads_redownload">Erneut herunterladen</string>
+    <string name="downloads_delete_download">Download löschen</string>
+    <string name="downloads_delete_options">Download-Optionen</string>
+    <string name="downloads_empty">Keine Downloads</string>
+    <string name="downloads_filter_downloading">Wird geladen</string>
+    <string name="downloads_filter_queued">Eingereiht</string>
+    <string name="downloads_filter_done">Fertig</string>
+    <string name="downloads_filter_failed">Fehlgeschlagen</string>
+    <plurals name="downloads_count_downloaded"><item quantity="one">%1$d heruntergeladen</item><item quantity="other">%1$d heruntergeladen</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="one">%1$d eingereiht</item><item quantity="other">%1$d eingereiht</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="one">%1$d wird geladen</item><item quantity="other">%1$d werden geladen</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="one">%1$d fehlgeschlagen</item><item quantity="other">%1$d fehlgeschlagen</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">Statistiken</string>
+    <string name="statistics_reading">Lesen</string>
+    <string name="statistics_chapters_read">Gelesene Kapitel</string>
+    <string name="statistics_words_read">Gelesene Wörter</string>
+    <string name="statistics_novels_completed">Beendete Romane</string>
+    <string name="statistics_novels_started">Begonnene Romane</string>
+    <string name="statistics_average_words">Ø Wörter / Kapitel</string>
+    <string name="statistics_last_read">Zuletzt gelesen</string>
+    <string name="statistics_library">Bibliothek</string>
+    <string name="statistics_library_novels">Romane in der Bibliothek</string>
+    <string name="statistics_library_chapters">Kapitel in der Bibliothek</string>
+    <string name="statistics_library_unread">Ungelesen in der Bibliothek</string>
+    <string name="statistics_downloaded">Heruntergeladen</string>
+    <string name="statistics_empty_hint">Lies ein paar Kapitel, um mit der Statistik zu beginnen.</string>
+    <string name="statistics_counting_hint">Jedes Kapitel wird nur einmal gezählt – als ungelesen markieren zieht nichts ab.</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Aufgaben</string>
+    <string name="tasks_empty">Noch keine Aufgaben.\nDownloads und Bibliotheks-Syncs erscheinen hier, während sie laufen,\nund ihre Ergebnisse werden unten aufbewahrt.</string>
+    <string name="tasks_running">Laufend</string>
+    <string name="tasks_history">Verlauf</string>
+    <string name="tasks_clear_title">Aufgabenprotokoll leeren?</string>
+    <string name="tasks_clear_message">Entfernt den Verlauf abgeschlossener Bibliotheks-Syncs und Downloads. Laufende Aufgaben sind nicht betroffen.</string>
+    <string name="tasks_cancel_named">%1$s abbrechen</string>
+    <string name="tasks_finished_with_errors">Mit Fehlern beendet</string>
+    <string name="tasks_updating_library">Bibliothek wird aktualisiert</string>
+    <string name="tasks_starting">Wird gestartet…</string>
+    <plurals name="tasks_novels_progress"><item quantity="one">%1$d / %2$d Roman</item><item quantity="other">%1$d / %2$d Romane</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">Kapitel werden heruntergeladen</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="one">%1$d Kapitel übrig</item><item quantity="other">%1$d Kapitel übrig</item></plurals>
+    <string name="tasks_downloads">Downloads</string>
+    <string name="tasks_library_sync">Bibliotheks-Sync</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="one">%1$d Kapitel heruntergeladen</item><item quantity="other">%1$d Kapitel heruntergeladen</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="one">%1$d fehlgeschlagen</item><item quantity="other">%1$d fehlgeschlagen</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="one">%1$d Roman geprüft</item><item quantity="other">%1$d Romane geprüft</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="one">%1$d neues Kapitel</item><item quantity="other">%1$d neue Kapitel</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="one">%1$d Warnung</item><item quantity="other">%1$d Warnungen</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="one">%1$d Fehler</item><item quantity="other">%1$d Fehler</item></plurals>
+    <string name="tasks_sync_failed">Bibliotheks-Sync fehlgeschlagen · %1$s</string>
+    <string name="library_update_downloading_new">Neue Kapitel werden heruntergeladen</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d eingereiht</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="one">%1$d neues gesperrtes Kapitel</item><item quantity="other">%1$d neue gesperrte Kapitel</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · %2$d gesperrt</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">Updates</string>
+    <string name="updates_open_novel">Roman öffnen</string>
+    <string name="updates_delete_from_log">Aus Protokoll löschen</string>
+    <string name="updates_empty">Noch keine Updates.\nNeue Kapitel, die beim Aktualisieren der Bibliothek gefunden werden, erscheinen hier.</string>
+    <string name="updates_tab_subscribed">Abonniert</string>
+    <string name="updates_tab_all">Alle</string>
+    <string name="updates_subscribed_empty">Noch keine Updates von abonnierten Romanen.</string>
+    <string name="updates_clear_title">Update-Protokoll leeren?</string>
+    <string name="updates_clear_message">Dadurch werden alle Einträge dauerhaft aus dem Update-Protokoll entfernt. Deine Bibliothek und Kapitel sind nicht betroffen.</string>
+    <plurals name="updates_count_new"><item quantity="one">%1$d neu</item><item quantity="other">%1$d neu</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="one">%1$d gesperrt</item><item quantity="other">%1$d gesperrt</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="one">%1$d heruntergeladen</item><item quantity="other">%1$d heruntergeladen</item></plurals>
+    <string name="updates_all_downloaded">Alle heruntergeladen</string>
+    <string name="updates_unlocked">Freigeschaltet</string>
+    <plurals name="updates_count_unlocked"><item quantity="one">%1$d freigeschaltet</item><item quantity="other">%1$d freigeschaltet</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">Verlauf</string>
+    <string name="history_reading">Lesen</string>
+    <string name="history_browsing">Entdecken</string>
+    <string name="history_clear_reading">Leseverlauf löschen</string>
+    <string name="history_clear_browsing">Entdecken-Verlauf löschen</string>
+    <string name="history_reading_empty">Noch kein Leseverlauf.\nKapitel, die du in der Leseansicht öffnest, erscheinen hier.</string>
+    <string name="history_browsing_empty">Noch kein Entdecken-Verlauf.\nRomane, die du unter Entdecken öffnest (und nicht zur Bibliothek hinzugefügt hast), erscheinen hier.</string>
+    <string name="history_clear_reading_title">Leseverlauf löschen?</string>
+    <string name="history_clear_browsing_title">Entdecken-Verlauf löschen?</string>
+    <string name="history_clear_reading_message">Dadurch werden alle Einträge dauerhaft aus deinem Leseverlauf entfernt. Deine Bibliothek und Kapitel sind nicht betroffen.</string>
+    <string name="history_clear_browsing_message">Dadurch werden alle Einträge dauerhaft aus deinem Entdecken-Verlauf entfernt. Deine Bibliothek ist nicht betroffen.</string>
+    <plurals name="history_chapter_count"><item quantity="one">%1$d Kapitel</item><item quantity="other">%1$d Kapitel</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">Update-Warnungen</string>
+    <string name="update_issues_empty">Keine Probleme.\nRomane, die sich nicht aktualisieren lassen, erscheinen hier.</string>
+    <string name="update_issue_source_missing">Quelle nicht installiert – übersprungen</string>
+    <string name="update_issue_no_chapters">Quelle lieferte keine Kapitel – bisherige Liste behalten</string>
+    <string name="update_issue_incomplete_data">Quelle lieferte unvollständige Daten – bisheriger Titel/bisheriges Cover behalten</string>
+    <string name="update_issues_retry_all">Alle wiederholen</string>
+    <string name="update_issues_dismiss_all">Alle verwerfen</string>
+    <string name="update_issue_dismiss">Verwerfen</string>
+    <string name="update_issue_install_source">Quelle installieren</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">App abgestürzt</string>
+    <string name="crash_empty">Kein Absturzbericht verfügbar.</string>
+    <string name="crash_description">Die App wurde beim letzten Mal unerwartet beendet. Ein Bericht hilft, das Problem zu beheben – die Absturzdetails unten sind schon für dich ausgefüllt. Du kannst sie auch kopieren, um sie woanders zu teilen.</string>
+    <string name="crash_no_browser">Kein Browser zum Öffnen von GitHub verfügbar.</string>
+    <string name="crash_report_github">Auf GitHub melden</string>
+    <string name="crash_details_copied">Absturzdetails kopiert.</string>
+    <string name="crash_copy_details">Details kopieren</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">Zurück</string>
+    <string name="action_play">Abspielen</string>
+    <string name="action_stop">Stopp</string>
+    <string name="tts_notification_title">Vorlesen</string>
+    <string name="tts_error_request_failed">ElevenLabs-Anfrage fehlgeschlagen</string>
+    <string name="tts_error_play_audio">Audio konnte nicht abgespielt werden</string>
+    <string name="tts_error_play_preview">Hörprobe konnte nicht abgespielt werden</string>
+    <string name="tts_error_start_playback">Wiedergabe konnte nicht gestartet werden</string>
+    <string name="notification_channel_downloads">Kapitel-Downloads</string>
+    <string name="notification_channel_downloads_desc">Kapitel-Downloads im Hintergrund</string>
+    <string name="notification_channel_backups">Backups</string>
+    <string name="notification_channel_backups_desc">Geplante lokale Backups</string>
+    <string name="notification_channel_app_updates">App-Updates</string>
+    <string name="notification_channel_app_updates_desc">App-Update-Downloads im Hintergrund</string>
+    <string name="notification_channel_library_updates">Bibliotheks-Updates</string>
+    <string name="notification_channel_library_updates_desc">Fortschritt und Ergebnisse der Bibliotheksaktualisierung im Hintergrund</string>
+    <string name="notification_channel_tts">Vorlesen</string>
+    <string name="notification_channel_tts_desc">Steuerung der Vorlese-Wiedergabe</string>
+    <string name="tts_error_no_chapters">Dieser Roman hat keine Kapitel zum Vorlesen</string>
+    <string name="tts_error_missing_api_key">Füge unter Einstellungen → Vorlesen einen ElevenLabs-API-Schlüssel hinzu</string>
+    <string name="tts_error_device_unavailable">Die Sprach-Engine des Geräts ist nicht verfügbar</string>
+    <string name="tts_error_chapter_not_found">Kapitel nicht gefunden</string>
+    <string name="tts_error_no_readable_text">Dieses Kapitel hat keinen lesbaren Text</string>
+    <string name="tts_error_audio_focus">Audiofokus konnte nicht abgerufen werden</string>
+    <string name="tts_error_device_engine">Fehler der Sprach-Engine des Geräts</string>
+    <string name="tts_error_device_engine_code">Fehler der Sprach-Engine des Geräts (%1$d)</string>
+    <string name="extension_download_failed_http">Download fehlgeschlagen: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">Fehler der Sprach-Engine auf dem Gerät</string>
+    <string name="tts_error_preview_engine_code">Fehler der Sprach-Engine auf dem Gerät (%1$d)</string>
+    <string name="tts_error_audio_playback_code">Fehler bei der Audiowiedergabe (%1$d)</string>
+    <string name="tts_error_no_default_voice">Keine ElevenLabs-Standardstimme verfügbar – wähle eine in den Vorlese-Einstellungen</string>
+    <string name="tts_error_no_default_voice_preview">Keine ElevenLabs-Standardstimme verfügbar – wähle eine für die Hörprobe</string>
+    <string name="tts_error_source_unavailable">Quelle nicht verfügbar – lade das Kapitel herunter, um offline zuzuhören</string>
+    <string name="tts_error_source_no_text">Diese Quelle kann keinen Kapiteltext liefern – lade es herunter, um offline zuzuhören</string>
+    <string name="tts_error_api_key_first">Füge zuerst einen ElevenLabs-API-Schlüssel hinzu.</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: ungültiger API-Schlüssel oder API-Zugriff im kostenlosen Tarif deaktiviert</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: Dein Tarif erlaubt das nicht – siehe Vorlese-Einstellungen</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: Anfragelimit oder Zeichenkontingent überschritten</string>
+    <string name="tts_error_elevenlabs_code">ElevenLabs-Anfrage fehlgeschlagen (%1$d)</string>
+</resources>

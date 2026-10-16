@@ -3,5 +3,22 @@
      AppLocale.supported and the values-* folders (LocaleCoverageTest checks both). -->
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
     <locale android:name="en" />
+    <locale android:name="in" />
+    <locale android:name="de" />
+    <locale android:name="es" />
+    <locale android:name="fr" />
+    <locale android:name="it" />
+    <locale android:name="pl" />
+    <locale android:name="pt-BR" />
+    <locale android:name="vi" />
+    <locale android:name="tr" />
+    <locale android:name="ru" />
+    <locale android:name="uk" />
+    <locale android:name="ar" />
+    <locale android:name="hi" />
+    <locale android:name="th" />
+    <locale android:name="ja" />
+    <locale android:name="ko" />
     <locale android:name="zh" />
+    <locale android:name="zh-TW" />
 </locale-config>

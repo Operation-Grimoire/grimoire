@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">اليوم</string>
+    <string name="common_yesterday">أمس</string>
+    <string name="action_pause">إيقاف مؤقت</string>
+    <string name="action_resume">استئناف</string>
+    <string name="action_expand">توسيع</string>
+    <string name="action_collapse">طي</string>
+    <string name="action_clear_log">مسح السجل</string>
+    <string name="action_set">تعيين</string>
+    <string name="action_choose">اختيار</string>
+    <string name="action_restore">استعادة</string>
+    <string name="action_disconnect">قطع الاتصال</string>
+    <string name="action_dismiss">تجاهل</string>
+    <string name="action_try_again">حاول مجددًا</string>
+    <string name="action_skip">تخطٍّ</string>
+    <string name="action_next">التالي</string>
+    <string name="status_error">خطأ</string>
+    <string name="status_warning">تحذير</string>
+    <string name="status_completed">مكتمل</string>
+    <string name="status_queued">في الانتظار</string>
+    <string name="status_downloaded">منزّل</string>
+    <string name="chapter_cancel_download">إلغاء التنزيل</string>
+    <string name="chapter_downloaded_refresh_queued">منزّل · التحديث في الانتظار</string>
+    <string name="chapter_cancel_refresh">إلغاء التحديث</string>
+    <string name="chapter_downloaded_refreshing">منزّل · جارٍ التحديث</string>
+    <string name="chapter_downloaded_refresh_failed">منزّل · فشل التحديث</string>
+
+    <!-- More -->
+    <string name="more_title">المزيد</string>
+    <string name="more_incognito">التصفّح المتخفي</string>
+    <string name="more_incognito_enabled">لا يُسجَّل السجل في هذه الجلسة</string>
+    <string name="more_incognito_disabled">إيقاف سجل القراءة والتصفّح مؤقتًا</string>
+    <string name="incognito_banner">التصفّح المتخفي · السجل متوقف مؤقتًا</string>
+    <string name="more_updates">التحديثات</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="zero">%1$d فصل جديد من الروايات المشترك فيها</item>
+        <item quantity="one">%1$d فصل جديد من الروايات المشترك فيها</item>
+        <item quantity="two">%1$d فصلان جديدان من الروايات المشترك فيها</item>
+        <item quantity="few">%1$d فصول جديدة من الروايات المشترك فيها</item>
+        <item quantity="many">%1$d فصلًا جديدًا من الروايات المشترك فيها</item>
+        <item quantity="other">%1$d فصل جديد من الروايات المشترك فيها</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="zero">%1$d فصل جديد في مكتبتك</item>
+        <item quantity="one">%1$d فصل جديد في مكتبتك</item>
+        <item quantity="two">%1$d فصلان جديدان في مكتبتك</item>
+        <item quantity="few">%1$d فصول جديدة في مكتبتك</item>
+        <item quantity="many">%1$d فصلًا جديدًا في مكتبتك</item>
+        <item quantity="other">%1$d فصل جديد في مكتبتك</item>
+    </plurals>
+    <string name="more_no_new_chapters">لا توجد فصول جديدة</string>
+    <string name="more_history">السجل</string>
+    <string name="more_history_summary">الفصول المقروءة مؤخرًا والروايات المتصفَّحة</string>
+    <string name="more_downloads">التنزيلات</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="zero">قيد التنفيذ: %1$d</item>
+        <item quantity="one">قيد التنفيذ: %1$d</item>
+        <item quantity="two">قيد التنفيذ: %1$d</item>
+        <item quantity="few">قيد التنفيذ: %1$d</item>
+        <item quantity="many">قيد التنفيذ: %1$d</item>
+        <item quantity="other">قيد التنفيذ: %1$d</item>
+    </plurals>
+    <string name="more_downloads_summary">الفصول المنزّلة وقائمة الانتظار</string>
+    <string name="more_tasks">المهام</string>
+    <string name="more_tasks_summary">التنزيلات والمزامنات الجارية، وسجلها</string>
+    <string name="more_update_warnings">تحذيرات التحديث</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="zero">%1$d رواية تحتاج إلى انتباه</item>
+        <item quantity="one">%1$d رواية تحتاج إلى انتباه</item>
+        <item quantity="two">%1$d روايتان تحتاجان إلى انتباه</item>
+        <item quantity="few">%1$d روايات تحتاج إلى انتباه</item>
+        <item quantity="many">%1$d روايةً تحتاج إلى انتباه</item>
+        <item quantity="other">%1$d رواية تحتاج إلى انتباه</item>
+    </plurals>
+    <string name="more_no_refresh_problems">لا توجد مشكلات في التحديث</string>
+    <string name="more_statistics">الإحصاءات</string>
+    <string name="more_statistics_summary">نشاطك في القراءة</string>
+    <string name="more_settings_summary">المظهر، المكتبة، القارئ، النسخ الاحتياطية</string>
+    <string name="more_tours">الجولات</string>
+    <string name="more_tours_summary">إعادة تشغيل الجولات الإرشادية داخل التطبيق</string>
+    <string name="more_about">حول</string>
+    <string name="more_about_summary">الإصدار، قناة التحديث، التراخيص</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">ابدأ</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">جولة الترحيب</string>
+    <string name="tour_welcome_description">الأساسيات: المكتبة والتصفّح والمصادر والإعدادات.</string>
+    <string name="tour_step_welcome_title">مرحبًا بك في Grimoire</string>
+    <string name="tour_step_welcome_body">جولة سريعة على الأساسيات — تستغرق نحو 20 ثانية.</string>
+    <string name="tour_step_library_title">مكتبتك</string>
+    <string name="tour_step_library_body">الروايات التي تضيفها تُحفظ هنا، مرتبة في فئات.</string>
+    <string name="tour_step_browse_title">تصفّح</string>
+    <string name="tour_step_browse_body">انقر على «تصفّح» للعثور على روايات من مصادرك.</string>
+    <string name="tour_step_extensions_title">المصادر والإضافات</string>
+    <string name="tour_step_extensions_body">تُثبَّت المصادر من هنا. افتحها لترى ما هو متاح.</string>
+    <string name="tour_open_extensions">فتح الإضافات</string>
+    <string name="tour_step_repositories_title">المستودعات</string>
+    <string name="tour_step_repositories_body">تأتي المصادر من المستودعات. المستودع الرسمي مضاف بالفعل — انقر هنا لإدارتها أو لإضافة مستودعك الخاص.</string>
+    <string name="tour_step_more_title">كل شيء آخر</string>
+    <string name="tour_step_more_body">التنزيلات والإحصاءات والنسخ الاحتياطية والإعدادات موجودة ضمن «المزيد».</string>
+    <string name="tour_step_done_title">أنت جاهز تمامًا</string>
+    <string name="tour_step_done_body">أعد تشغيل أي جولة من المزيد ← الجولات.</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">التشخيص</string>
+    <string name="privacy_diagnostics_note">بيانات التشخيص مجهولة الهوية ولا تتضمن أبدًا بيانات شخصية أو عناوين روايات أو روابط. كل شيء متوقف ما لم تفعّله بنفسك.</string>
+    <string name="privacy_crash_reports">إرسال تقارير الأعطال</string>
+    <string name="privacy_crash_reports_summary">تتبعات مكدس مجهولة عند تعطل التطبيق</string>
+    <string name="privacy_usage_analytics">إرسال تحليلات استخدام مجهولة</string>
+    <string name="privacy_usage_analytics_summary">الميزات المستخدمة، لتوجيه ما نطوّره لاحقًا</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">جارٍ تنزيل الفصول</string>
+    <string name="download_notification_starting">جارٍ البدء…</string>
+    <string name="download_notification_working">جارٍ التنزيل…</string>
+    <string name="download_notification_queued">+%1$d في الانتظار</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d في الانتظار)</string>
+    <string name="download_notification_complete_title">اكتملت التنزيلات</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="zero">تم تنزيل %1$d فصل</item>
+        <item quantity="one">تم تنزيل %1$d فصل</item>
+        <item quantity="two">تم تنزيل %1$d فصلين</item>
+        <item quantity="few">تم تنزيل %1$d فصول</item>
+        <item quantity="many">تم تنزيل %1$d فصلًا</item>
+        <item quantity="other">تم تنزيل %1$d فصل</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">جارٍ تنزيل التحديث</string>
+    <string name="app_update_notification_downloading_version">جارٍ تنزيل التحديث %1$s</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s ميغابايت</string>
+    <string name="app_update_notification_size">%1$s ميغابايت</string>
+    <string name="app_update_notification_starting">جارٍ البدء…</string>
+    <string name="app_update_notification_ready">التحديث جاهز للتثبيت</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s جاهز</string>
+    <string name="app_update_notification_tap_to_install">انقر للتثبيت</string>
+    <string name="app_update_notification_failed">فشل تنزيل التحديث</string>
+    <string name="error_verification_failed">فشل التحقق من التنزيل — حاول مجددًا أو بدّل الشبكة</string>
+    <string name="app_update_download_failed">فشل التنزيل</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">التنزيلات</string>
+    <string name="downloads_settings">إعدادات التنزيل</string>
+    <string name="downloads_no_filter_matches">لا توجد تنزيلات تطابق عوامل التصفية المحددة.</string>
+    <string name="downloads_parallel">التنزيلات المتوازية</string>
+    <string name="downloads_parallel_summary">عدد الفصول التي تُنزَّل في الوقت نفسه</string>
+    <string name="downloads_move_to_top">نقل إلى الأعلى</string>
+    <string name="downloads_cancel_failed">إلغاء الفاشلة</string>
+    <string name="downloads_redownload">إعادة التنزيل</string>
+    <string name="downloads_delete_download">حذف التنزيل</string>
+    <string name="downloads_delete_options">خيارات التنزيل</string>
+    <string name="downloads_empty">لا توجد تنزيلات</string>
+    <string name="downloads_filter_downloading">قيد التنزيل</string>
+    <string name="downloads_filter_queued">في الانتظار</string>
+    <string name="downloads_filter_done">مكتملة</string>
+    <string name="downloads_filter_failed">فاشلة</string>
+    <plurals name="downloads_count_downloaded">
+        <item quantity="zero">المنزّلة: %1$d</item>
+        <item quantity="one">المنزّلة: %1$d</item>
+        <item quantity="two">المنزّلة: %1$d</item>
+        <item quantity="few">المنزّلة: %1$d</item>
+        <item quantity="many">المنزّلة: %1$d</item>
+        <item quantity="other">المنزّلة: %1$d</item>
+    </plurals>
+    <plurals name="downloads_count_queued">
+        <item quantity="zero">في الانتظار: %1$d</item>
+        <item quantity="one">في الانتظار: %1$d</item>
+        <item quantity="two">في الانتظار: %1$d</item>
+        <item quantity="few">في الانتظار: %1$d</item>
+        <item quantity="many">في الانتظار: %1$d</item>
+        <item quantity="other">في الانتظار: %1$d</item>
+    </plurals>
+    <plurals name="downloads_count_downloading">
+        <item quantity="zero">قيد التنزيل: %1$d</item>
+        <item quantity="one">قيد التنزيل: %1$d</item>
+        <item quantity="two">قيد التنزيل: %1$d</item>
+        <item quantity="few">قيد التنزيل: %1$d</item>
+        <item quantity="many">قيد التنزيل: %1$d</item>
+        <item quantity="other">قيد التنزيل: %1$d</item>
+    </plurals>
+    <plurals name="downloads_count_failed">
+        <item quantity="zero">الفاشلة: %1$d</item>
+        <item quantity="one">الفاشلة: %1$d</item>
+        <item quantity="two">الفاشلة: %1$d</item>
+        <item quantity="few">الفاشلة: %1$d</item>
+        <item quantity="many">الفاشلة: %1$d</item>
+        <item quantity="other">الفاشلة: %1$d</item>
+    </plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">الإحصاءات</string>
+    <string name="statistics_reading">القراءة</string>
+    <string name="statistics_chapters_read">الفصول المقروءة</string>
+    <string name="statistics_words_read">الكلمات المقروءة</string>
+    <string name="statistics_novels_completed">الروايات المكتملة</string>
+    <string name="statistics_novels_started">الروايات التي بدأتها</string>
+    <string name="statistics_average_words">متوسط الكلمات / فصل</string>
+    <string name="statistics_last_read">آخر قراءة</string>
+    <string name="statistics_library">المكتبة</string>
+    <string name="statistics_library_novels">الروايات في المكتبة</string>
+    <string name="statistics_library_chapters">فصول المكتبة</string>
+    <string name="statistics_library_unread">غير المقروء في المكتبة</string>
+    <string name="statistics_downloaded">المنزّلة</string>
+    <string name="statistics_empty_hint">اقرأ بعض الفصول لبدء تتبّع الإحصاءات.</string>
+    <string name="statistics_counting_hint">تُحتسب الإحصاءات لكل فصل مرة واحدة — التعليم كغير مقروء لا ينقصها.</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">المهام</string>
+    <string name="tasks_empty">لا توجد مهام بعد.\nتظهر التنزيلات ومزامنات المكتبة هنا أثناء تشغيلها،\nوتُحفظ نتائجها في الأسفل.</string>
+    <string name="tasks_running">قيد التشغيل</string>
+    <string name="tasks_history">السجل</string>
+    <string name="tasks_clear_title">هل تريد مسح سجل المهام؟</string>
+    <string name="tasks_clear_message">يزيل سجل مزامنات المكتبة والتنزيلات المكتملة. لا تتأثر المهام الجارية.</string>
+    <string name="tasks_cancel_named">إلغاء %1$s</string>
+    <string name="tasks_finished_with_errors">انتهت مع أخطاء</string>
+    <string name="tasks_updating_library">جارٍ تحديث المكتبة</string>
+    <string name="tasks_starting">جارٍ البدء…</string>
+    <plurals name="tasks_novels_progress">
+        <item quantity="zero">%1$d / %2$d رواية</item>
+        <item quantity="one">%1$d / %2$d رواية</item>
+        <item quantity="two">%1$d / %2$d روايتين</item>
+        <item quantity="few">%1$d / %2$d روايات</item>
+        <item quantity="many">%1$d / %2$d روايةً</item>
+        <item quantity="other">%1$d / %2$d رواية</item>
+    </plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">جارٍ تنزيل الفصول</string>
+    <plurals name="tasks_chapters_remaining">
+        <item quantity="zero">المتبقي: %1$d فصل</item>
+        <item quantity="one">المتبقي: %1$d فصل</item>
+        <item quantity="two">المتبقي: %1$d فصلان</item>
+        <item quantity="few">المتبقي: %1$d فصول</item>
+        <item quantity="many">المتبقي: %1$d فصلًا</item>
+        <item quantity="other">المتبقي: %1$d فصل</item>
+    </plurals>
+    <string name="tasks_downloads">التنزيلات</string>
+    <string name="tasks_library_sync">مزامنة المكتبة</string>
+    <plurals name="tasks_downloaded_summary">
+        <item quantity="zero">تم تنزيل %1$d فصل</item>
+        <item quantity="one">تم تنزيل %1$d فصل</item>
+        <item quantity="two">تم تنزيل %1$d فصلين</item>
+        <item quantity="few">تم تنزيل %1$d فصول</item>
+        <item quantity="many">تم تنزيل %1$d فصلًا</item>
+        <item quantity="other">تم تنزيل %1$d فصل</item>
+    </plurals>
+    <plurals name="tasks_failed_count">
+        <item quantity="zero">الفاشلة: %1$d</item>
+        <item quantity="one">الفاشلة: %1$d</item>
+        <item quantity="two">الفاشلة: %1$d</item>
+        <item quantity="few">الفاشلة: %1$d</item>
+        <item quantity="many">الفاشلة: %1$d</item>
+        <item quantity="other">الفاشلة: %1$d</item>
+    </plurals>
+    <plurals name="tasks_checked_novels">
+        <item quantity="zero">تم فحص %1$d رواية</item>
+        <item quantity="one">تم فحص %1$d رواية</item>
+        <item quantity="two">تم فحص %1$d روايتين</item>
+        <item quantity="few">تم فحص %1$d روايات</item>
+        <item quantity="many">تم فحص %1$d روايةً</item>
+        <item quantity="other">تم فحص %1$d رواية</item>
+    </plurals>
+    <plurals name="tasks_new_chapters">
+        <item quantity="zero">%1$d فصل جديد</item>
+        <item quantity="one">%1$d فصل جديد</item>
+        <item quantity="two">%1$d فصلان جديدان</item>
+        <item quantity="few">%1$d فصول جديدة</item>
+        <item quantity="many">%1$d فصلًا جديدًا</item>
+        <item quantity="other">%1$d فصل جديد</item>
+    </plurals>
+    <plurals name="tasks_warning_count">
+        <item quantity="zero">%1$d تحذير</item>
+        <item quantity="one">%1$d تحذير</item>
+        <item quantity="two">%1$d تحذيران</item>
+        <item quantity="few">%1$d تحذيرات</item>
+        <item quantity="many">%1$d تحذيرًا</item>
+        <item quantity="other">%1$d تحذير</item>
+    </plurals>
+    <plurals name="tasks_error_count">
+        <item quantity="zero">%1$d خطأ</item>
+        <item quantity="one">%1$d خطأ</item>
+        <item quantity="two">%1$d خطآن</item>
+        <item quantity="few">%1$d أخطاء</item>
+        <item quantity="many">%1$d خطأً</item>
+        <item quantity="other">%1$d خطأ</item>
+    </plurals>
+    <string name="tasks_sync_failed">فشلت مزامنة المكتبة · %1$s</string>
+    <string name="library_update_downloading_new">جارٍ تنزيل الفصول الجديدة</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d في الانتظار</string>
+    <plurals name="library_update_new_locked_chapters">
+        <item quantity="zero">%1$d فصل مقفل جديد</item>
+        <item quantity="one">%1$d فصل مقفل جديد</item>
+        <item quantity="two">%1$d فصلان مقفلان جديدان</item>
+        <item quantity="few">%1$d فصول مقفلة جديدة</item>
+        <item quantity="many">%1$d فصلًا مقفلًا جديدًا</item>
+        <item quantity="other">%1$d فصل مقفل جديد</item>
+    </plurals>
+    <string name="library_update_new_with_locked">%1$s · %2$d مقفل</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">التحديثات</string>
+    <string name="updates_open_novel">فتح الرواية</string>
+    <string name="updates_delete_from_log">حذف من السجل</string>
+    <string name="updates_empty">لا توجد تحديثات بعد.\nتظهر هنا الفصول الجديدة التي يعثر عليها تحديث المكتبة.</string>
+    <string name="updates_tab_subscribed">المشترك فيها</string>
+    <string name="updates_tab_all">الكل</string>
+    <string name="updates_subscribed_empty">لا توجد تحديثات من الروايات المشترك فيها بعد.</string>
+    <string name="updates_clear_title">هل تريد مسح سجل التحديثات؟</string>
+    <string name="updates_clear_message">سيؤدي هذا إلى إزالة كل الإدخالات من سجل التحديثات نهائيًا. لن تتأثر مكتبتك وفصولك.</string>
+    <plurals name="updates_count_new">
+        <item quantity="zero">الجديدة: %1$d</item>
+        <item quantity="one">الجديدة: %1$d</item>
+        <item quantity="two">الجديدة: %1$d</item>
+        <item quantity="few">الجديدة: %1$d</item>
+        <item quantity="many">الجديدة: %1$d</item>
+        <item quantity="other">الجديدة: %1$d</item>
+    </plurals>
+    <plurals name="updates_count_locked">
+        <item quantity="zero">المقفلة: %1$d</item>
+        <item quantity="one">المقفلة: %1$d</item>
+        <item quantity="two">المقفلة: %1$d</item>
+        <item quantity="few">المقفلة: %1$d</item>
+        <item quantity="many">المقفلة: %1$d</item>
+        <item quantity="other">المقفلة: %1$d</item>
+    </plurals>
+    <plurals name="updates_count_downloaded">
+        <item quantity="zero">المنزّلة: %1$d</item>
+        <item quantity="one">المنزّلة: %1$d</item>
+        <item quantity="two">المنزّلة: %1$d</item>
+        <item quantity="few">المنزّلة: %1$d</item>
+        <item quantity="many">المنزّلة: %1$d</item>
+        <item quantity="other">المنزّلة: %1$d</item>
+    </plurals>
+    <string name="updates_all_downloaded">تم تنزيل الكل</string>
+    <string name="updates_unlocked">تم فتح القفل</string>
+    <plurals name="updates_count_unlocked">
+        <item quantity="zero">المفتوحة: %1$d</item>
+        <item quantity="one">المفتوحة: %1$d</item>
+        <item quantity="two">المفتوحة: %1$d</item>
+        <item quantity="few">المفتوحة: %1$d</item>
+        <item quantity="many">المفتوحة: %1$d</item>
+        <item quantity="other">المفتوحة: %1$d</item>
+    </plurals>
+
+    <!-- History -->
+    <string name="history_title">السجل</string>
+    <string name="history_reading">القراءة</string>
+    <string name="history_browsing">التصفّح</string>
+    <string name="history_clear_reading">مسح سجل القراءة</string>
+    <string name="history_clear_browsing">مسح سجل التصفّح</string>
+    <string name="history_reading_empty">لا يوجد سجل قراءة بعد.\nتظهر هنا الفصول التي تفتحها في القارئ.</string>
+    <string name="history_browsing_empty">لا يوجد سجل تصفّح بعد.\nتظهر هنا الروايات التي تفتحها في «تصفّح» (ولم تضفها إلى مكتبتك).</string>
+    <string name="history_clear_reading_title">هل تريد مسح سجل القراءة؟</string>
+    <string name="history_clear_browsing_title">هل تريد مسح سجل التصفّح؟</string>
+    <string name="history_clear_reading_message">سيؤدي هذا إلى إزالة كل الإدخالات من سجل القراءة نهائيًا. لن تتأثر مكتبتك وفصولك.</string>
+    <string name="history_clear_browsing_message">سيؤدي هذا إلى إزالة كل الإدخالات من سجل التصفّح نهائيًا. لن تتأثر مكتبتك.</string>
+    <plurals name="history_chapter_count">
+        <item quantity="zero">%1$d فصل</item>
+        <item quantity="one">%1$d فصل</item>
+        <item quantity="two">%1$d فصلان</item>
+        <item quantity="few">%1$d فصول</item>
+        <item quantity="many">%1$d فصلًا</item>
+        <item quantity="other">%1$d فصل</item>
+    </plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">تحذيرات التحديث</string>
+    <string name="update_issues_empty">لا توجد مشكلات.\nتظهر هنا الروايات التي يفشل تحديثها.</string>
+    <string name="update_issue_source_missing">المصدر غير مثبّت — تم التخطي</string>
+    <string name="update_issue_no_chapters">لم يُرجع المصدر أي فصول — أُبقيت القائمة الحالية</string>
+    <string name="update_issue_incomplete_data">أرجع المصدر بيانات ناقصة — أُبقي العنوان/الغلاف السابق</string>
+    <string name="update_issues_retry_all">إعادة محاولة الكل</string>
+    <string name="update_issues_dismiss_all">تجاهل الكل</string>
+    <string name="update_issue_dismiss">تجاهل</string>
+    <string name="update_issue_install_source">تثبيت المصدر</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">تعطّل التطبيق</string>
+    <string name="crash_empty">لا يتوفر تقرير عن العطل.</string>
+    <string name="crash_description">أُغلق التطبيق بشكل غير متوقع في آخر مرة جرى تشغيله. يساعد إرسال تقرير على إصلاح المشكلة — وتفاصيل العطل أدناه معبّأة مسبقًا. يمكنك أيضًا نسخها لمشاركتها في مكان آخر.</string>
+    <string name="crash_no_browser">لا يتوفر متصفح لفتح GitHub.</string>
+    <string name="crash_report_github">الإبلاغ على GitHub</string>
+    <string name="crash_details_copied">تم نسخ تفاصيل العطل.</string>
+    <string name="crash_copy_details">نسخ التفاصيل</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">السابق</string>
+    <string name="action_play">تشغيل</string>
+    <string name="action_stop">إيقاف</string>
+    <string name="tts_notification_title">تحويل النص إلى كلام</string>
+    <string name="tts_error_request_failed">فشل طلب ElevenLabs</string>
+    <string name="tts_error_play_audio">تعذّر تشغيل الصوت</string>
+    <string name="tts_error_play_preview">تعذّر تشغيل المعاينة الصوتية</string>
+    <string name="tts_error_start_playback">تعذّر بدء التشغيل</string>
+    <string name="notification_channel_downloads">تنزيلات الفصول</string>
+    <string name="notification_channel_downloads_desc">تنزيل الفصول في الخلفية</string>
+    <string name="notification_channel_backups">النسخ الاحتياطية</string>
+    <string name="notification_channel_backups_desc">النسخ الاحتياطية المحلية المجدولة</string>
+    <string name="notification_channel_app_updates">تحديثات التطبيق</string>
+    <string name="notification_channel_app_updates_desc">تنزيل تحديثات التطبيق في الخلفية</string>
+    <string name="notification_channel_library_updates">تحديثات المكتبة</string>
+    <string name="notification_channel_library_updates_desc">تقدّم تحديث المكتبة في الخلفية ونتائجه</string>
+    <string name="notification_channel_tts">تحويل النص إلى كلام</string>
+    <string name="notification_channel_tts_desc">عناصر التحكم في القراءة بصوت عالٍ</string>
+    <string name="tts_error_no_chapters">لا تحتوي هذه الرواية على فصول للقراءة</string>
+    <string name="tts_error_missing_api_key">أضف مفتاح API لـ ElevenLabs في الإعدادات ← تحويل النص إلى كلام</string>
+    <string name="tts_error_device_unavailable">محرّك الكلام على الجهاز غير متاح</string>
+    <string name="tts_error_chapter_not_found">لم يُعثر على الفصل</string>
+    <string name="tts_error_no_readable_text">لا يحتوي هذا الفصل على نص قابل للقراءة</string>
+    <string name="tts_error_audio_focus">تعذّر الحصول على تركيز الصوت</string>
+    <string name="tts_error_device_engine">خطأ في محرّك الكلام على الجهاز</string>
+    <string name="tts_error_device_engine_code">خطأ في محرّك الكلام على الجهاز (%1$d)</string>
+    <string name="extension_download_failed_http">فشل التنزيل: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">خطأ في محرّك الكلام على الجهاز</string>
+    <string name="tts_error_preview_engine_code">خطأ في محرّك الكلام على الجهاز (%1$d)</string>
+    <string name="tts_error_audio_playback_code">خطأ في تشغيل الصوت (%1$d)</string>
+    <string name="tts_error_no_default_voice">لا يتوفر صوت افتراضي من ElevenLabs — اختر صوتًا في إعدادات تحويل النص إلى كلام</string>
+    <string name="tts_error_no_default_voice_preview">لا يتوفر صوت افتراضي من ElevenLabs — اختر صوتًا لمعاينته</string>
+    <string name="tts_error_source_unavailable">المصدر غير متاح — نزّل الفصل للاستماع إليه دون اتصال</string>
+    <string name="tts_error_source_no_text">لا يستطيع هذا المصدر قراءة نص الفصل — نزّله للاستماع إليه دون اتصال</string>
+    <string name="tts_error_api_key_first">أضف مفتاح API لـ ElevenLabs أولًا.</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: مفتاح API غير صالح، أو أن الوصول إلى API في الخطة المجانية معطّل</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: خطتك لا تسمح بذلك — راجع إعدادات تحويل النص إلى كلام</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: تم تجاوز حد الطلبات أو حصة الأحرف</string>
+    <string name="tts_error_elevenlabs_code">فشل طلب ElevenLabs (%1$d)</string>
+</resources>

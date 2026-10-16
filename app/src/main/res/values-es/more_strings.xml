@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels used throughout More and its child screens -->
+    <string name="common_today">Hoy</string>
+    <string name="common_yesterday">Ayer</string>
+    <string name="action_pause">Pausar</string>
+    <string name="action_resume">Reanudar</string>
+    <string name="action_expand">Expandir</string>
+    <string name="action_collapse">Contraer</string>
+    <string name="action_clear_log">Borrar registro</string>
+    <string name="action_set">Establecer</string>
+    <string name="action_choose">Elegir</string>
+    <string name="action_restore">Restaurar</string>
+    <string name="action_disconnect">Desconectar</string>
+    <string name="action_dismiss">Descartar</string>
+    <string name="action_try_again">Reintentar</string>
+    <string name="action_skip">Omitir</string>
+    <string name="action_next">Siguiente</string>
+    <string name="status_error">Error</string>
+    <string name="status_warning">Advertencia</string>
+    <string name="status_completed">Completado</string>
+    <string name="status_queued">En cola</string>
+    <string name="status_downloaded">Descargado</string>
+    <string name="chapter_cancel_download">Cancelar descarga</string>
+    <string name="chapter_downloaded_refresh_queued">Descargado · actualización en cola</string>
+    <string name="chapter_cancel_refresh">Cancelar actualización</string>
+    <string name="chapter_downloaded_refreshing">Descargado · actualizando</string>
+    <string name="chapter_downloaded_refresh_failed">Descargado · error al actualizar</string>
+
+    <!-- More -->
+    <string name="more_title">Más</string>
+    <string name="more_incognito">Incógnito</string>
+    <string name="more_incognito_enabled">No se guarda el historial en esta sesión</string>
+    <string name="more_incognito_disabled">Pausar el historial de lectura y exploración</string>
+    <string name="incognito_banner">Incógnito · historial en pausa</string>
+    <string name="more_updates">Actualizaciones</string>
+    <plurals name="more_subscribed_updates_summary">
+        <item quantity="one">%1$d capítulo nuevo de novelas suscritas</item>
+        <item quantity="many">%1$d capítulos nuevos de novelas suscritas</item>
+        <item quantity="other">%1$d capítulos nuevos de novelas suscritas</item>
+    </plurals>
+    <plurals name="more_updates_summary">
+        <item quantity="one">%1$d capítulo nuevo en tu biblioteca</item>
+        <item quantity="many">%1$d capítulos nuevos en tu biblioteca</item>
+        <item quantity="other">%1$d capítulos nuevos en tu biblioteca</item>
+    </plurals>
+    <string name="more_no_new_chapters">No hay capítulos nuevos</string>
+    <string name="more_history">Historial</string>
+    <string name="more_history_summary">Capítulos leídos y novelas exploradas recientemente</string>
+    <string name="more_downloads">Descargas</string>
+    <plurals name="more_downloads_in_progress">
+        <item quantity="one">%1$d en curso</item>
+        <item quantity="many">%1$d en curso</item>
+        <item quantity="other">%1$d en curso</item>
+    </plurals>
+    <string name="more_downloads_summary">Capítulos descargados y cola</string>
+    <string name="more_tasks">Tareas</string>
+    <string name="more_tasks_summary">Descargas y sincronizaciones en curso, además de su historial</string>
+    <string name="more_update_warnings">Advertencias de actualización</string>
+    <plurals name="more_update_warnings_summary">
+        <item quantity="one">%1$d novela requiere atención</item>
+        <item quantity="many">%1$d novelas requieren atención</item>
+        <item quantity="other">%1$d novelas requieren atención</item>
+    </plurals>
+    <string name="more_no_refresh_problems">Sin problemas de actualización</string>
+    <string name="more_statistics">Estadísticas</string>
+    <string name="more_statistics_summary">Tu actividad de lectura</string>
+    <string name="more_settings_summary">Apariencia, biblioteca, lector, copias de seguridad</string>
+    <string name="more_tours">Recorridos</string>
+    <string name="more_tours_summary">Repetir los recorridos guiados de la app</string>
+    <string name="more_about">Acerca de</string>
+    <string name="more_about_summary">Versión, canal de actualizaciones, licencias</string>
+
+    <!-- Tours and shared tour overlay -->
+    <string name="tour_start">Comenzar</string>
+    <string name="tour_progress">%1$d/%2$d</string>
+    <string name="tour_welcome_title">Recorrido de bienvenida</string>
+    <string name="tour_welcome_description">Lo esencial: biblioteca, exploración, fuentes y configuración.</string>
+    <string name="tour_step_welcome_title">Te damos la bienvenida a Grimoire</string>
+    <string name="tour_step_welcome_body">Un recorrido rápido por lo esencial; toma unos 20 segundos.</string>
+    <string name="tour_step_library_title">Tu biblioteca</string>
+    <string name="tour_step_library_body">Las novelas que agregues se guardan aquí, organizadas en categorías.</string>
+    <string name="tour_step_browse_title">Explorar</string>
+    <string name="tour_step_browse_body">Toca Explorar para buscar novelas en tus fuentes.</string>
+    <string name="tour_step_extensions_title">Fuentes y extensiones</string>
+    <string name="tour_step_extensions_body">Las fuentes se instalan desde aquí. Ábrelo para ver qué hay disponible.</string>
+    <string name="tour_open_extensions">Abrir extensiones</string>
+    <string name="tour_step_repositories_title">Repositorios</string>
+    <string name="tour_step_repositories_body">Las fuentes provienen de repositorios. El oficial ya está agregado; toca aquí para administrarlos o agregar los tuyos.</string>
+    <string name="tour_step_more_title">Todo lo demás</string>
+    <string name="tour_step_more_body">Las descargas, estadísticas, copias de seguridad y configuración están en Más.</string>
+    <string name="tour_step_done_title">Todo listo</string>
+    <string name="tour_step_done_body">Repite cualquier recorrido desde Más → Recorridos.</string>
+
+    <!-- Privacy settings -->
+    <string name="privacy_section_diagnostics">Diagnóstico</string>
+    <string name="privacy_diagnostics_note">Los datos de diagnóstico son anónimos y nunca incluyen datos personales, títulos de novelas ni enlaces. Todo está desactivado a menos que lo actives.</string>
+    <string name="privacy_crash_reports">Enviar informes de fallos</string>
+    <string name="privacy_crash_reports_summary">Seguimientos de pila anónimos cuando la app falla</string>
+    <string name="privacy_usage_analytics">Enviar estadísticas de uso anónimas</string>
+    <string name="privacy_usage_analytics_summary">Qué funciones se usan, para decidir qué desarrollar</string>
+
+    <!-- Chapter download notifications -->
+    <string name="download_notification_title">Descargando capítulos</string>
+    <string name="download_notification_starting">Iniciando…</string>
+    <string name="download_notification_working">Descargando…</string>
+    <string name="download_notification_queued">+%1$d en cola</string>
+    <string name="download_notification_chapter_queued">%1$s  (+%2$d en cola)</string>
+    <string name="download_notification_complete_title">Descargas completadas</string>
+    <plurals name="download_notification_complete_count">
+        <item quantity="one">%1$d capítulo descargado</item>
+        <item quantity="many">%1$d capítulos descargados</item>
+        <item quantity="other">%1$d capítulos descargados</item>
+    </plurals>
+
+    <!-- App update notifications -->
+    <string name="app_update_notification_downloading">Descargando actualización</string>
+    <string name="app_update_notification_downloading_version">Descargando actualización %1$s</string>
+    <string name="app_update_notification_progress">%1$d%%  ·  %2$s / %3$s MB</string>
+    <string name="app_update_notification_size">%1$s MB</string>
+    <string name="app_update_notification_starting">Iniciando…</string>
+    <string name="app_update_notification_ready">Actualización lista para instalar</string>
+    <string name="app_update_notification_ready_version">Grimoire %1$s está lista</string>
+    <string name="app_update_notification_tap_to_install">Toca para instalar</string>
+    <string name="app_update_notification_failed">Error al descargar la actualización</string>
+    <string name="error_verification_failed">Error al verificar la descarga: vuelve a intentarlo o cambia de red</string>
+    <string name="app_update_download_failed">Error en la descarga</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">Descargas</string>
+    <string name="downloads_settings">Configuración de descargas</string>
+    <string name="downloads_no_filter_matches">Ninguna descarga coincide con los filtros seleccionados.</string>
+    <string name="downloads_parallel">Descargas simultáneas</string>
+    <string name="downloads_parallel_summary">Número de capítulos que se descargan a la vez</string>
+    <string name="downloads_move_to_top">Mover al principio</string>
+    <string name="downloads_cancel_failed">Cancelar fallidas</string>
+    <string name="downloads_redownload">Volver a descargar</string>
+    <string name="downloads_delete_download">Eliminar descarga</string>
+    <string name="downloads_delete_options">Opciones de descarga</string>
+    <string name="downloads_empty">No hay descargas</string>
+    <string name="downloads_filter_downloading">Descargando</string>
+    <string name="downloads_filter_queued">En cola</string>
+    <string name="downloads_filter_done">Listas</string>
+    <string name="downloads_filter_failed">Fallidas</string>
+    <plurals name="downloads_count_downloaded"><item quantity="one">%1$d descargado</item><item quantity="many">%1$d descargados</item><item quantity="other">%1$d descargados</item></plurals>
+    <plurals name="downloads_count_queued"><item quantity="one">%1$d en cola</item><item quantity="many">%1$d en cola</item><item quantity="other">%1$d en cola</item></plurals>
+    <plurals name="downloads_count_downloading"><item quantity="one">%1$d descargando</item><item quantity="many">%1$d descargando</item><item quantity="other">%1$d descargando</item></plurals>
+    <plurals name="downloads_count_failed"><item quantity="one">%1$d fallido</item><item quantity="many">%1$d fallidos</item><item quantity="other">%1$d fallidos</item></plurals>
+
+    <!-- Statistics -->
+    <string name="statistics_title">Estadísticas</string>
+    <string name="statistics_reading">Lectura</string>
+    <string name="statistics_chapters_read">Capítulos leídos</string>
+    <string name="statistics_words_read">Palabras leídas</string>
+    <string name="statistics_novels_completed">Novelas terminadas</string>
+    <string name="statistics_novels_started">Novelas empezadas</string>
+    <string name="statistics_average_words">Prom. palabras / capítulo</string>
+    <string name="statistics_last_read">Última lectura</string>
+    <string name="statistics_library">Biblioteca</string>
+    <string name="statistics_library_novels">Novelas en la biblioteca</string>
+    <string name="statistics_library_chapters">Capítulos de la biblioteca</string>
+    <string name="statistics_library_unread">Sin leer en la biblioteca</string>
+    <string name="statistics_downloaded">Descargados</string>
+    <string name="statistics_empty_hint">Lee algunos capítulos para empezar a registrar estadísticas.</string>
+    <string name="statistics_counting_hint">Cada capítulo se cuenta una sola vez; marcarlo como no leído no lo resta.</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Tareas</string>
+    <string name="tasks_empty">Aún no hay tareas.\nLas descargas y sincronizaciones de la biblioteca aparecen aquí mientras se ejecutan,\ny sus resultados se guardan abajo.</string>
+    <string name="tasks_running">En curso</string>
+    <string name="tasks_history">Historial</string>
+    <string name="tasks_clear_title">¿Borrar el registro de tareas?</string>
+    <string name="tasks_clear_message">Elimina el historial de sincronizaciones de la biblioteca y descargas completadas. Las tareas en curso no se ven afectadas.</string>
+    <string name="tasks_cancel_named">Cancelar %1$s</string>
+    <string name="tasks_finished_with_errors">Terminó con errores</string>
+    <string name="tasks_updating_library">Actualizando biblioteca</string>
+    <string name="tasks_starting">Iniciando…</string>
+    <plurals name="tasks_novels_progress"><item quantity="one">%1$d / %2$d novela</item><item quantity="many">%1$d / %2$d novelas</item><item quantity="other">%1$d / %2$d novelas</item></plurals>
+    <string name="tasks_novel_progress_title">%1$d / %2$d · %3$s</string>
+    <string name="tasks_downloading_chapters">Descargando capítulos</string>
+    <plurals name="tasks_chapters_remaining"><item quantity="one">Queda %1$d capítulo</item><item quantity="many">Quedan %1$d capítulos</item><item quantity="other">Quedan %1$d capítulos</item></plurals>
+    <string name="tasks_downloads">Descargas</string>
+    <string name="tasks_library_sync">Sincronización de la biblioteca</string>
+    <plurals name="tasks_downloaded_summary"><item quantity="one">%1$d capítulo descargado</item><item quantity="many">%1$d capítulos descargados</item><item quantity="other">%1$d capítulos descargados</item></plurals>
+    <plurals name="tasks_failed_count"><item quantity="one">%1$d fallido</item><item quantity="many">%1$d fallidos</item><item quantity="other">%1$d fallidos</item></plurals>
+    <plurals name="tasks_checked_novels"><item quantity="one">Se revisó %1$d novela</item><item quantity="many">Se revisaron %1$d novelas</item><item quantity="other">Se revisaron %1$d novelas</item></plurals>
+    <plurals name="tasks_new_chapters"><item quantity="one">%1$d capítulo nuevo</item><item quantity="many">%1$d capítulos nuevos</item><item quantity="other">%1$d capítulos nuevos</item></plurals>
+    <plurals name="tasks_warning_count"><item quantity="one">%1$d advertencia</item><item quantity="many">%1$d advertencias</item><item quantity="other">%1$d advertencias</item></plurals>
+    <plurals name="tasks_error_count"><item quantity="one">%1$d error</item><item quantity="many">%1$d errores</item><item quantity="other">%1$d errores</item></plurals>
+    <string name="tasks_sync_failed">Error al sincronizar la biblioteca · %1$s</string>
+    <string name="library_update_downloading_new">Descargando capítulos nuevos</string>
+    <string name="library_update_chapter_queued">%1$s · +%2$d en cola</string>
+    <plurals name="library_update_new_locked_chapters"><item quantity="one">%1$d capítulo bloqueado nuevo</item><item quantity="many">%1$d capítulos bloqueados nuevos</item><item quantity="other">%1$d capítulos bloqueados nuevos</item></plurals>
+    <string name="library_update_new_with_locked">%1$s · %2$d bloqueados</string>
+
+    <!-- Library updates -->
+    <string name="updates_title">Actualizaciones</string>
+    <string name="updates_open_novel">Abrir novela</string>
+    <string name="updates_delete_from_log">Eliminar del registro</string>
+    <string name="updates_empty">Aún no hay actualizaciones.\nAquí aparecen los capítulos nuevos que encuentre una actualización de la biblioteca.</string>
+    <string name="updates_tab_subscribed">Suscritas</string>
+    <string name="updates_tab_all">Todas</string>
+    <string name="updates_subscribed_empty">Aún no hay actualizaciones de novelas suscritas.</string>
+    <string name="updates_clear_title">¿Borrar el registro de actualizaciones?</string>
+    <string name="updates_clear_message">Esto elimina de forma permanente todas las entradas del registro de actualizaciones. Tu biblioteca y tus capítulos no se ven afectados.</string>
+    <plurals name="updates_count_new"><item quantity="one">%1$d nuevo</item><item quantity="many">%1$d nuevos</item><item quantity="other">%1$d nuevos</item></plurals>
+    <plurals name="updates_count_locked"><item quantity="one">%1$d bloqueado</item><item quantity="many">%1$d bloqueados</item><item quantity="other">%1$d bloqueados</item></plurals>
+    <plurals name="updates_count_downloaded"><item quantity="one">%1$d descargado</item><item quantity="many">%1$d descargados</item><item quantity="other">%1$d descargados</item></plurals>
+    <string name="updates_all_downloaded">Todo descargado</string>
+    <string name="updates_unlocked">Desbloqueado</string>
+    <plurals name="updates_count_unlocked"><item quantity="one">%1$d desbloqueado</item><item quantity="many">%1$d desbloqueados</item><item quantity="other">%1$d desbloqueados</item></plurals>
+
+    <!-- History -->
+    <string name="history_title">Historial</string>
+    <string name="history_reading">Lectura</string>
+    <string name="history_browsing">Exploración</string>
+    <string name="history_clear_reading">Borrar historial de lectura</string>
+    <string name="history_clear_browsing">Borrar historial de exploración</string>
+    <string name="history_reading_empty">Aún no hay historial de lectura.\nAquí aparecen los capítulos que abres en el lector.</string>
+    <string name="history_browsing_empty">Aún no hay historial de exploración.\nAquí aparecen las novelas que abres en Explorar (y que no agregaste a tu biblioteca).</string>
+    <string name="history_clear_reading_title">¿Borrar el historial de lectura?</string>
+    <string name="history_clear_browsing_title">¿Borrar el historial de exploración?</string>
+    <string name="history_clear_reading_message">Esto elimina de forma permanente todas las entradas de tu historial de lectura. Tu biblioteca y tus capítulos no se ven afectados.</string>
+    <string name="history_clear_browsing_message">Esto elimina de forma permanente todas las entradas de tu historial de exploración. Tu biblioteca no se ve afectada.</string>
+    <plurals name="history_chapter_count"><item quantity="one">%1$d capítulo</item><item quantity="many">%1$d capítulos</item><item quantity="other">%1$d capítulos</item></plurals>
+
+    <!-- Update warnings -->
+    <string name="update_issues_title">Advertencias de actualización</string>
+    <string name="update_issues_empty">No hay problemas.\nAquí aparecen las novelas que no se pueden actualizar.</string>
+    <string name="update_issue_source_missing">Fuente no instalada: se omitió</string>
+    <string name="update_issue_no_chapters">La fuente no devolvió capítulos: se conservó la lista existente</string>
+    <string name="update_issue_incomplete_data">La fuente devolvió datos incompletos: se conservaron el título y la portada anteriores</string>
+    <string name="update_issues_retry_all">Reintentar todo</string>
+    <string name="update_issues_dismiss_all">Descartar todo</string>
+    <string name="update_issue_dismiss">Descartar</string>
+    <string name="update_issue_install_source">Instalar fuente</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">La app falló</string>
+    <string name="crash_empty">No hay ningún informe de fallo disponible.</string>
+    <string name="crash_description">La app se cerró inesperadamente la última vez que se ejecutó. Enviar un informe ayuda a corregirlo; los detalles del fallo de abajo ya están completados. También puedes copiarlos para compartirlos en otro lugar.</string>
+    <string name="crash_no_browser">No hay ningún navegador disponible para abrir GitHub.</string>
+    <string name="crash_report_github">Informar en GitHub</string>
+    <string name="crash_details_copied">Detalles del fallo copiados.</string>
+    <string name="crash_copy_details">Copiar detalles</string>
+
+    <!-- Read-aloud media notification and playback errors -->
+    <string name="action_previous">Anterior</string>
+    <string name="action_play">Reproducir</string>
+    <string name="action_stop">Detener</string>
+    <string name="tts_notification_title">Texto a voz</string>
+    <string name="tts_error_request_failed">Error en la solicitud a ElevenLabs</string>
+    <string name="tts_error_play_audio">No se pudo reproducir el audio</string>
+    <string name="tts_error_play_preview">No se pudo reproducir el audio de vista previa</string>
+    <string name="tts_error_start_playback">No se pudo iniciar la reproducción</string>
+    <string name="notification_channel_downloads">Descargas de capítulos</string>
+    <string name="notification_channel_downloads_desc">Descargas de capítulos en segundo plano</string>
+    <string name="notification_channel_backups">Copias de seguridad</string>
+    <string name="notification_channel_backups_desc">Copias de seguridad locales programadas</string>
+    <string name="notification_channel_app_updates">Actualizaciones de la app</string>
+    <string name="notification_channel_app_updates_desc">Descargas de actualizaciones de la app en segundo plano</string>
+    <string name="notification_channel_library_updates">Actualizaciones de la biblioteca</string>
+    <string name="notification_channel_library_updates_desc">Progreso y resultados de la actualización de la biblioteca en segundo plano</string>
+    <string name="notification_channel_tts">Texto a voz</string>
+    <string name="notification_channel_tts_desc">Controles de reproducción de la lectura en voz alta</string>
+    <string name="tts_error_no_chapters">Esta novela no tiene capítulos para leer</string>
+    <string name="tts_error_missing_api_key">Agrega una clave de API de ElevenLabs en Configuración → Texto a voz</string>
+    <string name="tts_error_device_unavailable">El motor de voz del dispositivo no está disponible</string>
+    <string name="tts_error_chapter_not_found">No se encontró el capítulo</string>
+    <string name="tts_error_no_readable_text">Este capítulo no tiene texto legible</string>
+    <string name="tts_error_audio_focus">No se pudo obtener el foco de audio</string>
+    <string name="tts_error_device_engine">Error del motor de voz del dispositivo</string>
+    <string name="tts_error_device_engine_code">Error del motor de voz del dispositivo (%1$d)</string>
+    <string name="extension_download_failed_http">Error en la descarga: HTTP %1$d</string>
+    <string name="tts_error_preview_engine">Error del motor de voz en el dispositivo</string>
+    <string name="tts_error_preview_engine_code">Error del motor de voz en el dispositivo (%1$d)</string>
+    <string name="tts_error_audio_playback_code">Error de reproducción de audio (%1$d)</string>
+    <string name="tts_error_no_default_voice">No hay ninguna voz predeterminada de ElevenLabs disponible; elige una en la configuración de Texto a voz</string>
+    <string name="tts_error_no_default_voice_preview">No hay ninguna voz predeterminada de ElevenLabs disponible; elige una para escuchar la vista previa</string>
+    <string name="tts_error_source_unavailable">Fuente no disponible: descarga el capítulo para escucharlo sin conexión</string>
+    <string name="tts_error_source_no_text">Esta fuente no puede leer el texto del capítulo: descárgalo para escucharlo sin conexión</string>
+    <string name="tts_error_api_key_first">Primero agrega una clave de API de ElevenLabs.</string>
+    <string name="tts_error_elevenlabs_detail">ElevenLabs: %1$s</string>
+    <string name="tts_error_elevenlabs_401">ElevenLabs: clave de API no válida o acceso a la API desactivado en el plan gratuito</string>
+    <string name="tts_error_elevenlabs_plan">ElevenLabs: tu plan no permite esto; consulta la configuración de Texto a voz</string>
+    <string name="tts_error_elevenlabs_429">ElevenLabs: se superó el límite de solicitudes o la cuota de caracteres</string>
+    <string name="tts_error_elevenlabs_code">Error en la solicitud a ElevenLabs (%1$d)</string>
+</resources>
