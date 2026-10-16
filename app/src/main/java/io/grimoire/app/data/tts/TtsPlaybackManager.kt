@@ -134,7 +134,7 @@ class TtsPlaybackManager @Inject constructor(
                 activeEngine = engine
 
                 if (chapters.isEmpty()) chapters = chapterLoader.loadChapterList(novelId)
-                if (chapters.isEmpty()) return@launch fail("This novel has no chapters to read")
+                if (chapters.isEmpty()) return@launch fail(localizedContext.getString(R.string.tts_error_no_chapters))
                 pendingChapterUrl?.let { url ->
                     val match = chapters.indexOfFirst { it.url == url }
                     if (match >= 0) chapterIndex = match
@@ -152,9 +152,9 @@ class TtsPlaybackManager @Inject constructor(
                 if (!engine.init()) {
                     return@launch fail(
                         if (engine.type == TtsEngineType.ELEVENLABS) {
-                            "Add an ElevenLabs API key in Settings → Text-to-speech"
+                            localizedContext.getString(R.string.tts_error_missing_api_key)
                         } else {
-                            "The device speech engine is unavailable"
+                            localizedContext.getString(R.string.tts_error_device_unavailable)
                         },
                     )
                 }
@@ -240,7 +240,7 @@ class TtsPlaybackManager @Inject constructor(
         activeEngine?.stop()
         generation++
         chapterIndex = index
-        val chapter = chapters.getOrNull(index) ?: return fail("Chapter not found")
+        val chapter = chapters.getOrNull(index) ?: return fail(localizedContext.getString(R.string.tts_error_chapter_not_found))
         _state.value = TtsPlaybackState.LOADING
         updateNowPlaying()
 
@@ -251,12 +251,12 @@ class TtsPlaybackManager @Inject constructor(
             if (autoAdvance() && chapterIndex < chapters.size - 1) {
                 return startChapter(chapterIndex + 1, null)
             }
-            return fail("This chapter has no readable text")
+            return fail(localizedContext.getString(R.string.tts_error_no_readable_text))
         }
 
         utteranceIndex = resumeUtterance(chapter)
         configureEngine(locale)
-        if (!requestAudioFocus()) return fail("Could not get audio focus")
+        if (!requestAudioFocus()) return fail(localizedContext.getString(R.string.tts_error_audio_focus))
         registerNoisy()
         mediaSession?.isActive = true
         _state.value = TtsPlaybackState.PLAYING

@@ -305,4 +305,19 @@
     <string name="language_global">全局</string>
     <string name="language_added_here">在此处添加</string>
     <string name="language_hidden_here">在此处隐藏</string>
+    <string name="tts_voice_quality_very_high">极高音质</string>
+    <string name="tts_voice_quality_high">高音质</string>
+    <string name="tts_voice_quality_normal">普通音质</string>
+    <string name="tts_voice_quality_low">低音质</string>
+    <string name="tts_voice_online">需联网</string>
+    <string name="tts_voice_not_installed">未安装</string>
+    <string name="tts_voice_category_default">默认语音</string>
+    <string name="tts_voice_category_personal">你的克隆语音</string>
+    <string name="tts_voice_category_workspace">工作区语音</string>
+    <string name="tts_voice_category_community">语音库 · 仅限付费方案</string>
+    <string name="github_error_access_denied">授权被拒绝</string>
+    <string name="github_error_expired">授权完成前验证码已过期</string>
+    <string name="github_error_cancelled">已取消</string>
+    <string name="github_error_network">网络错误：%1$s</string>
+    <string name="github_error_unexpected">意外错误：%1$s</string>
 </resources>

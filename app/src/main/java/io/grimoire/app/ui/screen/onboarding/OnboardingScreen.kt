@@ -101,8 +101,9 @@ private fun WelcomeStep(
                         selected = tag == currentTag,
                         onClick = {
                             if (tag != currentTag) {
-                                AppLocale.setTag(context, tag)
-                                context.findActivity()?.recreate()
+                                if (AppLocale.setTag(context, tag)) {
+                                    context.findActivity()?.recreate()
+                                }
                             }
                         },
                     )

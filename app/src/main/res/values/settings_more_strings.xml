@@ -305,4 +305,19 @@
     <string name="language_global">Global</string>
     <string name="language_added_here">Added here</string>
     <string name="language_hidden_here">Hidden here</string>
+    <string name="tts_voice_quality_very_high">Very high quality</string>
+    <string name="tts_voice_quality_high">High quality</string>
+    <string name="tts_voice_quality_normal">Normal quality</string>
+    <string name="tts_voice_quality_low">Low quality</string>
+    <string name="tts_voice_online">online</string>
+    <string name="tts_voice_not_installed">not installed</string>
+    <string name="tts_voice_category_default">Default voice</string>
+    <string name="tts_voice_category_personal">Your cloned voice</string>
+    <string name="tts_voice_category_workspace">Workspace voice</string>
+    <string name="tts_voice_category_community">Voice Library · paid plans only</string>
+    <string name="github_error_access_denied">Authorization was denied</string>
+    <string name="github_error_expired">Code expired before authorization completed</string>
+    <string name="github_error_cancelled">Cancelled</string>
+    <string name="github_error_network">Network error: %1$s</string>
+    <string name="github_error_unexpected">Unexpected error: %1$s</string>
 </resources>

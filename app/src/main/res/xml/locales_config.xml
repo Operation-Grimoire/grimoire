@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UI languages offered in Android 13+ per-app language settings. Keep in sync with
+     AppLocale.supported and the values-* folders (LocaleCoverageTest checks both). -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="zh" />
+</locale-config>

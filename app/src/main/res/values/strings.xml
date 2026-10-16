@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Grimoire</string>
+    <string name="app_name" translatable="false">Grimoire</string>
 
     <!-- Common actions -->
     <string name="action_back">Back</string>
@@ -717,4 +717,5 @@
     <string name="error_save_to_library_first">Save this novel to your library first</string>
     <string name="source_validate_nothing">This source has nothing to validate.</string>
     <string name="source_validate_failed">Validation failed.</string>
+    <plurals name="novel_export_success"><item quantity="one">Exported %1$d chapter</item><item quantity="other">Exported %1$d chapters</item></plurals>
 </resources>

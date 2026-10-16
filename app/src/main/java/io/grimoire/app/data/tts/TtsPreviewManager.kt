@@ -143,7 +143,7 @@ class TtsPreviewManager @Inject constructor(
                     val voiceId = config.voiceId?.takeIf { it.isNotBlank() }
                         ?: api.defaultVoiceId(config.elevenLabsApiKey)
                         ?: throw IllegalStateException(
-                            "No default ElevenLabs voice is available — pick one to preview",
+                            localizedContext.getString(R.string.tts_error_no_default_voice_preview),
                         )
                     val bytes = api.synthesize(
                         apiKey = config.elevenLabsApiKey,
@@ -188,7 +188,10 @@ class TtsPreviewManager @Inject constructor(
         }
         mp.setOnErrorListener { _, what, _ ->
             file.delete()
-            if (myToken == token) fail(myToken, "Audio playback error ($what)")
+            if (myToken == token) fail(
+                    myToken,
+                    localizedContext.getString(R.string.tts_error_audio_playback_code, what),
+                )
             true
         }
         player = mp
@@ -256,13 +259,16 @@ class TtsPreviewManager @Inject constructor(
         @Deprecated("Deprecated in Java")
         override fun onError(utteranceId: String) {
             if (utteranceId == previewUtteranceId(token)) {
-                fail(token, "On-device speech engine error")
+                fail(token, localizedContext.getString(R.string.tts_error_preview_engine))
             }
         }
 
         override fun onError(utteranceId: String, errorCode: Int) {
             if (utteranceId == previewUtteranceId(token)) {
-                fail(token, "On-device speech engine error ($errorCode)")
+                fail(
+                    token,
+                    localizedContext.getString(R.string.tts_error_preview_engine_code, errorCode),
+                )
             }
         }
     }

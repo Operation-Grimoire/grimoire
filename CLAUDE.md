@@ -131,4 +131,5 @@ CI lives in `.github/workflows/release.yml` and builds signed release APKs from 
 | TTS playback | `data/tts/TtsPlaybackManager.kt` + `TtsPlaybackService.kt` |
 | GitHub OAuth | `auth/github/*` and `di/GitHubAuthModule.kt` |
 | Extension discovery | `extension/ExtensionLoader.kt`, `extension/ExtensionManager.kt` |
+| UI language + translations | `util/AppLocale.kt` (system per-app language on 13+), `res/xml/locales_config.xml`, `res/values-zh/`; `LocaleCoverageTest` fails on a missing/stale translation or a locale list out of sync |
 | Source identity (derived from package, not declared) | `LoadedExtension.id` (← `sourceIdFor()` in the API); legacy ids re-keyed by `data/local/SourceIdMigrator.kt` |

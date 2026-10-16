@@ -35,8 +35,12 @@ sealed class GitHubAuthState {
     data class Failed(val reason: AuthFailure) : GitHubAuthState()
 }
 
-/** Reasons the device-flow attempt can fail or be interrupted. */
+/**
+ * Reasons the device-flow attempt can fail or be interrupted. [message] is English, for logs and
+ * exceptions; the auth screen shows a localized label instead.
+ */
 sealed class AuthFailure(val message: String) {
+    object MissingClientId : AuthFailure("GitHub OAuth client ID is not configured in this build")
     object AccessDenied : AuthFailure("Authorization was denied")
     object Expired : AuthFailure("Code expired before authorization completed")
     object Cancelled : AuthFailure("Cancelled")

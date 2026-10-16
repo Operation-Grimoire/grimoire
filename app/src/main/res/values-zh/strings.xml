@@ -700,4 +700,5 @@
     <string name="error_save_to_library_first">请先将这本小说加入书库</string>
     <string name="source_validate_nothing">该书源没有需要验证的内容。</string>
     <string name="source_validate_failed">验证失败。</string>
+    <plurals name="novel_export_success"><item quantity="other">已导出 %1$d 个章节</item></plurals>
 </resources>

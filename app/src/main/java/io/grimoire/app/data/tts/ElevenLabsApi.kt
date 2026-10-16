@@ -1,5 +1,9 @@
 package io.grimoire.app.data.tts
 
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.grimoire.app.R
+import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -16,7 +20,11 @@ import javax.inject.Singleton
 
 /** Thin client for the ElevenLabs Text-to-Speech REST API. */
 @Singleton
-class ElevenLabsApi @Inject constructor() {
+class ElevenLabsApi @Inject constructor(
+    @ApplicationContext context: Context,
+) {
+
+    private val localizedContext = AppLocale.wrap(context)
 
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -34,7 +42,7 @@ class ElevenLabsApi @Inject constructor() {
      * Voice Library voices, which the API rejects for free accounts.
      */
     suspend fun listVoices(apiKey: String): List<TtsVoice> = withContext(Dispatchers.IO) {
-        require(apiKey.isNotBlank()) { "Add an ElevenLabs API key first." }
+        require(apiKey.isNotBlank()) { localizedContext.getString(R.string.tts_error_api_key_first) }
         val request = Request.Builder()
             .url("$BASE_URL/v2/voices?page_size=100")
             .header("xi-api-key", apiKey)
@@ -50,7 +58,7 @@ class ElevenLabsApi @Inject constructor() {
                     TtsVoice(
                         id = v.voiceId,
                         displayName = v.name,
-                        detail = voiceTypeLabel(v.voiceType),
+                        category = voiceCategory(v.voiceType),
                         engine = TtsEngineType.ELEVENLABS,
                         needsNetwork = true,
                     )
@@ -69,7 +77,7 @@ class ElevenLabsApi @Inject constructor() {
         text: String,
         speed: Float,
     ): ByteArray = withContext(Dispatchers.IO) {
-        require(apiKey.isNotBlank()) { "Add an ElevenLabs API key first." }
+        require(apiKey.isNotBlank()) { localizedContext.getString(R.string.tts_error_api_key_first) }
         val settings = VoiceSettings(speed = speed.coerceIn(0.7f, 1.2f))
         val payload = SynthesisRequest(text = text, modelId = modelId, voiceSettings = settings)
         val request = Request.Builder()
@@ -88,7 +96,7 @@ class ElevenLabsApi @Inject constructor() {
 
     /** Returns the account's character-quota usage for the current billing period. */
     suspend fun getUsage(apiKey: String): ElevenLabsUsage = withContext(Dispatchers.IO) {
-        require(apiKey.isNotBlank()) { "Add an ElevenLabs API key first." }
+        require(apiKey.isNotBlank()) { localizedContext.getString(R.string.tts_error_api_key_first) }
         val request = Request.Builder()
             .url("$BASE_URL/v1/user/subscription")
             .header("xi-api-key", apiKey)
@@ -108,7 +116,7 @@ class ElevenLabsApi @Inject constructor() {
 
     /** Returns a default (every-plan) voice id for the account, or null if none exists. */
     suspend fun defaultVoiceId(apiKey: String): String? = withContext(Dispatchers.IO) {
-        require(apiKey.isNotBlank()) { "Add an ElevenLabs API key first." }
+        require(apiKey.isNotBlank()) { localizedContext.getString(R.string.tts_error_api_key_first) }
         val request = Request.Builder()
             .url("$BASE_URL/v2/voices?voice_type=default&page_size=1")
             .header("xi-api-key", apiKey)
@@ -127,12 +135,14 @@ class ElevenLabsApi @Inject constructor() {
         // ElevenLabs' own message is the most accurate — it covers quota limits,
         // free-tier "unusual activity" blocks and voice restrictions — so surface
         // it directly rather than guessing from the HTTP status code.
-        if (!detail.isNullOrBlank()) return "ElevenLabs: $detail"
+        if (!detail.isNullOrBlank()) {
+            return localizedContext.getString(R.string.tts_error_elevenlabs_detail, detail)
+        }
         return when (code) {
-            401 -> "ElevenLabs: invalid API key, or free-tier API access is disabled"
-            402, 403 -> "ElevenLabs: your plan does not allow this — see Text-to-speech settings"
-            429 -> "ElevenLabs: rate limit or character quota exceeded"
-            else -> "ElevenLabs request failed ($code)"
+            401 -> localizedContext.getString(R.string.tts_error_elevenlabs_401)
+            402, 403 -> localizedContext.getString(R.string.tts_error_elevenlabs_plan)
+            429 -> localizedContext.getString(R.string.tts_error_elevenlabs_429)
+            else -> localizedContext.getString(R.string.tts_error_elevenlabs_code, code)
         }
     }
 
@@ -152,11 +162,11 @@ private fun voiceTypeRank(voiceType: String?): Int = when (voiceType) {
     else -> 4
 }
 
-private fun voiceTypeLabel(voiceType: String?): String? = when (voiceType) {
-    "default" -> "Default voice"
-    "personal" -> "Your cloned voice"
-    "workspace" -> "Workspace voice"
-    "community" -> "Voice Library · paid plans only"
+private fun voiceCategory(voiceType: String?): ElevenLabsVoiceCategory? = when (voiceType) {
+    "default" -> ElevenLabsVoiceCategory.DEFAULT
+    "personal" -> ElevenLabsVoiceCategory.PERSONAL
+    "workspace" -> ElevenLabsVoiceCategory.WORKSPACE
+    "community" -> ElevenLabsVoiceCategory.COMMUNITY
     else -> null
 }
 

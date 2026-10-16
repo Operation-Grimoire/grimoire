@@ -200,12 +200,22 @@ private fun ConnectedBody(login: String, onDisconnect: () -> Unit) {
 private fun FailedBody(failure: AuthFailure, onDismiss: () -> Unit, onRetry: () -> Unit) {
     Text(stringResource(R.string.github_authorization_failed), style = MaterialTheme.typography.titleMedium)
     Text(
-        failure.message,
+        failure.label(),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.error,
     )
     Button(onClick = onRetry) { Text(stringResource(R.string.action_try_again)) }
     TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_dismiss)) }
+}
+
+@Composable
+private fun AuthFailure.label(): String = when (this) {
+    AuthFailure.MissingClientId -> stringResource(R.string.github_no_client_id)
+    AuthFailure.AccessDenied -> stringResource(R.string.github_error_access_denied)
+    AuthFailure.Expired -> stringResource(R.string.github_error_expired)
+    AuthFailure.Cancelled -> stringResource(R.string.github_error_cancelled)
+    is AuthFailure.Network -> stringResource(R.string.github_error_network, cause)
+    is AuthFailure.Unexpected -> stringResource(R.string.github_error_unexpected, cause)
 }
 
 @Composable

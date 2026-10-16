@@ -953,8 +953,11 @@ class NovelDetailViewModel @Inject constructor(
             epubExporter.export(id, dest).fold(
                 onSuccess = { result ->
                     _exportEvent.value = ExportEvent.Success(
-                        "Exported ${result.chapterCount} " +
-                            (if (result.chapterCount == 1) "chapter" else "chapters"),
+                        localizedContext.resources.getQuantityString(
+                            R.plurals.novel_export_success,
+                            result.chapterCount,
+                            result.chapterCount,
+                        ),
                     )
                 },
                 onFailure = { e ->

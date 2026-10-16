@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import io.grimoire.app.R
 import java.io.File
+import java.text.NumberFormat
 
 /**
  * All the novel facts the share card renders. Built from the detail screen's state so the
@@ -347,7 +348,7 @@ object NovelShareCardRenderer {
             .setLineSpacing(0f, 1.05f)
             .build()
 
-    private fun formatCount(n: Int): String = String.format("%,d", n)
+    private fun formatCount(n: Int): String = NumberFormat.getIntegerInstance().format(n)
 
     private inline fun Canvas.withTranslation(dx: Float, dy: Float, block: Canvas.() -> Unit) {
         val save = save()
