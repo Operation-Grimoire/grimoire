@@ -25,6 +25,7 @@ import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.cover.CustomCoverStore
 import io.grimoire.app.data.source.fetchAllChapters
 import io.grimoire.app.data.local.dao.CategoryDao
+import io.grimoire.app.data.libraryupdate.reconcileFetchedChapters
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
@@ -823,16 +824,9 @@ class NovelDetailViewModel @Inject constructor(
             )
         }.onSuccess { list ->
             if (cachedNovelId > 0L) {
-                val existing = chapterDao.getChaptersOnce(cachedNovelId).associateBy { it.url }
-                chapterDao.replaceChapters(cachedNovelId, list.map { ch ->
-                    val prev = existing[ch.url]
-                    ch.toEntity(cachedNovelId).copy(
-                        read = prev?.read ?: false,
-                        readProgress = prev?.readProgress ?: 0f,
-                        downloadStatus = prev?.downloadStatus ?: 0,
-                        downloadedContent = prev?.downloadedContent,
-                    )
-                })
+                // In place, like the library sync: matched chapters keep their row id,
+                // and with it their read state, position and downloaded text.
+                chapterDao.reconcileFetchedChapters(cachedNovelId, list)
                 // A successful network fetch clears any stale library-update
                 // warning/failure recorded for this novel.
                 updateIssueDao.clearForNovel(cachedNovelId)
@@ -1241,16 +1235,6 @@ internal fun NovelEntity.toOverrides() = NovelOverrides(
 )
 
 private fun ChapterEntity.toChapter() = Chapter(
-    url = url,
-    name = name,
-    uploadDate = uploadDate,
-    chapterNumber = chapterNumber,
-    translator = translator,
-    locked = locked,
-)
-
-internal fun Chapter.toEntity(novelId: Long) = ChapterEntity(
-    novelId = novelId,
     url = url,
     name = name,
     uploadDate = uploadDate,

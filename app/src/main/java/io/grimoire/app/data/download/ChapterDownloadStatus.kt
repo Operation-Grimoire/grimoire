@@ -20,7 +20,7 @@ enum class ChapterDownloadStatus {
     REDOWNLOAD_ERROR;
 
     companion object {
-        /** States in which the row has saved `downloadedContent` — i.e. the reader can open it. */
+        /** States in which the row has saved text in `chapter_content` — i.e. the reader can open it. */
         val HAS_CONTENT_ORDINALS: Set<Int> = setOf(
             DOWNLOADED.ordinal,
             REDOWNLOAD_QUEUED.ordinal,

@@ -11,6 +11,10 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.grimoire.app.data.local.AppDatabase
+import io.grimoire.app.data.local.ChapterContentPrepassFactory
+import io.grimoire.app.data.local.SupportSqlExecutor
+import io.grimoire.app.data.local.rebuildChaptersWithoutContent
+import io.grimoire.app.data.local.withSecureDeleteOff
 import io.grimoire.app.data.local.dao.BrowsingHistoryDao
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
@@ -22,6 +26,29 @@ import io.grimoire.app.data.local.dao.RepoDao
 import io.grimoire.app.data.local.dao.TaskLogDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
 import javax.inject.Singleton
+
+private val MIGRATION_31_32 = object : Migration(31, 32) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Downloaded chapter text moves to its own table; `chapters` is rebuilt
+        // without the column. The bulk of the copy normally already happened in
+        // batches before Room opened the file (ChapterContentPrepassFactory).
+        val executor = SupportSqlExecutor(db)
+        executor.withSecureDeleteOff { rebuildChaptersWithoutContent(executor) }
+    }
+}
+
+private val MIGRATION_30_31 = object : Migration(30, 31) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Covering index so the library's chapter-stats GROUP BY and the cold-start
+        // transient prune read only the index, not the chapter rows (whose inline
+        // downloadedContent makes every downloaded row ~a page wide). Name matches
+        // what Room generates for ChapterEntity's composite index.
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_chapters_novelId_read_downloadStatus_locked " +
+                "ON chapters (novelId, read, downloadStatus, locked)"
+        )
+    }
+}
 
 private val MIGRATION_29_30 = object : Migration(29, 30) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -371,8 +398,9 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "grimoire.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32)
             .addCallback(SEED_DEFAULT_CATEGORY)
+            .openHelperFactory(ChapterContentPrepassFactory())
             .build()
 
     @Provides fun provideNovelDao(db: AppDatabase): NovelDao = db.novelDao()

@@ -1,10 +1,12 @@
 package io.grimoire.app.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
+import io.grimoire.app.data.local.entity.ChapterContentEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryStats
 import io.grimoire.app.data.local.entity.NovelChapterStats
@@ -20,11 +22,9 @@ interface ChapterDao {
     suspend fun getChaptersOnce(novelId: Long): List<ChapterEntity>
 
     /**
-     * Chapter metadata in reading order, **excluding `downloadedContent`** — the
-     * reader and TTS only need the list for navigation and re-read the chosen
-     * chapter's content on demand (via [getByUrl]). Selecting the full content of
-     * every chapter here made opening a heavily-downloaded novel slow (and memory-
-     * heavy), scaling with how much was downloaded. Mirrors [getChapters].
+     * Chapter metadata in reading order. Downloaded text lives in `chapter_content`
+     * and is read per chapter on demand ([getContent]), so this stays cheap no matter
+     * how much of the novel is downloaded. Mirrors [getChapters].
      */
     @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
     suspend fun getChapterMetadataOnce(novelId: Long): List<ChapterEntity>
@@ -48,16 +48,48 @@ interface ChapterDao {
     suspend fun getByUrl(url: String): ChapterEntity?
 
     @Insert
-    suspend fun insertAll(chapters: List<ChapterEntity>)
+    suspend fun insertAll(chapters: List<ChapterEntity>): List<Long>
 
     @Query("DELETE FROM chapters WHERE novelId = :novelId")
     suspend fun deleteByNovelId(novelId: Long)
 
+    /**
+     * Replaces a novel's whole chapter list with [chapters], saving [contents][i] as
+     * the downloaded text of [chapters][i] (null = none). Old rows and their content
+     * are deleted (content cascades). Only for sources whose list is rebuilt from
+     * scratch (EPUB import); web sources reconcile in place via [reconcileChapters]
+     * so row ids, and the content keyed by them, survive a refresh.
+     */
     @Transaction
-    suspend fun replaceChapters(novelId: Long, chapters: List<ChapterEntity>) {
+    suspend fun replaceChaptersWithContent(
+        novelId: Long,
+        chapters: List<ChapterEntity>,
+        contents: List<String?>,
+    ) {
+        require(chapters.size == contents.size) { "chapters/contents size mismatch" }
         deleteByNovelId(novelId)
-        insertAll(chapters)
+        val ids = insertAll(chapters)
+        ids.forEachIndexed { i, id -> contents[i]?.let { upsertContent(ChapterContentEntity(id, it)) } }
     }
+
+    /** Downloaded text of one chapter, or null when nothing is saved. */
+    @Query("SELECT content FROM chapter_content WHERE chapterId = :chapterId")
+    suspend fun getContent(chapterId: Long): String?
+
+    @Upsert
+    suspend fun upsertContent(content: ChapterContentEntity)
+
+    @Query("DELETE FROM chapter_content WHERE chapterId = :chapterId")
+    suspend fun deleteContent(chapterId: Long)
+
+    /** A novel's chapters that have saved text, with that text, in reading order. */
+    @Query("""
+        SELECT c.*, cc.content AS content FROM chapters c
+        INNER JOIN chapter_content cc ON cc.chapterId = c.id
+        WHERE c.novelId = :novelId AND c.downloadStatus IN (3, 5, 6, 7)
+        ORDER BY c.chapterNumber ASC
+    """)
+    suspend fun getDownloadedChaptersWithContent(novelId: Long): List<ChapterWithContent>
 
     @Query("DELETE FROM chapters WHERE id IN (:ids)")
     suspend fun deleteByIds(ids: List<Long>)
@@ -79,13 +111,12 @@ interface ChapterDao {
 
     /**
      * Reconciles a novel's stored chapters against a freshly fetched list **in
-     * place**, so each chapter's `downloadedContent` is never read into — and
-     * written back out of — app memory.
+     * place**: matched rows keep their id, so their read state and their downloaded
+     * text in `chapter_content` stay put without passing through app memory.
      *
-     * Unlike [replaceChapters] (delete-all + insert-all, which forces the caller to
-     * re-supply every chapter's `downloadedContent` so the saved download survives
-     * the rewrite), matched rows stay where they are: [updates] rewrites only the
-     * scraped metadata, leaving read state and downloaded text in the row untouched;
+     * Unlike a delete-all + insert-all rewrite, matched rows stay where they are:
+     * [updates] rewrites only the scraped metadata, leaving read state and download
+     * state untouched;
      * [deleteIds] drops rows the source no longer lists; [inserts] adds genuinely new
      * chapters. Matched chapters also keep their row id (downloads/images key off it).
      *
@@ -190,18 +221,27 @@ interface ChapterDao {
     suspend fun setDownloadStatusBatch(ids: List<Long>, status: Int)
 
     @Query(
-        "UPDATE chapters SET downloadStatus = :status, downloadedContent = :content, " +
+        "UPDATE chapters SET downloadStatus = :status, " +
             "wordCount = CASE WHEN :wordCount > 0 THEN :wordCount ELSE wordCount END " +
             "WHERE id = :id"
     )
-    suspend fun setDownloadedContentRaw(id: Long, content: String, status: Int, wordCount: Int)
+    suspend fun setDownloadedStatusRaw(id: Long, status: Int, wordCount: Int)
 
+    /** Saves [content] as the chapter's downloaded text and flips its download state. */
+    @Transaction
     suspend fun setDownloadedContent(id: Long, content: String, status: Int) {
-        setDownloadedContentRaw(id, content, status, countWordsIn(content))
+        upsertContent(ChapterContentEntity(id, content))
+        setDownloadedStatusRaw(id, status, countWordsIn(content))
     }
 
-    @Query("UPDATE chapters SET downloadStatus = 0, downloadedContent = NULL WHERE id = :id")
-    suspend fun deleteDownload(id: Long)
+    @Query("UPDATE chapters SET downloadStatus = 0 WHERE id = :id")
+    suspend fun clearDownloadStatus(id: Long)
+
+    @Transaction
+    suspend fun deleteDownload(id: Long) {
+        deleteContent(id)
+        clearDownloadStatus(id)
+    }
 
     // Picks up either a fresh QUEUED (1) or a REDOWNLOAD_QUEUED (5) — the worker reads
     // chapter.downloadStatus to decide which DOWNLOADING / ERROR variant to write back.
@@ -241,9 +281,21 @@ interface ChapterDao {
     )
     suspend fun cancelAllQueuedDownloads()
 
+    @Query(
+        "DELETE FROM chapter_content WHERE chapterId IN " +
+            "(SELECT id FROM chapters WHERE novelId = :novelId AND downloadStatus = 3)"
+    )
+    suspend fun deleteSettledContent(novelId: Long)
+
+    @Query("UPDATE chapters SET downloadStatus = 0 WHERE novelId = :novelId AND downloadStatus = 3")
+    suspend fun clearSettledDownloadStatus(novelId: Long)
+
     // Only deletes settled DOWNLOADED rows — leaves anything in flight to settle first.
-    @Query("UPDATE chapters SET downloadStatus = 0, downloadedContent = NULL WHERE novelId = :novelId AND downloadStatus = 3")
-    suspend fun deleteAllDownloads(novelId: Long)
+    @Transaction
+    suspend fun deleteAllDownloads(novelId: Long) {
+        deleteSettledContent(novelId)
+        clearSettledDownloadStatus(novelId)
+    }
 
     // Retry of failed: fresh (4) → QUEUED (1); refresh (7) → REDOWNLOAD_QUEUED (5).
     @Query(
@@ -277,7 +329,7 @@ interface ChapterDao {
     fun getAllDownloads(excludeHidden: Boolean): Flow<List<ChapterEntity>>
 
     /**
-     * Live chapter rows (metadata only, no `downloadedContent`) for exactly the
+     * Live chapter rows for exactly the
      * chapters referenced by a library-update log entry, matched on
      * (novelId, url) via a join against `library_updates`.
      *
@@ -286,11 +338,10 @@ interface ChapterDao {
      * and filtering down to the handful actually logged. For a large library that
      * pulled most of the library's chapter metadata into a `List` plus an
      * equally-large lookup map; during a sync the chapters table is rewritten
-     * constantly (`replaceChapters`), so this Flow re-emitted repeatedly and the
+     * constantly, so this Flow re-emitted repeatedly and the
      * old generation was still held while the next was built — double-allocating
      * enough to OOM the app while the Updates page was open. Joining against the
-     * log bounds the result to the log size instead. (Mirrors [getChapters] in
-     * excluding `downloadedContent`.)
+     * log bounds the result to the log size instead.
      */
     @Query("""
         SELECT DISTINCT ch.id, ch.novelId, ch.url, ch.name, ch.uploadDate, ch.chapterNumber,
@@ -334,14 +385,15 @@ interface ChapterDao {
     fun getFavoriteStats(): Flow<List<NovelChapterStats>>
 
     @Query("""
-        SELECT id, downloadedContent FROM chapters
-        WHERE read = 1 AND wordCount = 0 AND downloadedContent IS NOT NULL
+        SELECT c.id AS id, cc.content AS content FROM chapters c
+        INNER JOIN chapter_content cc ON cc.chapterId = c.id
+        WHERE c.read = 1 AND c.wordCount = 0
     """)
     suspend fun getReadDownloadedMissingWordCount(): List<ChapterContent>
 
     suspend fun backfillWordCountsFromDownloads() {
         for (c in getReadDownloadedMissingWordCount()) {
-            val n = countWordsIn(c.downloadedContent)
+            val n = countWordsIn(c.content)
             if (n > 0) setWordCount(c.id, n)
         }
     }
@@ -373,15 +425,15 @@ interface ChapterDao {
 
     /**
      * One-shot chapter counts/bytes for the Data management screen. Downloaded text
-     * is sized by SUM(LENGTH(downloadedContent)) — char length, a close estimate of
+     * is sized by SUM(LENGTH(content)) — char length, a close estimate of
      * the on-disk byte cost for mostly-Latin prose.
      */
     @Query("""
         SELECT
           (SELECT COUNT(*) FROM chapters c
              JOIN novels n ON n.id = c.novelId WHERE n.favorite = 1) AS libraryChapters,
-          (SELECT COUNT(*) FROM chapters WHERE downloadedContent IS NOT NULL) AS downloadedTextCount,
-          (SELECT COALESCE(SUM(LENGTH(downloadedContent)), 0) FROM chapters WHERE downloadedContent IS NOT NULL) AS downloadedTextBytes
+          (SELECT COUNT(*) FROM chapter_content) AS downloadedTextCount,
+          (SELECT COALESCE(SUM(LENGTH(content)), 0) FROM chapter_content) AS downloadedTextBytes
     """)
     suspend fun getStorageChapterStats(): StorageChapterStats
 }
@@ -392,7 +444,13 @@ data class StorageChapterStats(
     val downloadedTextBytes: Long,
 )
 
-data class ChapterContent(val id: Long, val downloadedContent: String)
+data class ChapterContent(val id: Long, val content: String)
+
+/** A chapter row plus its saved text; see [ChapterDao.getDownloadedChaptersWithContent]. */
+data class ChapterWithContent(
+    @Embedded val chapter: ChapterEntity,
+    val content: String,
+)
 
 /** A single in-place chapter-metadata update applied by [ChapterDao.reconcileChapters]. */
 data class ChapterMetaUpdate(

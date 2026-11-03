@@ -192,6 +192,7 @@ class EpubImporter @Inject constructor(
         val previous = chapterDao.getChaptersOnce(novelId)
         val priorByIndex = matchPreviousEpubChapters(previous, parsed.chapters.map { it.title })
 
+        val contents = ArrayList<String>(parsed.chapters.size)
         val entities = parsed.chapters.mapIndexed { index, ch ->
             val chapterUrl = "$url/$index"
             val prior = priorByIndex[index]
@@ -202,6 +203,7 @@ class EpubImporter @Inject constructor(
                 }
             }
             val encoded = encodeChapterContent(novelPages)
+            contents += encoded
             ChapterEntity(
                 novelId = novelId,
                 url = chapterUrl,
@@ -211,11 +213,10 @@ class EpubImporter @Inject constructor(
                 readProgress = prior?.readProgress ?: 0f,
                 firstReadAt = prior?.firstReadAt,
                 downloadStatus = ChapterDownloadStatus.DOWNLOADED.ordinal,
-                downloadedContent = encoded,
                 wordCount = encoded.countWords(),
             )
         }
-        chapterDao.replaceChapters(novelId, entities)
+        chapterDao.replaceChaptersWithContent(novelId, entities, contents)
 
         // Write each chapter's in-EPUB illustration bytes to the same on-disk
         // layout DownloadManager uses for web-source images, so the reader's

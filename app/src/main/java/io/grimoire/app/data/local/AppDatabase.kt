@@ -14,6 +14,7 @@ import io.grimoire.app.data.local.dao.TaskLogDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
 import io.grimoire.app.data.local.entity.BrowsingHistoryEntity
 import io.grimoire.app.data.local.entity.CategoryEntity
+import io.grimoire.app.data.local.entity.ChapterContentEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
 import io.grimoire.app.data.local.entity.NovelEntity
@@ -27,6 +28,7 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
     entities = [
         NovelEntity::class,
         ChapterEntity::class,
+        ChapterContentEntity::class,
         RepoEntity::class,
         CategoryEntity::class,
         LibraryUpdateEntity::class,
@@ -36,7 +38,7 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
         ReadingHistoryEntity::class,
         BrowsingHistoryEntity::class,
     ],
-    version = 30,
+    version = 32,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {

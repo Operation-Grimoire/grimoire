@@ -275,7 +275,7 @@ class ReaderViewModel @Inject constructor(
             }
             recordHistory(chapter)
             // Metadata only — the per-chapter content is read on demand in loadPages
-            // (via getByUrl). Pulling every chapter's downloadedContent here made
+            // (via getByUrl). Pulling every chapter's downloaded text here made
             // opening a heavily-downloaded novel slow.
             val allChapters = chapterDao.getChapterMetadataOnce(chapter.novelId)
             _chapters.value = allChapters
@@ -354,14 +354,7 @@ class ReaderViewModel @Inject constructor(
             // The in-memory chapter list is a snapshot from init; re-read this row so a
             // download that completed since then is served from disk, not refetched.
             val fresh = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
-            if (fresh.id == chapter.id && fresh.downloadedContent != chapter.downloadedContent) {
-                _chapters.update { list ->
-                    list.map {
-                        if (it.id == fresh.id) it.copy(downloadedContent = fresh.downloadedContent) else it
-                    }
-                }
-            }
-            val cached = fresh.downloadedContent
+            val cached = chapterDao.getContent(fresh.id)
             if (cached != null) {
                 val pages = decodeChapterContent(cached)
                     .filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }

@@ -1,6 +1,7 @@
 package io.grimoire.app.data.libraryupdate
 
 import io.grimoire.api.model.novel.Chapter
+import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.ChapterMetaUpdate
 import io.grimoire.app.data.local.entity.ChapterEntity
 
@@ -81,7 +82,7 @@ internal fun matchChapters(
 /**
  * The in-place reconciliation [ChapterDao.reconcileChapters][io.grimoire.app.data.local.dao.ChapterDao.reconcileChapters]
  * applies to bring a novel's stored chapters in line with a freshly fetched list
- * without round-tripping any chapter's `downloadedContent` through memory.
+ * without round-tripping any chapter's downloaded text through memory.
  */
 internal class ChapterReconcilePlan(
     /** Ids of existing rows the source no longer lists. */
@@ -119,7 +120,7 @@ internal const val MAX_LOGGED_NEW_CHAPTERS = 150
  * applies. Each fetched chapter with a prior becomes an in-place metadata [update]
  * of that row (its read state and downloaded content stay put); each fetched
  * chapter with no prior is a fresh [insert]; every existing row that matched
- * nothing is [delete]d. Pure — no `downloadedContent` is touched.
+ * nothing is [delete]d. Pure — no downloaded text is touched.
  */
 internal fun buildReconcilePlan(
     novelId: Long,
@@ -159,4 +160,16 @@ internal fun buildReconcilePlan(
         }
     }
     return ChapterReconcilePlan(deleteIds, updates, inserts)
+}
+
+/**
+ * Brings a novel's stored chapters in line with [fetched] in place (see
+ * [buildReconcilePlan]): matched rows keep their id, read state, reading position
+ * and downloaded text. For interactive refreshes (novel detail, quick view); the
+ * background sync in [LibraryUpdater] adds truncation guards on top of the same plan.
+ */
+internal suspend fun ChapterDao.reconcileFetchedChapters(novelId: Long, fetched: List<Chapter>) {
+    val existing = getChapterMetadataOnce(novelId)
+    val plan = buildReconcilePlan(novelId, existing, fetched, matchChapters(existing, fetched))
+    reconcileChapters(plan.deleteIds, plan.updates, plan.inserts)
 }
