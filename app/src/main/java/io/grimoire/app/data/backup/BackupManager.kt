@@ -401,7 +401,6 @@ class BackupManager @Inject constructor(
                         read = c.read || (existingCh?.read ?: false),
                         readProgress = maxOf(c.readProgress, existingCh?.readProgress ?: 0f),
                         downloadStatus = existingCh?.downloadStatus ?: 0,
-                        downloadedContent = existingCh?.downloadedContent,
                         queueOrder = existingCh?.queueOrder ?: 0L,
                         firstReadAt = c.firstReadAt ?: existingCh?.firstReadAt,
                         wordCount = if (c.wordCount > 0) c.wordCount else (existingCh?.wordCount ?: 0),

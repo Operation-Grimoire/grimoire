@@ -16,6 +16,7 @@ import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.R
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.CategoryDao
+import io.grimoire.app.data.libraryupdate.reconcileFetchedChapters
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.CategoryEntity
@@ -210,18 +211,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
     private suspend fun fetchChapters(src: Source, novel: Novel) {
         runCatching { fetchAllChapters(src, novel) }
             .onSuccess { list ->
-                if (cachedNovelId > 0L) {
-                    val existing = chapterDao.getChaptersOnce(cachedNovelId).associateBy { it.url }
-                    chapterDao.replaceChapters(cachedNovelId, list.map { ch ->
-                        val prev = existing[ch.url]
-                        ch.toEntity(cachedNovelId).copy(
-                            read = prev?.read ?: false,
-                            readProgress = prev?.readProgress ?: 0f,
-                            downloadStatus = prev?.downloadStatus ?: 0,
-                            downloadedContent = prev?.downloadedContent,
-                        )
-                    })
-                }
+                if (cachedNovelId > 0L) chapterDao.reconcileFetchedChapters(cachedNovelId, list)
             }
     }
 

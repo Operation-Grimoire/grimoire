@@ -158,6 +158,8 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.androidx.security.crypto)
     testImplementation(libs.junit)
+    // Real SQLite on the JVM for the chapter-content migration test.
+    testImplementation(libs.sqlite.jdbc)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

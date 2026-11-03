@@ -8,7 +8,7 @@ import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
 
 /**
- * Boundary written between pages when [ChapterEntity.downloadedContent] is persisted, so the
+ * Boundary written between pages when [ChapterContentEntity.content] is persisted, so the
  * original paragraph structure can be reconstructed on read. Uses the ASCII Unit Separator,
  * which never occurs in prose and is treated as whitespace by trim/blank/word-count logic.
  */
@@ -35,7 +35,7 @@ val CHAPTER_SEPARATOR_MARKER: String = 29.toChar().toString()
  */
 val CHAPTER_FORMATTED_MARKER: String = 28.toChar().toString()
 
-/** Serialises chapter [pages] into the single string stored in [ChapterEntity.downloadedContent]. */
+/** Serialises chapter [pages] into the single string stored in [ChapterContentEntity.content]. */
 fun encodeChapterContent(pages: List<NovelPage>): String =
     pages.joinToString(CHAPTER_PAGE_SEPARATOR) { page ->
         when (val c = page.content) {
@@ -93,7 +93,6 @@ data class ChapterEntity(
     val readAnchorItemIndex: Int = 0,
     val readAnchorItemOffset: Int = 0,
     val downloadStatus: Int = 0,
-    val downloadedContent: String? = null,
     val queueOrder: Long = 0L,
     val firstReadAt: Long? = null,
     val wordCount: Int = 0,

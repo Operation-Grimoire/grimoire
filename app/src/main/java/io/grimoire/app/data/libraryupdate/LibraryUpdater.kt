@@ -209,7 +209,7 @@ class LibraryUpdater @Inject constructor(
             return NovelRefreshResult.Failed
         }
 
-        // Metadata only — never the per-chapter downloadedContent blob. The merge
+        // Metadata only — never the per-chapter downloaded text. The merge
         // matches on url/name/read state, and the reconcile below preserves any
         // downloaded text in the DB without it ever passing through app memory.
         // Loading full content for every chapter of every novel syncing in parallel
@@ -251,7 +251,7 @@ class LibraryUpdater @Inject constructor(
         }
         // Reconcile in place: matched rows keep their id, read state, and downloaded
         // content; only metadata is rewritten. New chapters are inserted, vanished
-        // ones deleted. No downloadedContent is read or written here.
+        // ones deleted. No downloaded text is read or written here.
         val plan = buildReconcilePlan(novel.id, existing, fetchedChapters, merge)
         // A fetch that would wipe most of an established list is far more likely a
         // silently truncated response (throttle page mid-pagination) than a real

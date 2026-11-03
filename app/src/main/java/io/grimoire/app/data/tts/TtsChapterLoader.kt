@@ -35,11 +35,10 @@ class TtsChapterLoader @Inject constructor(
         chapterDao.getChapterMetadataOnce(novelId)
 
     suspend fun loadPages(pkg: String, chapter: ChapterEntity): List<NovelPage> {
-        // The passed entity comes from a metadata-only list (no downloadedContent),
-        // so re-read the row to serve a downloaded chapter from disk instead of the
-        // network.
+        // Re-read the row (the passed entity may be a stale snapshot) and serve a
+        // downloaded chapter's saved text instead of hitting the network.
         val full = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
-        val cached = full.downloadedContent
+        val cached = chapterDao.getContent(full.id)
         if (cached != null) {
             // Image pages carry no prose; drop them so read-aloud only speaks text.
             return decodeChapterContent(cached).filter { it.text.isNotBlank() }

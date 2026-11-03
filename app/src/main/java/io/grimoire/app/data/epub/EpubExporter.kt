@@ -9,7 +9,7 @@ import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.ChapterImageStore
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
-import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.local.dao.ChapterWithContent
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +33,7 @@ data class EpubExportResult(val title: String, val chapterCount: Int)
  * Writes any library novel back out as a standards-compliant EPUB 3 file at a
  * user-chosen [Uri]. Works for both source-downloaded novels and books that were
  * themselves imported from an EPUB: in either case the chapter text lives in
- * [ChapterEntity.downloadedContent] and the illustrations on disk in
+ * `chapter_content` and the illustrations on disk in
  * [ChapterImageStore], so the exporter never needs the backing extension.
  *
  * Only chapters whose content is actually present locally (see
@@ -53,11 +53,8 @@ class EpubExporter @Inject constructor(
         withContext(Dispatchers.IO) {
             runCatching {
                 val novel = novelDao.getById(novelId) ?: error("Novel not found")
-                val chapters = chapterDao.getChaptersOnce(novelId)
-                    .filter {
-                        it.downloadStatus in ChapterDownloadStatus.HAS_CONTENT_ORDINALS &&
-                            !it.downloadedContent.isNullOrEmpty()
-                    }
+                val chapters = chapterDao.getDownloadedChaptersWithContent(novelId)
+                    .filter { it.content.isNotEmpty() }
                 require(chapters.isNotEmpty()) {
                     "No downloaded chapters to export. Download chapters first."
                 }
@@ -77,7 +74,7 @@ class EpubExporter @Inject constructor(
         zip: ZipOutputStream,
         novelId: Long,
         novel: NovelEntity,
-        chapters: List<ChapterEntity>,
+        chapters: List<ChapterWithContent>,
     ) {
         // The mimetype entry must be first and stored uncompressed (OCF spec).
         zip.putStored("mimetype", "application/epub+zip".toByteArray(Charsets.US_ASCII))
@@ -110,8 +107,8 @@ class EpubExporter @Inject constructor(
             val images: List<ImageEntry>,
         )
 
-        val chapterDocs = chapters.mapIndexed { index, chapter ->
-            val pages = decodeChapterContent(chapter.downloadedContent.orEmpty())
+        val chapterDocs = chapters.mapIndexed { index, (chapter, content) ->
+            val pages = decodeChapterContent(content)
             val images = ArrayList<ImageEntry>()
             val body = StringBuilder()
             body.append("    <h1>").append(escape(chapter.name)).append("</h1>\n")

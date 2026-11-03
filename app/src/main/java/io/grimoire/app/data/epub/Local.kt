@@ -3,7 +3,7 @@ package io.grimoire.app.data.epub
 /**
  * Reserved source identity for novels imported from a local EPUB file. These
  * novels have no backing extension: their chapter text is fully extracted at
- * import time into [io.grimoire.app.data.local.entity.ChapterEntity.downloadedContent],
+ * import time into [io.grimoire.app.data.local.entity.ChapterContentEntity],
  * so the reader never needs a runtime [io.grimoire.api.source.Source].
  *
  * [LOCAL_SOURCE_ID] is 0 because no real extension reports that source id, and
