@@ -70,7 +70,15 @@ fun decodeChapterContent(content: String): List<NovelPage> =
         childColumns = ["novelId"],
         onDelete = ForeignKey.CASCADE,
     )],
-    indices = [Index("novelId"), Index("downloadStatus")],
+    indices = [
+        Index("novelId"),
+        Index("downloadStatus"),
+        // Covering index for the per-novel stats aggregation and the transient-novel
+        // prune. Downloaded chapter text lives inline in this table, so each downloaded
+        // row fills roughly a whole page; without this index those queries page in every
+        // downloaded chapter's body just to read a few integer flags. See MIGRATION_30_31.
+        Index(value = ["novelId", "read", "downloadStatus", "locked"]),
+    ],
 )
 data class ChapterEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
