@@ -222,6 +222,21 @@ class ChapterMergeTest {
     }
 
     @Test
+    fun `keeps the stored list when the fetch is empty or truncated`() {
+        // Empty is rejected even for lists too short for the truncation check.
+        assertTrue(shouldKeepExistingList(existingCount = 1, fetchedCount = 0, deleteCount = 1))
+        assertTrue(shouldKeepExistingList(existingCount = 40, fetchedCount = 10, deleteCount = 30))
+    }
+
+    @Test
+    fun `applies the fetched list when it looks healthy`() {
+        assertFalse(shouldKeepExistingList(existingCount = 0, fetchedCount = 0, deleteCount = 0))
+        assertFalse(shouldKeepExistingList(existingCount = 0, fetchedCount = 5, deleteCount = 0))
+        assertFalse(shouldKeepExistingList(existingCount = 19, fetchedCount = 1, deleteCount = 19))
+        assertFalse(shouldKeepExistingList(existingCount = 100, fetchedCount = 105, deleteCount = 5))
+    }
+
+    @Test
     fun `suspect truncation flags deleting most of an established list`() {
         assertTrue(isSuspectTruncation(existingCount = 2000, deleteCount = 1100))
         assertTrue(isSuspectTruncation(existingCount = 40, deleteCount = 21))

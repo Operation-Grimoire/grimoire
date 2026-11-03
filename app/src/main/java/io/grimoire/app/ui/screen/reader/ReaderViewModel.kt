@@ -275,7 +275,7 @@ class ReaderViewModel @Inject constructor(
             }
             recordHistory(chapter)
             // Metadata only — the per-chapter content is read on demand in loadPages
-            // (via getByUrl). Pulling every chapter's downloaded text here made
+            // (via getContent). Pulling every chapter's downloaded text here made
             // opening a heavily-downloaded novel slow.
             val allChapters = chapterDao.getChapterMetadataOnce(chapter.novelId)
             _chapters.value = allChapters

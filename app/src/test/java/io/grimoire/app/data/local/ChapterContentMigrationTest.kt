@@ -3,7 +3,6 @@ package io.grimoire.app.data.local
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -20,6 +19,7 @@ class ChapterContentMigrationTest {
 
     private lateinit var conn: Connection
     private lateinit var db: JdbcExecutor
+    private lateinit var metadataBefore: List<String>
 
     @Before
     fun setUp() {
@@ -35,12 +35,15 @@ class ChapterContentMigrationTest {
                 "INSERT INTO chapters (id, novelId, url, name, uploadDate, chapterNumber, translator, " +
                     "read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, " +
                     "downloadedContent, queueOrder, firstReadAt, wordCount, locked) VALUES " +
-                    "($id, ${if (id <= 5) 1 else 2}, 'u$id', 'c$id', $id, $id.0, NULL, ${id % 3 == 0}, 0.5, " +
-                    "$id, 7, ${if (id % 2 == 0) 3 else 0}, $content, 0, ${if (id == 4) 1234 else "NULL"}, " +
-                    "${id * 10}, ${id == 9})",
+                    // Every column gets its own value, so a column-copy mix-up changes the row.
+                    "($id, ${if (id <= 5) 1 else 2}, 'u$id', 'c$id', ${id + 1000}, $id.5, " +
+                    "${if (id % 4 == 0) "'t$id'" else "NULL"}, ${id % 3 == 0}, 0.$id, " +
+                    "${id + 100}, ${id + 200}, ${if (id % 2 == 0) 3 else 0}, $content, ${id + 300}, " +
+                    "${if (id == 4) 1234 else "NULL"}, ${id * 10}, ${id == 9})",
             )
         }
         db.exec("DELETE FROM chapters WHERE id = 11")
+        metadataBefore = db.rows(METADATA_ROWS)
     }
 
     @After
@@ -98,13 +101,7 @@ class ChapterContentMigrationTest {
         for (id in listOf(2, 4, 6, 8, 10)) {
             assertEquals("body $id", db.string("SELECT content FROM chapter_content WHERE chapterId = $id"))
         }
-        // Metadata, including the columns after the old content column, survives.
-        assertEquals(10L, db.long("SELECT COUNT(*) FROM chapters"))
-        assertEquals(1234L, db.long("SELECT firstReadAt FROM chapters WHERE id = 4"))
-        assertEquals(70L, db.long("SELECT wordCount FROM chapters WHERE id = 7"))
-        assertEquals(1L, db.long("SELECT locked FROM chapters WHERE id = 9"))
-        assertEquals(7L, db.long("SELECT readAnchorItemOffset FROM chapters WHERE id = 3"))
-        assertNull(db.longs("SELECT firstReadAt FROM chapters WHERE id = 5").single())
+        assertEquals(metadataBefore, db.rows(METADATA_ROWS))
 
         // Deleted ids are never reused.
         assertEquals(11L, db.long("SELECT seq FROM sqlite_sequence WHERE name = 'chapters'"))
@@ -182,6 +179,12 @@ class ChapterContentMigrationTest {
     }
 
     private companion object {
+        /** Every chapter column except the removed one. */
+        const val METADATA_ROWS =
+            "SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, " +
+                "readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, " +
+                "wordCount, locked FROM chapters ORDER BY id"
+
         const val NOVELS_TABLE = "CREATE TABLE `novels` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)"
 
         /** v31 as Room generated it (chapters still carries downloadedContent). */

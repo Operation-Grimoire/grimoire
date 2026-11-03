@@ -5,13 +5,14 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 /**
  * Chapters that changed across a user-triggered refresh: rows absent from [before],
  * plus rows that flipped locked -> unlocked (the user couldn't read them before and
- * now can). Same rule the background LibraryUpdater uses to detect updates.
+ * now can). Same rule the background LibraryUpdater uses to detect updates. Keyed by
+ * row id, because a refresh keeps a chapter's row even when its URL changes.
  */
 internal fun diffNewChapters(
-    before: Map<String, ChapterEntity>,
+    before: Map<Long, ChapterEntity>,
     after: List<ChapterEntity>,
 ): List<ChapterEntity> = after.filter { ch ->
-    val prev = before[ch.url]
+    val prev = before[ch.id]
     prev == null || (prev.locked && !ch.locked)
 }
 

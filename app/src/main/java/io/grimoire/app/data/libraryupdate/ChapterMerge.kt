@@ -106,6 +106,14 @@ internal fun isSuspectTruncation(existingCount: Int, deleteCount: Int): Boolean 
 internal const val SUSPECT_TRUNCATION_MIN_LIST = 20
 
 /**
+ * True when a fetched list shouldn't replace the stored one: it came back empty, or
+ * it looks truncated ([isSuspectTruncation]). Applying it would delete read state and
+ * downloaded text.
+ */
+internal fun shouldKeepExistingList(existingCount: Int, fetchedCount: Int, deleteCount: Int): Boolean =
+    (fetchedCount == 0 && existingCount > 0) || isSuspectTruncation(existingCount, deleteCount)
+
+/**
  * Ceiling on how many "new" chapters one sync may log to the updates feed for a
  * single novel. A count above it is almost always chapters being *re-detected*
  * after an earlier truncated sync deleted them (no translator drops 150+
@@ -165,11 +173,13 @@ internal fun buildReconcilePlan(
 /**
  * Brings a novel's stored chapters in line with [fetched] in place (see
  * [buildReconcilePlan]): matched rows keep their id, read state, reading position
- * and downloaded text. For interactive refreshes (novel detail, quick view); the
- * background sync in [LibraryUpdater] adds truncation guards on top of the same plan.
+ * and downloaded text. For interactive refreshes (novel detail, quick view). Returns
+ * false, changing nothing, when [shouldKeepExistingList] rejects the fetched list.
  */
-internal suspend fun ChapterDao.reconcileFetchedChapters(novelId: Long, fetched: List<Chapter>) {
+internal suspend fun ChapterDao.reconcileFetchedChapters(novelId: Long, fetched: List<Chapter>): Boolean {
     val existing = getChapterMetadataOnce(novelId)
     val plan = buildReconcilePlan(novelId, existing, fetched, matchChapters(existing, fetched))
+    if (shouldKeepExistingList(existing.size, fetched.size, plan.deleteIds.size)) return false
     reconcileChapters(plan.deleteIds, plan.updates, plan.inserts)
+    return true
 }
