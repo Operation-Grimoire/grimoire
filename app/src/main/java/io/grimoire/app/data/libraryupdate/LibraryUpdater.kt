@@ -220,7 +220,7 @@ class LibraryUpdater @Inject constructor(
                 existing.isNotEmpty() -> {
                     setIssue(
                         novel, pkg, UpdateIssueSeverity.WARNING,
-                        "Source returned no chapters — kept the existing list",
+                        ISSUE_NO_CHAPTERS,
                     )
                     NovelRefreshResult.Warned(0)
                 }
@@ -258,10 +258,8 @@ class LibraryUpdater @Inject constructor(
         // mass removal — deleting would destroy read state and downloads, and the
         // next healthy sync would re-detect everything as "new". Keep the list.
         if (isSuspectTruncation(existing.size, plan.deleteIds.size)) {
-            setIssue(
-                novel, pkg, UpdateIssueSeverity.WARNING,
-                "Source returned ${fetchedChapters.size} of ${existing.size} chapters — kept the existing list",
-            )
+            Log.w(TAG, "Kept list for novel ${novel.id}: fetched=${fetchedChapters.size} existing=${existing.size}")
+            setIssue(novel, pkg, UpdateIssueSeverity.WARNING, ISSUE_CHAPTER_LIST_CHANGED)
             return NovelRefreshResult.Warned(0)
         }
         chapterDao.reconcileChapters(plan.deleteIds, plan.updates, plan.inserts)

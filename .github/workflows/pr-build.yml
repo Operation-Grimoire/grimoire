@@ -27,8 +27,8 @@ jobs:
 
       - run: chmod +x gradlew
 
-      - name: Assemble debug APK
-        run: ./gradlew assembleDebug --build-cache --stacktrace
+      - name: Assemble debug APK and run unit tests
+        run: ./gradlew assembleDebug testDebugUnitTest --build-cache --stacktrace
         env:
           # Avoids `versionCode = 0` since PR builds don't fetch tags.
           APP_VERSION_TAG: v0.0.0

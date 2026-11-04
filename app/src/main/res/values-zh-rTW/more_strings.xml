@@ -269,6 +269,7 @@
     <string name="update_issues_empty">沒有問題。\n重新整理失敗的小說會顯示在這裡。</string>
     <string name="update_issue_source_missing">未安裝來源，已略過</string>
     <string name="update_issue_no_chapters">來源未傳回任何章節，已保留現有清單</string>
+    <string name="update_issue_chapter_list_changed">來源的章節清單變動過大，已保留現有清單</string>
     <string name="update_issue_incomplete_data">來源傳回的資料不完整，已保留先前的標題/封面</string>
     <string name="update_issues_retry_all">全部重試</string>
     <string name="update_issues_dismiss_all">全部關閉</string>

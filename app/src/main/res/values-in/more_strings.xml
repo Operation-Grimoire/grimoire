@@ -269,6 +269,7 @@
     <string name="update_issues_empty">Tidak ada masalah.\nNovel yang gagal disegarkan muncul di sini.</string>
     <string name="update_issue_source_missing">Sumber tidak terpasang — dilewati</string>
     <string name="update_issue_no_chapters">Sumber tidak mengembalikan bab — daftar lama dipertahankan</string>
+    <string name="update_issue_chapter_list_changed">Daftar bab sumber terlalu banyak berubah — daftar lama dipertahankan</string>
     <string name="update_issue_incomplete_data">Sumber mengembalikan data tidak lengkap — judul/sampul sebelumnya dipertahankan</string>
     <string name="update_issues_retry_all">Coba lagi semua</string>
     <string name="update_issues_dismiss_all">Tutup semua</string>

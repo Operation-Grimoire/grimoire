@@ -38,6 +38,8 @@ import io.grimoire.app.data.local.entity.UpdateIssueSeverity
 import java.text.DateFormat
 import java.util.Date
 import io.grimoire.app.R
+import io.grimoire.app.data.libraryupdate.ISSUE_CHAPTER_LIST_CHANGED
+import io.grimoire.app.data.libraryupdate.ISSUE_NO_CHAPTERS
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -218,8 +220,8 @@ private fun IssueRow(
 @Composable
 private fun localizedIssueMessage(message: String): String = when (message) {
     "Source not installed — skipped" -> stringResource(R.string.update_issue_source_missing)
-    "Source returned no chapters — kept the existing list" ->
-        stringResource(R.string.update_issue_no_chapters)
+    ISSUE_NO_CHAPTERS -> stringResource(R.string.update_issue_no_chapters)
+    ISSUE_CHAPTER_LIST_CHANGED -> stringResource(R.string.update_issue_chapter_list_changed)
     "Source returned incomplete data — kept the previous title/cover" ->
         stringResource(R.string.update_issue_incomplete_data)
     else -> message

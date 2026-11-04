@@ -420,6 +420,7 @@
     <string name="update_issues_empty">لا توجد مشكلات.\nتظهر هنا الروايات التي يفشل تحديثها.</string>
     <string name="update_issue_source_missing">المصدر غير مثبّت — تم التخطي</string>
     <string name="update_issue_no_chapters">لم يُرجع المصدر أي فصول — أُبقيت القائمة الحالية</string>
+    <string name="update_issue_chapter_list_changed">تغيّرت قائمة فصول المصدر كثيرًا — أُبقيت القائمة الحالية</string>
     <string name="update_issue_incomplete_data">أرجع المصدر بيانات ناقصة — أُبقي العنوان/الغلاف السابق</string>
     <string name="update_issues_retry_all">إعادة محاولة الكل</string>
     <string name="update_issues_dismiss_all">تجاهل الكل</string>

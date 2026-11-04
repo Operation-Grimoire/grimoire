@@ -25,6 +25,8 @@ import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.cover.CustomCoverStore
 import io.grimoire.app.data.source.fetchAllChapters
 import io.grimoire.app.data.local.dao.CategoryDao
+import io.grimoire.app.data.libraryupdate.ISSUE_CHAPTER_LIST_CHANGED
+import io.grimoire.app.data.libraryupdate.ISSUE_NO_CHAPTERS
 import io.grimoire.app.data.libraryupdate.reconcileFetchedChapters
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -32,6 +34,8 @@ import io.grimoire.app.data.local.dao.UpdateIssueDao
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.app.data.local.entity.UpdateIssueEntity
+import io.grimoire.app.data.local.entity.UpdateIssueSeverity
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.epub.EpubExporter
@@ -493,7 +497,7 @@ class NovelDetailViewModel @Inject constructor(
             // Snapshot the chapter list before the refresh so we can diff against the
             // post-refresh list and surface the new/unlocked chapters to the user.
             val before = if (cachedNovelId > 0L) {
-                chapterDao.getChaptersOnce(cachedNovelId).associateBy { it.url }
+                chapterDao.getChaptersOnce(cachedNovelId).associateBy { it.id }
             } else emptyMap()
 
             loadNovel(forceRefresh = true)
@@ -525,7 +529,7 @@ class NovelDetailViewModel @Inject constructor(
                                         name = ch.name,
                                         chapterNumber = ch.chapterNumber,
                                         locked = ch.locked,
-                                        unlockedFromLocked = before[ch.url]?.locked == true,
+                                        unlockedFromLocked = before[ch.id]?.locked == true,
                                     )
                                 },
                         )
@@ -826,10 +830,23 @@ class NovelDetailViewModel @Inject constructor(
             if (cachedNovelId > 0L) {
                 // In place, like the library sync: matched chapters keep their row id,
                 // and with it their read state, position and downloaded text.
-                chapterDao.reconcileFetchedChapters(cachedNovelId, list)
-                // A successful network fetch clears any stale library-update
-                // warning/failure recorded for this novel.
-                updateIssueDao.clearForNovel(cachedNovelId)
+                if (chapterDao.reconcileFetchedChapters(cachedNovelId, list)) {
+                    // A successful network fetch clears any stale library-update
+                    // warning/failure recorded for this novel.
+                    updateIssueDao.clearForNovel(cachedNovelId)
+                } else {
+                    updateIssueDao.setIssue(
+                        UpdateIssueEntity(
+                            novelId = cachedNovelId,
+                            sourcePackage = pkg,
+                            novelUrl = novelUrl,
+                            novelTitle = novel.title,
+                            severity = UpdateIssueSeverity.WARNING.ordinal,
+                            message = if (list.isEmpty()) ISSUE_NO_CHAPTERS else ISSUE_CHAPTER_LIST_CHANGED,
+                            occurredAt = System.currentTimeMillis(),
+                        ),
+                    )
+                }
             }
         }.onFailure { e ->
             if (e is CloudflareException) _cloudflareBlocked.value = true

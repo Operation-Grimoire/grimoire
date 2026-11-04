@@ -274,6 +274,7 @@
     <string name="update_issues_empty">Sorun yok.\nYenilenemeyen romanlar burada görünür.</string>
     <string name="update_issue_source_missing">Kaynak yüklü değil — atlandı</string>
     <string name="update_issue_no_chapters">Kaynak bölüm döndürmedi — mevcut liste korundu</string>
+    <string name="update_issue_chapter_list_changed">Kaynağın bölüm listesi çok fazla değişti — mevcut liste korundu</string>
     <string name="update_issue_incomplete_data">Kaynak eksik veri döndürdü — önceki başlık/kapak korundu</string>
     <string name="update_issues_retry_all">Tümünü yeniden dene</string>
     <string name="update_issues_dismiss_all">Tümünü kapat</string>

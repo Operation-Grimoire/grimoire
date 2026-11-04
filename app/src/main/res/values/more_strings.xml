@@ -273,6 +273,7 @@
     <string name="update_issues_empty">No problems.\nNovels that fail to refresh show up here.</string>
     <string name="update_issue_source_missing">Source not installed — skipped</string>
     <string name="update_issue_no_chapters">Source returned no chapters — kept the existing list</string>
+    <string name="update_issue_chapter_list_changed">Source\'s chapter list changed too much — kept the existing list</string>
     <string name="update_issue_incomplete_data">Source returned incomplete data — kept the previous title/cover</string>
     <string name="update_issues_retry_all">Retry all</string>
     <string name="update_issues_dismiss_all">Dismiss all</string>
