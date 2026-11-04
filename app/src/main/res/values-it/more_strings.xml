@@ -279,6 +279,7 @@
     <string name="update_issues_empty">Nessun problema.\nI romanzi che non si aggiornano compaiono qui.</string>
     <string name="update_issue_source_missing">Fonte non installata: saltato</string>
     <string name="update_issue_no_chapters">La fonte non ha restituito capitoli: elenco esistente mantenuto</string>
+    <string name="update_issue_chapter_list_changed">L\'elenco dei capitoli della fonte è cambiato troppo: elenco esistente mantenuto</string>
     <string name="update_issue_incomplete_data">La fonte ha restituito dati incompleti: titolo/copertina precedenti mantenuti</string>
     <string name="update_issues_retry_all">Riprova tutti</string>
     <string name="update_issues_dismiss_all">Ignora tutti</string>

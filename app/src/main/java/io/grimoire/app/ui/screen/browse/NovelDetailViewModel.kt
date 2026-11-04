@@ -25,6 +25,8 @@ import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.cover.CustomCoverStore
 import io.grimoire.app.data.source.fetchAllChapters
 import io.grimoire.app.data.local.dao.CategoryDao
+import io.grimoire.app.data.libraryupdate.ISSUE_CHAPTER_LIST_CHANGED
+import io.grimoire.app.data.libraryupdate.ISSUE_NO_CHAPTERS
 import io.grimoire.app.data.libraryupdate.reconcileFetchedChapters
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -840,7 +842,7 @@ class NovelDetailViewModel @Inject constructor(
                             novelUrl = novelUrl,
                             novelTitle = novel.title,
                             severity = UpdateIssueSeverity.WARNING.ordinal,
-                            message = "Source returned only ${list.size} chapters — kept the existing list",
+                            message = if (list.isEmpty()) ISSUE_NO_CHAPTERS else ISSUE_CHAPTER_LIST_CHANGED,
                             occurredAt = System.currentTimeMillis(),
                         ),
                     )

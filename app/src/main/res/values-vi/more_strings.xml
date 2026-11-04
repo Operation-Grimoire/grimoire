@@ -269,6 +269,7 @@
     <string name="update_issues_empty">Không có lỗi.\nCác truyện làm mới thất bại sẽ hiện ở đây.</string>
     <string name="update_issue_source_missing">Chưa cài nguồn — đã bỏ qua</string>
     <string name="update_issue_no_chapters">Nguồn không trả về chương nào — đã giữ danh sách hiện có</string>
+    <string name="update_issue_chapter_list_changed">Danh sách chương của nguồn thay đổi quá nhiều — đã giữ danh sách hiện có</string>
     <string name="update_issue_incomplete_data">Nguồn trả về dữ liệu không đầy đủ — đã giữ tiêu đề/ảnh bìa trước đó</string>
     <string name="update_issues_retry_all">Thử lại tất cả</string>
     <string name="update_issues_dismiss_all">Bỏ qua tất cả</string>

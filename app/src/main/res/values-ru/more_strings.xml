@@ -284,6 +284,7 @@
     <string name="update_issues_empty">Проблем нет.\nЗдесь появятся новеллы, которые не удалось обновить.</string>
     <string name="update_issue_source_missing">Источник не установлен — пропущено</string>
     <string name="update_issue_no_chapters">Источник не вернул глав — оставлен прежний список</string>
+    <string name="update_issue_chapter_list_changed">Список глав источника изменился слишком сильно — оставлен прежний список</string>
     <string name="update_issue_incomplete_data">Источник вернул неполные данные — оставлены прежние название и обложка</string>
     <string name="update_issues_retry_all">Повторить все</string>
     <string name="update_issues_dismiss_all">Скрыть все</string>

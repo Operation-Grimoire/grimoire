@@ -374,6 +374,7 @@
     <string name="update_issues_empty">Brak problemów.\nTutaj pojawią się powieści, których nie udało się odświeżyć.</string>
     <string name="update_issue_source_missing">Źródło nie jest zainstalowane — pominięto</string>
     <string name="update_issue_no_chapters">Źródło nie zwróciło rozdziałów — zachowano istniejącą listę</string>
+    <string name="update_issue_chapter_list_changed">Lista rozdziałów źródła zmieniła się zbyt mocno — zachowano istniejącą listę</string>
     <string name="update_issue_incomplete_data">Źródło zwróciło niepełne dane — zachowano poprzedni tytuł/okładkę</string>
     <string name="update_issues_retry_all">Ponów wszystkie</string>
     <string name="update_issues_dismiss_all">Odrzuć wszystkie</string>

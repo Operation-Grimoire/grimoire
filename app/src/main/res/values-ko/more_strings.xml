@@ -269,6 +269,7 @@
     <string name="update_issues_empty">문제가 없어요.\n새로고침에 실패한 소설이 여기에 표시돼요.</string>
     <string name="update_issue_source_missing">소스가 설치되지 않아 건너뜀</string>
     <string name="update_issue_no_chapters">소스에서 챕터를 반환하지 않아 기존 목록을 유지함</string>
+    <string name="update_issue_chapter_list_changed">소스의 챕터 목록이 너무 많이 바뀌어 기존 목록을 유지함</string>
     <string name="update_issue_incomplete_data">소스에서 불완전한 데이터를 반환해 이전 제목/표지를 유지함</string>
     <string name="update_issues_retry_all">모두 다시 시도</string>
     <string name="update_issues_dismiss_all">모두 닫기</string>

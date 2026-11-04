@@ -268,6 +268,7 @@
     <string name="update_issues_empty">ไม่มีปัญหา\nนิยายที่รีเฟรชไม่สำเร็จจะแสดงที่นี่</string>
     <string name="update_issue_source_missing">ไม่ได้ติดตั้งแหล่งที่มา — ข้ามไป</string>
     <string name="update_issue_no_chapters">แหล่งที่มาไม่ส่งตอนกลับมา — คงรายการเดิมไว้</string>
+    <string name="update_issue_chapter_list_changed">รายการตอนของแหล่งที่มาเปลี่ยนแปลงมากเกินไป — คงรายการเดิมไว้</string>
     <string name="update_issue_incomplete_data">แหล่งที่มาส่งข้อมูลไม่ครบ — คงชื่อเรื่อง/ปกเดิมไว้</string>
     <string name="update_issues_retry_all">ลองใหม่ทั้งหมด</string>
     <string name="update_issues_dismiss_all">ปิดทั้งหมด</string>

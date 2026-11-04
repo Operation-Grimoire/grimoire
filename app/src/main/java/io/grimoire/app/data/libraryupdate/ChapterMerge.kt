@@ -113,6 +113,10 @@ internal const val SUSPECT_TRUNCATION_MIN_LIST = 20
 internal fun shouldKeepExistingList(existingCount: Int, fetchedCount: Int, deleteCount: Int): Boolean =
     (fetchedCount == 0 && existingCount > 0) || isSuspectTruncation(existingCount, deleteCount)
 
+// Stored as update issues, and translated by exact match in UpdateIssuesScreen.
+internal const val ISSUE_NO_CHAPTERS = "Source returned no chapters — kept the existing list"
+internal const val ISSUE_CHAPTER_LIST_CHANGED = "Source's chapter list changed too much — kept the existing list"
+
 /**
  * Ceiling on how many "new" chapters one sync may log to the updates feed for a
  * single novel. A count above it is almost always chapters being *re-detected*

@@ -273,6 +273,7 @@
     <string name="update_issues_empty">Keine Probleme.\nRomane, die sich nicht aktualisieren lassen, erscheinen hier.</string>
     <string name="update_issue_source_missing">Quelle nicht installiert – übersprungen</string>
     <string name="update_issue_no_chapters">Quelle lieferte keine Kapitel – bisherige Liste behalten</string>
+    <string name="update_issue_chapter_list_changed">Kapitelliste der Quelle hat sich zu stark geändert – bisherige Liste behalten</string>
     <string name="update_issue_incomplete_data">Quelle lieferte unvollständige Daten – bisheriger Titel/bisheriges Cover behalten</string>
     <string name="update_issues_retry_all">Alle wiederholen</string>
     <string name="update_issues_dismiss_all">Alle verwerfen</string>

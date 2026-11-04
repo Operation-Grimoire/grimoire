@@ -269,6 +269,7 @@
     <string name="update_issues_empty">問題はありません。\n更新に失敗した小説がここに表示されます。</string>
     <string name="update_issue_source_missing">ソースがインストールされていません — スキップしました</string>
     <string name="update_issue_no_chapters">ソースから章が返されませんでした — 既存のリストを保持しました</string>
+    <string name="update_issue_chapter_list_changed">ソースの章リストの変更が大きすぎます — 既存のリストを保持しました</string>
     <string name="update_issue_incomplete_data">ソースから不完全なデータが返されました — 以前のタイトルと表紙を保持しました</string>
     <string name="update_issues_retry_all">すべて再試行</string>
     <string name="update_issues_dismiss_all">すべて閉じる</string>

@@ -274,6 +274,7 @@
     <string name="update_issues_empty">कोई समस्या नहीं।\nजो उपन्यास रीफ़्रेश नहीं हो पाते, वे यहाँ दिखते हैं।</string>
     <string name="update_issue_source_missing">स्रोत इंस्टॉल नहीं है — छोड़ दिया गया</string>
     <string name="update_issue_no_chapters">स्रोत ने कोई अध्याय नहीं लौटाया — मौजूदा सूची रखी गई</string>
+    <string name="update_issue_chapter_list_changed">स्रोत की अध्याय सूची बहुत अधिक बदल गई — मौजूदा सूची रखी गई</string>
     <string name="update_issue_incomplete_data">स्रोत ने अधूरा डेटा लौटाया — पिछला शीर्षक/कवर रखा गया</string>
     <string name="update_issues_retry_all">सभी फिर से आज़माएँ</string>
     <string name="update_issues_dismiss_all">सभी ख़ारिज करें</string>

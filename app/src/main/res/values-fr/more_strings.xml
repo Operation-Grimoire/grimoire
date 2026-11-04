@@ -279,6 +279,7 @@
     <string name="update_issues_empty">Aucun problème.\nLes romans dont l’actualisation échoue apparaissent ici.</string>
     <string name="update_issue_source_missing">Source non installée — ignoré</string>
     <string name="update_issue_no_chapters">La source n’a renvoyé aucun chapitre — liste existante conservée</string>
+    <string name="update_issue_chapter_list_changed">La liste des chapitres de la source a trop changé — liste existante conservée</string>
     <string name="update_issue_incomplete_data">La source a renvoyé des données incomplètes — titre/couverture précédents conservés</string>
     <string name="update_issues_retry_all">Tout réessayer</string>
     <string name="update_issues_dismiss_all">Tout ignorer</string>

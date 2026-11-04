@@ -374,6 +374,7 @@
     <string name="update_issues_empty">Проблем немає.\nТут з’являтимуться новели, які не вдалося оновити.</string>
     <string name="update_issue_source_missing">Джерело не встановлено — пропущено</string>
     <string name="update_issue_no_chapters">Джерело не повернуло розділів — збережено наявний список</string>
+    <string name="update_issue_chapter_list_changed">Список розділів джерела змінився надто сильно — збережено наявний список</string>
     <string name="update_issue_incomplete_data">Джерело повернуло неповні дані — збережено попередні назву й обкладинку</string>
     <string name="update_issues_retry_all">Повторити всі</string>
     <string name="update_issues_dismiss_all">Закрити всі</string>

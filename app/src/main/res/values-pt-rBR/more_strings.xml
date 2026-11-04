@@ -279,6 +279,7 @@
     <string name="update_issues_empty">Nenhum problema.\nAs novels que não conseguirem ser atualizadas aparecem aqui.</string>
     <string name="update_issue_source_missing">Fonte não instalada — ignorada</string>
     <string name="update_issue_no_chapters">A fonte não retornou capítulos — a lista existente foi mantida</string>
+    <string name="update_issue_chapter_list_changed">A lista de capítulos da fonte mudou demais — a lista existente foi mantida</string>
     <string name="update_issue_incomplete_data">A fonte retornou dados incompletos — o título/capa anterior foi mantido</string>
     <string name="update_issues_retry_all">Tentar todas novamente</string>
     <string name="update_issues_dismiss_all">Dispensar todos</string>
