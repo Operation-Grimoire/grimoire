@@ -54,10 +54,12 @@ class EpubImportStateTest {
     @Test fun absentCoverAndUnknownLanguageKeepEarlierMetadata() {
         val existing = NovelEntity(sourceId = 7, url = "book", title = "Old",
             thumbnailUrl = "old-cover", language = "French")
-        val actual = mergeEpubMetadata(existing, parsed.copy(language = null), 7, "book", null, false, true, 500)
-        assertEquals("old-cover", actual.thumbnailUrl)
-        assertEquals("French", actual.language)
-        assertEquals(500L, actual.lastReadAt)
+        for (language in listOf(null, "not-a-language")) {
+            val actual = mergeEpubMetadata(existing, parsed.copy(language = language), 7, "book", null, false, true, 500)
+            assertEquals("old-cover", actual.thumbnailUrl)
+            assertEquals("French", actual.language)
+            assertEquals(500L, actual.lastReadAt)
+        }
     }
 
     @Test fun shiftedChapterKeepsItsReadingAnchorAndNewDownloadIdentity() {
