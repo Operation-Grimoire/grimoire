@@ -1,6 +1,7 @@
 package io.grimoire.app.ui.update
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -110,7 +111,7 @@ class AppUpdateViewModel @Inject constructor(
                     appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
                 }
             }
-            val release = checker.checkForUpdate(channel) ?: return@launch
+            val release = checker.checkForUpdate(channel).getOrNull() ?: return@launch
             val autoPopupEnabled = updatePreferences.autoPopupEnabled.changes().first()
             val skippedVersion = updatePreferences.skippedVersion.changes().first()
             if (!autoPopupEnabled || release.tagName == skippedVersion) return@launch
@@ -124,7 +125,7 @@ class AppUpdateViewModel @Inject constructor(
             checkStore.set(CheckState.Checking)
             runCatching {
                 val channel = updatePreferences.channel.changes().first()
-                val release = checker.checkForUpdate(channel)
+                val release = checker.checkForUpdate(channel).getOrThrow()
                 if (release != null) {
                     _availableRelease.value = release
                     checkStore.set(CheckState.Idle)
@@ -132,7 +133,9 @@ class AppUpdateViewModel @Inject constructor(
                     checkStore.set(CheckState.UpToDate)
                 }
             }.onFailure { e ->
-                checkStore.set(CheckState.Error(e.message.orEmpty()))
+                Log.e("AppUpdateVM", "Update check failed", e)
+                // The screen already has a translated fallback for an empty error message.
+                checkStore.set(CheckState.Error(""))
             }
         }
     }
