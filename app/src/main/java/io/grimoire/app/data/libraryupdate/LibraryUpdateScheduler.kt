@@ -109,7 +109,7 @@ class LibraryUpdateScheduler @Inject constructor(
         .putLong(LibraryUpdateWorker.KEY_CATEGORY_ID, categoryId ?: LibraryUpdateWorker.ALL_LIBRARY)
         .build()
 
-    private fun applySchedule(s: Schedule, reAnchor: Boolean) {
+    private suspend fun applySchedule(s: Schedule, reAnchor: Boolean) {
         val wm = WorkManager.getInstance(context)
         if (!s.enabled) {
             wm.cancelUniqueWork(LibraryUpdateWorker.UNIQUE_PERIODIC_NAME)
@@ -127,7 +127,14 @@ class LibraryUpdateScheduler @Inject constructor(
         // delays. We avoid the flex-interval constructor because flex windows
         // sit at the END of each repeat period, which would push the first run
         // ~[repeatInterval] past the requested time.
-        val initialDelay = computeInitialDelayMillis(System.currentTimeMillis(), s.preferredMinutes)
+        // UPDATE retains enqueue time, so also retain the original delay for a
+        // schedule whose first run is still pending.
+        val existingDelay = if (reAnchor) null else {
+            wm.getWorkInfosForUniqueWorkFlow(LibraryUpdateWorker.UNIQUE_PERIODIC_NAME)
+                .first().firstOrNull { !it.state.isFinished }?.initialDelayMillis
+        }
+        val initialDelay = existingDelay
+            ?: computeInitialDelayMillis(System.currentTimeMillis(), s.preferredMinutes)
         val request = PeriodicWorkRequestBuilder<LibraryUpdateWorker>(
             intervalHours, TimeUnit.HOURS,
         )
