@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 
 internal fun restoreBackupPreferences(prefs: MutablePreferences, preferences: List<BackupPreference>) {
     for (p in preferences) {
+        if (p.key.startsWith(AUTOMATIC_BACKUP_REGISTRY_PREFIX)) continue
         when (p.type) {
             "b" -> p.value?.toBooleanStrictOrNull()?.let { prefs[booleanPreferencesKey(p.key)] = it }
             "i" -> p.value?.toIntOrNull()?.let { prefs[intPreferencesKey(p.key)] = it }

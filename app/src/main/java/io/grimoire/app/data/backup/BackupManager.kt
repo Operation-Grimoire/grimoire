@@ -2,9 +2,11 @@ package io.grimoire.app.data.backup
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.app.data.local.dao.CategoryDao
@@ -17,7 +19,10 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.NuBookmarkEntity
 import io.grimoire.app.data.local.entity.RepoEntity
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -32,6 +37,8 @@ import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
+import java.util.UUID
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import javax.inject.Inject
@@ -41,7 +48,7 @@ import javax.inject.Singleton
 
 sealed class BackupResult {
     data class Success(val fileName: String, val fileUri: String, val novelCount: Int) : BackupResult()
-    data class Failure(val message: String) : BackupResult()
+    data class Failure(val message: String, val retryable: Boolean = true) : BackupResult()
 }
 
 sealed class RestoreResult {
@@ -70,17 +77,34 @@ class BackupManager @Inject constructor(
         encodeDefaults = true
     }
 
-    suspend fun backupTo(folderUri: Uri): BackupResult = withContext(Dispatchers.IO) {
-        val folder = DocumentFile.fromTreeUri(context, folderUri)
-            ?: return@withContext BackupResult.Failure(localizedContext.getString(R.string.backup_folder_inaccessible))
-        if (!folder.exists() || !folder.canWrite()) {
-            return@withContext BackupResult.Failure(localizedContext.getString(R.string.backup_folder_not_writable))
-        }
-        val fileName = generateFileName()
-        val target = folder.createFile(BACKUP_MIME_TYPE, fileName)
-            ?: return@withContext BackupResult.Failure(localizedContext.getString(R.string.backup_create_file_failed))
+    private val backupMutex = Mutex()
 
-        runCatching {
+    suspend fun backupTo(folderUri: Uri, automatic: Boolean = false): BackupResult = withContext(Dispatchers.IO) {
+        backupMutex.withLock {
+            try {
+                createBackup(folderUri, automatic)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                BackupResult.Failure(
+                    e.message ?: localizedContext.getString(R.string.backup_failed),
+                    retryable = e !is SecurityException && e !is IllegalArgumentException,
+                )
+            }
+        }
+    }
+
+    private suspend fun createBackup(folderUri: Uri, automatic: Boolean): BackupResult {
+        val folder = DocumentFile.fromTreeUri(context, folderUri)
+            ?: return BackupResult.Failure(localizedContext.getString(R.string.backup_folder_inaccessible), retryable = false)
+        if (!folder.exists() || !folder.canWrite()) {
+            return BackupResult.Failure(localizedContext.getString(R.string.backup_folder_not_writable), retryable = false)
+        }
+        val fileName = generateFileName(automatic)
+        val target = folder.createFile(BACKUP_MIME_TYPE, fileName)
+            ?: return BackupResult.Failure(localizedContext.getString(R.string.backup_create_file_failed))
+
+        var written = false
+        return runCatching {
             val novels = novelDao.getForBackup()
             val categories = categoryDao.getAllOnce()
             val categoryById = categories.associateBy { it.id }
@@ -110,12 +134,42 @@ class BackupManager @Inject constructor(
                         appVersionName = appVersionName,
                     )
                 }
-            } ?: return@runCatching BackupResult.Failure(localizedContext.getString(R.string.backup_open_output_failed))
-            BackupResult.Success(fileName, target.uri.toString(), novels.size)
+            } ?: error(localizedContext.getString(R.string.backup_open_output_failed))
+            written = true
+            if (automatic) {
+                try {
+                    pruneAutomaticBackups(folderUri, folder, target)
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    Log.w("BackupManager", "Automatic backup retention failed", e)
+                }
+            }
+            BackupResult.Success(target.name ?: fileName, target.uri.toString(), novels.size)
         }.getOrElse { e ->
-            runCatching { target.delete() }
-            BackupResult.Failure(e.message ?: localizedContext.getString(R.string.backup_failed))
+            if (!written) runCatching { target.delete() }
+            if (e is CancellationException) throw e
+            BackupResult.Failure(
+                e.message ?: localizedContext.getString(R.string.backup_failed),
+                retryable = e !is SecurityException && e !is IllegalArgumentException,
+            )
         }
+    }
+
+    private suspend fun pruneAutomaticBackups(folderUri: Uri, folder: DocumentFile, current: DocumentFile) {
+        val key = stringSetPreferencesKey(AUTOMATIC_BACKUP_REGISTRY_PREFIX + folderUri)
+        val currentUri = current.uri.toString()
+        // Register only after the complete gzip stream was closed successfully.
+        dataStore.edit { it[key] = it[key].orEmpty() + currentUri }
+        val tracked = dataStore.data.first()[key].orEmpty()
+        val files = folder.listFiles()
+        val candidates = files.filter { it.isFile }.map {
+            AutomaticBackupFile(it.uri.toString(), it.name.orEmpty())
+        }
+        val deletions = automaticBackupsToDelete(candidates, tracked, currentUri).toSet()
+        val deleted = files.filter { it.uri.toString() in deletions }
+            .filter { it.delete() }.map { it.uri.toString() }.toSet()
+        // A provider may return an incomplete listing; retain provenance for missing files.
+        dataStore.edit { it[key] = it[key].orEmpty() - deleted }
     }
 
     suspend fun restoreFrom(fileUri: Uri): RestoreResult = withContext(Dispatchers.IO) {
@@ -396,7 +450,13 @@ class BackupManager @Inject constructor(
 
     private fun OutputStream.writeUtf8(s: String) = write(s.toByteArray(Charsets.UTF_8))
 
-    private fun generateFileName(): String {
+    private fun generateFileName(automatic: Boolean): String {
+        if (automatic) {
+            val ts = SimpleDateFormat("yyyy-MM-dd_HHmmss_SSS", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }.format(Date())
+            return "grimoire_auto_backup_${ts}_${UUID.randomUUID()}.json.gz"
+        }
         val ts = SimpleDateFormat("yyyy-MM-dd_HHmmss", Locale.US).format(Date())
         return "grimoire_backup_$ts.json.gz"
     }

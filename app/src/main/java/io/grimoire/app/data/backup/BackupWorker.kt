@@ -29,7 +29,7 @@ class BackupWorker @AssistedInject constructor(
         val uri = runCatching { Uri.parse(folderUriString) }.getOrNull()
             ?: return Result.failure()
 
-        return when (val result = backupManager.backupTo(uri)) {
+        return when (val result = backupManager.backupTo(uri, automatic = true)) {
             is BackupResult.Success -> {
                 backupPreferences.lastAutoBackupAt.set(System.currentTimeMillis().toString())
                 backupPreferences.lastAutoBackupFile.set(result.fileName)
@@ -43,7 +43,7 @@ class BackupWorker @AssistedInject constructor(
                 backupPreferences.lastAutoBackupAt.set(System.currentTimeMillis().toString())
                 backupPreferences.lastAutoBackupSuccess.set(false)
                 backupPreferences.lastAutoBackupMessage.set(result.message)
-                Result.retry()
+                if (shouldRetryBackup(result.retryable, runAttemptCount)) Result.retry() else Result.failure()
             }
         }
     }

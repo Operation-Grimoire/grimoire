@@ -61,10 +61,8 @@ class BackupScheduler @Inject constructor(
             }
                 .distinctUntilChanged()
                 .collectLatest {
-                    // The first emission is the stored prefs replayed at process
-                    // start — not a real change — so KEEP the live schedule and
-                    // its existing next-run anchor. Only a genuine later change
-                    // (the user editing a pref) re-anchors via REPLACE.
+                    // Apply new constraints on startup while preserving enqueue time.
+                    // User preference changes re-anchor via REPLACE.
                     applySchedule(it, reAnchor = !isInitial)
                     isInitial = false
                 }
@@ -99,6 +97,7 @@ class BackupScheduler @Inject constructor(
             .setRequiredNetworkType(if (s.onlyOnWifi) NetworkType.UNMETERED else NetworkType.NOT_REQUIRED)
             .setRequiresCharging(s.requiresCharging)
             .setRequiresStorageNotLow(true)
+            .setRequiresBatteryNotLow(true)
             .build()
         // Anchor the first run to the user's preferred time-of-day; see
         // LibraryUpdateScheduler for why we avoid the flex-interval constructor.
@@ -109,14 +108,12 @@ class BackupScheduler @Inject constructor(
             .setConstraints(constraints)
             .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
             .build()
-        // KEEP on the initial application preserves the live schedule and its
-        // next-run anchor across app restarts; REPLACE on a genuine change
-        // re-anchors so a new interval / time-of-day takes effect. See
-        // LibraryUpdateScheduler for the full rationale.
+        // UPDATE applies constraints while preserving the existing enqueue time.
+        // A user schedule change still re-anchors via REPLACE.
         val policy = if (reAnchor) {
             ExistingPeriodicWorkPolicy.REPLACE
         } else {
-            ExistingPeriodicWorkPolicy.KEEP
+            ExistingPeriodicWorkPolicy.UPDATE
         }
         wm.enqueueUniquePeriodicWork(
             BackupWorker.UNIQUE_PERIODIC_NAME,
