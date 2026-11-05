@@ -97,7 +97,7 @@ class MoreViewModel @Inject constructor(
             "novel?pkg=${Uri.encode(pkg)}&url=${Uri.encode(novel.url)}",
             "reader?pkg=${Uri.encode(pkg)}" +
                 "&novelUrl=${Uri.encode(novel.url)}" +
-                "&chapterUrl=${Uri.encode(target.url)}",
+                "&chapterUrl=${Uri.encode(target.url)}&novelId=${novel.id}",
         )
     }
 }

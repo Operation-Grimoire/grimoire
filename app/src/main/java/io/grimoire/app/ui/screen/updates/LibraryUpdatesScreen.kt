@@ -96,7 +96,7 @@ private fun bucketDays(entries: List<LibraryUpdateEntity>): List<Pair<Long, List
 @Composable
 fun LibraryUpdatesScreen(
     onNavigateBack: () -> Unit,
-    onOpenReader: (pkg: String, novelUrl: String, chapterUrl: String) -> Unit,
+    onOpenReader: (pkg: String, novelUrl: String, chapterUrl: String, novelId: Long?) -> Unit,
     onOpenNovel: (pkg: String, novelUrl: String) -> Unit,
     viewModel: LibraryUpdatesViewModel = hiltViewModel(),
 ) {
@@ -357,7 +357,7 @@ fun LibraryUpdatesScreen(
                                                     else if (liveChapter?.locked == true) {
                                                         onOpenNovel(entry.sourcePackage, entry.novelUrl)
                                                     } else {
-                                                        onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
+                                                        onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl, entry.novelId)
                                                     }
                                                 },
                                                 onLongClick = { toggleEntry(entry.id) },
@@ -413,6 +413,7 @@ fun LibraryUpdatesScreen(
                                                                 entry.sourcePackage,
                                                                 entry.novelUrl,
                                                                 entry.chapterUrl,
+                                                                entry.novelId,
                                                             )
                                                         },
                                                         onLockedClick = {

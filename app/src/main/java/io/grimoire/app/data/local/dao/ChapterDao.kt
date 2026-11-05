@@ -47,6 +47,9 @@ interface ChapterDao {
     @Query(CHAPTER_BY_NOVEL_URL_QUERY)
     suspend fun getByNovelUrl(sourceId: Long, novelUrl: String, chapterUrl: String): ChapterEntity?
 
+    @Query(CHAPTER_BY_NOVEL_ID_QUERY)
+    suspend fun getByNovelIdUrl(novelId: Long, novelUrl: String, chapterUrl: String): ChapterEntity?
+
     @Insert
     suspend fun insertAll(chapters: List<ChapterEntity>): List<Long>
 

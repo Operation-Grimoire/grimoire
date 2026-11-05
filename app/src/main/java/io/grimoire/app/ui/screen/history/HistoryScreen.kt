@@ -91,7 +91,7 @@ private fun groupConsecutiveByNovel(
 @Composable
 fun HistoryScreen(
     onNavigateBack: () -> Unit,
-    onOpenReader: (pkg: String, novelUrl: String, chapterUrl: String) -> Unit,
+    onOpenReader: (pkg: String, novelUrl: String, chapterUrl: String, novelId: Long?) -> Unit,
     onOpenNovel: (pkg: String, novelUrl: String) -> Unit,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
@@ -228,7 +228,7 @@ fun HistoryScreen(
                                                 selected = entry.id in selectedIds,
                                                 onClick = {
                                                     if (selectionMode) toggle(entry.id)
-                                                    else onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
+                                                    else onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl, entry.novelId)
                                                 },
                                                 onLongClick = { toggle(entry.id) },
                                             )
@@ -265,7 +265,7 @@ fun HistoryScreen(
                                                         selected = entry.id in selectedIds,
                                                         onClick = {
                                                             if (selectionMode) toggle(entry.id)
-                                                            else onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl)
+                                                            else onOpenReader(entry.sourcePackage, entry.novelUrl, entry.chapterUrl, entry.novelId)
                                                         },
                                                         onLongClick = { toggle(entry.id) },
                                                     )

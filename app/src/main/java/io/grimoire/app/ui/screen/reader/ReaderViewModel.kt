@@ -88,6 +88,7 @@ class ReaderViewModel @Inject constructor(
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
     private val novelUrl: String = checkNotNull(savedStateHandle["novelUrl"])
+    private val navNovelId: Long? = savedStateHandle.get<Long>("novelId")?.takeIf { it > 0L }
 
     // Written back on every chapter change (navigatePrev/Next, TTS auto-advance), so
     // a process-death restore reopens the chapter the user is actually on rather than
@@ -272,8 +273,12 @@ class ReaderViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val sourceId = if (pkg == LOCAL_PKG) LOCAL_SOURCE_ID else sourceIdFor(pkg)
-            val chapter = chapterDao.getByNovelUrl(sourceId, novelUrl, initialChapterUrl) ?: run {
+            val chapter = if (navNovelId != null) {
+                chapterDao.getByNovelIdUrl(navNovelId, novelUrl, initialChapterUrl)
+            } else {
+                val sourceId = if (pkg == LOCAL_PKG) LOCAL_SOURCE_ID else sourceIdFor(pkg)
+                chapterDao.getByNovelUrl(sourceId, novelUrl, initialChapterUrl)
+            } ?: run {
                 _error.value = localizedContext.getString(R.string.error_chapter_not_found)
                 _isLoading.value = false
                 return@launch

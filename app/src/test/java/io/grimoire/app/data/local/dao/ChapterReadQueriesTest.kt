@@ -29,6 +29,21 @@ class ChapterReadQueriesTest {
                 assertEquals(null, selected(22, "one"))
                 assertEquals(null, selected(11, "missing"))
 
+                db.prepareStatement(CHAPTER_BY_NOVEL_ID_QUERY).use { offline ->
+                    fun selectedById(novelId: Long, novelUrl: String): Long? {
+                        offline.setLong(1, novelId)
+                        offline.setString(2, novelUrl)
+                        offline.setString(3, "shared")
+                        return offline.executeQuery().use { if (it.next()) it.getLong("id") else null }
+                    }
+                    // Stored identity works without resolving an installed package.
+                    assertEquals(200L, selectedById(2, "two"))
+                    assertEquals(300L, selectedById(3, "two"))
+                    assertEquals(400L, selectedById(4, "local"))
+                    assertEquals(null, selectedById(2, "one"))
+                    assertEquals(null, selectedById(99, "two"))
+                }
+
                 val selectedId = checkNotNull(selected(11, "two"))
                 db.createStatement().use { sql ->
                     sql.executeUpdate("UPDATE chapters SET read=1 WHERE id=$selectedId")
