@@ -19,6 +19,14 @@ class NovelSyncMergeTest {
     private val fetched = Novel(url = "book", title = "Title", language = Language.UNKNOWN)
 
     @Test
+    fun `live sync eligibility excludes removed and completed favorites`() {
+        assertTrue(isEligibleForLibrarySync(old))
+        assertFalse(isEligibleForLibrarySync(old.copy(favorite = false)))
+        assertFalse(isEligibleForLibrarySync(old.copy(status = NovelStatus.COMPLETED.ordinal)))
+        assertFalse(isEligibleForLibrarySync(old.copy(overrideStatus = NovelStatus.COMPLETED.ordinal)))
+    }
+
+    @Test
     fun `unchanged refresh preserves timestamp and needs no write`() {
         assertSame(old, mergeNovelMetadata(old, fetched, 200))
     }
