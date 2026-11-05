@@ -55,6 +55,7 @@ fun ChapterItem(
     chapter: ChapterEntity,
     selected: Boolean,
     selectionMode: Boolean,
+    allowDownloadChanges: Boolean,
     onClick: () -> Unit,
     onLockedClick: () -> Unit,
     onToggleSelection: () -> Unit,
@@ -110,6 +111,7 @@ fun ChapterItem(
             ChapterStatusTrailing(
                 chapter = chapter,
                 selectionMode = selectionMode,
+                allowDownloadChanges = allowDownloadChanges,
                 onLockedClick = onLockedClick,
                 onDownload = onDownload,
                 onCancelDownload = onCancelDownload,
@@ -137,6 +139,7 @@ fun ChapterItem(
 fun ChapterStatusTrailing(
     chapter: ChapterEntity,
     selectionMode: Boolean,
+    allowDownloadChanges: Boolean,
     onLockedClick: () -> Unit,
     onDownload: () -> Unit,
     onCancelDownload: () -> Unit,
@@ -145,6 +148,14 @@ fun ChapterStatusTrailing(
 ) {
     val dlStatus = ChapterDownloadStatus.entries.getOrElse(chapter.downloadStatus) { ChapterDownloadStatus.NONE }
     when {
+        !allowDownloadChanges -> if (chapter.downloadStatus in ChapterDownloadStatus.HAS_CONTENT_ORDINALS) {
+            ChapterTrailingIcon(
+                icon = AppIcons.DownloadDone,
+                description = stringResource(R.string.status_downloaded),
+                tint = MaterialTheme.colorScheme.primary,
+                onClick = null,
+            )
+        }
         chapter.locked -> ChapterTrailingIcon(
             icon = AppIcons.Lock,
             description = stringResource(R.string.content_description_locked),

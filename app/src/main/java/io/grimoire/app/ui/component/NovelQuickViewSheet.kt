@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.model.novel.NovelStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.download.canManageDownloads
 import io.grimoire.app.ui.screen.browse.NovelQuickViewViewModel
 import io.grimoire.app.ui.screen.library.HiddenCategoriesUnlockDialog
 import kotlinx.coroutines.launch
@@ -144,6 +145,7 @@ fun NovelQuickViewSheet(
                     ChapterSection(
                         chapterCount = chapterCount,
                         latestChapters = latestChapters,
+                        allowDownloadChanges = canManageDownloads(novel.sourceId),
                         expanded = chaptersExpanded,
                         loading = isLoadingChapters,
                         onToggle = { chaptersExpanded = !chaptersExpanded },
@@ -281,6 +283,7 @@ private fun ActionRow(
 private fun ChapterSection(
     chapterCount: Int,
     latestChapters: List<ChapterEntity>,
+    allowDownloadChanges: Boolean,
     expanded: Boolean,
     loading: Boolean,
     onToggle: () -> Unit,
@@ -328,6 +331,7 @@ private fun ChapterSection(
             latestChapters.forEach { chapter ->
                 ChapterItem(
                     chapter = chapter,
+                    allowDownloadChanges = allowDownloadChanges,
                     selected = false,
                     selectionMode = false,
                     onClick = { onChapterClick(chapter) },

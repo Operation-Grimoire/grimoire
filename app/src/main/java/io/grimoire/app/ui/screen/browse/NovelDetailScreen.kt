@@ -373,7 +373,7 @@ fun NovelDetailScreen(
         )
     }
 
-    if (showDownloadsSheet) {
+    if (showDownloadsSheet && !viewModel.isLocal) {
         DownloadsSheet(
             chapters = chapters,
             onDownloadAll = viewModel::downloadAll,
@@ -743,15 +743,15 @@ fun NovelDetailScreen(
                 TooltipBottomBar(visible = selectionMode) {
                     val showMarkRead = selectedChapters.any { !it.read }
                     val showMarkUnread = selectedChapters.any { it.read }
-                    val showDownload = selectedChapters.any {
+                    val showDownload = !viewModel.isLocal && selectedChapters.any {
                         !it.locked &&
                             (it.downloadStatus == ChapterDownloadStatus.NONE.ordinal ||
                                 it.downloadStatus == ChapterDownloadStatus.ERROR.ordinal)
                     }
-                    val showDelete = selectedChapters.any {
+                    val showDelete = !viewModel.isLocal && selectedChapters.any {
                         it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal
                     }
-                    val showRedownload = selectedChapters.any {
+                    val showRedownload = !viewModel.isLocal && selectedChapters.any {
                         !it.locked && (
                             it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal ||
                                 it.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
@@ -1284,6 +1284,7 @@ fun NovelDetailScreen(
                         items(displayedChapters, key = { it.id }) { chapter ->
                             ChapterItem(
                                 chapter = chapter,
+                                allowDownloadChanges = !viewModel.isLocal,
                                 selected = chapter.id in selectedIds,
                                 selectionMode = selectionMode,
                                 onClick = { onChapterClick(viewModel.pkg, novel.url, chapter.url) },
