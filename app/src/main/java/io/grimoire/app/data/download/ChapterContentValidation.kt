@@ -5,6 +5,8 @@ import io.grimoire.app.util.formattedText
 import io.grimoire.app.util.imageUrl
 import io.grimoire.app.util.text
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
+import java.io.IOException
 
 /**
  * Raised when a chapter fetch keeps coming back with no readable content. The
@@ -39,10 +41,9 @@ fun hasReadableContent(pages: List<NovelPage>): Boolean =
  * [EmptyChapterContentException] so the caller can fail the chapter instead of
  * saving the blank.
  *
- * Exceptions thrown by [fetch] propagate immediately (unchanged behaviour): a
- * network/parse error is already surfaced as a chapter ERROR by the caller, and
- * retrying every hard failure here would slow a large batch full of genuinely
- * failing chapters. [sleep] is injectable so tests don't wait on real time.
+ * Connectivity failures get the same bounded retry. A persistent failure is
+ * rethrown so the caller can stop the drain and keep its rows queued. Other
+ * source and parser errors propagate immediately. [sleep] is injectable.
  */
 suspend fun fetchReadablePages(
     maxAttempts: Int = 3,
@@ -52,9 +53,17 @@ suspend fun fetchReadablePages(
 ): List<NovelPage> {
     require(maxAttempts >= 1) { "maxAttempts must be >= 1" }
     repeat(maxAttempts) { attempt ->
-        val pages = fetch()
-        if (hasReadableContent(pages)) return pages
+        val pages = try {
+            fetch()
+        } catch (e: Exception) {
+            if (e is CancellationException || !e.isConnectivityFailure() || attempt == maxAttempts - 1) throw e
+            null
+        }
+        if (pages != null && hasReadableContent(pages)) return pages
         if (attempt < maxAttempts - 1) sleep(initialDelayMs * (attempt + 1))
     }
     throw EmptyChapterContentException("Chapter content was empty after $maxAttempts attempts")
 }
+
+internal fun Throwable.isConnectivityFailure(): Boolean =
+    generateSequence(this) { it.cause }.take(32).any { it is IOException }

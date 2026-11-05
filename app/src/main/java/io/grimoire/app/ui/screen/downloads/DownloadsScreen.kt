@@ -205,7 +205,7 @@ fun DownloadsScreen(
                     label = stringResource(R.string.action_cancel),
                     onClick = {
                         target.chapters
-                            .filter { it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }
+                            .filter { it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS }
                             .forEach { viewModel.cancel(it) }
                         clearSelection()
                     },

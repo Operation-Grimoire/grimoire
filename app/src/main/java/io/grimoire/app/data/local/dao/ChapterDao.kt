@@ -234,6 +234,29 @@ interface ChapterDao {
         setDownloadedStatusRaw(id, status, countWordsIn(content))
     }
 
+    @Query("SELECT downloadStatus FROM chapters WHERE id = :id")
+    suspend fun getDownloadStatus(id: Long): Int?
+
+    /** A cancelled request must not overwrite its restored state or saved text. */
+    @Transaction
+    suspend fun finishDownload(id: Long, content: String): Boolean {
+        if (getDownloadStatus(id) !in listOf(2, 6)) return false
+        setDownloadedContent(id, content, 3)
+        return true
+    }
+
+    @Query("UPDATE chapters SET downloadStatus = :status WHERE id = :id AND downloadStatus IN (2, 6)")
+    suspend fun updateActiveDownloadStatus(id: Long, status: Int)
+
+    @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus IN (1, 2, 5, 6)")
+    suspend fun getPendingDownloadCount(): Int
+
+    @Query(
+        "UPDATE chapters SET downloadStatus = CASE WHEN downloadStatus IN (5, 6) THEN 3 ELSE 0 END " +
+            "WHERE id IN (:ids) AND downloadStatus IN (1, 2, 5, 6)"
+    )
+    suspend fun cancelDownloads(ids: List<Long>)
+
     @Query("UPDATE chapters SET downloadStatus = 0 WHERE id = :id")
     suspend fun clearDownloadStatus(id: Long)
 
@@ -265,19 +288,18 @@ interface ChapterDao {
     )
     suspend fun resetStuckDownloads()
 
-    // Cancelling a queued row: fresh (1) → NONE (0); refresh (5) → DOWNLOADED (3), preserving
-    // the existing saved content so the row keeps showing as downloaded.
+    // Cancelling queued or active rows preserves saved text for refresh downloads.
     @Query(
         "UPDATE chapters " +
-            "SET downloadStatus = CASE WHEN downloadStatus = 5 THEN 3 ELSE 0 END " +
-            "WHERE novelId = :novelId AND downloadStatus IN (1, 5)"
+            "SET downloadStatus = CASE WHEN downloadStatus IN (5, 6) THEN 3 ELSE 0 END " +
+            "WHERE novelId = :novelId AND downloadStatus IN (1, 2, 5, 6)"
     )
     suspend fun cancelAllQueued(novelId: Long)
 
     @Query(
         "UPDATE chapters " +
-            "SET downloadStatus = CASE WHEN downloadStatus = 5 THEN 3 ELSE 0 END " +
-            "WHERE downloadStatus IN (1, 5)"
+            "SET downloadStatus = CASE WHEN downloadStatus IN (5, 6) THEN 3 ELSE 0 END " +
+            "WHERE downloadStatus IN (1, 2, 5, 6)"
     )
     suspend fun cancelAllQueuedDownloads()
 
