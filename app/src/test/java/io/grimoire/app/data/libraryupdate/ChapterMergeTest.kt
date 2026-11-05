@@ -167,7 +167,7 @@ class ChapterMergeTest {
     }
 
     @Test
-    fun reconcilePlan_appendedChapterInsertsOnly_existingRowsUpdatedInPlace() {
+    fun reconcilePlan_appendedChapterInsertsOnly_unchangedRowsAreNotWritten() {
         val existing = listOf(
             entity(1, "u/1", "One", read = true),
             entity(2, "u/2", "Two"),
@@ -179,8 +179,7 @@ class ChapterMergeTest {
         )
         val plan = buildReconcilePlan(1L, existing, fetched, matchChapters(existing, fetched))
 
-        // Both existing rows matched by url → updated in place, keeping their ids.
-        assertEquals(listOf(1L, 2L), plan.updates.map { it.id })
+        assertTrue(plan.updates.isEmpty())
         // Nothing dropped.
         assertEquals(emptyList<Long>(), plan.deleteIds)
         // Only the genuinely new chapter is inserted, with a fresh (id == 0) row.
@@ -217,8 +216,29 @@ class ChapterMergeTest {
         val plan = buildReconcilePlan(1L, existing, fetched, matchChapters(existing, fetched))
 
         assertEquals(listOf(2L), plan.deleteIds)
-        assertEquals(listOf(1L), plan.updates.map { it.id })
+        assertTrue(plan.updates.isEmpty())
         assertEquals(emptyList<ChapterEntity>(), plan.inserts)
+    }
+
+    @Test
+    fun reconcilePlan_eachMetadataChangeUpdatesTheExistingRow() {
+        val old = entity(7, "u/7", "Seven", read = true, readProgress = 0.6f)
+        val original = chapter("u/7", "Seven")
+        val changes = listOf(
+            original.copy(url = "u/new"),
+            original.copy(name = "New name"),
+            original.copy(uploadDate = 123L),
+            original.copy(chapterNumber = 7f),
+            original.copy(translator = "Translator"),
+            original.copy(locked = true),
+        )
+        for (changed in changes) {
+            val fetched = listOf(changed)
+            val plan = buildReconcilePlan(1L, listOf(old), fetched, matchChapters(listOf(old), fetched))
+            assertEquals(listOf(7L), plan.updates.map { it.id })
+            assertTrue(plan.deleteIds.isEmpty())
+            assertTrue(plan.inserts.isEmpty())
+        }
     }
 
     @Test

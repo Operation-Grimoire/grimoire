@@ -1,14 +1,14 @@
 package io.grimoire.app.data.libraryupdate
 
 import android.util.Log
+import androidx.room.withTransaction
 import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.Novel
-import io.grimoire.api.model.novel.NovelStatus
-import io.grimoire.app.util.ContentLanguages
 import io.grimoire.api.source.epub.EpubSource
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.dao.CategoryDao
+import io.grimoire.app.data.local.AppDatabase
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.LibraryUpdateDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -58,6 +58,7 @@ class LibraryUpdater @Inject constructor(
     private val preferences: LibraryUpdatePreferences,
     private val downloadManager: DownloadManager,
     private val authManager: HiddenCategoriesAuthManager,
+    private val database: AppDatabase,
 ) {
 
     /**
@@ -85,7 +86,7 @@ class LibraryUpdater @Inject constructor(
         // opt them back in.
         val includeEpubs = preferences.includeEpubsInSync.changes().first()
         val targets = resolveTargets(categoryId).let { list ->
-            if (includeEpubs) list else list.filterNot { isEpubNovel(it, extensions) }
+            list.filter { shouldSyncNovel(it) && (includeEpubs || !isEpubNovel(it, extensions)) }
         }
         val total = targets.size
         val n = preferences.concurrency.changes().first().coerceIn(1, MAX_CONCURRENCY)
@@ -110,17 +111,22 @@ class LibraryUpdater @Inject constructor(
                     while (true) {
                         val novel = mutex.withLock { queue.removeFirstOrNull() } ?: break
                         onProgress(done.get(), total, titleFor(novel))
-                        when (val result = refreshNovel(novel, extensions)) {
+                        when (val result = refreshNovel(novel, extensions, requireFavorite = true)) {
                             is NovelRefreshResult.Ok -> {
                                 newChapters.addAndGet(result.newChapters)
-                                onNovelComplete(novel, result.newReadable, result.newLocked)
+                                novelDao.getById(novel.id)?.takeIf { it.favorite }?.let {
+                                    onNovelComplete(it, result.newReadable, result.newLocked)
+                                }
                             }
                             is NovelRefreshResult.Warned -> {
                                 newChapters.addAndGet(result.newChapters)
                                 warnings.incrementAndGet()
-                                onNovelComplete(novel, result.newReadable, result.newLocked)
+                                novelDao.getById(novel.id)?.takeIf { it.favorite }?.let {
+                                    onNovelComplete(it, result.newReadable, result.newLocked)
+                                }
                             }
                             NovelRefreshResult.Failed -> errors.incrementAndGet()
+                            NovelRefreshResult.Skipped -> Unit
                         }
                         done.incrementAndGet()
                     }
@@ -167,13 +173,16 @@ class LibraryUpdater @Inject constructor(
         extensionManager.refresh()
         val novel = novelDao.getById(novelId) ?: return false
         val result = refreshNovel(novel, extensionManager.extensions.value)
-        return result !is NovelRefreshResult.Failed
+        return result is NovelRefreshResult.Ok || result is NovelRefreshResult.Warned
     }
 
     private suspend fun refreshNovel(
-        novel: NovelEntity,
+        snapshot: NovelEntity,
         extensions: List<LoadedExtension>,
+        requireFavorite: Boolean = false,
     ): NovelRefreshResult {
+        var novel = novelDao.getById(snapshot.id) ?: return NovelRefreshResult.Skipped
+        if (requireFavorite && (!novel.favorite || !shouldSyncNovel(novel))) return NovelRefreshResult.Skipped
         val loaded = extensions.firstOrNull { it.id == novel.sourceId }
         if (loaded == null) {
             setIssue(novel, "", UpdateIssueSeverity.WARNING, "Source not installed — skipped")
@@ -197,10 +206,18 @@ class LibraryUpdater @Inject constructor(
             return NovelRefreshResult.Failed
         }
 
-        val merged = mergeNovel(novel, fetched)
+        // Read and merge atomically after the network wait, so local edits cannot
+        // be replaced by the start-of-run snapshot.
+        val merged = database.withTransaction {
+            val current = novelDao.getById(novel.id) ?: return@withTransaction null
+            if (requireFavorite && !current.favorite) return@withTransaction null
+            val updated = mergeNovelMetadata(current, fetched, System.currentTimeMillis())
+            if (updated != current) novelDao.upsert(updated)
+            updated
+        } ?: return NovelRefreshResult.Skipped
+        novel = merged
         val titleRegressed = fetched.title.isBlank() && novel.title.isNotBlank()
         val regressed = titleRegressed || coverRegressed(novel, fetched)
-        novelDao.upsert(merged)
 
         val fetchedChapters = runCatching {
             withRetry { fetchAllChapters(src, fetched) }
@@ -342,22 +359,6 @@ class LibraryUpdater @Inject constructor(
         }
     }
 
-    /** Builds the saved novel, keeping each previous value when the fetched one is blank. */
-    private fun mergeNovel(old: NovelEntity, fetched: Novel): NovelEntity = old.copy(
-        title = fetched.title.takeIf { it.isNotBlank() } ?: old.title,
-        thumbnailUrl = fetched.thumbnailUrl?.takeIf { it.isNotBlank() } ?: old.thumbnailUrl,
-        author = fetched.author?.takeIf { it.isNotBlank() } ?: old.author,
-        description = fetched.description?.takeIf { it.isNotBlank() } ?: old.description,
-        genres = fetched.genres.filter { it.isNotBlank() }
-            .takeIf { it.isNotEmpty() }?.joinToString(",") ?: old.genres,
-        status = if (fetched.status != NovelStatus.UNKNOWN) fetched.status.ordinal else old.status,
-        rating = fetched.rating ?: old.rating,
-        ratingCount = fetched.ratingCount ?: old.ratingCount,
-        language = fetched.language.takeIf { it != Language.UNKNOWN && it != Language.MULTI }
-            ?.displayName ?: old.language,
-        lastUpdated = System.currentTimeMillis(),
-    )
-
     /** True when the source dropped a cover the novel previously had. */
     private fun coverRegressed(old: NovelEntity, fetched: Novel): Boolean =
         !old.thumbnailUrl.isNullOrBlank() && fetched.thumbnailUrl.isNullOrBlank()
@@ -420,6 +421,7 @@ class LibraryUpdater @Inject constructor(
             override val newLocked: Int = 0,
         ) : NovelRefreshResult
         data object Failed : NovelRefreshResult
+        data object Skipped : NovelRefreshResult
     }
 
     private companion object {

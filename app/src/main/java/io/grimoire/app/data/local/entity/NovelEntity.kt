@@ -49,7 +49,7 @@ data class NovelEntity(
     /**
      * User cover override. Precedence when rendering: [customCoverPath] (a local
      * file in filesDir/covers/{id}) > [customCoverUrl] > [thumbnailUrl] (source).
-     * Both survive a source refresh — see LibraryUpdater.mergeNovel / Novel.toEntity.
+     * Both survive source refreshes and conversions from source metadata.
      */
     val customCoverPath: String? = null,
     val customCoverUrl: String? = null,

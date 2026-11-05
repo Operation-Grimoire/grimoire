@@ -129,7 +129,7 @@ internal const val MAX_LOGGED_NEW_CHAPTERS = 150
 
 /**
  * Turns a [matchChapters] result into the delete / update / insert sets a refresh
- * applies. Each fetched chapter with a prior becomes an in-place metadata [update]
+ * applies. Each fetched chapter with changed metadata becomes an in-place [update]
  * of that row (its read state and downloaded content stay put); each fetched
  * chapter with no prior is a fresh [insert]; every existing row that matched
  * nothing is [delete]d. Pure — no downloaded text is touched.
@@ -150,7 +150,10 @@ internal fun buildReconcilePlan(
     fetched.forEachIndexed { i, ch ->
         val prev = merge.priors[i]
         if (prev != null) {
-            updates += ChapterMetaUpdate(
+            if (prev.url != ch.url || prev.name != ch.name ||
+                prev.uploadDate != ch.uploadDate || prev.chapterNumber != ch.chapterNumber ||
+                prev.translator != ch.translator || prev.locked != ch.locked
+            ) updates += ChapterMetaUpdate(
                 id = prev.id,
                 url = ch.url,
                 name = ch.name,
