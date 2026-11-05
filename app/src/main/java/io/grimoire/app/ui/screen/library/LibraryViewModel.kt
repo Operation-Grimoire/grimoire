@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -170,12 +171,13 @@ class LibraryViewModel @Inject constructor(
     // behind the chapter-stats aggregation. Scoped to favorites so the GROUP BY cost
     // tracks the library, not every browsed chapter.
     private val chapterStatsOrNull: StateFlow<Map<Long, NovelChapterStats>?> = chapterDao.getFavoriteStats()
+        .distinctUntilChanged()
         .map { list -> list.associateBy { it.novelId } }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val chapterStats: StateFlow<Map<Long, NovelChapterStats>> = chapterStatsOrNull
         .map { it.orEmpty() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     val displayMode: StateFlow<LibraryDisplayMode> = libraryPreferences.displayMode.stateIn(viewModelScope)
     val gridColumns: StateFlow<Int> = libraryPreferences.gridColumns.stateIn(viewModelScope)

@@ -43,9 +43,8 @@ class MoreViewModel @Inject constructor(
     fun toggleIncognito() = incognitoManager.toggle()
 
     val activeDownloadCount = excludeHidden
-        .flatMapLatest { chapterDao.getAllDownloads(it) }
-        .map { chapters ->
-            chapters.count { it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS }
+        .flatMapLatest {
+            chapterDao.getActiveDownloadCount(it, ChapterDownloadStatus.IN_FLIGHT_ORDINALS.toList())
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 

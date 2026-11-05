@@ -64,7 +64,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -124,42 +124,42 @@ fun LibraryScreen(
     onEpubUriHandled: () -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
-    val categories by viewModel.categories.collectAsState()
-    val chapterStats by viewModel.chapterStats.collectAsState()
-    val displayMode by viewModel.displayMode.collectAsState()
-    val gridColumns by viewModel.gridColumns.collectAsState()
-    val sortField by viewModel.sortField.collectAsState()
-    val sortDirection by viewModel.sortDirection.collectAsState()
-    val filterStatuses by viewModel.filterStatuses.collectAsState()
-    val filterStatusesExclude by viewModel.filterStatusesExclude.collectAsState()
-    val filterUnreadOnly by viewModel.filterUnreadOnly.collectAsState()
-    val filterDownloadedOnly by viewModel.filterDownloadedOnly.collectAsState()
-    val filterNotifyEnabled by viewModel.filterNotifyEnabled.collectAsState()
-    val filterAutoDownloadEnabled by viewModel.filterAutoDownloadEnabled.collectAsState()
-    val filterMinUserRating by viewModel.filterMinUserRating.collectAsState()
-    val filterMaxUserRating by viewModel.filterMaxUserRating.collectAsState()
-    val filterType by viewModel.filterType.collectAsState()
-    val filterAdult by viewModel.filterAdult.collectAsState()
-    val filterSourceIds by viewModel.filterSourceIds.collectAsState()
-    val librarySourceOptions by viewModel.librarySources.collectAsState()
-    val isUnlocked by viewModel.isUnlocked.collectAsState()
-    val hasPin by viewModel.hasPin.collectAsState()
-    val biometricEnabled by viewModel.biometricEnabled.collectAsState()
-    val includeLockedInTotals by viewModel.includeLockedInTotals.collectAsState()
-    val showReadBadge by viewModel.showReadBadge.collectAsState()
-    val showDownloadedBadge by viewModel.showDownloadedBadge.collectAsState()
-    val showLockedBadge by viewModel.showLockedBadge.collectAsState()
-    val showRatingBadge by viewModel.showRatingBadge.collectAsState()
-    val showEpubBadge by viewModel.showEpubBadge.collectAsState()
-    val epubSourceIds by viewModel.epubSourceIds.collectAsState()
-    val staging by viewModel.staging.collectAsState()
-    val importing by viewModel.importing.collectAsState()
-    val pendingImport by viewModel.pendingImport.collectAsState()
-    val importMessage by viewModel.importMessage.collectAsState()
-    val persistedCategoryId by viewModel.persistedCategoryId.collectAsState()
-    val categoriesLoaded by viewModel.categoriesLoaded.collectAsState()
-    val displayedTabs by viewModel.displayedTabs.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val chapterStats by viewModel.chapterStats.collectAsStateWithLifecycle()
+    val displayMode by viewModel.displayMode.collectAsStateWithLifecycle()
+    val gridColumns by viewModel.gridColumns.collectAsStateWithLifecycle()
+    val sortField by viewModel.sortField.collectAsStateWithLifecycle()
+    val sortDirection by viewModel.sortDirection.collectAsStateWithLifecycle()
+    val filterStatuses by viewModel.filterStatuses.collectAsStateWithLifecycle()
+    val filterStatusesExclude by viewModel.filterStatusesExclude.collectAsStateWithLifecycle()
+    val filterUnreadOnly by viewModel.filterUnreadOnly.collectAsStateWithLifecycle()
+    val filterDownloadedOnly by viewModel.filterDownloadedOnly.collectAsStateWithLifecycle()
+    val filterNotifyEnabled by viewModel.filterNotifyEnabled.collectAsStateWithLifecycle()
+    val filterAutoDownloadEnabled by viewModel.filterAutoDownloadEnabled.collectAsStateWithLifecycle()
+    val filterMinUserRating by viewModel.filterMinUserRating.collectAsStateWithLifecycle()
+    val filterMaxUserRating by viewModel.filterMaxUserRating.collectAsStateWithLifecycle()
+    val filterType by viewModel.filterType.collectAsStateWithLifecycle()
+    val filterAdult by viewModel.filterAdult.collectAsStateWithLifecycle()
+    val filterSourceIds by viewModel.filterSourceIds.collectAsStateWithLifecycle()
+    val librarySourceOptions by viewModel.librarySources.collectAsStateWithLifecycle()
+    val isUnlocked by viewModel.isUnlocked.collectAsStateWithLifecycle()
+    val hasPin by viewModel.hasPin.collectAsStateWithLifecycle()
+    val biometricEnabled by viewModel.biometricEnabled.collectAsStateWithLifecycle()
+    val includeLockedInTotals by viewModel.includeLockedInTotals.collectAsStateWithLifecycle()
+    val showReadBadge by viewModel.showReadBadge.collectAsStateWithLifecycle()
+    val showDownloadedBadge by viewModel.showDownloadedBadge.collectAsStateWithLifecycle()
+    val showLockedBadge by viewModel.showLockedBadge.collectAsStateWithLifecycle()
+    val showRatingBadge by viewModel.showRatingBadge.collectAsStateWithLifecycle()
+    val showEpubBadge by viewModel.showEpubBadge.collectAsStateWithLifecycle()
+    val epubSourceIds by viewModel.epubSourceIds.collectAsStateWithLifecycle()
+    val staging by viewModel.staging.collectAsStateWithLifecycle()
+    val importing by viewModel.importing.collectAsStateWithLifecycle()
+    val pendingImport by viewModel.pendingImport.collectAsStateWithLifecycle()
+    val importMessage by viewModel.importMessage.collectAsStateWithLifecycle()
+    val persistedCategoryId by viewModel.persistedCategoryId.collectAsStateWithLifecycle()
+    val categoriesLoaded by viewModel.categoriesLoaded.collectAsStateWithLifecycle()
+    val displayedTabs by viewModel.displayedTabs.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
 
     var showManage by remember { mutableStateOf(false) }
     var libraryMenuExpanded by remember { mutableStateOf(false) }
@@ -208,7 +208,7 @@ fun LibraryScreen(
         if (uri != null) viewModel.stageEpub(uri)
     }
 
-    val externalEpubUri by pendingEpubUri.collectAsState()
+    val externalEpubUri by pendingEpubUri.collectAsStateWithLifecycle()
     LaunchedEffect(externalEpubUri) {
         val uri = externalEpubUri ?: return@LaunchedEffect
         viewModel.stageEpub(uri)
@@ -788,7 +788,7 @@ fun LibraryScreen(
     }
 
     if (showBulkMove) {
-        val canUnlockHidden by viewModel.canUnlockHidden.collectAsState()
+        val canUnlockHidden by viewModel.canUnlockHidden.collectAsStateWithLifecycle()
         MoveToCategorySheet(
             categories = categories,
             count = selectedIds.size,
