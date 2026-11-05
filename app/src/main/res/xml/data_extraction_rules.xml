@@ -7,8 +7,6 @@
         <include domain="database" path="." />
         <include domain="file" path="covers/" />
         <include domain="file" path="epub_covers/" />
-        <exclude domain="file" path="datastore/" />
-        <exclude domain="sharedpref" path="github_auth.xml" />
     </cloud-backup>
     <device-transfer>
         <!-- Keep the app database and user covers. The DataStore mixes
@@ -17,7 +15,5 @@
         <include domain="database" path="." />
         <include domain="file" path="covers/" />
         <include domain="file" path="epub_covers/" />
-        <exclude domain="file" path="datastore/" />
-        <exclude domain="sharedpref" path="github_auth.xml" />
     </device-transfer>
 </data-extraction-rules>

@@ -6,6 +6,4 @@
     <include domain="database" path="." />
     <include domain="file" path="covers/" />
     <include domain="file" path="epub_covers/" />
-    <exclude domain="file" path="datastore/" />
-    <exclude domain="sharedpref" path="github_auth.xml" />
 </full-backup-content>

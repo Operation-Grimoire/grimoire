@@ -22,12 +22,9 @@ class AndroidBackupRulesTest {
                 element.getAttribute("domain") to element.getAttribute("path")
             }.toSet()
             assertEquals(setOf("database" to ".", "file" to "covers/", "file" to "epub_covers/"), paths)
-            val excludes = transport.getElementsByTagName("exclude")
-            val excludedPaths = (0 until excludes.length).map {
-                val element = excludes.item(it) as Element
-                element.getAttribute("domain") to element.getAttribute("path")
-            }.toSet()
-            assertEquals(setOf("file" to "datastore/", "sharedpref" to "github_auth.xml"), excludedPaths)
+            // The includes are an allowlist, and lint fails release builds on an
+            // exclude outside an included path.
+            assertEquals(0, transport.getElementsByTagName("exclude").length)
         }
     }
 }
