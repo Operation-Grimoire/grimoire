@@ -52,6 +52,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -65,6 +66,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -171,6 +173,7 @@ fun ReaderScreen(
     val novelLanguage by viewModel.novelLanguage.collectAsState()
 
     val colors = colorTheme.readerColors
+    ReaderSystemBarAppearance(colors.background.luminance() > 0.5f)
     val fontFamily = readerFont.fontFamily
     val textLayout = resolveReaderTextLayout(textAlign, novelLanguage)
     val textStyle = TextStyle(
@@ -665,5 +668,23 @@ fun ReaderScreen(
                 onOpenTtsSettings()
             },
         )
+    }
+}
+
+@Composable
+private fun ReaderSystemBarAppearance(lightReader: Boolean) {
+    val view = LocalView.current
+    val appLight = MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val window = LocalContext.current.findActivity()?.window ?: return
+    val controller = remember(window, view) { WindowCompat.getInsetsController(window, view) }
+    DisposableEffect(controller, appLight) {
+        onDispose {
+            controller.isAppearanceLightStatusBars = appLight
+            controller.isAppearanceLightNavigationBars = appLight
+        }
+    }
+    SideEffect {
+        controller.isAppearanceLightStatusBars = lightReader
+        controller.isAppearanceLightNavigationBars = lightReader
     }
 }
