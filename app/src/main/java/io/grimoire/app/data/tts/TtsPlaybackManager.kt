@@ -84,7 +84,7 @@ class TtsPlaybackManager @Inject constructor(
 
     private val audioManager by lazy { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     private var focusRequest: AudioFocusRequestCompat? = null
-    private var pausedByFocusLoss = false
+    private val focusResume = TtsFocusResumePolicy()
     private var noisyRegistered = false
 
     // Request context.
@@ -185,16 +185,29 @@ class TtsPlaybackManager @Inject constructor(
     }
 
     fun pause() {
+        focusResume.clear()
+        if (_state.value == TtsPlaybackState.PAUSED) {
+            abandonAudioFocus()
+            unregisterNoisy()
+            return
+        }
+        pausePlayback(releaseFocus = true)
+    }
+
+    private fun pausePlayback(releaseFocus: Boolean) {
         if (_state.value != TtsPlaybackState.PLAYING) return
         activeEngine?.pause()
         _state.value = TtsPlaybackState.PAUSED
-        abandonAudioFocus()
-        unregisterNoisy()
+        if (releaseFocus) {
+            abandonAudioFocus()
+            unregisterNoisy()
+        }
         updateMediaSession()
     }
 
     fun resume() {
         if (_state.value != TtsPlaybackState.PAUSED) return
+        focusResume.clear()
         val engine = activeEngine ?: return
         if (!requestAudioFocus()) return
         registerNoisy()
@@ -241,6 +254,17 @@ class TtsPlaybackManager @Inject constructor(
     }
 
     // ---- Service hooks -------------------------------------------------------
+
+    fun release() {
+        stop()
+        deviceEngine.listener = null
+        cloudEngine.listener = null
+        deviceEngine.release()
+        cloudEngine.release()
+        activeEngine = null
+        mediaSession?.release()
+        mediaSession = null
+    }
 
     fun buildNotification(): Notification {
         ensureSession()
@@ -500,7 +524,7 @@ class TtsPlaybackManager @Inject constructor(
     // ---- Audio focus & becoming-noisy --------------------------------------
 
     private fun requestAudioFocus(): Boolean {
-        val request = AudioFocusRequestCompat.Builder(AudioManagerCompat.AUDIOFOCUS_GAIN)
+        val request = focusRequest ?: AudioFocusRequestCompat.Builder(AudioManagerCompat.AUDIOFOCUS_GAIN)
             .setAudioAttributes(
                 AudioAttributesCompat.Builder()
                     .setUsage(AudioAttributesCompat.USAGE_MEDIA)
@@ -517,7 +541,7 @@ class TtsPlaybackManager @Inject constructor(
     private fun abandonAudioFocus() {
         focusRequest?.let { AudioManagerCompat.abandonAudioFocusRequest(audioManager, it) }
         focusRequest = null
-        pausedByFocusLoss = false
+        focusResume.clear()
     }
 
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
@@ -525,16 +549,12 @@ class TtsPlaybackManager @Inject constructor(
             AudioManager.AUDIOFOCUS_LOSS -> stop()
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                if (_state.value == TtsPlaybackState.PLAYING) {
-                    pause()
-                    pausedByFocusLoss = true
+                if (focusResume.transientLoss(_state.value == TtsPlaybackState.PLAYING)) {
+                    pausePlayback(releaseFocus = false)
                 }
             }
             AudioManager.AUDIOFOCUS_GAIN -> {
-                if (pausedByFocusLoss) {
-                    pausedByFocusLoss = false
-                    resume()
-                }
+                if (focusResume.gain()) resume()
             }
         }
     }

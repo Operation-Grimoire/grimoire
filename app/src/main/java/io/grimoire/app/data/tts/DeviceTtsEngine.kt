@@ -38,6 +38,10 @@ class DeviceTtsEngine @Inject constructor(
         return suspendCancellableCoroutine { cont ->
             var engine: TextToSpeech? = null
             engine = TextToSpeech(context.applicationContext) { status ->
+                if (!cont.isActive) {
+                    engine?.shutdown()
+                    return@TextToSpeech
+                }
                 ready = status == TextToSpeech.SUCCESS
                 if (ready) {
                     engine?.setAudioAttributes(
@@ -48,8 +52,14 @@ class DeviceTtsEngine @Inject constructor(
                     )
                     engine?.setOnUtteranceProgressListener(progressListener)
                     tts = engine
+                } else {
+                    engine?.shutdown()
                 }
-                if (cont.isActive) cont.resume(ready)
+                cont.resume(ready)
+            }
+            cont.invokeOnCancellation {
+                engine?.shutdown()
+                if (tts === engine) { tts = null; ready = false }
             }
         }
     }
