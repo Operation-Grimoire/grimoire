@@ -182,7 +182,7 @@ fun DownloadsScreen(
                 val target = resolveTargets(currentDownloads, selectedChapterIds)
                 val hasQueued = target.chapters.any { it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }
                 val hasInFlight = target.chapters.any { it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS }
-                val hasError = target.chapters.any { it.downloadStatus in ChapterDownloadStatus.ERROR_ORDINALS }
+                val hasError = target.editableChapters.any { it.downloadStatus in ChapterDownloadStatus.ERROR_ORDINALS }
                 val hasDownloaded = target.editableChapters.any { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
                 val hasRedownloadable = target.editableChapters.any {
                     !it.locked && (
@@ -216,7 +216,7 @@ fun DownloadsScreen(
                     icon = AppIcons.Refresh,
                     label = stringResource(R.string.action_retry),
                     onClick = {
-                        target.chapters
+                        target.editableChapters
                             .filter { it.downloadStatus in ChapterDownloadStatus.ERROR_ORDINALS }
                             .forEach { viewModel.retryChapter(it) }
                         clearSelection()
