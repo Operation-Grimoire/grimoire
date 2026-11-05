@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -28,7 +29,10 @@ class DownloadService : Service() {
     @Inject lateinit var downloadManager: DownloadManager
     @Inject lateinit var taskLogDao: TaskLogDao
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    private var drainJob: Job? = null
+    private var latestStartId = 0
 
     /** Notification text follows the in-app language override, like [io.grimoire.app.data.backup.BackupManager]. */
     private val localizedContext by lazy { AppLocale.wrap(this) }
@@ -36,30 +40,39 @@ class DownloadService : Service() {
     override fun onBind(intent: Intent?) = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        latestStartId = startId
+        if (drainJob?.isActive == true) return START_NOT_STICKY
         showNotification(localizedContext.getString(R.string.download_notification_starting))
-        scope.launch {
-            val result = downloadManager.processQueue { chapterName, remaining ->
-                val text = when {
-                    chapterName.isBlank() && remaining > 0 ->
-                        localizedContext.getString(R.string.download_notification_queued, remaining)
-                    chapterName.isBlank() ->
-                        localizedContext.getString(R.string.download_notification_working)
-                    remaining > 0 -> localizedContext.getString(
-                        R.string.download_notification_chapter_queued,
-                        chapterName,
-                        remaining,
-                    )
-                    else -> chapterName
-                }
-                showNotification(text)
+        drainJob = scope.launch {
+            try {
+                do {
+                    val drainingStartId = latestStartId
+                    // Stay responsible for taps arriving as the inline worker finishes.
+                    val result = downloadManager.processQueue(waitForTurn = true) { chapterName, remaining ->
+                        val text = when {
+                            chapterName.isBlank() && remaining > 0 ->
+                                localizedContext.getString(R.string.download_notification_queued, remaining)
+                            chapterName.isBlank() ->
+                                localizedContext.getString(R.string.download_notification_working)
+                            remaining > 0 -> localizedContext.getString(
+                                R.string.download_notification_chapter_queued,
+                                chapterName,
+                                remaining,
+                            )
+                            else -> chapterName
+                        }
+                        scope.launch { showNotification(text) }
+                    }
+                    if (result.skipped) break
+                    if (!downloadManager.isPaused.value && result.downloaded > 0) {
+                        showCompletionNotification(result.downloaded)
+                    }
+                    recordHistory(result.downloaded, result.failed)
+                } while (latestStartId != drainingStartId)
+            } finally {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelfResult(latestStartId)
             }
-            if (result.skipped) return@launch  // already processing in another coroutine — don't stop
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            if (!downloadManager.isPaused.value && result.downloaded > 0) {
-                showCompletionNotification(result.downloaded)
-            }
-            recordHistory(result.downloaded, result.failed)
-            stopSelf()
         }
         return START_NOT_STICKY
     }
@@ -79,6 +92,12 @@ class DownloadService : Service() {
                 summary = summary,
             ),
         )
+    }
+
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        scope.cancel()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     override fun onDestroy() {

@@ -13,6 +13,7 @@ import io.grimoire.app.data.local.entity.encodeChapterContent
 import io.grimoire.app.data.preferences.DownloadPreferences
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -26,7 +27,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -43,7 +44,8 @@ class DownloadManager @Inject constructor(
     private val authManager: HiddenCategoriesAuthManager,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val isProcessing = AtomicBoolean(false)
+    private val drain = DownloadDrain()
+    private val queueWrites = DownloadQueueWrites(scope)
     private val _isPaused = MutableStateFlow(false)
     val isPaused: StateFlow<Boolean> = _isPaused.asStateFlow()
 
@@ -72,7 +74,7 @@ class DownloadManager @Inject constructor(
      * notification would just collide with the sync's own progress notification.
      */
     fun enqueue(chapters: List<ChapterEntity>, force: Boolean = false, startService: Boolean = true) {
-        scope.launch {
+        queueWrites.submit {
             // NONE / ERROR rows become a fresh QUEUED; DOWNLOADED / REDOWNLOAD_ERROR (only
             // when force=true) become REDOWNLOAD_QUEUED so the row keeps reading as
             // downloaded throughout the refresh.
@@ -94,8 +96,10 @@ class DownloadManager @Inject constructor(
                 chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal)
             }
         }
-        _isPaused.value = false
-        if (startService) requestServiceStart()
+        if (startService) {
+            _isPaused.value = false
+            requestServiceStart()
+        }
     }
 
     fun cancel(chapter: ChapterEntity) {
@@ -166,13 +170,13 @@ class DownloadManager @Inject constructor(
             ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal
             else -> return
         }
-        scope.launch { chapterDao.setDownloadStatus(chapter.id, target) }
+        queueWrites.submit { chapterDao.setDownloadStatus(chapter.id, target) }
         _isPaused.value = false
         requestServiceStart()
     }
 
     fun retryAll(novelId: Long) {
-        scope.launch { chapterDao.retryAllFailed(novelId) }
+        queueWrites.submit { chapterDao.retryAllFailed(novelId) }
         _isPaused.value = false
         requestServiceStart()
     }
@@ -195,19 +199,23 @@ class DownloadManager @Inject constructor(
         scope.launch { chapterDao.cancelAllFailed(novelId) }
     }
 
-    suspend fun processQueue(onProgress: (chapterName: String, remaining: Int) -> Unit): DownloadBatchResult {
-        if (!isProcessing.compareAndSet(false, true)) return DownloadBatchResult.SKIPPED
-        // Wait for the extension scan: a drain kicked off right after process start
-        // (e.g. WorkManager re-running a queued batch) would otherwise see an empty
-        // extensions list and fail every chapter with "Source not available".
-        extensionManager.awaitReady()
-        // Read the preference directly rather than the eagerly-shared StateFlow,
-        // whose first value is the default until the DataStore read lands.
-        val n = downloadPreferences.concurrency.changes().first().coerceIn(1, 5)
-        val downloaded = AtomicInteger(0)
-        val failed = AtomicInteger(0)
-        val mutex = Mutex()
-        try {
+    suspend fun processQueue(
+        waitForTurn: Boolean = false,
+        onProgress: (chapterName: String, remaining: Int) -> Unit,
+    ): DownloadBatchResult = withContext(Dispatchers.IO) {
+        drain.run(waitForTurn, onExit = { chapterDao.resetStuckDownloads() }) {
+            queueWrites.await()
+            // Wait for the extension scan: a drain kicked off right after process start
+            // (e.g. WorkManager re-running a queued batch) would otherwise see an empty
+            // extensions list and fail every chapter with "Source not available".
+            extensionManager.awaitReady()
+            // Read the preference directly rather than the eagerly-shared StateFlow,
+            // whose first value is the default until the DataStore read lands.
+            val n = downloadPreferences.concurrency.changes().first().coerceIn(1, 5)
+            val downloaded = AtomicInteger(0)
+            val failed = AtomicInteger(0)
+            val mutex = Mutex()
+            val progress = DownloadProgressThrottle()
             chapterDao.resetStuckDownloads()
             coroutineScope {
                 repeat(n) {
@@ -235,7 +243,9 @@ class DownloadManager @Inject constructor(
                                 categoryDao.getAllOnce()
                                     .firstOrNull { it.id == novel.categoryId }?.isHidden == true
                             val displayName = if (redactName) "" else chapter.name
-                            onProgress(displayName, chapterDao.getQueuedCount())
+                            if (progress.shouldReport()) {
+                                onProgress(displayName, chapterDao.getQueuedCount())
+                            }
 
                             runCatching {
                                 if (novel == null) error("Novel not found")
@@ -256,9 +266,10 @@ class DownloadManager @Inject constructor(
                                 // fetch must not flip the chapter to ERROR.
                                 runCatching {
                                     chapterImageStore.saveImages(chapter.novelId, chapter.url, pages)
-                                }
+                                }.onFailure { if (it is CancellationException) throw it }
                                 downloaded.incrementAndGet()
                             }.onFailure {
+                                if (it is CancellationException) throw it
                                 val errorStatus = if (isRefresh) ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
                                                   else ChapterDownloadStatus.ERROR.ordinal
                                 chapterDao.setDownloadStatus(chapter.id, errorStatus)
@@ -268,10 +279,8 @@ class DownloadManager @Inject constructor(
                     }
                 }
             }
-        } finally {
-            isProcessing.set(false)
-        }
-        return DownloadBatchResult(downloaded = downloaded.get(), failed = failed.get())
+            DownloadBatchResult(downloaded = downloaded.get(), failed = failed.get())
+        } ?: DownloadBatchResult.SKIPPED
     }
 }
 
