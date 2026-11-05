@@ -10,6 +10,9 @@ import java.io.IOException
 
 internal enum class SourceSyncOutcome { SUCCESS, FAILURE, SKIPPED }
 
+// Reuse the existing localized source-unavailable message in Update Issues.
+internal const val ISSUE_SOURCE_PAUSED = "Source not available"
+
 /** One novel at a time per source; a failing source is paused for the rest of this run. */
 internal class SourceSyncGate(private val failureLimit: Int = 3) {
     private val semaphore = Semaphore(1)
@@ -29,7 +32,7 @@ internal class SourceSyncGate(private val failureLimit: Int = 3) {
 }
 
 // Extensions report HTTP failures as messages; the API has no typed HTTP exception.
-private val httpStatus = Regex("""\bHTTP\s+([45]\d{2})\b""", RegexOption.IGNORE_CASE)
+private val httpStatus = Regex("""\bHTTP\s+([1-5]\d{2})\b""", RegexOption.IGNORE_CASE)
 
 internal fun isRetryableSourceFailure(error: Throwable): Boolean {
     val causes = generateSequence(error) { it.cause }.take(8).toList()

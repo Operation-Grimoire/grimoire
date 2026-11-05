@@ -91,6 +91,8 @@ class SourceSyncPolicyTest {
     @Test
     fun `permanent and interactive failures are not retried`() {
         val failures = listOf(
+            IOException("HTTP 302 for https://source/book"),
+            IOException("HTTP 200 with invalid response data"),
             IOException("HTTP 404 for https://source/book"),
             IllegalStateException("HTTP 403 for https://source/book"),
             IOException("request failed", IOException("HTTP 410")),

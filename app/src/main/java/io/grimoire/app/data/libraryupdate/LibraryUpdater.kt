@@ -132,7 +132,16 @@ class LibraryUpdater @Inject constructor(
                                 },
                             ) {
                                 refreshNovel(current, extensions, requireFavorite = true)
-                            } ?: NovelRefreshResult.Failed
+                            } ?: run {
+                                setIssue(
+                                    current,
+                                    extensions.firstOrNull { it.id == current.sourceId }
+                                        ?.info?.packageName.orEmpty(),
+                                    UpdateIssueSeverity.ERROR,
+                                    ISSUE_SOURCE_PAUSED,
+                                )
+                                NovelRefreshResult.Failed
+                            }
                             when (result) {
                                 is NovelRefreshResult.Ok -> {
                                     newChapters.addAndGet(result.newChapters)

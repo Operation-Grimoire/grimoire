@@ -1,9 +1,15 @@
 package io.grimoire.app.ui.screen.updates
 
+import io.grimoire.app.data.libraryupdate.ISSUE_SOURCE_PAUSED
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class UpdateIssueKindTest {
+
+    @Test
+    fun `paused source issues retain the retry action`() {
+        assertEquals(UpdateIssueKind.OTHER, issueKindFor(ISSUE_SOURCE_PAUSED))
+    }
 
     @Test
     fun `source missing message maps to SOURCE_MISSING`() {
