@@ -104,7 +104,7 @@ class DownloadManager @Inject constructor(
             // downloaded throughout the refresh.
             val freshIds = mutableListOf<Long>()
             val refreshIds = mutableListOf<Long>()
-            for (ch in chapters) {
+            for (ch in editableChapters(chapters)) {
                 if (ch.locked) continue
                 when (ch.downloadStatus) {
                     ChapterDownloadStatus.NONE.ordinal,
@@ -149,25 +149,27 @@ class DownloadManager @Inject constructor(
 
     fun deleteAllDownloads(novelId: Long) {
         scope.launch {
+            if (!canManageDownloads(novelDao.getById(novelId)?.sourceId)) return@launch
             chapterDao.deleteAllDownloads(novelId)
             chapterImageStore.deleteNovel(novelId)
         }
     }
 
-    fun deleteDownload(chapter: ChapterEntity) {
-        scope.launch {
-            chapterDao.deleteDownload(chapter.id)
-            chapterImageStore.deleteChapter(chapter.novelId, chapter.url)
-        }
-    }
+    fun deleteDownload(chapter: ChapterEntity) = deleteDownloads(listOf(chapter))
 
     fun deleteDownloads(chapters: List<ChapterEntity>) {
         scope.launch {
-            chapters.forEach { chapter ->
+            editableChapters(chapters).forEach { chapter ->
                 chapterDao.deleteDownload(chapter.id)
                 chapterImageStore.deleteChapter(chapter.novelId, chapter.url)
             }
         }
+    }
+
+    private suspend fun editableChapters(chapters: List<ChapterEntity>): List<ChapterEntity> {
+        val sources = chapters.map { it.novelId }.distinct()
+            .associateWith { novelDao.getById(it)?.sourceId }
+        return chaptersForDownloadChanges(chapters, sources)
     }
 
     fun retryChapter(chapter: ChapterEntity) {
@@ -176,13 +178,19 @@ class DownloadManager @Inject constructor(
             ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal
             else -> return
         }
-        queueWrites.submit { chapterDao.setDownloadStatus(chapter.id, target) }
+        queueWrites.submit {
+            if (canManageDownloads(novelDao.getById(chapter.novelId)?.sourceId)) {
+                chapterDao.setDownloadStatus(chapter.id, target)
+            }
+        }
         queueWrites.submit { setPaused(false) }
         requestServiceStart()
     }
 
     fun retryAll(novelId: Long) {
-        queueWrites.submit { chapterDao.retryAllFailed(novelId) }
+        queueWrites.submit {
+            if (canManageDownloads(novelDao.getById(novelId)?.sourceId)) chapterDao.retryAllFailed(novelId)
+        }
         queueWrites.submit { setPaused(false) }
         requestServiceStart()
     }

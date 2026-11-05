@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import io.grimoire.app.data.download.ChapterDownloadStatus
+import io.grimoire.app.data.download.canManageDownloads
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
@@ -181,9 +182,9 @@ fun DownloadsScreen(
                 val target = resolveTargets(currentDownloads, selectedChapterIds)
                 val hasQueued = target.chapters.any { it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }
                 val hasInFlight = target.chapters.any { it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS }
-                val hasError = target.chapters.any { it.downloadStatus in ChapterDownloadStatus.ERROR_ORDINALS }
-                val hasDownloaded = target.chapters.any { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
-                val hasRedownloadable = target.chapters.any {
+                val hasError = target.editableChapters.any { it.downloadStatus in ChapterDownloadStatus.ERROR_ORDINALS }
+                val hasDownloaded = target.editableChapters.any { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
+                val hasRedownloadable = target.editableChapters.any {
                     !it.locked && (
                         it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal ||
                             it.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
@@ -215,7 +216,7 @@ fun DownloadsScreen(
                     icon = AppIcons.Refresh,
                     label = stringResource(R.string.action_retry),
                     onClick = {
-                        target.chapters
+                        target.editableChapters
                             .filter { it.downloadStatus in ChapterDownloadStatus.ERROR_ORDINALS }
                             .forEach { viewModel.retryChapter(it) }
                         clearSelection()
@@ -235,7 +236,7 @@ fun DownloadsScreen(
                     icon = AppIcons.Refresh,
                     label = stringResource(R.string.downloads_redownload),
                     onClick = {
-                        val redownloadable = target.chapters.filter {
+                        val redownloadable = target.editableChapters.filter {
                             !it.locked && (
                                 it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal ||
                                     it.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
@@ -250,7 +251,7 @@ fun DownloadsScreen(
                     icon = AppIcons.Delete,
                     label = stringResource(R.string.action_delete),
                     onClick = {
-                        target.chapters
+                        target.editableChapters
                             .filter { it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal }
                             .forEach { viewModel.deleteDownload(it) }
                         clearSelection()
@@ -342,6 +343,7 @@ fun DownloadsScreen(
                             ChildRail {
                             ChapterDownloadItem(
                                 chapter = chapter,
+                                allowDownloadChanges = canManageDownloads(novelDownloads.novel.sourceId),
                                 selected = chapter.id in selectedChapterIds,
                                 selectionMode = selectionMode,
                                 onClick = { if (selectionMode) toggleChapter(chapter.id) },
@@ -455,27 +457,30 @@ private fun StatusFilterSegments(
  * The chapters an action should touch, plus the set of novels they belong to —
  * needed for novel-scoped operations like "Cancel all failed" and "Move to top".
  */
-private data class SelectionTargets(
+internal data class SelectionTargets(
     val novelIds: Set<Long>,
     val chapters: List<ChapterEntity>,
+    val editableChapters: List<ChapterEntity>,
 )
 
-private fun resolveTargets(
+internal fun resolveTargets(
     downloads: List<NovelDownloads>?,
     selectedChapterIds: Set<Long>,
 ): SelectionTargets {
-    if (downloads == null) return SelectionTargets(emptySet(), emptyList())
+    if (downloads == null) return SelectionTargets(emptySet(), emptyList(), emptyList())
     val chapters = mutableListOf<ChapterEntity>()
     val novels = mutableSetOf<Long>()
+    val editableChapters = mutableListOf<ChapterEntity>()
     downloads.forEach { nd ->
         nd.chapters.forEach { ch ->
             if (ch.id in selectedChapterIds) {
                 chapters.add(ch)
+                if (canManageDownloads(nd.novel.sourceId)) editableChapters.add(ch)
                 novels.add(nd.novel.id)
             }
         }
     }
-    return SelectionTargets(novels, chapters)
+    return SelectionTargets(novels, chapters, editableChapters)
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -546,6 +551,7 @@ private fun NovelDownloadHeader(
 @Composable
 private fun ChapterDownloadItem(
     chapter: ChapterEntity,
+    allowDownloadChanges: Boolean,
     selected: Boolean,
     selectionMode: Boolean,
     onClick: () -> Unit,
@@ -597,7 +603,7 @@ private fun ChapterDownloadItem(
                 ChapterDownloadStatus.NONE -> Spacer(modifier = Modifier.size(20.dp))
             }
         },
-        trailingContent = if (selectionMode) {
+        trailingContent = if (selectionMode || !allowDownloadChanges) {
             null
         } else {
             {

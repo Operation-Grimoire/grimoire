@@ -1,5 +1,7 @@
 package io.grimoire.app.ui.screen.updates
 
+import io.grimoire.app.data.epub.LOCAL_PKG
+
 import io.grimoire.app.ui.icon.*
 import androidx.activity.compose.BackHandler
 import io.grimoire.app.ui.component.PlainTooltipIconButton
@@ -403,6 +405,7 @@ fun LibraryUpdatesScreen(
                                                 ChildRail {
                                                     ChapterItem(
                                                         chapter = chapter,
+                                                        allowDownloadChanges = entry.sourcePackage != LOCAL_PKG,
                                                         selected = entry.id in selectedEntryIds,
                                                         selectionMode = selectionMode,
                                                         onClick = {
@@ -520,6 +523,7 @@ private fun UpdateRow(
                 )
                 ChapterStatusTrailing(
                     chapter = chapter ?: stubChapterFromEntry(entry),
+                    allowDownloadChanges = entry.sourcePackage != LOCAL_PKG,
                     selectionMode = selectionMode,
                     onLockedClick = onClick,
                     onDownload = onDownload,
