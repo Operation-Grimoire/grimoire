@@ -29,6 +29,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.grimoire.app.BuildConfig
 import io.grimoire.app.R
 
@@ -67,6 +70,7 @@ fun SourceLoginScreen(
     viewModel: SourceLoginViewModel = hiltViewModel(),
 ) {
     val loginUrl = viewModel.loginUrl
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     var webView by remember { mutableStateOf<WebView?>(null) }
     var popupView by remember { mutableStateOf<WebView?>(null) }
@@ -74,6 +78,11 @@ fun SourceLoginScreen(
     var isLoading by remember { mutableStateOf(true) }
     var canGoBack by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
+
+    // A popup can be allocated before its AndroidView is composed.
+    DisposableEffect(Unit) {
+        onDispose { popupView?.destroy() }
+    }
 
     fun finish() {
         if (finished) return
@@ -162,7 +171,7 @@ fun SourceLoginScreen(
             Box(Modifier.fillMaxSize()) {
                 AndroidView(
                     factory = { ctx ->
-                        WebView(ctx).apply {
+                        LifecycleWebView(ctx, lifecycleOwner).apply {
                             applyLoginSettings()
                             webViewClient = object : WebViewClient() {
                                 override fun onPageStarted(
@@ -197,10 +206,13 @@ fun SourceLoginScreen(
                             }
                             webChromeClient = loginChromeClient(
                                 onProgress = { p -> loadProgress = p; isLoading = p < 100 },
-                                onOpenPopup = { popup -> popupView = popup },
-                                onClosePopup = { popupView = null },
+                                onOpenPopup = { popup ->
+                                    popupView?.destroy()
+                                    popupView = popup
+                                },
+                                onClosePopup = { closed -> if (popupView === closed) popupView = null },
                                 buildPopup = { mainView ->
-                                    WebView(mainView.context).apply {
+                                    LifecycleWebView(mainView.context, lifecycleOwner).apply {
                                         applyLoginSettings(uaFrom = mainView)
                                         webViewClient = object : WebViewClient() {
                                             override fun onPageFinished(view: WebView, url: String) {
@@ -216,23 +228,30 @@ fun SourceLoginScreen(
                         }
                     },
                     modifier = Modifier.fillMaxSize(),
+                    onRelease = { it.destroy() },
                 )
 
                 // Overlay the popup (account chooser) on top of the main WebView.
                 popupView?.let { popup ->
-                    AndroidView(
-                        factory = { ctx -> FrameLayout(ctx) },
-                        update = { container ->
-                            (popup.parent as? ViewGroup)?.removeView(popup)
-                            container.removeAllViews()
-                            container.addView(
-                                popup,
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                            )
-                        },
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    key(popup) {
+                        AndroidView(
+                            factory = { ctx -> FrameLayout(ctx) },
+                            update = { container ->
+                                (popup.parent as? ViewGroup)?.removeView(popup)
+                                container.removeAllViews()
+                                container.addView(
+                                    popup,
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                )
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                            onRelease = { container ->
+                                container.removeAllViews()
+                                popup.destroy()
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -249,7 +268,7 @@ fun SourceLoginScreen(
 private fun loginChromeClient(
     onProgress: (Int) -> Unit,
     onOpenPopup: (WebView) -> Unit,
-    onClosePopup: () -> Unit,
+    onClosePopup: (WebView) -> Unit,
     buildPopup: (mainView: WebView) -> WebView,
 ): WebChromeClient = object : WebChromeClient() {
     override fun onProgressChanged(view: WebView, newProgress: Int) {
@@ -266,7 +285,7 @@ private fun loginChromeClient(
         popup.webChromeClient = object : WebChromeClient() {
             override fun onCloseWindow(window: WebView) {
                 window.destroy()
-                onClosePopup()
+                onClosePopup(window)
             }
         }
         onOpenPopup(popup)
