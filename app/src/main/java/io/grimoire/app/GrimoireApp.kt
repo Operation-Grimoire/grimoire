@@ -15,6 +15,7 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import dagger.hilt.android.HiltAndroidApp
+import dagger.Lazy
 import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.cache.CoverPreloader
 import io.grimoire.app.data.crash.CrashLogStore
@@ -38,13 +39,13 @@ import javax.inject.Inject
 class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
 
     @Inject lateinit var hiddenAuthManager: HiddenCategoriesAuthManager
-    @Inject lateinit var coverPreloader: CoverPreloader
+    @Inject lateinit var coverPreloader: Lazy<CoverPreloader>
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var backupScheduler: BackupScheduler
     @Inject lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
     @Inject lateinit var scheduleMigrator: ScheduleMigrator
     @Inject lateinit var sourceIdMigrator: SourceIdMigrator
-    @Inject lateinit var extensionRepository: ExtensionRepository
+    @Inject lateinit var extensionRepository: Lazy<ExtensionRepository>
     @Inject lateinit var transientNovelPruner: TransientNovelPruner
     @Inject lateinit var crashLogStore: CrashLogStore
     @Inject lateinit var analytics: io.grimoire.app.data.analytics.Analytics
@@ -52,6 +53,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject @GitHubAuthorized lateinit var imageHttpClient: OkHttpClient
 
     private var relockJob: Job? = null
+    private var launchWorkStarted = false
 
     override fun attachBaseContext(base: Context) {
         // Wrap the application context too so strings resolved off the app context
@@ -120,8 +122,6 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
             }
         }
         NetworkContext.init(this)
-        coverPreloader.start()
-        extensionRepository.checkForUpdatesOnLaunch()
         val channel = NotificationChannel(
             DOWNLOAD_CHANNEL_ID,
             getString(R.string.notification_channel_downloads),
@@ -131,6 +131,11 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
+                if (!launchWorkStarted) {
+                    launchWorkStarted = true
+                    coverPreloader.get().start()
+                    extensionRepository.get().checkForUpdatesOnLaunch()
+                }
                 relockJob?.cancel()
                 relockJob = null
                 // Await the opt-in pref (and lazily init the SDK) before tracking, so the
