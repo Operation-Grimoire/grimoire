@@ -103,6 +103,9 @@ data class BackupChapter(
     val translator: String? = null,
     val read: Boolean = false,
     val readProgress: Float = 0f,
+    val readAnchorItemIndex: Int? = null,
+    val readAnchorItemOffset: Int? = null,
+    val locked: Boolean? = null,
     val firstReadAt: Long? = null,
     val wordCount: Int = 0,
 )
