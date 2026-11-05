@@ -287,6 +287,9 @@ interface ChapterDao {
     @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus IN (1, 5)")
     suspend fun getQueuedCount(): Int
 
+    @Query("SELECT COUNT(*) FROM chapters WHERE id IN (:ids) AND locked = 0 AND downloadStatus IN (1, 5)")
+    suspend fun countQueuedDownloads(ids: List<Long>): Int
+
     // Reset both DOWNLOADING (2) → QUEUED (1) and REDOWNLOADING (6) → REDOWNLOAD_QUEUED (5).
     @Query(
         "UPDATE chapters " +

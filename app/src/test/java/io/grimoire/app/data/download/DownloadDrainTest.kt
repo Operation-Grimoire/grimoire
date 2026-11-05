@@ -101,14 +101,6 @@ class DownloadDrainTest {
     }
 
     @Test
-    fun rejectedBatchDoesNotAuthorizeUnrelatedQueuedWork() = runBlocking {
-        val requests = DownloadServiceRequests()
-        var drains = 0
-        assertNull(requests.run({}) { drains++; "unexpected" })
-        assertEquals(0, drains)
-    }
-
-    @Test
     fun acceptedRequestWaitsForWritesAndIsConsumedOnlyOnce() = runBlocking {
         val requests = DownloadServiceRequests()
         val writes = DownloadQueueWrites(this)

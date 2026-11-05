@@ -51,6 +51,10 @@ class DownloadManager @Inject constructor(
     private val drain = DownloadDrain()
     private val queueWrites = DownloadQueueWrites(scope)
     private val serviceRequests = DownloadServiceRequests()
+    private val requestWriter = DownloadRequestWriter(chapterDao, novelDao) {
+        setPaused(false)
+        serviceRequests.allow()
+    }
     private val _isPaused = MutableStateFlow(false)
     val isPaused: StateFlow<Boolean> = _isPaused.asStateFlow()
     private val pauseLoaded = scope.async {
@@ -100,35 +104,7 @@ class DownloadManager @Inject constructor(
      * notification would just collide with the sync's own progress notification.
      */
     fun enqueue(chapters: List<ChapterEntity>, force: Boolean = false, startService: Boolean = true) {
-        queueWrites.submit {
-            // NONE / ERROR rows become a fresh QUEUED; DOWNLOADED / REDOWNLOAD_ERROR (only
-            // when force=true) become REDOWNLOAD_QUEUED so the row keeps reading as
-            // downloaded throughout the refresh.
-            val freshIds = mutableListOf<Long>()
-            val refreshIds = mutableListOf<Long>()
-            val eligible = editableChapters(chapters)
-            for (ch in eligible) {
-                if (ch.locked) continue
-                when (ch.downloadStatus) {
-                    ChapterDownloadStatus.NONE.ordinal,
-                    ChapterDownloadStatus.ERROR.ordinal -> freshIds += ch.id
-                    ChapterDownloadStatus.DOWNLOADED.ordinal,
-                    ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> if (force) refreshIds += ch.id
-                }
-            }
-            freshIds.chunked(999).forEach { chunk ->
-                chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.QUEUED.ordinal)
-            }
-            refreshIds.chunked(999).forEach { chunk ->
-                chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal)
-            }
-            val hasTargets = freshIds.isNotEmpty() || refreshIds.isNotEmpty() ||
-                eligible.any { !it.locked && it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }
-            if (startService && hasTargets) {
-                setPaused(false)
-                serviceRequests.allow()
-            }
-        }
+        queueWrites.submit { requestWriter.enqueue(chapters, force, startService) }
         // Reserve the foreground slot now; the service awaits eligibility and writes.
         if (startService) requestServiceStart()
     }
@@ -166,39 +142,20 @@ class DownloadManager @Inject constructor(
 
     fun deleteDownloads(chapters: List<ChapterEntity>) {
         scope.launch {
-            editableChapters(chapters).forEach { chapter ->
+            requestWriter.editableChapters(chapters).forEach { chapter ->
                 chapterDao.deleteDownload(chapter.id)
                 chapterImageStore.deleteChapter(chapter.novelId, chapter.url)
             }
         }
     }
 
-    private suspend fun editableChapters(chapters: List<ChapterEntity>): List<ChapterEntity> {
-        val sources = chapters.map { it.novelId }.distinct()
-            .associateWith { novelDao.getById(it)?.sourceId }
-        return chaptersForDownloadChanges(chapters, sources)
-    }
-
     fun retryChapter(chapter: ChapterEntity) {
-        if (chapter.downloadStatus !in ChapterDownloadStatus.ERROR_ORDINALS) return
-        queueWrites.submit {
-            if (canManageDownloads(novelDao.getById(chapter.novelId)?.sourceId)) {
-                if (chapterDao.retryDownload(chapter.id) > 0) {
-                    setPaused(false)
-                    serviceRequests.allow()
-                }
-            }
-        }
+        queueWrites.submit { requestWriter.retryChapter(chapter) }
         requestServiceStart()
     }
 
     fun retryAll(novelId: Long) {
-        queueWrites.submit {
-            if (canManageDownloads(novelDao.getById(novelId)?.sourceId) && chapterDao.retryAllFailed(novelId) > 0) {
-                setPaused(false)
-                serviceRequests.allow()
-            }
-        }
+        queueWrites.submit { requestWriter.retryAll(novelId) }
         requestServiceStart()
     }
 
