@@ -74,6 +74,9 @@ class TtsPlaybackManager @Inject constructor(
     private val _nowPlaying = MutableStateFlow<TtsNowPlaying?>(null)
     val nowPlaying: StateFlow<TtsNowPlaying?> = _nowPlaying.asStateFlow()
 
+    private val _chapterContent = MutableStateFlow<TtsChapterContent?>(null)
+    val chapterContent: StateFlow<TtsChapterContent?> = _chapterContent.asStateFlow()
+
     private val _progress = MutableStateFlow(TtsProgress())
     val progress: StateFlow<TtsProgress> = _progress.asStateFlow()
 
@@ -119,6 +122,7 @@ class TtsPlaybackManager @Inject constructor(
         playbackTask.cancel()
         engineInitialized = false
         generation++
+        _chapterContent.value = null
         completedUtterance = null
         activeEngine?.stop()
         this.pkg = pkg
@@ -226,6 +230,7 @@ class TtsPlaybackManager @Inject constructor(
         playbackTask.cancel()
         engineInitialized = false
         generation++
+        _chapterContent.value = null
         completedUtterance = null
         activeEngine?.stop()
         _state.value = TtsPlaybackState.IDLE
@@ -285,6 +290,7 @@ class TtsPlaybackManager @Inject constructor(
     private suspend fun startChapter(index: Int, preloaded: List<NovelPage>?, startIndex: Int? = null) {
         activeEngine?.stop()
         generation++
+        _chapterContent.value = null
         completedUtterance = null
         chapterIndex = index
         val chapter = chapters.getOrNull(index) ?: return fail(localizedContext.getString(R.string.tts_error_chapter_not_found))
@@ -293,6 +299,7 @@ class TtsPlaybackManager @Inject constructor(
 
         val pages = preloaded?.takeIf { it.isNotEmpty() } ?: chapterLoader.loadPages(pkg, chapter)
         currentCoroutineContext().ensureActive()
+        _nowPlaying.value?.let { _chapterContent.value = TtsChapterContent(it, pages) }
         val locale = languageResolver.resolveLocale(novelLanguage)
         utterances = TtsTextChunker.chunk(pages, locale)
         if (utterances.isEmpty()) {
@@ -445,6 +452,7 @@ class TtsPlaybackManager @Inject constructor(
         playbackTask.cancel()
         engineInitialized = false
         generation++
+        _chapterContent.value = null
         completedUtterance = null
         activeEngine?.stop()
         _state.value = TtsPlaybackState.ERROR

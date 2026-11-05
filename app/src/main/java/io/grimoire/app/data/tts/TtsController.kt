@@ -21,6 +21,7 @@ class TtsController @Inject constructor(
 ) {
     val state: StateFlow<TtsPlaybackState> = manager.state
     val nowPlaying: StateFlow<TtsNowPlaying?> = manager.nowPlaying
+    val chapterContent: StateFlow<TtsChapterContent?> = manager.chapterContent
     val progress: StateFlow<TtsProgress> = manager.progress
     val errorMessage: StateFlow<String?> = manager.errorMessage
 
