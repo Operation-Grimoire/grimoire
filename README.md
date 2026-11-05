@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-alpha-orange" alt="status" />
+  <img src="https://img.shields.io/badge/status-stable-brightgreen" alt="status" />
   <img src="https://img.shields.io/badge/minSdk-26-blue" alt="min sdk" />
   <img src="https://img.shields.io/badge/targetSdk-36-blue" alt="target sdk" />
   <img src="https://img.shields.io/badge/kotlin-2.2.10-7F52FF" alt="kotlin" />
