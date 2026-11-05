@@ -1,5 +1,12 @@
 package io.grimoire.app.domain.migration
 
+import androidx.room.withTransaction
+import io.grimoire.app.data.cover.CustomCoverStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
+import java.io.File
+import io.grimoire.app.data.local.AppDatabase
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
@@ -21,13 +28,14 @@ sealed interface MigrationState {
  * so this only updates existing rows (never inserts), sidestepping the foreign
  * key pitfalls of relying on an `@Upsert` row id.
  *
- * Chapters are paired by chapter number, falling back to a number parsed out of
- * the chapter name and then to an exact name match, so progress still carries
- * over for sources that don't expose chapter numbers.
+ * Chapters are paired by unique normalized names first, then by unambiguous
+ * chapter numbers, so repeated per-volume numbers cannot leak read state.
  */
 class NovelMigrator @Inject constructor(
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
+    private val database: AppDatabase,
+    private val coverStore: CustomCoverStore,
 ) {
 
     /**
@@ -38,7 +46,7 @@ class NovelMigrator @Inject constructor(
     suspend fun matchReadProgress(fromNovelId: Long, toNovelId: Long): List<ChapterEntity> {
         val source = chapterDao.getChaptersOnce(fromNovelId)
         val target = chapterDao.getChaptersOnce(toNovelId)
-        return matchReadProgress(source, target)
+        return matchMigratedChapters(source, target)
     }
 
     /**
@@ -46,67 +54,39 @@ class NovelMigrator @Inject constructor(
      * to the library, and removes the original from it (its history is kept).
      */
     suspend fun migrate(fromNovelId: Long, toNovelId: Long) {
-        val source = novelDao.getById(fromNovelId) ?: error("Original novel not found")
-        val target = novelDao.getById(toNovelId) ?: error("Target novel not found")
-        if (source.id == target.id) error("Cannot migrate a novel onto itself")
+        var copiedCover: File? = null
+        var previousCoverPath: String? = null
+        try {
+            database.withTransaction {
+                val source = novelDao.getById(fromNovelId) ?: error("Original novel not found")
+                val target = novelDao.getById(toNovelId) ?: error("Target novel not found")
+                if (source.id == target.id) error("Cannot migrate a novel onto itself")
 
-        val migratedChapters = matchReadProgress(fromNovelId, toNovelId)
-        if (migratedChapters.isNotEmpty()) chapterDao.upsertAll(migratedChapters)
-
-        // Save the target to the library, carrying over library metadata.
-        novelDao.upsert(
-            target.copy(
-                favorite = true,
-                categoryId = source.categoryId,
-                chapterSortOrder = source.chapterSortOrder,
-                lastReadAt = source.lastReadAt,
-            ),
-        )
-        // Drop the original from the library; its history stays in the DB.
-        novelDao.upsert(source.copy(favorite = false))
-    }
-
-    private fun matchReadProgress(
-        source: List<ChapterEntity>,
-        target: List<ChapterEntity>,
-    ): List<ChapterEntity> {
-        val readSource = source.filter { it.read || it.readProgress > 0f }
-        if (readSource.isEmpty()) return emptyList()
-
-        val byNumber = HashMap<Float, ChapterEntity>()
-        val byName = HashMap<String, ChapterEntity>()
-        for (chapter in readSource) {
-            val number = chapter.effectiveNumber()
-            if (number > 0f) byNumber.putIfAbsent(number, chapter)
-            byName.putIfAbsent(chapter.name.chapterNameKey(), chapter)
-        }
-
-        return target.mapNotNull { chapter ->
-            val match = byNumber[chapter.effectiveNumber()]
-                ?: byName[chapter.name.chapterNameKey()]
-                ?: return@mapNotNull null
-            chapter.copy(
-                read = match.read,
-                readProgress = match.readProgress,
-                firstReadAt = chapter.firstReadAt ?: match.firstReadAt,
-            )
+                previousCoverPath = target.customCoverPath
+                source.customCoverPath?.let { path ->
+                    // Finish staging so cancellation cleanup always knows the new file.
+                    withContext(NonCancellable) {
+                        copiedCover = coverStore.copyForMigration(target.id, path)
+                    }
+                }
+                val migratedChapters = matchReadProgress(fromNovelId, toNovelId)
+                if (migratedChapters.isNotEmpty()) chapterDao.upsertAll(migratedChapters)
+                novelDao.upsert(target.withMigratedMetadata(source, copiedCover?.absolutePath))
+                // Keep the original's history while moving its library membership.
+                novelDao.upsert(source.copy(favorite = false))
+            }
+        } finally {
+            if (previousCoverPath != null || copiedCover != null) {
+                withContext(NonCancellable + Dispatchers.IO) {
+                    // The persisted path distinguishes commit from rollback, even after cancellation.
+                    runCatching {
+                        coverStore.cleanupAfterMigration(
+                            toNovelId, previousCoverPath, copiedCover?.absolutePath,
+                            novelDao.getById(toNovelId)?.customCoverPath,
+                        )
+                    }
+                }
+            }
         }
     }
 }
-
-private val CHAPTER_NUMBER = Regex(
-    """\b(?:chapter|chap|episode|part)\b\.?\s*(\d+(?:\.\d+)?)""",
-    RegexOption.IGNORE_CASE,
-)
-private val ANY_NUMBER = Regex("""\d+(?:\.\d+)?""")
-private val WHITESPACE = Regex("""\s+""")
-
-/** The chapter's own number, or one parsed from its name when it has none. */
-private fun ChapterEntity.effectiveNumber(): Float {
-    if (chapterNumber > 0f) return chapterNumber
-    CHAPTER_NUMBER.find(name)?.groupValues?.get(1)?.toFloatOrNull()?.let { return it }
-    return ANY_NUMBER.find(name)?.value?.toFloatOrNull() ?: -1f
-}
-
-private fun String.chapterNameKey(): String =
-    trim().lowercase().replace(WHITESPACE, " ")

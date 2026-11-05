@@ -40,8 +40,48 @@ class CustomCoverStore @Inject constructor(
         dest.absolutePath
     }
 
+    /** Stages a target-owned copy without deleting the target's current cover. */
+    suspend fun copyForMigration(novelId: Long, sourcePath: String): File = withContext(Dispatchers.IO) {
+        copyMigrationCover(File(sourcePath), novelDir(novelId))
+    }
+
+    suspend fun cleanupAfterMigration(
+        novelId: Long,
+        previousPath: String?,
+        stagedPath: String?,
+        persistedPath: String?,
+    ) = withContext(Dispatchers.IO) {
+        cleanupMigrationCovers(novelDir(novelId), previousPath, stagedPath, persistedPath)
+    }
+
     /** Removes the saved cover for a novel, if any. */
     suspend fun delete(novelId: Long) {
         withContext(Dispatchers.IO) { novelDir(novelId).deleteRecursively() }
+    }
+}
+
+internal fun copyMigrationCover(source: File, targetDir: File): File {
+    targetDir.mkdirs()
+    val copy = File.createTempFile("migrated_", ".cover", targetDir)
+    try {
+        source.copyTo(copy, overwrite = true)
+        return copy
+    } catch (failure: Throwable) {
+        copy.delete()
+        throw failure
+    }
+}
+
+internal fun cleanupMigrationCovers(
+    targetDir: File,
+    previousPath: String?,
+    stagedPath: String?,
+    persistedPath: String?,
+) {
+    val ownedDir = targetDir.canonicalFile
+    val active = persistedPath?.let { File(it).canonicalFile }
+    for (path in listOfNotNull(previousPath, stagedPath).distinct()) {
+        val file = File(path).canonicalFile
+        if (file != active && file.parentFile == ownedDir) file.delete()
     }
 }
