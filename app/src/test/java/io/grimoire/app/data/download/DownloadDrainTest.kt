@@ -101,6 +101,32 @@ class DownloadDrainTest {
     }
 
     @Test
+    fun acceptedRequestWaitsForWritesAndIsConsumedOnlyOnce() = runBlocking {
+        val requests = DownloadServiceRequests()
+        val writes = DownloadQueueWrites(this)
+        val allowWrite = CompletableDeferred<Unit>()
+        writes.submit { allowWrite.await(); requests.allow() }
+        var drains = 0
+        val service = launch(start = CoroutineStart.UNDISPATCHED) {
+            requests.run(writes::await) { drains++; "accepted" }
+        }
+        assertEquals(0, drains)
+        allowWrite.complete(Unit)
+        service.join()
+        assertEquals(1, drains)
+        assertNull(requests.run(writes::await) { drains++; "replayed" })
+        assertEquals(1, drains)
+    }
+
+    @Test
+    fun explicitPauseRevokesPendingServiceWork() = runBlocking {
+        val requests = DownloadServiceRequests()
+        requests.allow()
+        requests.clear()
+        assertNull(requests.run({}) { "unexpected" })
+    }
+
+    @Test
     fun progressReportsImmediatelyThenAtMostOncePerSecond() {
         var time = 0L
         val throttle = DownloadProgressThrottle { time }

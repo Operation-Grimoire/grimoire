@@ -217,6 +217,12 @@ interface ChapterDao {
     @Query("UPDATE chapters SET downloadStatus = :status WHERE id = :id")
     suspend fun setDownloadStatus(id: Long, status: Int)
 
+    @Query(
+        "UPDATE chapters SET downloadStatus = :status WHERE id IN (:ids) " +
+            "AND locked = 0 AND downloadStatus IN (:previousStatuses)"
+    )
+    suspend fun queueRequestedDownloads(ids: List<Long>, status: Int, previousStatuses: List<Int>): Int
+
     @Query("UPDATE chapters SET downloadStatus = :status WHERE id IN (:ids)")
     suspend fun setDownloadStatusBatch(ids: List<Long>, status: Int)
 
@@ -287,6 +293,9 @@ interface ChapterDao {
     @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus IN (1, 5)")
     suspend fun getQueuedCount(): Int
 
+    @Query("SELECT COUNT(*) FROM chapters WHERE id IN (:ids) AND locked = 0 AND downloadStatus IN (1, 5)")
+    suspend fun countQueuedDownloads(ids: List<Long>): Int
+
     // Reset both DOWNLOADING (2) → QUEUED (1) and REDOWNLOADING (6) → REDOWNLOAD_QUEUED (5).
     @Query(
         "UPDATE chapters " +
@@ -326,13 +335,19 @@ interface ChapterDao {
         clearSettledDownloadStatus(novelId)
     }
 
+    @Query(
+        "UPDATE chapters SET downloadStatus = CASE WHEN downloadStatus = 7 THEN 5 ELSE 1 END " +
+            "WHERE id = :id AND downloadStatus IN (4, 7)"
+    )
+    suspend fun retryDownload(id: Long): Int
+
     // Retry of failed: fresh (4) → QUEUED (1); refresh (7) → REDOWNLOAD_QUEUED (5).
     @Query(
         "UPDATE chapters " +
             "SET downloadStatus = CASE WHEN downloadStatus = 7 THEN 5 ELSE 1 END " +
             "WHERE novelId = :novelId AND downloadStatus IN (4, 7)"
     )
-    suspend fun retryAllFailed(novelId: Long)
+    suspend fun retryAllFailed(novelId: Long): Int
 
     // Cancel of failed: fresh (4) → NONE (0); refresh (7) → DOWNLOADED (3), keeping the
     // existing saved content (the failed refresh didn't wipe it).

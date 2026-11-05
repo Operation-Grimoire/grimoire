@@ -50,6 +50,11 @@ class DownloadManager @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val drain = DownloadDrain()
     private val queueWrites = DownloadQueueWrites(scope)
+    private val serviceRequests = DownloadServiceRequests()
+    private val requestWriter = DownloadRequestWriter(chapterDao, novelDao) {
+        setPaused(false)
+        serviceRequests.allow()
+    }
     private val _isPaused = MutableStateFlow(false)
     val isPaused: StateFlow<Boolean> = _isPaused.asStateFlow()
     private val pauseLoaded = scope.async {
@@ -61,7 +66,7 @@ class DownloadManager @Inject constructor(
         .stateIn(scope, SharingStarted.Eagerly, downloadPreferences.concurrency.defaultValue())
 
     fun pause() {
-        queueWrites.submit { setPaused(true) }
+        queueWrites.submit { setPaused(true); serviceRequests.clear() }
     }
 
     private suspend fun setPaused(value: Boolean) {
@@ -77,12 +82,13 @@ class DownloadManager @Inject constructor(
         drain.run(false) { chapterDao.resetStuckDownloads() }
         if (!_isPaused.value && chapterDao.getPendingDownloadCount() > 0) {
             currentCoroutineContext().ensureActive()
+            serviceRequests.allow()
             requestServiceStart()
         }
     }
 
     fun resume() {
-        queueWrites.submit { setPaused(false) }
+        queueWrites.submit { setPaused(false); serviceRequests.allow() }
         requestServiceStart()
     }
 
@@ -98,32 +104,9 @@ class DownloadManager @Inject constructor(
      * notification would just collide with the sync's own progress notification.
      */
     fun enqueue(chapters: List<ChapterEntity>, force: Boolean = false, startService: Boolean = true) {
-        queueWrites.submit {
-            // NONE / ERROR rows become a fresh QUEUED; DOWNLOADED / REDOWNLOAD_ERROR (only
-            // when force=true) become REDOWNLOAD_QUEUED so the row keeps reading as
-            // downloaded throughout the refresh.
-            val freshIds = mutableListOf<Long>()
-            val refreshIds = mutableListOf<Long>()
-            for (ch in editableChapters(chapters)) {
-                if (ch.locked) continue
-                when (ch.downloadStatus) {
-                    ChapterDownloadStatus.NONE.ordinal,
-                    ChapterDownloadStatus.ERROR.ordinal -> freshIds += ch.id
-                    ChapterDownloadStatus.DOWNLOADED.ordinal,
-                    ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> if (force) refreshIds += ch.id
-                }
-            }
-            freshIds.chunked(999).forEach { chunk ->
-                chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.QUEUED.ordinal)
-            }
-            refreshIds.chunked(999).forEach { chunk ->
-                chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal)
-            }
-        }
-        if (startService) {
-            queueWrites.submit { setPaused(false) }
-            requestServiceStart()
-        }
+        queueWrites.submit { requestWriter.enqueue(chapters, force, startService) }
+        // Reserve the foreground slot now; the service awaits eligibility and writes.
+        if (startService) requestServiceStart()
     }
 
     fun cancel(chapter: ChapterEntity) = cancelDownloads(listOf(chapter))
@@ -159,39 +142,20 @@ class DownloadManager @Inject constructor(
 
     fun deleteDownloads(chapters: List<ChapterEntity>) {
         scope.launch {
-            editableChapters(chapters).forEach { chapter ->
+            requestWriter.editableChapters(chapters).forEach { chapter ->
                 chapterDao.deleteDownload(chapter.id)
                 chapterImageStore.deleteChapter(chapter.novelId, chapter.url)
             }
         }
     }
 
-    private suspend fun editableChapters(chapters: List<ChapterEntity>): List<ChapterEntity> {
-        val sources = chapters.map { it.novelId }.distinct()
-            .associateWith { novelDao.getById(it)?.sourceId }
-        return chaptersForDownloadChanges(chapters, sources)
-    }
-
     fun retryChapter(chapter: ChapterEntity) {
-        val target = when (chapter.downloadStatus) {
-            ChapterDownloadStatus.ERROR.ordinal -> ChapterDownloadStatus.QUEUED.ordinal
-            ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal
-            else -> return
-        }
-        queueWrites.submit {
-            if (canManageDownloads(novelDao.getById(chapter.novelId)?.sourceId)) {
-                chapterDao.setDownloadStatus(chapter.id, target)
-            }
-        }
-        queueWrites.submit { setPaused(false) }
+        queueWrites.submit { requestWriter.retryChapter(chapter) }
         requestServiceStart()
     }
 
     fun retryAll(novelId: Long) {
-        queueWrites.submit {
-            if (canManageDownloads(novelDao.getById(novelId)?.sourceId)) chapterDao.retryAllFailed(novelId)
-        }
-        queueWrites.submit { setPaused(false) }
+        queueWrites.submit { requestWriter.retryAll(novelId) }
         requestServiceStart()
     }
 
@@ -212,6 +176,12 @@ class DownloadManager @Inject constructor(
     fun cancelAllFailed(novelId: Long) {
         scope.launch { chapterDao.cancelAllFailed(novelId) }
     }
+
+    internal suspend fun processServiceQueue(
+        onProgress: (chapterName: String, remaining: Int) -> Unit,
+    ): DownloadBatchResult = serviceRequests.run(queueWrites::await) {
+        processQueue(waitForTurn = true, onProgress = onProgress)
+    } ?: DownloadBatchResult(downloaded = 0, failed = 0)
 
     suspend fun processQueue(
         waitForTurn: Boolean = false,

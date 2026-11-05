@@ -1,5 +1,6 @@
 package io.grimoire.app.data.download
 
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -53,5 +54,19 @@ internal class DownloadQueueWrites(private val scope: CoroutineScope) {
 
     suspend fun await() {
         mutex.withLock { }
+    }
+}
+
+/** Coalesces accepted user requests without letting rejected batches start a drain. */
+internal class DownloadServiceRequests {
+    private val pending = AtomicBoolean(false)
+
+    fun allow() { pending.set(true) }
+    fun clear() { pending.set(false) }
+
+    suspend fun <T : Any> run(awaitWrites: suspend () -> Unit, drain: suspend () -> T): T? {
+        awaitWrites()
+        if (!pending.getAndSet(false)) return null
+        return drain()
     }
 }
