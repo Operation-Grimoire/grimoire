@@ -41,7 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.api.model.novel.NovelStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
-import io.grimoire.app.data.download.canManageDownloads
+import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.app.ui.screen.browse.NovelQuickViewViewModel
 import io.grimoire.app.ui.screen.library.HiddenCategoriesUnlockDialog
 import kotlinx.coroutines.launch
@@ -145,7 +145,7 @@ fun NovelQuickViewSheet(
                     ChapterSection(
                         chapterCount = chapterCount,
                         latestChapters = latestChapters,
-                        allowDownloadChanges = canManageDownloads(novel.sourceId),
+                        allowDownloadChanges = packageName != LOCAL_PKG,
                         expanded = chaptersExpanded,
                         loading = isLoadingChapters,
                         onToggle = { chaptersExpanded = !chaptersExpanded },
