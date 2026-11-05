@@ -61,7 +61,12 @@ class NovelMigrator @Inject constructor(
                 val target = novelDao.getById(toNovelId) ?: error("Target novel not found")
                 if (source.id == target.id) error("Cannot migrate a novel onto itself")
 
-                copiedCover = source.customCoverPath?.let { coverStore.copyForMigration(target.id, it) }
+                source.customCoverPath?.let { path ->
+                    // Finish staging so cancellation cleanup always knows the new file.
+                    withContext(NonCancellable) {
+                        copiedCover = coverStore.copyForMigration(target.id, path)
+                    }
+                }
                 val migratedChapters = matchReadProgress(fromNovelId, toNovelId)
                 if (migratedChapters.isNotEmpty()) chapterDao.upsertAll(migratedChapters)
                 novelDao.upsert(target.withMigratedMetadata(source, copiedCover?.absolutePath))
