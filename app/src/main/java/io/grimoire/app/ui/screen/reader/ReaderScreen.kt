@@ -10,20 +10,14 @@ import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -74,14 +68,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -248,7 +236,9 @@ fun ReaderScreen(
     // Pause the easter-egg colour animation when the reader leaves the foreground —
     // avoids waking the recomposer for off-screen frames.
     val lifecycleOwner = LocalLifecycleOwner.current
-    var isResumed by remember { mutableStateOf(true) }
+    var isResumed by remember(lifecycleOwner) {
+        mutableStateOf(lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+    }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
@@ -261,19 +251,9 @@ fun ReaderScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // One ticker drives every visible "grimoire" — each character samples this phase plus
-    // its own position so the highlight reads as a wave rolling along the word.
-    val grimoireTransition = rememberInfiniteTransition(label = "grimoire")
-    val grimoireWavePhase by grimoireTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1800, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "grimoire_wave_phase",
-    )
     val grimoireEffectActive = grimoireEasterEggEnabled && isResumed
+    val wave = remember { GrimoireWaveClock() }
+    GrimoireWaveTicker(wave, grimoireEffectActive)
 
     // Reset scroll only on genuine chapter changes (next/prev/TTS auto-advance) — NOT on
     // composition re-entry from transient screens (e.g. returning from the in-chapter webview).
@@ -431,78 +411,17 @@ fun ReaderScreen(
                                 }
                             }
                             else -> {
-                                val highlighted = page.index == ttsSpokenPageIndex
-                                // Sources that opt into rich formatting populate
-                                // `formattedText` with the constrained-HTML subset that
-                                // AnnotatedString.fromHtml understands (<i>, <b>, <u>,
-                                // <a>, <br>, &nbsp;). Otherwise fall back to plain text.
-                                // Cached per page so we don't re-parse HTML on every
-                                // recomposition (scroll, TTS highlight, etc.).
-                                val rendered = remember(page.formattedText, page.text) {
-                                    page.formattedText?.let { AnnotatedString.fromHtml(it) }
-                                        ?: AnnotatedString(page.text.trim())
-                                }
-                                val grimoireMatches = remember(rendered) {
-                                    GRIMOIRE_REGEX.findAll(rendered.text).map { it.range }.toList()
-                                }
-                                val hasMatches = grimoireMatches.isNotEmpty()
-                                val displayText = if (grimoireEffectActive && hasMatches) {
-                                    buildAnnotatedString {
-                                        append(rendered)
-                                        grimoireMatches.forEach { r ->
-                                            val len = (r.last - r.first + 1).coerceAtLeast(1)
-                                            // One SpanStyle per character so each letter can carry a
-                                            // different phase of the wave.
-                                            for (i in 0 until len) {
-                                                val pos = i.toFloat() / len
-                                                val color = grimoireWaveColor(grimoireWavePhase, pos)
-                                                addStyle(
-                                                    SpanStyle(
-                                                        color = color,
-                                                        fontWeight = FontWeight.Bold,
-                                                    ),
-                                                    r.first + i,
-                                                    r.first + i + 1,
-                                                )
-                                            }
-                                            addStringAnnotation(
-                                                GRIMOIRE_ANNOTATION_TAG,
-                                                rendered.text.substring(r),
-                                                r.first,
-                                                r.last + 1,
-                                            )
-                                        }
-                                    }
-                                } else rendered
-                                var layoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-                                val tapModifier = if (grimoireEffectActive && hasMatches) {
-                                    Modifier.pointerInput(grimoireMatches) {
-                                        detectTapGestures { pos ->
-                                            val lr = layoutResult
-                                            val onWord = lr != null && grimoireMatches.any { range ->
-                                                val offset = lr.getOffsetForPosition(pos)
-                                                offset in range.first..range.last
-                                            }
-                                            if (onWord) showGrimoirePopup = true
-                                            else barsVisible = !barsVisible
-                                        }
-                                    }
-                                } else Modifier
-                                Text(
-                                    text = displayText,
-                                    style = textStyle,
-                                    onTextLayout = { layoutResult = it },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .then(
-                                            if (highlighted) {
-                                                Modifier.background(colors.foreground.copy(alpha = 0.10f))
-                                            } else {
-                                                Modifier
-                                            },
-                                        )
-                                        .then(tapModifier)
-                                        .padding(bottom = paragraphSpacing.dp),
+                                ReaderParagraph(
+                                    formattedText = page.formattedText,
+                                    plainText = page.text,
+                                    highlighted = page.index == ttsSpokenPageIndex,
+                                    textStyle = textStyle,
+                                    foreground = colors.foreground,
+                                    paragraphSpacing = paragraphSpacing,
+                                    effectActive = grimoireEffectActive,
+                                    wave = wave,
+                                    onWordTap = { showGrimoirePopup = true },
+                                    onOtherTap = { barsVisible = !barsVisible },
                                 )
                             }
                         }
