@@ -4,14 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.floatPreferencesKey
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.longPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.app.data.local.dao.CategoryDao
@@ -247,7 +240,7 @@ class BackupManager @Inject constructor(
     }
 
     /**
-     * Snapshot every DataStore preference, tagged by runtime value type.
+     * Snapshot portable DataStore preferences, tagged by runtime value type.
      * Credential-bearing keys are excluded: a backup is plaintext JSON the
      * user may park in shared storage or a cloud drive. Old backups that do
      * contain such a key still restore it ([restorePreferences] stays
@@ -255,7 +248,7 @@ class BackupManager @Inject constructor(
      */
     private suspend fun dumpPreferences(): List<BackupPreference> =
         dataStore.data.first().asMap().mapNotNull { (key, value) ->
-            if (key.name in SENSITIVE_PREF_KEYS) return@mapNotNull null
+            if (!shouldExportPreference(key.name)) return@mapNotNull null
             when (value) {
                 is Boolean -> BackupPreference(key.name, "b", value.toString())
                 is Int -> BackupPreference(key.name, "i", value.toString())
@@ -272,17 +265,7 @@ class BackupManager @Inject constructor(
     private suspend fun restorePreferences(preferences: List<BackupPreference>) {
         if (preferences.isEmpty()) return
         dataStore.edit { prefs ->
-            for (p in preferences) {
-                when (p.type) {
-                    "b" -> p.value?.toBooleanStrictOrNull()?.let { prefs[booleanPreferencesKey(p.key)] = it }
-                    "i" -> p.value?.toIntOrNull()?.let { prefs[intPreferencesKey(p.key)] = it }
-                    "l" -> p.value?.toLongOrNull()?.let { prefs[longPreferencesKey(p.key)] = it }
-                    "f" -> p.value?.toFloatOrNull()?.let { prefs[floatPreferencesKey(p.key)] = it }
-                    "d" -> p.value?.toDoubleOrNull()?.let { prefs[doublePreferencesKey(p.key)] = it }
-                    "s" -> p.value?.let { prefs[stringPreferencesKey(p.key)] = it }
-                    "ss" -> p.stringSet?.let { prefs[stringSetPreferencesKey(p.key)] = it.toSet() }
-                }
-            }
+            restoreBackupPreferences(prefs, preferences)
         }
     }
 
@@ -421,7 +404,5 @@ class BackupManager @Inject constructor(
     companion object {
         const val BACKUP_MIME_TYPE = "application/gzip"
 
-        /** Preference keys holding credentials/secrets — never exported (see [dumpPreferences]). */
-        private val SENSITIVE_PREF_KEYS = setOf("tts_elevenlabs_api_key")
     }
 }
