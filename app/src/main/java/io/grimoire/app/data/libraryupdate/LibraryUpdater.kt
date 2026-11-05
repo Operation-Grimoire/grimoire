@@ -24,7 +24,6 @@ import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.extension.LoadedExtension
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -60,6 +59,7 @@ class LibraryUpdater @Inject constructor(
     private val authManager: HiddenCategoriesAuthManager,
     private val database: AppDatabase,
 ) {
+    private val runMutex = Mutex()
 
     /**
      * Refreshes every favorited novel in [categoryId], or the whole library when
@@ -70,6 +70,14 @@ class LibraryUpdater @Inject constructor(
         categoryId: Long?,
         onProgress: suspend (done: Int, total: Int, title: String) -> Unit = { _, _, _ -> },
         onNovelComplete: suspend (novel: NovelEntity, newReadable: Int, newLocked: Int) -> Unit = { _, _, _ -> },
+    ): UpdateSummary = runMutex.withLock {
+        updateLibraryLocked(categoryId, onProgress, onNovelComplete)
+    }
+
+    private suspend fun updateLibraryLocked(
+        categoryId: Long?,
+        onProgress: suspend (done: Int, total: Int, title: String) -> Unit,
+        onNovelComplete: suspend (novel: NovelEntity, newReadable: Int, newLocked: Int) -> Unit,
     ): UpdateSummary {
         // Background runs can wake the process before ExtensionManager's eager
         // scan completes; without this every novel would be flagged "Source not
@@ -100,6 +108,7 @@ class LibraryUpdater @Inject constructor(
 
         val queue = ArrayDeque(targets)
         val mutex = Mutex()
+        val sourceGates = targets.map { it.sourceId }.distinct().associateWith { SourceSyncGate() }
         val done = AtomicInteger(0)
         val newChapters = AtomicInteger(0)
         val warnings = AtomicInteger(0)
@@ -110,25 +119,46 @@ class LibraryUpdater @Inject constructor(
                 launch {
                     while (true) {
                         val novel = mutex.withLock { queue.removeFirstOrNull() } ?: break
-                        onProgress(done.get(), total, titleFor(novel))
-                        when (val result = refreshNovel(novel, extensions, requireFavorite = true)) {
-                            is NovelRefreshResult.Ok -> {
-                                newChapters.addAndGet(result.newChapters)
-                                novelDao.getById(novel.id)?.takeIf { it.favorite }?.let {
-                                    onNovelComplete(it, result.newReadable, result.newLocked)
+                        try {
+                            val current = novelDao.getById(novel.id) ?: continue
+                            onProgress(done.get(), total, titleFor(current))
+                            val result = sourceGates.getValue(novel.sourceId).run(
+                                outcome = {
+                                    when (it) {
+                                        NovelRefreshResult.Failed -> SourceSyncOutcome.FAILURE
+                                        NovelRefreshResult.Skipped -> SourceSyncOutcome.SKIPPED
+                                        else -> SourceSyncOutcome.SUCCESS
+                                    }
+                                },
+                            ) {
+                                refreshNovel(current, extensions, requireFavorite = true)
+                            } ?: NovelRefreshResult.Failed
+                            when (result) {
+                                is NovelRefreshResult.Ok -> {
+                                    newChapters.addAndGet(result.newChapters)
+                                    novelDao.getById(novel.id)?.takeIf { it.favorite }?.let {
+                                        onNovelComplete(it, result.newReadable, result.newLocked)
+                                    }
                                 }
-                            }
-                            is NovelRefreshResult.Warned -> {
-                                newChapters.addAndGet(result.newChapters)
-                                warnings.incrementAndGet()
-                                novelDao.getById(novel.id)?.takeIf { it.favorite }?.let {
-                                    onNovelComplete(it, result.newReadable, result.newLocked)
+                                is NovelRefreshResult.Warned -> {
+                                    newChapters.addAndGet(result.newChapters)
+                                    warnings.incrementAndGet()
+                                    novelDao.getById(novel.id)?.takeIf { it.favorite }?.let {
+                                        onNovelComplete(it, result.newReadable, result.newLocked)
+                                    }
                                 }
+                                NovelRefreshResult.Failed -> errors.incrementAndGet()
+                                NovelRefreshResult.Skipped -> Unit
                             }
-                            NovelRefreshResult.Failed -> errors.incrementAndGet()
-                            NovelRefreshResult.Skipped -> Unit
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            // A failed DB write must not restart the whole library.
+                            Log.e(TAG, "Refresh failed for novel ${novel.id}", e)
+                            errors.incrementAndGet()
+                        } finally {
+                            done.incrementAndGet()
                         }
-                        done.incrementAndGet()
                     }
                 }
             }
@@ -166,14 +196,14 @@ class LibraryUpdater @Inject constructor(
      * A clean refresh clears the novel's issue row; a failing one re-records
      * it with the fresh error. Returns false when the refresh failed outright.
      */
-    suspend fun updateNovel(novelId: Long): Boolean {
+    suspend fun updateNovel(novelId: Long): Boolean = runMutex.withLock {
         // Full rescan, not just awaitReady: a "source not installed" issue is
         // retried right after the user installs the extension, and the retry
         // must see the fresh package set. Cheap at single-novel scale.
         extensionManager.refresh()
-        val novel = novelDao.getById(novelId) ?: return false
+        val novel = novelDao.getById(novelId) ?: return@withLock false
         val result = refreshNovel(novel, extensionManager.extensions.value)
-        return result is NovelRefreshResult.Ok || result is NovelRefreshResult.Warned
+        result is NovelRefreshResult.Ok || result is NovelRefreshResult.Warned
     }
 
     private suspend fun refreshNovel(
@@ -200,8 +230,9 @@ class LibraryUpdater @Inject constructor(
         }
 
         val fetched = runCatching {
-            withRetry { src.getNovelDetails(Novel(url = novel.url, title = "", language = Language.UNKNOWN)) }
+            retrySourceCall { src.getNovelDetails(Novel(url = novel.url, title = "", language = Language.UNKNOWN)) }
         }.getOrElse { e ->
+            if (e is CancellationException) throw e
             setIssue(novel, pkg, UpdateIssueSeverity.ERROR, describeError(e))
             return NovelRefreshResult.Failed
         }
@@ -210,8 +241,9 @@ class LibraryUpdater @Inject constructor(
         if (requireFavorite && (!novel.favorite || !shouldSyncNovel(novel))) return NovelRefreshResult.Skipped
 
         val fetchedChapters = runCatching {
-            withRetry { fetchAllChapters(src, fetched) }
+            retrySourceCall { fetchAllChapters(src, fetched, window = 2) }
         }.getOrElse { e ->
+            if (e is CancellationException) throw e
             setIssue(novel, pkg, UpdateIssueSeverity.ERROR, describeError(e))
             return NovelRefreshResult.Failed
         }
@@ -366,26 +398,6 @@ class LibraryUpdater @Inject constructor(
     private fun coverRegressed(old: NovelEntity, fetched: Novel): Boolean =
         !old.thumbnailUrl.isNullOrBlank() && fetched.thumbnailUrl.isNullOrBlank()
 
-    /**
-     * Runs [block], retrying on failure up to [MAX_ATTEMPTS] times total so a brief
-     * network drop does not fail an otherwise healthy novel. Cancellation is never
-     * retried.
-     */
-    private suspend fun <T> withRetry(block: suspend () -> T): T {
-        var lastError: Throwable? = null
-        repeat(MAX_ATTEMPTS) { attempt ->
-            try {
-                return block()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Throwable) {
-                lastError = e
-                if (attempt < MAX_ATTEMPTS - 1) delay(RETRY_DELAY_MS * (attempt + 1))
-            }
-        }
-        throw lastError ?: IllegalStateException("Retry failed")
-    }
-
     private suspend fun setIssue(
         novel: NovelEntity,
         pkg: String,
@@ -432,12 +444,6 @@ class LibraryUpdater @Inject constructor(
 
         const val REGRESSION_MESSAGE =
             "Source returned incomplete data — kept the previous title/cover"
-
-        /** Total fetch attempts per network call (1 initial + 2 retries). */
-        const val MAX_ATTEMPTS = 3
-
-        /** Base back-off between retries; the wait grows with each attempt. */
-        const val RETRY_DELAY_MS = 2_000L
 
         /** Upper bound for the user-tunable sync concurrency setting. */
         const val MAX_CONCURRENCY = 8
