@@ -3,7 +3,16 @@ package io.grimoire.app.data.download
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.app.util.text
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.SocketException
+import java.net.ProtocolException
+import java.net.UnknownHostException
+import java.io.EOFException
+import java.io.FileNotFoundException
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -77,6 +86,56 @@ class ChapterContentValidationTest {
     fun fetchReadablePages_alwaysEmpty_throws() = runBlocking {
         fetchReadablePages(sleep = {}) { emptyList<NovelPage>() }
         Unit
+    }
+
+    @Test
+    fun transientSocketFailureRetriesThenReturnsContent() = runBlocking {
+        var attempts = 0
+        val slept = mutableListOf<Long>()
+        val pages = fetchReadablePages(sleep = { slept += it }) {
+            if (++attempts < 3) throw SocketTimeoutException("stalled")
+            listOf(NovelPage(0, PageContent.Text("recovered")))
+        }
+        assertEquals("recovered", pages.single().text)
+        assertEquals(listOf(1_000L, 2_000L), slept)
+    }
+
+    @Test
+    fun exhaustedConnectivityRetriesPreserveFailureForQueueRecovery() = runBlocking {
+        val failure = SocketException("offline")
+        var attempts = 0
+        try {
+            fetchReadablePages(sleep = {}) { attempts++; throw failure }
+            throw AssertionError("expected exception")
+        } catch (e: IOException) {
+            assertSame(failure, e)
+        }
+        assertEquals(3, attempts)
+    }
+
+    @Test
+    fun cancellationNeverRetries() = runBlocking {
+        var attempts = 0
+        try {
+            fetchReadablePages(sleep = { throw AssertionError("must not sleep") }) {
+                attempts++
+                throw CancellationException("stopped")
+            }
+            throw AssertionError("expected cancellation")
+        } catch (_: CancellationException) {
+            assertEquals(1, attempts)
+        }
+    }
+
+    @Test
+    fun connectivityClassificationIncludesWrappedIoButExcludesParserErrors() {
+        assertTrue(IllegalStateException("source failed", UnknownHostException("offline")).isConnectivityFailure())
+        assertFalse(IllegalArgumentException("bad markup").isConnectivityFailure())
+        assertTrue(SocketTimeoutException("stalled").isConnectivityFailure())
+        assertTrue(EOFException("truncated response").isConnectivityFailure())
+        assertFalse(ProtocolException("permanent source response").isConnectivityFailure())
+        assertFalse(FileNotFoundException("local file missing").isConnectivityFailure())
+        assertFalse(IOException("source rejected the request").isConnectivityFailure())
     }
 
     @Test

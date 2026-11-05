@@ -15,9 +15,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import io.grimoire.app.data.crash.CrashLogStore
+import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.preferences.UiPreferences
 import io.grimoire.app.ui.AppNavigation
 import io.grimoire.app.ui.NAV_TARGET_CRASH
@@ -33,6 +36,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.awaitCancellation
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -41,6 +45,8 @@ class MainActivity : FragmentActivity() {
     @Inject lateinit var uiPreferences: UiPreferences
 
     @Inject lateinit var crashLogStore: CrashLogStore
+
+    @Inject lateinit var downloadManager: DownloadManager
 
     private val notifPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
@@ -61,6 +67,12 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                downloadManager.restartPendingDownloads()
+                awaitCancellation()
+            }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED

@@ -758,7 +758,7 @@ fun NovelDetailScreen(
                             )
                     }
                     val showCancel = selectedChapters.any {
-                        it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS
+                        it.downloadStatus in ChapterDownloadStatus.IN_FLIGHT_ORDINALS
                     }
                     val singleSelection = selectedIds.size == 1
                     TooltipIconButton(
