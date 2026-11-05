@@ -22,6 +22,8 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.preferences.TtsPreferences
 import io.grimoire.app.util.AppLocale
 import io.grimoire.app.util.ContentLanguages
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -62,6 +64,9 @@ class TtsPlaybackManager @Inject constructor(
     private val localizedContext get() = AppLocale.wrap(context)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val playbackTask = TtsPlaybackTask(scope) { e ->
+        fail(e.message ?: localizedContext.getString(R.string.tts_error_start_playback))
+    }
 
     private val _state = MutableStateFlow(TtsPlaybackState.IDLE)
     val state: StateFlow<TtsPlaybackState> = _state.asStateFlow()
@@ -94,6 +99,7 @@ class TtsPlaybackManager @Inject constructor(
 
     // Current chapter playback.
     private var activeEngine: TtsEngine? = null
+    private var engineInitialized = false
     private var utterances: List<Utterance> = emptyList()
     private var utteranceIndex = 0
     private var generation = 0
@@ -109,6 +115,8 @@ class TtsPlaybackManager @Inject constructor(
         startIndex: Int,
         pages: List<NovelPage>,
     ) {
+        playbackTask.cancel()
+        engineInitialized = false
         generation++
         activeEngine?.stop()
         this.pkg = pkg
@@ -126,43 +134,43 @@ class TtsPlaybackManager @Inject constructor(
 
     /** Begins playback. Called by [TtsPlaybackService] once it is in the foreground. */
     fun startPlayback() {
-        scope.launch {
-            try {
-                _state.value = TtsPlaybackState.LOADING
-                val engineType = ttsPreferences.engine.changes().first()
-                val engine = if (engineType == TtsEngineType.ELEVENLABS) cloudEngine else deviceEngine
-                engine.listener = engineListener
-                activeEngine = engine
+        playbackTask.launch {
+            engineInitialized = false
+            _state.value = TtsPlaybackState.LOADING
+            val engineType = ttsPreferences.engine.changes().first()
+            val engine = if (engineType == TtsEngineType.ELEVENLABS) cloudEngine else deviceEngine
+            engine.listener = engineListener
+            activeEngine = engine
 
-                if (chapters.isEmpty()) chapters = chapterLoader.loadChapterList(novelId)
-                if (chapters.isEmpty()) return@launch fail(localizedContext.getString(R.string.tts_error_no_chapters))
-                pendingChapterUrl?.let { url ->
-                    val match = chapters.indexOfFirst { it.url == url }
-                    if (match >= 0) chapterIndex = match
-                }
-
-                novelDao.getById(novelId)?.let {
-                    novelTitle = it.title
-                    novelLanguage = it.language
-                }
-                novelDao.updateLastReadAt(novelId, System.currentTimeMillis())
-                updateNowPlaying()
-
-                // Configure before init() so the cloud engine sees the API key.
-                configureEngine(languageResolver.resolveLocale(novelLanguage))
-                if (!engine.init()) {
-                    return@launch fail(
-                        if (engine.type == TtsEngineType.ELEVENLABS) {
-                            localizedContext.getString(R.string.tts_error_missing_api_key)
-                        } else {
-                            localizedContext.getString(R.string.tts_error_device_unavailable)
-                        },
-                    )
-                }
-                startChapter(chapterIndex, preloadedPages)
-            } catch (e: Exception) {
-                fail(e.message ?: localizedContext.getString(R.string.tts_error_start_playback))
+            if (chapters.isEmpty()) chapters = chapterLoader.loadChapterList(novelId)
+            if (chapters.isEmpty()) return@launch fail(localizedContext.getString(R.string.tts_error_no_chapters))
+            pendingChapterUrl?.let { url ->
+                val match = chapters.indexOfFirst { it.url == url }
+                if (match >= 0) chapterIndex = match
             }
+
+            novelDao.getById(novelId)?.let {
+                novelTitle = it.title
+                novelLanguage = it.language
+            }
+            novelDao.updateLastReadAt(novelId, System.currentTimeMillis())
+            updateNowPlaying()
+
+            // Configure before init() so the cloud engine sees the API key.
+            configureEngine(languageResolver.resolveLocale(novelLanguage))
+            val initialized = engine.init()
+            currentCoroutineContext().ensureActive()
+            if (!initialized) {
+                return@launch fail(
+                    if (engine.type == TtsEngineType.ELEVENLABS) {
+                        localizedContext.getString(R.string.tts_error_missing_api_key)
+                    } else {
+                        localizedContext.getString(R.string.tts_error_device_unavailable)
+                    },
+                )
+            }
+            engineInitialized = true
+            startChapter(chapterIndex, preloadedPages)
         }
     }
 
@@ -194,6 +202,8 @@ class TtsPlaybackManager @Inject constructor(
     }
 
     fun stop() {
+        playbackTask.cancel()
+        engineInitialized = false
         generation++
         activeEngine?.stop()
         _state.value = TtsPlaybackState.IDLE
@@ -207,15 +217,17 @@ class TtsPlaybackManager @Inject constructor(
     }
 
     fun skipNext() {
+        if (!engineInitialized) return
         if (chapterIndex >= chapters.size - 1) return
-        scope.launch { runCatching { startChapter(chapterIndex + 1, null) } }
+        playbackTask.launch { startChapter(chapterIndex + 1, null, startIndex = 0) }
     }
 
     fun skipPrevious() {
-        scope.launch {
+        if (!engineInitialized) return
+        playbackTask.launch {
             // Restart the current chapter if well into it, otherwise go to the previous one.
             val target = if (utteranceIndex > 2 || chapterIndex == 0) chapterIndex else chapterIndex - 1
-            runCatching { startChapter(target, null) }
+            startChapter(target, null, startIndex = 0)
         }
     }
 
@@ -237,7 +249,7 @@ class TtsPlaybackManager @Inject constructor(
 
     // ---- Chapter playback ---------------------------------------------------
 
-    private suspend fun startChapter(index: Int, preloaded: List<NovelPage>?) {
+    private suspend fun startChapter(index: Int, preloaded: List<NovelPage>?, startIndex: Int? = null) {
         activeEngine?.stop()
         generation++
         chapterIndex = index
@@ -246,17 +258,19 @@ class TtsPlaybackManager @Inject constructor(
         updateNowPlaying()
 
         val pages = preloaded?.takeIf { it.isNotEmpty() } ?: chapterLoader.loadPages(pkg, chapter)
+        currentCoroutineContext().ensureActive()
         val locale = languageResolver.resolveLocale(novelLanguage)
         utterances = TtsTextChunker.chunk(pages, locale)
         if (utterances.isEmpty()) {
             if (autoAdvance() && chapterIndex < chapters.size - 1) {
-                return startChapter(chapterIndex + 1, null)
+                return startChapter(chapterIndex + 1, null, startIndex = 0)
             }
             return fail(localizedContext.getString(R.string.tts_error_no_readable_text))
         }
 
-        utteranceIndex = resumeUtterance(chapter)
+        utteranceIndex = chapterStartUtterance(chapter.read, chapter.readProgress, utterances.size, startIndex)
         configureEngine(locale)
+        currentCoroutineContext().ensureActive()
         if (!requestAudioFocus()) return fail(localizedContext.getString(R.string.tts_error_audio_focus))
         registerNoisy()
         mediaSession?.isActive = true
@@ -268,7 +282,7 @@ class TtsPlaybackManager @Inject constructor(
         val engine = activeEngine ?: return
         val utterance = utterances.getOrNull(utteranceIndex)
         if (utterance == null) {
-            scope.launch { endOfChapter() }
+            playbackTask.launch { endOfChapter() }
             return
         }
         _progress.value = TtsProgress(utteranceIndex, utterances.size, utterance.pageIndex)
@@ -286,8 +300,10 @@ class TtsPlaybackManager @Inject constructor(
                 chapterDao.setRead(chapter.id, true)
             }
         }
+        currentCoroutineContext().ensureActive()
         if (autoAdvance() && chapterIndex < chapters.size - 1) {
-            startChapter(chapterIndex + 1, null)
+            currentCoroutineContext().ensureActive()
+            startChapter(chapterIndex + 1, null, startIndex = 0)
         } else {
             stop()
         }
@@ -307,9 +323,12 @@ class TtsPlaybackManager @Inject constructor(
         override fun onDone(utteranceId: String) {
             scope.launch {
                 if (parseGeneration(utteranceId) != generation) return@launch
-                persistProgress()
-                utteranceIndex++
-                if (utteranceIndex >= utterances.size) endOfChapter() else speakCurrent()
+                playbackTask.launch {
+                    persistProgress()
+                    currentCoroutineContext().ensureActive()
+                    utteranceIndex++
+                    if (utteranceIndex >= utterances.size) endOfChapter() else speakCurrent()
+                }
             }
         }
 
@@ -326,13 +345,6 @@ class TtsPlaybackManager @Inject constructor(
         if (utterances.isEmpty()) return
         val fraction = ((utteranceIndex + 1).toFloat() / utterances.size).coerceIn(0f, 1f)
         runCatching { chapterDao.setReadProgress(chapter.id, fraction) }
-    }
-
-    private fun resumeUtterance(chapter: ChapterEntity): Int {
-        if (chapter.read) return 0
-        val progress = chapter.readProgress
-        if (progress <= 0.01f || progress >= 0.97f) return 0
-        return (progress * utterances.size).toInt().coerceIn(0, utterances.size - 1)
     }
 
     private suspend fun configureEngine(locale: java.util.Locale) {
@@ -380,6 +392,8 @@ class TtsPlaybackManager @Inject constructor(
     private suspend fun autoAdvance(): Boolean = ttsPreferences.autoAdvance.changes().first()
 
     private fun fail(message: String) {
+        playbackTask.cancel()
+        engineInitialized = false
         generation++
         activeEngine?.stop()
         _state.value = TtsPlaybackState.ERROR
