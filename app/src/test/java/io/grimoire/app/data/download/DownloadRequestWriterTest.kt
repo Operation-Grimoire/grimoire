@@ -64,6 +64,17 @@ class DownloadRequestWriterTest {
     }
 
     @Test
+    fun largeBatchLeavesRoomForSqlStatusParameters() = runBlocking {
+        val fixture = Fixture()
+        val chapters = (1_000L until 3_000L).map { chapter(it, ChapterDownloadStatus.NONE) }
+        chapters.forEach { fixture.rows[it.id] = it }
+        fixture.writer.enqueue(chapters, force = false, startService = true)
+        assertTrue(fixture.writeBindCounts.all { it <= 999 })
+        assertTrue(chapters.all { fixture.rows.getValue(it.id).downloadStatus == ChapterDownloadStatus.QUEUED.ordinal })
+        assertEquals(2_001, fixture.serviceDrain()?.size)
+    }
+
+    @Test
     fun inlineWorkerEnqueueKeepsPauseAndDoesNotAuthorizeService() = runBlocking {
         val fixture = Fixture()
         fixture.writer.enqueue(listOf(fixture.rows.getValue(3)), force = false, startService = false)
@@ -75,6 +86,7 @@ class DownloadRequestWriterTest {
     private class Fixture {
         var paused = true
         val requests = DownloadServiceRequests()
+        val writeBindCounts = mutableListOf<Int>()
         val rows = linkedMapOf(
             1L to chapter(1, ChapterDownloadStatus.QUEUED),
             2L to chapter(2, ChapterDownloadStatus.DOWNLOADED),
@@ -87,6 +99,7 @@ class DownloadRequestWriterTest {
                     val ids = args[0] as List<Long>
                     @Suppress("UNCHECKED_CAST")
                     val previous = args[2] as List<Int>
+                    writeBindCounts += ids.size + previous.size + 1
                     ids.count { id ->
                         val chapter = rows[id]
                         if (chapter == null || chapter.locked || chapter.downloadStatus !in previous) false else {

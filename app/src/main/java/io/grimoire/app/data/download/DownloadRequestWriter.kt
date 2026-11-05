@@ -26,13 +26,14 @@ internal class DownloadRequestWriter(
             it.downloadStatus == ChapterDownloadStatus.DOWNLOADED.ordinal ||
                 it.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
         }.map { it.id } else emptyList()
-        freshIds.chunked(999).forEach {
+        // Leave three bind slots for status and the two previous states.
+        freshIds.chunked(996).forEach {
             chapterDao.queueRequestedDownloads(
                 it, ChapterDownloadStatus.QUEUED.ordinal,
                 listOf(ChapterDownloadStatus.NONE.ordinal, ChapterDownloadStatus.ERROR.ordinal),
             )
         }
-        refreshIds.chunked(999).forEach {
+        refreshIds.chunked(996).forEach {
             chapterDao.queueRequestedDownloads(
                 it, ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal,
                 listOf(ChapterDownloadStatus.DOWNLOADED.ordinal, ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal),
