@@ -11,12 +11,11 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.util.AppLocale
-import io.grimoire.app.util.text
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Loads chapter lists and chapter text for the TTS service without going through
+ * Loads chapter lists and original pages for the TTS service without going through
  * [io.grimoire.app.ui.screen.reader.ReaderViewModel]. Mirrors the reader's
  * cached-or-live loading: downloaded content is reconstructed from the database,
  * otherwise the extension source is queried.
@@ -36,12 +35,11 @@ class TtsChapterLoader @Inject constructor(
 
     suspend fun loadPages(pkg: String, chapter: ChapterEntity): List<NovelPage> {
         // Re-read the row (the passed entity may be a stale snapshot) and serve a
-        // downloaded chapter's saved text instead of hitting the network.
+        // downloaded chapter's saved pages instead of hitting the network.
         val full = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
         val cached = chapterDao.getContent(full.id)
         if (cached != null) {
-            // Image pages carry no prose; drop them so read-aloud only speaks text.
-            return decodeChapterContent(cached).filter { it.text.isNotBlank() }
+            return decodeChapterContent(cached)
         }
         val source = extensionManager.extensions.value
             .firstOrNull { it.info.packageName == pkg }
@@ -53,7 +51,7 @@ class TtsChapterLoader @Inject constructor(
             ?: throw IllegalStateException(
                 localizedContext.getString(R.string.tts_error_source_no_text),
             )
-        return pageSource.getPageList(full.toChapter()).filter { it.text.isNotBlank() }
+        return pageSource.getPageList(full.toChapter())
     }
 }
 

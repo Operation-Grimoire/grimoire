@@ -285,14 +285,15 @@ class ReaderViewModel @Inject constructor(
         }
         // Keep the reader in sync when TTS auto-advances or skips chapters.
         viewModelScope.launch {
-            ttsController.nowPlaying.drop(1).collect { nowPlaying ->
-                val url = nowPlaying?.chapterUrl ?: return@collect
+            ttsController.chapterContent.drop(1).collect { content ->
+                content ?: return@collect
+                val url = content.nowPlaying.chapterUrl
                 if (ttsController.state.value == TtsPlaybackState.IDLE) return@collect
-                val index = _chapters.value.indexOfFirst { it.url == url }
+                val index = content.readerChapterIndex(pkg, _chapters.value)
                 if (index >= 0 && index != _currentIndex.value) {
                     _currentIndex.value = index
                     onChapterChanged(url)
-                    loadPages()
+                    loadPages(preloaded = content.pages)
                 }
             }
         }
@@ -348,13 +349,16 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    fun loadPages() {
+    fun loadPages() = loadPages(preloaded = null)
+
+    private fun loadPages(preloaded: List<NovelPage>?) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
         viewModelScope.launch {
             // The in-memory chapter list is a snapshot from init; re-read this row so a
             // download that completed since then is served from disk, not refetched.
             val fresh = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
             val cached = chapterDao.getContent(fresh.id)
+            if (preloaded != null && _chapters.value.getOrNull(_currentIndex.value)?.id != chapter.id) return@launch
             if (cached != null) {
                 val pages = decodeChapterContent(cached)
                     .filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
@@ -367,6 +371,13 @@ class ReaderViewModel @Inject constructor(
                 _isLoading.value = false
                 _error.value = null
                 recordWordCount(fresh, pages)
+                return@launch
+            }
+            if (preloaded != null) {
+                _pages.value = preloaded
+                _isLoading.value = false
+                _error.value = null
+                recordWordCount(fresh, preloaded)
                 return@launch
             }
             _isLoading.value = true
