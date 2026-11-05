@@ -55,10 +55,16 @@ class BackupRestoreMergeTest {
         val backup = BackupChapter("chapter", "Chapter", readProgress = .6f,
             readAnchorItemIndex = 60, readAnchorItemOffset = 9)
         val missing = local.copy(readAnchorItemIndex = 0, readAnchorItemOffset = 0)
-        assertEquals(60, mergeBackupChapter(backup, missing, 4).readAnchorItemIndex)
-        assertEquals(42, mergeBackupChapter(backup, local, 4).readAnchorItemIndex)
+        val restoredMissing = mergeBackupChapter(backup, missing, 4)
+        assertEquals(60, restoredMissing.readAnchorItemIndex)
+        assertEquals(9, restoredMissing.readAnchorItemOffset)
+        val restoredKnown = mergeBackupChapter(backup, local, 4)
+        assertEquals(42, restoredKnown.readAnchorItemIndex)
+        assertEquals(17, restoredKnown.readAnchorItemOffset)
         val absent = backup.copy(readProgress = .8f, readAnchorItemIndex = 0, readAnchorItemOffset = 0)
-        assertEquals(42, mergeBackupChapter(absent, local, 4).readAnchorItemIndex)
+        val restoredAbsent = mergeBackupChapter(absent, local, 4)
+        assertEquals(42, restoredAbsent.readAnchorItemIndex)
+        assertEquals(17, restoredAbsent.readAnchorItemOffset)
     }
 
     @Test fun `new-device EPUB is skipped while existing EPUB state can merge`() {
