@@ -76,8 +76,19 @@ interface ChapterDao {
     }
 
     /** Downloaded text of one chapter, or null when nothing is saved. */
-    @Query("SELECT content FROM chapter_content WHERE chapterId = :chapterId")
-    suspend fun getContent(chapterId: Long): String?
+    @Transaction
+    suspend fun getContent(chapterId: Long): String? {
+        val byteLength = getContentByteLength(chapterId) ?: return null
+        return readChapterContentInChunks(byteLength) { start, length ->
+            getContentChunk(chapterId, start, length)
+        }
+    }
+
+    @Query(CHAPTER_CONTENT_LENGTH_QUERY)
+    suspend fun getContentByteLength(chapterId: Long): Long?
+
+    @Query(CHAPTER_CONTENT_CHUNK_QUERY)
+    suspend fun getContentChunk(chapterId: Long, start: Long, length: Int): ByteArray?
 
     @Upsert
     suspend fun upsertContent(content: ChapterContentEntity)
@@ -437,17 +448,14 @@ interface ChapterDao {
     """)
     fun getFavoriteStats(): Flow<List<NovelChapterStats>>
 
-    @Query("""
-        SELECT c.id AS id, cc.content AS content FROM chapters c
-        INNER JOIN chapter_content cc ON cc.chapterId = c.id
-        WHERE c.read = 1 AND c.wordCount = 0
-    """)
-    suspend fun getReadDownloadedMissingWordCount(): List<ChapterContent>
+    @Query(READ_DOWNLOADS_MISSING_WORD_COUNT_QUERY)
+    suspend fun getReadDownloadedMissingWordCountIds(): List<Long>
 
     suspend fun backfillWordCountsFromDownloads() {
-        for (c in getReadDownloadedMissingWordCount()) {
-            val n = countWordsIn(c.content)
-            if (n > 0) setWordCount(c.id, n)
+        for (id in getReadDownloadedMissingWordCountIds()) {
+            val content = getContent(id) ?: continue
+            val n = countWordsIn(content)
+            if (n > 0) setWordCount(id, n)
         }
     }
 
@@ -496,8 +504,6 @@ data class StorageChapterStats(
     val downloadedTextCount: Int,
     val downloadedTextBytes: Long,
 )
-
-data class ChapterContent(val id: Long, val content: String)
 
 /** A chapter row plus its saved text; see [ChapterDao.getDownloadedChaptersWithContent]. */
 data class ChapterWithContent(
