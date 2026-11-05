@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
     <cloud-backup>
-        <!-- Only durable library data and user covers travel. The DataStore mixes
+        <!-- Keep the app database and user covers. The DataStore mixes
              settings with credentials; GitHub auth also uses device keystore keys.
-             File caches, logs and future files are excluded by this allowlist. -->
+             File caches, crash logs and future files are excluded by this allowlist. -->
         <include domain="database" path="." />
         <include domain="file" path="covers/" />
         <include domain="file" path="epub_covers/" />
@@ -11,9 +11,9 @@
         <exclude domain="sharedpref" path="github_auth.xml" />
     </cloud-backup>
     <device-transfer>
-        <!-- Only durable library data and user covers travel. The DataStore mixes
+        <!-- Keep the app database and user covers. The DataStore mixes
              settings with credentials; GitHub auth also uses device keystore keys.
-             File caches, logs and future files are excluded by this allowlist. -->
+             File caches, crash logs and future files are excluded by this allowlist. -->
         <include domain="database" path="." />
         <include domain="file" path="covers/" />
         <include domain="file" path="epub_covers/" />

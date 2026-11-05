@@ -1,5 +1,7 @@
 package io.grimoire.app.data.backup
 
+import androidx.datastore.preferences.core.mutablePreferencesOf
+import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -28,7 +30,11 @@ class BackupPreferencePolicyTest {
                 {"key":"hidden_pin_salt","type":"s","value":"test-salt"}
             ]
         }""")
-        assertEquals(listOf("test-password", "test-hash", "test-salt"), backup.preferences.map { it.value })
+        val restored = mutablePreferencesOf()
+        restoreBackupPreferences(restored, backup.preferences)
+        assertEquals("test-password", restored[stringPreferencesKey("source.old.extension.password")])
+        assertEquals("test-hash", restored[stringPreferencesKey("hidden_pin_hash")])
+        assertEquals("test-salt", restored[stringPreferencesKey("hidden_pin_salt")])
     }
 
 }
