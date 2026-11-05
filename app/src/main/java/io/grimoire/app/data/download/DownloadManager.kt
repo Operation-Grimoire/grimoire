@@ -13,7 +13,7 @@ import io.grimoire.app.data.local.entity.encodeChapterContent
 import io.grimoire.app.data.preferences.DownloadPreferences
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
-import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -45,7 +45,7 @@ class DownloadManager @Inject constructor(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val drain = DownloadDrain()
-    private val queueWrites = Mutex()
+    private val queueWrites = DownloadQueueWrites(scope)
     private val _isPaused = MutableStateFlow(false)
     val isPaused: StateFlow<Boolean> = _isPaused.asStateFlow()
 
@@ -74,33 +74,31 @@ class DownloadManager @Inject constructor(
      * notification would just collide with the sync's own progress notification.
      */
     fun enqueue(chapters: List<ChapterEntity>, force: Boolean = false, startService: Boolean = true) {
-        scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            queueWrites.withLock {
-                // NONE / ERROR rows become a fresh QUEUED; DOWNLOADED / REDOWNLOAD_ERROR (only
-                // when force=true) become REDOWNLOAD_QUEUED so the row keeps reading as
-                // downloaded throughout the refresh.
-                val freshIds = mutableListOf<Long>()
-                val refreshIds = mutableListOf<Long>()
-                for (ch in chapters) {
-                    if (ch.locked) continue
-                    when (ch.downloadStatus) {
-                        ChapterDownloadStatus.NONE.ordinal,
-                        ChapterDownloadStatus.ERROR.ordinal -> freshIds += ch.id
-                        ChapterDownloadStatus.DOWNLOADED.ordinal,
-                        ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> if (force) refreshIds += ch.id
-                    }
-                }
-                freshIds.chunked(999).forEach { chunk ->
-                    chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.QUEUED.ordinal)
-                }
-                refreshIds.chunked(999).forEach { chunk ->
-                    chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal)
+        queueWrites.submit {
+            // NONE / ERROR rows become a fresh QUEUED; DOWNLOADED / REDOWNLOAD_ERROR (only
+            // when force=true) become REDOWNLOAD_QUEUED so the row keeps reading as
+            // downloaded throughout the refresh.
+            val freshIds = mutableListOf<Long>()
+            val refreshIds = mutableListOf<Long>()
+            for (ch in chapters) {
+                if (ch.locked) continue
+                when (ch.downloadStatus) {
+                    ChapterDownloadStatus.NONE.ordinal,
+                    ChapterDownloadStatus.ERROR.ordinal -> freshIds += ch.id
+                    ChapterDownloadStatus.DOWNLOADED.ordinal,
+                    ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> if (force) refreshIds += ch.id
                 }
             }
-            if (startService) {
-                _isPaused.value = false
-                requestServiceStart()
+            freshIds.chunked(999).forEach { chunk ->
+                chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.QUEUED.ordinal)
             }
+            refreshIds.chunked(999).forEach { chunk ->
+                chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal)
+            }
+        }
+        if (startService) {
+            _isPaused.value = false
+            requestServiceStart()
         }
     }
 
@@ -172,19 +170,15 @@ class DownloadManager @Inject constructor(
             ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal
             else -> return
         }
-        scope.launch {
-            chapterDao.setDownloadStatus(chapter.id, target)
-            _isPaused.value = false
-            requestServiceStart()
-        }
+        queueWrites.submit { chapterDao.setDownloadStatus(chapter.id, target) }
+        _isPaused.value = false
+        requestServiceStart()
     }
 
     fun retryAll(novelId: Long) {
-        scope.launch {
-            chapterDao.retryAllFailed(novelId)
-            _isPaused.value = false
-            requestServiceStart()
-        }
+        queueWrites.submit { chapterDao.retryAllFailed(novelId) }
+        _isPaused.value = false
+        requestServiceStart()
     }
 
     /**
@@ -209,8 +203,8 @@ class DownloadManager @Inject constructor(
         waitForTurn: Boolean = false,
         onProgress: (chapterName: String, remaining: Int) -> Unit,
     ): DownloadBatchResult = withContext(Dispatchers.IO) {
-        drain.run(waitForTurn) {
-            queueWrites.withLock { /* Await writes queued before this drain. */ }
+        drain.run(waitForTurn, onExit = { chapterDao.resetStuckDownloads() }) {
+            queueWrites.await()
             // Wait for the extension scan: a drain kicked off right after process start
             // (e.g. WorkManager re-running a queued batch) would otherwise see an empty
             // extensions list and fail every chapter with "Source not available".
@@ -272,9 +266,10 @@ class DownloadManager @Inject constructor(
                                 // fetch must not flip the chapter to ERROR.
                                 runCatching {
                                     chapterImageStore.saveImages(chapter.novelId, chapter.url, pages)
-                                }
+                                }.onFailure { if (it is CancellationException) throw it }
                                 downloaded.incrementAndGet()
                             }.onFailure {
+                                if (it is CancellationException) throw it
                                 val errorStatus = if (isRefresh) ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
                                                   else ChapterDownloadStatus.ERROR.ordinal
                                 chapterDao.setDownloadStatus(chapter.id, errorStatus)

@@ -1,17 +1,32 @@
 package io.grimoire.app.data.download
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.Mutex
 
 /** Serializes service and inline-worker drains, including initialization. */
 internal class DownloadDrain {
     private val mutex = Mutex()
 
-    suspend fun <T : Any> run(waitForTurn: Boolean, block: suspend () -> T): T? {
+    suspend fun <T : Any> run(
+        waitForTurn: Boolean,
+        onExit: suspend () -> Unit = {},
+        block: suspend () -> T,
+    ): T? {
         if (waitForTurn) mutex.lock() else if (!mutex.tryLock()) return null
         try {
             return block()
         } finally {
-            mutex.unlock()
+            try {
+                withContext(NonCancellable) { onExit() }
+            } finally {
+                mutex.unlock()
+            }
         }
     }
 }
@@ -25,5 +40,18 @@ internal class DownloadProgressThrottle(private val now: () -> Long = System::na
         if (lastReport?.let { current - it < 1_000_000_000L } == true) return false
         lastReport = current
         return true
+    }
+}
+
+/** Registers writes before returning, then does the work off the caller thread. */
+internal class DownloadQueueWrites(private val scope: CoroutineScope) {
+    private val mutex = Mutex()
+
+    fun submit(block: suspend () -> Unit) = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+        mutex.withLock { withContext(Dispatchers.IO) { block() } }
+    }
+
+    suspend fun await() {
+        mutex.withLock { }
     }
 }

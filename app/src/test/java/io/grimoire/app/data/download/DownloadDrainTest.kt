@@ -60,6 +60,47 @@ class DownloadDrainTest {
     }
 
     @Test
+    fun cancellationCleansUpBeforeAnotherDrainCanStart() = runBlocking {
+        val drain = DownloadDrain()
+        val entered = CompletableDeferred<Unit>()
+        var cleaned = false
+        val worker = launch(start = CoroutineStart.UNDISPATCHED) {
+            drain.run(false, onExit = {
+                assertNull(drain.run(false) { "overlap" })
+                cleaned = true
+            }) {
+                entered.complete(Unit)
+                CompletableDeferred<Unit>().await()
+            }
+        }
+        entered.await()
+        worker.cancelAndJoin()
+        assertTrue(cleaned)
+        assertEquals("ready", drain.run(false) { "ready" })
+    }
+
+    @Test
+    fun immediateServiceDrainWaitsForRegisteredQueueWrites() = runBlocking {
+        val writes = DownloadQueueWrites(this)
+        val allowWrite = CompletableDeferred<Unit>()
+        val persisted = CompletableDeferred<Unit>()
+        val callerThread = Thread.currentThread()
+        val writer = writes.submit {
+            assertNotSame(callerThread, Thread.currentThread())
+            allowWrite.await()
+            persisted.complete(Unit)
+        }
+        val service = launch(start = CoroutineStart.UNDISPATCHED) {
+            writes.await()
+            assertTrue(persisted.isCompleted)
+        }
+        assertFalse(service.isCompleted)
+        allowWrite.complete(Unit)
+        writer.join()
+        service.join()
+    }
+
+    @Test
     fun progressReportsImmediatelyThenAtMostOncePerSecond() {
         var time = 0L
         val throttle = DownloadProgressThrottle { time }
