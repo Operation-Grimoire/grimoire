@@ -156,14 +156,22 @@ class AppUpdateSelectionTest {
 
     @Test fun betaNotesIncludeLatestStableOutsideTheListPage() {
         val actual = notesReleasesSince(listOf(release("v1.0.0-beta.303")),
-            "1.0.0-beta.302", "1.0.1", UpdateChannel.BETA, release("v1.0.1"))
+            "1.0.0-beta.302", "1.0.1", UpdateChannel.BETA) { release("v1.0.1") }
         assertEquals(listOf("v1.0.1", "v1.0.0-beta.303"), actual.map { it.tag_name })
     }
 
     @Test fun latestStableAppearsOnlyOnceWhenAlreadyListed() {
         val actual = notesReleasesSince(listOf(release("v1.0.1"), release("v1.0.0-beta.303")),
-            "1.0.0-beta.302", "1.0.1", UpdateChannel.BETA, release("v1.0.1"))
+            "1.0.0-beta.302", "1.0.1", UpdateChannel.BETA) { release("v1.0.1") }
         assertEquals(listOf("v1.0.1", "v1.0.0-beta.303"), actual.map { it.tag_name })
+    }
+
+    @Test fun latestStableLookupFailurePreservesListNotes() {
+        val actual = notesReleasesSince(listOf(release("v1.0.0-beta.303")),
+            "1.0.0-beta.302", "1.0.0-beta.303", UpdateChannel.BETA) {
+            throw IOException("latest stable endpoint unavailable")
+        }
+        assertEquals(listOf("v1.0.0-beta.303"), actual.map { it.tag_name })
     }
 
     @Test fun betaNotesFromStableIncludeNewerSameBaseBetas() {

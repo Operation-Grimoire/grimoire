@@ -70,8 +70,9 @@ internal fun notesReleasesSince(
     fromTag: String,
     toTag: String,
     channel: UpdateChannel,
-    latestStable: GitHubRelease? = null,
+    fetchLatestStable: () -> GitHubRelease? = { null },
 ): List<GitHubRelease> {
+    val latestStable = runCatching { fetchLatestStable() }.getOrNull()
     val included = releases.withLatestStable(latestStable).filter { release ->
         if (release.tag_name.isBlank()) return@filter false
         when (channel) {
