@@ -47,6 +47,19 @@ class MigrationStateTransferTest {
         assertTrue(matchMigratedChapters(source, target).single().read)
     }
 
+    @Test fun volumeAndUnlabeledNumbersAreNotChapterNumbers() {
+        assertTrue(matchMigratedChapters(listOf(chapter("Volume 2: Interlude", -1f, true)),
+            listOf(chapter("Volume 2: Afterword", -1f))).isEmpty())
+        assertTrue(matchMigratedChapters(listOf(chapter("Interlude 2", -1f, true)),
+            listOf(chapter("Afterword 2", -1f))).isEmpty())
+    }
+
+    @Test fun chapterAbbreviationsSupportNumberFallback() {
+        val source = listOf(chapter("Vol. 2 Ch.3: Before", -1f, true))
+        assertTrue(matchMigratedChapters(source,
+            listOf(chapter("V2 Chapter3: After", -1f))).single().read)
+    }
+
     @Test fun unknownNumbersDoNotMatchUnrelatedNames() {
         assertTrue(matchMigratedChapters(listOf(chapter("Intro", -1f, true)),
             listOf(chapter("Opening", -1f))).isEmpty())
@@ -61,6 +74,7 @@ class MigrationStateTransferTest {
         assertEquals(2L, actual.novelId)
         assertEquals("new-url", actual.url)
         assertEquals(3, actual.downloadStatus)
+        assertFalse(actual.read)
         assertEquals(0.4f, actual.readProgress, 0f)
         assertEquals(8, actual.readAnchorItemIndex)
         assertEquals(25, actual.readAnchorItemOffset)
@@ -75,7 +89,7 @@ class MigrationStateTransferTest {
             overrideTitle = "My title", overrideAuthor = "My author", overrideDescription = "My synopsis",
             overrideStatus = 1, overrideGenres = "Custom")
         val target = NovelEntity(id = 2, sourceId = 2, url = "new", title = "Target", author = "Target author")
-        val actual = target.withMigratedMetadata(source)
+        val actual = target.withMigratedMetadata(source, "/covers/2/migrated")
         assertEquals(2L, actual.id)
         assertEquals(2L, actual.sourceId)
         assertEquals("new", actual.url)
@@ -90,7 +104,7 @@ class MigrationStateTransferTest {
         assertTrue(actual.autoDownloadNewChapters)
         assertEquals(9, actual.userRating)
         assertEquals(3, actual.readerTextAlign)
-        assertEquals(source.customCoverPath, actual.customCoverPath)
+        assertEquals("/covers/2/migrated", actual.customCoverPath)
         assertEquals(source.customCoverUrl, actual.customCoverUrl)
         assertEquals("My title", actual.effectiveTitle)
         assertEquals("My author", actual.effectiveAuthor)

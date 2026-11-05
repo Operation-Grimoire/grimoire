@@ -1,6 +1,11 @@
 package io.grimoire.app.domain.migration
 
 import androidx.room.withTransaction
+import io.grimoire.app.data.cover.CustomCoverStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
+import java.io.File
 import io.grimoire.app.data.local.AppDatabase
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -30,6 +35,7 @@ class NovelMigrator @Inject constructor(
     private val novelDao: NovelDao,
     private val chapterDao: ChapterDao,
     private val database: AppDatabase,
+    private val coverStore: CustomCoverStore,
 ) {
 
     /**
@@ -48,16 +54,30 @@ class NovelMigrator @Inject constructor(
      * to the library, and removes the original from it (its history is kept).
      */
     suspend fun migrate(fromNovelId: Long, toNovelId: Long) {
-        database.withTransaction {
-            val source = novelDao.getById(fromNovelId) ?: error("Original novel not found")
-            val target = novelDao.getById(toNovelId) ?: error("Target novel not found")
-            if (source.id == target.id) error("Cannot migrate a novel onto itself")
+        var copiedCover: File? = null
+        try {
+            database.withTransaction {
+                val source = novelDao.getById(fromNovelId) ?: error("Original novel not found")
+                val target = novelDao.getById(toNovelId) ?: error("Target novel not found")
+                if (source.id == target.id) error("Cannot migrate a novel onto itself")
 
-            val migratedChapters = matchReadProgress(fromNovelId, toNovelId)
-            if (migratedChapters.isNotEmpty()) chapterDao.upsertAll(migratedChapters)
-            novelDao.upsert(target.withMigratedMetadata(source))
-            // Keep the original's history while moving its library membership.
-            novelDao.upsert(source.copy(favorite = false))
+                copiedCover = source.customCoverPath?.let { coverStore.copyForMigration(target.id, it) }
+                val migratedChapters = matchReadProgress(fromNovelId, toNovelId)
+                if (migratedChapters.isNotEmpty()) chapterDao.upsertAll(migratedChapters)
+                novelDao.upsert(target.withMigratedMetadata(source, copiedCover?.absolutePath))
+                // Keep the original's history while moving its library membership.
+                novelDao.upsert(source.copy(favorite = false))
+            }
+        } catch (failure: Throwable) {
+            copiedCover?.let { copy ->
+                withContext(NonCancellable + Dispatchers.IO) {
+                    // Cancellation can arrive after commit. Never delete a referenced cover.
+                    runCatching {
+                        if (novelDao.getById(toNovelId)?.customCoverPath != copy.absolutePath) copy.delete()
+                    }
+                }
+            }
+            throw failure
         }
     }
 }

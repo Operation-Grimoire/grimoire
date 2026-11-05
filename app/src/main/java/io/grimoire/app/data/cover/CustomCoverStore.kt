@@ -40,8 +40,25 @@ class CustomCoverStore @Inject constructor(
         dest.absolutePath
     }
 
+    /** Stages a target-owned copy without deleting the target's current cover. */
+    suspend fun copyForMigration(novelId: Long, sourcePath: String): File = withContext(Dispatchers.IO) {
+        copyMigrationCover(File(sourcePath), novelDir(novelId))
+    }
+
     /** Removes the saved cover for a novel, if any. */
     suspend fun delete(novelId: Long) {
         withContext(Dispatchers.IO) { novelDir(novelId).deleteRecursively() }
+    }
+}
+
+internal fun copyMigrationCover(source: File, targetDir: File): File {
+    targetDir.mkdirs()
+    val copy = File.createTempFile("migrated_", ".cover", targetDir)
+    try {
+        source.copyTo(copy, overwrite = true)
+        return copy
+    } catch (failure: Throwable) {
+        copy.delete()
+        throw failure
     }
 }

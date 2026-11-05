@@ -4,7 +4,10 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import java.util.Locale
 
-internal fun NovelEntity.withMigratedMetadata(source: NovelEntity): NovelEntity = copy(
+internal fun NovelEntity.withMigratedMetadata(
+    source: NovelEntity,
+    migratedCoverPath: String?,
+): NovelEntity = copy(
     favorite = true,
     categoryId = source.categoryId,
     chapterSortOrder = source.chapterSortOrder,
@@ -14,7 +17,7 @@ internal fun NovelEntity.withMigratedMetadata(source: NovelEntity): NovelEntity 
     autoDownloadNewChapters = source.autoDownloadNewChapters,
     userRating = source.userRating,
     readerTextAlign = source.readerTextAlign,
-    customCoverPath = source.customCoverPath,
+    customCoverPath = migratedCoverPath,
     customCoverUrl = source.customCoverUrl,
     overrideTitle = source.overrideTitle,
     overrideAuthor = source.overrideAuthor,
@@ -69,17 +72,16 @@ internal fun matchMigratedChapters(
 }
 
 private val CHAPTER_NUMBER = Regex(
-    """\b(?:chapter|chap|episode|part)\b\.?\s*(\d+(?:\.\d+)?)""",
+    """\b(?:chapter|chap|ch|episode|ep|part)\.?\s*(\d+(?:\.\d+)?)""",
     RegexOption.IGNORE_CASE,
 )
 private val VOLUME_NUMBER = Regex("""\b(?:volume|vol|book|v)\.?\s*(\d+)\b""", RegexOption.IGNORE_CASE)
-private val ANY_NUMBER = Regex("""\d+(?:\.\d+)?""")
 private val WHITESPACE = Regex("""\s+""")
 
 private fun ChapterEntity.effectiveNumber(): Float {
     if (chapterNumber > 0f) return chapterNumber
     CHAPTER_NUMBER.find(name)?.groupValues?.get(1)?.toFloatOrNull()?.let { return it }
-    return ANY_NUMBER.find(name)?.value?.toFloatOrNull() ?: -1f
+    return -1f
 }
 
 private fun ChapterEntity.volumeNumber(): Int? =
