@@ -32,7 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,7 +85,7 @@ fun AppNavigation(
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
 
-    val target by pendingTarget.collectAsState()
+    val target by pendingTarget.collectAsStateWithLifecycle()
     LaunchedEffect(target) {
         val t = target ?: return@LaunchedEffect
         val route = when {
@@ -112,7 +112,7 @@ fun AppNavigation(
     // An EPUB arriving from an external "Open with" needs the Library tab to be
     // visible so its import-preview dialog has somewhere to render. LibraryScreen
     // is the one that actually consumes the URI and clears the flow.
-    val epubUri by pendingEpubUri.collectAsState()
+    val epubUri by pendingEpubUri.collectAsStateWithLifecycle()
     LaunchedEffect(epubUri) {
         if (epubUri == null) return@LaunchedEffect
         // Same cold-start hazard as the pending target above: an "Open with"
@@ -158,16 +158,16 @@ fun AppNavigation(
 
     val scope = rememberCoroutineScope()
     val moreVm: MoreViewModel = hiltViewModel()
-    val activeDownloadCount by moreVm.activeDownloadCount.collectAsState()
-    val subscribedUpdateCount by moreVm.subscribedUpdateCount.collectAsState()
-    val extensionUpdateCount by moreVm.extensionUpdateCount.collectAsState()
-    val incognito by moreVm.incognito.collectAsState()
+    val activeDownloadCount by moreVm.activeDownloadCount.collectAsStateWithLifecycle()
+    val subscribedUpdateCount by moreVm.subscribedUpdateCount.collectAsStateWithLifecycle()
+    val extensionUpdateCount by moreVm.extensionUpdateCount.collectAsStateWithLifecycle()
+    val incognito by moreVm.incognito.collectAsStateWithLifecycle()
 
     // Tours. The registry collects target bounds; the controller owns which tour
     // is running + the position. AppNavigation is the one place that can both see
     // the current route and drive navigation, so it bridges the two.
     val tourController = hiltViewModel<TourViewModel>().controller
-    val tourState by tourController.state.collectAsState()
+    val tourState by tourController.state.collectAsStateWithLifecycle()
     val tourRegistry = remember { TourRegistry() }
     val tourSteps = tourState.tourId?.let { tourById(it).steps }.orEmpty()
 

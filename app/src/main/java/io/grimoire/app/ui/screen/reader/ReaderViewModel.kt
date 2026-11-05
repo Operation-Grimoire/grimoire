@@ -50,6 +50,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
@@ -158,16 +159,17 @@ class ReaderViewModel @Inject constructor(
 
     /**
      * Fraction (0..1) of chapters in the current chapter's novel that are marked read. Computed
-     * by chapter count from the existing [ChapterDao.getStatsForAll] query. Honors the library's
+     * by chapter count from the existing [ChapterDao.getStatsForNovel] query. Honors the library's
      * "Include locked chapters in totals" preference so the in-reader Book % matches what the
      * library row shows for the same novel.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     val novelProgress: StateFlow<Float> = currentChapter
         .filterNotNull()
+        .distinctUntilChangedBy { it.novelId }
         .flatMapLatest { chapter ->
-            combine(chapterDao.getStatsForAll(), libraryPreferences.includeLockedInTotals.changes()) { all, includeLocked ->
-                val stats = all.firstOrNull { it.novelId == chapter.novelId } ?: return@combine 0f
+            combine(chapterDao.getStatsForNovel(chapter.novelId), libraryPreferences.includeLockedInTotals.changes()) { stats, includeLocked ->
+                if (stats == null) return@combine 0f
                 val denom = stats.effectiveTotal(includeLocked)
                 if (denom <= 0) 0f else stats.readCount.toFloat() / denom
             }

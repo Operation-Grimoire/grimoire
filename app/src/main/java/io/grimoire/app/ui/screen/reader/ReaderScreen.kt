@@ -55,7 +55,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -128,49 +128,49 @@ fun ReaderScreen(
     modifier: Modifier = Modifier,
     viewModel: ReaderViewModel = hiltViewModel(),
 ) {
-    val pages by viewModel.pages.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val currentChapter by viewModel.currentChapter.collectAsState()
-    val hasPrev by viewModel.hasPrev.collectAsState()
-    val hasNext by viewModel.hasNext.collectAsState()
+    val pages by viewModel.pages.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    val currentChapter by viewModel.currentChapter.collectAsStateWithLifecycle()
+    val hasPrev by viewModel.hasPrev.collectAsStateWithLifecycle()
+    val hasNext by viewModel.hasNext.collectAsStateWithLifecycle()
 
-    val fontSize by viewModel.fontSize.collectAsState()
-    val lineHeightTimes10 by viewModel.lineHeightTimes10.collectAsState()
-    val paragraphSpacing by viewModel.paragraphSpacing.collectAsState()
-    val readerFont by viewModel.readerFont.collectAsState()
-    val savedColorTheme by viewModel.colorTheme.collectAsState()
+    val fontSize by viewModel.fontSize.collectAsStateWithLifecycle()
+    val lineHeightTimes10 by viewModel.lineHeightTimes10.collectAsStateWithLifecycle()
+    val paragraphSpacing by viewModel.paragraphSpacing.collectAsStateWithLifecycle()
+    val readerFont by viewModel.readerFont.collectAsStateWithLifecycle()
+    val savedColorTheme by viewModel.colorTheme.collectAsStateWithLifecycle()
     val colorTheme = resolveReaderColorTheme(savedColorTheme, isSystemInDarkTheme())
-    val orientation by viewModel.orientation.collectAsState()
-    val hideNotificationBar by viewModel.hideNotificationBar.collectAsState()
-    val hideInlineImages by viewModel.hideInlineImages.collectAsState()
-    val showChapterProgressPercent by viewModel.showChapterProgressPercent.collectAsState()
-    val showNovelProgressPercent by viewModel.showNovelProgressPercent.collectAsState()
-    val grimoireEasterEggEnabled by viewModel.grimoireEasterEggEnabled.collectAsState()
-    val markAsReadStrategy by viewModel.markAsReadStrategy.collectAsState()
-    val markAsReadThreshold by viewModel.markAsReadThreshold.collectAsState()
-    val markAsReadParagraphsFromEnd by viewModel.markAsReadParagraphsFromEnd.collectAsState()
-    val novelProgress by viewModel.novelProgress.collectAsState()
-    val revealedImageUrls by viewModel.revealedImageUrls.collectAsState()
+    val orientation by viewModel.orientation.collectAsStateWithLifecycle()
+    val hideNotificationBar by viewModel.hideNotificationBar.collectAsStateWithLifecycle()
+    val hideInlineImages by viewModel.hideInlineImages.collectAsStateWithLifecycle()
+    val showChapterProgressPercent by viewModel.showChapterProgressPercent.collectAsStateWithLifecycle()
+    val showNovelProgressPercent by viewModel.showNovelProgressPercent.collectAsStateWithLifecycle()
+    val grimoireEasterEggEnabled by viewModel.grimoireEasterEggEnabled.collectAsStateWithLifecycle()
+    val markAsReadStrategy by viewModel.markAsReadStrategy.collectAsStateWithLifecycle()
+    val markAsReadThreshold by viewModel.markAsReadThreshold.collectAsStateWithLifecycle()
+    val markAsReadParagraphsFromEnd by viewModel.markAsReadParagraphsFromEnd.collectAsStateWithLifecycle()
+    val novelProgress by viewModel.novelProgress.collectAsStateWithLifecycle()
+    val revealedImageUrls by viewModel.revealedImageUrls.collectAsStateWithLifecycle()
 
-    val ttsState by viewModel.ttsState.collectAsState()
-    val ttsCurrentUrl by viewModel.ttsCurrentUrl.collectAsState()
-    val ttsSpokenPageIndex by viewModel.ttsSpokenPageIndex.collectAsState()
-    val ttsError by viewModel.ttsError.collectAsState()
+    val ttsState by viewModel.ttsState.collectAsStateWithLifecycle()
+    val ttsCurrentUrl by viewModel.ttsCurrentUrl.collectAsStateWithLifecycle()
+    val ttsSpokenPageIndex by viewModel.ttsSpokenPageIndex.collectAsStateWithLifecycle()
+    val ttsError by viewModel.ttsError.collectAsStateWithLifecycle()
 
-    val ttsEnabled by viewModel.ttsEnabled.collectAsState()
-    val ttsEngine by viewModel.ttsEngine.collectAsState()
-    val ttsSpeechRate by viewModel.ttsSpeechRate.collectAsState()
-    val ttsPitch by viewModel.ttsPitch.collectAsState()
-    val ttsAutoAdvance by viewModel.ttsAutoAdvance.collectAsState()
+    val ttsEnabled by viewModel.ttsEnabled.collectAsStateWithLifecycle()
+    val ttsEngine by viewModel.ttsEngine.collectAsStateWithLifecycle()
+    val ttsSpeechRate by viewModel.ttsSpeechRate.collectAsStateWithLifecycle()
+    val ttsPitch by viewModel.ttsPitch.collectAsStateWithLifecycle()
+    val ttsAutoAdvance by viewModel.ttsAutoAdvance.collectAsStateWithLifecycle()
 
     val ttsActiveForChapter = currentChapter?.url != null &&
         currentChapter?.url == ttsCurrentUrl &&
         ttsState != TtsPlaybackState.IDLE && ttsState != TtsPlaybackState.ERROR
     val ttsPlayingThisChapter = ttsActiveForChapter && ttsState == TtsPlaybackState.PLAYING
 
-    val textAlign by viewModel.textAlign.collectAsState()
-    val novelLanguage by viewModel.novelLanguage.collectAsState()
+    val textAlign by viewModel.textAlign.collectAsStateWithLifecycle()
+    val novelLanguage by viewModel.novelLanguage.collectAsStateWithLifecycle()
 
     val colors = colorTheme.readerColors
     ReaderSystemBarAppearance(colors.background.luminance() > 0.5f)
