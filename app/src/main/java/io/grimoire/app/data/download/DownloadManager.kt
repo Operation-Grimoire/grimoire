@@ -74,6 +74,7 @@ class DownloadManager @Inject constructor(
     suspend fun restartPendingDownloads() {
         pauseLoaded.await()
         queueWrites.await()
+        drain.run(false) { chapterDao.resetStuckDownloads() }
         if (!_isPaused.value && chapterDao.getPendingDownloadCount() > 0) {
             currentCoroutineContext().ensureActive()
             requestServiceStart()
