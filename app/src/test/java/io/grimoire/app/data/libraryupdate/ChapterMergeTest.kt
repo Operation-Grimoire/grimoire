@@ -236,6 +236,13 @@ class ChapterMergeTest {
             val fetched = listOf(changed)
             val plan = buildReconcilePlan(1L, listOf(old), fetched, matchChapters(listOf(old), fetched))
             assertEquals(listOf(7L), plan.updates.map { it.id })
+            val update = plan.updates.single()
+            assertEquals(changed.url, update.url)
+            assertEquals(changed.name, update.name)
+            assertEquals(changed.uploadDate, update.uploadDate)
+            assertEquals(changed.chapterNumber, update.chapterNumber, 0f)
+            assertEquals(changed.translator, update.translator)
+            assertEquals(changed.locked, update.locked)
             assertTrue(plan.deleteIds.isEmpty())
             assertTrue(plan.inserts.isEmpty())
         }

@@ -206,18 +206,8 @@ class LibraryUpdater @Inject constructor(
             return NovelRefreshResult.Failed
         }
 
-        // Read and merge atomically after the network wait, so local edits cannot
-        // be replaced by the start-of-run snapshot.
-        val merged = database.withTransaction {
-            val current = novelDao.getById(novel.id) ?: return@withTransaction null
-            if (requireFavorite && !current.favorite) return@withTransaction null
-            val updated = mergeNovelMetadata(current, fetched, System.currentTimeMillis())
-            if (updated != current) novelDao.upsert(updated)
-            updated
-        } ?: return NovelRefreshResult.Skipped
-        novel = merged
-        val titleRegressed = fetched.title.isBlank() && novel.title.isNotBlank()
-        val regressed = titleRegressed || coverRegressed(novel, fetched)
+        novel = novelDao.getById(novel.id) ?: return NovelRefreshResult.Skipped
+        if (requireFavorite && (!novel.favorite || !shouldSyncNovel(novel))) return NovelRefreshResult.Skipped
 
         val fetchedChapters = runCatching {
             withRetry { fetchAllChapters(src, fetched) }
@@ -225,6 +215,19 @@ class LibraryUpdater @Inject constructor(
             setIssue(novel, pkg, UpdateIssueSeverity.ERROR, describeError(e))
             return NovelRefreshResult.Failed
         }
+
+        // Read and merge atomically after both network waits, so local edits cannot
+        // be replaced by the start-of-run snapshot.
+        val merged = database.withTransaction {
+            val current = novelDao.getById(novel.id) ?: return@withTransaction null
+            if (requireFavorite && (!current.favorite || !shouldSyncNovel(current))) return@withTransaction null
+            val updated = mergeNovelMetadata(current, fetched, System.currentTimeMillis())
+            if (updated != current) novelDao.upsert(updated)
+            updated
+        } ?: return NovelRefreshResult.Skipped
+        novel = merged
+        val titleRegressed = fetched.title.isBlank() && novel.title.isNotBlank()
+        val regressed = titleRegressed || coverRegressed(novel, fetched)
 
         // Metadata only — never the per-chapter downloaded text. The merge
         // matches on url/name/read state, and the reconcile below preserves any
