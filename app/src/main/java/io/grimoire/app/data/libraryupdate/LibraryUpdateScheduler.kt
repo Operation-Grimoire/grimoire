@@ -61,8 +61,9 @@ class LibraryUpdateScheduler @Inject constructor(
                     // start — update constraints without moving the live schedule's
                     // next-run anchor. Only a genuine later change
                     // (the user editing a pref) re-anchors via REPLACE.
-                    applySchedule(it, reAnchor = !isInitial)
+                    val reAnchor = !isInitial
                     isInitial = false
+                    applySchedule(it, reAnchor = reAnchor)
                 }
         }
     }
@@ -143,18 +144,8 @@ class LibraryUpdateScheduler @Inject constructor(
             .setInputData(categoryData(null))
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .build()
-        // Policy depends on whether this is a genuine change ([reAnchor]) or just
-        // the stored prefs replayed at process start.
-        //
-        // - reAnchor: REPLACE cancels and re-enqueues atomically in one
-        //   transaction, re-anchoring the initial delay. UPDATE would preserve
-        //   the existing next-run-time and ignore the new setInitialDelay, so a
-        //   changed preferred time-of-day would never take effect. We avoid a
-        //   manual cancelUniqueWork + KEEP because the cancel is an unawaited
-        //   async Operation, so KEEP could observe the still-live work and
-        //   silently drop the new request, leaving the stale anchor in place.
-        // - otherwise: UPDATE applies new constraints/backoff after an app upgrade
-        //   while preserving the existing anchor and any currently running work.
+        // User edits re-anchor atomically. Startup updates retain enqueue time
+        // and initial delay while applying new constraints/backoff after upgrades.
         val policy = if (reAnchor) {
             ExistingPeriodicWorkPolicy.REPLACE
         } else {
