@@ -54,7 +54,7 @@ class ChapterImageStore @Inject constructor(
                     httpClient.newCall(Request.Builder().url(url).build()).execute().use { response ->
                         val body = response.body
                         if (response.isSuccessful && body != null) {
-                            File(dir, page.index.toString()).outputStream().use { output ->
+                            writeImageAtomically(File(dir, page.index.toString()), body.contentLength()) { output ->
                                 body.byteStream().copyTo(output)
                             }
                         }
@@ -82,7 +82,7 @@ class ChapterImageStore @Inject constructor(
             dir.mkdirs()
             for ((index, bytes) in images) {
                 runCatching {
-                    File(dir, index.toString()).outputStream().use { it.write(bytes) }
+                    writeImageAtomically(File(dir, index.toString()), bytes.size.toLong()) { it.write(bytes) }
                 }
             }
         }
