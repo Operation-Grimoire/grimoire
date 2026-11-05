@@ -129,6 +129,7 @@ fun ReaderScreen(
     viewModel: ReaderViewModel = hiltViewModel(),
 ) {
     val pages by viewModel.pages.collectAsStateWithLifecycle()
+    val pagesChapterId by viewModel.pagesChapterId.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val currentChapter by viewModel.currentChapter.collectAsStateWithLifecycle()
@@ -237,7 +238,7 @@ fun ReaderScreen(
     var showSettings by remember { mutableStateOf(false) }
     var showGrimoirePopup by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-    var restoredScrollUrl by remember { mutableStateOf<String?>(null) }
+    var restoredScrollChapterId by remember { mutableStateOf<Long?>(null) }
 
     // Pause the easter-egg colour animation when the reader leaves the foreground —
     // avoids waking the recomposer for off-screen frames.
@@ -249,52 +250,53 @@ fun ReaderScreen(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> isResumed = true
-                Lifecycle.Event.ON_PAUSE -> isResumed = false
+                Lifecycle.Event.ON_PAUSE -> {
+                    isResumed = false
+                    viewModel.flushProgress()
+                }
                 else -> {}
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.flushProgress()
+        }
     }
 
     val grimoireEffectActive = grimoireEasterEggEnabled && isResumed
     val wave = remember { GrimoireWaveClock() }
     GrimoireWaveTicker(wave, grimoireEffectActive)
 
-    // Reset scroll only on genuine chapter changes (next/prev/TTS auto-advance) — NOT on
-    // composition re-entry from transient screens (e.g. returning from the in-chapter webview).
-    // `rememberLazyListState` already persists scroll across navigation via rememberSaveable, so
-    // we just need to stop fighting it. See issue #133.
-    LaunchedEffect(Unit) {
-        viewModel.chapterChanged.collect {
-            restoredScrollUrl = null
-            listState.scrollToItem(0)
-        }
-    }
-
-    LaunchedEffect(currentChapter?.url, isLoading) {
-        if (isLoading) return@LaunchedEffect
-        if (pages.isEmpty()) return@LaunchedEffect
+    // Restore only after the new chapter has been laid out; old list measurements
+    // must never become the new chapter's saved anchor or mark it read.
+    LaunchedEffect(currentChapter?.id, pagesChapterId, isLoading) {
         val chapter = currentChapter ?: return@LaunchedEffect
-        if (restoredScrollUrl == chapter.url) return@LaunchedEffect
-        restoredScrollUrl = chapter.url
-        val anchorIndex = chapter.readAnchorItemIndex
-        val anchorOffset = chapter.readAnchorItemOffset
-        if (anchorIndex <= 0 && anchorOffset <= 0) return@LaunchedEffect
-        snapshotFlow { listState.layoutInfo.totalItemsCount }
-            .first { it > 0 }
-        val total = listState.layoutInfo.totalItemsCount
-        val targetIndex = anchorIndex.coerceIn(0, total - 1)
-        listState.scrollToItem(targetIndex, anchorOffset.coerceAtLeast(0))
+        if (isLoading || pagesChapterId != chapter.id) {
+            restoredScrollChapterId = null
+            return@LaunchedEffect
+        }
+        if (restoredScrollChapterId == chapter.id) return@LaunchedEffect
+        restoredScrollChapterId = null
+        val prefix = "${chapter.id}:"
+        val total = snapshotFlow { listState.layoutInfo }
+            .first { info -> info.visibleItemsInfo.any { it.key.toString().startsWith(prefix) } }
+            .totalItemsCount
+        val targetIndex = chapter.readAnchorItemIndex.coerceIn(0, total - 1)
+        listState.scrollToItem(targetIndex, chapter.readAnchorItemOffset.coerceAtLeast(0))
+        restoredScrollChapterId = chapter.id
     }
 
-    LaunchedEffect(listState) {
+    LaunchedEffect(listState, currentChapter?.id, pagesChapterId, restoredScrollChapterId) {
+        val chapterId = currentChapter?.id ?: return@LaunchedEffect
+        if (pagesChapterId != chapterId || restoredScrollChapterId != chapterId) return@LaunchedEffect
         snapshotFlow {
             val info = listState.layoutInfo
             val total = info.totalItemsCount
             if (total <= 0) return@snapshotFlow null
             val first = info.visibleItemsInfo.firstOrNull() ?: return@snapshotFlow null
             val last = info.visibleItemsInfo.lastOrNull() ?: return@snapshotFlow null
+            if (!first.key.toString().startsWith("$chapterId:")) return@snapshotFlow null
             // Fraction is last-visible-based so it matches the existing scrollbar percentage
             // (see ReaderScrollbar `readFraction`) — what the user has actually scrolled past.
             val fraction = ((last.index + 1).toFloat() / total).coerceIn(0f, 1f)
@@ -310,6 +312,7 @@ fun ReaderScreen(
             .distinctUntilChanged()
             .collect {
                 viewModel.updateProgress(
+                    chapterId = chapterId,
                     fraction = it.fraction,
                     anchorIndex = it.anchorIndex,
                     anchorOffset = it.anchorOffset,
@@ -320,7 +323,8 @@ fun ReaderScreen(
     }
 
     // Follow TTS: scroll the paragraph being spoken into view, unless the user is scrolling.
-    LaunchedEffect(ttsSpokenPageIndex) {
+    LaunchedEffect(ttsSpokenPageIndex, pagesChapterId, restoredScrollChapterId) {
+        if (pagesChapterId != currentChapter?.id || restoredScrollChapterId != pagesChapterId) return@LaunchedEffect
         val pageIndex = ttsSpokenPageIndex ?: return@LaunchedEffect
         val target = visiblePages.indexOfFirst { it.index == pageIndex }
         if (target >= 0 && !listState.isScrollInProgress) {
@@ -367,7 +371,7 @@ fun ReaderScreen(
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    item {
+                    item(key = "$pagesChapterId:title") {
                         Text(
                             text = currentChapter?.name ?: "",
                             style = MaterialTheme.typography.titleLarge.copy(
@@ -379,7 +383,7 @@ fun ReaderScreen(
                             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                         )
                     }
-                    items(visiblePages, key = { it.index }) { page ->
+                    items(visiblePages, key = { "$pagesChapterId:page:${it.index}" }) { page ->
                         val imageUrl = page.imageUrl
                         when {
                             page.isSeparator -> {
@@ -432,7 +436,7 @@ fun ReaderScreen(
                             }
                         }
                     }
-                    item {
+                    item(key = "$pagesChapterId:end") {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
