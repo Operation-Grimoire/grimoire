@@ -6,7 +6,10 @@ import io.grimoire.app.util.imageUrl
 import io.grimoire.app.util.text
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.CancellationException
-import java.io.IOException
+import java.io.EOFException
+import java.io.InterruptedIOException
+import java.net.SocketException
+import java.net.UnknownHostException
 
 /**
  * Raised when a chapter fetch keeps coming back with no readable content. The
@@ -66,4 +69,7 @@ suspend fun fetchReadablePages(
 }
 
 internal fun Throwable.isConnectivityFailure(): Boolean =
-    generateSequence(this) { it.cause }.take(32).any { it is IOException }
+    generateSequence(this) { it.cause }.take(32).any {
+        it is SocketException || it is UnknownHostException ||
+            it is InterruptedIOException || it is EOFException
+    }

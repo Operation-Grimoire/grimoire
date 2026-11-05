@@ -7,6 +7,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import java.io.IOException
 import java.net.SocketTimeoutException
+import java.net.SocketException
+import java.net.ProtocolException
+import java.net.UnknownHostException
+import java.io.EOFException
+import java.io.FileNotFoundException
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -97,7 +102,7 @@ class ChapterContentValidationTest {
 
     @Test
     fun exhaustedConnectivityRetriesPreserveFailureForQueueRecovery() = runBlocking {
-        val failure = IOException("offline")
+        val failure = SocketException("offline")
         var attempts = 0
         try {
             fetchReadablePages(sleep = {}) { attempts++; throw failure }
@@ -124,8 +129,13 @@ class ChapterContentValidationTest {
 
     @Test
     fun connectivityClassificationIncludesWrappedIoButExcludesParserErrors() {
-        assertTrue(IllegalStateException("source failed", IOException("offline")).isConnectivityFailure())
+        assertTrue(IllegalStateException("source failed", UnknownHostException("offline")).isConnectivityFailure())
         assertFalse(IllegalArgumentException("bad markup").isConnectivityFailure())
+        assertTrue(SocketTimeoutException("stalled").isConnectivityFailure())
+        assertTrue(EOFException("truncated response").isConnectivityFailure())
+        assertFalse(ProtocolException("permanent source response").isConnectivityFailure())
+        assertFalse(FileNotFoundException("local file missing").isConnectivityFailure())
+        assertFalse(IOException("source rejected the request").isConnectivityFailure())
     }
 
     @Test
