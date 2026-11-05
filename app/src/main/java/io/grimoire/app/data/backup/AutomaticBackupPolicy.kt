@@ -5,7 +5,7 @@ internal const val AUTOMATIC_BACKUP_RETENTION = 7
 private const val MAX_BACKUP_ATTEMPTS = 3
 private val automaticBackupName = Regex(
     "grimoire_auto_backup_\\d{4}-\\d{2}-\\d{2}_\\d{6}_\\d{3}_" +
-        "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.json\\.gz"
+        "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.json\\.gz(?:\\.gz|\\.gzip)?"
 )
 
 internal fun shouldRetryBackup(retryable: Boolean, runAttemptCount: Int): Boolean =

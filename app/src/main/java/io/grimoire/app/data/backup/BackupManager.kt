@@ -144,7 +144,7 @@ class BackupManager @Inject constructor(
                     Log.w("BackupManager", "Automatic backup retention failed", e)
                 }
             }
-            BackupResult.Success(fileName, target.uri.toString(), novels.size)
+            BackupResult.Success(target.name ?: fileName, target.uri.toString(), novels.size)
         }.getOrElse { e ->
             if (!written) runCatching { target.delete() }
             if (e is CancellationException) throw e

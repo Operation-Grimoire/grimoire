@@ -41,6 +41,16 @@ class AutomaticBackupPolicyTest {
         ))
     }
 
+    @Test fun `provider appended gzip extensions still allow owned retention`() {
+        val files = (1..10).map { day ->
+            file(day).let { it.copy(name = it.name + if (day % 2 == 0) ".gz" else ".gzip") }
+        }
+        val tracked = files.map { it.uri }.toSet()
+        val stranger = file(11).let { it.copy(name = it.name + ".gz") }
+        assertEquals(listOf("uri:3", "uri:2", "uri:1"),
+            automaticBackupsToDelete(files + stranger, tracked, "uri:10"))
+    }
+
     @Test fun `missing latest file or a single good backup never permits deletion`() {
         val files = (1..10).map(::file)
         assertTrue(automaticBackupsToDelete(files, files.map { it.uri }.toSet(), "missing").isEmpty())
