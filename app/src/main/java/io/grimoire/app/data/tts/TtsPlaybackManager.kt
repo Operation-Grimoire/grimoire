@@ -103,6 +103,7 @@ class TtsPlaybackManager @Inject constructor(
     private var utterances: List<Utterance> = emptyList()
     private var utteranceIndex = 0
     private var generation = 0
+    private var completedUtterance: String? = null
 
     // ---- Public entry points -------------------------------------------------
 
@@ -118,6 +119,7 @@ class TtsPlaybackManager @Inject constructor(
         playbackTask.cancel()
         engineInitialized = false
         generation++
+        completedUtterance = null
         activeEngine?.stop()
         this.pkg = pkg
         this.novelId = novelId
@@ -198,13 +200,20 @@ class TtsPlaybackManager @Inject constructor(
         registerNoisy()
         _state.value = TtsPlaybackState.PLAYING
         updateMediaSession()
-        if (engine.canResumeMidUtterance) engine.resume() else speakCurrent()
+        if (completedUtterance != null) {
+            advanceCompletedUtterance()
+        } else if (engine.canResumeMidUtterance) {
+            engine.resume()
+        } else {
+            speakCurrent()
+        }
     }
 
     fun stop() {
         playbackTask.cancel()
         engineInitialized = false
         generation++
+        completedUtterance = null
         activeEngine?.stop()
         _state.value = TtsPlaybackState.IDLE
         _nowPlaying.value = null
@@ -252,6 +261,7 @@ class TtsPlaybackManager @Inject constructor(
     private suspend fun startChapter(index: Int, preloaded: List<NovelPage>?, startIndex: Int? = null) {
         activeEngine?.stop()
         generation++
+        completedUtterance = null
         chapterIndex = index
         val chapter = chapters.getOrNull(index) ?: return fail(localizedContext.getString(R.string.tts_error_chapter_not_found))
         _state.value = TtsPlaybackState.LOADING
@@ -300,9 +310,10 @@ class TtsPlaybackManager @Inject constructor(
                 chapterDao.setRead(chapter.id, true)
             }
         }
+        val advance = autoAdvance()
         currentCoroutineContext().ensureActive()
-        if (autoAdvance() && chapterIndex < chapters.size - 1) {
-            currentCoroutineContext().ensureActive()
+        if (_state.value != TtsPlaybackState.PLAYING) return
+        if (advance && chapterIndex < chapters.size - 1) {
             startChapter(chapterIndex + 1, null, startIndex = 0)
         } else {
             stop()
@@ -323,12 +334,9 @@ class TtsPlaybackManager @Inject constructor(
         override fun onDone(utteranceId: String) {
             scope.launch {
                 if (parseGeneration(utteranceId) != generation) return@launch
-                playbackTask.launch {
-                    persistProgress()
-                    currentCoroutineContext().ensureActive()
-                    utteranceIndex++
-                    if (utteranceIndex >= utterances.size) endOfChapter() else speakCurrent()
-                }
+                if (utteranceId != uid(utteranceIndex)) return@launch
+                completedUtterance = utteranceId
+                if (_state.value == TtsPlaybackState.PLAYING) advanceCompletedUtterance()
             }
         }
 
@@ -336,6 +344,24 @@ class TtsPlaybackManager @Inject constructor(
             scope.launch {
                 if (parseGeneration(utteranceId) != generation) return@launch
                 fail(message)
+            }
+        }
+    }
+
+    private fun advanceCompletedUtterance() {
+        val completed = completedUtterance ?: return
+        playbackTask.launch {
+            persistProgress()
+            currentCoroutineContext().ensureActive()
+            if (_state.value != TtsPlaybackState.PLAYING || completed != completedUtterance ||
+                completed != uid(utteranceIndex)
+            ) return@launch
+            if (utteranceIndex >= utterances.lastIndex) {
+                endOfChapter()
+            } else {
+                completedUtterance = null
+                utteranceIndex++
+                speakCurrent()
             }
         }
     }
@@ -395,6 +421,7 @@ class TtsPlaybackManager @Inject constructor(
         playbackTask.cancel()
         engineInitialized = false
         generation++
+        completedUtterance = null
         activeEngine?.stop()
         _state.value = TtsPlaybackState.ERROR
         _errorMessage.value = message

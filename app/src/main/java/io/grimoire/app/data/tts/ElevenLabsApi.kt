@@ -87,7 +87,7 @@ class ElevenLabsApi @Inject constructor(
             .header("Accept", "audio/mpeg")
             .post(json.encodeToString(SynthesisRequest.serializer(), payload).toRequestBody(JSON_MEDIA))
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).awaitTtsResult { response ->
             if (!response.isSuccessful) {
                 throw IOException(errorMessage(response.code, response.body?.string().orEmpty()))
             }
@@ -122,7 +122,7 @@ class ElevenLabsApi @Inject constructor(
             .url("$BASE_URL/v2/voices?voice_type=default&page_size=1")
             .header("xi-api-key", apiKey)
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).awaitTtsResult { response ->
             val body = response.body?.string().orEmpty()
             if (!response.isSuccessful) throw IOException(errorMessage(response.code, body))
             json.decodeFromString(VoicesResponse.serializer(), body).voices.firstOrNull()?.voiceId
