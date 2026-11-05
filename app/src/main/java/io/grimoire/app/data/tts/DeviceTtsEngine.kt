@@ -2,12 +2,18 @@ package io.grimoire.app.data.tts
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.app.R
 import io.grimoire.app.util.AppLocale
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.Locale
 import javax.inject.Inject
@@ -32,24 +38,43 @@ class DeviceTtsEngine @Inject constructor(
 
     private var tts: TextToSpeech? = null
     private var ready = false
+    private val initMutex = Mutex()
 
-    override suspend fun init(): Boolean {
-        if (ready && tts != null) return true
-        return suspendCancellableCoroutine { cont ->
-            var engine: TextToSpeech? = null
-            engine = TextToSpeech(context.applicationContext) { status ->
-                ready = status == TextToSpeech.SUCCESS
-                if (ready) {
-                    engine?.setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_MEDIA)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                            .build(),
-                    )
-                    engine?.setOnUtteranceProgressListener(progressListener)
-                    tts = engine
+    override suspend fun init(): Boolean = withContext(Dispatchers.Main.immediate) {
+        initMutex.withLock {
+            if (ready && tts != null) return@withLock true
+            val initialized = suspendCancellableCoroutine<TextToSpeech?> { cont ->
+                val handler = Handler(Looper.getMainLooper())
+                var engine: TextToSpeech? = null
+                engine = TextToSpeech(context.applicationContext) { status ->
+                    // Queue even synchronous callbacks until constructor assignment finishes.
+                    handler.post {
+                        val created = engine ?: return@post
+                        if (status == TextToSpeech.SUCCESS && cont.isActive) {
+                            cont.resume(created) { _, value, _ -> value?.shutdown() }
+                        } else {
+                            created.shutdown()
+                            if (cont.isActive) cont.resume(null)
+                        }
+                    }
                 }
-                if (cont.isActive) cont.resume(ready)
+                cont.invokeOnCancellation { engine?.shutdown() }
+            } ?: return@withLock false
+            // Only publish after the cancellable handoff has delivered a live engine.
+            try {
+                initialized.setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build(),
+                )
+                initialized.setOnUtteranceProgressListener(progressListener)
+                tts = initialized
+                ready = true
+                true
+            } catch (e: Exception) {
+                initialized.shutdown()
+                throw e
             }
         }
     }

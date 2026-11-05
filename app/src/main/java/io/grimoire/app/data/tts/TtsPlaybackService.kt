@@ -9,6 +9,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,13 +29,7 @@ class TtsPlaybackService : Service() {
 
     override fun onBind(intent: Intent?) = null
 
-    override fun onCreate() {
-        super.onCreate()
-        scope.launch {
-            combine(manager.state, manager.nowPlaying) { state, _ -> state }
-                .collect { applyState(it) }
-        }
-    }
+    private var observing = false
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Promote to foreground promptly to satisfy the foreground-service start window.
@@ -42,6 +38,19 @@ class TtsPlaybackService : Service() {
             manager.startPlayback()
         } else {
             manager.handleMediaButton(intent)
+        }
+        if (!observing) {
+            observing = true
+            scope.launch {
+                combine(manager.state, manager.nowPlaying) { state, _ -> state }
+                    .collectLatest { state ->
+                        applyState(state)
+                        if (state == TtsPlaybackState.PAUSED) {
+                            delay(PAUSED_IDLE_TIMEOUT_MS)
+                            if (manager.state.value == TtsPlaybackState.PAUSED) manager.stop()
+                        }
+                    }
+            }
         }
         return START_NOT_STICKY
     }
@@ -52,9 +61,7 @@ class TtsPlaybackService : Service() {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }
-            // Stay in the foreground while paused so the process and the media
-            // session keep their priority — hardware/Bluetooth media buttons
-            // are only routed reliably to a high-priority active session.
+            // Keep media buttons available during the bounded pause window.
             TtsPlaybackState.PLAYING, TtsPlaybackState.LOADING, TtsPlaybackState.PAUSED ->
                 startForegroundCompat()
         }
@@ -74,11 +81,13 @@ class TtsPlaybackService : Service() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         scope.cancel()
+        manager.release()
+        super.onDestroy()
     }
 
     companion object {
+        private const val PAUSED_IDLE_TIMEOUT_MS = 5 * 60 * 1000L
         const val ACTION_START = "io.grimoire.app.tts.START"
     }
 }
