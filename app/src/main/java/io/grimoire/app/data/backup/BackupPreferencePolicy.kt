@@ -1,5 +1,7 @@
 package io.grimoire.app.data.backup
 
+import io.grimoire.app.data.local.SOURCE_ID_MIGRATION_KEY_PREFIX
+
 private val deviceOnlyPreferences = setOf(
     "tts_elevenlabs_api_key",
     "hidden_pin_hash",
@@ -10,4 +12,5 @@ private val deviceOnlyPreferences = setOf(
 // Source settings have no persisted password metadata. Exclude the entire namespace,
 // including settings for extensions that are currently uninstalled.
 internal fun shouldExportPreference(key: String): Boolean =
-    !key.startsWith("source.") && !key.startsWith(AUTOMATIC_BACKUP_REGISTRY_PREFIX) && key !in deviceOnlyPreferences
+    !key.startsWith("source.") && !key.startsWith(AUTOMATIC_BACKUP_REGISTRY_PREFIX) &&
+        !key.startsWith(SOURCE_ID_MIGRATION_KEY_PREFIX) && key !in deviceOnlyPreferences

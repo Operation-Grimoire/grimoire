@@ -39,7 +39,6 @@ private val declaredPreferenceTypes: Map<String, String> by lazy {
     UpdatePreferences(store)
     store.types + mapOf(
         "schedule_prefs_migrated_v1" to "b",
-        "source_ids_pkg_derived_v1" to "b",
         "backup_frequency" to "s",
         "library_update_frequency" to "s",
     )

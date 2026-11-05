@@ -56,4 +56,14 @@ class BackupPreferenceRestoreTest {
         assertEquals(true, prefs[booleanPreferencesKey("source.uninstalled.content_languages_override")])
     }
 
+
+    @Test fun `migration completion from another device never restores or exports`() {
+        val prefs = mutablePreferencesOf()
+        listOf("source_ids_pkg_derived_v1", "source_ids_pkg_derived_v2").forEach { key ->
+            assertFalse(shouldExportPreference(key))
+            restoreBackupPreferences(prefs, listOf(BackupPreference(key, "b", "true")))
+            assertNull(prefs[booleanPreferencesKey(key)])
+        }
+    }
+
 }

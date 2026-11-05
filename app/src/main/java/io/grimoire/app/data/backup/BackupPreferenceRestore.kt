@@ -1,5 +1,6 @@
 package io.grimoire.app.data.backup
 
+import io.grimoire.app.data.local.SOURCE_ID_MIGRATION_KEY_PREFIX
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
@@ -11,7 +12,8 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 
 internal fun restoreBackupPreferences(prefs: MutablePreferences, preferences: List<BackupPreference>) {
     for (p in preferences) {
-        if (p.key.startsWith(AUTOMATIC_BACKUP_REGISTRY_PREFIX)) continue
+        if (p.key.startsWith(AUTOMATIC_BACKUP_REGISTRY_PREFIX) ||
+            p.key.startsWith(SOURCE_ID_MIGRATION_KEY_PREFIX)) continue
         if (p.key.startsWith("source.") && p.type != "s" && p.type != "b") continue
         val expected = expectedBackupPreferenceType(p.key) ?: prefs.asMap().entries
             .firstOrNull { it.key.name == p.key }?.value?.let(::storedPreferenceType)
