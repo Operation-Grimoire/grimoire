@@ -252,9 +252,9 @@ internal fun NavGraphBuilder.moreDestinations(navController: NavHostController) 
     composable(route = ROUTE_UPDATES) {
         LibraryUpdatesScreen(
             onNavigateBack = { navController.popBackStack() },
-            onOpenReader = { pkg, novelUrl, chapterUrl ->
+            onOpenReader = { pkg, novelUrl, chapterUrl, novelId ->
                 navController.navigate(
-                    "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}"
+                    "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}&novelId=${novelId ?: -1L}"
                 )
             },
             onOpenNovel = { pkg, novelUrl ->
@@ -267,9 +267,9 @@ internal fun NavGraphBuilder.moreDestinations(navController: NavHostController) 
     composable(route = ROUTE_HISTORY) {
         HistoryScreen(
             onNavigateBack = { navController.popBackStack() },
-            onOpenReader = { pkg, novelUrl, chapterUrl ->
+            onOpenReader = { pkg, novelUrl, chapterUrl, novelId ->
                 navController.navigate(
-                    "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}"
+                    "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}&novelId=${novelId ?: -1L}"
                 )
             },
             onOpenNovel = { pkg, novelUrl ->
@@ -515,9 +515,9 @@ internal fun NavGraphBuilder.novelDetailDestinations(navController: NavHostContr
     ) {
         NovelDetailScreen(
             onNavigateBack = { navController.popBackStack() },
-            onChapterClick = { pkg, novelUrl, chapterUrl ->
+            onChapterClick = { pkg, novelUrl, chapterUrl, novelId ->
                 navController.navigate(
-                    "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}"
+                    "reader?pkg=${Uri.encode(pkg)}&novelUrl=${Uri.encode(novelUrl)}&chapterUrl=${Uri.encode(chapterUrl)}&novelId=$novelId"
                 )
             },
             onOpenWebView = { url ->
@@ -570,6 +570,7 @@ internal fun NavGraphBuilder.readerDestinations(navController: NavHostController
             navArgument("pkg") { type = NavType.StringType },
             navArgument("novelUrl") { type = NavType.StringType },
             navArgument("chapterUrl") { type = NavType.StringType },
+            navArgument("novelId") { type = NavType.LongType; defaultValue = -1L },
         ),
     ) {
         ReaderScreen(

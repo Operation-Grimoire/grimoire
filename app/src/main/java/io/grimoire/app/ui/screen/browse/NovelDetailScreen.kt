@@ -113,7 +113,7 @@ import io.grimoire.app.R
 @Composable
 fun NovelDetailScreen(
     onNavigateBack: () -> Unit,
-    onChapterClick: (pkg: String, novelUrl: String, chapterUrl: String) -> Unit = { _, _, _ -> },
+    onChapterClick: (pkg: String, novelUrl: String, chapterUrl: String, novelId: Long) -> Unit = { _, _, _, _ -> },
     onOpenWebView: (url: String) -> Unit = {},
     onOpenNuSeries: (slug: String) -> Unit = {},
     onNavigateToLogin: (pkg: String) -> Unit = {},
@@ -537,7 +537,7 @@ fun NovelDetailScreen(
             if (continueChapter != null && !viewModel.isMigrationTarget && !selectionMode) {
                 ExtendedFloatingActionButton(
                     onClick = {
-                        onChapterClick(viewModel.pkg, novel.url, continueChapter!!.url)
+                        onChapterClick(viewModel.pkg, novel.url, continueChapter!!.url, continueChapter!!.novelId)
                     },
                     icon = { Icon(AppIcons.PlayArrow, contentDescription = null) },
                     text = {
@@ -1287,7 +1287,7 @@ fun NovelDetailScreen(
                                 allowDownloadChanges = !viewModel.isLocal,
                                 selected = chapter.id in selectedIds,
                                 selectionMode = selectionMode,
-                                onClick = { onChapterClick(viewModel.pkg, novel.url, chapter.url) },
+                                onClick = { onChapterClick(viewModel.pkg, novel.url, chapter.url, chapter.novelId) },
                                 onLockedClick = { lockedDialogChapter = chapter },
                                 onToggleSelection = { toggleSelect(chapter.id) },
                                 onDownload = { viewModel.downloadChapter(chapter) },
