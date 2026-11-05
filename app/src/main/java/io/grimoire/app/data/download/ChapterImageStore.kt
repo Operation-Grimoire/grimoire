@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.File
+import java.io.IOException
 import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,6 +34,8 @@ class ChapterImageStore @Inject constructor(
     private val rootDir: File
         get() = File(context.filesDir, "chapter_images")
 
+    private val maintenance by lazy { ImageFileMaintenance(rootDir) }
+
     private fun chapterDir(novelId: Long, chapterUrl: String): File =
         File(File(rootDir, novelId.toString()), chapterUrl.sha256())
 
@@ -41,23 +44,16 @@ class ChapterImageStore @Inject constructor(
      * Best-effort: a failed image is skipped so the reader can still stream it.
      */
     suspend fun saveImages(novelId: Long, chapterUrl: String, pages: List<NovelPage>) {
-        val images = pages.filter { it.imageUrl != null }
+        val images = pages.mapNotNull { page -> page.imageUrl?.let { page.index to it } }.toMap()
         if (images.isEmpty()) return
         withContext(Dispatchers.IO) {
-            val dir = chapterDir(novelId, chapterUrl)
-            // Drop any stale files first so a re-download can't leave orphans behind.
-            dir.deleteRecursively()
-            dir.mkdirs()
-            for (page in images) {
-                val url = page.imageUrl ?: continue
-                runCatching {
-                    httpClient.newCall(Request.Builder().url(url).build()).execute().use { response ->
-                        val body = response.body
-                        if (response.isSuccessful && body != null) {
-                            writeImageAtomically(File(dir, page.index.toString()), body.contentLength()) { output ->
-                                body.byteStream().copyTo(output)
-                            }
-                        }
+            maintenance.prepare()
+            updateImageFiles(chapterDir(novelId, chapterUrl), images.keys) { index, destination ->
+                httpClient.newCall(Request.Builder().url(images.getValue(index)).build()).execute().use { response ->
+                    val body = response.body
+                    if (!response.isSuccessful || body == null) throw IOException("Image download failed")
+                    writeImageAtomically(destination, body.contentLength()) { output ->
+                        body.byteStream().copyTo(output)
                     }
                 }
             }
@@ -76,14 +72,12 @@ class ChapterImageStore @Inject constructor(
         images: List<Pair<Int, ByteArray>>,
     ) {
         if (images.isEmpty()) return
+        val indexed = images.toMap()
         withContext(Dispatchers.IO) {
-            val dir = chapterDir(novelId, chapterUrl)
-            dir.deleteRecursively()
-            dir.mkdirs()
-            for ((index, bytes) in images) {
-                runCatching {
-                    writeImageAtomically(File(dir, index.toString()), bytes.size.toLong()) { it.write(bytes) }
-                }
+            maintenance.prepare()
+            updateImageFiles(chapterDir(novelId, chapterUrl), indexed.keys) { index, destination ->
+                val bytes = indexed.getValue(index)
+                writeImageAtomically(destination, bytes.size.toLong()) { it.write(bytes) }
             }
         }
     }
@@ -108,16 +102,9 @@ class ChapterImageStore @Inject constructor(
 
     /** Total bytes and file count of every saved illustration, for the Data screen. */
     suspend fun usage(): ImageStoreUsage = withContext(Dispatchers.IO) {
-        var bytes = 0L
-        var count = 0
-        rootDir.walkTopDown().forEach { f ->
-            if (f.isFile) {
-                bytes += f.length()
-                count++
-            }
-        }
-        ImageStoreUsage(bytes, count)
+        maintenance.usage()
     }
+
 }
 
 data class ImageStoreUsage(val bytes: Long, val fileCount: Int)
