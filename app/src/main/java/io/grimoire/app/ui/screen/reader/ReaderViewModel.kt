@@ -41,13 +41,18 @@ import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsPlaybackState
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.util.AppLocale
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChangedBy
@@ -102,8 +107,15 @@ class ReaderViewModel @Inject constructor(
     private val _chapters = MutableStateFlow<List<ChapterEntity>>(emptyList())
     private val _currentIndex = MutableStateFlow(-1)
 
-    val currentChapter: StateFlow<ChapterEntity?> = combine(_chapters, _currentIndex) { chapters, idx ->
-        chapters.getOrNull(idx)
+    private val livePosition = MutableStateFlow<ReaderPosition?>(null)
+    private val persistenceJob = SupervisorJob()
+    private val persistenceScope = CoroutineScope(persistenceJob + Dispatchers.Main.immediate)
+    private val progressWriter = ReaderProgressWriter(persistenceScope) { position ->
+        chapterDao.setReadAnchor(position.chapterId, position.fraction, position.anchorIndex, position.anchorOffset)
+    }
+
+    val currentChapter: StateFlow<ChapterEntity?> = combine(_chapters, _currentIndex, livePosition) { chapters, idx, position ->
+        chapters.getOrNull(idx)?.withReaderPosition(position)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val hasPrev: StateFlow<Boolean> = combine(_chapters, _currentIndex) { _, idx ->
@@ -116,6 +128,9 @@ class ReaderViewModel @Inject constructor(
 
     private val _pages = MutableStateFlow<List<NovelPage>>(emptyList())
     val pages: StateFlow<List<NovelPage>> = _pages.asStateFlow()
+    private val _pagesChapterId = MutableStateFlow<Long?>(null)
+    val pagesChapterId: StateFlow<Long?> = _pagesChapterId.asStateFlow()
+    private var loadPagesJob: Job? = null
 
     // Per-novel text alignment + the novel's language (for AUTO direction).
     // Loaded with the chapter list; the setter persists on the novel row.
@@ -175,14 +190,6 @@ class ReaderViewModel @Inject constructor(
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0f)
-
-    /**
-     * Emits whenever the user (or TTS auto-advance) moves to a different chapter — so the reader
-     * screen knows to reset scroll. Not emitted on initial load or on transient screen returns
-     * (e.g. coming back from the webview), so saved scroll position survives those.
-     */
-    private val _chapterChanged = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    val chapterChanged: SharedFlow<String> = _chapterChanged.asSharedFlow()
 
     private val _revealedImageUrls = MutableStateFlow<Set<String>>(emptySet())
     val revealedImageUrls: StateFlow<Set<String>> = _revealedImageUrls.asStateFlow()
@@ -293,6 +300,7 @@ class ReaderViewModel @Inject constructor(
                 if (ttsController.state.value == TtsPlaybackState.IDLE) return@collect
                 val index = content.readerChapterIndex(pkg, _chapters.value)
                 if (index >= 0 && index != _currentIndex.value) {
+                    flushProgress()
                     _currentIndex.value = index
                     onChapterChanged(url)
                     loadPages(preloaded = content.pages)
@@ -319,10 +327,9 @@ class ReaderViewModel @Inject constructor(
         )
     }
 
-    /** Records a chapter switch: persists it for process-death restore and resets scroll. */
+    /** Records a chapter switch for history and process-death restore. */
     private fun onChapterChanged(url: String) {
         savedStateHandle["chapterUrl"] = url
-        _chapterChanged.tryEmit(url)
         _chapters.value.firstOrNull { it.url == url }?.let { recordHistory(it) }
     }
 
@@ -355,55 +362,51 @@ class ReaderViewModel @Inject constructor(
 
     private fun loadPages(preloaded: List<NovelPage>?) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
-        viewModelScope.launch {
-            // The in-memory chapter list is a snapshot from init; re-read this row so a
-            // download that completed since then is served from disk, not refetched.
-            val fresh = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
-            val cached = chapterDao.getContent(fresh.id)
-            if (preloaded != null && _chapters.value.getOrNull(_currentIndex.value)?.id != chapter.id) return@launch
-            if (cached != null) {
-                val pages = decodeChapterContent(cached)
-                    .filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
-                    .map { page ->
-                        if (page.imageUrl == null) return@map page
-                        val local = chapterImageStore.localImageUri(fresh.novelId, fresh.url, page.index)
-                        if (local != null) page.copy(content = PageContent.Image(local)) else page
+        flushProgress()
+        loadPagesJob?.cancel()
+        _pagesChapterId.value = null
+        _pages.value = emptyList()
+        _isLoading.value = true
+        _error.value = null
+        loadPagesJob = viewModelScope.launch {
+            try {
+                // A download may have completed since the chapter list was loaded.
+                val fresh = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
+                val cached = chapterDao.getContent(fresh.id)
+                val loaded = when {
+                    cached != null -> decodeChapterContent(cached)
+                        .filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
+                        .map { page ->
+                            if (page.imageUrl == null) return@map page
+                            val local = chapterImageStore.localImageUri(fresh.novelId, fresh.url, page.index)
+                            if (local != null) page.copy(content = PageContent.Image(local)) else page
+                        }
+                    preloaded != null -> preloaded
+                    else -> {
+                        extensionManager.awaitReady()
+                        currentCoroutineContext().ensureActive()
+                        val src = source ?: run {
+                            _error.value = localizedContext.getString(R.string.error_source_not_available)
+                            return@launch
+                        }
+                        (src as? PageListSource)?.getPageList(fresh.toChapter())
+                            ?: error(localizedContext.getString(R.string.error_no_readable_pages))
                     }
-                _pages.value = pages
-                _isLoading.value = false
-                _error.value = null
-                recordWordCount(fresh, pages)
-                return@launch
-            }
-            if (preloaded != null) {
-                _pages.value = preloaded
-                _isLoading.value = false
-                _error.value = null
-                recordWordCount(fresh, preloaded)
-                return@launch
-            }
-            _isLoading.value = true
-            _error.value = null
-            _pages.value = emptyList()
-            // Don't resolve the source from a possibly-still-empty extensions snapshot:
-            // a cold start straight into the reader races the package scan and used to
-            // surface "Source not available" for an installed extension.
-            extensionManager.awaitReady()
-            val src = source ?: run {
-                _error.value = localizedContext.getString(R.string.error_source_not_available)
-                _isLoading.value = false
-                return@launch
-            }
-            runCatching {
-                (src as? PageListSource)?.getPageList(fresh.toChapter())
-                    ?: error(localizedContext.getString(R.string.error_no_readable_pages))
-            }
-                .onSuccess {
-                    _pages.value = it
-                    recordWordCount(fresh, it)
                 }
-                .onFailure { _error.value = "${it::class.simpleName}: ${it.message ?: "(no message)"}" }
-            _isLoading.value = false
+                // Some extensions return normally even after cancellation.
+                currentCoroutineContext().ensureActive()
+                if (_chapters.value.getOrNull(_currentIndex.value)?.id != chapter.id) return@launch
+                _pages.value = loaded
+                _pagesChapterId.value = chapter.id
+                recordWordCount(fresh, loaded)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                currentCoroutineContext().ensureActive()
+                _error.value = "${error::class.simpleName}: ${error.message ?: "(no message)"}"
+            } finally {
+                if (currentCoroutineContext().isActive) _isLoading.value = false
+            }
         }
     }
 
@@ -418,6 +421,7 @@ class ReaderViewModel @Inject constructor(
 
     fun navigatePrev() {
         if (_currentIndex.value > 0) {
+            flushProgress()
             _currentIndex.value--
             _chapters.value.getOrNull(_currentIndex.value)?.url?.let { onChapterChanged(it) }
             loadPages()
@@ -426,9 +430,10 @@ class ReaderViewModel @Inject constructor(
 
     fun navigateNext() {
         if (_currentIndex.value < _chapters.value.size - 1) {
+            flushProgress()
             val chapter = _chapters.value.getOrNull(_currentIndex.value)
-            if (chapter != null && !chapter.read) {
-                viewModelScope.launch { chapterDao.setRead(chapter.id, true) }
+            if (chapter != null && chapter.id == _pagesChapterId.value && !chapter.read) {
+                persistenceScope.launch { chapterDao.setRead(chapter.id, true) }
                 _chapters.update { list ->
                     list.map { if (it.id == chapter.id) it.copy(read = true, readProgress = 1f) else it }
                 }
@@ -440,6 +445,7 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun updateProgress(
+        chapterId: Long,
         fraction: Float,
         anchorIndex: Int,
         anchorOffset: Int,
@@ -447,33 +453,34 @@ class ReaderViewModel @Inject constructor(
         totalItems: Int,
     ) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
-        // Persist the real fraction (not clamped to 1f) so the chapter % chip moves both
-        // directions as the user scrolls — including back up after the auto-mark-as-read
-        // threshold was crossed. The `read` flag is sticky once set: crossing the trigger
-        // promotes it, but scrolling back doesn't un-mark.
-        val shouldMark = !chapter.read && totalItems > 0 && when (markAsReadStrategy.value) {
-            MarkAsReadStrategy.PERCENT -> fraction >= markAsReadThreshold.value / 100f
-            MarkAsReadStrategy.PARAGRAPHS_FROM_END ->
-                (totalItems - 1 - lastVisibleIndex) <= markAsReadParagraphsFromEnd.value
-            MarkAsReadStrategy.AT_END -> lastVisibleIndex >= totalItems - 1
+        if (!acceptsReaderProgress(chapter.id, _pagesChapterId.value, chapterId)) return
+        val position = ReaderPosition(chapterId, fraction, anchorIndex, anchorOffset)
+        livePosition.value = position
+        progressWriter.submit(position)
+        val shouldMark = shouldMarkReaderChapterRead(
+            chapter.read, fraction, lastVisibleIndex, totalItems,
+            markAsReadStrategy.value, markAsReadThreshold.value, markAsReadParagraphsFromEnd.value,
+        )
+        if (shouldMark) {
+            _chapters.update { list -> list.map { if (it.id == chapterId) it.copy(read = true) else it } }
+            // Read status is prompt; only the frequently changing anchor is debounced.
+            persistenceScope.launch { chapterDao.setRead(chapterId, true) }
         }
-        // Update in-memory state FIRST so the chip stays live during scrolling. If we awaited
-        // the DB writes, every subsequent updateProgress call would queue behind setRead's
-        // backfillWordCountsFromDownloads scan and the % display would visibly freeze.
-        _chapters.update { list ->
-            list.map {
-                if (it.id == chapter.id) it.copy(
-                    read = it.read || shouldMark,
-                    readProgress = fraction,
-                    readAnchorItemIndex = anchorIndex,
-                    readAnchorItemOffset = anchorOffset,
-                ) else it
-            }
+    }
+
+    fun flushProgress() {
+        livePosition.value?.let { position ->
+            _chapters.update { list -> list.map { it.withReaderPosition(position) } }
+            livePosition.value = null
         }
-        viewModelScope.launch {
-            chapterDao.setReadAnchor(chapter.id, fraction, anchorIndex, anchorOffset)
-            if (shouldMark) chapterDao.setRead(chapter.id, true)
-        }
+        progressWriter.flush()
+    }
+
+    override fun onCleared() {
+        flushProgress()
+        // Finish queued writes after viewModelScope is cancelled, then release this scope.
+        persistenceJob.complete()
+        super.onCleared()
     }
 
     fun toggleRead() {
