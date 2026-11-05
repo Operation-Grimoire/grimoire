@@ -14,7 +14,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
-import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
@@ -39,12 +42,17 @@ class ElevenLabsTtsEngine @Inject constructor(
     override val canResumeMidUtterance = true
     override var listener: TtsEngine.Listener? = null
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var config: TtsEngineConfig? = null
 
     private var player: MediaPlayer? = null
     private var speakJob: Job? = null
-    private val prefetched = ConcurrentHashMap<String, ByteArray>()
+    private val requests = TtsSynthesisRequests(scope)
+    private val playback = TtsAudioPlayback()
+    private var playingId: String? = null
+    private var playerFile: File? = null
+    private val voiceMutex = Mutex()
+    private val audioCache by lazy { TtsAudioCache(File(context.cacheDir, "tts-audio")) }
     private var resolvedDefaultVoiceId: String? = null
 
     private val cacheDir: File by lazy { File(context.cacheDir, "tts").apply { mkdirs() } }
@@ -52,20 +60,32 @@ class ElevenLabsTtsEngine @Inject constructor(
     override suspend fun init(): Boolean = !config?.elevenLabsApiKey.isNullOrBlank()
 
     override fun configure(config: TtsEngineConfig) {
+        if (this.config?.elevenLabsApiKey != config.elevenLabsApiKey) resolvedDefaultVoiceId = null
         this.config = config
-        resolvedDefaultVoiceId = null
     }
 
     override fun speak(utteranceId: String, text: String) {
         speakJob?.cancel()
+        releasePlayer()
+        playback.reset()
+        playingId = utteranceId
         speakJob = scope.launch {
+            var file: File? = null
             try {
-                val bytes = prefetched.remove(utteranceId) ?: synthesize(text)
-                val file = writeTemp(utteranceId, bytes)
-                withContext(Dispatchers.Main) { play(utteranceId, file) }
+                val request = request(utteranceId, text)
+                val bytes = request.await()
+                requests.consumed(utteranceId, request)
+                withContext(Dispatchers.IO) {
+                    file = File.createTempFile("utterance-", ".mp3", cacheDir)
+                    file!!.writeBytes(bytes)
+                }
+                currentCoroutineContext().ensureActive()
+                play(utteranceId, file!!)
             } catch (ce: CancellationException) {
+                file?.delete()
                 throw ce
             } catch (e: Exception) {
+                file?.delete()
                 listener?.onError(
                     utteranceId,
                     e.message ?: localizedContext.getString(R.string.tts_error_request_failed),
@@ -75,39 +95,53 @@ class ElevenLabsTtsEngine @Inject constructor(
     }
 
     override fun prefetch(utteranceId: String, text: String) {
-        if (prefetched.containsKey(utteranceId)) return
-        scope.launch {
-            runCatching { synthesize(text) }.onSuccess { prefetched[utteranceId] = it }
-        }
+        request(utteranceId, text)
+    }
+
+    private fun request(utteranceId: String, text: String) = requests.get(utteranceId) {
+        synthesize(text, config ?: error("ElevenLabs engine not configured"))
     }
 
     override fun pause() {
+        playback.pause()
         runCatching { player?.takeIf { it.isPlaying }?.pause() }
     }
 
     override fun resume() {
-        runCatching { player?.start() }
+        when (playback.resume()) {
+            TtsAudioPlayback.Resume.WAIT -> Unit
+            TtsAudioPlayback.Resume.START -> runCatching { player?.start() }
+            TtsAudioPlayback.Resume.COMPLETE -> playingId?.let { listener?.onDone(it) }
+        }
     }
 
     override fun stop() {
         speakJob?.cancel()
         speakJob = null
-        prefetched.clear()
+        requests.clear()
+        playback.reset()
+        playingId = null
         releasePlayer()
         runCatching { cacheDir.listFiles()?.forEach { it.delete() } }
     }
 
     override fun release() = stop()
 
-    private suspend fun synthesize(text: String): ByteArray {
-        val cfg = config ?: error("ElevenLabs engine not configured")
-        return api.synthesize(
-            apiKey = cfg.elevenLabsApiKey,
-            voiceId = resolveVoiceId(cfg),
-            modelId = cfg.elevenLabsModel,
-            text = text,
-            speed = cfg.rate,
-        )
+    private suspend fun synthesize(text: String, cfg: TtsEngineConfig): ByteArray {
+        val voiceId = voiceMutex.withLock { resolveVoiceId(cfg) }
+        val key = ttsAudioCacheKey(cfg, voiceId, text)
+        return withContext(Dispatchers.IO) {
+            audioCache.get(key) ?: api.synthesize(
+                apiKey = cfg.elevenLabsApiKey,
+                voiceId = voiceId,
+                modelId = cfg.elevenLabsModel,
+                text = text,
+                speed = cfg.rate,
+            ).also {
+                currentCoroutineContext().ensureActive()
+                audioCache.put(key, it)
+            }
+        }
     }
 
     /** The chosen voice, or — when none is set — a default voice usable on any plan. */
@@ -120,11 +154,6 @@ class ElevenLabsTtsEngine @Inject constructor(
         return id
     }
 
-    private fun writeTemp(utteranceId: String, bytes: ByteArray): File {
-        val safe = utteranceId.replace(Regex("[^A-Za-z0-9_-]"), "_")
-        return File(cacheDir, "u_$safe.mp3").apply { writeBytes(bytes) }
-    }
-
     private fun play(utteranceId: String, file: File) {
         releasePlayer()
         val mp = MediaPlayer()
@@ -135,14 +164,19 @@ class ElevenLabsTtsEngine @Inject constructor(
                 .build(),
         )
         mp.setOnPreparedListener {
-            it.start()
-            listener?.onStart(utteranceId)
+            if (player === it && playback.prepared()) {
+                it.start()
+                listener?.onStart(utteranceId)
+            }
         }
         mp.setOnCompletionListener {
-            file.delete()
-            listener?.onDone(utteranceId)
+            if (player === it) {
+                file.delete()
+                if (playback.completed()) listener?.onDone(utteranceId)
+            }
         }
-        mp.setOnErrorListener { _, what, _ ->
+        mp.setOnErrorListener { failed, what, _ ->
+            if (player !== failed) return@setOnErrorListener true
             file.delete()
             listener?.onError(
                 utteranceId,
@@ -151,6 +185,7 @@ class ElevenLabsTtsEngine @Inject constructor(
             true
         }
         player = mp
+        playerFile = file
         runCatching {
             mp.setDataSource(file.path)
             mp.prepareAsync()
@@ -173,5 +208,7 @@ class ElevenLabsTtsEngine @Inject constructor(
             }
         }
         player = null
+        playerFile?.delete()
+        playerFile = null
     }
 }
