@@ -3,16 +3,13 @@ package io.grimoire.app.data.epub
 import android.content.Context
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.NovelPage
-import io.grimoire.api.model.novel.NovelStatus
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.ChapterImageStore
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
-import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.encodeChapterContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -132,8 +129,8 @@ class EpubImporter @Inject constructor(
     /**
      * Stores [parsed] as a fully-downloaded novel attributed to [sourceId] /
      * [url]. Re-importing the same (sourceId, url) replaces its chapters and
-     * preserves the existing library state (favorite, category, sort,
-     * last-read) unless [favorite] / [markRead] override it.
+     * preserves existing user metadata and reading state. [favorite] applies
+     * to new rows; [markRead] updates the novel's last-read time.
      */
     private suspend fun persist(
         parsed: ParsedEpub,
@@ -151,32 +148,8 @@ class EpubImporter @Inject constructor(
 
         val existing = novelDao.getBySourceUrl(sourceId, url)
         novelDao.upsert(
-            NovelEntity(
-                id = existing?.id ?: 0L,
-                sourceId = sourceId,
-                url = url,
-                title = parsed.title,
-                thumbnailUrl = thumbnailUrl ?: existing?.thumbnailUrl,
-                author = parsed.author,
-                description = parsed.description,
-                genres = parsed.genres.joinToString(","),
-                // dc:language is a BCP-47 tag; store the English name to match how
-                // source novels persist theirs (see Novel.toEntity). Unmappable or
-                // absent tags keep whatever an earlier import recorded.
-                language = parsed.language
-                    ?.let { Language.fromCode(it.substringBefore('-')) }
-                    ?.takeIf { it != Language.UNKNOWN && it != Language.MULTI }
-                    ?.displayName
-                    ?: existing?.language,
-                status = NovelStatus.COMPLETED.ordinal,
-                favorite = existing?.favorite ?: favorite,
-                lastUpdated = System.currentTimeMillis(),
-                chapterSortOrder = existing?.chapterSortOrder ?: 0,
-                categoryId = existing?.categoryId,
-                lastReadAt = if (markRead) System.currentTimeMillis() else (existing?.lastReadAt ?: 0L),
-                notifyOnNewChapters = existing?.notifyOnNewChapters ?: false,
-                notifyOnNewLockedChapters = existing?.notifyOnNewLockedChapters ?: false,
-            ),
+            mergeEpubMetadata(existing, parsed, sourceId, url, thumbnailUrl, favorite, markRead,
+                System.currentTimeMillis()),
         )
         // @Upsert returns -1 on the update path, so resolve the real row
         // id explicitly — otherwise chapters get novelId = -1 and the
@@ -209,12 +182,9 @@ class EpubImporter @Inject constructor(
                 url = chapterUrl,
                 name = ch.title,
                 chapterNumber = (index + 1).toFloat(),
-                read = prior?.read ?: false,
-                readProgress = prior?.readProgress ?: 0f,
-                firstReadAt = prior?.firstReadAt,
                 downloadStatus = ChapterDownloadStatus.DOWNLOADED.ordinal,
                 wordCount = encoded.countWords(),
-            )
+            ).withEpubReadingState(prior)
         }
         chapterDao.replaceChaptersWithContent(novelId, entities, contents)
 
