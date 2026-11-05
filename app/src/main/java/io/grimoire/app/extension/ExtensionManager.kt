@@ -91,7 +91,7 @@ class ExtensionManager @Inject constructor(
 
     private suspend fun applyPreferences(loaded: LoadedExtension) {
         val pkg = loaded.info.packageName
-        runCatching {
+        applySetting(pkg) {
             (loaded.source as? ConfigurableSource)?.let { configurable ->
                 val prefs = configurable.getPreferences()
                 val stored = sourceSettings.snapshot(pkg, prefs.map { it.key })
@@ -106,11 +106,20 @@ class ExtensionManager @Inject constructor(
                 }.toMap()
                 configurable.setPreferences(typed)
             }
+        }
+        applySetting(pkg) {
             (loaded.source as? MultiLanguageSource)?.setEnabledLanguages(
                 sourceSettings.effectiveLanguages(pkg),
             )
+        }
+        applySetting(pkg) {
             (loaded.source as? MultiHostSource)?.setActiveHost(sourceSettings.activeHostNow(pkg))
-        }.onFailure { Log.e(TAG, "Failed to apply source settings [pkg=$pkg]", it) }
+        }
+    }
+
+    private suspend fun applySetting(pkg: String, block: suspend () -> Unit) {
+        catchExtensionFailure(block)
+            .onFailure { Log.e(TAG, "Failed to apply source settings [pkg=$pkg]", it) }
     }
 
     private suspend fun scanPackages() = scanMutex.withLock {
