@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
 import io.grimoire.app.R
 
@@ -51,6 +52,7 @@ fun WebViewScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val copiedUrlMessage = stringResource(R.string.webview_url_copied)
@@ -163,7 +165,7 @@ fun WebViewScreen(
             }
             AndroidView(
                 factory = { ctx ->
-                    WebView(ctx).apply {
+                    LifecycleWebView(ctx, lifecycleOwner).apply {
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         webViewClient = object : WebViewClient() {
@@ -196,6 +198,7 @@ fun WebViewScreen(
                     }
                 },
                 modifier = Modifier.fillMaxSize(),
+                onRelease = { it.destroy() },
             )
         }
     }
