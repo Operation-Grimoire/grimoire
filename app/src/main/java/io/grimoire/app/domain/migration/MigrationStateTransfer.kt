@@ -49,6 +49,9 @@ internal fun matchMigratedChapters(
         if (matches[index] != null) return@forEachIndexed
         val number = chapter.effectiveNumber()
         val previous = byNumber[number]?.takeIf { targetNumbers[number] == 1 } ?: return@forEachIndexed
+        val sourceVolume = source[previous].volumeNumber()
+        val targetVolume = chapter.volumeNumber()
+        if (sourceVolume != null && targetVolume != null && sourceVolume != targetVolume) return@forEachIndexed
         if (claimed.add(previous)) matches[index] = source[previous]
     }
 
@@ -69,6 +72,7 @@ private val CHAPTER_NUMBER = Regex(
     """\b(?:chapter|chap|episode|part)\b\.?\s*(\d+(?:\.\d+)?)""",
     RegexOption.IGNORE_CASE,
 )
+private val VOLUME_NUMBER = Regex("""\b(?:volume|vol|book|v)\.?\s*(\d+)\b""", RegexOption.IGNORE_CASE)
 private val ANY_NUMBER = Regex("""\d+(?:\.\d+)?""")
 private val WHITESPACE = Regex("""\s+""")
 
@@ -77,6 +81,9 @@ private fun ChapterEntity.effectiveNumber(): Float {
     CHAPTER_NUMBER.find(name)?.groupValues?.get(1)?.toFloatOrNull()?.let { return it }
     return ANY_NUMBER.find(name)?.value?.toFloatOrNull() ?: -1f
 }
+
+private fun ChapterEntity.volumeNumber(): Int? =
+    VOLUME_NUMBER.find(name)?.groupValues?.get(1)?.toIntOrNull()
 
 private fun String.chapterNameKey(): String =
     trim().lowercase(Locale.ROOT).replace(WHITESPACE, " ")

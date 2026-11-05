@@ -23,6 +23,12 @@ class MigrationStateTransferTest {
             listOf(chapter("Renamed A", 1f), chapter("Renamed B", 1f))).isEmpty())
     }
 
+    @Test fun explicitDifferentVolumesNeverUseNumericFallback() {
+        val source = listOf(chapter("V1 Ch1", 1f, true))
+        assertTrue(matchMigratedChapters(source, listOf(chapter("V2 Ch1", 1f))).isEmpty())
+        assertTrue(matchMigratedChapters(source, listOf(chapter("Volume 1: Chapter 1", 1f))).single().read)
+    }
+
     @Test fun normalizedNameWinsOverAConflictingNumber() {
         val source = listOf(chapter("The Beginning", 1f, true), chapter("Other", 2f))
         val target = listOf(chapter("  THE   BEGINNING ", 2f))
