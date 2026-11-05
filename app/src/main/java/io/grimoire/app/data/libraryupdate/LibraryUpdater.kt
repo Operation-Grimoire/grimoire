@@ -133,14 +133,19 @@ class LibraryUpdater @Inject constructor(
                             ) {
                                 refreshNovel(current, extensions, requireFavorite = true)
                             } ?: run {
-                                setIssue(
-                                    current,
-                                    extensions.firstOrNull { it.id == current.sourceId }
-                                        ?.info?.packageName.orEmpty(),
-                                    UpdateIssueSeverity.ERROR,
-                                    ISSUE_SOURCE_PAUSED,
-                                )
-                                NovelRefreshResult.Failed
+                                val latest = novelDao.getById(novel.id)
+                                if (latest == null || !isEligibleForLibrarySync(latest)) {
+                                    NovelRefreshResult.Skipped
+                                } else {
+                                    setIssue(
+                                        latest,
+                                        extensions.firstOrNull { it.id == latest.sourceId }
+                                            ?.info?.packageName.orEmpty(),
+                                        UpdateIssueSeverity.ERROR,
+                                        ISSUE_SOURCE_PAUSED,
+                                    )
+                                    NovelRefreshResult.Failed
+                                }
                             }
                             when (result) {
                                 is NovelRefreshResult.Ok -> {
@@ -221,7 +226,7 @@ class LibraryUpdater @Inject constructor(
         requireFavorite: Boolean = false,
     ): NovelRefreshResult {
         var novel = novelDao.getById(snapshot.id) ?: return NovelRefreshResult.Skipped
-        if (requireFavorite && (!novel.favorite || !shouldSyncNovel(novel))) return NovelRefreshResult.Skipped
+        if (requireFavorite && !isEligibleForLibrarySync(novel)) return NovelRefreshResult.Skipped
         val loaded = extensions.firstOrNull { it.id == novel.sourceId }
         if (loaded == null) {
             setIssue(novel, "", UpdateIssueSeverity.WARNING, "Source not installed — skipped")
@@ -247,7 +252,7 @@ class LibraryUpdater @Inject constructor(
         }
 
         novel = novelDao.getById(novel.id) ?: return NovelRefreshResult.Skipped
-        if (requireFavorite && (!novel.favorite || !shouldSyncNovel(novel))) return NovelRefreshResult.Skipped
+        if (requireFavorite && !isEligibleForLibrarySync(novel)) return NovelRefreshResult.Skipped
 
         val fetchedChapters = runCatching {
             retrySourceCall { fetchAllChapters(src, fetched, window = 2) }
@@ -261,7 +266,7 @@ class LibraryUpdater @Inject constructor(
         // be replaced by the start-of-run snapshot.
         val merged = database.withTransaction {
             val current = novelDao.getById(novel.id) ?: return@withTransaction null
-            if (requireFavorite && (!current.favorite || !shouldSyncNovel(current))) return@withTransaction null
+            if (requireFavorite && !isEligibleForLibrarySync(current)) return@withTransaction null
             val updated = mergeNovelMetadata(current, fetched, System.currentTimeMillis())
             if (updated != current) novelDao.upsert(updated)
             updated

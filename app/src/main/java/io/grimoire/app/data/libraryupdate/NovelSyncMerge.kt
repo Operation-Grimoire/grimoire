@@ -8,6 +8,9 @@ import io.grimoire.app.data.local.entity.NovelEntity
 internal fun shouldSyncNovel(novel: NovelEntity): Boolean =
     novel.effectiveStatus != NovelStatus.COMPLETED.ordinal
 
+internal fun isEligibleForLibrarySync(novel: NovelEntity): Boolean =
+    novel.favorite && shouldSyncNovel(novel)
+
 /** Keeps local edits and good metadata when a source returns incomplete fields. */
 internal fun mergeNovelMetadata(old: NovelEntity, fetched: Novel, now: Long): NovelEntity {
     val merged = old.copy(
