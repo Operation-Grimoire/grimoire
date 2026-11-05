@@ -34,6 +34,10 @@ private val GRIMOIRE_LIGHT = Color(0xFF7CFC4D)
 // visible banding rather than a single fade.
 private const val GRIMOIRE_WAVE_FREQUENCY = 1.5f
 
+// All paragraphs sample the same 18-step, 1.8-second wave.
+internal fun grimoireWavePhase(elapsedMillis: Long): Float =
+    ((elapsedMillis / 100) % 18).toFloat() / 18f
+
 internal fun grimoireWaveColor(phase: Float, charPos: Float): Color {
     val arg = (GRIMOIRE_WAVE_FREQUENCY * charPos - phase).mod(1f)
     val w = (sin(arg * 2f * PI.toFloat()) + 1f) / 2f
