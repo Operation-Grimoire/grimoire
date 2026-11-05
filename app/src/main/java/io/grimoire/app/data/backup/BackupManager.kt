@@ -8,14 +8,15 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.documentfile.provider.DocumentFile
+import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.grimoire.app.data.local.AppDatabase
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.NuBookmarkDao
 import io.grimoire.app.data.local.dao.RepoDao
 import io.grimoire.app.data.local.entity.CategoryEntity
-import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.NuBookmarkEntity
 import io.grimoire.app.data.local.entity.RepoEntity
@@ -66,6 +67,7 @@ class BackupManager @Inject constructor(
     private val repoDao: RepoDao,
     private val nuBookmarkDao: NuBookmarkDao,
     private val dataStore: DataStore<Preferences>,
+    private val database: AppDatabase,
 ) {
 
     // Resolved per use: these singletons outlive an in-app language change.
@@ -194,7 +196,6 @@ class BackupManager @Inject constructor(
                 )
             }
             applyBackup(backup)
-            RestoreResult.Success(backup.novels.size, backup.novels.sumOf { it.chapters.size })
         }.getOrElse { e ->
             RestoreResult.Failure(e.message ?: localizedContext.getString(R.string.restore_failed))
         }
@@ -283,6 +284,9 @@ class BackupManager @Inject constructor(
                         translator = c.translator,
                         read = c.read,
                         readProgress = c.readProgress,
+                        readAnchorItemIndex = c.readAnchorItemIndex,
+                        readAnchorItemOffset = c.readAnchorItemOffset,
+                        locked = c.locked,
                         firstReadAt = c.firstReadAt,
                         wordCount = c.wordCount,
                     )
@@ -315,7 +319,7 @@ class BackupManager @Inject constructor(
             }
         }
 
-    /** Overwrite stored preferences with the backed-up values (backup wins). */
+    /** Apply compatible backed-up preferences after the database restore succeeds. */
     private suspend fun restorePreferences(preferences: List<BackupPreference>) {
         if (preferences.isEmpty()) return
         dataStore.edit { prefs ->
@@ -323,9 +327,15 @@ class BackupManager @Inject constructor(
         }
     }
 
-    private suspend fun applyBackup(backup: BackupFile) {
+    private suspend fun applyBackup(backup: BackupFile): RestoreResult.Success {
+        val restored = database.withTransaction { applyDatabaseBackup(backup) }
         restorePreferences(backup.preferences)
+        return restored
+    }
 
+    private suspend fun applyDatabaseBackup(backup: BackupFile): RestoreResult.Success {
+        var novelCount = 0
+        var chapterCount = 0
         val existingCategories = categoryDao.getAllOnce()
         val existingByName = existingCategories.associateBy { it.name }
         val existingDefault = existingCategories.firstOrNull { it.isDefault }
@@ -388,64 +398,20 @@ class BackupManager @Inject constructor(
         for (novel in backup.novels) {
             val existing = novelDao.getBySourceUrl(novel.sourceId, novel.url)
             val categoryId = novel.categoryName?.let { categoryIdByName[it] }
-            val mergedNovel = NovelEntity(
-                id = existing?.id ?: 0,
-                sourceId = novel.sourceId,
-                url = novel.url,
-                title = novel.title,
-                thumbnailUrl = novel.thumbnailUrl ?: existing?.thumbnailUrl,
-                author = novel.author ?: existing?.author,
-                description = novel.description ?: existing?.description,
-                genres = if (novel.genres.isNotEmpty()) novel.genres else (existing?.genres ?: ""),
-                status = novel.status,
-                favorite = novel.favorite || (existing?.favorite ?: false),
-                lastUpdated = maxOf(novel.lastUpdated, existing?.lastUpdated ?: 0L),
-                chapterSortOrder = novel.chapterSortOrder,
-                categoryId = categoryId ?: existing?.categoryId,
-                lastReadAt = maxOf(novel.lastReadAt, existing?.lastReadAt ?: 0L),
-                rating = novel.rating ?: existing?.rating,
-                ratingCount = novel.ratingCount ?: existing?.ratingCount,
-                userRating = novel.userRating ?: existing?.userRating,
-                notifyOnNewChapters = novel.notifyOnNewChapters || (existing?.notifyOnNewChapters ?: false),
-                notifyOnNewLockedChapters = novel.notifyOnNewLockedChapters || (existing?.notifyOnNewLockedChapters ?: false),
-                autoDownloadNewChapters = novel.autoDownloadNewChapters || (existing?.autoDownloadNewChapters ?: false),
-                language = novel.language ?: existing?.language,
-                readerTextAlign = if (novel.readerTextAlign != 0) novel.readerTextAlign
-                    else (existing?.readerTextAlign ?: 0),
-                // Never in the backup (device-local file) — keep whatever this device has.
-                customCoverPath = existing?.customCoverPath,
-                customCoverUrl = novel.customCoverUrl ?: existing?.customCoverUrl,
-                overrideTitle = novel.overrideTitle ?: existing?.overrideTitle,
-                overrideAuthor = novel.overrideAuthor ?: existing?.overrideAuthor,
-                overrideDescription = novel.overrideDescription ?: existing?.overrideDescription,
-                overrideStatus = novel.overrideStatus ?: existing?.overrideStatus,
-                overrideGenres = novel.overrideGenres ?: existing?.overrideGenres,
-            )
+            val mergedNovel = mergeBackupNovel(novel, existing, categoryId) ?: continue
             val novelId = novelDao.upsert(mergedNovel)
             val effectiveId = if (existing != null && novelId == -1L) existing.id else novelId
+            novelCount++
+            chapterCount += novel.chapters.size
             if (novel.chapters.isNotEmpty()) {
                 val existingChapters = chapterDao.getChaptersOnce(effectiveId).associateBy { it.url }
                 val merged = novel.chapters.map { c ->
-                    val existingCh = existingChapters[c.url]
-                    ChapterEntity(
-                        id = existingCh?.id ?: 0,
-                        novelId = effectiveId,
-                        url = c.url,
-                        name = c.name,
-                        uploadDate = c.uploadDate,
-                        chapterNumber = c.chapterNumber,
-                        translator = c.translator ?: existingCh?.translator,
-                        read = c.read || (existingCh?.read ?: false),
-                        readProgress = maxOf(c.readProgress, existingCh?.readProgress ?: 0f),
-                        downloadStatus = existingCh?.downloadStatus ?: 0,
-                        queueOrder = existingCh?.queueOrder ?: 0L,
-                        firstReadAt = c.firstReadAt ?: existingCh?.firstReadAt,
-                        wordCount = if (c.wordCount > 0) c.wordCount else (existingCh?.wordCount ?: 0),
-                    )
+                    mergeBackupChapter(c, existingChapters[c.url], effectiveId)
                 }
                 chapterDao.upsertAll(merged)
             }
         }
+        return RestoreResult.Success(novelCount, chapterCount)
     }
 
     private fun OutputStream.writeUtf8(s: String) = write(s.toByteArray(Charsets.UTF_8))
