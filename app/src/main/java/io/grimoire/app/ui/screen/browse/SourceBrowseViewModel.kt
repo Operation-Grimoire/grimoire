@@ -109,7 +109,10 @@ class SourceBrowseViewModel @Inject constructor(
     val sourceBaseUrl: String get() = loaded?.source?.javaClass
         ?.getAnnotation(SourceInfo::class.java)?.baseUrl ?: ""
 
-    val supportsSearchWithFilters: Boolean get() = searchSource?.supportsSearchWithFilters ?: false
+    val supportsSearchWithFilters: Boolean
+        get() = runCatching { searchSource?.supportsSearchWithFilters ?: false }
+            .onFailure { Log.e(TAG, "Failed to read search capabilities [pkg=$packageName]", it) }
+            .getOrDefault(false)
 
     private val _filters = MutableStateFlow<List<Filter<*>>>(emptyList())
     val filters: StateFlow<List<Filter<*>>> = _filters.asStateFlow()
@@ -200,18 +203,25 @@ class SourceBrowseViewModel @Inject constructor(
 
     private fun initFilters() {
         val src = filterSource ?: return
-        val list = src.getFilterList()
+        val list = runCatching { src.getFilterList() }
+            .onFailure { Log.e(TAG, "Failed to initialize filters [pkg=$packageName]", it) }
+            .getOrDefault(emptyList())
         _filters.value = list
         _filterLoadState.value = when {
             list.isEmpty() -> FilterLoadState.None
-            src.hasDynamicFilters -> FilterLoadState.NeedsLoad
+            hasDynamicFilters(src) -> FilterLoadState.NeedsLoad
             else -> FilterLoadState.Ready
         }
     }
 
+    private fun hasDynamicFilters(src: FilterSource): Boolean =
+        runCatching { src.hasDynamicFilters }
+            .onFailure { Log.e(TAG, "Failed to read filter capabilities [pkg=$packageName]", it) }
+            .getOrDefault(false)
+
     fun loadFilterOptions() {
         val src = filterSource ?: return
-        if (!src.hasDynamicFilters) return
+        if (!hasDynamicFilters(src)) return
         if (_filterLoadState.value is FilterLoadState.Loading) return
         viewModelScope.launch {
             _filterLoadState.value = FilterLoadState.Loading
