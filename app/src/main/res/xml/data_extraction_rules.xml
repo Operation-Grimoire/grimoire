@@ -3,7 +3,7 @@
     <cloud-backup>
         <!-- Only durable library data and user covers travel. The DataStore mixes
              settings with credentials; GitHub auth also uses device keystore keys.
-             Cache, downloads, logs and future files are excluded by this allowlist. -->
+             File caches, logs and future files are excluded by this allowlist. -->
         <include domain="database" path="." />
         <include domain="file" path="covers/" />
         <include domain="file" path="epub_covers/" />
@@ -13,7 +13,7 @@
     <device-transfer>
         <!-- Only durable library data and user covers travel. The DataStore mixes
              settings with credentials; GitHub auth also uses device keystore keys.
-             Cache, downloads, logs and future files are excluded by this allowlist. -->
+             File caches, logs and future files are excluded by this allowlist. -->
         <include domain="database" path="." />
         <include domain="file" path="covers/" />
         <include domain="file" path="epub_covers/" />
