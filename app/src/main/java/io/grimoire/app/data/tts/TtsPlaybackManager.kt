@@ -99,6 +99,7 @@ class TtsPlaybackManager @Inject constructor(
 
     // Current chapter playback.
     private var activeEngine: TtsEngine? = null
+    private var engineInitialized = false
     private var utterances: List<Utterance> = emptyList()
     private var utteranceIndex = 0
     private var generation = 0
@@ -115,6 +116,7 @@ class TtsPlaybackManager @Inject constructor(
         pages: List<NovelPage>,
     ) {
         playbackTask.cancel()
+        engineInitialized = false
         generation++
         activeEngine?.stop()
         this.pkg = pkg
@@ -133,6 +135,7 @@ class TtsPlaybackManager @Inject constructor(
     /** Begins playback. Called by [TtsPlaybackService] once it is in the foreground. */
     fun startPlayback() {
         playbackTask.launch {
+            engineInitialized = false
             _state.value = TtsPlaybackState.LOADING
             val engineType = ttsPreferences.engine.changes().first()
             val engine = if (engineType == TtsEngineType.ELEVENLABS) cloudEngine else deviceEngine
@@ -166,7 +169,7 @@ class TtsPlaybackManager @Inject constructor(
                     },
                 )
             }
-            currentCoroutineContext().ensureActive()
+            engineInitialized = true
             startChapter(chapterIndex, preloadedPages)
         }
     }
@@ -200,6 +203,7 @@ class TtsPlaybackManager @Inject constructor(
 
     fun stop() {
         playbackTask.cancel()
+        engineInitialized = false
         generation++
         activeEngine?.stop()
         _state.value = TtsPlaybackState.IDLE
@@ -213,11 +217,13 @@ class TtsPlaybackManager @Inject constructor(
     }
 
     fun skipNext() {
+        if (!engineInitialized) return
         if (chapterIndex >= chapters.size - 1) return
         playbackTask.launch { startChapter(chapterIndex + 1, null, startIndex = 0) }
     }
 
     fun skipPrevious() {
+        if (!engineInitialized) return
         playbackTask.launch {
             // Restart the current chapter if well into it, otherwise go to the previous one.
             val target = if (utteranceIndex > 2 || chapterIndex == 0) chapterIndex else chapterIndex - 1
@@ -387,6 +393,7 @@ class TtsPlaybackManager @Inject constructor(
 
     private fun fail(message: String) {
         playbackTask.cancel()
+        engineInitialized = false
         generation++
         activeEngine?.stop()
         _state.value = TtsPlaybackState.ERROR
