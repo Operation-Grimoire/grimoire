@@ -326,13 +326,19 @@ interface ChapterDao {
         clearSettledDownloadStatus(novelId)
     }
 
+    @Query(
+        "UPDATE chapters SET downloadStatus = CASE WHEN downloadStatus = 7 THEN 5 ELSE 1 END " +
+            "WHERE id = :id AND downloadStatus IN (4, 7)"
+    )
+    suspend fun retryDownload(id: Long): Int
+
     // Retry of failed: fresh (4) → QUEUED (1); refresh (7) → REDOWNLOAD_QUEUED (5).
     @Query(
         "UPDATE chapters " +
             "SET downloadStatus = CASE WHEN downloadStatus = 7 THEN 5 ELSE 1 END " +
             "WHERE novelId = :novelId AND downloadStatus IN (4, 7)"
     )
-    suspend fun retryAllFailed(novelId: Long)
+    suspend fun retryAllFailed(novelId: Long): Int
 
     // Cancel of failed: fresh (4) → NONE (0); refresh (7) → DOWNLOADED (3), keeping the
     // existing saved content (the failed refresh didn't wipe it).

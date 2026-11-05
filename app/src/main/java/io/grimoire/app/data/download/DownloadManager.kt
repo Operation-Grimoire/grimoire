@@ -50,6 +50,7 @@ class DownloadManager @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val drain = DownloadDrain()
     private val queueWrites = DownloadQueueWrites(scope)
+    private val serviceRequests = DownloadServiceRequests()
     private val _isPaused = MutableStateFlow(false)
     val isPaused: StateFlow<Boolean> = _isPaused.asStateFlow()
     private val pauseLoaded = scope.async {
@@ -61,7 +62,7 @@ class DownloadManager @Inject constructor(
         .stateIn(scope, SharingStarted.Eagerly, downloadPreferences.concurrency.defaultValue())
 
     fun pause() {
-        queueWrites.submit { setPaused(true) }
+        queueWrites.submit { setPaused(true); serviceRequests.clear() }
     }
 
     private suspend fun setPaused(value: Boolean) {
@@ -77,12 +78,13 @@ class DownloadManager @Inject constructor(
         drain.run(false) { chapterDao.resetStuckDownloads() }
         if (!_isPaused.value && chapterDao.getPendingDownloadCount() > 0) {
             currentCoroutineContext().ensureActive()
+            serviceRequests.allow()
             requestServiceStart()
         }
     }
 
     fun resume() {
-        queueWrites.submit { setPaused(false) }
+        queueWrites.submit { setPaused(false); serviceRequests.allow() }
         requestServiceStart()
     }
 
@@ -104,7 +106,8 @@ class DownloadManager @Inject constructor(
             // downloaded throughout the refresh.
             val freshIds = mutableListOf<Long>()
             val refreshIds = mutableListOf<Long>()
-            for (ch in editableChapters(chapters)) {
+            val eligible = editableChapters(chapters)
+            for (ch in eligible) {
                 if (ch.locked) continue
                 when (ch.downloadStatus) {
                     ChapterDownloadStatus.NONE.ordinal,
@@ -119,11 +122,15 @@ class DownloadManager @Inject constructor(
             refreshIds.chunked(999).forEach { chunk ->
                 chapterDao.setDownloadStatusBatch(chunk, ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal)
             }
+            val hasTargets = freshIds.isNotEmpty() || refreshIds.isNotEmpty() ||
+                eligible.any { !it.locked && it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }
+            if (startService && hasTargets) {
+                setPaused(false)
+                serviceRequests.allow()
+            }
         }
-        if (startService) {
-            queueWrites.submit { setPaused(false) }
-            requestServiceStart()
-        }
+        // Reserve the foreground slot now; the service awaits eligibility and writes.
+        if (startService) requestServiceStart()
     }
 
     fun cancel(chapter: ChapterEntity) = cancelDownloads(listOf(chapter))
@@ -173,25 +180,25 @@ class DownloadManager @Inject constructor(
     }
 
     fun retryChapter(chapter: ChapterEntity) {
-        val target = when (chapter.downloadStatus) {
-            ChapterDownloadStatus.ERROR.ordinal -> ChapterDownloadStatus.QUEUED.ordinal
-            ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal -> ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal
-            else -> return
-        }
+        if (chapter.downloadStatus !in ChapterDownloadStatus.ERROR_ORDINALS) return
         queueWrites.submit {
             if (canManageDownloads(novelDao.getById(chapter.novelId)?.sourceId)) {
-                chapterDao.setDownloadStatus(chapter.id, target)
+                if (chapterDao.retryDownload(chapter.id) > 0) {
+                    setPaused(false)
+                    serviceRequests.allow()
+                }
             }
         }
-        queueWrites.submit { setPaused(false) }
         requestServiceStart()
     }
 
     fun retryAll(novelId: Long) {
         queueWrites.submit {
-            if (canManageDownloads(novelDao.getById(novelId)?.sourceId)) chapterDao.retryAllFailed(novelId)
+            if (canManageDownloads(novelDao.getById(novelId)?.sourceId) && chapterDao.retryAllFailed(novelId) > 0) {
+                setPaused(false)
+                serviceRequests.allow()
+            }
         }
-        queueWrites.submit { setPaused(false) }
         requestServiceStart()
     }
 
@@ -212,6 +219,12 @@ class DownloadManager @Inject constructor(
     fun cancelAllFailed(novelId: Long) {
         scope.launch { chapterDao.cancelAllFailed(novelId) }
     }
+
+    internal suspend fun processServiceQueue(
+        onProgress: (chapterName: String, remaining: Int) -> Unit,
+    ): DownloadBatchResult = serviceRequests.run(queueWrites::await) {
+        processQueue(waitForTurn = true, onProgress = onProgress)
+    } ?: DownloadBatchResult(downloaded = 0, failed = 0)
 
     suspend fun processQueue(
         waitForTurn: Boolean = false,

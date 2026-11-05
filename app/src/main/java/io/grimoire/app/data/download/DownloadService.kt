@@ -48,7 +48,7 @@ class DownloadService : Service() {
                 do {
                     val drainingStartId = latestStartId
                     // Stay responsible for taps arriving as the inline worker finishes.
-                    val result = downloadManager.processQueue(waitForTurn = true) { chapterName, remaining ->
+                    val result = downloadManager.processServiceQueue { chapterName, remaining ->
                         val text = when {
                             chapterName.isBlank() && remaining > 0 ->
                                 localizedContext.getString(R.string.download_notification_queued, remaining)
