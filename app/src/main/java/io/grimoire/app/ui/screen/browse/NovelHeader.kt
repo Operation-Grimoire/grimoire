@@ -46,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.app.ui.component.ImageAction
+import io.grimoire.app.ui.component.rememberShimmerAlpha
 import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.component.localizedDisplayName
@@ -293,18 +294,19 @@ internal fun OverrideIndicator(overridden: Boolean, onClick: () -> Unit) {
 
 @Composable
 internal fun NovelHeaderSkeleton(modifier: Modifier = Modifier) {
+    val alpha = rememberShimmerAlpha()
     Row(
         modifier = modifier.fillMaxWidth().padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        ShimmerBox(modifier = Modifier.width(140.dp).aspectRatio(2f / 3f), shape = RoundedCornerShape(8.dp))
+        ShimmerBox(modifier = Modifier.width(140.dp).aspectRatio(2f / 3f), shape = RoundedCornerShape(8.dp), alpha = alpha)
         Column(
             modifier = Modifier.weight(1f).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            ShimmerBox(modifier = Modifier.fillMaxWidth().height(20.dp))
-            ShimmerBox(modifier = Modifier.fillMaxWidth(0.6f).height(14.dp))
-            ShimmerBox(modifier = Modifier.fillMaxWidth(0.35f).height(12.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth().height(20.dp), alpha = alpha)
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.6f).height(14.dp), alpha = alpha)
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.35f).height(12.dp), alpha = alpha)
         }
     }
 }
