@@ -97,7 +97,9 @@ class AppUpdateChecker @Inject constructor(
         channel: UpdateChannel,
     ): String? = withContext(Dispatchers.IO) {
         runCatching {
-            val included = notesReleasesSince(fetchReleases(RELEASES_LIST_URL), fromTag, toTag, channel)
+            val releases = fetchReleases(RELEASES_LIST_URL)
+            val latestStable = fetchRelease(LATEST_RELEASE_URL)
+            val included = notesReleasesSince(releases, fromTag, toTag, channel, latestStable)
             if (included.isEmpty()) return@runCatching null
             included.joinToString("\n\n") { release ->
                 val header = "## ${release.tag_name}"

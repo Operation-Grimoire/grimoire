@@ -23,6 +23,9 @@ internal fun compareSemver(a: String, b: String): Int =
 private fun betaChannelRelease(release: GitHubRelease): Boolean =
     !release.prerelease || BETA_TAG.matches(release.tag_name)
 
+private fun List<GitHubRelease>.withLatestStable(stable: GitHubRelease?): List<GitHubRelease> =
+    stable?.takeUnless { latest -> any { it.tag_name == latest.tag_name } }?.let { this + it } ?: this
+
 private val VERSION_CODE_ORDER = compareBy<GitHubRelease> { releaseVersionCode(it.tag_name) }
     .thenBy { AppUpdateChecker.SemverKey(it.tag_name.removePrefix("v")) }
 
@@ -36,7 +39,7 @@ internal fun checkAppUpdate(
 ): Result<ReleaseInfo?> = runCatching {
     val release = when (channel) {
         UpdateChannel.STABLE -> fetchStable()
-        UpdateChannel.BETA -> (fetchReleases() + listOfNotNull(fetchStable()))
+        UpdateChannel.BETA -> fetchReleases().withLatestStable(fetchStable())
             .filter { it.tag_name.isNotBlank() && betaChannelRelease(it) }
             .maxWithOrNull(VERSION_CODE_ORDER)
     } ?: return@runCatching null
@@ -67,8 +70,9 @@ internal fun notesReleasesSince(
     fromTag: String,
     toTag: String,
     channel: UpdateChannel,
+    latestStable: GitHubRelease? = null,
 ): List<GitHubRelease> {
-    val included = releases.filter { release ->
+    val included = releases.withLatestStable(latestStable).filter { release ->
         if (release.tag_name.isBlank()) return@filter false
         when (channel) {
             UpdateChannel.STABLE -> !release.prerelease &&
