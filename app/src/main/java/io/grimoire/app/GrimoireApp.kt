@@ -115,7 +115,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
         super.onCreate()
         installCrashHandler()
         AppLocale.migrateToSystem(this)
-        // Keep the analytics enabled-flag in sync with the opt-in preference.
+        // Keep analytics enabled state in sync with the usage preference (default on).
         ProcessLifecycleOwner.get().lifecycleScope.launch {
             analyticsPreferences.usageAnalyticsEnabled.changes().collect {
                 analytics.setEnabled(this@GrimoireApp, it)
@@ -138,7 +138,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
                 }
                 relockJob?.cancel()
                 relockJob = null
-                // Await the opt-in pref (and lazily init the SDK) before tracking, so the
+                // Await the usage preference (and lazily init the SDK) before tracking, so the
                 // first cold-start open isn't dropped by the enable-collect racing onStart.
                 ProcessLifecycleOwner.get().lifecycleScope.launch {
                     val on = analyticsPreferences.usageAnalyticsEnabled.changes().first()
@@ -156,7 +156,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
                 // always restarts locked.
                 // Fires for real backgrounding *and* app-driven excursions (SAF picker,
                 // share sheet, in-app browser) — same as the relock below. Dropped unless
-                // the user opted into analytics; onStart already initialised the SDK.
+                // usage analytics is enabled; onStart already initialised the SDK.
                 analytics.track(io.grimoire.app.data.analytics.AnalyticsEvent.APP_BACKGROUNDED)
                 relockJob?.cancel()
                 relockJob = ProcessLifecycleOwner.get().lifecycleScope.launch {

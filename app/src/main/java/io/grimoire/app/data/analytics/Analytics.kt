@@ -7,8 +7,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Thin, opt-in wrapper over Aptabase. Events are dropped unless the user has
- * enabled usage analytics **and** the build carries an Aptabase app key. Keep
+ * Thin wrapper over Aptabase, controlled by the default-on usage preference
+ * users can disable in Settings. Events are dropped unless usage analytics is
+ * enabled and the build carries an Aptabase app key. Keep
  * events anonymous — names + [String]/[Int] props only, never titles/URLs/PII.
  */
 @Singleton

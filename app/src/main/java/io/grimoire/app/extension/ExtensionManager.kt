@@ -162,7 +162,7 @@ class ExtensionManager @Inject constructor(
      * Emits install/uninstall analytics from the diff between this scan and the
      * previous one — the one place that sees every add/remove regardless of path
      * (repo install, sideload, system settings). The first scan only seeds the
-     * baseline. Dropped anyway unless the user opted into analytics.
+     * baseline. Dropped when usage analytics is disabled.
      */
     private fun trackInstallChanges(loaded: List<LoadedExtension>) {
         val current = loaded.associateBy { it.info.packageName }
