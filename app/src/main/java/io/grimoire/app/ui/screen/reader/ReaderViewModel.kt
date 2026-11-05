@@ -15,6 +15,7 @@ import io.grimoire.app.util.imageUrl
 import io.grimoire.app.util.isSeparator
 import io.grimoire.app.util.text
 import io.grimoire.app.data.download.ChapterImageStore
+import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.epub.LOCAL_PKG
 import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.local.dao.ChapterDao
@@ -86,6 +87,7 @@ class ReaderViewModel @Inject constructor(
     private val localizedContext = AppLocale.wrap(context)
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
+    private val novelUrl: String = checkNotNull(savedStateHandle["novelUrl"])
 
     // Written back on every chapter change (navigatePrev/Next, TTS auto-advance), so
     // a process-death restore reopens the chapter the user is actually on rather than
@@ -270,7 +272,8 @@ class ReaderViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val chapter = chapterDao.getByUrl(initialChapterUrl) ?: run {
+            val sourceId = if (pkg == LOCAL_PKG) LOCAL_SOURCE_ID else sourceIdFor(pkg)
+            val chapter = chapterDao.getByNovelUrl(sourceId, novelUrl, initialChapterUrl) ?: run {
                 _error.value = localizedContext.getString(R.string.error_chapter_not_found)
                 _isLoading.value = false
                 return@launch
