@@ -91,24 +91,35 @@ class ExtensionManager @Inject constructor(
 
     private suspend fun applyPreferences(loaded: LoadedExtension) {
         val pkg = loaded.info.packageName
-        (loaded.source as? ConfigurableSource)?.let { configurable ->
-            val prefs = configurable.getPreferences()
-            val stored = sourceSettings.snapshot(pkg, prefs.map { it.key })
-            // Type each stored string per its declaration (absent keys → default).
-            val typed = prefs.mapNotNull { pref ->
-                val raw = stored[pref.key] ?: return@mapNotNull null
-                pref.key to when (pref) {
-                    is SourcePreference.Switch -> PrefValue.Bool(raw.toBooleanStrictOrNull() ?: pref.default)
-                    is SourcePreference.EditText ->
-                        if (pref.isPassword) PrefValue.Sensitive(raw) else PrefValue.Str(raw)
-                }
-            }.toMap()
-            configurable.setPreferences(typed)
+        applySetting(pkg) {
+            (loaded.source as? ConfigurableSource)?.let { configurable ->
+                val prefs = configurable.getPreferences()
+                val stored = sourceSettings.snapshot(pkg, prefs.map { it.key })
+                // Type each stored string per its declaration (absent keys → default).
+                val typed = prefs.mapNotNull { pref ->
+                    val raw = stored[pref.key] ?: return@mapNotNull null
+                    pref.key to when (pref) {
+                        is SourcePreference.Switch -> PrefValue.Bool(raw.toBooleanStrictOrNull() ?: pref.default)
+                        is SourcePreference.EditText ->
+                            if (pref.isPassword) PrefValue.Sensitive(raw) else PrefValue.Str(raw)
+                    }
+                }.toMap()
+                configurable.setPreferences(typed)
+            }
         }
-        (loaded.source as? MultiLanguageSource)?.setEnabledLanguages(
-            sourceSettings.effectiveLanguages(pkg),
-        )
-        (loaded.source as? MultiHostSource)?.setActiveHost(sourceSettings.activeHostNow(pkg))
+        applySetting(pkg) {
+            (loaded.source as? MultiLanguageSource)?.setEnabledLanguages(
+                sourceSettings.effectiveLanguages(pkg),
+            )
+        }
+        applySetting(pkg) {
+            (loaded.source as? MultiHostSource)?.setActiveHost(sourceSettings.activeHostNow(pkg))
+        }
+    }
+
+    private suspend fun applySetting(pkg: String, block: suspend () -> Unit) {
+        catchExtensionFailure(block)
+            .onFailure { Log.e(TAG, "Failed to apply source settings [pkg=$pkg]", it) }
     }
 
     private suspend fun scanPackages() = scanMutex.withLock {
@@ -140,8 +151,8 @@ class ExtensionManager @Inject constructor(
                 Log.e(TAG, "Source id collision $id: ${dupes.joinToString { it.info.packageName }}")
             }
 
-        // Configure before publishing: consumers must never observe a source that
-        // hasn't had its persisted login/host/language settings pushed in yet.
+        // Apply settings before publishing. Keep failed sources reachable so users
+        // can repair their settings, and don't let one failure hide every source.
         loaded.forEach { applyPreferences(it) }
         _extensions.value = loaded
         trackInstallChanges(loaded)
