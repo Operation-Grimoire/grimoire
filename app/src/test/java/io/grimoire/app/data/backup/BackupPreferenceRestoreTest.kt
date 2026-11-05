@@ -14,22 +14,24 @@ class BackupPreferenceRestoreTest {
         val prefs = mutablePreferencesOf()
         restoreBackupPreferences(prefs, listOf(
             BackupPreference("reader_font_size", "s", "old-string"),
-            BackupPreference("source.uninstalled.content_languages_override", "s", "true"),
+            BackupPreference("source.uninstalled.password", "b", "true"),
             BackupPreference("tour_completed_reader", "b", "true"),
             BackupPreference("theme_mode", "s", "DARK"),
         ))
         assertNull(prefs[intPreferencesKey("reader_font_size")])
-        assertNull(prefs[booleanPreferencesKey("source.uninstalled.content_languages_override")])
+        assertNull(prefs[stringPreferencesKey("source.uninstalled.password")])
         assertNull(prefs[intPreferencesKey("tour_completed_reader")])
         assertEquals("DARK", prefs[stringPreferencesKey("theme_mode")])
     }
 
     @Test fun `bad entries are skipped independently and valid legacy credentials still restore`() {
         val prefs = mutablePreferencesOf(intPreferencesKey("reader_font_size") to 20,
-            booleanPreferencesKey("extension_private_flag") to false)
+            booleanPreferencesKey("extension_private_flag") to false,
+            booleanPreferencesKey("source.installed.content_languages_override") to false)
         restoreBackupPreferences(prefs, listOf(
             BackupPreference("reader_font_size", "s", "bad"),
             BackupPreference("extension_private_flag", "s", "bad"),
+            BackupPreference("source.installed.content_languages_override", "s", "bad"),
             BackupPreference("download_concurrency", "i", "not-a-number"),
             BackupPreference("hidden_pin_hash", "s", "test-hash"),
             BackupPreference("source.uninstalled.password", "s", "test-password"),
@@ -37,9 +39,21 @@ class BackupPreferenceRestoreTest {
         ))
         assertEquals(20, prefs[intPreferencesKey("reader_font_size")])
         assertFalse(prefs[booleanPreferencesKey("extension_private_flag")]!!)
+        assertFalse(prefs[booleanPreferencesKey("source.installed.content_languages_override")]!!)
         assertNull(prefs[intPreferencesKey("download_concurrency")])
         assertEquals("test-hash", prefs[stringPreferencesKey("hidden_pin_hash")])
         assertEquals("test-password", prefs[stringPreferencesKey("source.uninstalled.password")])
         assertEquals(24, prefs[intPreferencesKey("reader_paragraph_spacing")])
     }
+
+    @Test fun `dotted legacy extension keys and unloaded source flags retain their scalar types`() {
+        val prefs = mutablePreferencesOf()
+        restoreBackupPreferences(prefs, listOf(
+            BackupPreference("source.uninstalled.oauth.content_languages_override", "s", "test-value"),
+            BackupPreference("source.uninstalled.content_languages_override", "b", "true"),
+        ))
+        assertEquals("test-value", prefs[stringPreferencesKey("source.uninstalled.oauth.content_languages_override")])
+        assertEquals(true, prefs[booleanPreferencesKey("source.uninstalled.content_languages_override")])
+    }
+
 }

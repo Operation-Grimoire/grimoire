@@ -46,7 +46,8 @@ private val declaredPreferenceTypes: Map<String, String> by lazy {
 }
 
 internal fun expectedBackupPreferenceType(key: String): String? = when {
-    key.startsWith("source.") -> if (key.endsWith(".content_languages_override")) "b" else "s"
+    // Dotted extension keys make this suffix ambiguous without a known stored type.
+    key.startsWith("source.") -> if (key.endsWith(".content_languages_override")) null else "s"
     key.startsWith("tour_completed_") -> "i"
     else -> declaredPreferenceTypes[key]
 }

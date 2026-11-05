@@ -43,8 +43,13 @@ internal fun mergeBackupNovel(novel: BackupNovel, existing: NovelEntity?, catego
 }
 
 internal fun mergeBackupChapter(c: BackupChapter, existingCh: ChapterEntity?, novelId: Long): ChapterEntity {
-    val useBackupAnchor = c.readAnchorItemIndex != null && c.readAnchorItemOffset != null &&
-        (existingCh == null || c.readProgress > existingCh.readProgress)
+    val backupHasAnchor = c.readAnchorItemIndex != null && c.readAnchorItemOffset != null &&
+        (c.readAnchorItemIndex != 0 || c.readAnchorItemOffset != 0)
+    val localHasAnchor = existingCh != null &&
+        (existingCh.readAnchorItemIndex != 0 || existingCh.readAnchorItemOffset != 0)
+    val useBackupAnchor = backupHasAnchor && (existingCh == null ||
+        c.readProgress > existingCh.readProgress ||
+        (!localHasAnchor && c.readProgress >= existingCh.readProgress))
     return ChapterEntity(
         id = existingCh?.id ?: 0,
         novelId = novelId,

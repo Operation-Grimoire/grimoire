@@ -51,6 +51,16 @@ class BackupRestoreMergeTest {
         assertEquals(.6f, older.readProgress)
     }
 
+    @Test fun `equal progress restores a missing local anchor but never erases a known anchor`() {
+        val backup = BackupChapter("chapter", "Chapter", readProgress = .6f,
+            readAnchorItemIndex = 60, readAnchorItemOffset = 9)
+        val missing = local.copy(readAnchorItemIndex = 0, readAnchorItemOffset = 0)
+        assertEquals(60, mergeBackupChapter(backup, missing, 4).readAnchorItemIndex)
+        assertEquals(42, mergeBackupChapter(backup, local, 4).readAnchorItemIndex)
+        val absent = backup.copy(readProgress = .8f, readAnchorItemIndex = 0, readAnchorItemOffset = 0)
+        assertEquals(42, mergeBackupChapter(absent, local, 4).readAnchorItemIndex)
+    }
+
     @Test fun `new-device EPUB is skipped while existing EPUB state can merge`() {
         val epub = BackupNovel(LOCAL_SOURCE_ID, "epub:book", "Book", favorite = true)
         assertNull(mergeBackupNovel(epub, null, null))
