@@ -787,6 +787,7 @@ class NovelDetailViewModel @Inject constructor(
                 overrideStatus = existing?.overrideStatus,
                 overrideGenres = existing?.overrideGenres,
                 userRating = existing?.userRating,
+                readerTextAlign = existing?.readerTextAlign ?: 0,
             ))
             cachedNovelId = existing?.id ?: upsertId
             _liveNovelId.value = cachedNovelId
@@ -1186,6 +1187,7 @@ internal fun Novel.toEntity(
     overrideStatus: Int? = null,
     overrideGenres: String? = null,
     userRating: Int? = null,
+    readerTextAlign: Int = 0,
 ) = NovelEntity(
     id = existingId,
     sourceId = sourceId,
@@ -1216,6 +1218,7 @@ internal fun Novel.toEntity(
     overrideStatus = overrideStatus,
     overrideGenres = overrideGenres,
     userRating = userRating,
+    readerTextAlign = readerTextAlign,
 )
 
 /**

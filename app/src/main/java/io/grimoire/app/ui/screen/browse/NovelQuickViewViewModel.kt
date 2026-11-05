@@ -189,6 +189,8 @@ class NovelQuickViewViewModel @AssistedInject constructor(
                         overrideDescription = current?.overrideDescription,
                         overrideStatus = current?.overrideStatus,
                         overrideGenres = current?.overrideGenres,
+                        userRating = current?.userRating,
+                        readerTextAlign = current?.readerTextAlign ?: 0,
                     )
                 )
                 cachedNovelId = current?.id ?: upsertId
