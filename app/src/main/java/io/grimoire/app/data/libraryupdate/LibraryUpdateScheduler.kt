@@ -68,7 +68,7 @@ class LibraryUpdateScheduler @Inject constructor(
         }
     }
 
-    /** Enqueues an immediate refresh of [categoryId], or the whole library when null. */
+    /** Requests a refresh; an unfinished manual run is kept, including across category scopes. */
     fun triggerOneOff(categoryId: Long?) {
         val request = OneTimeWorkRequestBuilder<LibraryUpdateWorker>()
             .setInputData(categoryData(categoryId))
