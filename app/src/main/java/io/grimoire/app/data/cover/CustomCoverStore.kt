@@ -45,6 +45,15 @@ class CustomCoverStore @Inject constructor(
         copyMigrationCover(File(sourcePath), novelDir(novelId))
     }
 
+    suspend fun cleanupAfterMigration(
+        novelId: Long,
+        previousPath: String?,
+        stagedPath: String?,
+        persistedPath: String?,
+    ) = withContext(Dispatchers.IO) {
+        cleanupMigrationCovers(novelDir(novelId), previousPath, stagedPath, persistedPath)
+    }
+
     /** Removes the saved cover for a novel, if any. */
     suspend fun delete(novelId: Long) {
         withContext(Dispatchers.IO) { novelDir(novelId).deleteRecursively() }
@@ -60,5 +69,19 @@ internal fun copyMigrationCover(source: File, targetDir: File): File {
     } catch (failure: Throwable) {
         copy.delete()
         throw failure
+    }
+}
+
+internal fun cleanupMigrationCovers(
+    targetDir: File,
+    previousPath: String?,
+    stagedPath: String?,
+    persistedPath: String?,
+) {
+    val ownedDir = targetDir.canonicalFile
+    val active = persistedPath?.let { File(it).canonicalFile }
+    for (path in listOfNotNull(previousPath, stagedPath).distinct()) {
+        val file = File(path).canonicalFile
+        if (file != active && file.parentFile == ownedDir) file.delete()
     }
 }

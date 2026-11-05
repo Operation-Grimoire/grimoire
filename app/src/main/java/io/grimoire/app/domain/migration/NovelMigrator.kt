@@ -55,12 +55,14 @@ class NovelMigrator @Inject constructor(
      */
     suspend fun migrate(fromNovelId: Long, toNovelId: Long) {
         var copiedCover: File? = null
+        var previousCoverPath: String? = null
         try {
             database.withTransaction {
                 val source = novelDao.getById(fromNovelId) ?: error("Original novel not found")
                 val target = novelDao.getById(toNovelId) ?: error("Target novel not found")
                 if (source.id == target.id) error("Cannot migrate a novel onto itself")
 
+                previousCoverPath = target.customCoverPath
                 source.customCoverPath?.let { path ->
                     // Finish staging so cancellation cleanup always knows the new file.
                     withContext(NonCancellable) {
@@ -73,16 +75,18 @@ class NovelMigrator @Inject constructor(
                 // Keep the original's history while moving its library membership.
                 novelDao.upsert(source.copy(favorite = false))
             }
-        } catch (failure: Throwable) {
-            copiedCover?.let { copy ->
+        } finally {
+            if (previousCoverPath != null || copiedCover != null) {
                 withContext(NonCancellable + Dispatchers.IO) {
-                    // Cancellation can arrive after commit. Never delete a referenced cover.
+                    // The persisted path distinguishes commit from rollback, even after cancellation.
                     runCatching {
-                        if (novelDao.getById(toNovelId)?.customCoverPath != copy.absolutePath) copy.delete()
+                        coverStore.cleanupAfterMigration(
+                            toNovelId, previousCoverPath, copiedCover?.absolutePath,
+                            novelDao.getById(toNovelId)?.customCoverPath,
+                        )
                     }
                 }
             }
-            throw failure
         }
     }
 }
