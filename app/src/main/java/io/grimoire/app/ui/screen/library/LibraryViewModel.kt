@@ -497,10 +497,10 @@ class LibraryViewModel @Inject constructor(
         categoryDao.upsert(category.copy(isHidden = hidden))
     }
 
-    /** Queues a background refresh of every favorited novel in the library. */
+    /** Requests a library refresh, keeping any unfinished manual refresh. */
     fun updateLibrary() = libraryUpdateScheduler.triggerOneOff(null)
 
-    /** Queues a background refresh of the favorited novels in [categoryId]. */
+    /** Requests a category refresh, keeping any unfinished manual refresh. */
     fun updateCategory(categoryId: Long) = libraryUpdateScheduler.triggerOneOff(categoryId)
 
     fun lock() {

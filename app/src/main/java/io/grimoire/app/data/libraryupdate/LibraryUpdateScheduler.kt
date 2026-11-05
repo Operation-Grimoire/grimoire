@@ -1,6 +1,7 @@
 package io.grimoire.app.data.libraryupdate
 
 import android.content.Context
+import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -57,23 +58,25 @@ class LibraryUpdateScheduler @Inject constructor(
                 .distinctUntilChanged()
                 .collectLatest {
                     // The first emission is the stored prefs replayed at process
-                    // start — not a real change — so KEEP the live schedule and
-                    // its existing next-run anchor. Only a genuine later change
+                    // start — update constraints without moving the live schedule's
+                    // next-run anchor. Only a genuine later change
                     // (the user editing a pref) re-anchors via REPLACE.
-                    applySchedule(it, reAnchor = !isInitial)
+                    val reAnchor = !isInitial
                     isInitial = false
+                    applySchedule(it, reAnchor = reAnchor)
                 }
         }
     }
 
-    /** Enqueues an immediate refresh of [categoryId], or the whole library when null. */
+    /** Requests a refresh; an unfinished manual run is kept, including across category scopes. */
     fun triggerOneOff(categoryId: Long?) {
         val request = OneTimeWorkRequestBuilder<LibraryUpdateWorker>()
             .setInputData(categoryData(categoryId))
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .build()
         WorkManager.getInstance(context).enqueueUniqueWork(
             LibraryUpdateWorker.ONE_OFF_NAME,
-            ExistingWorkPolicy.REPLACE,
+            ExistingWorkPolicy.KEEP,
             request,
         )
     }
@@ -107,7 +110,7 @@ class LibraryUpdateScheduler @Inject constructor(
         .putLong(LibraryUpdateWorker.KEY_CATEGORY_ID, categoryId ?: LibraryUpdateWorker.ALL_LIBRARY)
         .build()
 
-    private fun applySchedule(s: Schedule, reAnchor: Boolean) {
+    private suspend fun applySchedule(s: Schedule, reAnchor: Boolean) {
         val wm = WorkManager.getInstance(context)
         if (!s.enabled) {
             wm.cancelUniqueWork(LibraryUpdateWorker.UNIQUE_PERIODIC_NAME)
@@ -117,6 +120,7 @@ class LibraryUpdateScheduler @Inject constructor(
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(if (s.onlyOnWifi) NetworkType.UNMETERED else NetworkType.CONNECTED)
             .setRequiresCharging(s.requiresCharging)
+            .setRequiresBatteryNotLow(true)
             .build()
         // Anchor the first run to the user's preferred time-of-day. WorkManager
         // schedules each subsequent run on the repeat interval from that anchor,
@@ -124,33 +128,28 @@ class LibraryUpdateScheduler @Inject constructor(
         // delays. We avoid the flex-interval constructor because flex windows
         // sit at the END of each repeat period, which would push the first run
         // ~[repeatInterval] past the requested time.
-        val initialDelay = computeInitialDelayMillis(System.currentTimeMillis(), s.preferredMinutes)
+        // UPDATE retains enqueue time, so also retain the original delay for a
+        // schedule whose first run is still pending.
+        val existingDelay = if (reAnchor) null else {
+            wm.getWorkInfosForUniqueWorkFlow(LibraryUpdateWorker.UNIQUE_PERIODIC_NAME)
+                .first().firstOrNull { !it.state.isFinished }?.initialDelayMillis
+        }
+        val initialDelay = existingDelay
+            ?: computeInitialDelayMillis(System.currentTimeMillis(), s.preferredMinutes)
         val request = PeriodicWorkRequestBuilder<LibraryUpdateWorker>(
             intervalHours, TimeUnit.HOURS,
         )
             .setConstraints(constraints)
             .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
             .setInputData(categoryData(null))
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .build()
-        // Policy depends on whether this is a genuine change ([reAnchor]) or just
-        // the stored prefs replayed at process start.
-        //
-        // - reAnchor: REPLACE cancels and re-enqueues atomically in one
-        //   transaction, re-anchoring the initial delay. UPDATE would preserve
-        //   the existing next-run-time and ignore the new setInitialDelay, so a
-        //   changed preferred time-of-day would never take effect. We avoid a
-        //   manual cancelUniqueWork + KEEP because the cancel is an unawaited
-        //   async Operation, so KEEP could observe the still-live work and
-        //   silently drop the new request, leaving the stale anchor in place.
-        // - otherwise: KEEP preserves any already-enqueued schedule and its
-        //   existing next-run anchor. Without this, every app launch would
-        //   re-anchor the initial delay to the next preferred time, so a user
-        //   who opens the app daily before that time would perpetually push the
-        //   run forward and the scheduled sync would never fire.
+        // User edits re-anchor atomically. Startup updates retain enqueue time
+        // and initial delay while applying new constraints/backoff after upgrades.
         val policy = if (reAnchor) {
             ExistingPeriodicWorkPolicy.REPLACE
         } else {
-            ExistingPeriodicWorkPolicy.KEEP
+            ExistingPeriodicWorkPolicy.UPDATE
         }
         wm.enqueueUniquePeriodicWork(
             LibraryUpdateWorker.UNIQUE_PERIODIC_NAME,

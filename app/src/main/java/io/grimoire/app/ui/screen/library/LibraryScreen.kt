@@ -178,8 +178,7 @@ fun LibraryScreen(
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkMove by remember { mutableStateOf(false) }
     var showBulkRemoveConfirm by remember { mutableStateOf(false) }
-    val libraryUpdateQueuedMessage = stringResource(R.string.library_update_queued)
-    val categoryUpdateQueuedMessage = stringResource(R.string.library_category_update_queued)
+    val libraryUpdateMessage = stringResource(R.string.tasks_updating_library)
     val queuedDownloadsMessage = pluralStringResource(
         R.plurals.library_downloads_queued,
         selectedIds.size,
@@ -364,7 +363,7 @@ fun LibraryScreen(
                                     onClick = {
                                         refreshMenuExpanded = false
                                         viewModel.updateLibrary()
-                                        scope.launch { snackbarHostState.showSnackbar(libraryUpdateQueuedMessage) }
+                                        scope.launch { snackbarHostState.showSnackbar(libraryUpdateMessage) }
                                     },
                                 )
                                 val currentCategoryId =
@@ -384,7 +383,7 @@ fun LibraryScreen(
                                             refreshMenuExpanded = false
                                             viewModel.updateCategory(currentCategoryId)
                                             scope.launch {
-                                                snackbarHostState.showSnackbar(categoryUpdateQueuedMessage)
+                                                snackbarHostState.showSnackbar(libraryUpdateMessage)
                                             }
                                         },
                                     )

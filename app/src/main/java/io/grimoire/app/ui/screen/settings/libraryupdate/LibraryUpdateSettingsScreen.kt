@@ -61,7 +61,7 @@ fun LibraryUpdateSettingsScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val queuedMessage = stringResource(R.string.library_update_queued)
+    val updateMessage = stringResource(R.string.tasks_updating_library)
     var showTimePicker by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -221,7 +221,7 @@ fun LibraryUpdateSettingsScreen(
                     supportingContent = { Text(stringResource(R.string.library_update_now_summary)) },
                     modifier = Modifier.clickable {
                         viewModel.updateLibraryNow()
-                        scope.launch { snackbarHostState.showSnackbar(queuedMessage) }
+                        scope.launch { snackbarHostState.showSnackbar(updateMessage) }
                     },
                 )
             }

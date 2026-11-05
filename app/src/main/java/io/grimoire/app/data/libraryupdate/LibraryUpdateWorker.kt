@@ -7,6 +7,8 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.Build
+import android.os.SystemClock
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.work.HiltWorker
@@ -30,14 +32,15 @@ import io.grimoire.app.data.preferences.LibraryUpdatePreferences
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.util.AppLocale
+import kotlinx.coroutines.CancellationException
 
 /**
  * Runs a library refresh in the background. Used for both the periodic schedule
  * and one-off manual runs; the category to refresh is passed via [KEY_CATEGORY_ID]
  * ([ALL_LIBRARY] meaning the whole library).
  *
- * Runs as a foreground worker so the OS does not kill the process mid-run — which
- * would otherwise make WorkManager restart the refresh from the first novel.
+ * Requests foreground execution before fetching. A refused foreground start is
+ * recorded as a failed attempt instead of silently running with a shorter limit.
  */
 @HiltWorker
 class LibraryUpdateWorker @AssistedInject constructor(
@@ -54,6 +57,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
 
     /** Notification text follows the in-app language override, like [io.grimoire.app.data.backup.BackupManager]. */
     private val localizedContext = AppLocale.wrap(applicationContext)
+    private val progressThrottle = LibraryProgressThrottle()
 
     override suspend fun getForegroundInfo(): ForegroundInfo =
         foregroundInfo(
@@ -65,35 +69,27 @@ class LibraryUpdateWorker @AssistedInject constructor(
         )
 
     override suspend fun doWork(): Result {
+        if (runAttemptCount >= MAX_LIBRARY_UPDATE_ATTEMPTS) return Result.failure()
         val rawCategory = inputData.getLong(KEY_CATEGORY_ID, ALL_LIBRARY)
         val categoryId = rawCategory.takeIf { it != ALL_LIBRARY }
 
-        runCatching { setForeground(getForegroundInfo()) }
-
         CrashContext.drop("library sync started (category=${categoryId ?: "all"})")
         try {
-            val summary = runCatching {
-                libraryUpdater.updateLibrary(
-                    categoryId,
-                    onProgress = { done, total, title ->
+            setForeground(getForegroundInfo())
+            val summary = libraryUpdater.updateLibrary(
+                categoryId,
+                onProgress = { done, total, title ->
+                    if (done == total || progressThrottle.shouldPublish(SystemClock.elapsedRealtime())) {
                         setProgress(
                             workDataOf(KEY_DONE to done, KEY_TOTAL to total, KEY_TITLE to title),
                         )
                         updateProgress(done, total, title)
-                    },
-                    onNovelComplete = { novel, newReadable, newLocked ->
-                        maybeNotifyNovel(novel, newReadable, newLocked)
-                    },
-                )
-            }.getOrElse { e ->
-                val message = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
-                preferences.lastRunAt.set(System.currentTimeMillis().toString())
-                preferences.lastRunSuccess.set(false)
-                preferences.lastRunMessage.set(message)
-                recordHistory(success = false, summary = "Library sync failed · $message")
-                CrashContext.drop("library sync failed · $message")
-                return Result.retry()
-            }
+                    }
+                },
+                onNovelComplete = { novel, newReadable, newLocked ->
+                    maybeNotifyNovel(novel, newReadable, newLocked)
+                },
+            )
 
             // Per-novel auto-download queues chapters via DownloadManager.enqueue, but
             // the startForegroundService() call there is a no-op for background callers
@@ -105,6 +101,9 @@ class LibraryUpdateWorker @AssistedInject constructor(
                     downloadManager.processQueue { chapterName, remaining ->
                         updateForegroundText(downloadingText(chapterName, remaining))
                     }
+                }.onFailure {
+                    if (it is CancellationException) throw it
+                    Log.w(TAG, "Auto-download queue failed", it)
                 }
             }
 
@@ -115,13 +114,29 @@ class LibraryUpdateWorker @AssistedInject constructor(
             recordHistory(success = true, summary = line)
             CrashContext.drop("library sync done · $line")
             return Result.success()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val message = "${e::class.simpleName}: ${e.message ?: "(no message)"}"
+            CrashContext.drop("library sync failed · $message")
+            Log.e(TAG, "Library sync failed", e)
+            runCatching {
+                preferences.lastRunAt.set(System.currentTimeMillis().toString())
+                preferences.lastRunSuccess.set(false)
+                preferences.lastRunMessage.set(message)
+                recordHistory(success = false, summary = "Library sync failed · $message")
+            }.onFailure {
+                if (it is CancellationException) throw it
+                Log.e(TAG, "Could not record sync failure", it)
+            }
+            return if (shouldRetryLibraryUpdate(runAttemptCount)) Result.retry() else Result.failure()
         } finally {
             // The progress notification is this worker's foreground notification.
             // Clear it on every exit so a finished or interrupted run never leaves a
             // stuck "Updating library" notification behind — it is setOngoing, so the
             // user can't swipe it away. A WorkManager stop cancels this coroutine,
             // which surfaces here as a CancellationException and still runs this block.
-            NotificationManagerCompat.from(applicationContext).cancel(PROGRESS_NOTIF_ID)
+            runCatching { NotificationManagerCompat.from(applicationContext).cancel(PROGRESS_NOTIF_ID) }
         }
     }
 
@@ -136,6 +151,9 @@ class LibraryUpdateWorker @AssistedInject constructor(
                     summary = summary,
                 ),
             )
+        }.onFailure {
+            if (it is CancellationException) throw it
+            Log.w(TAG, "Could not record sync history", it)
         }
     }
 
@@ -183,16 +201,15 @@ class LibraryUpdateWorker @AssistedInject constructor(
             ForegroundInfo(PROGRESS_NOTIF_ID, notification)
         }
 
-    /**
-     * Updates the ongoing foreground notification via [setForeground] (not a bare
-     * NotificationManager.notify) so the notification stays owned by WorkManager and
-     * the foreground service — that ownership is what lets WorkManager remove it when
-     * the run ends and lets the OS clear it if the process is killed mid-run.
-     */
+    /** Updates WorkManager's registered foreground notification. */
     private suspend fun updateProgress(done: Int, total: Int, title: String) {
         if (total <= 0 || done >= total) return
         val text = if (title.isBlank()) "${done + 1}/$total" else "${done + 1}/$total · $title"
         runCatching { setForeground(foregroundInfo(buildProgressNotification(text, total, done))) }
+            .onFailure {
+                if (it is CancellationException) throw it
+                Log.w(TAG, "Could not update sync notification", it)
+            }
     }
 
     private fun buildProgressNotification(
@@ -218,6 +235,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
      * foreground service (see [updateProgress]).
      */
     private fun updateForegroundText(text: String) {
+        if (!progressThrottle.shouldPublish(SystemClock.elapsedRealtime())) return
         runCatching {
             setForegroundAsync(
                 foregroundInfo(
@@ -286,6 +304,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
     }
 
     companion object {
+        private const val TAG = "LibraryUpdateWorker"
         const val UNIQUE_PERIODIC_NAME = "grimoire-library-update"
         const val ONE_OFF_NAME = "grimoire-library-update-oneoff"
         const val KEY_CATEGORY_ID = "category_id"
