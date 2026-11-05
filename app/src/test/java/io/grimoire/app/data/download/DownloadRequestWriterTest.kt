@@ -44,6 +44,17 @@ class DownloadRequestWriterTest {
     }
 
     @Test
+    fun completedRowCannotBeDowngradedByStaleFreshRequest() = runBlocking {
+        val fixture = Fixture()
+        val stale = fixture.rows.getValue(3)
+        fixture.rows[3] = stale.copy(downloadStatus = ChapterDownloadStatus.DOWNLOADED.ordinal)
+        fixture.writer.enqueue(listOf(stale), force = false, startService = true)
+        assertEquals(ChapterDownloadStatus.DOWNLOADED.ordinal, fixture.rows.getValue(3).downloadStatus)
+        assertTrue(fixture.paused)
+        assertNull(fixture.serviceDrain())
+    }
+
+    @Test
     fun acceptedWebRequestPersistsThenResumesQueue() = runBlocking {
         val fixture = Fixture()
         fixture.writer.enqueue(listOf(fixture.rows.getValue(3)), force = false, startService = true)
@@ -71,11 +82,18 @@ class DownloadRequestWriterTest {
         )
         private val chapterDao = dao<ChapterDao> { method, args ->
             when (method) {
-                "setDownloadStatusBatch" -> {
+                "queueRequestedDownloads" -> {
                     @Suppress("UNCHECKED_CAST")
                     val ids = args[0] as List<Long>
-                    ids.forEach { id -> rows[id]?.let { rows[id] = it.copy(downloadStatus = args[1] as Int) } }
-                    Unit
+                    @Suppress("UNCHECKED_CAST")
+                    val previous = args[2] as List<Int>
+                    ids.count { id ->
+                        val chapter = rows[id]
+                        if (chapter == null || chapter.locked || chapter.downloadStatus !in previous) false else {
+                            rows[id] = chapter.copy(downloadStatus = args[1] as Int)
+                            true
+                        }
+                    }
                 }
                 "countQueuedDownloads" -> {
                     @Suppress("UNCHECKED_CAST")

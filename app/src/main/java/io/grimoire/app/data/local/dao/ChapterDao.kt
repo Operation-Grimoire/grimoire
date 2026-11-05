@@ -217,6 +217,12 @@ interface ChapterDao {
     @Query("UPDATE chapters SET downloadStatus = :status WHERE id = :id")
     suspend fun setDownloadStatus(id: Long, status: Int)
 
+    @Query(
+        "UPDATE chapters SET downloadStatus = :status WHERE id IN (:ids) " +
+            "AND locked = 0 AND downloadStatus IN (:previousStatuses)"
+    )
+    suspend fun queueRequestedDownloads(ids: List<Long>, status: Int, previousStatuses: List<Int>): Int
+
     @Query("UPDATE chapters SET downloadStatus = :status WHERE id IN (:ids)")
     suspend fun setDownloadStatusBatch(ids: List<Long>, status: Int)
 

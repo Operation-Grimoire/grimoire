@@ -27,10 +27,16 @@ internal class DownloadRequestWriter(
                 it.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
         }.map { it.id } else emptyList()
         freshIds.chunked(999).forEach {
-            chapterDao.setDownloadStatusBatch(it, ChapterDownloadStatus.QUEUED.ordinal)
+            chapterDao.queueRequestedDownloads(
+                it, ChapterDownloadStatus.QUEUED.ordinal,
+                listOf(ChapterDownloadStatus.NONE.ordinal, ChapterDownloadStatus.ERROR.ordinal),
+            )
         }
         refreshIds.chunked(999).forEach {
-            chapterDao.setDownloadStatusBatch(it, ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal)
+            chapterDao.queueRequestedDownloads(
+                it, ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal,
+                listOf(ChapterDownloadStatus.DOWNLOADED.ordinal, ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal),
+            )
         }
         // Re-read stored state: queued snapshots may have been cancelled meanwhile.
         if (startService && eligible.map { it.id }.chunked(999).any { chapterDao.countQueuedDownloads(it) > 0 }) {
