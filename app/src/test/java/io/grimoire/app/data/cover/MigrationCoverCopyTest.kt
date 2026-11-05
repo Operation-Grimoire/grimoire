@@ -16,9 +16,9 @@ class MigrationCoverCopyTest {
         val targetDir = temporary.newFolder("2")
         val oldTarget = File(targetDir, "old").apply { writeText("old target image") }
         val copy = copyMigrationCover(source, targetDir)
-        assertEquals(targetDir.canonicalFile, copy.parentFile.canonicalFile)
+        assertEquals(targetDir.canonicalFile, copy.parentFile?.canonicalFile)
         assertNotEquals(source.canonicalFile, copy.canonicalFile)
-        source.delete()
+        assertTrue(source.delete())
         assertEquals("source image", copy.readText())
         assertEquals("old target image", oldTarget.readText())
     }
