@@ -39,10 +39,19 @@ class WebViewLifecycleBindingTest {
         val owner = Owner(Lifecycle.State.RESUMED)
         val calls = mutableListOf<String>()
         val binding = binding(owner, calls)
+        val otherOwner = Owner(Lifecycle.State.RESUMED)
+        val otherCalls = mutableListOf<String>()
+        val otherBinding = binding(otherOwner, otherCalls)
         owner.events.pauseScreen()
+        assertEquals(listOf("resume"), otherCalls)
         owner.events.resumeScreen()
         assertEquals(listOf("resume", "pause", "resume"), calls)
+        assertEquals(listOf("resume"), otherCalls)
         binding.release()
+        assertEquals(listOf("resume"), otherCalls)
+        assertEquals(1, otherOwner.events.observers.size)
+        otherBinding.release()
+        assertTrue(otherOwner.events.observers.isEmpty())
     }
 
     @Test fun releaseDestroysOnceAndStopsLifecycleCallbacks() {
