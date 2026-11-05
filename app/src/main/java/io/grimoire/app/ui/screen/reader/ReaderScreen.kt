@@ -17,6 +17,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
+import io.grimoire.app.data.preferences.resolveReaderColorTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -135,7 +137,8 @@ fun ReaderScreen(
     val lineHeightTimes10 by viewModel.lineHeightTimes10.collectAsState()
     val paragraphSpacing by viewModel.paragraphSpacing.collectAsState()
     val readerFont by viewModel.readerFont.collectAsState()
-    val colorTheme by viewModel.colorTheme.collectAsState()
+    val savedColorTheme by viewModel.colorTheme.collectAsState()
+    val colorTheme = resolveReaderColorTheme(savedColorTheme, isSystemInDarkTheme())
     val orientation by viewModel.orientation.collectAsState()
     val hideNotificationBar by viewModel.hideNotificationBar.collectAsState()
     val hideInlineImages by viewModel.hideInlineImages.collectAsState()

@@ -1,6 +1,8 @@
 package io.grimoire.app.ui.screen.settings.reader
 
 import io.grimoire.app.ui.icon.*
+import androidx.compose.foundation.isSystemInDarkTheme
+import io.grimoire.app.data.preferences.resolveReaderColorTheme
 import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Arrangement
@@ -44,7 +46,8 @@ fun ReaderSettingsScreen(
     val orientation by viewModel.readerOrientation.collectAsState()
     val hideNotificationBar by viewModel.readerHideNotificationBar.collectAsState()
     val hideInlineImages by viewModel.readerHideInlineImages.collectAsState()
-    val colorTheme by viewModel.readerColorTheme.collectAsState()
+    val savedColorTheme by viewModel.readerColorTheme.collectAsState()
+    val colorTheme = resolveReaderColorTheme(savedColorTheme, isSystemInDarkTheme())
     val font by viewModel.readerFont.collectAsState()
     val fontSize by viewModel.readerFontSize.collectAsState()
     val lineHeightTimes10 by viewModel.readerLineHeightTimes10.collectAsState()
