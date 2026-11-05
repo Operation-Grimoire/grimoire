@@ -5,12 +5,18 @@ import android.net.Uri
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.documentfile.provider.DocumentFile
 import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.AppDatabase
+import io.grimoire.app.data.local.InstalledSourceIdentity
+import io.grimoire.app.data.local.SOURCE_ID_MIGRATION_KEY
+import io.grimoire.app.data.local.SourceIdMigrator
+import io.grimoire.app.data.local.resolveSourceId
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
@@ -68,6 +74,7 @@ class BackupManager @Inject constructor(
     private val nuBookmarkDao: NuBookmarkDao,
     private val dataStore: DataStore<Preferences>,
     private val database: AppDatabase,
+    private val sourceIdMigrator: SourceIdMigrator,
 ) {
 
     // Resolved per use: these singletons outlive an in-app language change.
@@ -321,19 +328,23 @@ class BackupManager @Inject constructor(
 
     /** Apply compatible backed-up preferences after the database restore succeeds. */
     private suspend fun restorePreferences(preferences: List<BackupPreference>) {
-        if (preferences.isEmpty()) return
         dataStore.edit { prefs ->
             restoreBackupPreferences(prefs, preferences)
+            prefs[booleanPreferencesKey(SOURCE_ID_MIGRATION_KEY)] = false
         }
     }
 
-    private suspend fun applyBackup(backup: BackupFile): RestoreResult.Success {
-        val restored = database.withTransaction { applyDatabaseBackup(backup) }
-        restorePreferences(backup.preferences)
-        return restored
-    }
+    private suspend fun applyBackup(backup: BackupFile): RestoreResult.Success =
+        sourceIdMigrator.withRestoreSources(backup.novels.any { it.sourceId != LOCAL_SOURCE_ID }) { sources ->
+            val restored = database.withTransaction { applyDatabaseBackup(backup, sources) }
+            restorePreferences(backup.preferences)
+            restored
+        }
 
-    private suspend fun applyDatabaseBackup(backup: BackupFile): RestoreResult.Success {
+    private suspend fun applyDatabaseBackup(
+        backup: BackupFile,
+        sources: List<InstalledSourceIdentity>,
+    ): RestoreResult.Success {
         var novelCount = 0
         var chapterCount = 0
         val existingCategories = categoryDao.getAllOnce()
@@ -395,7 +406,9 @@ class BackupManager @Inject constructor(
             )
         }
 
-        for (novel in backup.novels) {
+        for (savedNovel in backup.novels) {
+            val sourceId = resolveSourceId(savedNovel.sourceId, savedNovel.url, sources) ?: savedNovel.sourceId
+            val novel = savedNovel.copy(sourceId = sourceId)
             val existing = novelDao.getBySourceUrl(novel.sourceId, novel.url)
             val categoryId = novel.categoryName?.let { categoryIdByName[it] }
             val mergedNovel = mergeBackupNovel(novel, existing, categoryId) ?: continue
