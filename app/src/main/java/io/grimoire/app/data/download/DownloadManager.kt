@@ -230,11 +230,8 @@ class DownloadManager @Inject constructor(
                         while (!_isPaused.value && !networkInterrupted.get()) {
                             val picked = mutex.withLock {
                                 if (_isPaused.value || networkInterrupted.get()) return@withLock null
-                                val ch = chapterDao.getNextQueued() ?: return@withLock null
+                                val ch = chapterDao.takeNextQueued() ?: return@withLock null
                                 val isRefresh = ch.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal
-                                val inflight = if (isRefresh) ChapterDownloadStatus.REDOWNLOADING.ordinal
-                                               else ChapterDownloadStatus.DOWNLOADING.ordinal
-                                chapterDao.setDownloadStatus(ch.id, inflight)
                                 ch to isRefresh
                             } ?: break
                             val chapter = picked.first
@@ -288,8 +285,9 @@ class DownloadManager @Inject constructor(
                                 }
                                 val errorStatus = if (isRefresh) ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
                                                   else ChapterDownloadStatus.ERROR.ordinal
-                                chapterDao.updateActiveDownloadStatus(chapter.id, errorStatus)
-                                failed.incrementAndGet()
+                                if (chapterDao.updateActiveDownloadStatus(chapter.id, errorStatus) > 0) {
+                                    failed.incrementAndGet()
+                                }
                             }
                         }
                     }
