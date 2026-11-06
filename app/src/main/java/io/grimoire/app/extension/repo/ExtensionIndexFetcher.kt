@@ -20,19 +20,26 @@ class IndexAuthRequiredException(message: String, val statusCode: Int) : Runtime
 
 /**
  * Thrown when GitHub answers a 403 because the request budget is exhausted.
- * Unauthenticated callers get 60 requests/hour shared across index fetches,
- * icon loads and APK downloads; once spent every GitHub call 403s until reset.
+ * Unauthenticated REST API callers get 60 requests/hour shared across API
+ * index fetches, icon loads and APK downloads. Public direct downloads avoid
+ * that REST API budget.
  * Connecting a GitHub account lifts the ceiling to 5,000/hour.
  */
 class GitHubRateLimitException(message: String) : RuntimeException(message)
 
 @Singleton
-class ExtensionIndexFetcher @Inject constructor(
-    @ApplicationContext context: Context,
-    @GitHubAuthorized private val client: OkHttpClient,
+class ExtensionIndexFetcher internal constructor(
+    private val cacheDir: File,
+    private val client: OkHttpClient,
 ) {
+    @Inject constructor(
+        @ApplicationContext context: Context,
+        @GitHubAuthorized client: OkHttpClient,
+    ) : this(File(context.cacheDir, "ext_index"), client)
+
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
-    private val cacheDir = File(context.cacheDir, "ext_index").also { it.mkdirs() }
+
+    init { cacheDir.mkdirs() }
 
     private fun cacheFile(indexUrl: String) =
         File(cacheDir, indexUrl.hashCode().toString() + ".json")
@@ -46,9 +53,15 @@ class ExtensionIndexFetcher @Inject constructor(
     suspend fun fetch(indexUrl: String): Result<List<RemoteExtension>> =
         withContext(Dispatchers.IO) {
             runCatching {
-                val list = GitHubReleaseAsset.parse(indexUrl)
-                    ?.let { fetchViaGitHubApi(it, indexUrl) }
-                    ?: fetchDirect(indexUrl)
+                // Public releases work directly without spending REST API quota.
+                // Private release downloads may ignore Bearer auth and return
+                // 401/404, so only those responses trigger the API fallback.
+                val list = try {
+                    fetchDirect(indexUrl)
+                } catch (e: IndexAuthRequiredException) {
+                    val asset = GitHubReleaseAsset.parse(indexUrl) ?: throw e
+                    fetchViaGitHubApi(asset, indexUrl)
+                }
                 cacheFile(indexUrl).writeText(
                     json.encodeToString(ListSerializer(RemoteExtension.serializer()), list),
                 )

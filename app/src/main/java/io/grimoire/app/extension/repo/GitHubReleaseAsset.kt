@@ -10,7 +10,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
  * `/repos/{owner}/{repo}/releases/assets/{id}` endpoint with
  * `Accept: application/octet-stream`. The browser-style download URL accepts
  * Bearer auth for public repos but not consistently for private ones, so we
- * detect these URLs and route them through the API instead.
+ * fall back to the API when a direct download returns 401/404. Public
+ * downloads keep their browser-style URLs to avoid REST API quota usage.
  */
 internal data class GitHubReleaseAsset(
     val owner: String,

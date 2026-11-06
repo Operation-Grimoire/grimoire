@@ -23,10 +23,18 @@ class HashMismatchException(
 ) : Exception("Downloaded APK hash did not match: expected $expected, got $actual")
 
 @Singleton
-class ExtensionInstaller @Inject constructor(
-    @ApplicationContext private val context: Context,
-    @GitHubAuthorized private val client: OkHttpClient,
+class ExtensionInstaller internal constructor(
+    private val cacheDir: File,
+    private val client: OkHttpClient,
+    private val httpErrorMessage: (Int) -> String,
 ) {
+    @Inject constructor(
+        @ApplicationContext context: Context,
+        @GitHubAuthorized client: OkHttpClient,
+    ) : this(context.cacheDir, client, { code ->
+        AppLocale.wrap(context).getString(R.string.extension_download_failed_http, code)
+    })
+
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun download(
@@ -36,27 +44,34 @@ class ExtensionInstaller @Inject constructor(
         onProgress: (bytesRead: Long, totalBytes: Long) -> Unit = { _, _ -> },
     ): Result<File> = withContext(Dispatchers.IO) {
         runCatching {
-            // Private-repo APKs need to go through GitHub's REST API; rewrite the
-            // browser-style URL to the API-style asset endpoint so the Bearer
-            // token actually gets honoured. Public repos and non-GitHub URLs
-            // keep the direct path.
-            val effectiveUrl = GitHubReleaseAsset.parse(apkUrl)
-                ?.let { resolveAssetApiUrl(it) }
-                ?: apkUrl
-            val file = File(context.cacheDir, "$packageName.apk")
+            val file = File(cacheDir, "$packageName.apk")
             val digest = MessageDigest.getInstance("SHA-256")
             val req = Request.Builder()
-                .url(effectiveUrl)
+                .url(apkUrl)
                 .apply {
-                    if (effectiveUrl.startsWith("https://api.github.com/")) {
+                    if (apkUrl.startsWith("https://api.github.com/")) {
                         header("Accept", "application/octet-stream")
                     }
                 }
                 .build()
-            client.newCall(req).execute().use { response ->
+            val direct = client.newCall(req).execute()
+            val asset = GitHubReleaseAsset.parse(apkUrl)
+            // Public APKs use direct downloads. Private release URLs can
+            // reject browser-style auth, requiring the existing API path.
+            val download = if ((direct.code == 401 || direct.code == 404) && asset != null) {
+                direct.close()
+                val apiRequest = Request.Builder()
+                    .url(resolveAssetApiUrl(asset))
+                    .header("Accept", "application/octet-stream")
+                    .build()
+                client.newCall(apiRequest).execute()
+            } else {
+                direct
+            }
+            download.use { response ->
                 if (!response.isSuccessful) failResponse(
                     response,
-                    AppLocale.wrap(context).getString(R.string.extension_download_failed_http, response.code),
+                    httpErrorMessage(response.code),
                 )
                 val body = response.body!!
                 val total = body.contentLength().coerceAtLeast(0L)
