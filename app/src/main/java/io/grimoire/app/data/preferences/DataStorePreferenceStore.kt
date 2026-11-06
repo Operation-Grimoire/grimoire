@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -17,6 +18,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "PreferenceStore"
+
+/** Recover ordinary settings without treating lost consent as a new install. */
+internal fun resetCorruptPreferences(): Preferences = mutablePreferencesOf(
+    booleanPreferencesKey(CRASH_REPORTS_KEY) to false,
+    booleanPreferencesKey(USAGE_ANALYTICS_KEY) to false,
+)
 
 // Read failures fall back to defaults so one bad disk read doesn't crash every
 // screen, but only for IO errors — anything else is a bug and must surface.
@@ -35,8 +42,8 @@ class DataStorePreferenceStore @Inject constructor(
     private val dataStore: DataStore<Preferences>,
 ) : PreferenceStore {
 
-    override fun getBoolean(key: String, defaultValue: Boolean): Preference<Boolean> =
-        PrimitivePreference(dataStore, booleanPreferencesKey(key), defaultValue)
+    override fun getBoolean(key: String, defaultValue: Boolean, readErrorValue: Boolean): Preference<Boolean> =
+        PrimitivePreference(dataStore, booleanPreferencesKey(key), defaultValue, readErrorValue)
 
     override fun getInt(key: String, defaultValue: Int): Preference<Int> =
         PrimitivePreference(dataStore, intPreferencesKey(key), defaultValue)
@@ -59,12 +66,20 @@ private class PrimitivePreference<T>(
     private val dataStore: DataStore<Preferences>,
     private val prefKey: Preferences.Key<T>,
     private val default: T,
+    private val readErrorValue: T = default,
 ) : Preference<T> {
     override fun key() = prefKey.name
     override fun defaultValue() = default
-    override fun changes(): Flow<T> = dataStore.data
-        .orDefaultsOnIoError()
-        .map { it[prefKey] ?: default }
+    override fun changes(): Flow<T> =
+        if (readErrorValue == default) {
+            dataStore.data.orDefaultsOnIoError().map { it[prefKey] ?: default }
+        } else {
+            // Missing keys may default on; unreadable consent must fail closed.
+            // Recover after mapping so an IO failure cannot become an empty store.
+            dataStore.data.map { it[prefKey] ?: default }.catch { failure ->
+                if (failure is IOException) emit(readErrorValue) else throw failure
+            }
+        }
     override suspend fun set(value: T) { dataStore.edit { it[prefKey] = value } }
 }
 

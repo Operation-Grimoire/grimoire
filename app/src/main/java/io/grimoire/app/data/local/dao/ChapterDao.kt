@@ -15,10 +15,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ChapterDao {
-    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
+    @Query(CHAPTER_METADATA_IN_READING_ORDER_QUERY)
     fun getChapters(novelId: Long): Flow<List<ChapterEntity>>
 
-    @Query("SELECT * FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
+    @Query(CHAPTERS_IN_READING_ORDER_QUERY)
     suspend fun getChaptersOnce(novelId: Long): List<ChapterEntity>
 
     /**
@@ -26,7 +26,7 @@ interface ChapterDao {
      * and is read per chapter on demand ([getContent]), so this stays cheap no matter
      * how much of the novel is downloaded. Mirrors [getChapters].
      */
-    @Query("SELECT id, novelId, url, name, uploadDate, chapterNumber, translator, read, readProgress, readAnchorItemIndex, readAnchorItemOffset, downloadStatus, queueOrder, firstReadAt, wordCount, locked FROM chapters WHERE novelId = :novelId ORDER BY chapterNumber ASC")
+    @Query(CHAPTER_METADATA_IN_READING_ORDER_QUERY)
     suspend fun getChapterMetadataOnce(novelId: Long): List<ChapterEntity>
 
     /**
@@ -37,7 +37,7 @@ interface ChapterDao {
     @Query("""
         SELECT * FROM chapters
         WHERE novelId = :novelId AND (read = 1 OR readProgress > 0 OR firstReadAt IS NOT NULL)
-        ORDER BY chapterNumber ASC
+        ORDER BY chapterNumber ASC, id ASC
     """)
     suspend fun getBackupChaptersOnce(novelId: Long): List<ChapterEntity>
 
@@ -101,7 +101,7 @@ interface ChapterDao {
         SELECT c.*, cc.content AS content FROM chapters c
         INNER JOIN chapter_content cc ON cc.chapterId = c.id
         WHERE c.novelId = :novelId AND c.downloadStatus IN (3, 5, 6, 7)
-        ORDER BY c.chapterNumber ASC
+        ORDER BY c.chapterNumber ASC, c.id ASC
     """)
     suspend fun getDownloadedChaptersWithContent(novelId: Long): List<ChapterWithContent>
 
@@ -382,7 +382,7 @@ interface ChapterDao {
         LEFT JOIN categories c ON c.id = n.categoryId
         WHERE ch.downloadStatus != 0
           AND (:excludeHidden = 0 OR IFNULL(c.isHidden, 0) = 0)
-        ORDER BY ch.novelId ASC, ch.chapterNumber ASC
+        ORDER BY ch.novelId ASC, ch.chapterNumber ASC, ch.id ASC
     """)
     fun getAllDownloads(excludeHidden: Boolean): Flow<List<ChapterEntity>>
 

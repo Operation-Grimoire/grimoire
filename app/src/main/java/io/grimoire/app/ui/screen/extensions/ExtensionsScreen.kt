@@ -672,6 +672,13 @@ private fun ExtensionRow(
         supporting = {
             Column {
                 Text("${languageLabel(item.lang)} · v${item.versionName}")
+                if (!item.isCompatible) {
+                    Text(
+                        stringResource(R.string.error_source_not_available),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
                 val langs = languages
                 if (!langs.isNullOrEmpty()) {
                     Text(
@@ -855,6 +862,7 @@ private fun AuthRequiredBanner(
 }
 
 private suspend fun ExtensionItem.multiLanguageOptions(): List<String>? {
+    if (!isCompatible) return null
     val source = when (this) {
         is ExtensionItem.Installed -> loaded.source
         is ExtensionItem.InstalledOnly -> loaded.source
@@ -870,6 +878,7 @@ private suspend fun ExtensionItem.multiLanguageOptions(): List<String>? {
  * so we don't surface a gear that leads to an empty page.
  */
 private fun ExtensionItem.hasSettings(): Boolean {
+    if (!isCompatible) return false
     val source = when (this) {
         is ExtensionItem.Installed -> loaded.source
         is ExtensionItem.InstalledOnly -> loaded.source

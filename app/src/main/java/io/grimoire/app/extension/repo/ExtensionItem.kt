@@ -1,5 +1,6 @@
 package io.grimoire.app.extension.repo
 
+import io.grimoire.api.model.lang.Language
 import io.grimoire.api.source.AdultContent
 import io.grimoire.app.extension.LoadedExtension
 
@@ -10,6 +11,11 @@ sealed interface ExtensionItem {
     val versionName: String
     val iconUrl: String?
     val adultContent: AdultContent
+    val isCompatible: Boolean get() = when (this) {
+        is Installed -> loaded.isCompatible
+        is InstalledOnly -> loaded.isCompatible
+        is Available -> true
+    }
 
     /** Whether the source serves any adult content (PARTIAL or FULL) — drives the 18+ badge. */
     val isAdult: Boolean get() = adultContent != AdultContent.NONE
@@ -19,7 +25,7 @@ sealed interface ExtensionItem {
     ) : ExtensionItem {
         override val packageName = loaded.info.packageName
         override val name = loaded.info.label.substringAfter(": ", loaded.info.label)
-        override val lang = loaded.source.lang.code
+        override val lang = loaded.lang ?: Language.UNKNOWN.code
         override val versionName = loaded.info.versionName
         override val iconUrl: String? = null
         override val adultContent = loaded.adultContent
@@ -42,7 +48,7 @@ sealed interface ExtensionItem {
     ) : ExtensionItem {
         override val packageName = loaded.info.packageName
         override val name = remote.name
-        override val lang = loaded.source.lang.code
+        override val lang = loaded.lang ?: remote.lang
         override val versionName = loaded.info.versionName
         override val iconUrl: String? = remote.iconUrl
         override val adultContent = loaded.adultContent

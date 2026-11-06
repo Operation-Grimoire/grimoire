@@ -26,7 +26,7 @@ fun <T> Preference<T>.stateIn(
 ): StateFlow<T> = changes().stateIn(scope, started, defaultValue())
 
 interface PreferenceStore {
-    fun getBoolean(key: String, defaultValue: Boolean): Preference<Boolean>
+    fun getBoolean(key: String, defaultValue: Boolean, readErrorValue: Boolean = defaultValue): Preference<Boolean>
     fun getInt(key: String, defaultValue: Int): Preference<Int>
     fun getLong(key: String, defaultValue: Long): Preference<Long>
     fun getString(key: String, defaultValue: String): Preference<String>

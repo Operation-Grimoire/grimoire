@@ -50,6 +50,11 @@ class ExtensionManager @Inject constructor(
     private val _extensions = MutableStateFlow<List<LoadedExtension>>(emptyList())
     val extensions: StateFlow<List<LoadedExtension>> = _extensions.asStateFlow()
 
+    // Include incompatible APKs here so extension management can update/remove
+    // them. Runtime consumers use extensions, which contains usable sources only.
+    private val _installedExtensions = MutableStateFlow<List<LoadedExtension>>(emptyList())
+    val installedExtensions: StateFlow<List<LoadedExtension>> = _installedExtensions.asStateFlow()
+
     // Eagerly scan installed extensions so the list is ready before the first refresh().
     // Callers that read [extensions] near process start (workers, the reader resolving
     // its source) must await this first or they will observe an empty list and treat
@@ -153,8 +158,10 @@ class ExtensionManager @Inject constructor(
 
         // Apply settings before publishing. Keep failed sources reachable so users
         // can repair their settings, and don't let one failure hide every source.
-        loaded.forEach { applyPreferences(it) }
-        _extensions.value = loaded
+        val compatible = loaded.filter { it.isCompatible }
+        compatible.forEach { applyPreferences(it) }
+        _installedExtensions.value = loaded
+        _extensions.value = compatible
         trackInstallChanges(loaded)
     }
 

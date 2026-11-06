@@ -59,10 +59,10 @@ val githubOAuthClientId: String =
         ?: System.getenv("GITHUB_OAUTH_CLIENT_ID")
         ?: ""
 
-// Aptabase (privacy-first analytics) app key + GlitchTip (crash reporting) DSN.
+// Aptabase app key for anonymous usage analytics and crash reports.
 // Resolved from gradle property > env var > local.properties (gitignored), so the
-// secrets never live in committed source. Empty ⇒ that integration is inert
-// (also opt-in and config-gated at runtime).
+// key can vary by build. Empty ⇒ both integrations are inert;
+// each also respects its separate opt-out preference at runtime.
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
@@ -74,7 +74,6 @@ fun resolveSecret(name: String): String =
         ?: localProperties.getProperty(name)
         ?: ""
 val aptabaseAppKey: String = resolveSecret("APTABASE_APP_KEY")
-val glitchTipDsn: String = resolveSecret("GLITCHTIP_DSN")
 
 android {
     namespace = "io.grimoire.app"
@@ -95,7 +94,6 @@ android {
         buildConfigField("String", "EXTENSIONS_API_VERSION", "\"$extensionsApiVersion\"")
         buildConfigField("String", "GITHUB_OAUTH_CLIENT_ID", "\"$githubOAuthClientId\"")
         buildConfigField("String", "APTABASE_APP_KEY", "\"$aptabaseAppKey\"")
-        buildConfigField("String", "GLITCHTIP_DSN", "\"$glitchTipDsn\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

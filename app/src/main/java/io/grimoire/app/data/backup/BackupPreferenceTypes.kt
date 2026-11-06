@@ -75,7 +75,7 @@ private class PreferenceTypeCollector : PreferenceStore {
         }
     }
 
-    override fun getBoolean(key: String, defaultValue: Boolean) = record(key, "b", defaultValue)
+    override fun getBoolean(key: String, defaultValue: Boolean, readErrorValue: Boolean) = record(key, "b", defaultValue)
     override fun getInt(key: String, defaultValue: Int) = record(key, "i", defaultValue)
     override fun getLong(key: String, defaultValue: Long) = record(key, "l", defaultValue)
     override fun getString(key: String, defaultValue: String) = record(key, "s", defaultValue)
