@@ -19,6 +19,7 @@ import dagger.Lazy
 import io.grimoire.app.data.backup.BackupScheduler
 import io.grimoire.app.data.cache.CoverPreloader
 import io.grimoire.app.data.crash.CrashLogStore
+import io.grimoire.app.data.crash.AptabaseCrashReporter
 import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
 import io.grimoire.app.data.local.SourceIdMigrator
 import io.grimoire.app.data.local.TransientNovelPruner
@@ -29,6 +30,7 @@ import io.grimoire.app.extension.repo.ExtensionRepository
 import io.grimoire.api.network.NetworkContext
 import io.grimoire.app.util.AppLocale
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -48,6 +50,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     @Inject lateinit var extensionRepository: Lazy<ExtensionRepository>
     @Inject lateinit var transientNovelPruner: TransientNovelPruner
     @Inject lateinit var crashLogStore: CrashLogStore
+    @Inject lateinit var crashReporter: AptabaseCrashReporter
     @Inject lateinit var analytics: io.grimoire.app.data.analytics.Analytics
     @Inject lateinit var analyticsPreferences: io.grimoire.app.data.preferences.AnalyticsPreferences
     @Inject @GitHubAuthorized lateinit var imageHttpClient: OkHttpClient
@@ -114,6 +117,12 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         installCrashHandler()
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
+            analyticsPreferences.crashReportsEnabled.changes().collect {
+                // Diagnostics must not crash the app if its journal/work storage fails.
+                runCatching { crashReporter.applyPreference(it) }
+            }
+        }
         AppLocale.migrateToSystem(this)
         // Keep analytics enabled state in sync with the usage preference (default on).
         ProcessLifecycleOwner.get().lifecycleScope.launch {
@@ -220,6 +229,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
     private fun installCrashHandler() {
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            runCatching { crashReporter.captureCrash(throwable) }
             runCatching { crashLogStore.save(throwable, thread) }
             previous?.uncaughtException(thread, throwable)
         }

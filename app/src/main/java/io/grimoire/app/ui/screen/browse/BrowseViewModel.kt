@@ -74,7 +74,7 @@ class BrowseViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     val installed: StateFlow<List<ExtensionItem>> = repository.items
-        .map { items -> items.filter { it is ExtensionItem.Installed || it is ExtensionItem.InstalledOnly } }
+        .map { items -> items.filter { it.isCompatible && (it is ExtensionItem.Installed || it is ExtensionItem.InstalledOnly) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Installed extensions with an update available — badges the manage-extensions button. */

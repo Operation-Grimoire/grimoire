@@ -11,7 +11,7 @@ import javax.inject.Singleton
 @Singleton
 class AnalyticsPreferences @Inject constructor(store: PreferenceStore) {
 
-    /** Send anonymous crash reports (GlitchTip). */
+    /** Send anonymous crash reports (Aptabase), independently of usage analytics. */
     val crashReportsEnabled = store.getBoolean("diagnostics_crash_reports", true)
 
     /** Send anonymous usage analytics (Aptabase). */

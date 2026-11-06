@@ -33,6 +33,37 @@ Run at least `compileDebugKotlin` and `testDebugUnitTest` before opening a PR.
 Pure projection/logic changes should come with a unit test (see
 `LibraryFilterTest`, `ChapterProjectionTest` for the pattern).
 
+## Optional diagnostics configuration
+
+Set `APTABASE_APP_KEY` through a Gradle property, environment variable, or
+gitignored `local.properties` entry. Release and nightly workflows use the
+repository variable of the same name. Both diagnostics integrations are inert
+when the key is missing. The crash adapter supports hosted US/EU keys.
+
+Settings → Privacy has independent crash-reporting and usage-analytics toggles.
+Existing choices are preserved. Crash capture starts after the stored preference
+loads; it never assumes consent while that read is pending.
+
+Uncaught crashes still produce the local report shown on the next launch.
+Separately, the Aptabase adapter saves an anonymous report synchronously and
+uploads it on the next launch through WorkManager when a network is available.
+Automatic reports contain exception types, stack-frame identifiers and line
+numbers, capture time, app version/commit, Android version, a temporary session
+ID, and debug/release mode. They omit exception messages, source filenames,
+URLs, novel identifiers, device identifiers, and local-report breadcrumbs.
+
+The upload journal is excluded from Android backups, holds at most eight reports,
+and expires reports after 14 days. Opting out clears it and cancels upload work.
+Transient network/server failures and rate limiting retry with backoff; invalid
+payloads, invalid keys and exhausted quotas are discarded. Debug reports retain
+their original build mode even when uploaded by a later build.
+
+The adapter follows Aptabase's [error ingestion contract](https://github.com/aptabase/aptabase/blob/main/docs/error-api-openapi.yaml).
+Local HTTP tests validate delivery behavior. Before claiming live acceptance,
+verify Errors availability in the configured Aptabase account, send a deliberate
+debug crash, relaunch, and confirm that report in the dashboard's debug view.
+HTTP 202 means buffered acceptance, not confirmed dashboard storage.
+
 ## Conventions (the short version)
 
 The full rationale lives in [`CLAUDE.md`](./CLAUDE.md); the essentials:

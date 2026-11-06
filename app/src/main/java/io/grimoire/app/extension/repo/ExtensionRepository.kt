@@ -69,7 +69,7 @@ class ExtensionRepository @Inject constructor(
         _fetchError.value = null
         try {
             extensionManager.refresh()
-            val installed = extensionManager.extensions.value
+            val installed = extensionManager.installedExtensions.value
                 .associateBy { it.info.packageName }
             val enabledRepos = repoDao.getEnabled()
 
@@ -167,7 +167,7 @@ class ExtensionRepository @Inject constructor(
         if (wanted.isEmpty()) return emptyList()
 
         extensionManager.refresh()
-        val installed = extensionManager.extensions.value.associateBy { it.info.packageName }
+        val installed = extensionManager.installedExtensions.value.associateBy { it.info.packageName }
 
         val remotes = mutableMapOf<String, RemoteExtension>()
         for (repo in repoDao.getEnabled()) {
