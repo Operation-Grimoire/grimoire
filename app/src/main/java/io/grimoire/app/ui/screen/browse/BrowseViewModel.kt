@@ -57,6 +57,20 @@ data class BrowseSourcesUi(
     val languages: List<String> = emptyList(),
 )
 
+data class BrowseInstalledSources(
+    val usable: List<ExtensionItem> = emptyList(),
+    val hasUnavailable: Boolean = false,
+)
+
+/** Keep unavailable APKs out of navigation without claiming they aren't installed. */
+internal fun projectInstalledBrowseSources(items: List<ExtensionItem>): BrowseInstalledSources {
+    val installed = items.filter { it is ExtensionItem.Installed || it is ExtensionItem.InstalledOnly }
+    return BrowseInstalledSources(
+        usable = installed.filter { it.isCompatible },
+        hasUnavailable = installed.any { !it.isCompatible },
+    )
+}
+
 @HiltViewModel
 class BrowseViewModel @Inject constructor(
     @ApplicationContext context: Context,
@@ -73,9 +87,9 @@ class BrowseViewModel @Inject constructor(
         .map { keys -> keys.mapTo(HashSet(keys.size)) { it.sourceId to it.url } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
-    val installed: StateFlow<List<ExtensionItem>> = repository.items
-        .map { items -> items.filter { it.isCompatible && (it is ExtensionItem.Installed || it is ExtensionItem.InstalledOnly) } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val installed: StateFlow<BrowseInstalledSources> = repository.items
+        .map(::projectInstalledBrowseSources)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BrowseInstalledSources())
 
     /** Installed extensions with an update available — badges the manage-extensions button. */
     val extensionUpdateCount: StateFlow<Int> = repository.updateCount
@@ -121,7 +135,8 @@ class BrowseViewModel @Inject constructor(
         _nameFilter.debounce(120L),
         _languageFilter,
         duplicatePinned,
-    ) { sources, pinned, query, langFilter, duplicate ->
+    ) { installed, pinned, query, langFilter, duplicate ->
+        val sources = installed.usable
         val q = query.trim()
         val languages = sources.map { it.lang.uppercase() }.distinct().sorted()
         val nameMatched =

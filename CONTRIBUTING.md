@@ -42,7 +42,8 @@ when the key is missing. The crash adapter supports hosted US/EU keys.
 
 Settings → Privacy has independent crash-reporting and usage-analytics toggles.
 Existing choices are preserved. Crash capture starts after the stored preference
-loads; it never assumes consent while that read is pending.
+loads; it never assumes consent while that read is pending. Unreadable or corrupt
+preferences disable diagnostics instead of falling back to default-on consent.
 
 Uncaught crashes still produce the local report shown on the next launch.
 Separately, the Aptabase adapter saves an anonymous report synchronously and
@@ -53,7 +54,8 @@ ID, and debug/release mode. They omit exception messages, source filenames,
 URLs, novel identifiers, device identifiers, and local-report breadcrumbs.
 
 The upload journal is excluded from Android backups, holds at most eight reports,
-and expires reports after 14 days. Opting out clears it and cancels upload work.
+and expires reports after 14 days. Opting out clears it synchronously and cancels
+upload work before the asynchronous preference write completes.
 Transient network/server failures and rate limiting retry with backoff; invalid
 payloads, invalid keys and exhausted quotas are discarded. Debug reports retain
 their original build mode even when uploaded by a later build.

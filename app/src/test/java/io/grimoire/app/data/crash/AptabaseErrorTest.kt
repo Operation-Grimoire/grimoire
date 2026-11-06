@@ -78,6 +78,18 @@ class AptabaseErrorTest {
         }
     }
 
+    @Test fun immediateOptOutClearsPreviouslyCapturedReportsBeforeAnyAsyncPreferenceWrite() {
+        val folder = temporary.newFolder()
+        val capture = AptabaseCrashCapture(AptabaseErrorQueue(folder), configured = true)
+        capture.setEnabled(true)
+        capture.capture { report() }
+        assertEquals(1, AptabaseErrorQueue(folder).pending().size)
+        capture.disableAndClear()
+        capture.capture { fail("Capture must stay disabled"); report() }
+        // Simulate process death/relaunch without the DataStore write or collector.
+        assertTrue(AptabaseErrorQueue(folder).pending().isEmpty())
+    }
+
     @Test fun queueIsBoundedAndExpiresOldOrDamagedRecords() {
         val folder = temporary.newFolder()
         val queue = AptabaseErrorQueue(folder)

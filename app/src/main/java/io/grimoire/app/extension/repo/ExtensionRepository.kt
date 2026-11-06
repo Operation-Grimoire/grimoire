@@ -159,7 +159,7 @@ class ExtensionRepository @Inject constructor(
      * cached index, falling back to a network fetch only when no cache exists —
      * so opening a NovelUpdates series can surface a "read with this source"
      * link without forcing a full refresh. Returns [ExtensionItem.Installed]
-     * when the matched extension is already installed, else
+     * when the matched extension is installed and usable, else
      * [ExtensionItem.Available].
      */
     suspend fun extensionsForNovelUpdatesGroups(groups: Collection<String>): List<ExtensionItem> {
@@ -167,7 +167,7 @@ class ExtensionRepository @Inject constructor(
         if (wanted.isEmpty()) return emptyList()
 
         extensionManager.refresh()
-        val installed = extensionManager.installedExtensions.value.associateBy { it.info.packageName }
+        val installed = extensionManager.extensions.value.associateBy { it.info.packageName }
 
         val remotes = mutableMapOf<String, RemoteExtension>()
         for (repo in repoDao.getEnabled()) {

@@ -73,6 +73,13 @@ internal class AptabaseCrashCapture(
     @Synchronized
     fun setEnabled(value: Boolean) { enabled = value }
 
+    /** Complete opt-out on disk before returning to the caller. */
+    @Synchronized
+    fun disableAndClear() {
+        enabled = false
+        queue.clear()
+    }
+
     @Synchronized
     fun capture(build: () -> AptabaseErrorReport) {
         if (!enabled || !configured || captured) return

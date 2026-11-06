@@ -189,17 +189,25 @@ fun BrowseScreen(
                 }
             }
 
-            if (installed.isEmpty()) {
+            if (installed.usable.isEmpty()) {
                 item(key = "__empty__") {
-                    Box(
+                    Column(
                         Modifier.fillMaxWidth().padding(32.dp),
-                        contentAlignment = Alignment.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            stringResource(R.string.browse_no_extensions),
+                            stringResource(
+                                if (installed.hasUnavailable) R.string.error_source_not_available
+                                else R.string.browse_no_extensions,
+                            ),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        if (installed.hasUnavailable) {
+                            TextButton(onClick = onNavigateToManage) {
+                                Text(stringResource(R.string.browse_manage_extensions))
+                            }
+                        }
                     }
                 }
             } else {

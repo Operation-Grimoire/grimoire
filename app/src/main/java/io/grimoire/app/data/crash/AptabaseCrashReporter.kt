@@ -43,7 +43,7 @@ class AptabaseCrashReporter @Inject constructor(@param:ApplicationContext privat
     fun selectCollection(enabled: Boolean) {
         optedOutThisSession = !enabled
         if (!enabled) {
-            capture.setEnabled(false)
+            capture.disableAndClear()
             WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
         }
     }
