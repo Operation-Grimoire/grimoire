@@ -30,13 +30,17 @@ class DiagnosticsConsentTest {
         assertTrue(preferences.usageAnalyticsEnabled.changes().first())
     }
 
-    @Test fun persistedOptOutsRemainOff() = runBlocking {
-        val preferences = preferences(flowOf(mutablePreferencesOf(
-            booleanPreferencesKey("diagnostics_crash_reports") to false,
-            booleanPreferencesKey("diagnostics_usage_analytics") to false,
-        )))
-        assertFalse(preferences.crashReportsEnabled.changes().first())
-        assertFalse(preferences.usageAnalyticsEnabled.changes().first())
+    @Test fun persistedCrashAndUsageChoicesRemainIndependent() = runBlocking {
+        for (crash in listOf(false, true)) {
+            for (usage in listOf(false, true)) {
+                val preferences = preferences(flowOf(mutablePreferencesOf(
+                    booleanPreferencesKey("diagnostics_crash_reports") to crash,
+                    booleanPreferencesKey("diagnostics_usage_analytics") to usage,
+                )))
+                assertEquals(crash, preferences.crashReportsEnabled.changes().first())
+                assertEquals(usage, preferences.usageAnalyticsEnabled.changes().first())
+            }
+        }
     }
 
     @Test fun unreadablePreferencesNeverBecomeDefaultOnConsent() = runBlocking {
