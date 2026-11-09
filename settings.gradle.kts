@@ -26,6 +26,14 @@ dependencyResolutionManagement {
                 password = System.getenv("GITHUB_TOKEN") ?: ""
             }
         }
+        maven {
+            name = "BrowserSessionsPackages"
+            url = uri("https://maven.pkg.github.com/Operation-Grimoire/browser-sessions")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: ""
+                password = System.getenv("GITHUB_TOKEN") ?: ""
+            }
+        }
         google()
         mavenCentral()
         maven { url = uri("https://www.jitpack.io") } // Aptabase analytics SDK
