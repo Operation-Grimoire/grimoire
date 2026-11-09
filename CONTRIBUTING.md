@@ -11,7 +11,9 @@ truth**; if a doc drifts, fix the doc in the same PR.
 - **JDK 17** (CI builds on Temurin 17)
 - **Android SDK** — compileSdk API 36.1, minSdk 26, targetSdk 36
 - Access to the **`io.grimoire:extensions-api`** Android wrapper and its transitive
-  **`io.grimoire:extensions-core`** JVM dependency. They resolve from, in
+  **`io.grimoire:extensions-core`** JVM dependency. API 1.4 also brings the
+  `browser-sessions-android` and `browser-sessions-core` artifacts from the
+  [Browser sessions repository](https://github.com/Operation-Grimoire/browser-sessions). They resolve from, in
   order, your local Maven cache then GitHub Packages:
   - **mavenLocal** — if you also work on `grimoire-extensions-api`, run
     `./gradlew :core:publishToMavenLocal :api:publishToMavenLocal` there. Select
@@ -39,6 +41,8 @@ Pure projection/logic changes should come with a unit test (see
 For local API development, pass `-PgrimoireApiDir=/path/to/grimoire-extensions-api`
 and `-PextensionsApiVersion=VERSION` to use the composite instead of published
 packages. Normal builds use the stable release without either property.
+The normal Android build resolves both GitHub Packages repositories with the same
+package-read credentials.
 
 ## Optional diagnostics configuration
 
