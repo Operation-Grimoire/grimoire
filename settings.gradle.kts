@@ -34,3 +34,13 @@ dependencyResolutionManagement {
 
 rootProject.name = "Grimoire"
 include(":app")
+
+// Opt-in cross-repository development; released dependency pins remain the default.
+providers.gradleProperty("grimoireApiDir").orNull?.let { apiDirectory ->
+    includeBuild(apiDirectory) {
+        dependencySubstitution {
+            substitute(module("io.grimoire:extensions-api")).using(project(":api"))
+            substitute(module("io.grimoire:extensions-core")).using(project(":core"))
+        }
+    }
+}
