@@ -10,10 +10,13 @@ truth**; if a doc drifts, fix the doc in the same PR.
 
 - **JDK 17** (CI builds on Temurin 17)
 - **Android SDK** — compileSdk API 36.1, minSdk 26, targetSdk 36
-- Access to the **`io.grimoire:extensions-api`** dependency. It resolves from, in
+- Access to the **`io.grimoire:extensions-api`** Android wrapper and its transitive
+  **`io.grimoire:extensions-core`** JVM dependency. They resolve from, in
   order, your local Maven cache then GitHub Packages:
   - **mavenLocal** — if you also work on `grimoire-extensions-api`, run
-    `./gradlew :api:publishToMavenLocal` there and it's picked up automatically.
+    `./gradlew :core:publishToMavenLocal :api:publishToMavenLocal` there. Select
+    that version with `-PextensionsApiVersion=VERSION` if it differs from the
+    app's stable pin. Both matching artifacts must be available.
   - **GitHub Packages** — otherwise export `GITHUB_ACTOR` (your username) and
     `GITHUB_TOKEN` (a PAT with `read:packages`) so Gradle can authenticate.
 - Optional: a `GITHUB_OAUTH_CLIENT_ID` (gradle property or env) for your own
@@ -32,6 +35,10 @@ APP_VERSION_TAG=v0.1.0 ./gradlew :app:assembleRelease
 Run at least `compileDebugKotlin` and `testDebugUnitTest` before opening a PR.
 Pure projection/logic changes should come with a unit test (see
 `LibraryFilterTest`, `ChapterProjectionTest` for the pattern).
+
+For local API development, pass `-PgrimoireApiDir=/path/to/grimoire-extensions-api`
+and `-PextensionsApiVersion=VERSION` to use the composite instead of published
+packages. Normal builds use the stable release without either property.
 
 ## Optional diagnostics configuration
 
