@@ -15,7 +15,7 @@ class LibraryUpdatePreferences @Inject constructor(store: PreferenceStore) {
     val requiresCharging = store.getBoolean("library_update_requires_charging", false)
     val concurrency = store.getInt("library_update_concurrency", 4)
     /**
-     * When false (default), EPUB-typed novels are skipped by library sync: local
+     * When false (default), self-contained novels are skipped by library sync: local
      * file imports and EPUB-source extensions (e.g. Z-Library, libgen) have no
      * scraped chapter list to refresh, so there's nothing to fetch. Enable to pull
      * them into the run anyway.

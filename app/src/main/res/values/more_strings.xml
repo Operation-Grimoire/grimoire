@@ -93,7 +93,7 @@
     <string name="tour_step_library_refresh_title">Check for new chapters</string>
     <string name="tour_step_library_refresh_body">Refresh the whole library, or just the category you’re looking at.</string>
     <string name="tour_step_library_menu_title">Categories &amp; imports</string>
-    <string name="tour_step_library_menu_body">Create categories here, then swipe between them. You can also import EPUB files.</string>
+    <string name="tour_step_library_menu_body">Create categories here, then swipe between them. You can also import EPUB/TXT files.</string>
     <string name="tour_step_library_select_title">Select several</string>
     <string name="tour_step_library_select_body">Long-press a novel to start selecting, then move, download or remove them all at once.</string>
     <string name="tour_browse_title">Browse tour</string>

@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.updates
 
-import io.grimoire.app.data.epub.LOCAL_PKG
+import io.grimoire.app.data.book.LOCAL_PKG
 
 import io.grimoire.app.ui.icon.*
 import androidx.activity.compose.BackHandler

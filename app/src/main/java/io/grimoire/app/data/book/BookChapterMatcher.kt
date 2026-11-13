@@ -1,9 +1,9 @@
-package io.grimoire.app.data.epub
+package io.grimoire.app.data.book
 
 import io.grimoire.app.data.local.entity.ChapterEntity
 
 /**
- * Matches a re-imported EPUB's chapters ([titles], in spine order) to the
+ * Matches a re-imported book's chapters ([titles], in document order) to the
  * [previous] rows stored for the novel, so read state survives a re-import.
  * Returns a list aligned with [titles]: the prior row each chapter inherits
  * state from, or null when it starts unread.
@@ -17,13 +17,13 @@ import io.grimoire.app.data.local.entity.ChapterEntity
  * shift. A chapter matched by neither rule inherits nothing rather than
  * guessing.
  */
-internal fun matchPreviousEpubChapters(
+internal fun matchPreviousBookChapters(
     previous: List<ChapterEntity>,
     titles: List<String>,
 ): List<ChapterEntity?> {
     if (previous.isEmpty()) return List(titles.size) { null }
     // chapterNumber is index + 1 from the original import, so this restores
-    // spine order regardless of how the DAO returned the rows.
+    // document order regardless of how the DAO returned the rows.
     val ordered = previous.sortedBy { it.chapterNumber }
     val result = arrayOfNulls<ChapterEntity>(titles.size)
     val claimed = BooleanArray(ordered.size)

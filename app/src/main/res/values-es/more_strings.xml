@@ -98,7 +98,7 @@
     <string name="tour_step_library_refresh_title">Buscar capítulos nuevos</string>
     <string name="tour_step_library_refresh_body">Actualiza toda la biblioteca o solo la categoría que estás viendo.</string>
     <string name="tour_step_library_menu_title">Categorías e importación</string>
-    <string name="tour_step_library_menu_body">Crea categorías aquí y desliza para pasar de una a otra. También puedes importar archivos EPUB.</string>
+    <string name="tour_step_library_menu_body">Crea categorías aquí y desliza para pasar de una a otra. También puedes importar archivos EPUB/TXT.</string>
     <string name="tour_step_library_select_title">Seleccionar varias</string>
     <string name="tour_step_library_select_body">Mantén presionada una novela para empezar a seleccionar y luego mueve, descarga o elimina todas a la vez.</string>
     <string name="tour_browse_title">Recorrido por Explorar</string>

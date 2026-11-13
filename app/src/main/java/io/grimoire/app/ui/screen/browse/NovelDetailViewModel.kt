@@ -38,10 +38,10 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
 import io.grimoire.app.data.local.entity.UpdateIssueSeverity
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.DownloadManager
+import io.grimoire.app.data.book.BookImporter
 import io.grimoire.app.data.epub.EpubExporter
-import io.grimoire.app.data.epub.EpubImporter
-import io.grimoire.app.data.epub.LOCAL_PKG
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.book.LOCAL_PKG
+import io.grimoire.app.data.book.LOCAL_SOURCE_ID
 import io.grimoire.app.data.novelupdates.NuInfoState
 import io.grimoire.app.data.novelupdates.NuSearchResult
 import io.grimoire.app.data.preferences.LibraryPreferences
@@ -91,7 +91,7 @@ class NovelDetailViewModel @Inject constructor(
     private val categoryDao: CategoryDao,
     private val updateIssueDao: UpdateIssueDao,
     private val downloadManager: DownloadManager,
-    private val epubImporter: EpubImporter,
+    private val bookImporter: BookImporter,
     private val epubExporter: EpubExporter,
     private val novelUpdatesRepository: NovelUpdatesInfoRepository,
     private val migrator: NovelMigrator,
@@ -118,7 +118,7 @@ class NovelDetailViewModel @Inject constructor(
     val migrateFromId: Long = savedStateHandle.get<Long>("migrateFrom") ?: -1L
     val isMigrationTarget: Boolean get() = migrateFromId > 0L
 
-    /** A locally-imported EPUB novel: fully stored in the DB, no backing extension. */
+    /** A locally-imported book: fully stored in the DB, no backing extension. */
     val isLocal: Boolean = pkg == LOCAL_PKG
 
     /**
@@ -561,7 +561,7 @@ class NovelDetailViewModel @Inject constructor(
      * Whether opening this source's settings would show anything (configurable
      * prefs, multi-language picker, WebView login, or mirror hosts). Mirrors
      * ExtensionsScreen.hasSettings so we never offer a menu item that leads to an
-     * empty page. Always false for the local EPUB pseudo-source.
+     * empty page. Always false for the local book pseudo-source.
      */
     val hasSourceSettings: Boolean
         get() = !isLocal && source.let {
@@ -920,7 +920,7 @@ class NovelDetailViewModel @Inject constructor(
         _bookDownload.value = BookDownloadState.Downloading
         viewModelScope.launch {
             runCatching { src.getEpub(_novel.value) }
-                .mapCatching { bytes -> epubImporter.importBytes(bytes, canonicalSourceId, novelUrl).getOrThrow() }
+                .mapCatching { bytes -> bookImporter.importEpubBytes(bytes, canonicalSourceId, novelUrl).getOrThrow() }
                 .onSuccess { result ->
                     cachedNovelId = result.novelId
                     _liveNovelId.value = result.novelId

@@ -72,8 +72,8 @@
     <string name="library_filter_and_sort">Filter &amp; sort</string>
     <string name="library_refresh">Refresh library</string>
     <string name="library_more_actions">More actions</string>
-    <string name="library_importing_epub">Importing EPUB…</string>
-    <string name="library_import_epub">Import EPUB</string>
+    <string name="library_importing_epub">Importing EPUB/TXT…</string>
+    <string name="library_import_epub">Import EPUB/TXT</string>
     <string name="library_manage_categories">Manage categories</string>
     <string name="library_move">Move</string>
     <string name="library_mark_read">Mark read</string>
@@ -87,7 +87,7 @@
     <string name="library_extension_not_installed">Extension not installed</string>
     <string name="library_no_matches">No matches found</string>
     <string name="library_empty_title">Your library is empty</string>
-    <string name="library_empty_description">Add novels from a source, or import an EPUB from your device.</string>
+    <string name="library_empty_description">Add novels from a source, or import an EPUB or TXT file from your device.</string>
     <string name="library_browse_sources">Browse sources</string>
     <string name="library_update">Update library</string>
     <string name="library_update_all_description">Fetch new chapters across all categories</string>
@@ -129,6 +129,7 @@
     <string name="library_status_cancelled">Cancelled</string>
     <string name="library_status_unknown">Unknown</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">Web</string>
     <string name="library_filter_unread_only">Unread only</string>
     <string name="library_filter_unread_only_description">Hide fully read novels</string>
@@ -168,7 +169,7 @@
     <string name="library_biometric_unlock_title">Unlock hidden categories</string>
     <string name="library_biometric_unlock_subtitle">Use your biometric to reveal hidden categories</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="one">%1$d chapter</item>
         <item quantity="other">%1$d chapters</item>

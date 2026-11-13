@@ -90,7 +90,7 @@
     <string name="tour_step_library_refresh_title">새 챕터 확인</string>
     <string name="tour_step_library_refresh_body">서재 전체 또는 보고 있는 카테고리만 새로고침해요.</string>
     <string name="tour_step_library_menu_title">카테고리 및 가져오기</string>
-    <string name="tour_step_library_menu_body">여기서 카테고리를 만들고 스와이프해서 이동하세요. EPUB 파일도 가져올 수 있어요.</string>
+    <string name="tour_step_library_menu_body">여기서 카테고리를 만들고 스와이프해서 이동하세요. EPUB/TXT 파일도 가져올 수 있어요.</string>
     <string name="tour_step_library_select_title">여러 개 선택</string>
     <string name="tour_step_library_select_body">소설을 길게 눌러 선택을 시작한 다음, 한 번에 이동, 다운로드, 삭제할 수 있어요.</string>
     <string name="tour_browse_title">탐색 둘러보기</string>

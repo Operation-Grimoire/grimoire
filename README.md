@@ -31,7 +31,7 @@
 
 ## Features
 
-- **Library** — categories (incl. PIN-locked hidden categories), per-category background refresh, custom sort + filter + search, EPUB import, swipeable tabs throughout
+- **Library** — categories (incl. PIN-locked hidden categories), per-category background refresh, custom sort + filter + search, EPUB and TXT import, swipeable tabs throughout
 - **Personal ratings** — rate any novel 1–10; sort, filter, and badge your library by your own score (separate from the source's rating)
 - **Cover & metadata overrides** — replace a novel's cover, title, author, description, status or genres without losing them on refresh
 - **Reader** — adjustable font, spacing, line height, colour theme and orientation; in-line image privacy mode; optional Text-to-Speech (on-device + ElevenLabs voices)
@@ -67,7 +67,9 @@ io.grimoire.app/
 │   ├── tts/               Device + ElevenLabs TTS engines + playback service
 │   ├── novelupdates/      NU.com scraper + matcher
 │   ├── update/            In-app GitHub release updater
-│   ├── epub/              EPUB importer + parser + local source
+│   ├── book/              Format-neutral book importer + local source
+│   ├── epub/              EPUB parser + exporter
+│   ├── txt/               TXT parser + encoding detection
 │   └── cache/             Cover preloader
 ├── domain/                Auth / migration / NU info repositories
 ├── extension/             ExtensionLoader + ExtensionManager + repo browsing

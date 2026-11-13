@@ -102,7 +102,7 @@
     <string name="tour_step_library_refresh_title">Проверка новых глав</string>
     <string name="tour_step_library_refresh_body">Обновите всю библиотеку или только открытую категорию.</string>
     <string name="tour_step_library_menu_title">Категории и импорт</string>
-    <string name="tour_step_library_menu_body">Создавайте здесь категории и переключайтесь между ними свайпом. Также можно импортировать файлы EPUB.</string>
+    <string name="tour_step_library_menu_body">Создавайте здесь категории и переключайтесь между ними свайпом. Также можно импортировать файлы EPUB/TXT.</string>
     <string name="tour_step_library_select_title">Выбор нескольких</string>
     <string name="tour_step_library_select_body">Удерживайте новеллу, чтобы начать выбор, а затем переместите, скачайте или удалите все сразу.</string>
     <string name="tour_browse_title">Тур по разделу «Обзор»</string>

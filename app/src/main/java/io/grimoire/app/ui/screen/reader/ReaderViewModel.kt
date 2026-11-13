@@ -15,8 +15,8 @@ import io.grimoire.app.util.imageUrl
 import io.grimoire.app.util.isSeparator
 import io.grimoire.app.util.text
 import io.grimoire.app.data.download.ChapterImageStore
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
-import io.grimoire.app.data.epub.LOCAL_PKG
+import io.grimoire.app.data.book.LOCAL_SOURCE_ID
+import io.grimoire.app.data.book.LOCAL_PKG
 import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao

@@ -73,8 +73,8 @@
     <string name="library_filter_and_sort">Filter &amp; urutkan</string>
     <string name="library_refresh">Segarkan pustaka</string>
     <string name="library_more_actions">Tindakan lainnya</string>
-    <string name="library_importing_epub">Mengimpor EPUB…</string>
-    <string name="library_import_epub">Impor EPUB</string>
+    <string name="library_importing_epub">Mengimpor EPUB/TXT…</string>
+    <string name="library_import_epub">Impor EPUB/TXT</string>
     <string name="library_manage_categories">Kelola kategori</string>
     <string name="library_move">Pindahkan</string>
     <string name="library_mark_read">Tandai dibaca</string>
@@ -87,7 +87,7 @@
     <string name="library_extension_not_installed">Ekstensi tidak terpasang</string>
     <string name="library_no_matches">Tidak ada yang cocok</string>
     <string name="library_empty_title">Pustaka Anda kosong</string>
-    <string name="library_empty_description">Tambahkan novel dari sumber, atau impor EPUB dari perangkat Anda.</string>
+    <string name="library_empty_description">Tambahkan novel dari sumber, atau impor EPUB/TXT dari perangkat Anda.</string>
     <string name="library_browse_sources">Jelajahi sumber</string>
     <string name="library_update">Perbarui pustaka</string>
     <string name="library_update_all_description">Ambil bab baru dari semua kategori</string>
@@ -126,6 +126,7 @@
     <string name="library_status_cancelled">Dibatalkan</string>
     <string name="library_status_unknown">Tidak diketahui</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">Web</string>
     <string name="library_filter_unread_only">Hanya belum dibaca</string>
     <string name="library_filter_unread_only_description">Sembunyikan novel yang sudah selesai dibaca</string>
@@ -165,7 +166,7 @@
     <string name="library_biometric_unlock_title">Buka kunci kategori tersembunyi</string>
     <string name="library_biometric_unlock_subtitle">Gunakan biometrik untuk menampilkan kategori tersembunyi</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="other">%1$d bab</item>
     </plurals>

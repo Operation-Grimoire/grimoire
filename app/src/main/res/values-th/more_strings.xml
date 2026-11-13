@@ -89,7 +89,7 @@
     <string name="tour_step_library_refresh_title">ตรวจหาตอนใหม่</string>
     <string name="tour_step_library_refresh_body">รีเฟรชทั้งคลัง หรือเฉพาะหมวดหมู่ที่คุณกำลังดูอยู่</string>
     <string name="tour_step_library_menu_title">หมวดหมู่และการนำเข้า</string>
-    <string name="tour_step_library_menu_body">สร้างหมวดหมู่ที่นี่ แล้วปัดเพื่อสลับระหว่างหมวดหมู่ นำเข้าไฟล์ EPUB ได้ด้วย</string>
+    <string name="tour_step_library_menu_body">สร้างหมวดหมู่ที่นี่ แล้วปัดเพื่อสลับระหว่างหมวดหมู่ นำเข้าไฟล์ EPUB/TXT ได้ด้วย</string>
     <string name="tour_step_library_select_title">เลือกหลายรายการ</string>
     <string name="tour_step_library_select_body">กดนิยายค้างไว้เพื่อเริ่มเลือก แล้วย้าย ดาวน์โหลด หรือลบทั้งหมดในครั้งเดียว</string>
     <string name="tour_browse_title">ทัวร์เรียกดู</string>

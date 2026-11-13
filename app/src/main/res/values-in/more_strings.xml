@@ -90,7 +90,7 @@
     <string name="tour_step_library_refresh_title">Periksa bab baru</string>
     <string name="tour_step_library_refresh_body">Segarkan seluruh pustaka, atau hanya kategori yang sedang Anda lihat.</string>
     <string name="tour_step_library_menu_title">Kategori &amp; impor</string>
-    <string name="tour_step_library_menu_body">Buat kategori di sini, lalu geser untuk berpindah di antaranya. Anda juga bisa mengimpor file EPUB.</string>
+    <string name="tour_step_library_menu_body">Buat kategori di sini, lalu geser untuk berpindah di antaranya. Anda juga bisa mengimpor file EPUB/TXT.</string>
     <string name="tour_step_library_select_title">Pilih beberapa</string>
     <string name="tour_step_library_select_body">Tekan lama sebuah novel untuk mulai memilih, lalu pindahkan, unduh, atau hapus semuanya sekaligus.</string>
     <string name="tour_browse_title">Tur Jelajahi</string>

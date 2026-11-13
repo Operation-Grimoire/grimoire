@@ -102,7 +102,7 @@
     <string name="tour_step_library_refresh_title">Sprawdź nowe rozdziały</string>
     <string name="tour_step_library_refresh_body">Odśwież całą bibliotekę lub tylko oglądaną kategorię.</string>
     <string name="tour_step_library_menu_title">Kategorie i import</string>
-    <string name="tour_step_library_menu_body">Tutaj tworzysz kategorie, a potem przesuwasz między nimi palcem. Możesz też importować pliki EPUB.</string>
+    <string name="tour_step_library_menu_body">Tutaj tworzysz kategorie, a potem przesuwasz między nimi palcem. Możesz też importować pliki EPUB/TXT.</string>
     <string name="tour_step_library_select_title">Zaznacz kilka</string>
     <string name="tour_step_library_select_body">Przytrzymaj powieść, aby zacząć zaznaczanie, a potem przenieś, pobierz lub usuń wszystkie naraz.</string>
     <string name="tour_browse_title">Przewodnik po przeglądaniu</string>

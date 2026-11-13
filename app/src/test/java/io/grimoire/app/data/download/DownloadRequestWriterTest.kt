@@ -1,6 +1,6 @@
 package io.grimoire.app.data.download
 
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.book.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity

@@ -73,8 +73,8 @@
     <string name="library_filter_and_sort">Фільтр і сортування</string>
     <string name="library_refresh">Оновити бібліотеку</string>
     <string name="library_more_actions">Інші дії</string>
-    <string name="library_importing_epub">Імпорт EPUB…</string>
-    <string name="library_import_epub">Імпортувати EPUB</string>
+    <string name="library_importing_epub">Імпорт EPUB/TXT…</string>
+    <string name="library_import_epub">Імпортувати EPUB/TXT</string>
     <string name="library_manage_categories">Керувати категоріями</string>
     <string name="library_move">Перемістити</string>
     <string name="library_mark_read">Позначити прочитаним</string>
@@ -90,7 +90,7 @@
     <string name="library_extension_not_installed">Розширення не встановлено</string>
     <string name="library_no_matches">Нічого не знайдено</string>
     <string name="library_empty_title">Ваша бібліотека порожня</string>
-    <string name="library_empty_description">Додайте новели з джерела або імпортуйте EPUB зі свого пристрою.</string>
+    <string name="library_empty_description">Додайте новели з джерела або імпортуйте EPUB/TXT зі свого пристрою.</string>
     <string name="library_browse_sources">Переглянути джерела</string>
     <string name="library_update">Оновити бібліотеку</string>
     <string name="library_update_all_description">Отримати нові розділи в усіх категоріях</string>
@@ -138,6 +138,7 @@
     <string name="library_status_cancelled">Скасовано</string>
     <string name="library_status_unknown">Невідомо</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">Веб</string>
     <string name="library_filter_unread_only">Лише непрочитані</string>
     <string name="library_filter_unread_only_description">Приховати повністю прочитані новели</string>
@@ -177,7 +178,7 @@
     <string name="library_biometric_unlock_title">Розблокувати приховані категорії</string>
     <string name="library_biometric_unlock_subtitle">Скористайтеся біометрією, щоб показати приховані категорії</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="one">%1$d розділ</item>
         <item quantity="few">%1$d розділи</item>

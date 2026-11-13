@@ -73,8 +73,8 @@
     <string name="library_filter_and_sort">Фильтр и сортировка</string>
     <string name="library_refresh">Обновить библиотеку</string>
     <string name="library_more_actions">Другие действия</string>
-    <string name="library_importing_epub">Импорт EPUB…</string>
-    <string name="library_import_epub">Импортировать EPUB</string>
+    <string name="library_importing_epub">Импорт EPUB/TXT…</string>
+    <string name="library_import_epub">Импортировать EPUB/TXT</string>
     <string name="library_manage_categories">Управление категориями</string>
     <string name="library_move">Переместить</string>
     <string name="library_mark_read">Прочитано</string>
@@ -90,7 +90,7 @@
     <string name="library_extension_not_installed">Расширение не установлено</string>
     <string name="library_no_matches">Ничего не найдено</string>
     <string name="library_empty_title">Ваша библиотека пуста</string>
-    <string name="library_empty_description">Добавьте новеллы из источника или импортируйте EPUB с устройства.</string>
+    <string name="library_empty_description">Добавьте новеллы из источника или импортируйте EPUB/TXT с устройства.</string>
     <string name="library_browse_sources">Обзор источников</string>
     <string name="library_update">Обновить библиотеку</string>
     <string name="library_update_all_description">Проверить новые главы во всех категориях</string>
@@ -138,6 +138,7 @@
     <string name="library_status_cancelled">Заброшена</string>
     <string name="library_status_unknown">Неизвестно</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">Веб</string>
     <string name="library_filter_unread_only">Только непрочитанные</string>
     <string name="library_filter_unread_only_description">Скрыть полностью прочитанные новеллы</string>
@@ -177,7 +178,7 @@
     <string name="library_biometric_unlock_title">Разблокировать скрытые категории</string>
     <string name="library_biometric_unlock_subtitle">Подтвердите биометрией, чтобы показать скрытые категории</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="one">%1$d глава</item>
         <item quantity="few">%1$d главы</item>

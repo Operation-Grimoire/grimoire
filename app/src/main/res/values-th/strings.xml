@@ -72,8 +72,8 @@
     <string name="library_filter_and_sort">กรองและเรียงลำดับ</string>
     <string name="library_refresh">รีเฟรชคลัง</string>
     <string name="library_more_actions">การทำงานเพิ่มเติม</string>
-    <string name="library_importing_epub">กำลังนำเข้า EPUB…</string>
-    <string name="library_import_epub">นำเข้า EPUB</string>
+    <string name="library_importing_epub">กำลังนำเข้า EPUB/TXT…</string>
+    <string name="library_import_epub">นำเข้า EPUB/TXT</string>
     <string name="library_manage_categories">จัดการหมวดหมู่</string>
     <string name="library_move">ย้าย</string>
     <string name="library_mark_read">ทำเครื่องหมายว่าอ่านแล้ว</string>
@@ -86,7 +86,7 @@
     <string name="library_extension_not_installed">ยังไม่ได้ติดตั้งส่วนขยาย</string>
     <string name="library_no_matches">ไม่พบรายการที่ตรงกัน</string>
     <string name="library_empty_title">คลังของคุณยังว่างอยู่</string>
-    <string name="library_empty_description">เพิ่มนิยายจากแหล่งที่มา หรือนำเข้า EPUB จากอุปกรณ์ของคุณ</string>
+    <string name="library_empty_description">เพิ่มนิยายจากแหล่งที่มา หรือนำเข้า EPUB/TXT จากอุปกรณ์ของคุณ</string>
     <string name="library_browse_sources">เรียกดูแหล่งที่มา</string>
     <string name="library_update">อัปเดตคลัง</string>
     <string name="library_update_all_description">ดึงตอนใหม่จากทุกหมวดหมู่</string>
@@ -125,6 +125,7 @@
     <string name="library_status_cancelled">ยกเลิกแล้ว</string>
     <string name="library_status_unknown">ไม่ทราบ</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">เว็บ</string>
     <string name="library_filter_unread_only">เฉพาะที่ยังไม่อ่าน</string>
     <string name="library_filter_unread_only_description">ซ่อนนิยายที่อ่านจบแล้ว</string>
@@ -164,7 +165,7 @@
     <string name="library_biometric_unlock_title">ปลดล็อกหมวดหมู่ที่ซ่อน</string>
     <string name="library_biometric_unlock_subtitle">ใช้ไบโอเมตริกเพื่อแสดงหมวดหมู่ที่ซ่อน</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="other">%1$d ตอน</item>
     </plurals>

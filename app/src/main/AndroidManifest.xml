@@ -92,8 +92,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- "Open with Grimoire" for EPUB files when the source app declares
-                 the standard MIME type. -->
+            <!-- "Open with Grimoire" when the source app declares a supported MIME type. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -101,6 +100,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:mimeType="application/epub+zip" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
 
             <!-- Fallback for sources that hand us the file as octet-stream or
@@ -119,6 +119,27 @@
                 <data android:pathPattern=".*\\..*\\.epub" />
                 <data android:pathPattern=".*\\..*\\..*\\.epub" />
                 <data android:pathPattern=".*\\..*\\..*\\..*\\.epub" />
+            </intent-filter>
+
+            <!-- Equivalent extension fallback for plain-text books. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="*/*" />
+                <data android:pathPattern=".*\\.txt" />
+                <data android:pathPattern=".*\\..*\\.txt" />
+                <data android:pathPattern=".*\\..*\\..*\\.txt" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.txt" />
+                <data android:pathPattern=".*\\.TXT" />
+                <data android:pathPattern=".*\\..*\\.TXT" />
+                <data android:pathPattern=".*\\..*\\..*\\.TXT" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.TXT" />
             </intent-filter>
 
             <!-- Magic add-repo links. Verified App Link opens the app directly;

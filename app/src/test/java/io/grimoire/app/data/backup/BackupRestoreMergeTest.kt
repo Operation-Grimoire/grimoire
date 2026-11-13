@@ -1,6 +1,6 @@
 package io.grimoire.app.data.backup
 
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.book.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import kotlinx.serialization.encodeToString

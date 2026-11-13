@@ -73,8 +73,8 @@
     <string name="library_filter_and_sort">篩選與排序</string>
     <string name="library_refresh">重新整理書櫃</string>
     <string name="library_more_actions">更多動作</string>
-    <string name="library_importing_epub">正在匯入 EPUB…</string>
-    <string name="library_import_epub">匯入 EPUB</string>
+    <string name="library_importing_epub">正在匯入 EPUB/TXT…</string>
+    <string name="library_import_epub">匯入 EPUB/TXT</string>
     <string name="library_manage_categories">管理分類</string>
     <string name="library_move">移動</string>
     <string name="library_mark_read">標為已讀</string>
@@ -87,7 +87,7 @@
     <string name="library_extension_not_installed">未安裝擴充功能</string>
     <string name="library_no_matches">找不到符合的項目</string>
     <string name="library_empty_title">你的書櫃是空的</string>
-    <string name="library_empty_description">從來源加入小說，或從裝置匯入 EPUB。</string>
+    <string name="library_empty_description">從來源加入小說，或從裝置匯入 EPUB/TXT。</string>
     <string name="library_browse_sources">瀏覽來源</string>
     <string name="library_update">更新書櫃</string>
     <string name="library_update_all_description">抓取所有分類的新章節</string>
@@ -126,6 +126,7 @@
     <string name="library_status_cancelled">已停更</string>
     <string name="library_status_unknown">未知</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">網路</string>
     <string name="library_filter_unread_only">僅顯示未讀</string>
     <string name="library_filter_unread_only_description">隱藏已全部讀完的小說</string>
@@ -165,7 +166,7 @@
     <string name="library_biometric_unlock_title">解鎖隱藏分類</string>
     <string name="library_biometric_unlock_subtitle">使用生物辨識來顯示隱藏分類</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="other">%1$d 章</item>
     </plurals>

@@ -1,7 +1,7 @@
-package io.grimoire.app.data.epub
+package io.grimoire.app.data.book
 
 /**
- * Reserved source identity for novels imported from a local EPUB file. These
+ * Reserved source identity for novels imported from a local book file. These
  * novels have no backing extension: their chapter text is fully extracted at
  * import time into [io.grimoire.app.data.local.entity.ChapterContentEntity],
  * so the reader never needs a runtime [io.grimoire.api.source.Source].

@@ -1,4 +1,4 @@
-package io.grimoire.app.data.epub
+package io.grimoire.app.data.book
 
 import io.grimoire.app.data.local.entity.ChapterEntity
 import org.junit.Assert.assertEquals
@@ -6,7 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Test
 
-class EpubChapterMatcherTest {
+class BookChapterMatcherTest {
 
     private fun prior(
         index: Int,
@@ -24,7 +24,7 @@ class EpubChapterMatcherTest {
     @Test
     fun unchangedReimport_matchesEveryChapter() {
         val previous = listOf(prior(0, "One", read = true), prior(1, "Two"))
-        val result = matchPreviousEpubChapters(previous, listOf("One", "Two"))
+        val result = matchPreviousBookChapters(previous, listOf("One", "Two"))
         assertSame(previous[0], result[0])
         assertSame(previous[1], result[1])
     }
@@ -36,7 +36,7 @@ class EpubChapterMatcherTest {
             prior(1, "Two", read = true),
             prior(2, "Three"),
         )
-        val result = matchPreviousEpubChapters(
+        val result = matchPreviousBookChapters(
             previous,
             listOf("Prologue", "One", "Two", "Three"),
         )
@@ -53,7 +53,7 @@ class EpubChapterMatcherTest {
             prior(1, "One", read = true),
             prior(2, "Two"),
         )
-        val result = matchPreviousEpubChapters(previous, listOf("One", "Two"))
+        val result = matchPreviousBookChapters(previous, listOf("One", "Two"))
         assertSame(previous[1], result[0])
         assertSame(previous[2], result[1])
     }
@@ -64,7 +64,7 @@ class EpubChapterMatcherTest {
             prior(0, "Chapter", read = true),
             prior(1, "Chapter"),
         )
-        val result = matchPreviousEpubChapters(previous, listOf("Chapter", "Chapter"))
+        val result = matchPreviousBookChapters(previous, listOf("Chapter", "Chapter"))
         assertSame(previous[0], result[0])
         assertSame(previous[1], result[1])
     }
@@ -75,7 +75,7 @@ class EpubChapterMatcherTest {
             prior(0, "Chapter", read = true),
             prior(1, "Chapter", read = true),
         )
-        val result = matchPreviousEpubChapters(
+        val result = matchPreviousBookChapters(
             previous,
             listOf("Chapter", "Chapter", "Chapter"),
         )
@@ -93,7 +93,7 @@ class EpubChapterMatcherTest {
             prior(1, "Chapter"),
             prior(2, "Chapter", read = true),
         )
-        val result = matchPreviousEpubChapters(
+        val result = matchPreviousBookChapters(
             previous,
             listOf("Intro", "Chapter", "Chapter"),
         )
@@ -104,7 +104,7 @@ class EpubChapterMatcherTest {
 
     @Test
     fun firstImport_noPrevious_allFresh() {
-        val result = matchPreviousEpubChapters(emptyList(), listOf("One", "Two"))
+        val result = matchPreviousBookChapters(emptyList(), listOf("One", "Two"))
         assertEquals(listOf(null, null), result)
     }
 
@@ -116,7 +116,7 @@ class EpubChapterMatcherTest {
             prior(1, "Chapter"),
             prior(0, "Chapter", read = true),
         )
-        val result = matchPreviousEpubChapters(previous, listOf("Chapter", "Chapter"))
+        val result = matchPreviousBookChapters(previous, listOf("Chapter", "Chapter"))
         assertSame(previous[1], result[0]) // chapterNumber 1 (read) is position 0
         assertSame(previous[0], result[1])
     }

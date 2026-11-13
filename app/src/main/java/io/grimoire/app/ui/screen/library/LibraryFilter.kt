@@ -4,7 +4,7 @@ import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.effectiveTotal
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.book.LOCAL_SOURCE_ID
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
 import io.grimoire.app.data.preferences.AdultFilter
 import io.grimoire.app.data.preferences.NovelTypeFilter
@@ -159,7 +159,9 @@ internal fun computeTabNovels(
             (when (filterType) {
                 NovelTypeFilter.ALL -> true
                 NovelTypeFilter.EPUB -> novel.isEpubType(epubSourceIds)
-                NovelTypeFilter.WEB -> !novel.isEpubType(epubSourceIds)
+                NovelTypeFilter.TXT -> novel.isTxtType()
+                NovelTypeFilter.WEB ->
+                    novel.sourceId != LOCAL_SOURCE_ID && novel.sourceId !in epubSourceIds
             }) &&
             (filterSourceIds.isEmpty() || novel.sourceId in filterSourceIds) &&
             (when (filterAdult) {
@@ -175,10 +177,11 @@ internal fun computeTabNovels(
 }
 
 /**
- * True when this novel is EPUB-typed: a local file import ([LOCAL_SOURCE_ID]) or a
- * novel from an installed EPUB-source extension (its id is in [epubSourceIds], which
- * the ViewModel derives from the loaded extensions). Used by the EPUB badge and the
- * Type filter so both kinds of EPUB read the same way.
+ * True for a local EPUB identity or a novel from an installed EPUB-source extension.
+ * The local URL scheme distinguishes EPUB from TXT without adding a database field.
  */
 internal fun NovelEntity.isEpubType(epubSourceIds: Set<Long>): Boolean =
-    sourceId == LOCAL_SOURCE_ID || sourceId in epubSourceIds
+    (sourceId == LOCAL_SOURCE_ID && url.startsWith("epub:")) || sourceId in epubSourceIds
+
+internal fun NovelEntity.isTxtType(): Boolean =
+    sourceId == LOCAL_SOURCE_ID && url.startsWith("txt:")

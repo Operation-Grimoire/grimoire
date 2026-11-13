@@ -1,6 +1,6 @@
 package io.grimoire.app.data.local
 
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.book.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.entity.NovelEntity
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 

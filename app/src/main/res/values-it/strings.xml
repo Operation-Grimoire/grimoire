@@ -71,8 +71,8 @@
     <string name="library_filter_and_sort">Filtra e ordina</string>
     <string name="library_refresh">Aggiorna libreria</string>
     <string name="library_more_actions">Altre azioni</string>
-    <string name="library_importing_epub">Importazione EPUB…</string>
-    <string name="library_import_epub">Importa EPUB</string>
+    <string name="library_importing_epub">Importazione EPUB/TXT…</string>
+    <string name="library_import_epub">Importa EPUB/TXT</string>
     <string name="library_manage_categories">Gestisci categorie</string>
     <string name="library_move">Sposta</string>
     <string name="library_mark_read">Segna come letto</string>
@@ -87,7 +87,7 @@
     <string name="library_extension_not_installed">Estensione non installata</string>
     <string name="library_no_matches">Nessun risultato</string>
     <string name="library_empty_title">La tua libreria è vuota</string>
-    <string name="library_empty_description">Aggiungi romanzi da una fonte o importa un EPUB dal tuo dispositivo.</string>
+    <string name="library_empty_description">Aggiungi romanzi da una fonte o importa un EPUB/TXT dal tuo dispositivo.</string>
     <string name="library_browse_sources">Esplora le fonti</string>
     <string name="library_update">Aggiorna libreria</string>
     <string name="library_update_all_description">Cerca nuovi capitoli in tutte le categorie</string>
@@ -132,6 +132,7 @@
     <string name="library_status_cancelled">Cancellato</string>
     <string name="library_status_unknown">Sconosciuto</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">Web</string>
     <string name="library_filter_unread_only">Solo non letti</string>
     <string name="library_filter_unread_only_description">Nascondi i romanzi letti per intero</string>
@@ -171,7 +172,7 @@
     <string name="library_biometric_unlock_title">Sblocca categorie nascoste</string>
     <string name="library_biometric_unlock_subtitle">Usa la biometria per mostrare le categorie nascoste</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="one">%1$d capitolo</item>
         <item quantity="many">%1$d capitoli</item>

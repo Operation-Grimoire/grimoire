@@ -73,8 +73,8 @@
     <string name="library_filter_and_sort">Filtrar y ordenar</string>
     <string name="library_refresh">Actualizar biblioteca</string>
     <string name="library_more_actions">Más acciones</string>
-    <string name="library_importing_epub">Importando EPUB…</string>
-    <string name="library_import_epub">Importar EPUB</string>
+    <string name="library_importing_epub">Importando EPUB/TXT…</string>
+    <string name="library_import_epub">Importar EPUB/TXT</string>
     <string name="library_manage_categories">Administrar categorías</string>
     <string name="library_move">Mover</string>
     <string name="library_mark_read">Marcar como leída</string>
@@ -89,7 +89,7 @@
     <string name="library_extension_not_installed">Extensión no instalada</string>
     <string name="library_no_matches">No se encontraron coincidencias</string>
     <string name="library_empty_title">Tu biblioteca está vacía</string>
-    <string name="library_empty_description">Agrega novelas desde una fuente o importa un EPUB desde tu dispositivo.</string>
+    <string name="library_empty_description">Agrega novelas desde una fuente o importa un EPUB/TXT desde tu dispositivo.</string>
     <string name="library_browse_sources">Explorar fuentes</string>
     <string name="library_update">Actualizar biblioteca</string>
     <string name="library_update_all_description">Buscar capítulos nuevos en todas las categorías</string>
@@ -134,6 +134,7 @@
     <string name="library_status_cancelled">Cancelada</string>
     <string name="library_status_unknown">Desconocido</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">Web</string>
     <string name="library_filter_unread_only">Solo no leídas</string>
     <string name="library_filter_unread_only_description">Ocultar novelas leídas por completo</string>
@@ -173,7 +174,7 @@
     <string name="library_biometric_unlock_title">Desbloquear categorías ocultas</string>
     <string name="library_biometric_unlock_subtitle">Usa tu biometría para mostrar las categorías ocultas</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="one">%1$d capítulo</item>
         <item quantity="many">%1$d capítulos</item>

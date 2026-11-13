@@ -26,12 +26,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.grimoire.app.R
-import io.grimoire.app.data.epub.StagedEpub
+import io.grimoire.app.data.book.StagedBook
 import java.nio.ByteBuffer
 
 @Composable
-internal fun EpubImportPreviewDialog(
-    staged: StagedEpub,
+internal fun BookImportPreviewDialog(
+    staged: StagedBook,
     importing: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,

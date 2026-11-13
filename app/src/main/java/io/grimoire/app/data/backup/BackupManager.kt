@@ -11,7 +11,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.documentfile.provider.DocumentFile
 import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.book.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.AppDatabase
 import io.grimoire.app.data.local.InstalledSourceIdentity
 import io.grimoire.app.data.local.SOURCE_ID_MIGRATION_KEY

@@ -3,7 +3,7 @@ package io.grimoire.app.ui.screen.library
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.book.LOCAL_SOURCE_ID
 import io.grimoire.app.data.preferences.AdultFilter
 import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
@@ -20,6 +20,7 @@ class LibraryFilterTest {
         title: String = "Novel $id",
         author: String? = null,
         sourceId: Long = 1L,
+        url: String? = null,
         categoryId: Long? = null,
         status: Int = 0,
         lastUpdated: Long = 0L,
@@ -34,7 +35,7 @@ class LibraryFilterTest {
     ) = NovelEntity(
         id = id,
         sourceId = sourceId,
-        url = "https://example.test/$id",
+        url = url ?: if (sourceId == LOCAL_SOURCE_ID) "epub:$id" else "https://example.test/$id",
         title = title,
         author = author,
         status = status,
@@ -382,10 +383,11 @@ class LibraryFilterTest {
     }
 
     @Test
-    fun `type filter EPUB keeps only local novels`() {
+    fun `type filter EPUB keeps only local EPUB novels`() {
         val novels = listOf(
             novel(1, title = "Epub", sourceId = LOCAL_SOURCE_ID),
-            novel(2, title = "Web", sourceId = 100L),
+            novel(2, title = "Txt", sourceId = LOCAL_SOURCE_ID, url = "txt:2"),
+            novel(3, title = "Web", sourceId = 100L),
         )
         val tabs = buildLibraryTabs(
             baseInputs(novels = novels, filterType = NovelTypeFilter.EPUB),
@@ -394,10 +396,24 @@ class LibraryFilterTest {
     }
 
     @Test
+    fun `type filter TXT keeps only local txt novels`() {
+        val novels = listOf(
+            novel(1, title = "Epub", sourceId = LOCAL_SOURCE_ID),
+            novel(2, title = "Txt", sourceId = LOCAL_SOURCE_ID, url = "txt:2"),
+            novel(3, title = "Web", sourceId = 100L),
+        )
+        val tabs = buildLibraryTabs(
+            baseInputs(novels = novels, filterType = NovelTypeFilter.TXT),
+        )
+        assertEquals(listOf("Txt"), tabs[0].novels!!.map { it.title })
+    }
+
+    @Test
     fun `type filter WEB hides local novels`() {
         val novels = listOf(
             novel(1, title = "Epub", sourceId = LOCAL_SOURCE_ID),
-            novel(2, title = "Web", sourceId = 100L),
+            novel(2, title = "Txt", sourceId = LOCAL_SOURCE_ID, url = "txt:2"),
+            novel(3, title = "Web", sourceId = 100L),
         )
         val tabs = buildLibraryTabs(
             baseInputs(novels = novels, filterType = NovelTypeFilter.WEB),

@@ -90,7 +90,7 @@
     <string name="tour_step_library_refresh_title">Kiểm tra chương mới</string>
     <string name="tour_step_library_refresh_body">Làm mới toàn bộ thư viện, hoặc chỉ danh mục bạn đang xem.</string>
     <string name="tour_step_library_menu_title">Danh mục &amp; nhập</string>
-    <string name="tour_step_library_menu_body">Tạo danh mục tại đây, rồi vuốt để chuyển giữa chúng. Bạn cũng có thể nhập tệp EPUB.</string>
+    <string name="tour_step_library_menu_body">Tạo danh mục tại đây, rồi vuốt để chuyển giữa chúng. Bạn cũng có thể nhập tệp EPUB/TXT.</string>
     <string name="tour_step_library_select_title">Chọn nhiều</string>
     <string name="tour_step_library_select_body">Nhấn giữ một truyện để bắt đầu chọn, rồi di chuyển, tải xuống hoặc xóa tất cả cùng lúc.</string>
     <string name="tour_browse_title">Hướng dẫn Duyệt</string>

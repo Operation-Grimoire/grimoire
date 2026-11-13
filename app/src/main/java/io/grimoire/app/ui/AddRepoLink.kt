@@ -5,7 +5,7 @@ package io.grimoire.app.ui
  * (e.g. https://grimoireapp.org/add-repo?name=…&url=… or grimoire://add-repo?…).
  *
  * Carried as `pendingAddRepo: StateFlow<PendingAddRepo?>` through
- * [AppNavigation] into `ExtensionsScreen`, mirroring how `pendingEpubUri`
+ * [AppNavigation] into `ExtensionsScreen`, mirroring how `pendingBookUri`
  * routes an EPUB intent into `LibraryScreen`.
  */
 data class PendingAddRepo(val name: String?, val url: String)
@@ -14,7 +14,7 @@ data class PendingAddRepo(val name: String?, val url: String)
  * True iff the URI's scheme/host/path matches one of the add-repo deep-link
  * forms. Used to decide whether `MainActivity` should consume (and clear)
  * the URI even when the query params don't parse — otherwise a malformed
- * `grimoire://add-repo?…` would fall through to the EPUB import flow.
+ * `grimoire://add-repo?…` would fall through to the book import flow.
  */
 internal fun isAddRepoLink(scheme: String?, host: String?, path: String?): Boolean =
     (scheme == "https" && host == "grimoireapp.org" && path == "/add-repo") ||

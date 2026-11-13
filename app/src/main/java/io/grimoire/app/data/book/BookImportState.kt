@@ -1,13 +1,13 @@
-package io.grimoire.app.data.epub
+package io.grimoire.app.data.book
 
 import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.NovelStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 
-internal fun mergeEpubMetadata(
+internal fun mergeBookMetadata(
     existing: NovelEntity?,
-    parsed: ParsedEpub,
+    parsed: ParsedBook,
     sourceId: Long,
     url: String,
     thumbnailUrl: String?,
@@ -22,7 +22,7 @@ internal fun mergeEpubMetadata(
         author = parsed.author,
         description = parsed.description,
         genres = parsed.genres.joinToString(","),
-        // Keep the stored language when the EPUB tag is absent or unknown.
+        // Keep the stored language when the book's language tag is absent or unknown.
         language = parsed.language
             ?.let { Language.fromCode(it.substringBefore('-')) }
             ?.takeIf { it != Language.UNKNOWN && it != Language.MULTI }
@@ -33,7 +33,7 @@ internal fun mergeEpubMetadata(
     )
 }
 
-internal fun ChapterEntity.withEpubReadingState(previous: ChapterEntity?): ChapterEntity = copy(
+internal fun ChapterEntity.withBookReadingState(previous: ChapterEntity?): ChapterEntity = copy(
     read = previous?.read ?: false,
     readProgress = previous?.readProgress ?: 0f,
     readAnchorItemIndex = previous?.readAnchorItemIndex ?: 0,
