@@ -60,7 +60,7 @@ interface ChapterDao {
      * Replaces a novel's whole chapter list with [chapters], saving [contents][i] as
      * the downloaded text of [chapters][i] (null = none). Old rows and their content
      * are deleted (content cascades). Only for sources whose list is rebuilt from
-     * scratch (EPUB import); web sources reconcile in place via [reconcileChapters]
+     * scratch (local book import); web sources reconcile in place via [reconcileChapters]
      * so row ids, and the content keyed by them, survive a refresh.
      */
     @Transaction

@@ -102,7 +102,7 @@
     <string name="tour_step_library_refresh_title">Перевірка нових розділів</string>
     <string name="tour_step_library_refresh_body">Оновіть усю бібліотеку або лише категорію, яку зараз переглядаєте.</string>
     <string name="tour_step_library_menu_title">Категорії й імпорт</string>
-    <string name="tour_step_library_menu_body">Створюйте категорії тут, а потім гортайте між ними. Також можна імпортувати файли EPUB.</string>
+    <string name="tour_step_library_menu_body">Створюйте категорії тут, а потім гортайте між ними. Також можна імпортувати файли EPUB/TXT.</string>
     <string name="tour_step_library_select_title">Вибір кількох</string>
     <string name="tour_step_library_select_body">Утримуйте новелу, щоб почати вибір, а потім перемістіть, завантажте чи видаліть усі вибрані разом.</string>
     <string name="tour_browse_title">Тур розділом «Огляд»</string>

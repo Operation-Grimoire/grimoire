@@ -56,6 +56,7 @@ internal val STATUS_OPTIONS = listOf(
 internal val NOVEL_TYPE_OPTIONS = listOf(
     NovelTypeFilter.ALL to R.string.library_all,
     NovelTypeFilter.EPUB to R.string.library_type_epub,
+    NovelTypeFilter.TXT to R.string.library_type_txt,
     NovelTypeFilter.WEB to R.string.library_type_web,
 )
 

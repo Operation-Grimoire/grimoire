@@ -158,7 +158,7 @@ class GrimoireApp : Application(), ImageLoaderFactory, Configuration.Provider {
 
             override fun onStop(owner: LifecycleOwner) {
                 // Relock after a grace window instead of immediately: onStop also fires
-                // for app-driven excursions (the SAF picker the EPUB import opens, share
+                // for app-driven excursions (the SAF picker the book import opens, share
                 // sheets, the in-app browser), and an instant lock would relock hidden
                 // categories in the middle of the user's own flow. A real exit longer
                 // than the window still locks. In-memory only on purpose — process death

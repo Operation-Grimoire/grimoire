@@ -73,8 +73,8 @@
     <string name="library_filter_and_sort">フィルタと並べ替え</string>
     <string name="library_refresh">ライブラリを更新</string>
     <string name="library_more_actions">その他の操作</string>
-    <string name="library_importing_epub">EPUB をインポート中…</string>
-    <string name="library_import_epub">EPUB をインポート</string>
+    <string name="library_importing_epub">EPUB/TXT をインポート中…</string>
+    <string name="library_import_epub">EPUB/TXT をインポート</string>
     <string name="library_manage_categories">カテゴリを管理</string>
     <string name="library_move">移動</string>
     <string name="library_mark_read">既読にする</string>
@@ -87,7 +87,7 @@
     <string name="library_extension_not_installed">拡張機能がインストールされていません</string>
     <string name="library_no_matches">一致する項目がありません</string>
     <string name="library_empty_title">ライブラリは空です</string>
-    <string name="library_empty_description">ソースから小説を追加するか、端末から EPUB をインポートしてください。</string>
+    <string name="library_empty_description">ソースから小説を追加するか、端末から EPUB/TXT をインポートしてください。</string>
     <string name="library_browse_sources">ソースをブラウズ</string>
     <string name="library_update">ライブラリを更新</string>
     <string name="library_update_all_description">すべてのカテゴリの新しい章を取得します</string>
@@ -126,6 +126,7 @@
     <string name="library_status_cancelled">打ち切り</string>
     <string name="library_status_unknown">不明</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">Web</string>
     <string name="library_filter_unread_only">未読のみ</string>
     <string name="library_filter_unread_only_description">読了した小説を非表示</string>
@@ -165,7 +166,7 @@
     <string name="library_biometric_unlock_title">非表示カテゴリのロックを解除</string>
     <string name="library_biometric_unlock_subtitle">生体認証で非表示カテゴリを表示します</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="other">%1$d章</item>
     </plurals>

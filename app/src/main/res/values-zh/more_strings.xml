@@ -81,7 +81,7 @@
     <string name="tour_step_library_refresh_title">检查新章节</string>
     <string name="tour_step_library_refresh_body">刷新整个书库，或只刷新当前查看的分类。</string>
     <string name="tour_step_library_menu_title">分类与导入</string>
-    <string name="tour_step_library_menu_body">在这里创建分类，然后左右滑动切换。也可以导入 EPUB 文件。</string>
+    <string name="tour_step_library_menu_body">在这里创建分类，然后左右滑动切换。也可以导入 EPUB/TXT 文件。</string>
     <string name="tour_step_library_select_title">多选</string>
     <string name="tour_step_library_select_body">长按一本小说开始选择，然后一次性移动、下载或移除。</string>
     <string name="tour_browse_title">浏览导览</string>

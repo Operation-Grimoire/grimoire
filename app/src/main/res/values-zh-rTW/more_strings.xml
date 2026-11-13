@@ -90,7 +90,7 @@
     <string name="tour_step_library_refresh_title">檢查新章節</string>
     <string name="tour_step_library_refresh_body">重新整理整個書櫃，或只重新整理目前查看的分類。</string>
     <string name="tour_step_library_menu_title">分類與匯入</string>
-    <string name="tour_step_library_menu_body">在這裡建立分類，然後左右滑動切換。也可以匯入 EPUB 檔案。</string>
+    <string name="tour_step_library_menu_body">在這裡建立分類，然後左右滑動切換。也可以匯入 EPUB/TXT 檔案。</string>
     <string name="tour_step_library_select_title">多選</string>
     <string name="tour_step_library_select_body">長按小說即可開始選取，接著一次移動、下載或移除。</string>
     <string name="tour_browse_title">瀏覽導覽</string>

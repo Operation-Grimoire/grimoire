@@ -39,7 +39,9 @@ data/
   tts/                 13 files — DeviceTts + ElevenLabs + PlaybackManager / Service / Notification
   novelupdates/        NU.com scraper (Client / Parser / Matcher / Endpoints / Models)
   update/              In-app GitHub release updater + Changelog parser
-  epub/                EpubImporter / Parser, Local source
+  book/                BookImporter / neutral parsed model, Local source
+  epub/                EpubParser / Exporter
+  txt/                 TxtParser / encoding detection
   cache/               CoverPreloader
 domain/                auth / migration / novelupdates info repositories
 extension/             ExtensionLoader / Manager + repo browsing
@@ -56,7 +58,7 @@ util/                  ContentLanguages, LanguageLabels
 - **Pager pages read precomputed tabs** by index. Never run the per-page filter inside `HorizontalPager`'s page lambda — that triples the work on adjacent-page preload.
 - **Tabs are always swipeable.** Any tabbed surface (screens *and* bottom sheets) uses `ui/component/SwipeTabRow.kt` — a `TabRow` + `HorizontalPager` so tabs change on swipe as well as tap. Don't hand-roll a `TabRow` whose content switches via `when`/`if`; reach for `SwipeTabRow` with the matching `SwipeTabStyle` (`Primary` / `PrimaryScrollable` / `Secondary`) and pass `fillHeight = false` inside a sheet. Pass your own `PagerState` when the selection must persist/restore (the library remembers its category).
 - **Hidden categories / locked chapters**: the *locked* visibility state hides hidden-category novels from the All tab regardless of `includeHiddenInAll`; the *unlocked* state honours the pref. Tests in `LibraryFilterTest` cover both.
-- **EPUB intent**: the `pendingEpubUri: StateFlow<Uri?>` is plumbed through `AppNavigation` → `libraryDestination` → `LibraryScreen` so the import-preview dialog renders inside the Library tab.
+- **Book import intent**: the `pendingBookUri: StateFlow<Uri?>` is plumbed through `AppNavigation` → `libraryDestination` → `LibraryScreen` so the EPUB/TXT import-preview dialog renders inside the Library tab.
 
 ### When to extract code from a screen
 
@@ -74,7 +76,7 @@ Keep the same package — the screen's main composable still calls the moved hel
 
 | Extension | Routes covered |
 |-----------|----------------|
-| `libraryDestination` | Library tab (consumes EPUB intent) |
+| `libraryDestination` | Library tab (consumes EPUB/TXT import intents) |
 | `browseGraph` | Browse home, global search, NovelUpdates browser / search / series |
 | `moreDestinations` | More, Downloads, Statistics, Tasks, Library updates, Update issues, About |
 | `settingsGraph` | 15 settings sub-screens, all sharing the `SettingsViewModel` via `getBackStackEntry(SETTINGS_GRAPH_ROUTE)` |

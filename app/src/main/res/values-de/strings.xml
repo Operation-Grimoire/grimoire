@@ -72,8 +72,8 @@
     <string name="library_filter_and_sort">Filtern &amp; sortieren</string>
     <string name="library_refresh">Bibliothek aktualisieren</string>
     <string name="library_more_actions">Weitere Aktionen</string>
-    <string name="library_importing_epub">EPUB wird importiert…</string>
-    <string name="library_import_epub">EPUB importieren</string>
+    <string name="library_importing_epub">EPUB/TXT wird importiert…</string>
+    <string name="library_import_epub">EPUB/TXT importieren</string>
     <string name="library_manage_categories">Kategorien verwalten</string>
     <string name="library_move">Verschieben</string>
     <string name="library_mark_read">Als gelesen markieren</string>
@@ -87,7 +87,7 @@
     <string name="library_extension_not_installed">Erweiterung nicht installiert</string>
     <string name="library_no_matches">Keine Treffer gefunden</string>
     <string name="library_empty_title">Deine Bibliothek ist leer</string>
-    <string name="library_empty_description">Füge Romane aus einer Quelle hinzu oder importiere ein EPUB von deinem Gerät.</string>
+    <string name="library_empty_description">Füge Romane aus einer Quelle hinzu oder importiere eine EPUB/TXT-Datei von deinem Gerät.</string>
     <string name="library_browse_sources">Quellen entdecken</string>
     <string name="library_update">Bibliothek aktualisieren</string>
     <string name="library_update_all_description">Neue Kapitel in allen Kategorien abrufen</string>
@@ -129,6 +129,7 @@
     <string name="library_status_cancelled">Abgebrochen</string>
     <string name="library_status_unknown">Unbekannt</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">Web</string>
     <string name="library_filter_unread_only">Nur ungelesene</string>
     <string name="library_filter_unread_only_description">Komplett gelesene Romane ausblenden</string>
@@ -168,7 +169,7 @@
     <string name="library_biometric_unlock_title">Versteckte Kategorien entsperren</string>
     <string name="library_biometric_unlock_subtitle">Nutze deine Biometrie, um versteckte Kategorien anzuzeigen</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="one">%1$d Kapitel</item>
         <item quantity="other">%1$d Kapitel</item>

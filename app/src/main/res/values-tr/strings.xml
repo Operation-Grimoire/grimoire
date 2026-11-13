@@ -71,8 +71,8 @@
     <string name="library_filter_and_sort">Filtrele ve sırala</string>
     <string name="library_refresh">Kitaplığı yenile</string>
     <string name="library_more_actions">Diğer işlemler</string>
-    <string name="library_importing_epub">EPUB içe aktarılıyor…</string>
-    <string name="library_import_epub">EPUB içe aktar</string>
+    <string name="library_importing_epub">EPUB/TXT içe aktarılıyor…</string>
+    <string name="library_import_epub">EPUB/TXT içe aktar</string>
     <string name="library_manage_categories">Kategorileri yönet</string>
     <string name="library_move">Taşı</string>
     <string name="library_mark_read">Okundu işaretle</string>
@@ -86,7 +86,7 @@
     <string name="library_extension_not_installed">Uzantı yüklü değil</string>
     <string name="library_no_matches">Eşleşme bulunamadı</string>
     <string name="library_empty_title">Kitaplığınız boş</string>
-    <string name="library_empty_description">Bir kaynaktan roman ekleyin veya cihazınızdan bir EPUB içe aktarın.</string>
+    <string name="library_empty_description">Bir kaynaktan roman ekleyin veya cihazınızdan bir EPUB/TXT dosyası içe aktarın.</string>
     <string name="library_browse_sources">Kaynaklara göz at</string>
     <string name="library_update">Kitaplığı güncelle</string>
     <string name="library_update_all_description">Tüm kategorilerdeki yeni bölümleri getir</string>
@@ -128,6 +128,7 @@
     <string name="library_status_cancelled">İptal edildi</string>
     <string name="library_status_unknown">Bilinmiyor</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">Web</string>
     <string name="library_filter_unread_only">Yalnızca okunmamış</string>
     <string name="library_filter_unread_only_description">Tamamen okunmuş romanları gizle</string>
@@ -167,7 +168,7 @@
     <string name="library_biometric_unlock_title">Gizli kategorilerin kilidini aç</string>
     <string name="library_biometric_unlock_subtitle">Gizli kategorileri göstermek için biyometrik doğrulamanızı kullanın</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="one">%1$d bölüm</item>
         <item quantity="other">%1$d bölüm</item>

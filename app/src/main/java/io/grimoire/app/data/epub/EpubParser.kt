@@ -1,34 +1,17 @@
 package io.grimoire.app.data.epub
 
+import io.grimoire.app.data.book.BookChapter
+import io.grimoire.app.data.book.BookCover
+import io.grimoire.app.data.book.BookPage
+import io.grimoire.app.data.book.BookParser
+import io.grimoire.app.data.book.ParsedBook
+import io.grimoire.app.data.book.bookTitleFromFileName
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.parser.Parser
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.zip.ZipFile
-
-/** One page within an EPUB chapter — either a text run or an embedded illustration. */
-sealed interface EpubPage {
-    data class Text(val text: String) : EpubPage
-    data class Image(val bytes: ByteArray) : EpubPage
-}
-
-/** One chapter extracted from an EPUB: a title and its pages in document order. */
-data class EpubChapter(val title: String, val pages: List<EpubPage>)
-
-/** Cover image bytes plus the file extension to store it under. */
-data class EpubCover(val bytes: ByteArray, val extension: String)
-
-data class ParsedEpub(
-    val title: String,
-    val author: String?,
-    val description: String?,
-    val genres: List<String>,
-    /** BCP-47 tag from `dc:language` (e.g. "en", "pt-BR"), or null when absent. */
-    val language: String?,
-    val cover: EpubCover?,
-    val chapters: List<EpubChapter>,
-)
 
 /**
  * Minimal, dependency-free EPUB reader: an EPUB is a ZIP containing an OPF
@@ -37,9 +20,9 @@ data class ParsedEpub(
  * and extract each spine document's text. Jsoup (already on the classpath via
  * the extensions API) parses both the XML and the XHTML.
  */
-object EpubParser {
+object EpubParser : BookParser {
 
-    fun parse(file: File): ParsedEpub = ZipFile(file).use { zip ->
+    override fun parse(file: File, originalName: String?): ParsedBook = ZipFile(file).use { zip ->
         val containerXml = zip.readText("META-INF/container.xml")
             ?: error("Not a valid EPUB: missing META-INF/container.xml")
         val opfPath = Jsoup.parse(containerXml, "", Parser.xmlParser())
@@ -56,7 +39,9 @@ object EpubParser {
             Parser.xmlParser(),
         )
 
-        val title = opf.firstText("dc:title", "title").orEmpty().ifBlank { file.nameWithoutExtension }
+        val title = opf.firstText("dc:title", "title").orEmpty().ifBlank {
+            bookTitleFromFileName(originalName) ?: file.nameWithoutExtension
+        }
         val author = opf.firstText("dc:creator", "creator")
         val description = opf.firstText("dc:description", "description")
         val language = opf.firstText("dc:language", "language")?.trim()?.takeIf { it.isNotEmpty() }
@@ -119,7 +104,7 @@ object EpubParser {
             }
         }
 
-        val chapters = ArrayList<EpubChapter>()
+        val chapters = ArrayList<BookChapter>()
         spineRefs.forEachIndexed { index, idref ->
             val item = manifest[idref] ?: return@forEachIndexed
             val path = resolvePath(opfDir, item.href)
@@ -128,27 +113,27 @@ object EpubParser {
             doc.select("script, style").remove()
             val spineDir = path.substringBeforeLast('/', "")
             val pages = doc.body()?.let { body ->
-                val collected = ArrayList<EpubPage>()
+                val collected = ArrayList<BookPage>()
                 // Walk prose elements and images in document order. `<img>` /
                 // SVG `<image>` carry the chapter's illustrations; their src is
                 // resolved against the spine document's directory and loaded
-                // from the EPUB's own ZIP, so each illustration becomes an
-                // EpubPage.Image inlined at its in-flow position.
+                // from the EPUB's own ZIP, so each illustration becomes a
+                // BookPage.Image inlined at its in-flow position.
                 body.select(
                     "p, h1, h2, h3, h4, h5, h6, blockquote, li, img, image",
                 ).forEach { el ->
                     when (el.local().lowercase()) {
-                        "img" -> el.imageBytes(zip, spineDir)?.let { collected += EpubPage.Image(it) }
-                        "image" -> el.svgImageBytes(zip, spineDir)?.let { collected += EpubPage.Image(it) }
+                        "img" -> el.imageBytes(zip, spineDir)?.let { collected += BookPage.Image(it) }
+                        "image" -> el.svgImageBytes(zip, spineDir)?.let { collected += BookPage.Image(it) }
                         else -> {
                             val t = el.text().trim()
-                            if (t.isNotEmpty()) collected += EpubPage.Text(t)
+                            if (t.isNotEmpty()) collected += BookPage.Text(t)
                         }
                     }
                 }
-                if (collected.none { it is EpubPage.Text }) {
+                if (collected.none { it is BookPage.Text }) {
                     body.wholeText().split("\n").map { it.trim() }.filter { it.isNotEmpty() }
-                        .forEach { collected += EpubPage.Text(it) }
+                        .forEach { collected += BookPage.Text(it) }
                 }
                 collected
             }.orEmpty()
@@ -156,7 +141,7 @@ object EpubParser {
             val name = tocTitles[path]
                 ?: doc.title().trim().takeIf { it.isNotEmpty() }
                 ?: "Chapter ${index + 1}"
-            chapters += EpubChapter(name, pages)
+            chapters += BookChapter(name, pages)
         }
         require(chapters.isNotEmpty()) { "EPUB contains no readable chapters" }
 
@@ -171,11 +156,11 @@ object EpubParser {
             }?.value?.href
         val cover = coverHref?.let { href ->
             zip.readBytes(resolvePath(opfDir, href))?.let { bytes ->
-                EpubCover(bytes, href.substringAfterLast('.', "jpg").lowercase())
+                BookCover(bytes, href.substringAfterLast('.', "jpg").lowercase())
             }
         }
 
-        ParsedEpub(
+        ParsedBook(
             title = title.trim(),
             author = author?.trim()?.takeIf { it.isNotEmpty() },
             description = description?.trim()?.takeIf { it.isNotEmpty() },

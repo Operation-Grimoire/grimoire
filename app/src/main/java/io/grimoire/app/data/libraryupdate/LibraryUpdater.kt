@@ -6,7 +6,7 @@ import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.source.epub.EpubSource
 import io.grimoire.app.data.download.DownloadManager
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.book.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.AppDatabase
 import io.grimoire.app.data.local.dao.ChapterDao
@@ -88,7 +88,7 @@ class LibraryUpdater @Inject constructor(
         // mid-sync, so reading it once avoids repeating the lookup N times.
         // Auto-download is now a per-novel flag, read off each NovelEntity below.
         val extensions = extensionManager.extensions.value
-        // EPUB-typed novels (local file imports + EPUB-source extensions like
+        // Self-contained novels (local file imports + EPUB-source extensions like
         // Z-Library / libgen) have no scraped chapter list to refresh, so they're
         // dropped from the run by default — they'd only no-op or warn. The user can
         // opt them back in.

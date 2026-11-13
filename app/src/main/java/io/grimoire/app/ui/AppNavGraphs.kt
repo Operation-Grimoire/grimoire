@@ -64,8 +64,8 @@ import io.grimoire.app.ui.screen.webview.WebViewScreen
 internal fun NavGraphBuilder.libraryDestination(
     navController: NavHostController,
     onSelectionActiveChange: (Boolean) -> Unit,
-    pendingEpubUri: StateFlow<Uri?>,
-    onEpubUriHandled: () -> Unit,
+    pendingBookUri: StateFlow<Uri?>,
+    onBookUriHandled: () -> Unit,
 ) {
     composable(route = TopLevelDestination.Library.route) {
         LibraryScreen(
@@ -84,8 +84,8 @@ internal fun NavGraphBuilder.libraryDestination(
                 }
             },
             onSelectionActiveChange = onSelectionActiveChange,
-            pendingEpubUri = pendingEpubUri,
-            onEpubUriHandled = onEpubUriHandled,
+            pendingBookUri = pendingBookUri,
+            onBookUriHandled = onBookUriHandled,
         )
     }
 }

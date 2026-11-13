@@ -73,8 +73,8 @@
     <string name="library_filter_and_sort">التصفية والترتيب</string>
     <string name="library_refresh">تحديث المكتبة</string>
     <string name="library_more_actions">إجراءات إضافية</string>
-    <string name="library_importing_epub">جارٍ استيراد EPUB…</string>
-    <string name="library_import_epub">استيراد EPUB</string>
+    <string name="library_importing_epub">جارٍ استيراد EPUB/TXT…</string>
+    <string name="library_import_epub">استيراد EPUB/TXT</string>
     <string name="library_manage_categories">إدارة الفئات</string>
     <string name="library_move">نقل</string>
     <string name="library_mark_read">تعليم كمقروء</string>
@@ -92,7 +92,7 @@
     <string name="library_extension_not_installed">الإضافة غير مثبّتة</string>
     <string name="library_no_matches">لم يُعثر على نتائج مطابقة</string>
     <string name="library_empty_title">مكتبتك فارغة</string>
-    <string name="library_empty_description">أضف روايات من أحد المصادر، أو استورد ملف EPUB من جهازك.</string>
+    <string name="library_empty_description">أضف روايات من أحد المصادر، أو استورد ملف EPUB/TXT من جهازك.</string>
     <string name="library_browse_sources">تصفّح المصادر</string>
     <string name="library_update">تحديث المكتبة</string>
     <string name="library_update_all_description">جلب الفصول الجديدة في جميع الفئات</string>
@@ -146,6 +146,7 @@
     <string name="library_status_cancelled">ملغاة</string>
     <string name="library_status_unknown">غير معروفة</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">ويب</string>
     <string name="library_filter_unread_only">غير المقروءة فقط</string>
     <string name="library_filter_unread_only_description">إخفاء الروايات المقروءة بالكامل</string>
@@ -185,7 +186,7 @@
     <string name="library_biometric_unlock_title">فتح قفل الفئات المخفية</string>
     <string name="library_biometric_unlock_subtitle">استخدم المقاييس الحيوية لإظهار الفئات المخفية</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="zero">%1$d فصل</item>
         <item quantity="one">%1$d فصل</item>

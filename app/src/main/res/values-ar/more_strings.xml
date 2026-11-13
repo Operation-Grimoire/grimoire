@@ -110,7 +110,7 @@
     <string name="tour_step_library_refresh_title">التحقق من الفصول الجديدة</string>
     <string name="tour_step_library_refresh_body">حدّث المكتبة كلها، أو الفئة التي تعرضها فقط.</string>
     <string name="tour_step_library_menu_title">الفئات والاستيراد</string>
-    <string name="tour_step_library_menu_body">أنشئ الفئات من هنا، ثم اسحب للتنقّل بينها. يمكنك أيضًا استيراد ملفات EPUB.</string>
+    <string name="tour_step_library_menu_body">أنشئ الفئات من هنا، ثم اسحب للتنقّل بينها. يمكنك أيضًا استيراد ملفات EPUB/TXT.</string>
     <string name="tour_step_library_select_title">تحديد عدة روايات</string>
     <string name="tour_step_library_select_body">اضغط مطولًا على رواية لبدء التحديد، ثم انقلها أو نزّلها أو أزلها كلها دفعة واحدة.</string>
     <string name="tour_browse_title">جولة التصفّح</string>

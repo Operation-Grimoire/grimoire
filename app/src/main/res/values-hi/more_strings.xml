@@ -94,7 +94,7 @@
     <string name="tour_step_library_refresh_title">नए अध्याय देखें</string>
     <string name="tour_step_library_refresh_body">पूरी लाइब्रेरी रीफ़्रेश करें, या सिर्फ़ वह श्रेणी जो आप अभी देख रहे हैं।</string>
     <string name="tour_step_library_menu_title">श्रेणियाँ और इंपोर्ट</string>
-    <string name="tour_step_library_menu_body">यहाँ श्रेणियाँ बनाएँ, फिर उनके बीच स्वाइप करें। आप EPUB फ़ाइलें भी इंपोर्ट कर सकते हैं।</string>
+    <string name="tour_step_library_menu_body">यहाँ श्रेणियाँ बनाएँ, फिर उनके बीच स्वाइप करें। आप EPUB/TXT फ़ाइलें भी इंपोर्ट कर सकते हैं।</string>
     <string name="tour_step_library_select_title">कई चुनें</string>
     <string name="tour_step_library_select_body">चुनना शुरू करने के लिए किसी उपन्यास को देर तक दबाएँ, फिर सभी को एक साथ मूव, डाउनलोड या हटाएँ।</string>
     <string name="tour_browse_title">ब्राउज़ टूर</string>

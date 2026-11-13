@@ -73,8 +73,8 @@
     <string name="library_filter_and_sort">फ़िल्टर और क्रम</string>
     <string name="library_refresh">लाइब्रेरी रीफ़्रेश करें</string>
     <string name="library_more_actions">और विकल्प</string>
-    <string name="library_importing_epub">EPUB इंपोर्ट हो रहा है…</string>
-    <string name="library_import_epub">EPUB इंपोर्ट करें</string>
+    <string name="library_importing_epub">EPUB/TXT इंपोर्ट हो रहा है…</string>
+    <string name="library_import_epub">EPUB/TXT इंपोर्ट करें</string>
     <string name="library_manage_categories">श्रेणियाँ प्रबंधित करें</string>
     <string name="library_move">ले जाएँ</string>
     <string name="library_mark_read">पढ़ा हुआ मार्क करें</string>
@@ -88,7 +88,7 @@
     <string name="library_extension_not_installed">एक्सटेंशन इंस्टॉल नहीं है</string>
     <string name="library_no_matches">कोई मेल नहीं मिला</string>
     <string name="library_empty_title">आपकी लाइब्रेरी खाली है</string>
-    <string name="library_empty_description">किसी स्रोत से उपन्यास जोड़ें, या अपने डिवाइस से EPUB इंपोर्ट करें।</string>
+    <string name="library_empty_description">किसी स्रोत से उपन्यास जोड़ें, या अपने डिवाइस से EPUB/TXT इंपोर्ट करें।</string>
     <string name="library_browse_sources">स्रोत ब्राउज़ करें</string>
     <string name="library_update">लाइब्रेरी अपडेट करें</string>
     <string name="library_update_all_description">सभी श्रेणियों में नए अध्याय लाएँ</string>
@@ -130,6 +130,7 @@
     <string name="library_status_cancelled">रद्द</string>
     <string name="library_status_unknown">अज्ञात</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">वेब</string>
     <string name="library_filter_unread_only">केवल अनपढ़े</string>
     <string name="library_filter_unread_only_description">पूरी तरह पढ़े गए उपन्यास छिपाएँ</string>
@@ -169,7 +170,7 @@
     <string name="library_biometric_unlock_title">छिपी श्रेणियाँ अनलॉक करें</string>
     <string name="library_biometric_unlock_subtitle">छिपी श्रेणियाँ दिखाने के लिए अपने बायोमेट्रिक का इस्तेमाल करें</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="one">%1$d अध्याय</item>
         <item quantity="other">%1$d अध्याय</item>

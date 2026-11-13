@@ -94,7 +94,7 @@
     <string name="tour_step_library_refresh_title">Yeni bölümleri denetle</string>
     <string name="tour_step_library_refresh_body">Tüm kitaplığı ya da yalnızca baktığınız kategoriyi yenileyin.</string>
     <string name="tour_step_library_menu_title">Kategoriler ve içe aktarma</string>
-    <string name="tour_step_library_menu_body">Kategorileri burada oluşturun, sonra aralarında kaydırarak geçin. EPUB dosyalarını da içe aktarabilirsiniz.</string>
+    <string name="tour_step_library_menu_body">Kategorileri burada oluşturun, sonra aralarında kaydırarak geçin. EPUB/TXT dosyalarını da içe aktarabilirsiniz.</string>
     <string name="tour_step_library_select_title">Birden çok seç</string>
     <string name="tour_step_library_select_body">Seçmeye başlamak için bir romana uzun basın, ardından hepsini tek seferde taşıyın, indirin veya kaldırın.</string>
     <string name="tour_browse_title">Göz at turu</string>

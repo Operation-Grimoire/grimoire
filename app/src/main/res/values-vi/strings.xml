@@ -73,8 +73,8 @@
     <string name="library_filter_and_sort">Lọc &amp; sắp xếp</string>
     <string name="library_refresh">Làm mới thư viện</string>
     <string name="library_more_actions">Thao tác khác</string>
-    <string name="library_importing_epub">Đang nhập EPUB…</string>
-    <string name="library_import_epub">Nhập EPUB</string>
+    <string name="library_importing_epub">Đang nhập EPUB/TXT…</string>
+    <string name="library_import_epub">Nhập EPUB/TXT</string>
     <string name="library_manage_categories">Quản lý danh mục</string>
     <string name="library_move">Di chuyển</string>
     <string name="library_mark_read">Đánh dấu đã đọc</string>
@@ -87,7 +87,7 @@
     <string name="library_extension_not_installed">Chưa cài tiện ích</string>
     <string name="library_no_matches">Không tìm thấy kết quả phù hợp</string>
     <string name="library_empty_title">Thư viện của bạn đang trống</string>
-    <string name="library_empty_description">Thêm truyện từ một nguồn, hoặc nhập tệp EPUB từ thiết bị.</string>
+    <string name="library_empty_description">Thêm truyện từ một nguồn, hoặc nhập tệp EPUB/TXT từ thiết bị.</string>
     <string name="library_browse_sources">Duyệt nguồn</string>
     <string name="library_update">Cập nhật thư viện</string>
     <string name="library_update_all_description">Tải chương mới ở tất cả danh mục</string>
@@ -126,6 +126,7 @@
     <string name="library_status_cancelled">Đã hủy</string>
     <string name="library_status_unknown">Không rõ</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">Web</string>
     <string name="library_filter_unread_only">Chỉ chưa đọc</string>
     <string name="library_filter_unread_only_description">Ẩn truyện đã đọc hết</string>
@@ -165,7 +166,7 @@
     <string name="library_biometric_unlock_title">Mở khóa danh mục ẩn</string>
     <string name="library_biometric_unlock_subtitle">Dùng sinh trắc học để hiện danh mục ẩn</string>
 
-    <!-- Library EPUB import and novel badges -->
+    <!-- Library book import and novel badges -->
     <plurals name="library_chapter_count">
         <item quantity="other">%1$d chương</item>
     </plurals>

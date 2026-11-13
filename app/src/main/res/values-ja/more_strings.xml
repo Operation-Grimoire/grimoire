@@ -90,7 +90,7 @@
     <string name="tour_step_library_refresh_title">新しい章を確認</string>
     <string name="tour_step_library_refresh_body">ライブラリ全体、または表示中のカテゴリだけを更新できます。</string>
     <string name="tour_step_library_menu_title">カテゴリとインポート</string>
-    <string name="tour_step_library_menu_body">ここでカテゴリを作成し、スワイプで切り替えます。EPUB ファイルのインポートもできます。</string>
+    <string name="tour_step_library_menu_body">ここでカテゴリを作成し、スワイプで切り替えます。EPUB/TXT ファイルのインポートもできます。</string>
     <string name="tour_step_library_select_title">まとめて選択</string>
     <string name="tour_step_library_select_body">小説を長押しして選択を始めると、まとめて移動、ダウンロード、削除ができます。</string>
     <string name="tour_browse_title">ブラウズのツアー</string>

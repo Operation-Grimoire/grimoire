@@ -84,7 +84,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.R
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
+import io.grimoire.app.data.book.LOCAL_SOURCE_ID
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.preferences.ALL_TAB_CATEGORY_ID
 import io.grimoire.app.data.preferences.LibraryDisplayMode
@@ -105,13 +105,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
-private val EPUB_MIME_TYPES = arrayOf(
+private val BOOK_MIME_TYPES = arrayOf(
     "application/epub+zip",
     "application/zip",
+    "text/plain",
     "application/octet-stream",
 )
 
-private val EmptyExternalEpubUri: StateFlow<Uri?> = MutableStateFlow(null).asStateFlow()
+private val EmptyExternalBookUri: StateFlow<Uri?> = MutableStateFlow(null).asStateFlow()
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -120,8 +121,8 @@ fun LibraryScreen(
     onBrowse: () -> Unit,
     modifier: Modifier = Modifier,
     onSelectionActiveChange: (Boolean) -> Unit = {},
-    pendingEpubUri: StateFlow<Uri?> = EmptyExternalEpubUri,
-    onEpubUriHandled: () -> Unit = {},
+    pendingBookUri: StateFlow<Uri?> = EmptyExternalBookUri,
+    onBookUriHandled: () -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val categories by viewModel.categories.collectAsStateWithLifecycle()
@@ -202,17 +203,17 @@ fun LibraryScreen(
     // Let the app nav hide while selecting so the selection bar can replace it.
     LaunchedEffect(selectionMode) { onSelectionActiveChange(selectionMode) }
 
-    val epubPicker = rememberLauncherForActivityResult(
+    val bookPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri: Uri? ->
-        if (uri != null) viewModel.stageEpub(uri)
+        if (uri != null) viewModel.stageBook(uri)
     }
 
-    val externalEpubUri by pendingEpubUri.collectAsStateWithLifecycle()
-    LaunchedEffect(externalEpubUri) {
-        val uri = externalEpubUri ?: return@LaunchedEffect
-        viewModel.stageEpub(uri)
-        onEpubUriHandled()
+    val externalBookUri by pendingBookUri.collectAsStateWithLifecycle()
+    LaunchedEffect(externalBookUri) {
+        val uri = externalBookUri ?: return@LaunchedEffect
+        viewModel.stageBook(uri)
+        onBookUriHandled()
     }
 
     LaunchedEffect(searchActive) {
@@ -418,7 +419,7 @@ fun LibraryScreen(
                                     enabled = !importing && !staging,
                                     onClick = {
                                         libraryMenuExpanded = false
-                                        epubPicker.launch(EPUB_MIME_TYPES)
+                                        bookPicker.launch(BOOK_MIME_TYPES)
                                     },
                                     leadingIcon = {
                                         if (importing || staging) {
@@ -591,7 +592,7 @@ fun LibraryScreen(
                                         Text(stringResource(R.string.library_browse_sources))
                                     }
                                     TextButton(
-                                        onClick = { epubPicker.launch(EPUB_MIME_TYPES) },
+                                        onClick = { bookPicker.launch(BOOK_MIME_TYPES) },
                                         enabled = !importing && !staging,
                                     ) {
                                         Icon(
@@ -779,7 +780,7 @@ fun LibraryScreen(
     }
 
     pendingImport?.let { staged ->
-        EpubImportPreviewDialog(
+        BookImportPreviewDialog(
             staged = staged,
             importing = importing,
             onConfirm = viewModel::confirmImport,

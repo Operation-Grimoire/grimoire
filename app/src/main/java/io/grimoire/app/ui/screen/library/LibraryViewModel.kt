@@ -6,10 +6,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.net.Uri
 import io.grimoire.api.source.epub.EpubSource
-import io.grimoire.app.data.epub.EpubImporter
-import io.grimoire.app.data.epub.LOCAL_PKG
-import io.grimoire.app.data.epub.LOCAL_SOURCE_ID
-import io.grimoire.app.data.epub.StagedEpub
+import io.grimoire.app.data.book.BookImporter
+import io.grimoire.app.data.book.LOCAL_PKG
+import io.grimoire.app.data.book.LOCAL_SOURCE_ID
+import io.grimoire.app.data.book.StagedBook
 import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.libraryupdate.LibraryUpdateScheduler
 import io.grimoire.app.data.local.LibraryFavorites
@@ -66,7 +66,7 @@ class LibraryViewModel @Inject constructor(
     private val extensionManager: ExtensionManager,
     private val libraryPreferences: LibraryPreferences,
     private val authManager: HiddenCategoriesAuthManager,
-    private val epubImporter: EpubImporter,
+    private val bookImporter: BookImporter,
     private val downloadManager: DownloadManager,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
 ) : ViewModel() {
@@ -79,19 +79,19 @@ class LibraryViewModel @Inject constructor(
     private val _importing = MutableStateFlow(false)
     val importing: StateFlow<Boolean> = _importing.asStateFlow()
 
-    // The parsed EPUB awaiting the user's "Add to library" confirmation.
-    private val _pendingImport = MutableStateFlow<StagedEpub?>(null)
-    val pendingImport: StateFlow<StagedEpub?> = _pendingImport.asStateFlow()
+    // The parsed book awaiting the user's "Add to library" confirmation.
+    private val _pendingImport = MutableStateFlow<StagedBook?>(null)
+    val pendingImport: StateFlow<StagedBook?> = _pendingImport.asStateFlow()
 
     private val _importMessage = MutableStateFlow<LibraryImportMessage?>(null)
     internal val importMessage: StateFlow<LibraryImportMessage?> = _importMessage.asStateFlow()
 
-    /** Parse the picked EPUB and surface its metadata for confirmation. */
-    fun stageEpub(uri: Uri) {
+    /** Parse the picked book and surface its metadata for confirmation. */
+    fun stageBook(uri: Uri) {
         if (_staging.value || _pendingImport.value != null) return
         _staging.value = true
         viewModelScope.launch {
-            epubImporter.stage(uri).fold(
+            bookImporter.stage(uri).fold(
                 onSuccess = { _pendingImport.value = it },
                 onFailure = { e ->
                     _importMessage.value = LibraryImportMessage.Failed(e.message)
@@ -101,18 +101,18 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    /** Discard the staged EPUB without adding it to the library. */
+    /** Discard the staged book without adding it to the library. */
     fun cancelImport() {
         _pendingImport.value = null
     }
 
-    /** Persist the staged EPUB as a favorited, just-read local book. */
+    /** Persist the staged book as a favorited, just-read local book. */
     fun confirmImport() {
         val staged = _pendingImport.value ?: return
         if (_importing.value) return
         _importing.value = true
         viewModelScope.launch {
-            val result = epubImporter.commit(staged)
+            val result = bookImporter.commit(staged)
             _importMessage.value = result.fold(
                 onSuccess = { LibraryImportMessage.Added(it.title) },
                 onFailure = { e -> LibraryImportMessage.Failed(e.message) },
@@ -199,7 +199,7 @@ class LibraryViewModel @Inject constructor(
 
     /**
      * Source ids that appear in the user's library, paired with their human label
-     * (extension's source name, "Local" for imported EPUBs, or a fallback for
+     * (extension's source name, "Local" for imported books, or a fallback for
      * sources whose extension is no longer installed). Drives the source filter
      * chip row so it only lists sources the user actually has novels from.
      */
@@ -217,9 +217,9 @@ class LibraryViewModel @Inject constructor(
 
     /**
      * Source ids whose installed extension delivers whole-book EPUBs (e.g.
-     * Z-Library, libgen). Combined with [LOCAL_SOURCE_ID] in [NovelEntity.isEpubType],
-     * this lets the EPUB badge and the Type filter treat extension-backed EPUBs the
-     * same as local file imports. Empty until the extension scan completes.
+     * Z-Library, libgen). Used with local EPUB identities in [NovelEntity.isEpubType]
+     * so the EPUB badge and Type filter recognize both extension-backed and local
+     * EPUBs. Empty until the extension scan completes.
      */
     val epubSourceIds: StateFlow<Set<Long>> = extensionManager.extensions
         .map { exts -> exts.filter { it.source is EpubSource }.map { it.id }.toSet() }

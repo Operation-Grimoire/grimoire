@@ -98,7 +98,7 @@
     <string name="tour_step_library_refresh_title">Cerca nuovi capitoli</string>
     <string name="tour_step_library_refresh_body">Aggiorna l’intera libreria o solo la categoria che stai guardando.</string>
     <string name="tour_step_library_menu_title">Categorie e importazioni</string>
-    <string name="tour_step_library_menu_body">Crea qui le categorie, poi scorri tra di esse. Puoi anche importare file EPUB.</string>
+    <string name="tour_step_library_menu_body">Crea qui le categorie, poi scorri tra di esse. Puoi anche importare file EPUB/TXT.</string>
     <string name="tour_step_library_select_title">Selezione multipla</string>
     <string name="tour_step_library_select_body">Tieni premuto un romanzo per iniziare a selezionare, poi sposta, scarica o rimuovi tutto in una volta.</string>
     <string name="tour_browse_title">Tour di Esplora</string>

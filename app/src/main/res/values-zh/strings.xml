@@ -72,8 +72,8 @@
     <string name="library_filter_and_sort">筛选与排序</string>
     <string name="library_refresh">刷新书库</string>
     <string name="library_more_actions">更多操作</string>
-    <string name="library_importing_epub">正在导入 EPUB…</string>
-    <string name="library_import_epub">导入 EPUB</string>
+    <string name="library_importing_epub">正在导入 EPUB/TXT…</string>
+    <string name="library_import_epub">导入 EPUB/TXT</string>
     <string name="library_manage_categories">管理分类</string>
     <string name="library_move">移动</string>
     <string name="library_mark_read">标为已读</string>
@@ -86,7 +86,7 @@
     <string name="library_extension_not_installed">未安装对应扩展</string>
     <string name="library_no_matches">未找到匹配结果</string>
     <string name="library_empty_title">书库还是空的</string>
-    <string name="library_empty_description">从书源添加小说，或导入设备上的 EPUB 文件。</string>
+    <string name="library_empty_description">从书源添加小说，或导入设备上的 EPUB/TXT 文件。</string>
     <string name="library_browse_sources">浏览书源</string>
     <string name="library_update">更新书库</string>
     <string name="library_update_all_description">获取所有分类中的新章节</string>
@@ -125,6 +125,7 @@
     <string name="library_status_cancelled">已取消</string>
     <string name="library_status_unknown">未知</string>
     <string name="library_type_epub">EPUB</string>
+    <string name="library_type_txt">TXT</string>
     <string name="library_type_web">网络小说</string>
     <string name="library_filter_unread_only">仅显示未读</string>
     <string name="library_filter_unread_only_description">隐藏已全部读完的小说</string>

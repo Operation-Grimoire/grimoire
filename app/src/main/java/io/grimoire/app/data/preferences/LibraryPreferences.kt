@@ -15,12 +15,10 @@ enum class SortField { TITLE, LAST_UPDATED, UNREAD, TOTAL, LAST_READ, USER_RATIN
 enum class SortDirection { ASC, DESC }
 
 /**
- * Tri-state library filter on novel type:
- * [ALL] shows everything, [EPUB] keeps only imported-EPUB (local) novels, [WEB]
- * keeps only extension/source-backed (web) novels. A novel is EPUB when its
- * `sourceId` is the reserved local id; everything else is a web novel.
+ * Library filter on novel type. [EPUB] includes local EPUB files and EPUB-source
+ * extensions, [TXT] includes local plain-text files, and [WEB] excludes both.
  */
-enum class NovelTypeFilter { ALL, EPUB, WEB }
+enum class NovelTypeFilter { ALL, EPUB, WEB, TXT }
 
 /**
  * 18+ library filter. Adultness comes from the novel's source: any installed
@@ -143,7 +141,7 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
     val showRatingBadge = store.getBoolean("library_show_rating_badge", true)
 
     // Flags imported-EPUB (local) novels with a badge so they're distinguishable
-    // from extension-backed novels at a glance. Only renders on local novels.
+    // from extension-backed novels at a glance. Only renders on local EPUB novels.
     val showEpubBadge = store.getBoolean("library_show_epub_badge", true)
 
     // Persists the library category the user last viewed. Stores a category id, or

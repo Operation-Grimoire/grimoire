@@ -93,7 +93,7 @@
     <string name="tour_step_library_refresh_title">Nach neuen Kapiteln suchen</string>
     <string name="tour_step_library_refresh_body">Aktualisiere die ganze Bibliothek oder nur die Kategorie, die du gerade ansiehst.</string>
     <string name="tour_step_library_menu_title">Kategorien &amp; Importe</string>
-    <string name="tour_step_library_menu_body">Erstelle hier Kategorien und wische dann zwischen ihnen. Du kannst auch EPUB-Dateien importieren.</string>
+    <string name="tour_step_library_menu_body">Erstelle hier Kategorien und wische dann zwischen ihnen. Du kannst auch EPUB/TXT-Dateien importieren.</string>
     <string name="tour_step_library_select_title">Mehrere auswählen</string>
     <string name="tour_step_library_select_body">Halte einen Roman gedrückt, um die Auswahl zu starten. Dann kannst du alle auf einmal verschieben, herunterladen oder entfernen.</string>
     <string name="tour_browse_title">Entdecken-Tour</string>

@@ -54,8 +54,8 @@ class MainActivity : FragmentActivity() {
     /** Destination requested by an inbound intent (e.g. a notification tap); cleared once consumed. */
     private val pendingTarget = MutableStateFlow<String?>(null)
 
-    /** EPUB URI from an external "Open with" intent; cleared once the import flow picks it up. */
-    private val pendingEpubUri = MutableStateFlow<Uri?>(null)
+    /** Book URI from an external "Open with" intent; cleared once the import flow picks it up. */
+    private val pendingBookUri = MutableStateFlow<Uri?>(null)
 
     /** Inbound "add this extension repo" deep link; cleared once Extensions picks it up. */
     private val pendingAddRepo = MutableStateFlow<PendingAddRepo?>(null)
@@ -81,7 +81,7 @@ class MainActivity : FragmentActivity() {
         }
         pendingTarget.value = consumeNavTarget(intent)
         pendingAddRepo.value = consumeAddRepoLink(intent)
-        pendingEpubUri.value = consumeEpubUri(intent)
+        pendingBookUri.value = consumeBookUri(intent)
         // A crash recorded last session takes the user to the crash-report screen
         // on launch, unless an inbound intent already asked for somewhere specific.
         if (pendingTarget.value == null && crashLogStore.hasPendingCrash()) {
@@ -118,8 +118,8 @@ class MainActivity : FragmentActivity() {
                                     AppNavigation(
                                         pendingTarget = pendingTarget.asStateFlow(),
                                         onTargetHandled = { pendingTarget.value = null },
-                                        pendingEpubUri = pendingEpubUri.asStateFlow(),
-                                        onEpubUriHandled = { pendingEpubUri.value = null },
+                                        pendingBookUri = pendingBookUri.asStateFlow(),
+                                        onBookUriHandled = { pendingBookUri.value = null },
                                         pendingAddRepo = pendingAddRepo.asStateFlow(),
                                         onAddRepoHandled = { pendingAddRepo.value = null },
                                     )
@@ -138,7 +138,7 @@ class MainActivity : FragmentActivity() {
         setIntent(intent)
         consumeNavTarget(intent)?.let { pendingTarget.value = it }
         consumeAddRepoLink(intent)?.let { pendingAddRepo.value = it }
-        consumeEpubUri(intent)?.let { pendingEpubUri.value = it }
+        consumeBookUri(intent)?.let { pendingBookUri.value = it }
     }
 
     /**
@@ -154,12 +154,12 @@ class MainActivity : FragmentActivity() {
 
     /**
      * Extracts a content:// or file:// URI from a VIEW intent (the schemes our
-     * EPUB intent-filter declares) and clears it from the activity intent so a
+     * book intent-filters declare) and clears it from the activity intent so a
      * config-change rebuild doesn't re-trigger the import dialog on every
      * rotation. Other schemes (e.g. `grimoire://`) are ignored so they don't
-     * get force-fed to the EPUB importer.
+     * get force-fed to the book importer.
      */
-    private fun consumeEpubUri(intent: Intent?): Uri? {
+    private fun consumeBookUri(intent: Intent?): Uri? {
         if (intent == null || intent.action != Intent.ACTION_VIEW) return null
         val uri = intent.data ?: return null
         if (uri.scheme != "content" && uri.scheme != "file") return null
@@ -171,7 +171,7 @@ class MainActivity : FragmentActivity() {
      * Parses an inbound add-repo deep link (https://grimoireapp.org/add-repo
      * or grimoire://add-repo). Any URI matching the scheme/host is consumed
      * (intent.data cleared) even when params don't parse, so a malformed link
-     * silently no-ops instead of leaking through to EPUB import.
+     * silently no-ops instead of leaking through to book import.
      */
     private fun consumeAddRepoLink(intent: Intent?): PendingAddRepo? {
         if (intent == null || intent.action != Intent.ACTION_VIEW) return null

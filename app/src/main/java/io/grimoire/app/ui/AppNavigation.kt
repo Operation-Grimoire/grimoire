@@ -68,7 +68,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 private val EmptyNavTarget: StateFlow<String?> = MutableStateFlow(null)
-private val EmptyEpubUri: StateFlow<Uri?> = MutableStateFlow(null)
+private val EmptyBookUri: StateFlow<Uri?> = MutableStateFlow(null)
 private val EmptyAddRepo: StateFlow<PendingAddRepo?> = MutableStateFlow(null)
 
 @Composable
@@ -76,8 +76,8 @@ fun AppNavigation(
     modifier: Modifier = Modifier,
     pendingTarget: StateFlow<String?> = EmptyNavTarget,
     onTargetHandled: () -> Unit = {},
-    pendingEpubUri: StateFlow<Uri?> = EmptyEpubUri,
-    onEpubUriHandled: () -> Unit = {},
+    pendingBookUri: StateFlow<Uri?> = EmptyBookUri,
+    onBookUriHandled: () -> Unit = {},
     pendingAddRepo: StateFlow<PendingAddRepo?> = EmptyAddRepo,
     onAddRepoHandled: () -> Unit = {},
 ) {
@@ -109,14 +109,14 @@ fun AppNavigation(
         onTargetHandled()
     }
 
-    // An EPUB arriving from an external "Open with" needs the Library tab to be
+    // A book arriving from an external "Open with" needs the Library tab to be
     // visible so its import-preview dialog has somewhere to render. LibraryScreen
     // is the one that actually consumes the URI and clears the flow.
-    val epubUri by pendingEpubUri.collectAsStateWithLifecycle()
-    LaunchedEffect(epubUri) {
-        if (epubUri == null) return@LaunchedEffect
+    val bookUri by pendingBookUri.collectAsStateWithLifecycle()
+    LaunchedEffect(bookUri) {
+        if (bookUri == null) return@LaunchedEffect
         // Same cold-start hazard as the pending target above: an "Open with"
-        // EPUB can arrive before the graph is set. Wait for it before navigating.
+        // book can arrive before the graph is set. Wait for it before navigating.
         navController.currentBackStackEntryFlow.first()
         navController.navigate(TopLevelDestination.Library.route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -372,8 +372,8 @@ fun AppNavigation(
             libraryDestination(
                 navController = navController,
                 onSelectionActiveChange = { libraryInSelection = it },
-                pendingEpubUri = pendingEpubUri,
-                onEpubUriHandled = onEpubUriHandled,
+                pendingBookUri = pendingBookUri,
+                onBookUriHandled = onBookUriHandled,
             )
             browseGraph(
                 navController = navController,
