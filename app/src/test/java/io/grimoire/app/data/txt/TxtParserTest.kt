@@ -48,6 +48,13 @@ class TxtParserTest {
         assertEquals(listOf("Text."), textPages(parsed, 1))
     }
 
+    @Test fun `hard-wrapped lines retain indentation and become paragraphs`() {
+        val parsed = parse("  First line\nsecond line\n\nNext paragraph\n")
+
+        assertEquals(1, parsed.chapters.size)
+        assertEquals(listOf("  First line\nsecond line", "Next paragraph"), textPages(parsed))
+    }
+
     @Test fun `blank lines and nonnumeric chapter prose do not create chapters`() {
         val parsed = parse("Chapter one is not a heading.\n\nStill the same book.\n")
 
@@ -94,6 +101,30 @@ class TxtParserTest {
         val parsed = parseBytes("“Smart quotes”".toCharset("windows-1252"))
 
         assertEquals(listOf("“Smart quotes”"), textPages(parsed))
+    }
+
+    @Test fun `Windows-1252 accented prose is not misclassified as GB18030`() {
+        val text = "Une sélection spéciale de caractères."
+        val parsed = parseBytes(text.toCharset("windows-1252"))
+
+        assertEquals(listOf(text), textPages(parsed))
+    }
+
+    @Test fun `legacy detection continues past an ASCII-only prefix`() {
+        val text = "Une sélection spéciale de caractères."
+        val parsed = parseBytes(("a".repeat(70_000) + "\n\n" + text).toCharset("windows-1252"))
+
+        assertEquals(text, textPages(parsed).last())
+    }
+
+    @Test fun `UTF-32 BOMs are explicitly rejected`() {
+        for ((charset, bom) in listOf(
+            Charset.forName("UTF-32LE") to byteArrayOf(0xFF.toByte(), 0xFE.toByte(), 0, 0),
+            Charset.forName("UTF-32BE") to byteArrayOf(0, 0, 0xFE.toByte(), 0xFF.toByte()),
+        )) {
+            val bytes = bom + "Text".toByteArray(charset)
+            assertThrows(IllegalArgumentException::class.java) { parseBytes(bytes) }
+        }
     }
 
     @Test fun `empty text is rejected`() {

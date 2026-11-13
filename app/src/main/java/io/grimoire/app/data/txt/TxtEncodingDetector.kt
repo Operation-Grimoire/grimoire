@@ -12,6 +12,9 @@ internal object TxtEncodingDetector {
     private val WINDOWS_1252: Charset = Charset.forName("windows-1252")
 
     fun detect(sample: ByteArray): Charset = when {
+        sample.startsWith(0xFF, 0xFE, 0x00, 0x00) ||
+            sample.startsWith(0x00, 0x00, 0xFE, 0xFF) ->
+            throw IllegalArgumentException("UTF-32 TXT files are not supported")
         sample.startsWith(0xEF, 0xBB, 0xBF) -> Charsets.UTF_8
         sample.startsWith(0xFF, 0xFE) -> Charsets.UTF_16LE
         sample.startsWith(0xFE, 0xFF) -> Charsets.UTF_16BE
@@ -24,8 +27,8 @@ internal object TxtEncodingDetector {
         if (shiftJis != null && shiftJis.countKana() >= 2) return SHIFT_JIS
 
         val gb18030 = decode(sample, GB18030)
-        if (gb18030 != null && gb18030.countCjk() >= 2) return GB18030
-        if (shiftJis != null && shiftJis.countCjk() >= 2) return SHIFT_JIS
+        if (gb18030?.hasStrongCjkEvidence() == true) return GB18030
+        if (shiftJis?.hasStrongCjkEvidence() == true) return SHIFT_JIS
         return WINDOWS_1252
     }
 
@@ -55,4 +58,12 @@ internal object TxtEncodingDetector {
     }
 
     private fun String.countCjk(): Int = count { it in '\u4E00'..'\u9FFF' }
+
+    private fun String.hasStrongCjkEvidence(): Boolean {
+        val cjk = countCjk()
+        val latin = count {
+            it in 'A'..'Z' || it in 'a'..'z' || it in '\u00C0'..'\u00FF'
+        }
+        return cjk >= 2 && cjk * 4 >= latin
+    }
 }

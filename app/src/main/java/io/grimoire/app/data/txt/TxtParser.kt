@@ -24,8 +24,16 @@ object TxtParser : BookParser {
         val chapters = ArrayList<BookChapter>()
         var chapterTitle: String? = null
         var pages = ArrayList<BookPage>()
+        val paragraph = StringBuilder()
+
+        fun flushParagraph() {
+            if (paragraph.isEmpty()) return
+            pages += BookPage.Text(paragraph.toString())
+            paragraph.clear()
+        }
 
         fun finishChapter() {
+            flushParagraph()
             if (pages.isEmpty()) return
             chapters += BookChapter(chapterTitle ?: title, pages)
             pages = ArrayList()
@@ -34,15 +42,20 @@ object TxtParser : BookParser {
         file.bufferedReader(charset).use { reader ->
             var firstLine = true
             reader.forEachLine { rawLine ->
-                val line = (if (firstLine) rawLine.removePrefix("\uFEFF") else rawLine).trim()
+                val contentLine = if (firstLine) rawLine.removePrefix("\uFEFF") else rawLine
+                val line = contentLine.trim()
                 firstLine = false
-                if (line.isEmpty()) return@forEachLine
+                if (line.isEmpty()) {
+                    flushParagraph()
+                    return@forEachLine
+                }
 
                 if (isChapterHeading(line)) {
                     finishChapter()
                     chapterTitle = line
                 } else {
-                    pages += BookPage.Text(line)
+                    if (paragraph.isNotEmpty()) paragraph.append('\n')
+                    paragraph.append(contentLine)
                 }
             }
         }
@@ -68,12 +81,33 @@ object TxtParser : BookParser {
         val out = ByteArrayOutputStream(SAMPLE_SIZE_BYTES)
         file.inputStream().use { input ->
             val buffer = ByteArray(8192)
+            var firstChunk = true
+            var collecting = false
             while (out.size() < SAMPLE_SIZE_BYTES) {
                 val read = input.read(buffer, 0, minOf(buffer.size, SAMPLE_SIZE_BYTES - out.size()))
-                if (read < 0) break
-                out.write(buffer, 0, read)
+                if (read <= 0) break
+                if (firstChunk) {
+                    collecting = hasBom(buffer, read)
+                    firstChunk = false
+                }
+                if (!collecting) {
+                    val firstNonAscii = (0 until read).firstOrNull { buffer[it].toInt() and 0x80 != 0 }
+                    if (firstNonAscii == null) continue
+                    out.write(buffer, firstNonAscii, read - firstNonAscii)
+                    collecting = true
+                } else {
+                    out.write(buffer, 0, read)
+                }
             }
         }
         return out.toByteArray()
+    }
+
+    private fun hasBom(bytes: ByteArray, size: Int): Boolean {
+        fun byte(index: Int) = bytes[index].toInt() and 0xFF
+        return (size >= 3 && byte(0) == 0xEF && byte(1) == 0xBB && byte(2) == 0xBF) ||
+            (size >= 2 && byte(0) == 0xFF && byte(1) == 0xFE) ||
+            (size >= 2 && byte(0) == 0xFE && byte(1) == 0xFF) ||
+            (size >= 4 && byte(0) == 0x00 && byte(1) == 0x00 && byte(2) == 0xFE && byte(3) == 0xFF)
     }
 }

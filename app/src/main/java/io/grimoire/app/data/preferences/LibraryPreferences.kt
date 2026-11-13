@@ -140,8 +140,8 @@ class LibraryPreferences @Inject constructor(store: PreferenceStore) {
     val showLockedBadge = store.getBoolean("library_show_locked_badge", true)
     val showRatingBadge = store.getBoolean("library_show_rating_badge", true)
 
-    // Flags imported-EPUB (local) novels with a badge so they're distinguishable
-    // from extension-backed novels at a glance. Only renders on local EPUB novels.
+    // Flags EPUB novels with a badge so local files and EPUB-source extensions
+    // are distinguishable from web novels at a glance.
     val showEpubBadge = store.getBoolean("library_show_epub_badge", true)
 
     // Persists the library category the user last viewed. Stores a category id, or

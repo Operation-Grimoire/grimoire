@@ -13,6 +13,7 @@ class BookFormatTest {
 
     @Test fun `known MIME types work without a filename`() {
         assertEquals(BookFormat.EPUB, detectBookFormat("application/epub+zip", null))
+        assertEquals(BookFormat.EPUB, detectBookFormat("application/zip", null))
         assertEquals(BookFormat.TXT, detectBookFormat("text/plain; charset=UTF-8", null))
         assertEquals(BookFormat.TXT, detectBookFormat("TEXT/X-PLAIN", null))
     }

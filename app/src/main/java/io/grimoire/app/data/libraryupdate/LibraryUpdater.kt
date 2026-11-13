@@ -88,10 +88,10 @@ class LibraryUpdater @Inject constructor(
         // mid-sync, so reading it once avoids repeating the lookup N times.
         // Auto-download is now a per-novel flag, read off each NovelEntity below.
         val extensions = extensionManager.extensions.value
-        // Self-contained novels (local file imports + EPUB-source extensions like
-        // Z-Library / libgen) have no scraped chapter list to refresh, so they're
-        // dropped from the run by default — they'd only no-op or warn. The user can
-        // opt them back in.
+        // EPUB-source novels (extensions like Z-Library / libgen) have no scraped
+        // chapter list to refresh, so they're dropped from the run by default — they'd
+        // only no-op or warn. The user can opt them back in. Local file imports are
+        // always excluded in resolveTargets.
         val includeEpubs = preferences.includeEpubsInSync.changes().first()
         val targets = resolveTargets(categoryId).let { list ->
             list.filter { shouldSyncNovel(it) && (includeEpubs || !isEpubNovel(it, extensions)) }
