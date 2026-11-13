@@ -109,7 +109,11 @@ class NovelDetailViewModel @Inject constructor(
         libraryPreferences.includeLockedInTotals.stateIn(viewModelScope)
 
     val pkg: String = checkNotNull(savedStateHandle["pkg"])
-    private val novelUrl: String = checkNotNull(savedStateHandle["url"])
+    /**
+     * The novel's stored key (`novels.url`). Not necessarily [novel]`.url`: that is
+     * whatever the source's getNovelDetails returned, which may be canonicalised.
+     */
+    val novelUrl: String = checkNotNull(savedStateHandle["url"])
 
     /**
      * When this screen was opened as a migration target, the database id of the

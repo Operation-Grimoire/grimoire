@@ -41,14 +41,11 @@ interface ChapterDao {
     """)
     suspend fun getBackupChaptersOnce(novelId: Long): List<ChapterEntity>
 
-    @Query("SELECT * FROM chapters WHERE novelId = :novelId AND url = :url")
+    @Query(CHAPTER_BY_NOVEL_ID_QUERY)
     suspend fun getByUrl(novelId: Long, url: String): ChapterEntity?
 
     @Query(CHAPTER_BY_NOVEL_URL_QUERY)
     suspend fun getByNovelUrl(sourceId: Long, novelUrl: String, chapterUrl: String): ChapterEntity?
-
-    @Query(CHAPTER_BY_NOVEL_ID_QUERY)
-    suspend fun getByNovelIdUrl(novelId: Long, novelUrl: String, chapterUrl: String): ChapterEntity?
 
     @Insert
     suspend fun insertAll(chapters: List<ChapterEntity>): List<Long>

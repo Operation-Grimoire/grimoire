@@ -537,7 +537,7 @@ fun NovelDetailScreen(
             if (continueChapter != null && !viewModel.isMigrationTarget && !selectionMode) {
                 ExtendedFloatingActionButton(
                     onClick = {
-                        onChapterClick(viewModel.pkg, novel.url, continueChapter!!.url, continueChapter!!.novelId)
+                        onChapterClick(viewModel.pkg, viewModel.novelUrl, continueChapter!!.url, continueChapter!!.novelId)
                     },
                     icon = { Icon(AppIcons.PlayArrow, contentDescription = null) },
                     text = {
@@ -1287,7 +1287,7 @@ fun NovelDetailScreen(
                                 allowDownloadChanges = !viewModel.isLocal,
                                 selected = chapter.id in selectedIds,
                                 selectionMode = selectionMode,
-                                onClick = { onChapterClick(viewModel.pkg, novel.url, chapter.url, chapter.novelId) },
+                                onClick = { onChapterClick(viewModel.pkg, viewModel.novelUrl, chapter.url, chapter.novelId) },
                                 onLockedClick = { lockedDialogChapter = chapter },
                                 onToggleSelection = { toggleSelect(chapter.id) },
                                 onDownload = { viewModel.downloadChapter(chapter) },
