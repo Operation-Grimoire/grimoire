@@ -11,36 +11,36 @@ internal object TxtEncodingDetector {
     private val SHIFT_JIS: Charset = Charset.forName("Shift_JIS")
     private val WINDOWS_1252: Charset = Charset.forName("windows-1252")
 
-    fun detect(sample: ByteArray): Charset = when {
+    fun detect(sample: ByteArray, complete: Boolean): Charset = when {
         sample.startsWith(0xFF, 0xFE, 0x00, 0x00) ||
             sample.startsWith(0x00, 0x00, 0xFE, 0xFF) ->
             throw IllegalArgumentException("UTF-32 TXT files are not supported")
         sample.startsWith(0xEF, 0xBB, 0xBF) -> Charsets.UTF_8
         sample.startsWith(0xFF, 0xFE) -> Charsets.UTF_16LE
         sample.startsWith(0xFE, 0xFF) -> Charsets.UTF_16BE
-        decode(sample, Charsets.UTF_8) != null -> Charsets.UTF_8
-        else -> detectLegacyEncoding(sample)
+        decode(sample, Charsets.UTF_8, complete) != null -> Charsets.UTF_8
+        else -> detectLegacyEncoding(sample, complete)
     }
 
-    private fun detectLegacyEncoding(sample: ByteArray): Charset {
-        val shiftJis = decode(sample, SHIFT_JIS)
+    private fun detectLegacyEncoding(sample: ByteArray, complete: Boolean): Charset {
+        val shiftJis = decode(sample, SHIFT_JIS, complete)
         if (shiftJis != null && shiftJis.countKana() >= 2) return SHIFT_JIS
 
-        val gb18030 = decode(sample, GB18030)
+        val gb18030 = decode(sample, GB18030, complete)
         if (gb18030?.hasStrongCjkEvidence() == true) return GB18030
         if (shiftJis?.hasStrongCjkEvidence() == true) return SHIFT_JIS
         return WINDOWS_1252
     }
 
-    private fun decode(sample: ByteArray, charset: Charset): String? {
+    private fun decode(sample: ByteArray, charset: Charset, endOfInput: Boolean): String? {
         val decoder = charset.newDecoder()
             .onMalformedInput(CodingErrorAction.REPORT)
             .onUnmappableCharacter(CodingErrorAction.REPORT)
         val output = CharBuffer.allocate(sample.size.coerceAtLeast(1))
         return try {
-            // A sample may end in the middle of a multibyte character. Actual
-            // malformed sequences still fail; only the final partial one is allowed.
-            val result = decoder.decode(ByteBuffer.wrap(sample), output, false)
+            // Only a sample truncated by the size limit may end in a partial
+            // multibyte character. At EOF, an incomplete sequence is invalid.
+            val result = decoder.decode(ByteBuffer.wrap(sample), output, endOfInput)
             if (result.isError) null else {
                 output.flip()
                 output.toString()

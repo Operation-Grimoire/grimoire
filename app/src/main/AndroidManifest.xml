@@ -132,7 +132,14 @@
                 <data android:scheme="file" />
                 <data android:host="*" />
                 <data android:mimeType="*/*" />
-                <data android:pathAdvancedPattern=".*\\.[tT][xX][tT]" />
+                <data android:pathPattern=".*\\.txt" />
+                <data android:pathPattern=".*\\..*\\.txt" />
+                <data android:pathPattern=".*\\..*\\..*\\.txt" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.txt" />
+                <data android:pathPattern=".*\\.TXT" />
+                <data android:pathPattern=".*\\..*\\.TXT" />
+                <data android:pathPattern=".*\\..*\\..*\\.TXT" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.TXT" />
             </intent-filter>
 
             <!-- Magic add-repo links. Verified App Link opens the app directly;

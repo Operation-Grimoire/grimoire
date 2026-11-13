@@ -110,6 +110,12 @@ class TxtParserTest {
         assertEquals(listOf(text), textPages(parsed))
     }
 
+    @Test fun `Windows-1252 trailing accented character at EOF is decoded`() {
+        val parsed = parseBytes("Café".toCharset("windows-1252"))
+
+        assertEquals(listOf("Café"), textPages(parsed))
+    }
+
     @Test fun `legacy detection continues past an ASCII-only prefix`() {
         val text = "Une sélection spéciale de caractères."
         val parsed = parseBytes(("a".repeat(70_000) + "\n\n" + text).toCharset("windows-1252"))

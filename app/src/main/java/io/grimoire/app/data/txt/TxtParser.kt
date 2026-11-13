@@ -9,6 +9,8 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 
 object TxtParser : BookParser {
+    private data class Sample(val bytes: ByteArray, val complete: Boolean)
+
     private const val SAMPLE_SIZE_BYTES = 64 * 1024
     private const val MAX_HEADING_LENGTH = 120
 
@@ -20,7 +22,8 @@ object TxtParser : BookParser {
 
     override fun parse(file: File, originalName: String?): ParsedBook {
         val title = bookTitleFromFileName(originalName) ?: "Imported book"
-        val charset = TxtEncodingDetector.detect(readSample(file))
+        val sample = readSample(file)
+        val charset = TxtEncodingDetector.detect(sample.bytes, sample.complete)
         val chapters = ArrayList<BookChapter>()
         var chapterTitle: String? = null
         var pages = ArrayList<BookPage>()
@@ -77,15 +80,19 @@ object TxtParser : BookParser {
         line.length <= MAX_HEADING_LENGTH &&
             (ENGLISH_HEADING.matches(line) || CJK_HEADING.matches(line))
 
-    private fun readSample(file: File): ByteArray {
+    private fun readSample(file: File): Sample {
         val out = ByteArrayOutputStream(SAMPLE_SIZE_BYTES)
+        var complete = file.length() <= SAMPLE_SIZE_BYTES
         file.inputStream().use { input ->
             val buffer = ByteArray(8192)
             var firstChunk = true
             var collecting = false
             while (out.size() < SAMPLE_SIZE_BYTES) {
                 val read = input.read(buffer, 0, minOf(buffer.size, SAMPLE_SIZE_BYTES - out.size()))
-                if (read <= 0) break
+                if (read <= 0) {
+                    complete = true
+                    break
+                }
                 if (firstChunk) {
                     collecting = hasBom(buffer, read)
                     firstChunk = false
@@ -100,7 +107,7 @@ object TxtParser : BookParser {
                 }
             }
         }
-        return out.toByteArray()
+        return Sample(out.toByteArray(), complete)
     }
 
     private fun hasBom(bytes: ByteArray, size: Int): Boolean {
