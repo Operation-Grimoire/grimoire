@@ -274,7 +274,7 @@ class ReaderViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val chapter = if (navNovelId != null) {
-                chapterDao.getByNovelIdUrl(navNovelId, novelUrl, initialChapterUrl)
+                chapterDao.getByUrl(navNovelId, initialChapterUrl)
             } else {
                 val sourceId = if (pkg == LOCAL_PKG) LOCAL_SOURCE_ID else sourceIdFor(pkg)
                 chapterDao.getByNovelUrl(sourceId, novelUrl, initialChapterUrl)
