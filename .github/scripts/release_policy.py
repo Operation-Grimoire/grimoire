@@ -25,7 +25,7 @@ def git(*args):
 
 
 def commit(ref):
-    return git("rev-parse", "--verify", "--quiet", "--end-of-options", ref + "^{commit}")
+    return git("rev-parse", "--verify", "--end-of-options", ref + "^{commit}")
 
 
 def changes(base, head):
@@ -118,7 +118,9 @@ def release_key(release, platform, channel):
     if release.get("prerelease", False) != beta or (channel == "stable" and beta):
         return None
     if platform == "android":
-        assets = {asset.get("name") for asset in release.get("assets", [])}
+        assets = {asset.get("name") for asset in release.get("assets", [])
+                  if asset.get("state") == "uploaded" and
+                  type(asset.get("size")) is int and asset["size"] > 0}
         # Do not advance beyond a failed/incomplete upload. Legacy stable releases
         # can lack the checksum; all current beta publications require both files.
         if "grimoire.apk" not in assets or (beta and "grimoire.apk.sha256" not in assets):

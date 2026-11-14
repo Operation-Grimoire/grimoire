@@ -22,7 +22,8 @@ platform remains visible. A skipped job is not runtime acceptance evidence.
 Android nightly publication compares the selected commit with the last complete
 published Android release on its history. A desktop-only merge cannot lose an
 Android change left unpublished by an earlier failed or cancelled build.
-The planner checks paginated release metadata, tags, ancestry and expected assets;
+The planner checks paginated release metadata, tags, ancestry and expected assets
+with an uploaded state and nonzero size;
 an incomplete beta upload does not advance this boundary. Nightly dispatch has an
 explicit `force` input for rebuilding unchanged Android code when needed.
 

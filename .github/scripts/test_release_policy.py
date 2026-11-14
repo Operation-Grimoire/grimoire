@@ -69,9 +69,9 @@ class GitPolicyTest(unittest.TestCase):
 
     def release(self, tag, *, complete=True, draft=False):
         self.run_git("tag", tag)
-        assets = [{"name": "grimoire.apk"}]
+        assets = [{"name": "grimoire.apk", "state": "uploaded", "size": 100}]
         if complete:
-            assets.append({"name": "grimoire.apk.sha256"})
+            assets.append({"name": "grimoire.apk.sha256", "state": "uploaded", "size": 65})
         return {"tag_name": tag, "prerelease": "-beta." in tag,
                 "draft": draft, "assets": assets}
 
@@ -153,9 +153,18 @@ class GitPolicyTest(unittest.TestCase):
         self.assertEqual("v1.0.5", policy.previous(catalog, "android", "beta", beta_sha, beta["tag_name"]))
 
     def test_missing_published_tag_fails_instead_of_widening_release_range(self):
-        published = {"tag_name": "v1.0.5", "assets": [{"name": "grimoire.apk"}]}
+        published = {"tag_name": "v1.0.5", "assets": [{"name": "grimoire.apk", "state": "uploaded", "size": 100}]}
         with self.assertRaisesRegex(RuntimeError, "Missing local tag"):
             policy.previous([[published]], "android", "beta", self.base)
+
+    def test_started_or_empty_upload_does_not_advance_published_boundary(self):
+        stable = self.release("v1.0.5", complete=False)
+        beta = self.release("v1.0.5-beta.341")
+        for field, value in (("state", "starter"), ("size", 0)):
+            partial = json.loads(json.dumps(beta))
+            partial["assets"][-1][field] = value
+            with self.subTest(field=field):
+                self.assertEqual("v1.0.5", policy.previous([[partial, stable]], "android", "beta", self.base))
 
     def test_plan_rejects_runtime_without_fragment_even_when_forced(self):
         self.release("v1.0.5-beta.341")
