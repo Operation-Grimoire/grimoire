@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -43,6 +43,10 @@ jobs:
           python desktop/tools/local_manifest.py
           --jar .desktop-fixtures/jvm/build/extensions/en-royalroad/io.grimoire.extension.en.royalroad-1.0.4.jar
           --output desktop/build/royalroad.properties
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - name: Shared, desktop and packaged-source journey checks
         shell: bash
         run: >-
