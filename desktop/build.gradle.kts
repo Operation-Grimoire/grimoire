@@ -15,7 +15,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
     implementation(libs.okhttp)
-    implementation("org.json:json:20240303")
+    implementation(libs.json) { version { strictly(libs.versions.json.get()) } }
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
     testImplementation(libs.junit)
 }
@@ -32,8 +32,10 @@ tasks.withType<JavaExec>().configureEach {
 val hostApi = providers.gradleProperty("extensionsApiVersion").orElse(libs.versions.extensionsApi)
 tasks.processResources {
     inputs.property("hostApi", hostApi)
+    inputs.property("jsonVersion", libs.versions.json)
     val version = hostApi.get()
-    filesMatching("host.properties") { expand("apiVersion" to version) }
+    val jsonCoordinate = "org.json:json:${libs.versions.json.get()}"
+    filesMatching("host.properties") { expand("apiVersion" to version, "jsonCoordinate" to jsonCoordinate) }
 }
 
 // Reuse the maintained source contract from the pinned extensions checkout in CI.

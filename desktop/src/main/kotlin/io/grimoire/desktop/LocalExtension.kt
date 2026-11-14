@@ -38,8 +38,10 @@ class LocalExtension private constructor(
             val root = manifest.toAbsolutePath().parent
             fun bytes(prefix: String): ByteArray {
                 val path = root.resolve(required("$prefix.file"))
-                require(Files.isRegularFile(path) && Files.size(path) <= 20 * 1024 * 1024) { "Invalid JAR: $path" }
-                val content = Files.readAllBytes(path)
+                require(Files.isRegularFile(path)) { "Invalid JAR: $path" }
+                val limit = 20 * 1024 * 1024
+                val content = Files.newInputStream(path).use { it.readNBytes(limit + 1) }
+                require(content.size <= limit) { "JAR exceeds 20 MiB: $path" }
                 val expected = required("$prefix.sha256")
                 require(expected.matches(Regex("[0-9a-f]{64}")) && sha256(content) == expected) {
                     "JAR digest does not match the trusted local manifest: $path"
@@ -74,9 +76,10 @@ class LocalExtension private constructor(
             val libraryBytes = if (config.containsKey("library.file")) bytes("library") else null
             val libraryCoordinate = if (libraryBytes != null) required("library.coordinate") else null
             require(libraryCoordinate == null || libraryCoordinate.matches(Regex("io\\.grimoire:extensions-lib:[0-9][a-zA-Z0-9.\\-]*")))
-            require(requiredLibraries.all { it == "org.json:json:20240303" || it == libraryCoordinate }) {
+            require(requiredLibraries.all { it == HostRuntime.jsonCoordinate || it == libraryCoordinate }) {
                 "Unsupported host libraries: ${requiredLibraries.joinToString()}"
             }
+            require(libraryBytes == null || libraryCoordinate in requiredLibraries) { "Undeclared host library: $libraryCoordinate" }
             libraryBytes?.let { inspect(it, "io/grimoire/extensions/lib/") }
 
             // Load verified snapshots, never a path that can change after verification.
@@ -96,9 +99,10 @@ class LocalExtension private constructor(
                 require(info.name == source.name && info.lang == source.lang) { "SourceInfo identity mismatch" }
                 return LocalExtension(source, pkg, loader, files, directory)
             } catch (failure: Throwable) {
-                loader?.close()
-                files.forEach { Files.deleteIfExists(it) }
-                Files.deleteIfExists(directory)
+                // Keep the original load failure while attempting every cleanup operation.
+                runCatching { loader?.close() }.exceptionOrNull()?.let(failure::addSuppressed)
+                files.forEach { file -> runCatching { Files.deleteIfExists(file) }.exceptionOrNull()?.let(failure::addSuppressed) }
+                runCatching { Files.deleteIfExists(directory) }.exceptionOrNull()?.let(failure::addSuppressed)
                 throw failure
             }
         }

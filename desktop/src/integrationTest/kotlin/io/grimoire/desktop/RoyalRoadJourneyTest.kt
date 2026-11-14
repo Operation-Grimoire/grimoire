@@ -81,6 +81,9 @@ class RoyalRoadJourneyTest {
             model.download()
             model.settled()
             model.position(io.grimoire.reading.ChapterKey(book.key, book.chapters.first().url), 2, 19)
+            model.browse()
+            model.settled()
+            assertEquals(ReadPosition(book.chapters.first().url, 2, 19), LocalLibrary(directory).saved().single().position)
             model.close()
             val requestCount = requests.get()
             allowed.set(false) // Any accidental network request now fails, rather than returning fixture data.
@@ -97,9 +100,10 @@ class RoyalRoadJourneyTest {
                 assertEquals(View.READER, restarted.state.value.view)
                 assertEquals(encodeChapterContent(pages), encodeChapterContent(restarted.state.value.pages))
                 assertEquals(requestCount, requests.get())
-                assertEquals(4, requestCount) // catalog, details, chapter list, chapter
+                assertEquals(5, requestCount) // two catalog visits, details, chapter list, chapter
                 restarted.browse()
                 restarted.settled(expectError = true)
+                assertTrue(restarted.state.value.error!!.contains("offline"))
                 assertEquals(requestCount, requests.get())
             } finally { restarted.close() }
         } finally { model.close() }
@@ -107,7 +111,7 @@ class RoyalRoadJourneyTest {
 
     private suspend fun ReaderModel.settled(expectError: Boolean = false) {
         val value = withTimeout(15_000) { state.first { !it.busy } }
-        if (!expectError) assertNull(value.error, value.error)
+        if (expectError) assertNotNull("Expected an error", value.error) else assertNull(value.error, value.error)
     }
 
     companion object {

@@ -67,4 +67,34 @@ class LocalLibraryTest {
         catch (_: org.json.JSONException) { }
         assertEquals("{broken", Files.readString(directory.resolve("library.json")))
     }
+
+    @Test fun removingLibraryMembershipPreservesSavedContentAndProgress() {
+        val directory = temporary.newFolder().toPath()
+        val key = NovelKey(17, novel.url)
+        val chapter = ChapterKey(key, "/chapter")
+        val library = LocalLibrary(directory)
+        library.remember(key, novel, chapters)
+        library.download(chapter, pages)
+        library.position(chapter, 0, 21)
+        library.favorite(key, true)
+        library.favorite(key, false)
+        val restarted = LocalLibrary(directory)
+        assertTrue(restarted.saved().isEmpty())
+        assertEquals(pages, restarted.downloaded(chapter))
+        assertEquals(ReadPosition("/chapter", 0, 21), restarted.book(key)!!.position)
+    }
+
+    @Test fun missingDownloadedFileReportsAnIntegrityFailureWithoutResettingTheRecord() {
+        val directory = temporary.newFolder().toPath()
+        val key = NovelKey(17, novel.url)
+        val library = LocalLibrary(directory)
+        library.remember(key, novel, chapters)
+        library.download(ChapterKey(key, "/chapter"), pages)
+        val file = Files.list(directory).use { paths -> paths.filter { it.fileName.toString().startsWith("chapter-") }.findFirst().get() }
+        Files.delete(file)
+        try { library.downloaded(ChapterKey(key, "/chapter")); fail("Missing download was silently accepted") }
+        catch (_: java.nio.file.NoSuchFileException) { }
+        assertTrue("/chapter" in library.book(key)!!.downloaded)
+        assertFalse(Files.exists(file))
+    }
 }

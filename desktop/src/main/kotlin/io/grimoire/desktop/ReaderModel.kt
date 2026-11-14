@@ -38,6 +38,7 @@ class ReaderModel(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val closing = AtomicBoolean(false)
+    private val operationLock = Any()
     private var extension: LocalExtension? = null
     private val mutable = MutableStateFlow(ReaderState(library = library.saved()))
     val state = mutable.asStateFlow()
@@ -54,6 +55,7 @@ class ReaderModel(
     fun browse() = operate {
         check(!state.value.offline) { "Browsing is unavailable offline" }
         val source = extension?.source as? PopularSource ?: error("Open a compatible local extension first")
+        library.flush()
         val novels = source.getPopularNovels(1)
         check(novels.isNotEmpty()) { "The source returned no novels" }
         mutable.update { it.copy(view = View.BROWSE, novels = novels) }
@@ -130,24 +132,33 @@ class ReaderModel(
     suspend fun flushPosition() = withContext(Dispatchers.IO) { library.flush() }
 
     suspend fun close() {
-        closing.set(true)
+        synchronized(operationLock) { closing.set(true) }
+        try {
+            // Let the claimed operation finish, then save before cancelling the usable scope.
+            scope.coroutineContext.job.children.toList().joinAll()
+            withContext(Dispatchers.IO) { library.flush() }
+        } catch (failure: Exception) {
+            closing.set(false)
+            throw failure
+        }
         scope.coroutineContext.job.cancelAndJoin()
         withContext(Dispatchers.IO) {
-            library.flush()
             extension?.close()
             extension = null
         }
     }
 
     private fun operate(action: suspend () -> Unit) {
-        if (state.value.busy || closing.get()) return
-        // Claim busy synchronously, before dispatching, so repeated clicks cannot overlap.
-        mutable.update { it.copy(busy = true, error = null) }
-        scope.launch {
-            try { action() }
-            catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { mutable.update { it.copy(error = failure.message ?: failure.javaClass.simpleName) } }
-            finally { mutable.update { it.copy(busy = false) } }
+        synchronized(operationLock) {
+            if (state.value.busy || closing.get()) return
+            // Claim and register the job atomically with respect to other operations/close.
+            mutable.update { it.copy(busy = true, error = null) }
+            scope.launch {
+                try { action() }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (failure: Exception) { mutable.update { it.copy(error = failure.message ?: failure.javaClass.simpleName) } }
+                finally { mutable.update { it.copy(busy = false) } }
+            }
         }
     }
 }

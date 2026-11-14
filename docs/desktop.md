@@ -10,6 +10,8 @@ the application does not compile or copy a Royal Road implementation.
 ## Build and run
 
 Use JDK 17 and the package-read credentials described in [CONTRIBUTING](../CONTRIBUTING.md).
+Building the external extension JAR uses that repository's JDK 21 toolchain;
+the application build and runtime use JDK 17. CI installs both explicitly.
 The normal build uses published `extensions-core` 1.5.0. No API composite or
 prototype directory is required.
 
@@ -23,6 +25,9 @@ local library. Choose **Open extension** to select a local manifest, then **Brow
 Open a novel, add it to the library, and choose an unlocked chapter. **Save chapter
 offline** stores its text and adds the novel to the library. Scroll position is
 saved automatically and flushed on navigation and normal shutdown.
+Removing library membership retains downloaded chapters and reading progress,
+matching Android's behavior; it does not delete saved content. Dedicated download
+management remains later work.
 
 By default, data is stored in `%APPDATA%/GrimoireDesktop` on Windows, or
 `~/GrimoireDesktop` elsewhere. For an isolated run:
@@ -104,6 +109,9 @@ in downloads, but formatting and illustrations are not rendered yet. The local
 library format is versioned separately from Android's Room database. Source ID plus
 the source's novel and chapter URLs identify records; local row IDs are not sync
 identities. URL migration and sync conflict policy remain future work.
+The extracted codec retains Android's legacy delimiter format. Escaping reserved
+control characters needs a versioned migration; track that separately in
+[#409](https://github.com/Operation-Grimoire/grimoire/issues/409).
 
 Track runtime evidence and remaining acceptance in [#407](https://github.com/Operation-Grimoire/grimoire/issues/407).
 Authenticated/browser-dependent sources, browser lifecycle work, macOS/Linux UI

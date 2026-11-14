@@ -36,6 +36,7 @@ class ReadingCoreTest {
         val key = ChapterKey(NovelKey(12, "/book"), "/chapter")
         assertNotEquals(key, key.copy(novel = NovelKey(13, "/book")))
         assertNotEquals(key, key.copy(novel = NovelKey(12, "/other")))
+        assertNotEquals(key, key.copy(url = "/other-chapter"))
         assertEquals(key, ChapterKey(NovelKey(12, "/book"), "/chapter"))
     }
 }

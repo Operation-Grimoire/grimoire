@@ -3,6 +3,7 @@ agp = "9.2.1"
 kotlin = "2.2.10"
 composeMultiplatform = "1.9.3"
 extensionsApi = "1.5.0"
+json = "20240303"
 ksp = "2.2.10-2.0.2"
 coreKtx = "1.10.1"
 junit = "4.13.2"
@@ -31,6 +32,7 @@ okhttp = "4.12.0"
 securityCrypto = "1.1.0-beta01"
 
 [libraries]
+json = { group = "org.json", name = "json", version.ref = "json" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 sqlite-jdbc = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "sqliteJdbc" }

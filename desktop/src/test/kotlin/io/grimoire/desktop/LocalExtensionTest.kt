@@ -36,48 +36,68 @@ class LocalExtensionTest {
             assertEquals("yes", System.getProperty("grimoire.fixture.helper"))
         }
         resetProbe()
-        rejectsBeforeInitialization(manifest)
+        rejectsBeforeInitialization(manifest, "digest does not match")
     }
 
     @Test fun digestMismatchIsRejectedBeforeSourceCodeRuns() {
-        rejectsBeforeInitialization(fixture(configure = { setProperty("source.sha256", "0".repeat(64)) }))
+        rejectsBeforeInitialization(fixture(configure = { setProperty("source.sha256", "0".repeat(64)) }), "digest does not match")
     }
 
     @Test fun identityAndVersionMismatchAreRejectedBeforeSourceCodeRuns() {
         for (field in listOf("source.package", "source.class", "source.versionCode", "source.versionName", "source.sourceVersionCode")) {
             val manifest = fixture(configure = { setProperty(field, if (field.endsWith("Code")) "999" else "mismatch") })
-            rejectsBeforeInitialization(manifest)
+            val message = when (field) {
+                "source.package" -> "Invalid source package"
+                "source.class" -> "Invalid entry point"
+                else -> "JAR metadata mismatch"
+            }
+            rejectsBeforeInitialization(manifest, message)
         }
     }
 
     @Test fun missingAndMalformedOrIncompatibleApiAreRejectedBeforeSourceCodeRuns() {
-        rejectsBeforeInitialization(fixture(attributes = { remove(Attributes.Name("Grimoire-Core-Api")) }))
+        rejectsBeforeInitialization(fixture(attributes = { remove(Attributes.Name("Grimoire-Core-Api")) }), "Grimoire-Core-Api")
         for (api in listOf("1.5.0", "2.0", "1.6", "01.5", "1.2147483648")) {
             rejectsBeforeInitialization(fixture(
                 attributes = { putValue("Grimoire-Core-Api", api) },
                 configure = { setProperty("source.coreApi", api) },
-            ))
+            ), "Extension requires API")
         }
     }
 
     @Test fun unknownHostLibrariesAndExternalClasspathAreRejectedBeforeSourceCodeRuns() {
-        rejectsBeforeInitialization(fixture(attributes = { putValue("Grimoire-Host-Libraries", "unknown:library:1") }))
-        rejectsBeforeInitialization(fixture(attributes = { putValue("Class-Path", "unverified.jar") }))
-        rejectsBeforeInitialization(fixture(extraClass = "io/grimoire/api/Injected.class"))
+        rejectsBeforeInitialization(fixture(attributes = { putValue("Grimoire-Host-Libraries", "unknown:library:1") }), "Unsupported host libraries")
+        rejectsBeforeInitialization(fixture(attributes = { putValue("Class-Path", "unverified.jar") }), "External JAR Class-Path")
+        rejectsBeforeInitialization(fixture(extraClass = "io/grimoire/api/Injected.class"), "host or foreign classes")
     }
 
     @Test fun annotationMismatchIsRejectedWithoutInitializingTheClass() {
         rejectsBeforeInitialization(fixture(
             attributes = { putValue("Grimoire-Source-Version-Code", "8") },
             configure = { setProperty("source.sourceVersionCode", "8") },
-        ))
+        ), "SourceInfo version mismatch")
     }
 
-    private fun rejectsBeforeInitialization(manifest: Path) {
+    @Test fun oversizedArtifactsAreRejectedByTheReadBoundBeforeDigestOrCode() {
+        val manifest = fixture()
+        java.io.RandomAccessFile(manifest.parent.resolve("source.jar").toFile(), "rw").use { it.setLength(20L * 1024 * 1024 + 1) }
+        rejectsBeforeInitialization(manifest, "JAR exceeds 20 MiB")
+    }
+
+    @Test fun unusedHostLibraryCannotEnterTheLoader() {
+        val manifest = fixture(configure = {
+            setProperty("library.file", "source.jar")
+            setProperty("library.sha256", getProperty("source.sha256"))
+            setProperty("library.coordinate", "io.grimoire:extensions-lib:1.0.0")
+        })
+        rejectsBeforeInitialization(manifest, "Undeclared host library")
+    }
+
+    private fun rejectsBeforeInitialization(manifest: Path, expectedMessage: String) {
         try {
             LocalExtension.open(manifest, "1.5.0").use { fail("Invalid artifact was loaded") }
         } catch (failure: IllegalArgumentException) {
-            assertNotNull(failure.message)
+            assertTrue("Expected '$expectedMessage', got '${failure.message}'", failure.message?.contains(expectedMessage) == true)
         }
         assertNull("Rejected artifact initialized source code", System.getProperty("grimoire.fixture.initialized"))
     }

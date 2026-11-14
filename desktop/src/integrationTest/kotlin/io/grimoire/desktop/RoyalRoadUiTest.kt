@@ -66,8 +66,11 @@ class RoyalRoadUiTest {
             val prose = model.state.value.pages.mapNotNull { (it.content as? PageContent.Text)?.text }.first { it.isNotBlank() }
             compose.onNodeWithText(prose).assertIsDisplayed()
             capture("reader.png")
+            compose.onNodeWithText("Offline").performClick()
+            compose.onNode(hasText(chapter.name) and hasClickAction()).assertIsNotEnabled()
             compose.onNodeWithText("Save chapter offline").performClick()
             settled(model)
+            compose.onNode(hasText(chapter.name) and hasClickAction()).assertIsEnabled()
             val count = requests.get()
             runBlocking { model.close() }
             allowed.set(false)
@@ -82,7 +85,7 @@ class RoyalRoadUiTest {
             compose.onNodeWithText(prose).assertIsDisplayed()
             capture("offline-restart.png")
             assertEquals(count, requests.get())
-            assertEquals(4, count)
+            if (!live) assertEquals(4, count) // fixture catalog, details, chapter list and chapter
         } catch (failure: Throwable) {
             runCatching { capture("failure.png") }
             throw failure

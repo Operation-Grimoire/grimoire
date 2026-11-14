@@ -29,7 +29,6 @@ import java.awt.FileDialog
 import java.awt.Frame
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.Properties
 import java.util.concurrent.atomic.AtomicBoolean
 
 fun main(args: Array<String>) {
@@ -38,9 +37,7 @@ fun main(args: Array<String>) {
     require(options.keys.all { it == "--extension" || it == "--data" }) { "Unknown desktop argument" }
     val data = options["--data"]?.let(Paths::get) ?: Paths.get(
         System.getenv("APPDATA") ?: System.getProperty("user.home"), "GrimoireDesktop")
-    val hostApi = Properties().apply {
-        checkNotNull(ReaderModel::class.java.getResourceAsStream("/host.properties")).use(::load)
-    }.getProperty("api.version")
+    val hostApi = HostRuntime.apiVersion
     val networkEnabled = AtomicBoolean(true)
     SourceNetwork.install(DesktopHttpPlatform(networkEnabled))
     val model = ReaderModel(LocalLibrary(data), hostApi, networkEnabled)
@@ -126,7 +123,7 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
                 }
                 HorizontalDivider()
                 Row(Modifier.weight(1f).padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    ChapterPane(book, state.chapter, enabled, model, Modifier.width(300.dp).fillMaxHeight())
+                    ChapterPane(book, state.chapter, enabled, state.offline, model, Modifier.width(300.dp).fillMaxHeight())
                     if (state.view == View.READER && state.chapter != null) {
                         key(book.key, state.chapter!!.url) { ReaderPane(state, model, Modifier.weight(1f)) }
                     } else {
@@ -134,7 +131,8 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
                         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             item { Text("${book.chapters.size} chapters", style = MaterialTheme.typography.titleLarge) }
                             book.position?.let { position -> book.chapters.find { it.url == position.chapterUrl }?.let { chapter ->
-                                item { Button(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked) { Text("Continue reading") } }
+                                item { Button(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked &&
+                                    (!state.offline || chapter.url in book.downloaded)) { Text("Continue reading") } }
                             } }
                             item { Text(description, style = MaterialTheme.typography.bodyLarge) }
                         }
@@ -164,18 +162,20 @@ private fun LibraryPane(state: ReaderState, enabled: Boolean, model: ReaderModel
 }
 
 @Composable
-private fun ChapterPane(book: SavedBook, current: Chapter?, enabled: Boolean, model: ReaderModel, modifier: Modifier = Modifier) {
+private fun ChapterPane(book: SavedBook, current: Chapter?, enabled: Boolean, offline: Boolean, model: ReaderModel, modifier: Modifier = Modifier) {
     val scroll = rememberLazyListState()
     Box(modifier) {
         LazyColumn(state = scroll, modifier = Modifier.fillMaxSize().padding(end = 12.dp)) {
             items(book.chapters, key = { it.url }) { chapter ->
-                TextButton(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked, modifier = Modifier.fillMaxWidth()) {
+                TextButton(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked &&
+                    (!offline || chapter.url in book.downloaded), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.fillMaxWidth()) {
                         Text(chapter.name, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         val status = when {
                             chapter.locked -> "Locked"
                             chapter.url == current?.url -> "Reading"
                             chapter.url in book.downloaded -> "Saved offline"
+                            offline -> "Not downloaded"
                             else -> null
                         }
                         status?.let { Text(it, style = MaterialTheme.typography.labelSmall) }
