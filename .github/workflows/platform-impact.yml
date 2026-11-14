@@ -1,0 +1,32 @@
+name: Platform release policy
+
+on:
+  workflow_call:
+    outputs:
+      android_ci:
+        value: ${{ jobs.policy.outputs.android_ci }}
+      desktop_ci:
+        value: ${{ jobs.policy.outputs.desktop_ci }}
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    outputs:
+      android_ci: ${{ steps.impact.outputs.android_ci }}
+      desktop_ci: ${{ steps.impact.outputs.desktop_ci }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Test platform and release-range policy
+        run: python -m unittest discover -s .github/scripts -p 'test_*.py' -v
+      - name: Validate fragments and classify this change
+        id: impact
+        run: python .github/scripts/release_policy.py ci

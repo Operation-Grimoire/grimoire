@@ -15,7 +15,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  impact:
+    uses: ./.github/workflows/platform-impact.yml
   build:
+    needs: impact
+    if: always() && (needs.impact.result != 'success' || needs.impact.outputs.android_ci == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -24,6 +28,9 @@ jobs:
       APP_VERSION_TAG: v0.0.0
       APP_BETA_NUMBER: '1'
     steps:
+      - name: Require successful release policy
+        if: needs.impact.result != 'success'
+        run: exit 1
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -60,9 +67,13 @@ jobs:
 
   android:
     needs: build
+    if: always() && needs.build.result != 'skipped'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: Require successful Android build and release policy
+        if: needs.build.result != 'success'
+        run: exit 1
       - uses: actions/checkout@v4
         with:
           persist-credentials: false

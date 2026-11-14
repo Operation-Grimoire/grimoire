@@ -105,8 +105,10 @@ outside the initial reading slice.
 APP_VERSION_TAG=v0.1.0 ./gradlew :app:assembleRelease
 ```
 
-Merging to `master` produces a signed nightly beta through
-`.github/workflows/nightly.yml`. Validate that exact beta before proposing a
+Merging pending Android runtime changes to `master` produces a signed nightly beta through
+`.github/workflows/nightly.yml`; desktop-only, tests and CI/docs changes do not.
+Add an immutable platform-audience fragment for runtime changes; see
+[`docs/releases.md`](docs/releases.md). Validate that exact beta before proposing a
 stable release. Create stable tags or dispatch `.github/workflows/release.yml`
 only when the user explicitly requests a stable release. A request to continue,
 merge or validate does not authorize publishing stable. See CONTRIBUTING's

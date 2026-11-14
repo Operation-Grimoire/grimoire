@@ -15,7 +15,37 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  impact:
+    uses: ./.github/workflows/platform-impact.yml
+  release-preview:
+    needs: impact
+    if: github.event_name == 'push' && needs.impact.outputs.desktop_ci == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Preview desktop stream without publishing installers
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p build/desktop-release
+          gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases?per_page=100" > build/desktop-release/catalog.json
+          python .github/scripts/release_policy.py plan --platform desktop --channel beta --catalog build/desktop-release/catalog.json --notes build/desktop-release/notes.md > build/desktop-release/plan.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-release-preview
+          path: |
+            build/desktop-release/notes.md
+            build/desktop-release/plan.txt
+          if-no-files-found: error
   desktop:
+    needs: impact
+    if: always() && (needs.impact.result != 'success' || needs.impact.outputs.desktop_ci == 'true')
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -26,8 +56,13 @@ jobs:
       APP_BETA_NUMBER: ${{ github.run_number }}
       APP_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
+      - name: Require successful release policy
+        if: needs.impact.result != 'success'
+        shell: bash
+        run: exit 1
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
@@ -58,6 +93,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Verify normal launch task receives manifest and data arguments
+        shell: bash
+        run: >-
+          bash ./gradlew :desktop:help -I .github/scripts/verify-desktop-launch.gradle
+          -PdesktopManifest=desktop/build/royalroad.properties '-PdesktopData=desktop/build/launch check'
+          --no-configuration-cache --console=plain
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Shared, desktop and packaged-source journey checks
         shell: bash
         run: >-

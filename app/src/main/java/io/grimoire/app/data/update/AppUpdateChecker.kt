@@ -18,7 +18,7 @@ import javax.inject.Singleton
 
 private const val REPO = "Operation-Grimoire/grimoire"
 private const val LATEST_RELEASE_URL = "https://api.github.com/repos/$REPO/releases/latest"
-private const val RELEASES_LIST_URL = "https://api.github.com/repos/$REPO/releases?per_page=30"
+private const val RELEASES_LIST_URL = "https://api.github.com/repos/$REPO/releases?per_page=100"
 private const val APK_MIME = "application/vnd.android.package-archive"
 
 class AppUpdateHashMismatchException(
@@ -33,13 +33,23 @@ class AppUpdateChecker @Inject constructor(
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun checkForUpdate(channel: UpdateChannel): Result<ReleaseInfo?> = withContext(Dispatchers.IO) {
+        val pages = mutableMapOf<Int, List<GitHubRelease>>()
+        fun page(number: Int) = pages.getOrPut(number) { fetchReleases("$RELEASES_LIST_URL&page=$number") }
         checkAppUpdate(
             channel, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE,
-            fetchStable = { fetchRelease(LATEST_RELEASE_URL) },
-            fetchReleases = { fetchReleases(RELEASES_LIST_URL) },
+            fetchStable = {
+                latestAndroidStable() ?: collectAndroidReleases(UpdateChannel.STABLE, ::page, minimumMatches = 1)
+                    .maxByOrNull { releaseVersionCode(it.tag_name) }
+            },
+            fetchReleases = { collectAndroidReleases(channel, ::page) },
             fetchChecksum = ::fetchText,
         )
     }
+
+    // Preserve the legacy optional latest-stable fast path. This repo-wide slot
+    // can point at another platform: validate it and fall back to the shared feed.
+    private fun latestAndroidStable(): GitHubRelease? =
+        runCatching { fetchRelease(LATEST_RELEASE_URL) }.getOrNull()?.takeIf(::isAndroidStableRelease)
 
     private fun fetchRelease(url: String): GitHubRelease? {
         val conn = URL(url).openConnection() as HttpURLConnection
@@ -84,10 +94,11 @@ class AppUpdateChecker @Inject constructor(
     suspend fun fetchNotesForVersion(toName: String): String? =
         withContext(Dispatchers.IO) {
             runCatching {
-                val tag = if (toName.startsWith("v")) toName else "v$toName"
+                val version = toName.substringBefore('+')
+                val tag = if (version.startsWith("v")) version else "v$version"
+                if (!isAndroidRelease(GitHubRelease(tag, prerelease = tag.contains("-beta.")))) return@runCatching null
                 fetchRelease("https://api.github.com/repos/$REPO/releases/tags/$tag")
-                    ?.body
-                    ?.takeIf { it.isNotBlank() }
+                    ?.takeIf(::isAndroidRelease)?.let { it.body.orEmpty().trim() }
             }.getOrNull()
         }
 
@@ -97,15 +108,16 @@ class AppUpdateChecker @Inject constructor(
         channel: UpdateChannel,
     ): String? = withContext(Dispatchers.IO) {
         runCatching {
-            val releases = fetchReleases(RELEASES_LIST_URL)
+            val pages = mutableMapOf<Int, List<GitHubRelease>>()
+            fun page(number: Int) = pages.getOrPut(number) { fetchReleases("$RELEASES_LIST_URL&page=$number") }
+            val releases = collectAndroidReleases(channel, ::page, countMatch = {
+                isInNotesRange(it, fromTag, toTag, channel)
+            })
             val included = notesReleasesSince(releases, fromTag, toTag, channel) {
-                fetchRelease(LATEST_RELEASE_URL)
+                latestAndroidStable()
             }
             if (included.isEmpty()) return@runCatching null
-            included.joinToString("\n\n") { release ->
-                val header = "## ${release.tag_name}"
-                if (release.body.isBlank()) header else "$header\n\n${release.body.trim()}"
-            }
+            aggregateReleaseNotes(included)
         }.getOrNull()
     }
 

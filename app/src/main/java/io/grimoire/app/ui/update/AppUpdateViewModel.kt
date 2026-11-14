@@ -98,10 +98,15 @@ class AppUpdateViewModel @Inject constructor(
                             }
                         }
                     }
+                    if (remote != null && remote.isBlank()) {
+                        // A published internal-only build has no user-facing notes.
+                        appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
+                        appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
+                    }
                     _changelogContent.value = (remote ?: Changelog.since(
                         lastSeen,
                         BuildConfig.VERSION_CODE,
-                    ))?.let(ChangelogContent::Notes)
+                    ))?.takeIf { it.isNotBlank() }?.let(ChangelogContent::Notes)
                 } else {
                     // Popup disabled — mark this version as seen so we don't
                     // accumulate fetches if the user re-enables it later.
@@ -151,7 +156,7 @@ class AppUpdateViewModel @Inject constructor(
             _isLoadingChangelog.value = true
             try {
                 val remote = checker.fetchNotesForVersion(BuildConfig.VERSION_NAME)
-                _changelogContent.value = remote?.let(ChangelogContent::Notes)
+                _changelogContent.value = remote?.takeIf { it.isNotBlank() }?.let(ChangelogContent::Notes)
                     ?: ChangelogContent.Unavailable
             } finally {
                 _isLoadingChangelog.value = false

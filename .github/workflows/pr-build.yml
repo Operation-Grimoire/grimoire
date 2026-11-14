@@ -9,13 +9,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  impact:
+    uses: ./.github/workflows/platform-impact.yml
   build:
+    needs: impact
+    if: always() && (needs.impact.result != 'success' || needs.impact.outputs.android_ci == 'true')
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: read
 
     steps:
+      - name: Require successful release policy
+        if: needs.impact.result != 'success'
+        run: exit 1
       - uses: actions/checkout@v4
 
       - uses: actions/setup-java@v4
