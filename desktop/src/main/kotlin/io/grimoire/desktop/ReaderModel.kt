@@ -129,7 +129,17 @@ class ReaderModel(
         library.position(key, paragraph, offset)
     }
 
-    suspend fun flushPosition() = withContext(Dispatchers.IO) { library.flush() }
+    suspend fun flushPosition() {
+        val prefix = "Could not save reading position:"
+        try {
+            withContext(Dispatchers.IO) { library.flush() }
+            mutable.update { if (it.error?.startsWith(prefix) == true) it.copy(error = null) else it }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            mutable.update { it.copy(error = "$prefix ${failure.message ?: failure.javaClass.simpleName}") }
+        }
+    }
 
     suspend fun close() {
         synchronized(operationLock) { closing.set(true) }

@@ -14,6 +14,24 @@ import java.util.concurrent.atomic.AtomicBoolean
 class ReaderModelCloseTest {
     @get:Rule val temporary = TemporaryFolder()
 
+    @Test fun autosaveFailureIsReportedWithoutThrowingAndCanBeRetried() = runBlocking {
+        val directory = temporary.newFolder().toPath()
+        val model = ReaderModel(LocalLibrary(directory), "1.5.0", AtomicBoolean(true))
+        val blocked = directory.resolve("library.json")
+        Files.createDirectory(blocked)
+        try {
+            model.flushPosition()
+            assertTrue(model.state.value.error?.contains("Could not save reading position") == true)
+            Files.delete(blocked)
+            model.flushPosition()
+            assertNull(model.state.value.error)
+            assertTrue(Files.isRegularFile(blocked))
+        } finally {
+            if (Files.isDirectory(blocked)) Files.delete(blocked)
+            model.close()
+        }
+    }
+
     @Test fun failedSaveDuringCloseLeavesModelUsableAndCloseCanBeRetried() = runBlocking {
         val directory = temporary.newFolder().toPath()
         val model = ReaderModel(LocalLibrary(directory), "1.5.0", AtomicBoolean(true))
