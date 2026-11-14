@@ -8,17 +8,20 @@ import kotlinx.coroutines.CancellationException
 
 data class LoadedExtension(
     val info: ExtensionInfo,
-    val source: Source,
+    val source: Source?,
 ) {
-    // Loading the class succeeds even when an old APK lacks a current API method.
-    // Probe metadata at the boundary, before publishing it as a usable source.
+    // Rejected API requirements keep package identity without loading a Source.
+    // Legacy/supported APKs still need a metadata probe for missing API methods.
     private val metadata = runCatching {
-        source.lang.code to (source.javaClass.getAnnotation(SourceInfo::class.java)?.adultContent ?: AdultContent.NONE)
+        val current = requireNotNull(source)
+        current.lang.code to (current.javaClass.getAnnotation(SourceInfo::class.java)?.adultContent ?: AdultContent.NONE)
     }.onFailure {
         if (it is CancellationException || it is VirtualMachineError || it is ThreadDeath) throw it
     }
     val lang: String? get() = metadata.getOrNull()?.first
     val isCompatible: Boolean get() = metadata.isSuccess
+    val requiredApiVersion: String?
+        get() = if (source == null) declaredExtensionApi(info.minimumApiVersion) else null
 
     /** Canonical identity the app keys saved novels by — derived from the package, not [Source.id]. */
     val id: Long get() = sourceIdFor(info.packageName)

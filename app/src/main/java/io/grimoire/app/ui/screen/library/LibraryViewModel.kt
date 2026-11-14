@@ -205,11 +205,13 @@ class LibraryViewModel @Inject constructor(
      */
     internal val librarySources: StateFlow<List<LibrarySourceOption>> = combine(
         libraryFavorites.favorites,
-        extensionManager.extensions,
+        extensionManager.installedExtensions,
     ) { favoritesOrNull, exts ->
         val favorites = favoritesOrNull.orEmpty()
         val sourceIds = favorites.map { it.sourceId }.toSortedSet()
-        val nameBySourceId = exts.associate { it.id to it.source.name }
+        val nameBySourceId = exts.associate {
+            it.id to if (it.isCompatible) (it.source?.name ?: it.info.label) else it.info.label
+        }
         sourceIds.map { id ->
             LibrarySourceOption(id = id, name = nameBySourceId[id])
         }

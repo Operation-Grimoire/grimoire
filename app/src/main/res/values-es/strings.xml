@@ -732,4 +732,5 @@
     <string name="source_validate_nothing">Esta fuente no tiene nada que validar.</string>
     <string name="source_validate_failed">Error en la validación.</string>
     <plurals name="novel_export_success"><item quantity="one">Se exportó %1$d capítulo</item><item quantity="many">Se exportaron %1$d capítulos</item><item quantity="other">Se exportaron %1$d capítulos</item></plurals>
+    <string name="extension_api_required">La extensión requiere la API %1$s (API de la app: %2$s)</string>
 </resources>

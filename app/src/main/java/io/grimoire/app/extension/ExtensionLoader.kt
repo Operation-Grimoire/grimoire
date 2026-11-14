@@ -4,6 +4,7 @@ import android.content.Context
 import dalvik.system.PathClassLoader
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.source.Source
+import io.grimoire.app.BuildConfig
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -47,13 +48,19 @@ class ExtensionLoader @Inject constructor(
     private val lock = Any()
     private val cache = HashMap<String, Cached>()
 
-    fun load(info: ExtensionInfo): Source? = synchronized(lock) {
+    fun load(info: ExtensionInfo): LoadedExtension? {
+        val loaded = loadCompatibleExtension(info, BuildConfig.EXTENSIONS_API_VERSION) { loadSource(info) }
+        if (loaded?.source == null) synchronized(lock) { cache.remove(info.packageName) }
+        return loaded
+    }
+
+    private fun loadSource(info: ExtensionInfo): Source? = synchronized(lock) {
         cache[info.packageName]?.let { cached ->
             if (cached.versionCode == info.versionCode &&
                 cached.apkPath == info.apkPath &&
                 cached.sourceClassName == info.sourceClassName
             ) {
-                return cached.source
+                return@synchronized cached.source
             }
         }
         val source = runCatching {
@@ -61,7 +68,7 @@ class ExtensionLoader @Inject constructor(
             classLoader.loadClass(info.sourceClassName)
                 .getDeclaredConstructor()
                 .newInstance() as Source
-        }.getOrNull() ?: return null
+        }.getOrNull() ?: return@synchronized null
         cache[info.packageName] = Cached(
             versionCode = info.versionCode,
             apkPath = info.apkPath,

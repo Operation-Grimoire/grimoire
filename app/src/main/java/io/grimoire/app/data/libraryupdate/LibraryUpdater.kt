@@ -228,12 +228,12 @@ class LibraryUpdater @Inject constructor(
         var novel = novelDao.getById(snapshot.id) ?: return NovelRefreshResult.Skipped
         if (requireFavorite && !isEligibleForLibrarySync(novel)) return NovelRefreshResult.Skipped
         val loaded = extensions.firstOrNull { it.id == novel.sourceId }
-        if (loaded == null) {
+        val src = loaded?.source
+        if (loaded == null || src == null) {
             setIssue(novel, "", UpdateIssueSeverity.WARNING, "Source not installed — skipped")
             return NovelRefreshResult.Warned(0)
         }
         val pkg = loaded.info.packageName
-        val src = loaded.source
         // EPUB sources have no scraped chapter list; their chapters arrive when the
         // user downloads the book, so there is nothing to refresh here. Clear any
         // stale issue (e.g. a "Source not installed" warning left by an earlier

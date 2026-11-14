@@ -700,4 +700,5 @@
     <string name="source_validate_nothing">Tidak ada yang perlu divalidasi di sumber ini.</string>
     <string name="source_validate_failed">Validasi gagal.</string>
     <plurals name="novel_export_success"><item quantity="other">%1$d bab diekspor</item></plurals>
+    <string name="extension_api_required">Ekstensi memerlukan API %1$s (API aplikasi: %2$s)</string>
 </resources>

@@ -700,4 +700,5 @@
     <string name="source_validate_nothing">このソースには検証する項目がありません。</string>
     <string name="source_validate_failed">検証に失敗しました。</string>
     <plurals name="novel_export_success"><item quantity="other">%1$d章をエクスポートしました</item></plurals>
+    <string name="extension_api_required">拡張機能には API %1$s が必要です（アプリの API: %2$s）</string>
 </resources>

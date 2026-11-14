@@ -730,4 +730,5 @@
     <string name="source_validate_nothing">Questa fonte non ha nulla da verificare.</string>
     <string name="source_validate_failed">Verifica non riuscita.</string>
     <plurals name="novel_export_success"><item quantity="one">%1$d capitolo esportato</item><item quantity="many">%1$d capitoli esportati</item><item quantity="other">%1$d capitoli esportati</item></plurals>
+    <string name="extension_api_required">L’estensione richiede l’API %1$s (API dell’app: %2$s)</string>
 </resources>

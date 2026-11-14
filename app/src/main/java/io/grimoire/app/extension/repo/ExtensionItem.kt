@@ -11,6 +11,11 @@ sealed interface ExtensionItem {
     val versionName: String
     val iconUrl: String?
     val adultContent: AdultContent
+    val requiredApiVersion: String? get() = when (this) {
+        is Installed -> loaded.requiredApiVersion
+        is InstalledOnly -> loaded.requiredApiVersion
+        is Available -> null
+    }
     val isCompatible: Boolean get() = when (this) {
         is Installed -> loaded.isCompatible
         is InstalledOnly -> loaded.isCompatible

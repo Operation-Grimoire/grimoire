@@ -716,4 +716,5 @@
     <string name="source_validate_nothing">इस स्रोत में जाँचने के लिए कुछ नहीं है।</string>
     <string name="source_validate_failed">जाँच विफल रही।</string>
     <plurals name="novel_export_success"><item quantity="one">%1$d अध्याय एक्सपोर्ट किया गया</item><item quantity="other">%1$d अध्याय एक्सपोर्ट किए गए</item></plurals>
+    <string name="extension_api_required">एक्सटेंशन के लिए API %1$s चाहिए (ऐप API: %2$s)</string>
 </resources>

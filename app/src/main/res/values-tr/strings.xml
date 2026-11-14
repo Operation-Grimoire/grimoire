@@ -714,4 +714,5 @@
     <string name="source_validate_nothing">Bu kaynakta doğrulanacak bir şey yok.</string>
     <string name="source_validate_failed">Doğrulama başarısız.</string>
     <plurals name="novel_export_success"><item quantity="one">%1$d bölüm dışa aktarıldı</item><item quantity="other">%1$d bölüm dışa aktarıldı</item></plurals>
+    <string name="extension_api_required">Uzantı API %1$s gerektiriyor (uygulama API’si: %2$s)</string>
 </resources>

@@ -699,4 +699,5 @@
     <string name="source_validate_nothing">该书源没有需要验证的内容。</string>
     <string name="source_validate_failed">验证失败。</string>
     <plurals name="novel_export_success"><item quantity="other">已导出 %1$d 个章节</item></plurals>
+    <string name="extension_api_required">扩展需要 API %1$s（应用 API：%2$s）</string>
 </resources>

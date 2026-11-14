@@ -753,4 +753,5 @@
         <item quantity="many">Wyeksportowano %1$d rozdziałów</item>
         <item quantity="other">Wyeksportowano %1$d rozdziału</item>
     </plurals>
+    <string name="extension_api_required">Rozszerzenie wymaga API %1$s (API aplikacji: %2$s)</string>
 </resources>

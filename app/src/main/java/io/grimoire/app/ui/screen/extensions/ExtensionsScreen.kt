@@ -673,8 +673,10 @@ private fun ExtensionRow(
             Column {
                 Text("${languageLabel(item.lang)} · v${item.versionName}")
                 if (!item.isCompatible) {
+                    val requiredApi = item.requiredApiVersion
                     Text(
-                        stringResource(R.string.error_source_not_available),
+                        if (requiredApi == null) stringResource(R.string.error_source_not_available)
+                        else stringResource(R.string.extension_api_required, requiredApi, io.grimoire.app.BuildConfig.EXTENSIONS_API_VERSION),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error,
                     )
