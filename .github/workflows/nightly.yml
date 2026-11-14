@@ -4,27 +4,69 @@ on:
   push:
     branches: [master]
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Build an Android beta even without pending Android runtime changes'
+        type: boolean
+        default: false
 
 concurrency:
   group: nightly
   cancel-in-progress: true
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      publish: ${{ steps.plan.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Plan from last complete published Android release
+        id: plan
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE: ${{ inputs.force || false }}
+        run: |
+          mkdir -p build/android-release
+          gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases?per_page=100" > build/android-release/catalog.json
+          EXTRA=()
+          if [ "$FORCE" = true ]; then EXTRA+=(--force); fi
+          python .github/scripts/release_policy.py plan --platform android --channel beta --catalog build/android-release/catalog.json --notes build/android-release/notes.md "${EXTRA[@]}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-beta-notes
+          path: build/android-release/notes.md
+          if-no-files-found: error
   beta:
+    needs: plan
+    if: needs.plan.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: read
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-beta-notes
+          path: build/android-release
 
       - name: Compute beta version
         id: ver
         run: |
-          LATEST=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname \
-            | grep -Ev -- '-beta\.' | head -n1)
+          LATEST=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=v:refname \
+            | { grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true; } | tail -n1)
           LATEST=${LATEST:-v0.0.0}
           SHORT=$(git rev-parse --short HEAD)
           RUN=${{ github.run_number }}
@@ -80,39 +122,6 @@ jobs:
           sha256sum grimoire.apk | awk '{print $1}' > grimoire.apk.sha256
           echo "Published digest: $(cat grimoire.apk.sha256)"
 
-      - name: Generate beta release notes
-        id: notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SHA: ${{ github.sha }}
-          VERSION_NAME: ${{ steps.ver.outputs.version_name }}
-          BASE_TAG: ${{ steps.ver.outputs.base_tag }}
-          TAG: ${{ steps.ver.outputs.tag }}
-        run: |
-          set -euo pipefail
-          # Each nightly publishes its own versioned prerelease so the app can
-          # aggregate stored bodies on upgrade (matching the stable flow).
-          # /generate-notes diffs the new tag against the previous beta tag
-          # (or last stable if no prior beta exists), giving a categorised PR
-          # list per .github/release.yml.
-          PREV=$(gh release list --limit 50 \
-            --json tagName,isPrerelease,createdAt \
-            --jq '[.[] | select(.isPrerelease and (.tagName | test("^v.+-beta\\..+")))]
-                  | sort_by(.createdAt) | reverse | .[0].tagName // empty')
-          PREV=${PREV:-$BASE_TAG}
-          NOTES=$(gh api "repos/${{ github.repository }}/releases/generate-notes" \
-            -f "tag_name=$TAG" \
-            -f "target_commitish=$SHA" \
-            -f "previous_tag_name=$PREV" \
-            --jq .body)
-          {
-            echo 'body<<RELNOTES_EOF'
-            printf 'Auto-built from `master` @ %s.\n\n' "$SHA"
-            printf 'Version: `%s`\n\n' "$VERSION_NAME"
-            printf '%s\n' "$NOTES"
-            echo RELNOTES_EOF
-          } >> "$GITHUB_OUTPUT"
-
       - name: Publish beta release
         uses: softprops/action-gh-release@v2
         with:
@@ -121,7 +130,7 @@ jobs:
           prerelease: true
           make_latest: 'false'
           target_commitish: ${{ github.sha }}
-          body: ${{ steps.notes.outputs.body }}
+          body_path: build/android-release/notes.md
           files: |
             app/build/outputs/apk/release/grimoire.apk
             app/build/outputs/apk/release/grimoire.apk.sha256
@@ -138,7 +147,7 @@ jobs:
           # MAX_AGGREGATED_RELEASES = 10.
           OLD=$(gh release list --limit 100 \
             --json tagName,isPrerelease,createdAt \
-            --jq '[.[] | select(.isPrerelease and (.tagName | test("^v.+-beta\\..+")))]
+            --jq '[.[] | select(.isPrerelease and (.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-beta\\.[0-9]+$")))]
                   | sort_by(.createdAt) | reverse | .[10:] | .[].tagName')
           if [ -z "$OLD" ]; then
             echo "No old beta releases to prune."

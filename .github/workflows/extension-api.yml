@@ -15,7 +15,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  impact:
+    uses: ./.github/workflows/platform-impact.yml
   build:
+    needs: impact
+    if: needs.impact.outputs.android_ci == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

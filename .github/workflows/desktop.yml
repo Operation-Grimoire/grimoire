@@ -15,7 +15,11 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  impact:
+    uses: ./.github/workflows/platform-impact.yml
   desktop:
+    needs: impact
+    if: needs.impact.outputs.desktop_ci == 'true'
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -28,7 +32,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Preview desktop stream without publishing installers
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p build/desktop-release
+          gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases?per_page=100" > build/desktop-release/catalog.json
+          python .github/scripts/release_policy.py plan --platform desktop --channel beta --catalog build/desktop-release/catalog.json --notes build/desktop-release/notes.md > build/desktop-release/plan.txt
       - uses: actions/checkout@v4
         with:
           repository: Operation-Grimoire/grimoire-extensions
@@ -58,6 +75,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Verify normal launch task receives manifest and data arguments
+        shell: bash
+        run: >-
+          bash ./gradlew :desktop:help -I .github/scripts/verify-desktop-launch.gradle
+          -PdesktopManifest=desktop/build/royalroad.properties '-PdesktopData=desktop/build/launch check'
+          --no-configuration-cache --console=plain
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Shared, desktop and packaged-source journey checks
         shell: bash
         run: >-
@@ -84,3 +110,5 @@ jobs:
             desktop/build/reports/tests/
             desktop/build/royalroad.properties
             desktop/build/ui-evidence/
+            build/desktop-release/notes.md
+            build/desktop-release/plan.txt

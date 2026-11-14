@@ -1,0 +1,8 @@
+{
+  "android": [
+    {"category": "fix", "text": "Updates and release notes now stay on the Android release channel."}
+  ],
+  "desktop": [
+    {"category": "fix", "text": "Launching with an extension manifest now opens that extension in the selected data directory."}
+  ]
+}

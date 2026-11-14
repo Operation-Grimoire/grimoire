@@ -12,6 +12,7 @@
 /reading-core/build/
 /desktop/build/
 /desktop/tools/__pycache__/
+/.github/scripts/__pycache__/
 /captures
 .externalNativeBuild
 .cxx

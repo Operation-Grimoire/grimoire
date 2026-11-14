@@ -25,14 +25,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
       - name: Resolve release tag
         id: tag
+        env:
+          REQUESTED_TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            NAME="${{ github.ref_name }}"
-          else
-            NAME="${{ github.event.inputs.tag }}"
-          fi
+          NAME="$REQUESTED_TAG"
           if ! echo "$NAME" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "Tag '$NAME' is not vX.Y.Z" >&2
             exit 1
@@ -58,6 +60,18 @@ jobs:
             git push origin "refs/tags/$TAG"
           fi
 
+      - name: Build the requested tag and its Android stable notes
+        id: source
+        env:
+          TAG: ${{ steps.tag.outputs.name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git checkout --detach "refs/tags/$TAG"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          mkdir -p build/android-release
+          gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases?per_page=100" > build/android-release/catalog.json
+          python .github/scripts/release_policy.py plan --platform android --channel stable --exclude-tag "$TAG" --catalog build/android-release/catalog.json --notes build/android-release/notes.md
+
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -71,7 +85,7 @@ jobs:
         run: ./gradlew assembleRelease --build-cache
         env:
           APP_VERSION_TAG: ${{ steps.tag.outputs.name }}
-          APP_GIT_SHA: ${{ github.sha }}
+          APP_GIT_SHA: ${{ steps.source.outputs.sha }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Aptabase app key is non-sensitive (shipped in every APK) → repo variable.
@@ -100,34 +114,14 @@ jobs:
           sha256sum grimoire.apk | awk '{print $1}' > grimoire.apk.sha256
           echo "Published digest: $(cat grimoire.apk.sha256)"
 
-      - name: Generate release notes
-        id: notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.tag.outputs.name }}
-          SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          # GitHub's /generate-notes endpoint picks the previous release
-          # automatically when previous_tag_name is omitted. Honours
-          # .github/release.yml for PR categorisation.
-          NOTES=$(gh api "repos/${{ github.repository }}/releases/generate-notes" \
-            -f "tag_name=$TAG" \
-            -f "target_commitish=$SHA" \
-            --jq .body)
-          {
-            echo 'body<<RELNOTES_EOF'
-            printf '%s\n' "$NOTES"
-            echo RELNOTES_EOF
-          } >> "$GITHUB_OUTPUT"
-
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.name }}
           name: Grimoire ${{ steps.tag.outputs.name }}
           prerelease: false
-          body: ${{ steps.notes.outputs.body }}
+          make_latest: 'true'
+          body_path: build/android-release/notes.md
           files: |
             app/build/outputs/apk/release/grimoire.apk
             app/build/outputs/apk/release/grimoire.apk.sha256

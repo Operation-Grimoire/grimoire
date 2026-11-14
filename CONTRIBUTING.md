@@ -146,6 +146,9 @@ HTTP 202 means buffered acceptance, not confirmed dashboard storage.
 
 ## Conventions (the short version)
 
+See [Platform builds and release notes](docs/releases.md) for CI impact, required
+changelog fragments, independent Android/desktop streams, and beta-first validation.
+
 The full rationale lives in [`CLAUDE.md`](./CLAUDE.md); the essentials:
 
 - **MVI-lite per screen**: `XScreen` + `XViewModel`. ViewModels expose

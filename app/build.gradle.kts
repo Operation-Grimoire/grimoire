@@ -18,7 +18,7 @@ fun gitTag(): String {
     val env = System.getenv("APP_VERSION_TAG")
     if (!env.isNullOrBlank() && env.startsWith("v")) return env
     return runCatching {
-        gitOutput("git", "describe", "--tags", "--abbrev=0")
+        gitOutput("git", "describe", "--tags", "--abbrev=0", "--match", "v[0-9]*.[0-9]*.[0-9]*")
             .takeIf { it.startsWith("v") } ?: "v0.0.0"
     }.getOrDefault("v0.0.0")
 }

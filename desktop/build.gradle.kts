@@ -21,12 +21,11 @@ dependencies {
 }
 
 compose.desktop {
-    application { mainClass = "io.grimoire.desktop.MainKt" }
-}
-
-tasks.withType<JavaExec>().configureEach {
-    providers.gradleProperty("desktopManifest").orNull?.let { args("--extension", rootProject.file(it).absolutePath) }
-    providers.gradleProperty("desktopData").orNull?.let { args("--data", rootProject.file(it).absolutePath) }
+    application {
+        mainClass = "io.grimoire.desktop.MainKt"
+        providers.gradleProperty("desktopManifest").orNull?.let { args("--extension", rootProject.file(it).absolutePath) }
+        providers.gradleProperty("desktopData").orNull?.let { args("--data", rootProject.file(it).absolutePath) }
+    }
 }
 
 val hostApi = providers.gradleProperty("extensionsApiVersion").orElse(libs.versions.extensionsApi)

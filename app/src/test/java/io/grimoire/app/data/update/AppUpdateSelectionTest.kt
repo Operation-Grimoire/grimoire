@@ -6,6 +6,58 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AppUpdateSelectionTest {
+    @Test fun paginationFindsAndroidBeyondDesktopPages() {
+        val pages = listOf(List(2) { release("desktop-v1.0.$it") }, listOf(release("desktop-v1.1.0"), release("v1.0.1")), emptyList())
+        val requested = mutableListOf<Int>()
+        val actual = collectAndroidReleases(UpdateChannel.STABLE, { requested += it; pages[it - 1] }, pageSize = 2)
+        assertEquals(listOf("v1.0.1"), actual.map { it.tag_name })
+        assertEquals(listOf(1, 2, 3), requested)
+    }
+
+    @Test fun paginationIsBoundedAndExhaustionIsNotAnUpToDateResult() {
+        try {
+            collectAndroidReleases(UpdateChannel.BETA, { List(2) { release("desktop-v1.0.0") } }, pageSize = 2, maxPages = 2)
+            fail("A truncated search must fail explicitly")
+        } catch (failure: IllegalStateException) {
+            assertTrue(failure.message!!.contains("page limit"))
+        }
+    }
+
+    @Test fun stablePaginationDoesNotCountAndroidBetasAsStableMatches() {
+        val pages = listOf(listOf(release("v1.0.0-beta.341"), release("desktop-v1.0.0")), listOf(release("v1.0.1")))
+        assertEquals(listOf("v1.0.1"), collectAndroidReleases(UpdateChannel.STABLE, { pages[it - 1] }, pageSize = 2).map { it.tag_name })
+    }
+
+    @Test fun internalOnlyReleaseBodiesDoNotCreateEmptyVersionSections() {
+        assertEquals("", aggregateReleaseNotes(listOf(release("v1.0.1"))))
+        assertEquals("## v1.0.2\n\n## Bug fixes\n- Android fix", aggregateReleaseNotes(listOf(
+            release("v1.0.1"), release("v1.0.2").copy(body = "## Bug fixes\n- Android fix"))))
+    }
+
+    @Test fun desktopLatestDoesNotHideAnAndroidStableRelease() {
+        val actual = check(stable = release("desktop-v9.0.0"), releases = listOf(release("v1.0.1")))
+        assertEquals("v1.0.1", actual.getOrThrow()?.tagName)
+    }
+
+    @Test fun desktopStableCannotEnterTheAndroidBetaChannelOrNotes() {
+        val desktop = release("desktop-v9.900.0")
+        val android = release("v1.0.0-beta.303")
+        val actual = check(stable = release("v1.0.0"), channel = UpdateChannel.BETA, releases = listOf(desktop, android))
+        assertEquals(android.tag_name, actual.getOrThrow()?.tagName)
+        assertEquals(listOf(android.tag_name), notesReleasesSince(listOf(desktop, android), "1.0.0", "99.0.0", UpdateChannel.BETA).map { it.tag_name })
+    }
+
+    @Test fun onlyTheExpectedAndroidAssetIsDownloaded() {
+        val android = release("v1.0.1").copy(assets = listOf(GitHubAsset("other.apk", "https://release/other")) + release("v1.0.1").assets)
+        assertEquals("https://release/apk", check(stable = android).getOrThrow()?.apkUrl)
+    }
+
+    @Test fun malformedAndUnrelatedStableTagsDoNotBecomeAndroidUpdates() {
+        val actual = check(stable = release("v1.0.0"), channel = UpdateChannel.BETA,
+            releases = listOf(release("v99.0.0-preview"), release("v2147483647.0.0"), release("v1.0.1")))
+        assertEquals("v1.0.1", actual.getOrThrow()?.tagName)
+    }
+
     private fun release(tag: String, checksum: Boolean = false) = GitHubRelease(
         tag_name = tag,
         prerelease = tag.contains("-beta."),
