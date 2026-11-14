@@ -732,5 +732,5 @@
     <string name="source_validate_nothing">Cette source n’a rien à valider.</string>
     <string name="source_validate_failed">Échec de la validation.</string>
     <plurals name="novel_export_success"><item quantity="one">%1$d chapitre exporté</item><item quantity="many">%1$d chapitres exportés</item><item quantity="other">%1$d chapitres exportés</item></plurals>
-    <string name="extension_api_required">L’extension nécessite l’API %1$s (API de l’application : %2$s)</string>
+    <string name="extension_api_required">L’extension nécessite l’API %1$s (API de l’application : %2$s)</string>
 </resources>
