@@ -111,6 +111,9 @@ The release `versionCode` is derived from the latest git tag (`vMAJOR.MINOR.PATC
 
 ## Contributing
 
+The maintained desktop JVM reading target, trusted local extension setup and
+offline checks are documented in [Desktop reading slice](docs/desktop.md).
+
 - Bug reports / feature requests: open an issue
 - Extension contributions: see [`grimoire-extensions`](https://github.com/Operation-Grimoire/grimoire-extensions)
 - App contributions: see [`CLAUDE.md`](./CLAUDE.md) for an architecture / convention overview before touching the screen / VM layout

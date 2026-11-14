@@ -9,6 +9,9 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
+/reading-core/build/
+/desktop/build/
+/desktop/tools/__pycache__/
 /captures
 .externalNativeBuild
 .cxx

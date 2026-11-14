@@ -1,0 +1,86 @@
+name: Desktop reading slice
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  desktop:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      APP_VERSION_TAG: v0.0.0
+      APP_BETA_NUMBER: ${{ github.run_number }}
+      APP_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Operation-Grimoire/grimoire-extensions
+          ref: 69b008be343e8cbec9287ef57f8505430a648494
+          path: .desktop-fixtures
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build unchanged Royal Road source as a JAR
+        shell: bash
+        run: bash ./gradlew -p .desktop-fixtures/jvm jarEnRoyalroad --console=plain
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Bind trusted fixture artifact
+        shell: bash
+        run: |
+          python -m unittest discover -s desktop/tools -p 'test_*.py'
+          python desktop/tools/local_manifest.py --jar .desktop-fixtures/jvm/build/extensions/en-royalroad/io.grimoire.extension.en.royalroad-1.0.4.jar --output desktop/build/royalroad.properties
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Shared, desktop and packaged-source journey checks
+        shell: bash
+        run: >-
+          bash ./gradlew :reading-core:test :desktop:test :desktop:integrationTest
+          -PdesktopFixturesRepo=.desktop-fixtures -PdesktopTestManifest=desktop/build/royalroad.properties --console=plain
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Compose UI fixture journey
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then PREFIX="xvfb-run -a"; else PREFIX=""; fi
+          $PREFIX bash ./gradlew :desktop:uiTest -PdesktopFixturesRepo=.desktop-fixtures -PdesktopTestManifest=desktop/build/royalroad.properties --console=plain
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-${{ matrix.os }}
+          path: |
+            reading-core/build/test-results/
+            desktop/build/test-results/
+            desktop/build/reports/tests/
+            desktop/build/royalroad.properties
+            desktop/build/ui-evidence/

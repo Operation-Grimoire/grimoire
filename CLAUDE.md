@@ -88,6 +88,15 @@ All route constants live in `AppRoutes.kt`. The externally-visible `NAV_TARGET_U
 
 ## Build / test
 
+The maintained `:desktop` JVM target and `:reading-core` module are documented in
+[`docs/desktop.md`](docs/desktop.md). Android delegates minimum-API decisions and
+chapter serialization to reading-core; retain its legacy APK behavior and exact
+persisted bytes. Desktop loads trusted local packaged JARs, not source copies.
+Run shared/desktop unit checks and the packaged-source fixture/UI journeys when
+changing this boundary. Live reading, fixture results and native window lifecycle
+are separate acceptance evidence. Desktop browser/login, installers and sync remain
+outside the initial reading slice.
+
 ```bash
 ./gradlew :app:compileDebugKotlin            # fast typecheck
 ./gradlew :app:testDebugUnitTest             # JVM tests
