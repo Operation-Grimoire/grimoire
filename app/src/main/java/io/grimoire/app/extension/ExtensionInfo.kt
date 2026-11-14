@@ -7,4 +7,5 @@ data class ExtensionInfo(
     val versionCode: Long,
     val sourceClassName: String,
     val apkPath: String,
+    val minimumApiVersion: String? = null,
 )

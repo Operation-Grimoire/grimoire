@@ -42,7 +42,7 @@ class SourceIdMigrator @Inject constructor(
         // awaitReady() swallows an initial scan failure; refresh() must succeed here.
         extensionManager.refresh()
         return extensionManager.extensions.value.map {
-            InstalledSourceIdentity(it.id, it.source.javaClass.getAnnotation(SourceInfo::class.java)?.baseUrl)
+            InstalledSourceIdentity(it.id, it.source?.javaClass?.getAnnotation(SourceInfo::class.java)?.baseUrl)
         }
     }
 }

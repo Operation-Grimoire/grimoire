@@ -141,9 +141,11 @@ class ExtensionManager @Inject constructor(
                 versionCode = PackageInfoCompat.getLongVersionCode(pkg),
                 sourceClassName = className,
                 apkPath = pkg.applicationInfo!!.sourceDir,
+                minimumApiVersion = if (meta.containsKey("grimoire.extension.minApi")) {
+                    meta.getString("grimoire.extension.minApi").orEmpty()
+                } else null,
             )
-            val source = loader.load(info) ?: return@mapNotNull null
-            LoadedExtension(info, source)
+            loader.load(info)
         }
         // Release cached class loaders for extensions that are no longer
         // installed so they don't linger for the life of the process.

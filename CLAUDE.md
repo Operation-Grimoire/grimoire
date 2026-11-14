@@ -114,6 +114,7 @@ CI lives in `.github/workflows/release.yml` and builds signed release APKs from 
 - **Don't keep dead composables**. If a `private fun` is never called, delete it as part of whatever PR notices.
 - **Don't enable R8** in a refactor PR without adding the keep rules in the same commit.
 - **Don't bypass the extension API**. App-side code should depend on `io.grimoire:extensions-api` interfaces, not concrete extension classes (the app never loads extension code into its own classloader).
+- **Check API requirements before loading code.** `ExtensionLoader` rejects malformed or unsupported `grimoire.extension.minApi` declarations before class loading/cache reuse. `installedExtensions` retains these package records with a null `Source`; runtime consumers use the filtered `extensions` list. Legacy APKs without the declaration keep the metadata probe.
 - **Don't use `Icons.*` or re-add `material-icons-extended`**. Add an icon by fetching its Material Symbol into `ui/icon/AppIcons.<Name>.kt` (mirror an existing file), then reference `AppIcons.<Name>`.
 
 ## Quick file map

@@ -11,6 +11,8 @@ import io.grimoire.api.source.http.HttpSource
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -74,6 +76,23 @@ class ExtensionHostApiTest {
     }
 
     @Test
+    fun declaredRequirementsAreCheckedBeforeCachedOrMissingCodeCanLoad() {
+        val info = fixtureInfo("en.webnovel")
+        val cached = loader.load(info)!!.source
+        assertNotNull(cached)
+        val future = loader.load(info.copy(minimumApiVersion = "1.6"))
+        assertNotNull("A rejected cached source must remain manageable", future)
+        assertTrue(!future!!.isCompatible)
+        assertNull(future.source)
+        assertNotSame("Rejected requirements must release the cached source", cached, loader.load(info)!!.source)
+        val malformed = loader.load(info.copy(
+            minimumApiVersion = "invalid", apkPath = "missing.apk", sourceClassName = "MustNotLoad",
+        ))
+        assertNotNull("Rejection must happen before creating a class loader", malformed)
+        assertNull(malformed!!.source)
+    }
+
+    @Test
     fun installedGalaxySourceCanReachTheHostPageRenderer() = runBlocking {
         val source = load("ar.galaxynovels")
         val browser = source.javaClass.classLoader!!.loadClass("io.grimoire.api.network.SourceBrowser")
@@ -98,7 +117,7 @@ class ExtensionHostApiTest {
     }
 
     @Suppress("DEPRECATION")
-    private fun load(name: String): Source {
+    private fun fixtureInfo(name: String): ExtensionInfo {
         val packageName = "io.grimoire.extension.$name"
         val pkg = context.packageManager.getPackageInfo(packageName, PackageManager.GET_META_DATA)
         val app = requireNotNull(pkg.applicationInfo)
@@ -106,9 +125,18 @@ class ExtensionHostApiTest {
             packageName, context.packageManager.getApplicationLabel(app).toString(),
             pkg.versionName.orEmpty(), PackageInfoCompat.getLongVersionCode(pkg),
             requireNotNull(app.metaData.getString("grimoire.extension.class")), app.sourceDir,
+            if (app.metaData.containsKey("grimoire.extension.minApi")) app.metaData.getString("grimoire.extension.minApi").orEmpty() else null,
         )
-        val source = loader.load(info)
-        assertNotNull("Could not load fixture $packageName", source)
-        return requireNotNull(source)
+        assertEquals("The fixture APK must declare its API requirement", "1.5", info.minimumApiVersion)
+        return info
+    }
+
+    private fun load(name: String): Source {
+        val info = fixtureInfo(name)
+        val packageName = info.packageName
+        val loaded = loader.load(info)
+        assertNotNull("Could not load fixture $packageName", loaded)
+        assertTrue("Fixture $packageName must be compatible", loaded!!.isCompatible)
+        return requireNotNull(loaded.source)
     }
 }

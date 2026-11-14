@@ -715,4 +715,5 @@
     <string name="source_validate_nothing">Bei dieser Quelle gibt es nichts zu prüfen.</string>
     <string name="source_validate_failed">Prüfung fehlgeschlagen.</string>
     <plurals name="novel_export_success"><item quantity="one">%1$d Kapitel exportiert</item><item quantity="other">%1$d Kapitel exportiert</item></plurals>
+    <string name="extension_api_required">Erweiterung erfordert API %1$s (App-API: %2$s)</string>
 </resources>

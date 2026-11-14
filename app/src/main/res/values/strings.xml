@@ -715,4 +715,5 @@
     <string name="source_validate_nothing">This source has nothing to validate.</string>
     <string name="source_validate_failed">Validation failed.</string>
     <plurals name="novel_export_success"><item quantity="one">Exported %1$d chapter</item><item quantity="other">Exported %1$d chapters</item></plurals>
+    <string name="extension_api_required">Extension requires API %1$s (app API: %2$s)</string>
 </resources>

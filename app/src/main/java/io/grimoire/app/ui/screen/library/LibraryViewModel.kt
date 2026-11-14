@@ -209,7 +209,7 @@ class LibraryViewModel @Inject constructor(
     ) { favoritesOrNull, exts ->
         val favorites = favoritesOrNull.orEmpty()
         val sourceIds = favorites.map { it.sourceId }.toSortedSet()
-        val nameBySourceId = exts.associate { it.id to it.source.name }
+        val nameBySourceId = exts.associate { it.id to (it.source?.name ?: it.info.label) }
         sourceIds.map { id ->
             LibrarySourceOption(id = id, name = nameBySourceId[id])
         }

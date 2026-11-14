@@ -700,4 +700,5 @@
     <string name="source_validate_nothing">이 소스에는 검증할 항목이 없어요.</string>
     <string name="source_validate_failed">검증에 실패했어요.</string>
     <plurals name="novel_export_success"><item quantity="other">챕터 %1$d개를 내보냈어요</item></plurals>
+    <string name="extension_api_required">확장 기능에 API %1$s 필요(앱 API: %2$s)</string>
 </resources>

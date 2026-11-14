@@ -55,6 +55,7 @@ is copied into the app or rewritten for the test.
 The tests check host ownership of the cookie/browser APIs, host-written
 fixture login cookies followed by a signed-in assertion and logout on all four login sources,
 and a controlled rendered page through the API resolved by GalaxyNovels.
+They also verify API rejection before cached code or a missing APK can load.
 These checks do not establish real-site authentication or challenge handling.
 The workflow retains APK hashes and the instrumentation result.
 
@@ -90,7 +91,25 @@ adb shell am instrument -w -r \
 The fixture sources are WebNovel, Azure Chronicles, Z-Library, Cale Red Hair,
 and GalaxyNovels. Without the explicit fixture flag, these tests are skipped.
 With the flag, missing fixture packages fail the run. Use the workflow's pinned
-source revision to reproduce its APKs. A successful run reports `OK (3 tests)`.
+source revision to reproduce its APKs. A successful run reports `OK (4 tests)`.
+
+### Extension API requirements
+
+APKs declare `grimoire.extension.minApi` through a string resource generated from
+the shared extension library's API catalog pin. JARs declare the matching
+`Grimoire-Core-Api` value. The format is `major.minor`; patch releases retain the
+same binary API contract. Extension authors change one catalog pin, not a second
+source implementation or a per-platform parser.
+
+The loader checks this declaration before creating a class loader or using a
+cached source. It requires the same major version and a sufficient minor
+version. Malformed declarations fail closed. APKs released before this metadata
+existed keep their existing metadata compatibility probe.
+
+Rejected APKs remain visible for updates and removal, with their package/source
+identity preserved. They have no `Source` instance and never enter the usable
+source list. A valid unsupported requirement shows the required and provided
+API versions in the extension row.
 
 ## Optional diagnostics configuration
 

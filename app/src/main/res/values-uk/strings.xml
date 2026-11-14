@@ -753,4 +753,5 @@
         <item quantity="many">Експортовано %1$d розділів</item>
         <item quantity="other">Експортовано %1$d розділу</item>
     </plurals>
+    <string name="extension_api_required">Розширення потребує API %1$s (API застосунку: %2$s)</string>
 </resources>

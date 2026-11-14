@@ -700,4 +700,5 @@
     <string name="source_validate_nothing">Nguồn này không có gì để kiểm tra.</string>
     <string name="source_validate_failed">Kiểm tra thất bại.</string>
     <plurals name="novel_export_success"><item quantity="other">Đã xuất %1$d chương</item></plurals>
+    <string name="extension_api_required">Tiện ích mở rộng yêu cầu API %1$s (API ứng dụng: %2$s)</string>
 </resources>

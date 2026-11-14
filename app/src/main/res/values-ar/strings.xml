@@ -787,4 +787,5 @@
         <item quantity="many">تم تصدير %1$d فصلًا</item>
         <item quantity="other">تم تصدير %1$d فصل</item>
     </plurals>
+    <string name="extension_api_required">يتطلب الامتداد API %1$s (واجهة التطبيق: %2$s)</string>
 </resources>

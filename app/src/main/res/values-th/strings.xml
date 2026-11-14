@@ -699,4 +699,5 @@
     <string name="source_validate_nothing">แหล่งที่มานี้ไม่มีอะไรให้ตรวจสอบ</string>
     <string name="source_validate_failed">การตรวจสอบล้มเหลว</string>
     <plurals name="novel_export_success"><item quantity="other">ส่งออกแล้ว %1$d ตอน</item></plurals>
+    <string name="extension_api_required">ส่วนขยายต้องใช้ API %1$s (API ของแอป: %2$s)</string>
 </resources>

@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Operation-Grimoire/grimoire-extensions
-          ref: 2d64da8926d9b83d48fc123db6834090196aeb03
+          ref: b163910fe1368ec6a3c927b5fb9c70185eb9bffa
           path: fixtures
           persist-credentials: false
       - uses: actions/setup-java@v4
