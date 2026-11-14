@@ -129,10 +129,11 @@ class GitPolicyTest(unittest.TestCase):
         for i, value in enumerate([{"android": []}, {"android": [], "desktop": "none"},
                 {"android": [{"category": "bogus", "text": "bad"}], "desktop": []},
                 {"android": [{"category": "fix", "text": "two\nlines"}], "desktop": []}]):
-            self.write(f".changes/{i}-bad.json", json.dumps(value))
+            path = f".changes/{i}-bad.json"
+            self.write(path, json.dumps(value))
             head = self.save()
             with self.assertRaises(ValueError):
-                policy.validate(self.base, head)
+                policy.validate(self.run_git("rev-parse", "HEAD^"), head)
 
     def test_previous_uses_platform_channel_complete_assets_and_ancestry(self):
         stable = self.release("v1.0.5")
@@ -150,6 +151,25 @@ class GitPolicyTest(unittest.TestCase):
         self.assertEqual("v1.0.5", policy.previous(catalog, "android", "stable", beta_sha))
         self.assertEqual("desktop-v9.0.0", policy.previous(catalog, "desktop", "stable", beta_sha))
         self.assertEqual("v1.0.5", policy.previous(catalog, "android", "beta", beta_sha, beta["tag_name"]))
+
+    def test_missing_published_tag_fails_instead_of_widening_release_range(self):
+        published = {"tag_name": "v1.0.5", "assets": [{"name": "grimoire.apk"}]}
+        with self.assertRaisesRegex(RuntimeError, "Missing local tag"):
+            policy.previous([[published]], "android", "beta", self.base)
+
+    def test_plan_rejects_runtime_without_fragment_even_when_forced(self):
+        self.release("v1.0.5-beta.341")
+        self.write("app/src/main/Reader.kt", "runtime without notes classification")
+        self.save()
+        self.write("catalog.json", "[]")
+        script = Path(__file__).with_name("release_policy.py")
+        result = subprocess.run([os.sys.executable, str(script), "plan", "--platform", "android",
+            "--channel", "beta", "--catalog", "catalog.json", "--notes", "notes.md", "--force"],
+            capture_output=True, text=True,
+            env={key: value for key, value in os.environ.items() if key != "GITHUB_OUTPUT"})
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("need a new", result.stderr)
+        self.assertFalse(Path("notes.md").exists())
 
     def test_rename_between_platforms_counts_both(self):
         self.write("app/src/main/Shared.kt", "runtime")

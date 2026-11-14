@@ -17,6 +17,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val REPO = "Operation-Grimoire/grimoire"
+private const val LATEST_RELEASE_URL = "https://api.github.com/repos/$REPO/releases/latest"
 private const val RELEASES_LIST_URL = "https://api.github.com/repos/$REPO/releases?per_page=100"
 private const val APK_MIME = "application/vnd.android.package-archive"
 
@@ -37,13 +38,18 @@ class AppUpdateChecker @Inject constructor(
         checkAppUpdate(
             channel, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE,
             fetchStable = {
-                collectAndroidReleases(UpdateChannel.STABLE, ::page, minimumMatches = 1)
+                latestAndroidStable() ?: collectAndroidReleases(UpdateChannel.STABLE, ::page, minimumMatches = 1)
                     .maxByOrNull { releaseVersionCode(it.tag_name) }
             },
             fetchReleases = { collectAndroidReleases(channel, ::page) },
             fetchChecksum = ::fetchText,
         )
     }
+
+    // Preserve the legacy optional latest-stable fast path. This repo-wide slot
+    // can point at another platform: validate it and fall back to the shared feed.
+    private fun latestAndroidStable(): GitHubRelease? =
+        runCatching { fetchRelease(LATEST_RELEASE_URL) }.getOrNull()?.takeIf(::isAndroidStableRelease)
 
     private fun fetchRelease(url: String): GitHubRelease? {
         val conn = URL(url).openConnection() as HttpURLConnection
@@ -104,10 +110,11 @@ class AppUpdateChecker @Inject constructor(
         runCatching {
             val pages = mutableMapOf<Int, List<GitHubRelease>>()
             fun page(number: Int) = pages.getOrPut(number) { fetchReleases("$RELEASES_LIST_URL&page=$number") }
-            val releases = collectAndroidReleases(channel, ::page)
+            val releases = collectAndroidReleases(channel, ::page, countMatch = {
+                isInNotesRange(it, fromTag, toTag, channel)
+            })
             val included = notesReleasesSince(releases, fromTag, toTag, channel) {
-                collectAndroidReleases(UpdateChannel.STABLE, ::page, minimumMatches = 1)
-                    .maxByOrNull { releaseVersionCode(it.tag_name) }
+                latestAndroidStable()
             }
             if (included.isEmpty()) return@runCatching null
             aggregateReleaseNotes(included)

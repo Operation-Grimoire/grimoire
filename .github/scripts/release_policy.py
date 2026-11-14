@@ -25,7 +25,7 @@ def git(*args):
 
 
 def commit(ref):
-    return git("rev-parse", "--verify", "--end-of-options", ref + "^{commit}")
+    return git("rev-parse", "--verify", "--quiet", "--end-of-options", ref + "^{commit}")
 
 
 def changes(base, head):
@@ -138,8 +138,8 @@ def previous(catalog, platform, channel, head, exclude=""):
                 continue
             try:
                 sha = commit("refs/tags/" + tag)
-            except subprocess.CalledProcessError:
-                continue
+            except subprocess.CalledProcessError as error:
+                raise RuntimeError(f"Missing local tag for published release: {tag}") from error
             result = subprocess.run(["git", "merge-base", "--is-ancestor", sha, head], check=False)
             if result.returncode == 0:
                 candidates.append((key, tag))
@@ -196,7 +196,7 @@ def main():
         catalog = json.loads(Path(args.catalog).read_text(encoding="utf-8-sig"))
         prior = previous(catalog, args.platform, args.channel, head, args.exclude_tag)
         base = commit("refs/tags/" + prior) if prior else empty_tree()
-        affected = impact(path for _, path in changes(base, head))
+        affected = validate(base, head)
         Path(args.notes).parent.mkdir(parents=True, exist_ok=True)
         Path(args.notes).write_text(notes(base, head, args.platform), encoding="utf-8")
         # Desktop publication remains disabled until installer acceptance. The

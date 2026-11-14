@@ -6,6 +6,21 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AppUpdateSelectionTest {
+    @Test fun notesPaginationCountsTheInstalledRangeRatherThanNewerBuilds() {
+        val pages = listOf(
+            listOf(release("v1.0.0-beta.500"), release("v1.0.0-beta.499")),
+            listOf(release("v1.0.0-beta.341"), release("desktop-v9.0.0")),
+            listOf(release("v1.0.0-beta.340")),
+        )
+        val requested = mutableListOf<Int>()
+        val collected = collectAndroidReleases(UpdateChannel.BETA,
+            { requested += it; pages[it - 1] }, pageSize = 2, minimumMatches = 2,
+            countMatch = { isInNotesRange(it, "v1.0.0-beta.339", "v1.0.0-beta.341", UpdateChannel.BETA) })
+        assertEquals(listOf(1, 2, 3), requested)
+        assertEquals(listOf("v1.0.0-beta.341", "v1.0.0-beta.340"),
+            notesReleasesSince(collected, "v1.0.0-beta.339", "v1.0.0-beta.341", UpdateChannel.BETA).map { it.tag_name })
+    }
+
     @Test fun paginationFindsAndroidBeyondDesktopPages() {
         val pages = listOf(List(2) { release("desktop-v1.0.$it") }, listOf(release("desktop-v1.1.0"), release("v1.0.1")), emptyList())
         val requested = mutableListOf<Int>()

@@ -40,13 +40,14 @@ internal fun collectAndroidReleases(
     pageSize: Int = 100,
     maxPages: Int = 10,
     minimumMatches: Int = MAX_AGGREGATED_RELEASES,
+    countMatch: (GitHubRelease) -> Boolean = { true },
 ): List<GitHubRelease> {
     require(pageSize > 0 && maxPages > 0 && minimumMatches > 0)
     val result = mutableListOf<GitHubRelease>()
     for (page in 1..maxPages) {
         val releases = fetchPage(page)
         result += releases.filter { isAndroidRelease(it) && (channel == UpdateChannel.BETA || !it.prerelease) }
-        if (releases.size < pageSize || result.size >= minimumMatches) return result
+        if (releases.size < pageSize || result.count(countMatch) >= minimumMatches) return result
     }
     error("Android release lookup exceeded its page limit")
 }
@@ -102,21 +103,21 @@ internal fun notesReleasesSince(
     fetchLatestStable: () -> GitHubRelease? = { null },
 ): List<GitHubRelease> {
     val latestStable = runCatching { fetchLatestStable() }.getOrNull()?.takeIf(::isAndroidStableRelease)
-    val included = releases.withLatestStable(latestStable).filter { release ->
-        if (!isAndroidRelease(release)) return@filter false
-        when (channel) {
-            UpdateChannel.STABLE -> !release.prerelease &&
-                compareSemver(release.tag_name, fromTag) > 0 && compareSemver(release.tag_name, toTag) <= 0
-            UpdateChannel.BETA -> releaseVersionCode(release.tag_name) > releaseVersionCode(fromTag) &&
-                releaseVersionCode(release.tag_name) <= releaseVersionCode(toTag)
-        }
-    }
+    val included = releases.withLatestStable(latestStable).filter { isInNotesRange(it, fromTag, toTag, channel) }
     val order = when (channel) {
         UpdateChannel.STABLE -> compareBy<GitHubRelease> { AppUpdateChecker.SemverKey(it.tag_name.removePrefix("v")) }
         UpdateChannel.BETA -> VERSION_CODE_ORDER
     }
     return included.sortedWith(order.reversed()).take(MAX_AGGREGATED_RELEASES)
 }
+
+internal fun isInNotesRange(release: GitHubRelease, fromTag: String, toTag: String, channel: UpdateChannel): Boolean =
+    isAndroidRelease(release) && when (channel) {
+        UpdateChannel.STABLE -> !release.prerelease &&
+            compareSemver(release.tag_name, fromTag) > 0 && compareSemver(release.tag_name, toTag) <= 0
+        UpdateChannel.BETA -> releaseVersionCode(release.tag_name) > releaseVersionCode(fromTag) &&
+            releaseVersionCode(release.tag_name) <= releaseVersionCode(toTag)
+    }
 
 internal fun aggregateReleaseNotes(releases: List<GitHubRelease>): String = releases
     .filter { it.body.isNotBlank() }

@@ -177,8 +177,9 @@ unrelated PRs.
   needed when it isn't obvious from the diff.
 ### Beta validation and stable releases
 
-Merging to `master` builds a signed nightly beta through
-`.github/workflows/nightly.yml`. Validate that exact beta before a stable release.
+Merging pending Android runtime changes to `master` builds a signed nightly beta
+through `.github/workflows/nightly.yml`. Desktop-only, test-only and CI/docs
+changes do not trigger Android publication. Validate that exact beta before a stable release.
 Record its version, commit and APK hash with the checks performed and any skipped
 acceptance steps. Green build checks alone do not establish beta acceptance.
 
