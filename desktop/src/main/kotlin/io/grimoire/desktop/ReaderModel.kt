@@ -44,10 +44,11 @@ class ReaderModel(
 
     fun load(manifest: Path) = operate {
         val loaded = LocalExtension.open(manifest, hostApi)
-        try { extension?.close() }
+        try { library.flush(); extension?.close() }
         catch (failure: Exception) { loaded.close(); throw failure }
         extension = loaded
-        mutable.update { it.copy(sourceName = loaded.source.name) }
+        mutable.update { it.copy(sourceName = loaded.source.name, view = View.LIBRARY,
+            novels = emptyList(), book = null, chapter = null, pages = emptyList(), library = library.saved()) }
     }
 
     fun browse() = operate {
@@ -59,6 +60,7 @@ class ReaderModel(
     }
 
     fun details(novel: Novel) = operate {
+        check(state.value.view == View.BROWSE && novel in state.value.novels) { "This catalog selection is no longer current" }
         check(!state.value.offline) { "Novel refresh is unavailable offline" }
         val loaded = extension ?: error("Open a compatible local extension first")
         val source = loaded.source as? ChapterListSource ?: error("This source's chapter list is unsupported")

@@ -22,6 +22,30 @@ import java.util.concurrent.TimeUnit
 class RoyalRoadJourneyTest {
     @get:Rule val temporary = TemporaryFolder()
 
+    @Test fun reimportDropsCatalogAndRejectsStaleNovelBeforeHttp() = runBlocking {
+        SourceNetwork.install(platform)
+        allowed.set(true)
+        requests.set(0)
+        val model = ReaderModel(LocalLibrary(temporary.newFolder().toPath()), "1.5.0", allowed)
+        val manifest = Paths.get(checkNotNull(System.getProperty("desktop.test.manifest")))
+        try {
+            model.load(manifest)
+            model.settled()
+            model.browse()
+            model.settled()
+            val oldNovel = model.state.value.novels.single()
+            model.load(manifest)
+            model.settled()
+            assertEquals(View.LIBRARY, model.state.value.view)
+            assertTrue(model.state.value.novels.isEmpty())
+            val count = requests.get()
+            model.details(oldNovel)
+            model.settled(expectError = true)
+            assertNotNull(model.state.value.error)
+            assertEquals(count, requests.get())
+        } finally { model.close() }
+    }
+
     @Test fun packagedSourceReadsThenRestartsOfflineWithoutAnExtension() = runBlocking {
         SourceNetwork.install(platform)
         allowed.set(true)
