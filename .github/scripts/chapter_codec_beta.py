@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import sqlite3
 import subprocess
+import sys
 
 
 OUTPUT = Path("build/chapter-codec-beta")
@@ -29,8 +30,15 @@ def run(*args, check=True):
 def main():
     # This harness intentionally replaces a fixture app DB. Never run it on a
     # person's workstation or against an attached physical device.
-    if not __debug__ or os.environ.get("GITHUB_ACTIONS") != "true" or os.environ.get("RUNNER_OS") != "Linux":
-        raise RuntimeError("CI-only fixture harness; requires enabled assertions and a fresh Linux runner")
+    if not __debug__:
+        raise RuntimeError("CI-only fixture harness: Python assertions must be enabled")
+    workspace_value = os.environ.get("GITHUB_WORKSPACE")
+    workspace = Path(workspace_value).resolve() if workspace_value else None
+    if (sys.platform != "linux" or os.environ.get("GITHUB_ACTIONS") != "true" or
+            os.environ.get("RUNNER_OS") != "Linux" or os.environ.get("RUNNER_ENVIRONMENT") != "github-hosted" or
+            workspace is None or workspace != Path.cwd().resolve() or
+            not workspace.is_relative_to(Path("/home/runner/work").resolve())):
+        raise RuntimeError("CI-only fixture harness; requires enabled assertions and the fresh hosted Linux workspace")
     tag = os.environ["CODEC_BETA_TAG"]
     assert re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+", tag) and tag != BASELINE
     expected_sha = os.environ["GITHUB_SHA"]

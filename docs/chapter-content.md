@@ -103,5 +103,7 @@ old-APK downgrade refusal, and recovers by reinstalling the new APK. It retains
 the first result, logs and database copies. It does not claim a reader UI journey
 or acceptance on the user's phone. Never run its DB-replacement setup on a personal
 device. Stable release remains an explicit user decision after beta validation.
-This signed check is pinned to the DB33 rollout and requires the beta.342 release
-assets to remain available; retain its evidence before normal beta pruning.
+The nightly pruner retains beta.342 in addition to the newest ten Android betas
+while this pinned migration harness is maintained. Retire the retention pin and
+the harness together. CI-context checks guard accidental local execution; they
+are not a security sandbox for someone deliberately modifying the script/host.

@@ -22,6 +22,7 @@ internal fun escapeEpubXml(text: String): String {
             '>' -> append("&gt;")
             '"' -> append("&quot;")
             '\'' -> append("&#39;")
+            '\r' -> append("&#13;")
             else -> append(char)
         }
     }

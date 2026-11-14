@@ -233,6 +233,20 @@ class GitPolicyTest(unittest.TestCase):
 
 
 class ReleaseMetadataTest(unittest.TestCase):
+    def test_pruning_keeps_newest_ten_plus_pinned_migration_baseline(self):
+        releases = [{"tag_name": f"v1.0.5-beta.{number}", "prerelease": True,
+                     "created_at": f"2026-11-{number - 340:02d}T00:00:00Z"} for number in range(341, 366)]
+        unrelated = [{"tag_name": tag, "prerelease": beta, "created_at": "2099-01-01T00:00:00Z"}
+                     for tag, beta in (("desktop-v9.0.0-beta.99", True), ("v2.0.0", False), ("v1.0.5-beta.366", False))]
+        actual = policy.android_betas_to_prune([releases[:10], unrelated + releases[10:]])
+        self.assertEqual([f"v1.0.5-beta.{number}" for number in range(355, 340, -1) if number != 342], actual)
+
+    def test_small_beta_catalog_is_not_pruned_and_zero_retention_is_rejected(self):
+        releases = [{"tag_name": f"v1.0.5-beta.{number}", "prerelease": True} for number in (341, 342, 343)]
+        self.assertEqual([], policy.android_betas_to_prune([releases]))
+        with self.assertRaises(ValueError):
+            policy.android_betas_to_prune([releases], keep=0)
+
     def test_unrelated_and_inconsistent_tags_are_rejected(self):
         for tag in ("v1.0.5-alpha.1", "v01.0.5", "desktop-v9.0.0", "not-a-version"):
             self.assertIsNone(policy.release_key({"tag_name": tag}, "android", "beta"))

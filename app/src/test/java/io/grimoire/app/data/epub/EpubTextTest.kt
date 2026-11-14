@@ -6,7 +6,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 class EpubTextTest {
     @Test fun validUnicodeAndEscapedMarkupRoundTripThroughAnXmlParser() {
-        val text = "& <> \"'\t\n中文😀"
+        val text = "& <> \"'\t\n\r\r\n中文😀"
         val document = "<p>${escapeEpubXml(text)}</p>".toByteArray(Charsets.UTF_8)
         val parsed = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(document.inputStream())
         assertEquals(text, parsed.documentElement.textContent)

@@ -68,6 +68,10 @@ Android retains `vX.Y.Z` and `vX.Y.Z-beta.N`. Keep the existing `nightly.yml`
 workflow identity and `github.run_number` counter. Android's existing versionCode
 encoding and its beta-number cap remain unchanged in this migration.
 
+Nightly pruning keeps the newest ten Android betas plus the explicitly pinned
+beta.342 DB32 baseline used by the chapter-codec migration harness. Retire that
+baseline pin together with the harness, rather than deleting its proof inputs.
+
 Desktop reserves `desktop-vX.Y.Z` and `desktop-vX.Y.Z-beta.N`, with one version
 for all operating-system artifacts. Desktop CI writes a release-plan and scoped
 notes artifact on master. It never publishes installers, including with force.

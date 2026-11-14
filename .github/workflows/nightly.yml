@@ -62,6 +62,10 @@ jobs:
           name: android-beta-notes
           path: build/android-release
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
       - name: Compute beta version
         id: ver
         run: |
@@ -142,13 +146,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          # Keep the most recent 10 beta releases; delete older ones along
-          # with their git tags. Caps storage and matches the checker's
-          # MAX_AGGREGATED_RELEASES = 10.
-          OLD=$(gh release list --limit 100 \
-            --json tagName,isPrerelease,createdAt \
-            --jq '[.[] | select(.isPrerelease and (.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-beta\\.[0-9]+$")))]
-                  | sort_by(.createdAt) | reverse | .[10:] | .[].tagName')
+          # Keep the newest 10 plus explicit migration baselines. Never prune
+          # the signed DB32 baseline while its upgrade harness is maintained.
+          gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases?per_page=100" > build/android-release/prune-catalog.json
+          OLD=$(python .github/scripts/release_policy.py prune --catalog build/android-release/prune-catalog.json)
           if [ -z "$OLD" ]; then
             echo "No old beta releases to prune."
             exit 0

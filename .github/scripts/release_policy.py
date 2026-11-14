@@ -18,6 +18,9 @@ CATEGORIES = {"feature": "Features", "fix": "Bug fixes", "source": "Sources",
 TAG = re.compile(r"^(desktop-)?v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\."
                  r"(0|[1-9][0-9]*)(?:-beta\.(0|[1-9][0-9]*))?$")
 FRAGMENT = re.compile(r"^\.changes/[a-z0-9][a-z0-9-]*\.json$")
+# Keep the signed DB32 baseline available for #409's upgrade/rollback proof.
+# Retire this pin together with the dedicated signed-beta harness.
+PINNED_ANDROID_BETAS = {"v1.0.5-beta.342"}
 
 
 def git(*args):
@@ -154,6 +157,21 @@ def empty_tree():
     return subprocess.check_output(["git", "hash-object", "-t", "tree", "--stdin"], input=b"").decode().strip()
 
 
+def android_betas_to_prune(catalog, keep=10):
+    if keep < 1:
+        raise ValueError("Must retain at least one Android beta")
+    eligible = {}
+    for page in catalog:
+        for release in page if isinstance(page, list) else [page]:
+            tag = release.get("tag_name", "")
+            match = TAG.fullmatch(tag)
+            if (match and not match[1] and match[5] is not None and
+                    release.get("prerelease") is True and not release.get("draft", False)):
+                eligible[tag] = release
+    ordered = sorted(eligible.values(), key=lambda release: (release.get("created_at", ""), release["tag_name"]), reverse=True)
+    return [release["tag_name"] for release in ordered[keep:] if release["tag_name"] not in PINNED_ANDROID_BETAS]
+
+
 def emit(values):
     lines = [f"{key}={str(value).lower() if isinstance(value, bool) else value}" for key, value in values.items()]
     print("\n".join(lines))
@@ -167,6 +185,8 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     ci = sub.add_parser("ci")
     ci.add_argument("--event", default=os.environ.get("GITHUB_EVENT_PATH"))
+    prune = sub.add_parser("prune")
+    prune.add_argument("--catalog", required=True)
     for command in ("impact", "validate", "notes"):
         child = sub.add_parser(command)
         child.add_argument("--base", required=True)
@@ -193,6 +213,9 @@ def main():
             before = event.get("before", "")
             base = commit(before) if before and set(before) != {"0"} else empty_tree()
         emit(validate(base, head))
+    elif args.command == "prune":
+        catalog = json.loads(Path(args.catalog).read_text(encoding="utf-8-sig"))
+        print("\n".join(android_betas_to_prune(catalog)))
     elif args.command == "plan":
         head = commit(args.head)
         catalog = json.loads(Path(args.catalog).read_text(encoding="utf-8-sig"))

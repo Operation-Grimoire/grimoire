@@ -4,12 +4,13 @@ import android.content.Context
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.novel.PageContent
+import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.network.defaultOkHttpClient
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.ChapterImageStore
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
-import io.grimoire.app.data.local.dao.ChapterWithContent
+import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
 import io.grimoire.reading.StoredChapterContent
@@ -29,6 +30,8 @@ import javax.inject.Singleton
 
 /** Outcome of an EPUB export: the novel title and how many chapters were written. */
 data class EpubExportResult(val title: String, val chapterCount: Int)
+
+private data class ChapterForExport(val chapter: ChapterEntity, val pages: List<NovelPage>)
 
 /**
  * Writes any library novel back out as a standards-compliant EPUB 3 file at a
@@ -54,21 +57,20 @@ class EpubExporter @Inject constructor(
         withContext(Dispatchers.IO) {
             runCatching {
                 val novel = novelDao.getById(novelId) ?: error("Novel not found")
-                val chapters = chapterDao.getDownloadedChaptersWithContent(novelId)
-                    .filter { it.content.isNotEmpty() }
-                require(chapters.isNotEmpty()) {
-                    "No downloaded chapters to export. Download chapters first."
-                }
-
                 // Validate before opening/truncating the destination. The storage codec
                 // preserves controls, but XML 1.0 cannot represent them faithfully.
                 listOf(novel.effectiveTitle, novel.effectiveAuthor.orEmpty(),
                     (novel.overrideDescription ?: novel.description).orEmpty(),
                     novel.overrideGenres ?: novel.genres, novel.language.orEmpty()).forEach(::requireEpubXmlText)
-                chapters.forEach { chapter ->
-                    requireEpubXmlText(chapter.chapter.name)
-                    decodeChapterContent(StoredChapterContent(chapter.content, chapter.contentVersion))
-                        .forEach { page -> (page.content as? PageContent.Text)?.let { requireEpubXmlText(it.text) } }
+                val chapters = chapterDao.getDownloadedChaptersWithContent(novelId)
+                    .filter { it.content.isNotEmpty() }.map { stored ->
+                        requireEpubXmlText(stored.chapter.name)
+                        val pages = decodeChapterContent(StoredChapterContent(stored.content, stored.contentVersion))
+                        pages.forEach { page -> (page.content as? PageContent.Text)?.let { requireEpubXmlText(it.text) } }
+                        ChapterForExport(stored.chapter, pages)
+                    }
+                require(chapters.isNotEmpty()) {
+                    "No downloaded chapters to export. Download chapters first."
                 }
 
                 val output = context.contentResolver.openOutputStream(dest)
@@ -86,7 +88,7 @@ class EpubExporter @Inject constructor(
         zip: ZipOutputStream,
         novelId: Long,
         novel: NovelEntity,
-        chapters: List<ChapterWithContent>,
+        chapters: List<ChapterForExport>,
     ) {
         // The mimetype entry must be first and stored uncompressed (OCF spec).
         zip.putStored("mimetype", "application/epub+zip".toByteArray(Charsets.US_ASCII))
@@ -119,8 +121,7 @@ class EpubExporter @Inject constructor(
             val images: List<ImageEntry>,
         )
 
-        val chapterDocs = chapters.mapIndexed { index, (chapter, content, version) ->
-            val pages = decodeChapterContent(StoredChapterContent(content, version))
+        val chapterDocs = chapters.mapIndexed { index, (chapter, pages) ->
             val images = ArrayList<ImageEntry>()
             val body = StringBuilder()
             body.append("    <h1>").append(escape(chapter.name)).append("</h1>\n")
