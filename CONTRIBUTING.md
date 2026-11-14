@@ -172,9 +172,20 @@ unrelated PRs.
 - Keep PRs focused; update any doc your change contradicts in the same PR.
 - Write clear commit messages — a one-line summary, then *why* the change is
   needed when it isn't obvious from the diff.
-- CI builds signed release APKs from a pushed `vX.Y.Z` tag
-  (`.github/workflows/release.yml`); the `versionCode`/`versionName` are derived
-  from that tag, so you don't bump versions by hand.
+### Beta validation and stable releases
+
+Merging to `master` builds a signed nightly beta through
+`.github/workflows/nightly.yml`. Validate that exact beta before a stable release.
+Record its version, commit and APK hash with the checks performed and any skipped
+acceptance steps. Green build checks alone do not establish beta acceptance.
+
+Create a stable `vX.Y.Z` tag or dispatch `.github/workflows/release.yml` only after
+an explicit request to publish a stable release. Instructions to continue work,
+merge a PR or validate the beta do not authorize a stable release. Do not promote
+beta validation into a stable release automatically.
+
+The stable workflow derives `versionCode` and `versionName` from the approved tag;
+do not bump app versions by hand.
 
 ## License
 
