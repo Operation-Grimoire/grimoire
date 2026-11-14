@@ -1,0 +1,89 @@
+name: Extension host API
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: extension-api-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      APP_VERSION_TAG: v0.0.0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Operation-Grimoire/grimoire-extensions
+          ref: 2d64da8926d9b83d48fc123db6834090196aeb03
+          path: fixtures
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build the host and unchanged extension implementations
+        run: |
+          chmod +x gradlew fixtures/gradlew
+          ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+          fixtures/gradlew -p fixtures :en-webnovel:assembleDebug :en-azurechronicles:assembleDebug :all-zlibrary:assembleDebug :en-caleredhair:assembleDebug :ar-galaxynovels:assembleDebug
+          mkdir -p build/extension-api
+          cp app/build/outputs/apk/debug/app-debug.apk build/extension-api/host.apk
+          cp app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk build/extension-api/tests.apk
+          for module in en/webnovel en/azurechronicles all/zlibrary en/caleredhair ar/galaxynovels; do
+            artifact=${module//\//-}
+            cp "fixtures/src/$module/build/outputs/apk/debug/$artifact-debug.apk" "build/extension-api/$artifact.apk"
+          done
+          cd build/extension-api
+          sha256sum *.apk > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension-api-apks
+          path: build/extension-api/
+          if-no-files-found: error
+
+  android:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-api-apks
+          path: build/extension-api
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: bash .github/scripts/extension-api-test.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: extension-api-result
+          path: |
+            build/extension-api/result.log
+            build/extension-api/sha256sums.txt
+          if-no-files-found: error

@@ -11,7 +11,7 @@ truth**; if a doc drifts, fix the doc in the same PR.
 - **JDK 17** (CI builds on Temurin 17)
 - **Android SDK** — compileSdk API 36.1, minSdk 26, targetSdk 36
 - Access to the **`io.grimoire:extensions-api`** Android wrapper and its transitive
-  **`io.grimoire:extensions-core`** JVM dependency. API 1.4 also brings the
+  **`io.grimoire:extensions-core`** JVM dependency. API 1.5 also brings the
   `browser-sessions-android` and `browser-sessions-core` artifacts from the
   [Browser sessions repository](https://github.com/Operation-Grimoire/browser-sessions). They resolve from, in
   order, your local Maven cache then GitHub Packages:
@@ -43,6 +43,35 @@ and `-PextensionsApiVersion=VERSION` to use the composite instead of published
 packages. Normal builds use the stable release without either property.
 The normal Android build resolves both GitHub Packages repositories with the same
 package-read credentials.
+
+### Extension API consumer regression
+
+The `Extension host API` workflow builds the app with its normal published API
+pin and five extension APKs from a fixed revision of `grimoire-extensions`.
+It installs them on a fresh API 35 emulator and runs `ExtensionHostApiTest`.
+The APKs use the existing extension source directories; no source implementation
+is copied into the app or rewritten for the test.
+
+The tests check host ownership of the cookie/browser APIs, a host-written
+WebNovel login cookie followed by logout, logout on the other login sources,
+and a controlled rendered page through the API resolved by GalaxyNovels.
+These checks do not establish real-site authentication or challenge handling.
+The workflow retains APK hashes and the instrumentation result.
+
+For a local run, use a disposable emulator with the five fixture APKs installed.
+Build and install `:app:assembleDebug` and `:app:assembleDebugAndroidTest`, then run:
+
+```sh
+adb shell am instrument -w -r \
+  -e class io.grimoire.app.extension.ExtensionHostApiTest \
+  -e extensionApiFixtures true \
+  io.grimoire.app.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+The fixture sources are WebNovel, Azure Chronicles, Z-Library, Cale Red Hair,
+and GalaxyNovels. Without the explicit fixture flag, these tests are skipped.
+With the flag, missing fixture packages fail the run. Use the workflow's pinned
+source revision to reproduce its APKs. A successful run reports `OK (3 tests)`.
 
 ## Optional diagnostics configuration
 
