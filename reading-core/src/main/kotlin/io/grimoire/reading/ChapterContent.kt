@@ -1,0 +1,60 @@
+package io.grimoire.reading
+
+import io.grimoire.api.model.novel.NovelPage
+import io.grimoire.api.model.novel.PageContent
+
+/**
+ * Boundary written between pages when chapter content is persisted, so the
+ * original paragraph structure can be reconstructed on read. Uses the ASCII Unit Separator,
+ * which never occurs in prose and is treated as whitespace by trim/blank/word-count logic.
+ */
+val CHAPTER_PAGE_SEPARATOR: String = 31.toChar().toString()
+
+/**
+ * Prefix marking a persisted page as an illustration: the rest of the token is the image URL
+ * rather than prose. Uses the ASCII Record Separator, which never occurs in real text, so
+ * legacy text-only downloads (which contain no such prefix) keep decoding unchanged.
+ */
+val CHAPTER_IMAGE_MARKER: String = 30.toChar().toString()
+
+/**
+ * Token value marking a persisted page as a scene-break (NovelPage.isSeparator). Uses the
+ * ASCII Group Separator, distinct from the image marker so old downloads (which contain
+ * neither) keep decoding as plain text.
+ */
+val CHAPTER_SEPARATOR_MARKER: String = 29.toChar().toString()
+
+/**
+ * Within a text page token, splits the plain `text` field from an optional `formattedText`
+ * (constrained-HTML) payload. ASCII File Separator — same rationale: legacy tokens without
+ * this byte decode unchanged with `formattedText = null`.
+ */
+val CHAPTER_FORMATTED_MARKER: String = 28.toChar().toString()
+
+/** Serialises chapter [pages] into the single string stored in [ChapterContentEntity.content]. */
+fun encodeChapterContent(pages: List<NovelPage>): String =
+    pages.joinToString(CHAPTER_PAGE_SEPARATOR) { page ->
+        when (val c = page.content) {
+            is PageContent.Separator -> CHAPTER_SEPARATOR_MARKER
+            is PageContent.Image -> CHAPTER_IMAGE_MARKER + c.url
+            is PageContent.Text ->
+                if (c.html != null) c.text + CHAPTER_FORMATTED_MARKER + c.html else c.text
+        }
+    }
+
+/** Reconstructs the chapter pages previously serialised by [encodeChapterContent]. */
+fun decodeChapterContent(content: String): List<NovelPage> =
+    content.split(CHAPTER_PAGE_SEPARATOR).mapIndexed { index, token ->
+        when {
+            token == CHAPTER_SEPARATOR_MARKER ->
+                NovelPage(index, PageContent.Separator())
+            token.startsWith(CHAPTER_IMAGE_MARKER) ->
+                NovelPage(index, PageContent.Image(token.removePrefix(CHAPTER_IMAGE_MARKER)))
+            token.contains(CHAPTER_FORMATTED_MARKER) -> {
+                val parts = token.split(CHAPTER_FORMATTED_MARKER, limit = 2)
+                NovelPage(index, PageContent.Text(parts[0], parts[1]))
+            }
+            else -> NovelPage(index, PageContent.Text(token))
+        }
+    }
+
