@@ -21,6 +21,7 @@ jobs:
       GITHUB_ACTOR: ${{ github.actor }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       APP_VERSION_TAG: v0.0.0
+      APP_BETA_NUMBER: '1'
     steps:
       - uses: actions/checkout@v4
         with:
