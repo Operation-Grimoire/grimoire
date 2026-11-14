@@ -57,4 +57,3 @@ fun decodeChapterContent(content: String): List<NovelPage> =
             else -> NovelPage(index, PageContent.Text(token))
         }
     }
-
