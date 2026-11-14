@@ -2,10 +2,23 @@ package io.grimoire.app.data.update
 
 import io.grimoire.app.data.preferences.UpdateChannel
 import java.io.IOException
+import kotlinx.serialization.json.Json
 import org.junit.Assert.*
 import org.junit.Test
 
 class AppUpdateSelectionTest {
+    @Test fun nullGithubNotesDoNotBreakAnInternalOnlyRelease() {
+        val blank = Json.decodeFromString<GitHubRelease>("""
+            {"tag_name":"v1.0.1","body":null,"name":null,"assets":[
+                {"name":"grimoire.apk","browser_download_url":"https://release/apk"}
+            ]}
+        """.trimIndent())
+        val update = check(stable = blank).getOrThrow()
+        assertEquals("", update?.releaseNotes)
+        assertEquals("1.0.1", update?.displayVersion)
+        assertEquals("", aggregateReleaseNotes(listOf(blank)))
+    }
+
     @Test fun notesPaginationCountsTheInstalledRangeRatherThanNewerBuilds() {
         val pages = listOf(
             listOf(release("v1.0.0-beta.500"), release("v1.0.0-beta.499")),

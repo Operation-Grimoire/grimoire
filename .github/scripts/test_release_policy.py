@@ -160,11 +160,12 @@ class GitPolicyTest(unittest.TestCase):
     def test_started_or_empty_upload_does_not_advance_published_boundary(self):
         stable = self.release("v1.0.5", complete=False)
         beta = self.release("v1.0.5-beta.341")
-        for field, value in (("state", "starter"), ("size", 0)):
-            partial = json.loads(json.dumps(beta))
-            partial["assets"][-1][field] = value
-            with self.subTest(field=field):
-                self.assertEqual("v1.0.5", policy.previous([[partial, stable]], "android", "beta", self.base))
+        for asset in range(len(beta["assets"])):
+            for field, value in (("state", "starter"), ("size", 0)):
+                partial = json.loads(json.dumps(beta))
+                partial["assets"][asset][field] = value
+                with self.subTest(asset=beta["assets"][asset]["name"], field=field):
+                    self.assertEqual("v1.0.5", policy.previous([[partial, stable]], "android", "beta", self.base))
 
     def test_plan_rejects_runtime_without_fragment_even_when_forced(self):
         self.release("v1.0.5-beta.341")

@@ -86,9 +86,9 @@ internal fun checkAppUpdate(
     }
     ReleaseInfo(
         tagName = release.tag_name,
-        displayVersion = release.name.ifBlank { release.tag_name }
+        displayVersion = release.name.orEmpty().ifBlank { release.tag_name }
             .removePrefix("Grimoire").trim().removePrefix("v"),
-        releaseNotes = release.body,
+        releaseNotes = release.body.orEmpty(),
         apkUrl = apk.browser_download_url,
         isPrerelease = release.prerelease,
         sha256 = checksum,
@@ -120,5 +120,5 @@ internal fun isInNotesRange(release: GitHubRelease, fromTag: String, toTag: Stri
     }
 
 internal fun aggregateReleaseNotes(releases: List<GitHubRelease>): String = releases
-    .filter { it.body.isNotBlank() }
-    .joinToString("\n\n") { "## ${it.tag_name}\n\n${it.body.trim()}" }
+    .filterNot { it.body.isNullOrBlank() }
+    .joinToString("\n\n") { "## ${it.tag_name}\n\n${it.body.orEmpty().trim()}" }

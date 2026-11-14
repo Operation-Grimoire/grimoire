@@ -98,7 +98,7 @@ class AppUpdateChecker @Inject constructor(
                 val tag = if (version.startsWith("v")) version else "v$version"
                 if (!isAndroidRelease(GitHubRelease(tag, prerelease = tag.contains("-beta.")))) return@runCatching null
                 fetchRelease("https://api.github.com/repos/$REPO/releases/tags/$tag")
-                    ?.takeIf(::isAndroidRelease)?.body?.trim()
+                    ?.takeIf(::isAndroidRelease)?.let { it.body.orEmpty().trim() }
             }.getOrNull()
         }
 
