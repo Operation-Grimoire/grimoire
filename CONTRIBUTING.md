@@ -61,7 +61,7 @@ The workflow retains APK hashes and the instrumentation result.
 For a local run, use a disposable emulator. Build the host and test APKs:
 
 ```sh
-./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+bash ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
 adb install -r -t app/build/outputs/apk/debug/app-debug.apk
 adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 ```
@@ -70,7 +70,7 @@ Build the five fixture APKs from the workflow's pinned extension revision.
 Set `EXT` to that checkout and install its APKs:
 
 ```sh
-"$EXT/gradlew" -p "$EXT" :en-webnovel:assembleDebug :en-azurechronicles:assembleDebug \
+bash "$EXT/gradlew" -p "$EXT" :en-webnovel:assembleDebug :en-azurechronicles:assembleDebug \
   :all-zlibrary:assembleDebug :en-caleredhair:assembleDebug :ar-galaxynovels:assembleDebug
 for module in en/webnovel en/azurechronicles all/zlibrary en/caleredhair ar/galaxynovels; do
   artifact=${module//\//-}
