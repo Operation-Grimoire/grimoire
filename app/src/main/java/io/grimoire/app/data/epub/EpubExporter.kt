@@ -12,6 +12,7 @@ import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.ChapterWithContent
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
+import io.grimoire.reading.StoredChapterContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Request
@@ -57,6 +58,17 @@ class EpubExporter @Inject constructor(
                     .filter { it.content.isNotEmpty() }
                 require(chapters.isNotEmpty()) {
                     "No downloaded chapters to export. Download chapters first."
+                }
+
+                // Validate before opening/truncating the destination. The storage codec
+                // preserves controls, but XML 1.0 cannot represent them faithfully.
+                listOf(novel.effectiveTitle, novel.effectiveAuthor.orEmpty(),
+                    (novel.overrideDescription ?: novel.description).orEmpty(),
+                    novel.overrideGenres ?: novel.genres, novel.language.orEmpty()).forEach(::requireEpubXmlText)
+                chapters.forEach { chapter ->
+                    requireEpubXmlText(chapter.chapter.name)
+                    decodeChapterContent(StoredChapterContent(chapter.content, chapter.contentVersion))
+                        .forEach { page -> (page.content as? PageContent.Text)?.let { requireEpubXmlText(it.text) } }
                 }
 
                 val output = context.contentResolver.openOutputStream(dest)
@@ -107,8 +119,8 @@ class EpubExporter @Inject constructor(
             val images: List<ImageEntry>,
         )
 
-        val chapterDocs = chapters.mapIndexed { index, (chapter, content) ->
-            val pages = decodeChapterContent(content)
+        val chapterDocs = chapters.mapIndexed { index, (chapter, content, version) ->
+            val pages = decodeChapterContent(StoredChapterContent(content, version))
             val images = ArrayList<ImageEntry>()
             val body = StringBuilder()
             body.append("    <h1>").append(escape(chapter.name)).append("</h1>\n")
@@ -264,16 +276,7 @@ private fun ZipOutputStream.putStored(name: String, bytes: ByteArray) {
     closeEntry()
 }
 
-private fun escape(s: String): String = buildString(s.length) {
-    for (c in s) when (c) {
-        '&' -> append("&amp;")
-        '<' -> append("&lt;")
-        '>' -> append("&gt;")
-        '"' -> append("&quot;")
-        '\'' -> append("&#39;")
-        else -> append(c)
-    }
-}
+private fun escape(s: String): String = escapeEpubXml(s)
 
 private fun utcTimestamp(): String =
     SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)

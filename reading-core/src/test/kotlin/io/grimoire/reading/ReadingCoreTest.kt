@@ -24,7 +24,7 @@ class ReadingCoreTest {
             NovelPage(1, PageContent.Separator()),
             NovelPage(2, PageContent.Image("https://example.org/image.png")),
         )
-        assertEquals(stored, encodeChapterContent(pages))
+        assertEquals(LEGACY_CHAPTER_CONTENT_VERSION, StoredChapterContent(stored).version)
         val decoded = decodeChapterContent(stored)
         assertEquals(pages[0], decoded[0])
         assertTrue(decoded[1].content is PageContent.Separator)

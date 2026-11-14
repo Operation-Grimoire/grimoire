@@ -99,5 +99,6 @@ jobs:
           name: extension-api-result
           path: |
             build/extension-api/result.log
+            build/extension-api/codec-result.log
             build/extension-api/sha256sums.txt
           if-no-files-found: error

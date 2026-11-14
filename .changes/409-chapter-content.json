@@ -1,0 +1,10 @@
+{
+  "android": [
+    {"category": "fix", "text": "Newly saved chapters preserve text, image and formatting boundaries when source text contains control characters."},
+    {"category": "other", "text": "Local storage has changed. Returning to an older app requires a full pre-update app-data copy; library backups do not contain downloaded chapters or images."}
+  ],
+  "desktop": [
+    {"category": "fix", "text": "Newly saved chapters preserve text, image and formatting boundaries when source text contains control characters."},
+    {"category": "other", "text": "Older desktop builds cannot read newly saved chapter files. Keep a pre-update library-directory copy if you need to return to an older build."}
+  ]
+}
