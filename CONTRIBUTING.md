@@ -52,14 +52,33 @@ It installs them on a fresh API 35 emulator and runs `ExtensionHostApiTest`.
 The APKs use the existing extension source directories; no source implementation
 is copied into the app or rewritten for the test.
 
-The tests check host ownership of the cookie/browser APIs, a host-written
-WebNovel login cookie followed by logout, logout on the other login sources,
+The tests check host ownership of the cookie/browser APIs, host-written
+fixture login cookies followed by a signed-in assertion and logout on all four login sources,
 and a controlled rendered page through the API resolved by GalaxyNovels.
 These checks do not establish real-site authentication or challenge handling.
 The workflow retains APK hashes and the instrumentation result.
 
-For a local run, use a disposable emulator with the five fixture APKs installed.
-Build and install `:app:assembleDebug` and `:app:assembleDebugAndroidTest`, then run:
+For a local run, use a disposable emulator. Build the host and test APKs:
+
+```sh
+./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+adb install -r -t app/build/outputs/apk/debug/app-debug.apk
+adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+```
+
+Build the five fixture APKs from the workflow's pinned extension revision.
+Set `EXT` to that checkout and install its APKs:
+
+```sh
+"$EXT/gradlew" -p "$EXT" :en-webnovel:assembleDebug :en-azurechronicles:assembleDebug \
+  :all-zlibrary:assembleDebug :en-caleredhair:assembleDebug :ar-galaxynovels:assembleDebug
+for module in en/webnovel en/azurechronicles all/zlibrary en/caleredhair ar/galaxynovels; do
+  artifact=${module//\//-}
+  adb install -r -t "$EXT/src/$module/build/outputs/apk/debug/$artifact-debug.apk"
+done
+```
+
+Then run the regression:
 
 ```sh
 adb shell am instrument -w -r \

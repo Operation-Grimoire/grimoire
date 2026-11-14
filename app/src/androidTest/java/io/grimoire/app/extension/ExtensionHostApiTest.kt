@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.grimoire.api.source.Source
 import io.grimoire.api.source.feature.WebViewLoginSource
+import io.grimoire.api.source.http.HttpSource
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -18,6 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
@@ -37,19 +39,28 @@ class ExtensionHostApiTest {
 
     @Test
     fun installedLoginSourcesCanLogOut() = runBlocking {
-        for (name in listOf("en.webnovel", "en.azurechronicles", "en.zlibrary", "en.caleredhair")) {
+        val fixtures = mapOf(
+            "en.webnovel" to listOf("uid=397; Domain=.webnovel.com; Path=/; Secure"),
+            "en.azurechronicles" to listOf("wordpress_logged_in_397=fixture; Path=/; Secure"),
+            "en.zlibrary" to listOf("remix_userid=397; Path=/; Secure", "remix_userkey=fixture; Path=/; Secure"),
+            "en.caleredhair" to listOf("session_id=fixture; Path=/; Secure"),
+        )
+        for ((name, cookies) in fixtures) {
             val source = load(name)
             val login = source as WebViewLoginSource
-            if (name == "en.webnovel") {
-                val written = CountDownLatch(1)
-                InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                    CookieManager.getInstance().setCookie(
-                        "https://www.webnovel.com", "uid=397; Domain=.webnovel.com; Path=/; Secure",
-                    ) { written.countDown() }
+            val written = CountDownLatch(cookies.size)
+            val accepted = AtomicBoolean(true)
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                for (cookie in cookies) {
+                    CookieManager.getInstance().setCookie((source as HttpSource).baseUrl, cookie) {
+                        if (!it) accepted.set(false)
+                        written.countDown()
+                    }
                 }
-                assertTrue("Host cookie write timed out", written.await(5, TimeUnit.SECONDS))
-                assertTrue("The extension must see the host's login cookie", login.isLoggedIn())
             }
+            assertTrue("$name host cookie write timed out", written.await(5, TimeUnit.SECONDS))
+            assertTrue("$name host cookies were rejected", accepted.get())
+            assertTrue("$name must see the host's signed-in fixture cookies", login.isLoggedIn())
             login.logout()
             assertEquals("$name must be signed out after logout", false, login.isLoggedIn())
         }
