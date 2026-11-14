@@ -96,7 +96,12 @@ All route constants live in `AppRoutes.kt`. The externally-visible `NAV_TARGET_U
 APP_VERSION_TAG=v0.1.0 ./gradlew :app:assembleRelease
 ```
 
-CI lives in `.github/workflows/release.yml` and builds signed release APKs from a git tag.
+Merging to `master` produces a signed nightly beta through
+`.github/workflows/nightly.yml`. Validate that exact beta before proposing a
+stable release. Create stable tags or dispatch `.github/workflows/release.yml`
+only when the user explicitly requests a stable release. A request to continue,
+merge or validate does not authorize publishing stable. See CONTRIBUTING's
+"Beta validation and stable releases" section for the evidence to record.
 
 ## Known pre-existing warnings (don't fix in unrelated PRs)
 
