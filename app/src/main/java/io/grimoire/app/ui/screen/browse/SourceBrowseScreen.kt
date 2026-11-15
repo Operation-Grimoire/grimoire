@@ -440,12 +440,19 @@ private fun EmptySourceResults(
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                AppIcons.SearchOff,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(48.dp),
+            )
+            Spacer(Modifier.height(12.dp))
             Text(
                 stringResource(R.string.global_search_no_results_found),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
             FilledTonalButton(onClick = onRefresh) {
                 Icon(
                     AppIcons.Refresh,
