@@ -144,6 +144,10 @@ class SourceBrowseViewModel @Inject constructor(
     private val _cloudflareBlocked = MutableStateFlow(false)
     val cloudflareBlocked: StateFlow<Boolean> = _cloudflareBlocked.asStateFlow()
 
+    /** True once at least one non-blank fetch has completed with results (even if empty). */
+    private val _hasLoaded = MutableStateFlow(false)
+    val hasLoaded: StateFlow<Boolean> = _hasLoaded.asStateFlow()
+
     private val _mode = MutableStateFlow(BrowseMode.POPULAR)
     val mode: StateFlow<BrowseMode> = _mode.asStateFlow()
 
@@ -260,6 +264,9 @@ class SourceBrowseViewModel @Inject constructor(
 
     fun setQuery(q: String) {
         _query.value = q
+        if (_mode.value == BrowseMode.SEARCH && _novels.value.isEmpty()) {
+            _hasLoaded.value = false
+        }
     }
 
     fun submitSearch() {
@@ -318,6 +325,7 @@ class SourceBrowseViewModel @Inject constructor(
             page = 1
             _novels.value = emptyList()
             _hasMore.value = false
+            _hasLoaded.value = false
             _isLoading.value = false
             _isLoadingMore.value = false
             _error.value = null
@@ -327,6 +335,7 @@ class SourceBrowseViewModel @Inject constructor(
         viewModelScope.launch {
             if (reset) {
                 _isLoading.value = true
+                _hasLoaded.value = false
                 page = 1
                 _novels.value = emptyList()
                 _hasMore.value = true
@@ -353,6 +362,7 @@ class SourceBrowseViewModel @Inject constructor(
                 val grew = merged.size > _novels.value.size
                 _novels.value = merged
                 _hasMore.value = if (reset) result.isNotEmpty() else grew
+                _hasLoaded.value = true
             }.onFailure { e ->
                 Log.e(TAG, "Load failed [mode=${_mode.value} page=$page pkg=$packageName]", e)
                 if (e is CloudflareException) {

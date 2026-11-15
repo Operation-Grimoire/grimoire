@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -86,6 +87,7 @@ fun SourceBrowseScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
     val hasMore by viewModel.hasMore.collectAsState()
+    val hasLoaded by viewModel.hasLoaded.collectAsState()
     val error by viewModel.error.collectAsState()
     val cloudflareBlocked by viewModel.cloudflareBlocked.collectAsState()
     val mode by viewModel.mode.collectAsState()
@@ -263,11 +265,21 @@ fun SourceBrowseScreen(
             }
             HorizontalDivider()
 
-            when {
-                isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            val contentState = resolveSourceBrowseContent(
+                isLoading = isLoading,
+                cloudflareBlocked = cloudflareBlocked,
+                error = error,
+                mode = mode,
+                query = query,
+                hasActiveFilters = activeFilters.isNotEmpty(),
+                hasLoaded = hasLoaded,
+                hasNovels = novels.isNotEmpty(),
+            )
+            when (contentState) {
+                SourceBrowseContent.LOADING -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
-                cloudflareBlocked && novels.isEmpty() -> Box(
+                SourceBrowseContent.CLOUDFLARE_BLOCKED -> Box(
                     Modifier
                         .fillMaxSize()
                         .padding(24.dp),
@@ -279,7 +291,7 @@ fun SourceBrowseScreen(
                         onRetry = { viewModel.retry() },
                     )
                 }
-                error != null && novels.isEmpty() -> Box(
+                SourceBrowseContent.ERROR -> Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -293,8 +305,7 @@ fun SourceBrowseScreen(
                         TextButton(onClick = { viewModel.retry() }) { Text(stringResource(R.string.action_retry)) }
                     }
                 }
-                mode == BrowseMode.SEARCH && query.isBlank() &&
-                    activeFilters.isEmpty() && novels.isEmpty() -> Box(
+                SourceBrowseContent.SEARCH_PROMPT -> Box(
                     Modifier
                         .fillMaxSize()
                         .padding(24.dp),
@@ -306,7 +317,10 @@ fun SourceBrowseScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                else -> Box(Modifier.fillMaxSize()) {
+                SourceBrowseContent.EMPTY_RESULTS -> EmptySourceResults(
+                    onRefresh = { viewModel.retry() },
+                )
+                SourceBrowseContent.RESULTS -> Box(Modifier.fillMaxSize()) {
                     val showToTop by gridState.showScrollToTop()
                     LazyVerticalGrid(
                     columns = if (displayMode == BrowseDisplayMode.GRID) GridCells.Fixed(gridColumns) else GridCells.Fixed(1),
@@ -382,5 +396,65 @@ fun SourceBrowseScreen(
             },
             onDismiss = { showFilters = false },
         )
+    }
+}
+
+internal enum class SourceBrowseContent {
+    LOADING,
+    CLOUDFLARE_BLOCKED,
+    ERROR,
+    SEARCH_PROMPT,
+    EMPTY_RESULTS,
+    RESULTS,
+}
+
+/** Chooses the primary content body for [SourceBrowseScreen] from view-model state. */
+internal fun resolveSourceBrowseContent(
+    isLoading: Boolean,
+    cloudflareBlocked: Boolean,
+    error: String?,
+    mode: BrowseMode,
+    query: String,
+    hasActiveFilters: Boolean,
+    hasLoaded: Boolean,
+    hasNovels: Boolean,
+): SourceBrowseContent = when {
+    isLoading -> SourceBrowseContent.LOADING
+    cloudflareBlocked && !hasNovels -> SourceBrowseContent.CLOUDFLARE_BLOCKED
+    error != null && !hasNovels -> SourceBrowseContent.ERROR
+    mode == BrowseMode.SEARCH && query.isBlank() && !hasActiveFilters && !hasNovels ->
+        SourceBrowseContent.SEARCH_PROMPT
+    hasLoaded && !hasNovels -> SourceBrowseContent.EMPTY_RESULTS
+    else -> SourceBrowseContent.RESULTS
+}
+
+@Composable
+private fun EmptySourceResults(
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                stringResource(R.string.global_search_no_results_found),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(12.dp))
+            FilledTonalButton(onClick = onRefresh) {
+                Icon(
+                    AppIcons.Refresh,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.action_refresh))
+            }
+        }
     }
 }

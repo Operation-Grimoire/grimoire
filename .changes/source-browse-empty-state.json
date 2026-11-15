@@ -1,0 +1,6 @@
+{
+  "android": [
+    {"category": "fix", "text": "Source browse now shows an empty-state message with a Refresh button when a source returns zero novels instead of a blank screen."}
+  ],
+  "desktop": []
+}
