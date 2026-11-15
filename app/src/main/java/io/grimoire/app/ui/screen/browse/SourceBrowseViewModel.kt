@@ -362,12 +362,7 @@ class SourceBrowseViewModel @Inject constructor(
                     BrowseMode.SEARCH ->
                         searchSource?.searchNovels(requestQuery, page, requestFilters).orEmpty()
                 }
-                if (generation != loadGeneration ||
-                    (requestMode == BrowseMode.SEARCH && _query.value != requestQuery)
-                ) {
-                    if (!reset && generation == loadGeneration) page--
-                    return@runCatching
-                }
+                if (generation != loadGeneration) return@runCatching
                 // Always de-duplicate by URL: a source can legitimately return
                 // the same item twice (on one page or across pages), and the
                 // keyed list would crash on duplicate keys. Stop paginating
@@ -382,10 +377,6 @@ class SourceBrowseViewModel @Inject constructor(
                 if (e is CancellationException) throw e
                 if (generation != loadGeneration) return@onFailure
                 Log.e(TAG, "Load failed [mode=$requestMode page=$page pkg=$packageName]", e)
-                if (requestMode == BrowseMode.SEARCH && _query.value != requestQuery) {
-                    if (!reset) page--
-                    return@onFailure
-                }
                 if (e is CloudflareException) {
                     _cloudflareBlocked.value = true
                 } else {
