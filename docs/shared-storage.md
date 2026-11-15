@@ -56,8 +56,8 @@ layers retain source permissions, locked-chapter navigation and user-facing erro
 handling. The shared loader below owns selection order; platforms supply source
 access, including desktop offline restrictions. The DAO adds no network policy.
 
-Saved-chapter adapters do not change schemas, file layouts, saved bytes, download status,
-word counts, progress or writes. That slice retained Android database33; the
+The initial saved-chapter extraction changed no schemas, file layouts, saved bytes,
+download status, word counts, progress or writes. It retained Android database33; the
 download adoption below uses DB34.
 Desktop now imports those files into its own SQLite schema1; a schema2 JSON marker
 prevents older readers from writing the upgraded store. See [desktop storage](desktop-storage.md) and
@@ -88,12 +88,11 @@ backend response for another key or an unconfirmed membership value.
 
 Room updates only the membership column, then reads the projection in the same
 transaction. It does not copy a stale whole entity over concurrent metadata.
-The desktop backend persists a current library snapshot before publishing the
-new membership in memory. Its existing file layout and atomic-replacement helper
-are retained; a failed pre-commit file write leaves the previous cached membership.
-The Room adapter preserves Android categories and other novel fields. The file
-adapter preserves its chapters, download index, pending position and saved
-metadata. Library removal remains distinct from deleting saved content.
+The desktop backend patches current metadata in a SQLite transaction before
+returning a committed projection. A failed pre-commit write retains the previous
+membership; an uncertain reply is reconciled from SQL.
+The Room adapter preserves Android categories and other novel fields. The desktop
+adapter preserves its chapters, content, pending position and saved metadata. Library removal remains distinct from deleting saved content.
 
 Storage/access errors and cancellation propagate. Cancellation or a lost reply
 after commit does not prove that a write was rolled back; retry the explicit

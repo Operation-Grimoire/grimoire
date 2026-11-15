@@ -18,7 +18,7 @@ object DesktopCrashWorker {
         val directory = Path.of(args[0])
         val mode = args[1]
         val ready = Path.of(args[2])
-        var armed = mode.contains("HANDOFF") || mode == "BEFORE_PUBLISH"
+        var armed = mode.contains("HANDOFF") || mode == "BEFORE_PUBLISH" || mode == "BEFORE_BACKUP_PUBLISH"
         fun pause() {
             Files.writeString(ready, "ready")
             while (true) Thread.sleep(1000)
@@ -92,7 +92,7 @@ class DesktopProcessTest {
     }
 
     @Test fun processDeathBeforePublishAndDuringHandoffResumesWithoutRewritingLegacyBytes() {
-        for (point in listOf(StorageCheckpoint.BEFORE_PUBLISH, StorageCheckpoint.BEFORE_HANDOFF, StorageCheckpoint.AFTER_HANDOFF)) {
+        for (point in listOf(StorageCheckpoint.BEFORE_PUBLISH, StorageCheckpoint.BEFORE_BACKUP_PUBLISH, StorageCheckpoint.BEFORE_HANDOFF, StorageCheckpoint.AFTER_HANDOFF)) {
             val directory = temporary.newFolder("migration ${point.name}").toPath()
             val content = legacyFixture(directory)
             val manifest = Files.readAllBytes(directory.resolve("library.json"))
@@ -105,6 +105,14 @@ class DesktopProcessTest {
                 val orphan = if (point == StorageCheckpoint.BEFORE_PUBLISH) Files.list(directory).use { files ->
                     files.filter { it.fileName.toString().startsWith(".library-import-") }.findFirst().get()
                 } else null
+                val backupOrphan = if (point == StorageCheckpoint.BEFORE_BACKUP_PUBLISH) Files.list(directory).use { files ->
+                    files.filter { it.fileName.toString().startsWith(".library-backup-") }.findFirst().get()
+                } else null
+                if (backupOrphan != null) {
+                    assertFalse(Files.exists(directory.resolve("library.json.before-sqlite")))
+                    // A partial temporary copy must not be adopted or treated as the final backup.
+                    Files.writeString(backupOrphan, "partial copy")
+                }
                 val orphanBytes = orphan?.let { Files.readAllBytes(it) }
                 LocalLibrary(directory).use { store ->
                     assertEquals(ReadPosition("/chapter", 0, 17), store.saved().single().position)
@@ -112,6 +120,7 @@ class DesktopProcessTest {
                     assertNull(store.currentReceipt(fixtureKey))
                 }
                 if (orphan != null) assertArrayEquals(orphanBytes, Files.readAllBytes(orphan))
+                if (backupOrphan != null) assertEquals("partial copy", Files.readString(backupOrphan))
                 assertArrayEquals(manifest, Files.readAllBytes(directory.resolve("library.json.before-sqlite")))
                 assertArrayEquals(body, Files.readAllBytes(content))
             } finally { if (child.isAlive) kill(child, directory) }

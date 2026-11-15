@@ -18,7 +18,7 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.util.UUID
 
-internal enum class StorageCheckpoint { BEFORE_COMMIT, AFTER_COMMIT, BEFORE_PUBLISH, BEFORE_HANDOFF, AFTER_HANDOFF }
+internal enum class StorageCheckpoint { BEFORE_COMMIT, AFTER_COMMIT, BEFORE_PUBLISH, BEFORE_BACKUP_PUBLISH, BEFORE_HANDOFF, AFTER_HANDOFF }
 
 /** One local desktop process owns the store. Every caller is serialized by LocalLibrary. */
 internal class DesktopDatabase(
@@ -174,8 +174,17 @@ internal class DesktopDatabase(
             val backup = directory.resolve("library.json.before-sqlite")
             if (!expected.isNull("library.json")) {
                 if (Files.exists(backup)) require(sha256(Files.readAllBytes(backup)) == expected.getString("library.json")) { "Conflicting legacy backup" }
-                else Files.copy(marker, backup)
-                FileChannel.open(backup, WRITE).use { it.force(true) }
+                else {
+                    val temporary = Files.createTempFile(directory, ".library-backup-", ".tmp")
+                    try {
+                        Files.copy(marker, temporary, REPLACE_EXISTING)
+                        FileChannel.open(temporary, WRITE).use { it.force(true) }
+                        checkpoint(StorageCheckpoint.BEFORE_BACKUP_PUBLISH)
+                        verifyLegacy(expected)
+                        require(sha256(Files.readAllBytes(temporary)) == expected.getString("library.json")) { "Legacy backup copy changed" }
+                        Files.move(temporary, backup, ATOMIC_MOVE)
+                    } finally { Files.deleteIfExists(temporary) }
+                }
             }
             checkpoint(StorageCheckpoint.BEFORE_HANDOFF)
             verifyLegacy(expected)

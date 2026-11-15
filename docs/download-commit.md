@@ -13,7 +13,7 @@ remain compatible until an implementation explicitly migrates them.
 
 ## Adapter adoption and remaining gaps
 
-| Area | Android adoption | Remaining acceptance |
+| Area | Implemented behavior | Remaining acceptance |
 | --- | --- | --- |
 | Claim/terminal callbacks | Portable attempts, guarded success/error/connectivity callbacks and transactional receipts. | Both adapters implement this contract; see desktop storage tests. |
 | Cancel/delete/replacement/reset | SQL triggers revoke ownership across existing writers; deletes cascade protocol state. | Actual process-kill recovery remains separate from transaction rollback/reopen checks. |

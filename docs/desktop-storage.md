@@ -82,7 +82,8 @@ prove survival of arbitrary hardware/filesystem failure or sudden power loss.
 3. Import metadata and raw payloads into an app-owned temporary SQLite database.
    Persist the source fingerprints with an `imported` phase, recheck the sources,
    then atomically publish `library.sqlite`.
-4. Retain the exact manifest bytes in `library.json.before-sqlite` and leave every
+4. Atomically publish the exact manifest bytes in `library.json.before-sqlite`
+   from a forced temporary copy and leave every
    old chapter file unchanged. Atomically replace `library.json` with a schema2
    handoff marker containing this database's random ID, then mark the DB active.
 5. A restart with an imported database validates the retained source fingerprints
@@ -109,7 +110,8 @@ alone. There is no automatic data deletion or old-file garbage collection.
 failures, rollback, cancellation, idempotency, stale callbacks, metadata changes,
 source isolation, pending positions and reader save/error behavior. Separate JVMs
 are forcibly stopped before/after SQL commit and before/after migration handoff.
-Migration death before publication also leaves an unpublished database untouched.
+Migration death before database or backup publication leaves unpublished files
+untouched; partial temporary backups are never adopted.
 Tests inspect raw SQL, reopen through the production facade, verify old/new receipt
 and body consistency, and reject a competing process. Fixtures use isolated
 temporary directories; no test opens a personal library or kills unrelated Java.
