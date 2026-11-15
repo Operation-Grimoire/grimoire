@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import io.grimoire.app.R
@@ -69,8 +70,9 @@ fun StepperRow(
             textAlign = TextAlign.Center,
             maxLines = 1,
             softWrap = false,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier
-                .widthIn(min = 56.dp)
+                .widthIn(min = 56.dp, max = 128.dp)
                 .padding(horizontal = 4.dp),
         )
         PlainTooltipIconButton(

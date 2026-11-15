@@ -2,10 +2,12 @@ package io.grimoire.app.ui.screen.reader
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -194,35 +196,45 @@ private fun ReaderDisplaySettings(
     onMarkAsReadParagraphsFromEnd: (Int) -> Unit,
 ) {
     val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
-    Column(modifier = Modifier.fillMaxWidth()) {
-        // Keep the preview pinned above the scroll container so alignment, spacing,
-        // and typography changes remain visible regardless of scroll position.
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = colors.background,
-            border = BorderStroke(1.dp, dividerColor),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-        ) {
-            Text(
-                text = previewText,
-                style = textStyle,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            )
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val pinPreview = !constraints.hasBoundedHeight || maxHeight >= 420.dp
+        val previewMaxHeight = if (constraints.hasBoundedHeight) {
+            (maxHeight * 0.30f).coerceAtMost(156.dp)
+        } else {
+            156.dp
         }
-        HorizontalDivider(color = dividerColor)
+        Column(modifier = Modifier.fillMaxWidth()) {
+            if (pinPreview) {
+                // Keep the preview pinned above the scroll container when vertical space allows
+                // so alignment, spacing, and typography changes stay visible, capped relative to sheet height.
+                ReaderPreviewCard(
+                    colors = colors,
+                    textStyle = textStyle,
+                    previewText = previewText,
+                    dividerColor = dividerColor,
+                    modifier = Modifier.heightIn(max = previewMaxHeight),
+                )
+                HorizontalDivider(color = dividerColor)
+            }
 
-        Column(
-            modifier = Modifier
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
-                .padding(top = 4.dp, bottom = 16.dp),
-        ) {
-            SheetSectionLabel(stringResource(R.string.reader_color_theme))
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .navigationBarsPadding()
+                    .padding(top = 4.dp, bottom = 16.dp),
+            ) {
+                if (!pinPreview) {
+                    ReaderPreviewCard(
+                        colors = colors,
+                        textStyle = textStyle,
+                        previewText = previewText,
+                        dividerColor = dividerColor,
+                        modifier = Modifier.heightIn(max = previewMaxHeight),
+                    )
+                    HorizontalDivider(color = dividerColor)
+                }
+                SheetSectionLabel(stringResource(R.string.reader_color_theme))
             Spacer(Modifier.height(6.dp))
             ColorThemePicker(
                 selected = colorTheme,
@@ -386,6 +398,35 @@ private fun ReaderDisplaySettings(
                 onCheckedChange = onGrimoireEasterEggEnabled,
             )
         }
+        }
+    }
+}
+
+@Composable
+private fun ReaderPreviewCard(
+    colors: ReaderColors,
+    textStyle: TextStyle,
+    previewText: String,
+    dividerColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = colors.background,
+        border = BorderStroke(1.dp, dividerColor),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
+        Text(
+            text = previewText,
+            style = textStyle,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        )
     }
 }
 

@@ -27,22 +27,23 @@ import io.grimoire.app.ui.icon.*
  * chevron, so the row reads as "tap to open a picker" rather than a heading.
  */
 @Composable
-private fun SummaryTrailing(text: String, active: Boolean) {
+private fun SummaryTrailing(text: String, active: Boolean, enabled: Boolean = true) {
+    val alpha = if (enabled) 1f else 0.38f
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text,
             style = MaterialTheme.typography.labelMedium,
-            color = if (active) {
+            color = (if (active) {
                 MaterialTheme.colorScheme.primary
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
-            },
+            }).copy(alpha = alpha),
         )
         Spacer(Modifier.width(4.dp))
         Icon(
             AppIcons.KeyboardArrowRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha),
             modifier = Modifier.size(20.dp),
         )
     }
@@ -156,6 +157,7 @@ fun TriStateSummaryRow(
                     stringResource(R.string.filter_included_excluded, includedCount, excludedCount)
                 },
                 active = active,
+                enabled = enabled,
             )
         },
         colors = sheetListItemColors(enabled),
