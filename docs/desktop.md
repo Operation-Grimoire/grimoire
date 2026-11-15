@@ -3,7 +3,7 @@
 The maintained JVM target is `:desktop`. It reads a trusted local Royal Road JAR,
 stores a local library and paragraph position, and saves chapter text for offline
 reading. Android and desktop use `:reading-core` for API compatibility, versioned
-chapter encoding and the saved-chapter read contract/repository. Each platform
+chapter encoding, saved-chapter reads and library membership contracts/repositories. Each platform
 selects its backend adapter; see [shared storage](shared-storage.md). Both package
 formats use the extension repository's existing source;
 the application does not compile or copy a Royal Road implementation.

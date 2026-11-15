@@ -12,6 +12,38 @@ import java.nio.file.Files
 import org.json.JSONObject
 
 class LocalLibraryTest {
+    @Test fun failedMembershipWriteDoesNotPublishUnsavedState() {
+        val directory = temporary.newFolder().toPath()
+        val key = NovelKey(17, novel.url)
+        val library = LocalLibrary(directory)
+        library.remember(key, novel, chapters)
+        val file = directory.resolve("library.json")
+        val original = directory.resolve("original.json")
+        val before = Files.readAllBytes(file)
+        Files.move(file, original)
+        Files.createDirectory(file)
+        val blocker = file.resolve("blocker")
+        Files.writeString(blocker, "keep")
+        try {
+            try { library.favorite(key, true); fail("Membership write unexpectedly succeeded") }
+            catch (_: java.io.IOException) { }
+            assertFalse(library.book(key)!!.favorite)
+            assertArrayEquals(before, Files.readAllBytes(original))
+            assertEquals("keep", Files.readString(blocker))
+            kotlinx.coroutines.runBlocking {
+                val repository = io.grimoire.reading.storage.LibraryRepository(FileLibraryDao(library))
+                try { repository.setMembership(key, true); fail("Adapter hid the failed membership write") }
+                catch (_: java.io.IOException) { }
+            }
+            assertFalse(library.book(key)!!.favorite)
+        } finally {
+            Files.delete(blocker)
+            Files.delete(file)
+            Files.move(original, file)
+        }
+        assertFalse(LocalLibrary(directory).book(key)!!.favorite)
+    }
+
     @Test fun legacyChapterReadsWithoutRewritingBytesAndRetainsPosition() {
         val directory = temporary.newFolder().toPath()
         val key = NovelKey(17, novel.url)

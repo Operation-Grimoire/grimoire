@@ -18,6 +18,8 @@ import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.libraryupdate.reconcileFetchedChapters
 import io.grimoire.app.data.local.dao.ChapterDao
+import io.grimoire.reading.NovelKey
+import io.grimoire.reading.storage.LibraryRepository
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.CategoryEntity
 import io.grimoire.app.data.local.entity.ChapterEntity
@@ -46,6 +48,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
     @Assisted("novelUrl") private val novelUrl: String,
     private val extensionManager: ExtensionManager,
     private val novelDao: NovelDao,
+    private val libraryRepository: LibraryRepository,
     private val chapterDao: ChapterDao,
     private val browsingHistoryDao: io.grimoire.app.data.local.dao.BrowsingHistoryDao,
     private val categoryDao: CategoryDao,
@@ -223,8 +226,7 @@ class NovelQuickViewViewModel @AssistedInject constructor(
         _isFavorite.value = next
         if (next) trackNovelAdded()
         viewModelScope.launch {
-            val entity = novelDao.getBySourceUrl(canonicalSourceId, novelUrl) ?: return@launch
-            novelDao.upsert(entity.copy(favorite = next))
+            libraryRepository.setMembership(NovelKey(canonicalSourceId, novelUrl), next) ?: return@launch
             // Browsing history is only for non-library novels: drop the row once added.
             if (next) browsingHistoryDao.deleteByNovel(pkg, novelUrl)
         }

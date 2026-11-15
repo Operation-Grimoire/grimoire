@@ -10,6 +10,7 @@ import io.grimoire.api.source.web.PageListSource
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
 import io.grimoire.reading.storage.SavedChapterRepository
+import io.grimoire.reading.storage.LibraryRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,6 +38,7 @@ class ReaderModel(
     private val hostApi: String,
     private val networkEnabled: AtomicBoolean,
     private val savedChapters: SavedChapterRepository,
+    private val membership: LibraryRepository,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val closing = AtomicBoolean(false)
@@ -87,7 +89,7 @@ class ReaderModel(
 
     fun favorite() = operate {
         val current = state.value.book ?: return@operate
-        val book = library.favorite(current.key, !current.favorite)
+        val book = setMembership(current.key, !current.favorite)
         mutable.update { it.copy(book = book, library = library.saved()) }
     }
 
@@ -112,7 +114,7 @@ class ReaderModel(
         val book = current.book ?: return@operate
         val chapter = current.chapter ?: return@operate
         library.download(ChapterKey(book.key, chapter.url), current.pages)
-        val updated = library.favorite(book.key, true)
+        val updated = setMembership(book.key, true)
         mutable.update { it.copy(book = updated, library = library.saved()) }
     }
 
@@ -120,6 +122,11 @@ class ReaderModel(
         if (state.value.busy || closing.get()) return
         networkEnabled.set(!value)
         mutable.update { it.copy(offline = value, error = null) }
+    }
+
+    private suspend fun setMembership(key: NovelKey, inLibrary: Boolean): SavedBook {
+        val entry = membership.setMembership(key, inLibrary) ?: error("Novel is no longer stored")
+        return library.book(entry.key) ?: error("Novel is no longer stored")
     }
 
     fun position(key: ChapterKey, paragraph: Int, offset: Int) {
