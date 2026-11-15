@@ -105,7 +105,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
-private val BOOK_MIME_TYPES = arrayOf(
+internal val BOOK_MIME_TYPES = arrayOf(
     "application/epub+zip",
     "application/zip",
     "text/plain",

@@ -1,20 +1,15 @@
 package io.grimoire.app
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -24,6 +19,7 @@ import io.grimoire.app.data.download.DownloadManager
 import io.grimoire.app.data.preferences.UiPreferences
 import io.grimoire.app.ui.AppNavigation
 import io.grimoire.app.ui.NAV_TARGET_CRASH
+import io.grimoire.app.ui.NAV_TARGET_EXTENSIONS
 import io.grimoire.app.ui.PendingAddRepo
 import io.grimoire.app.ui.isAddRepoLink
 import io.grimoire.app.ui.parseAddRepoLink
@@ -48,9 +44,6 @@ class MainActivity : FragmentActivity() {
 
     @Inject lateinit var downloadManager: DownloadManager
 
-    private val notifPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
-
     /** Destination requested by an inbound intent (e.g. a notification tap); cleared once consumed. */
     private val pendingTarget = MutableStateFlow<String?>(null)
 
@@ -72,12 +65,6 @@ class MainActivity : FragmentActivity() {
                 downloadManager.restartPendingDownloads()
                 awaitCancellation()
             }
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
-        ) {
-            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         pendingTarget.value = consumeNavTarget(intent)
         pendingAddRepo.value = consumeAddRepoLink(intent)
@@ -113,6 +100,8 @@ class MainActivity : FragmentActivity() {
                                 null -> Unit
                                 false -> io.grimoire.app.ui.screen.onboarding.OnboardingScreen(
                                     viewModel = onboardingVm,
+                                    onOpenExtensions = { pendingTarget.value = NAV_TARGET_EXTENSIONS },
+                                    onImportBook = { uri -> pendingBookUri.value = uri },
                                 )
                                 true -> {
                                     AppNavigation(
