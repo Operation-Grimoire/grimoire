@@ -267,8 +267,6 @@
     <string name="about_updates_section">अपडेट</string>
     <string name="about_update_popups">अपडेट के ऑटो पॉपअप</string>
     <string name="about_update_popups_summary">अपडेट उपलब्ध होने पर ऐप खोलते समय डायलॉग दिखाएँ</string>
-    <string name="about_changelog_after_update">अपडेट के बाद चेंजलॉग</string>
-    <string name="about_changelog_after_update_summary">नया वर्शन पहली बार खोलने पर रिलीज़ नोट्स दिखाएँ</string>
     <string name="about_build_section">बिल्ड</string>
     <string name="about_build_details">बिल्ड विवरण</string>
     <string name="about_build_details_summary">बिल्ड %1$d · कमिट %2$s · Extensions API %3$s</string>
@@ -277,24 +275,15 @@
     <string name="about_channel_beta">बीटा</string>
     <string name="about_channel_stable_summary">केवल टैग की गई रिलीज़। सुझाया गया।</string>
     <string name="about_channel_beta_summary">main से हर कमिट पर ताज़ा बिल्ड। अस्थिर हो सकते हैं।</string>
-    <string name="update_whats_new">%1$s में नया क्या है</string>
-    <string name="update_got_it">समझ गया</string>
     <string name="update_ready">अपडेट तैयार है</string>
     <string name="update_available">अपडेट उपलब्ध है</string>
     <string name="update_unknown_error">अज्ञात त्रुटि</string>
-    <string name="update_no_changelog">%1$s के लिए कोई चेंजलॉग उपलब्ध नहीं है।</string>
     <string name="action_update">अपडेट करें</string>
     <string name="update_download_complete">डाउनलोड पूरा हुआ — अपडेट पूरा करने के लिए इंस्टॉल करें पर टैप करें।</string>
     <string name="update_skip_version">यह वर्शन छोड़ें</string>
     <string name="update_downloading_background">बैकग्राउंड में डाउनलोड हो रहा है — आप ऐप बंद कर सकते हैं।</string>
     <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
     <string name="update_download_size">%1$s MB</string>
-    <string name="changelog_features">सुविधाएँ</string>
-    <string name="changelog_bug_fixes">बग फ़िक्स</string>
-    <string name="changelog_sources">स्रोत</string>
-    <string name="changelog_documentation">दस्तावेज़</string>
-    <string name="changelog_other">अन्य बदलाव</string>
-    <string name="changelog_changes">बदलाव</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">ग्लोबल सामग्री भाषाओं को ओवरराइड करें</string>

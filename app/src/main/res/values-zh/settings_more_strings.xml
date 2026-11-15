@@ -266,8 +266,6 @@
     <string name="about_updates_section">更新</string>
     <string name="about_update_popups">自动显示更新弹窗</string>
     <string name="about_update_popups_summary">有可用更新时，在应用启动时显示对话框</string>
-    <string name="about_changelog_after_update">更新后显示更新日志</string>
-    <string name="about_changelog_after_update_summary">新版本首次启动时显示发行说明</string>
     <string name="about_build_section">构建</string>
     <string name="about_build_details">构建详情</string>
     <string name="about_build_details_summary">构建 %1$d · 提交 %2$s · 扩展 API %3$s</string>
@@ -276,24 +274,15 @@
     <string name="about_channel_beta">测试版</string>
     <string name="about_channel_stable_summary">仅接收带标签的正式版本，推荐使用。</string>
     <string name="about_channel_beta_summary">每次主分支提交都会生成新构建，可能不稳定。</string>
-    <string name="update_whats_new">%1$s 的新变化</string>
-    <string name="update_got_it">知道了</string>
     <string name="update_ready">更新已就绪</string>
     <string name="update_available">有可用更新</string>
     <string name="update_unknown_error">未知错误</string>
-    <string name="update_no_changelog">没有 %1$s 的更新日志。</string>
     <string name="action_update">更新</string>
     <string name="update_download_complete">下载完成 — 点按“安装”完成更新。</string>
     <string name="update_skip_version">跳过此版本</string>
     <string name="update_downloading_background">正在后台下载，你可以关闭应用。</string>
     <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
     <string name="update_download_size">%1$s MB</string>
-    <string name="changelog_features">新功能</string>
-    <string name="changelog_bug_fixes">问题修复</string>
-    <string name="changelog_sources">书源</string>
-    <string name="changelog_documentation">文档</string>
-    <string name="changelog_other">其他变化</string>
-    <string name="changelog_changes">改动</string>
 
     <!-- 共用语言选择器 -->
     <string name="language_override_global">覆盖全局内容语言</string>

@@ -332,8 +332,6 @@
     <string name="about_updates_section">Оновлення</string>
     <string name="about_update_popups">Спливні вікна оновлень</string>
     <string name="about_update_popups_summary">Показувати діалог під час запуску, коли доступне оновлення</string>
-    <string name="about_changelog_after_update">Список змін після оновлення</string>
-    <string name="about_changelog_after_update_summary">Показувати примітки до випуску під час першого запуску нової версії</string>
     <string name="about_build_section">Збірка</string>
     <string name="about_build_details">Відомості про збірку</string>
     <string name="about_build_details_summary">Збірка %1$d · коміт %2$s · Extensions API %3$s</string>
@@ -342,24 +340,15 @@
     <string name="about_channel_beta">Бета</string>
     <string name="about_channel_stable_summary">Лише позначені тегами випуски. Рекомендовано.</string>
     <string name="about_channel_beta_summary">Свіжі збірки з main після кожного коміту. Можуть бути нестабільними.</string>
-    <string name="update_whats_new">Що нового в %1$s</string>
-    <string name="update_got_it">Зрозуміло</string>
     <string name="update_ready">Оновлення готове</string>
     <string name="update_available">Доступне оновлення</string>
     <string name="update_unknown_error">Невідома помилка</string>
-    <string name="update_no_changelog">Список змін для %1$s недоступний.</string>
     <string name="action_update">Оновити</string>
     <string name="update_download_complete">Завантаження завершено — торкніться «Установити», щоб завершити оновлення.</string>
     <string name="update_skip_version">Пропустити цю версію</string>
     <string name="update_downloading_background">Завантаження у фоновому режимі — застосунок можна закрити.</string>
     <string name="update_download_progress">%1$s / %2$s МБ · %3$d%%</string>
     <string name="update_download_size">%1$s МБ</string>
-    <string name="changelog_features">Нові функції</string>
-    <string name="changelog_bug_fixes">Виправлення помилок</string>
-    <string name="changelog_sources">Джерела</string>
-    <string name="changelog_documentation">Документація</string>
-    <string name="changelog_other">Інші зміни</string>
-    <string name="changelog_changes">Зміни</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">Перевизначити глобальні мови вмісту</string>

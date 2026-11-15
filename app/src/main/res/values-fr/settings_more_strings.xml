@@ -267,8 +267,6 @@
     <string name="about_updates_section">Mises à jour</string>
     <string name="about_update_popups">Fenêtres de mise à jour automatiques</string>
     <string name="about_update_popups_summary">Afficher une boîte de dialogue au lancement lorsqu’une mise à jour est disponible</string>
-    <string name="about_changelog_after_update">Journal des modifications après mise à jour</string>
-    <string name="about_changelog_after_update_summary">Afficher les notes de version au premier lancement d’une nouvelle version</string>
     <string name="about_build_section">Build</string>
     <string name="about_build_details">Détails du build</string>
     <string name="about_build_details_summary">Build %1$d · commit %2$s · API des extensions %3$s</string>
@@ -277,24 +275,15 @@
     <string name="about_channel_beta">Bêta</string>
     <string name="about_channel_stable_summary">Versions officielles uniquement. Recommandé.</string>
     <string name="about_channel_beta_summary">Builds récents depuis main à chaque commit. Peut être instable.</string>
-    <string name="update_whats_new">Nouveautés de %1$s</string>
-    <string name="update_got_it">Compris</string>
     <string name="update_ready">Mise à jour prête</string>
     <string name="update_available">Mise à jour disponible</string>
     <string name="update_unknown_error">Erreur inconnue</string>
-    <string name="update_no_changelog">Aucun journal des modifications disponible pour %1$s.</string>
     <string name="action_update">Mettre à jour</string>
     <string name="update_download_complete">Téléchargement terminé — appuyez sur Installer pour finaliser la mise à jour.</string>
     <string name="update_skip_version">Ignorer cette version</string>
     <string name="update_downloading_background">Téléchargement en arrière-plan — vous pouvez fermer l’application.</string>
     <string name="update_download_progress">%1$s / %2$s Mo · %3$d %%</string>
     <string name="update_download_size">%1$s Mo</string>
-    <string name="changelog_features">Fonctionnalités</string>
-    <string name="changelog_bug_fixes">Corrections de bugs</string>
-    <string name="changelog_sources">Sources</string>
-    <string name="changelog_documentation">Documentation</string>
-    <string name="changelog_other">Autres changements</string>
-    <string name="changelog_changes">Changements</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">Remplacer les langues de contenu globales</string>

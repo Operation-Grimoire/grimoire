@@ -1,0 +1,9 @@
+{
+  "android": [
+    {
+      "category": "feature",
+      "text": "Changelogs now open directly on GitHub Releases instead of showing inside in-app update and About dialogs."
+    }
+  ],
+  "desktop": []
+}

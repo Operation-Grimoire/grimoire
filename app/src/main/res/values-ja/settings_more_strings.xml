@@ -267,8 +267,6 @@
     <string name="about_updates_section">アップデート</string>
     <string name="about_update_popups">アップデートの自動通知</string>
     <string name="about_update_popups_summary">アップデートがあるときは起動時にダイアログを表示します</string>
-    <string name="about_changelog_after_update">アップデート後に変更履歴を表示</string>
-    <string name="about_changelog_after_update_summary">新しいバージョンを初めて起動したときにリリースノートを表示します</string>
     <string name="about_build_section">ビルド</string>
     <string name="about_build_details">ビルドの詳細</string>
     <string name="about_build_details_summary">ビルド %1$d · コミット %2$s · Extensions API %3$s</string>
@@ -277,24 +275,15 @@
     <string name="about_channel_beta">ベータ版</string>
     <string name="about_channel_stable_summary">タグ付きのリリースのみ。おすすめです。</string>
     <string name="about_channel_beta_summary">main へのコミットごとの最新ビルド。不安定な場合があります。</string>
-    <string name="update_whats_new">%1$s の新機能</string>
-    <string name="update_got_it">了解</string>
     <string name="update_ready">アップデートの準備完了</string>
     <string name="update_available">アップデートがあります</string>
     <string name="update_unknown_error">不明なエラー</string>
-    <string name="update_no_changelog">%1$s の変更履歴はありません。</string>
     <string name="action_update">アップデート</string>
     <string name="update_download_complete">ダウンロードが完了しました — 「インストール」をタップしてアップデートを完了してください。</string>
     <string name="update_skip_version">このバージョンをスキップ</string>
     <string name="update_downloading_background">バックグラウンドでダウンロード中です — アプリを閉じても問題ありません。</string>
     <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
     <string name="update_download_size">%1$s MB</string>
-    <string name="changelog_features">新機能</string>
-    <string name="changelog_bug_fixes">バグ修正</string>
-    <string name="changelog_sources">ソース</string>
-    <string name="changelog_documentation">ドキュメント</string>
-    <string name="changelog_other">その他の変更</string>
-    <string name="changelog_changes">変更点</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">全体のコンテンツ言語を上書き</string>

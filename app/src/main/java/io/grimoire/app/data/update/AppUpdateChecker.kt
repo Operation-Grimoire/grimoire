@@ -85,42 +85,6 @@ class AppUpdateChecker @Inject constructor(
         }
     }
 
-    suspend fun fetchStableNotesSince(fromTag: String, toTag: String): String? =
-        fetchAggregatedNotes(fromTag, toTag, UpdateChannel.STABLE)
-
-    suspend fun fetchBetaNotesSince(fromTag: String, toTag: String): String? =
-        fetchAggregatedNotes(fromTag, toTag, UpdateChannel.BETA)
-
-    suspend fun fetchNotesForVersion(toName: String): String? =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                val version = toName.substringBefore('+')
-                val tag = if (version.startsWith("v")) version else "v$version"
-                if (!isAndroidRelease(GitHubRelease(tag, prerelease = tag.contains("-beta.")))) return@runCatching null
-                fetchRelease("https://api.github.com/repos/$REPO/releases/tags/$tag")
-                    ?.takeIf(::isAndroidRelease)?.let { it.body.orEmpty().trim() }
-            }.getOrNull()
-        }
-
-    private suspend fun fetchAggregatedNotes(
-        fromTag: String,
-        toTag: String,
-        channel: UpdateChannel,
-    ): String? = withContext(Dispatchers.IO) {
-        runCatching {
-            val pages = mutableMapOf<Int, List<GitHubRelease>>()
-            fun page(number: Int) = pages.getOrPut(number) { fetchReleases("$RELEASES_LIST_URL&page=$number") }
-            val releases = collectAndroidReleases(channel, ::page, countMatch = {
-                isInNotesRange(it, fromTag, toTag, channel)
-            })
-            val included = notesReleasesSince(releases, fromTag, toTag, channel) {
-                latestAndroidStable()
-            }
-            if (included.isEmpty()) return@runCatching null
-            aggregateReleaseNotes(included)
-        }.getOrNull()
-    }
-
     internal data class SemverKey(val name: String) : Comparable<SemverKey> {
         private val coreString: String = name.substringBefore('+')
         private val baseParts: List<Int> = coreString.substringBefore('-')
