@@ -1,0 +1,6 @@
+{
+  "android": [],
+  "desktop": [
+    {"category": "fix", "text": "Failed library saves now retain the previous library membership."}
+  ]
+}

@@ -95,6 +95,10 @@ interface NovelDao {
     @Query("SELECT * FROM novels WHERE sourceId = :sourceId AND url = :url")
     suspend fun getBySourceUrl(sourceId: Long, url: String): NovelEntity?
 
+    /** Membership writes must not copy stale metadata or modify categories/progress. */
+    @Query("UPDATE novels SET favorite = :inLibrary WHERE sourceId = :sourceId AND url = :url")
+    suspend fun setLibraryMembership(sourceId: Long, url: String, inLibrary: Boolean): Int
+
     @Upsert
     suspend fun upsert(novel: NovelEntity): Long
 

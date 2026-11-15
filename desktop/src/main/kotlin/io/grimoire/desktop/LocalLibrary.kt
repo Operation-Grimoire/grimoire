@@ -60,10 +60,19 @@ class LocalLibrary(private val directory: Path) {
     }
 
     @Synchronized fun favorite(key: NovelKey, value: Boolean): SavedBook {
-        val book = books.getValue(key).copy(favorite = value)
-        books[key] = book
-        flush()
-        return book
+        return commitMembership(books.getValue(key), value)
+    }
+
+    @Synchronized internal fun updateMembership(key: NovelKey, value: Boolean): SavedBook? {
+        return books[key]?.let { commitMembership(it, value) }
+    }
+
+    /** Caller holds the library monitor; publish only after successful persistence. */
+    private fun commitMembership(current: SavedBook, value: Boolean): SavedBook {
+        val updated = current.copy(favorite = value)
+        persist(books.values.map { if (it.key == current.key) updated else it })
+        books[current.key] = updated
+        return updated
     }
 
     @Synchronized fun download(key: ChapterKey, pages: List<NovelPage>) {
@@ -114,7 +123,11 @@ class LocalLibrary(private val directory: Path) {
     }
 
     @Synchronized fun flush() {
-        val root = JSONObject().put("schema", 1).put("books", JSONArray(books.values.map(::encodeBook)))
+        persist(books.values)
+    }
+
+    private fun persist(snapshot: Collection<SavedBook>) {
+        val root = JSONObject().put("schema", 1).put("books", JSONArray(snapshot.map(::encodeBook)))
         atomicWrite(file, root.toString())
     }
 

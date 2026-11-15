@@ -8,6 +8,7 @@ import io.grimoire.api.model.novel.PageContent
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
 import io.grimoire.reading.storage.SavedChapterRepository
+import io.grimoire.reading.storage.LibraryRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -90,7 +91,7 @@ class DesktopStorageTest {
         val library = LocalLibrary(temporary.newFolder().toPath())
         library.remember(key.novel, novel, listOf(chapter))
         val repository = SavedChapterRepository { throw IOException("saved chapter disk failure") }
-        val model = ReaderModel(library, "1.5.0", AtomicBoolean(false), repository)
+        val model = ReaderModel(library, "1.5.0", AtomicBoolean(false), repository, LibraryRepository(FileLibraryDao(library)))
         try {
             model.openSaved(library.book(key.novel)!!)
             withTimeout(5_000) { model.state.first { !it.busy } }

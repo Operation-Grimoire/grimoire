@@ -56,16 +56,60 @@ layers retain source permissions, locked-chapter navigation, offline mode,
 preloaded-page precedence and user-facing error handling. This interface adds no
 new network fallback or authorization policy.
 
-Neither adapter changes schemas, file layouts, saved bytes, download status,
+Saved-chapter adapters do not change schemas, file layouts, saved bytes, download status,
 word counts, progress or writes. Android remains database33; desktop library
 metadata remains schema1 and new chapter files remain schema2. See
 [chapter content](chapter-content.md) for the existing format/rollback boundary.
+
+## Implemented second slice: library metadata and membership
+
+`LibraryDao` and `LibraryRepository` operate on a portable `LibraryEntry`: the
+novel key, display title, author, description and membership flag. Android maps
+effective user overrides, including explicit empty overrides; desktop maps its
+current saved metadata. This is a read projection, not a full metadata-edit API.
+Category IDs, cover paths and other device-specific state remain platform-owned.
+
+```mermaid
+flowchart TB
+    Android[Android detail and quick-view toggles] --> Repository[Shared LibraryRepository]
+    Desktop[Desktop membership and add-after-download] --> Repository
+    Repository --> Contract[Shared LibraryDao contract]
+    Contract --> Room[Android RoomLibraryDao]
+    Contract --> Files[Desktop FileLibraryDao]
+```
+
+`find` returns the existing record or null. `setMembership` sets an explicit
+desired value and returns its committed metadata projection, or null when the
+book does not exist. It never creates a missing book, fetches metadata or deletes
+downloads. Repeating the same command is idempotent. The repository rejects a
+backend response for another key or an unconfirmed membership value.
+
+Room updates only the membership column, then reads the projection in the same
+transaction. It does not copy a stale whole entity over concurrent metadata.
+The desktop backend persists a current library snapshot before publishing the
+new membership in memory. Its existing file layout and atomic-replacement helper
+are retained; a failed pre-commit file write leaves the previous cached membership.
+The Room adapter preserves Android categories and other novel fields. The file
+adapter preserves its chapters, download index, pending position and saved
+metadata. Library removal remains distinct from deleting saved content.
+
+Storage/access errors and cancellation propagate. Cancellation or a lost reply
+after commit does not prove that a write was rolled back; retry the explicit
+desired value rather than an inverse toggle. This interface does not provide a
+cross-process transaction or a universal rollback guarantee for filesystem errors.
+
+Android retains its source/local-book gates, optimistic UI, analytics and
+browsing-history cleanup in the existing view models. Category selection, bulk
+operations and privacy-filtered/reactive library listings remain behind their
+existing platform implementations until their contracts are extracted. Desktop
+favorite and automatic membership after saving a chapter use the shared facade.
+Neither adapter adds a schema or file-format migration.
 
 ## Next extraction slices
 
 | Responsibility | Shared direction | Platform responsibility |
 | --- | --- | --- |
-| Library metadata and membership | DAO contracts, portable records and common repository rules | Existing backend adapters and device identity mapping |
+| Library projections and metadata editing | Reactive/list/edit contracts with privacy and category rules | Existing backend adapters and device identity mapping |
 | Chapter writes and downloads | Explicit atomic-write/cancellation contracts and shared orchestration | Backend transactions, file replacement and background execution |
 | Reading state | Logical anchors, read/completion rules and progress operations | Viewport/input integration and device-only preferences |
 | Feature presentation | Common feature state, actions and reusable UI components | Navigation, windows, touch/keyboard/mouse behaviour |
@@ -92,3 +136,13 @@ desktop wiring. Existing native `ChapterCodecMigrationTest` exercises the Room
 adapter with migrated content over 2 MB, source/novel/chapter isolation, new-format
 reads/reopen and strict unsupported metadata. Native execution, JVM checks and
 signed-nightly acceptance remain separate proof classes.
+
+`LibraryRepositoryTest` covers identity, missing records, explicit/idempotent
+commands, error propagation and lost confirmation after commit. Desktop checks
+include a fail-before/pass-after blocked-file membership regression, preservation
+of pending position/download bytes, restart, source isolation and the production
+reader facade. Native `LibraryStorageTest` runs separately with three required
+executed successes: full field/offline-state preservation, identity/missing keys,
+and SQLite-trigger rollback plus cancellation-before-entry and a real in-flight
+write cancelled before transaction commit. Its result is retained
+as `library-result.log`; skipped tests cannot satisfy the CI count.

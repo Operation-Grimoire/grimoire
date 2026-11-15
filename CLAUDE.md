@@ -97,6 +97,9 @@ See [`docs/chapter-content.md`](docs/chapter-content.md) for migration and rollb
 Saved chapter reads in the Android reader/TTS and desktop reader use the shared
 `SavedChapterDao` contract and `SavedChapterRepository`. Room and file adapters
 remain platform-owned; see [`docs/shared-storage.md`](docs/shared-storage.md).
+Library metadata/membership use `LibraryDao`/`LibraryRepository` with Room/file
+adapters. Android detail/quick-view toggles and desktop membership commands use
+this boundary; category/bulk operations retain their existing platform paths.
 Desktop loads trusted local packaged JARs, not source copies.
 Run shared/desktop unit checks and the packaged-source fixture/UI journeys when
 changing this boundary. Live reading, fixture results and native window lifecycle

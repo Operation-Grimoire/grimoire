@@ -29,6 +29,8 @@ import io.grimoire.app.data.libraryupdate.ISSUE_CHAPTER_LIST_CHANGED
 import io.grimoire.app.data.libraryupdate.ISSUE_NO_CHAPTERS
 import io.grimoire.app.data.libraryupdate.reconcileFetchedChapters
 import io.grimoire.app.data.local.dao.ChapterDao
+import io.grimoire.reading.NovelKey
+import io.grimoire.reading.storage.LibraryRepository
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
 import io.grimoire.app.data.local.entity.CategoryEntity
@@ -85,6 +87,7 @@ class NovelDetailViewModel @Inject constructor(
     private val extensionManager: ExtensionManager,
     private val extensionRepository: io.grimoire.app.extension.repo.ExtensionRepository,
     private val novelDao: NovelDao,
+    private val libraryRepository: LibraryRepository,
     private val chapterDao: ChapterDao,
     private val browsingHistoryDao: io.grimoire.app.data.local.dao.BrowsingHistoryDao,
     private val incognitoManager: io.grimoire.app.data.preferences.IncognitoManager,
@@ -1011,9 +1014,7 @@ class NovelDetailViewModel @Inject constructor(
             )
         }
         viewModelScope.launch {
-            val entity = novelDao.getBySourceUrl(sourceId, novelUrl) ?: return@launch
-            val updated = entity.copy(favorite = next)
-            novelDao.upsert(updated)
+            libraryRepository.setMembership(NovelKey(sourceId, novelUrl), next) ?: return@launch
             // Browsing history is only for non-library novels: drop the row once added.
             if (next) browsingHistoryDao.deleteByNovel(pkg, novelUrl)
         }

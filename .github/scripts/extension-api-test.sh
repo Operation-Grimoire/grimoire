@@ -21,3 +21,11 @@ grep -Fq 'OK (3 tests)' codec-result.log
 grep -Fq 'INSTRUMENTATION_CODE: -1' codec-result.log
 test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' codec-result.log)" -eq 3
 if grep -Eq 'FAILURES|INSTRUMENTATION_(FAILED|ABORTED)|INSTRUMENTATION_STATUS_CODE: -[234]' codec-result.log; then exit 1; fi
+
+adb shell am instrument -w -r \
+  -e class io.grimoire.app.data.local.LibraryStorageTest \
+  io.grimoire.app.test/androidx.test.runner.AndroidJUnitRunner | tee library-result.log
+grep -Fq 'OK (3 tests)' library-result.log
+grep -Fq 'INSTRUMENTATION_CODE: -1' library-result.log
+test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' library-result.log)" -eq 3
+if grep -Eq 'FAILURES|INSTRUMENTATION_(FAILED|ABORTED)|INSTRUMENTATION_STATUS_CODE: -[234]' library-result.log; then exit 1; fi
