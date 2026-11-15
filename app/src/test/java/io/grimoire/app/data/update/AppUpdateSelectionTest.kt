@@ -14,24 +14,40 @@ class AppUpdateSelectionTest {
             ]}
         """.trimIndent())
         val update = check(stable = blank).getOrThrow()
-        assertEquals("", update?.releaseNotes)
         assertEquals("1.0.1", update?.displayVersion)
-        assertEquals("", aggregateReleaseNotes(listOf(blank)))
+        assertEquals("$GITHUB_RELEASES_URL/tag/v1.0.1", update?.releaseUrl)
     }
 
-    @Test fun notesPaginationCountsTheInstalledRangeRatherThanNewerBuilds() {
+    @Test fun checkPrefersHtmlUrlAndFallsBackToTagReleaseUrl() {
+        val withHtmlUrl = release("v1.2.3").copy(html_url = "https://github.com/custom/releases/tag/v1.2.3")
+        assertEquals("https://github.com/custom/releases/tag/v1.2.3", check(stable = withHtmlUrl).getOrThrow()?.releaseUrl)
+
+        val withoutHtmlUrl = release("v1.2.3")
+        assertEquals("$GITHUB_RELEASES_URL/tag/v1.2.3", check(stable = withoutHtmlUrl).getOrThrow()?.releaseUrl)
+    }
+
+    @Test fun releaseChangelogUrlTargetsTaggedReleaseOrReleasesListForLocalBuilds() {
+        assertEquals("$GITHUB_RELEASES_URL/tag/v1.0.5-beta.347", releaseChangelogUrl("1.0.5-beta.347"))
+        assertEquals("$GITHUB_RELEASES_URL/tag/v1.0.5", releaseChangelogUrl("v1.0.5+abc123"))
+        assertEquals(GITHUB_RELEASES_URL, releaseChangelogUrl("0.0.0"))
+        assertEquals(GITHUB_RELEASES_URL, releaseChangelogUrl("v0.0.0-beta.1"))
+        assertEquals(GITHUB_RELEASES_URL, releaseChangelogUrl("  "))
+        assertEquals(GITHUB_RELEASES_URL, releaseChangelogUrl(null))
+    }
+
+    @Test fun paginationOnlyCollectsMatchingChannelReleasesAcrossDesktopPages() {
         val pages = listOf(
-            listOf(release("v1.0.0-beta.500"), release("v1.0.0-beta.499")),
-            listOf(release("v1.0.0-beta.341"), release("desktop-v9.0.0")),
+            listOf(release("v1.0.0-beta.500"), release("desktop-v9.0.0")),
+            listOf(release("v1.0.0-beta.341"), release("v1.0.1")),
             listOf(release("v1.0.0-beta.340")),
         )
         val requested = mutableListOf<Int>()
         val collected = collectAndroidReleases(UpdateChannel.BETA,
-            { requested += it; pages[it - 1] }, pageSize = 2, minimumMatches = 2,
-            countMatch = { isInNotesRange(it, "v1.0.0-beta.339", "v1.0.0-beta.341", UpdateChannel.BETA) })
+            { requested += it; pages[it - 1] }, pageSize = 2, minimumMatches = 3,
+            countMatch = { it.prerelease })
         assertEquals(listOf(1, 2, 3), requested)
-        assertEquals(listOf("v1.0.0-beta.341", "v1.0.0-beta.340"),
-            notesReleasesSince(collected, "v1.0.0-beta.339", "v1.0.0-beta.341", UpdateChannel.BETA).map { it.tag_name })
+        assertEquals(listOf("v1.0.0-beta.500", "v1.0.0-beta.341", "v1.0.1", "v1.0.0-beta.340"),
+            collected.map { it.tag_name })
     }
 
     @Test fun paginationFindsAndroidBeyondDesktopPages() {
@@ -56,23 +72,16 @@ class AppUpdateSelectionTest {
         assertEquals(listOf("v1.0.1"), collectAndroidReleases(UpdateChannel.STABLE, { pages[it - 1] }, pageSize = 2).map { it.tag_name })
     }
 
-    @Test fun internalOnlyReleaseBodiesDoNotCreateEmptyVersionSections() {
-        assertEquals("", aggregateReleaseNotes(listOf(release("v1.0.1"))))
-        assertEquals("## v1.0.2\n\n## Bug fixes\n- Android fix", aggregateReleaseNotes(listOf(
-            release("v1.0.1"), release("v1.0.2").copy(body = "## Bug fixes\n- Android fix"))))
-    }
-
     @Test fun desktopLatestDoesNotHideAnAndroidStableRelease() {
         val actual = check(stable = release("desktop-v9.0.0"), releases = listOf(release("v1.0.1")))
         assertEquals("v1.0.1", actual.getOrThrow()?.tagName)
     }
 
-    @Test fun desktopStableCannotEnterTheAndroidBetaChannelOrNotes() {
+    @Test fun desktopStableCannotEnterTheAndroidBetaChannel() {
         val desktop = release("desktop-v9.900.0")
         val android = release("v1.0.0-beta.303")
         val actual = check(stable = release("v1.0.0"), channel = UpdateChannel.BETA, releases = listOf(desktop, android))
         assertEquals(android.tag_name, actual.getOrThrow()?.tagName)
-        assertEquals(listOf(android.tag_name), notesReleasesSince(listOf(desktop, android), "1.0.0", "99.0.0", UpdateChannel.BETA).map { it.tag_name })
     }
 
     @Test fun onlyTheExpectedAndroidAssetIsDownloaded() {
@@ -226,49 +235,5 @@ class AppUpdateSelectionTest {
             { stable }, { emptyList() }, { error("Unrelated checksum must not be used") })
         assertEquals("v1.0.1", actual.getOrThrow()?.tagName)
         assertNull(actual.getOrThrow()?.sha256)
-    }
-
-    @Test fun betaNotesIncludeStableTransitionsInVersionCodeOrder() {
-        val actual = notesReleasesSince(listOf(release("v1.0.0-beta.302"), release("v1.0.0-beta.303"),
-            release("v1.0.1"), release("v0.0.38-beta.999")), "1.0.0-beta.302", "1.0.1", UpdateChannel.BETA)
-        assertEquals(listOf("v1.0.1", "v1.0.0-beta.303"), actual.map { it.tag_name })
-    }
-
-    @Test fun betaNotesIncludeLatestStableOutsideTheListPage() {
-        val actual = notesReleasesSince(listOf(release("v1.0.0-beta.303")),
-            "1.0.0-beta.302", "1.0.1", UpdateChannel.BETA) { release("v1.0.1") }
-        assertEquals(listOf("v1.0.1", "v1.0.0-beta.303"), actual.map { it.tag_name })
-    }
-
-    @Test fun latestStableAppearsOnlyOnceWhenAlreadyListed() {
-        val actual = notesReleasesSince(listOf(release("v1.0.1"), release("v1.0.0-beta.303")),
-            "1.0.0-beta.302", "1.0.1", UpdateChannel.BETA) { release("v1.0.1") }
-        assertEquals(listOf("v1.0.1", "v1.0.0-beta.303"), actual.map { it.tag_name })
-    }
-
-    @Test fun latestStableLookupFailurePreservesListNotes() {
-        val actual = notesReleasesSince(listOf(release("v1.0.0-beta.303")),
-            "1.0.0-beta.302", "1.0.0-beta.303", UpdateChannel.BETA) {
-            throw IOException("latest stable endpoint unavailable")
-        }
-        assertEquals(listOf("v1.0.0-beta.303"), actual.map { it.tag_name })
-    }
-
-    @Test fun betaNotesFromStableIncludeNewerSameBaseBetas() {
-        val actual = notesReleasesSince(listOf(release("v1.0.0"), release("v1.0.0-beta.302"),
-            release("v1.0.0-beta.303"), release("v1.0.1")), "1.0.0", "1.0.0-beta.303", UpdateChannel.BETA)
-        assertEquals(listOf("v1.0.0-beta.303", "v1.0.0-beta.302"), actual.map { it.tag_name })
-    }
-
-    @Test fun stableNotesExcludePrereleasesAndRespectTheRange() {
-        val actual = notesReleasesSince(listOf(release("v1.0.0"), release("v1.0.1"),
-            release("v1.0.1-beta.303"), release("v1.0.2")), "0.0.38", "1.0.1", UpdateChannel.STABLE)
-        assertEquals(listOf("v1.0.1", "v1.0.0"), actual.map { it.tag_name })
-    }
-
-    @Test fun aggregatedNotesKeepTheTenNewestEligibleReleases() {
-        val actual = notesReleasesSince((1..20).map { release("v1.0.0-beta.$it") },
-            "1.0.0", "1.0.0-beta.20", UpdateChannel.BETA)
-        assertEquals((20 downTo 11).map { "v1.0.0-beta.$it" }, actual.map { it.tag_name })
     }
 }

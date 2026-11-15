@@ -267,8 +267,6 @@
     <string name="about_updates_section">Pembaruan</string>
     <string name="about_update_popups">Pop-up pembaruan otomatis</string>
     <string name="about_update_popups_summary">Tampilkan dialog saat aplikasi dibuka jika ada pembaruan</string>
-    <string name="about_changelog_after_update">Log perubahan setelah pembaruan</string>
-    <string name="about_changelog_after_update_summary">Tampilkan catatan rilis saat pertama kali membuka versi baru</string>
     <string name="about_build_section">Build</string>
     <string name="about_build_details">Detail build</string>
     <string name="about_build_details_summary">Build %1$d · commit %2$s · Extensions API %3$s</string>
@@ -277,24 +275,15 @@
     <string name="about_channel_beta">Beta</string>
     <string name="about_channel_stable_summary">Hanya rilis bertag. Direkomendasikan.</string>
     <string name="about_channel_beta_summary">Build terbaru dari main di setiap commit. Mungkin tidak stabil.</string>
-    <string name="update_whats_new">Yang baru di %1$s</string>
-    <string name="update_got_it">Mengerti</string>
     <string name="update_ready">Pembaruan siap</string>
     <string name="update_available">Pembaruan tersedia</string>
     <string name="update_unknown_error">Error tidak diketahui</string>
-    <string name="update_no_changelog">Tidak ada log perubahan untuk %1$s.</string>
     <string name="action_update">Perbarui</string>
     <string name="update_download_complete">Unduhan selesai — ketuk Pasang untuk menyelesaikan pembaruan.</string>
     <string name="update_skip_version">Lewati versi ini</string>
     <string name="update_downloading_background">Mengunduh di latar belakang — Anda bisa menutup aplikasi.</string>
     <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
     <string name="update_download_size">%1$s MB</string>
-    <string name="changelog_features">Fitur</string>
-    <string name="changelog_bug_fixes">Perbaikan bug</string>
-    <string name="changelog_sources">Sumber</string>
-    <string name="changelog_documentation">Dokumentasi</string>
-    <string name="changelog_other">Perubahan lainnya</string>
-    <string name="changelog_changes">Perubahan</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">Ganti bahasa konten global</string>

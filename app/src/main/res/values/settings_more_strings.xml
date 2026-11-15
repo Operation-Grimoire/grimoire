@@ -266,8 +266,6 @@
     <string name="about_updates_section">Updates</string>
     <string name="about_update_popups">Automatic update popups</string>
     <string name="about_update_popups_summary">Show a dialog on launch when an update is available</string>
-    <string name="about_changelog_after_update">Changelog after updates</string>
-    <string name="about_changelog_after_update_summary">Show release notes the first time you launch a new version</string>
     <string name="about_build_section">Build</string>
     <string name="about_build_details">Build details</string>
     <string name="about_build_details_summary">Build %1$d · commit %2$s · Extensions API %3$s</string>
@@ -276,24 +274,15 @@
     <string name="about_channel_beta">Beta</string>
     <string name="about_channel_stable_summary">Tagged releases only. Recommended.</string>
     <string name="about_channel_beta_summary">Fresh builds from main on every commit. May be unstable.</string>
-    <string name="update_whats_new">What’s new in %1$s</string>
-    <string name="update_got_it">Got it</string>
     <string name="update_ready">Update ready</string>
     <string name="update_available">Update available</string>
     <string name="update_unknown_error">Unknown error</string>
-    <string name="update_no_changelog">No changelog available for %1$s.</string>
     <string name="action_update">Update</string>
     <string name="update_download_complete">Download complete — tap Install to finish updating.</string>
     <string name="update_skip_version">Skip this version</string>
     <string name="update_downloading_background">Downloading in the background — you can close the app.</string>
     <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
     <string name="update_download_size">%1$s MB</string>
-    <string name="changelog_features">Features</string>
-    <string name="changelog_bug_fixes">Bug fixes</string>
-    <string name="changelog_sources">Sources</string>
-    <string name="changelog_documentation">Documentation</string>
-    <string name="changelog_other">Other changes</string>
-    <string name="changelog_changes">Changes</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">Override global content languages</string>

@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
@@ -43,10 +44,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import io.grimoire.app.BuildConfig
 import io.grimoire.app.R
-import io.grimoire.app.ui.component.PlainTooltipIconButton
 import io.grimoire.app.data.preferences.UpdateChannel
+import io.grimoire.app.data.update.releaseChangelogUrl
+import io.grimoire.app.ui.component.PlainTooltipIconButton
 import io.grimoire.app.ui.update.AppUpdateViewModel
 import io.grimoire.app.ui.update.CheckState
+import io.grimoire.app.ui.update.openGitHubReleasePage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +68,7 @@ fun AboutSettingsScreen(
     val version = remember {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        }.getOrDefault("–")
+        }.getOrNull()?.takeIf { it.isNotBlank() }
     }
     val versionCode = remember {
         runCatching {
@@ -83,11 +86,10 @@ fun AboutSettingsScreen(
     )
     val buildCopiedMessage = stringResource(R.string.about_build_copied)
     val clipboard = LocalClipboardManager.current
+    val uriHandler = LocalUriHandler.current
     val checkState by updateViewModel.checkState.collectAsState()
     val channel by viewModel.channel.collectAsState()
     val autoPopupEnabled by viewModel.autoPopupEnabled.collectAsState()
-    val autoChangelogEnabled by viewModel.autoChangelogEnabled.collectAsState()
-    val isLoadingChangelog by updateViewModel.isLoadingChangelog.collectAsState()
 
     Scaffold(
         modifier = modifier,
@@ -182,15 +184,14 @@ fun AboutSettingsScreen(
                         Text(stringResource(R.string.about_show_changelog_summary, version ?: "–"))
                     },
                     trailingContent = {
-                        if (isLoadingChangelog) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                            )
-                        }
+                        Icon(
+                            AppIcons.OpenInNew,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     },
-                    modifier = Modifier.clickable(enabled = !isLoadingChangelog) {
-                        updateViewModel.showCurrentChangelog()
+                    modifier = Modifier.clickable {
+                        openGitHubReleasePage(context, uriHandler, releaseChangelogUrl(version))
                     },
                 )
             }
@@ -236,24 +237,6 @@ fun AboutSettingsScreen(
                     },
                     modifier = Modifier.clickable {
                         viewModel.setAutoPopupEnabled(!autoPopupEnabled)
-                    },
-                )
-            }
-
-            item {
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.about_changelog_after_update)) },
-                    supportingContent = {
-                        Text(stringResource(R.string.about_changelog_after_update_summary))
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = autoChangelogEnabled,
-                            onCheckedChange = { viewModel.setAutoChangelogEnabled(it) },
-                        )
-                    },
-                    modifier = Modifier.clickable {
-                        viewModel.setAutoChangelogEnabled(!autoChangelogEnabled)
                     },
                 )
             }

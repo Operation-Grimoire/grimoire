@@ -267,8 +267,6 @@
     <string name="about_updates_section">Güncellemeler</string>
     <string name="about_update_popups">Otomatik güncelleme açılır pencereleri</string>
     <string name="about_update_popups_summary">Güncelleme mevcut olduğunda açılışta bir iletişim kutusu göster</string>
-    <string name="about_changelog_after_update">Güncellemelerden sonra değişiklik günlüğü</string>
-    <string name="about_changelog_after_update_summary">Yeni bir sürümü ilk açtığınızda sürüm notlarını göster</string>
     <string name="about_build_section">Derleme</string>
     <string name="about_build_details">Derleme ayrıntıları</string>
     <string name="about_build_details_summary">Derleme %1$d · commit %2$s · Uzantı API’si %3$s</string>
@@ -277,24 +275,15 @@
     <string name="about_channel_beta">Beta</string>
     <string name="about_channel_stable_summary">Yalnızca etiketli sürümler. Önerilir.</string>
     <string name="about_channel_beta_summary">Her commit’te main dalından yeni derlemeler. Kararsız olabilir.</string>
-    <string name="update_whats_new">%1$s sürümündeki yenilikler</string>
-    <string name="update_got_it">Anladım</string>
     <string name="update_ready">Güncelleme hazır</string>
     <string name="update_available">Güncelleme mevcut</string>
     <string name="update_unknown_error">Bilinmeyen hata</string>
-    <string name="update_no_changelog">%1$s için değişiklik günlüğü yok.</string>
     <string name="action_update">Güncelle</string>
     <string name="update_download_complete">İndirme tamamlandı — güncellemeyi bitirmek için Yükle’ye dokunun.</string>
     <string name="update_skip_version">Bu sürümü atla</string>
     <string name="update_downloading_background">Arka planda indiriliyor — uygulamayı kapatabilirsiniz.</string>
     <string name="update_download_progress">%1$s / %2$s MB · %%%3$d</string>
     <string name="update_download_size">%1$s MB</string>
-    <string name="changelog_features">Özellikler</string>
-    <string name="changelog_bug_fixes">Hata düzeltmeleri</string>
-    <string name="changelog_sources">Kaynaklar</string>
-    <string name="changelog_documentation">Belgeler</string>
-    <string name="changelog_other">Diğer değişiklikler</string>
-    <string name="changelog_changes">Değişiklikler</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">Genel içerik dillerini geçersiz kıl</string>

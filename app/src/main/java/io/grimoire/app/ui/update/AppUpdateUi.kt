@@ -1,21 +1,17 @@
 package io.grimoire.app.ui.update
 
-import io.grimoire.app.ui.icon.*
-import androidx.compose.foundation.background
+import android.content.Context
+import android.widget.Toast
+import io.grimoire.app.ui.icon.AppIcons
+import io.grimoire.app.ui.icon.Description
+import io.grimoire.app.ui.icon.SystemUpdateAlt
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -24,38 +20,29 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.BuildConfig
-import io.grimoire.app.data.update.ChangelogCategory
-import io.grimoire.app.data.update.ChangelogItem
-import io.grimoire.app.data.update.ChangelogParser
-import io.grimoire.app.data.update.ChangelogSection
 import io.grimoire.app.data.update.DownloadState
 import io.grimoire.app.data.update.ReleaseInfo
 import io.grimoire.app.R
+import io.grimoire.app.ui.component.ActionLinkCard
+import io.grimoire.app.ui.component.ValueTransitionPill
 
 @Composable
 fun AppUpdateUi(viewModel: AppUpdateViewModel = hiltViewModel()) {
-    val changelogContent by viewModel.changelogContent.collectAsState()
     val availableRelease by viewModel.availableRelease.collectAsState()
     val downloadState by viewModel.downloadState.collectAsState()
 
-    changelogContent?.let { content ->
-        ChangelogDialog(content = content, onDismiss = viewModel::dismissChangelog)
-    }
-
-    if (availableRelease != null && changelogContent == null) {
+    availableRelease?.let { release ->
         UpdateDialog(
-            release = availableRelease!!,
+            release = release,
             downloadState = downloadState,
             onUpdate = viewModel::startDownload,
             onInstall = viewModel::installUpdate,
@@ -65,104 +52,11 @@ fun AppUpdateUi(viewModel: AppUpdateViewModel = hiltViewModel()) {
     }
 }
 
-@Composable
-private fun ChangelogDialog(content: ChangelogContent, onDismiss: () -> Unit) {
-    val text = when (content) {
-        is ChangelogContent.Notes -> content.text
-        ChangelogContent.Unavailable -> stringResource(
-            R.string.update_no_changelog,
-            BuildConfig.VERSION_NAME,
-        )
-    }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.update_whats_new, BuildConfig.VERSION_NAME)) },
-        text = {
-            Column(
-                modifier = Modifier
-                    .heightIn(max = 400.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ParsedReleaseNotes(text)
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.update_got_it)) }
-        },
-    )
-}
-
-@Composable
-private fun ParsedReleaseNotes(text: String) {
-    if (text.isBlank()) return
-    val sections = remember(text) { ChangelogParser.parse(text) }
-    if (sections.isEmpty()) {
-        // Parser found no list items — show the raw body so an unfamiliar
-        // shape never produces an empty surface.
-        Text(text, style = MaterialTheme.typography.bodyMedium)
-    } else {
-        sections.forEach { section -> ChangelogSectionCard(section) }
-    }
-}
-
-@Composable
-private fun ChangelogSectionCard(section: ChangelogSection) {
-    // Flat and always expanded: a small header and plain bullets. The old
-    // collapsed cards with counts and chevrons read as clutter and hid the
-    // actual changes behind taps (#329).
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(
-                imageVector = section.category.icon(),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp),
-            )
-            Text(
-                text = section.category.localizedDisplayName(),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
+internal fun openGitHubReleasePage(context: Context, uriHandler: UriHandler, url: String) {
+    runCatching { uriHandler.openUri(url) }
+        .onFailure {
+            Toast.makeText(context, R.string.crash_no_browser, Toast.LENGTH_SHORT).show()
         }
-        section.items.forEach { item -> ChangelogItemRow(item) }
-    }
-}
-
-@Composable
-private fun ChangelogItemRow(item: ChangelogItem) {
-    // Just the change text — PR numbers and author handles are repository
-    // noise, not release notes.
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(top = 7.dp)
-                .size(5.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary),
-        )
-        Text(
-            text = item.text,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
-
-private fun ChangelogCategory.icon(): ImageVector = when (this) {
-    ChangelogCategory.FEATURES -> AppIcons.AutoAwesome
-    ChangelogCategory.BUG_FIXES -> AppIcons.BugReport
-    ChangelogCategory.SOURCES -> AppIcons.Extension
-    ChangelogCategory.DOCUMENTATION -> AppIcons.Description
-    ChangelogCategory.OTHER -> AppIcons.Tune
-    ChangelogCategory.CHANGES -> AppIcons.List
 }
 
 @Composable
@@ -174,6 +68,8 @@ private fun UpdateDialog(
     onDismiss: () -> Unit,
     onSkip: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
@@ -192,22 +88,18 @@ private fun UpdateDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                VersionTransitionRow(
-                    current = BuildConfig.VERSION_NAME,
-                    target = release.displayVersion,
+            val targetVersion = release.displayVersion.substringBefore('+')
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                ValueTransitionPill(
+                    from = BuildConfig.VERSION_NAME.substringBefore('+'),
+                    to = targetVersion,
                 )
-                // Cap the notes so the dialog stays glanceable now that the
-                // sections render expanded — the notes scroll inside, and the
-                // Skip/Update controls stay on screen without scrolling.
-                Column(
-                    modifier = Modifier
-                        .heightIn(max = 320.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    ParsedReleaseNotes(release.releaseNotes)
-                }
+                ActionLinkCard(
+                    title = stringResource(R.string.about_show_changelog),
+                    subtitle = stringResource(R.string.about_show_changelog_summary, targetVersion),
+                    leadingIcon = AppIcons.Description,
+                    onClick = { openGitHubReleasePage(context, uriHandler, release.releaseUrl) },
+                )
                 when (downloadState) {
                     is DownloadState.Downloading -> DownloadProgressRow(downloadState)
                     is DownloadState.Error -> Text(
@@ -223,11 +115,15 @@ private fun UpdateDialog(
                     DownloadState.Idle -> {
                         TextButton(
                             onClick = onSkip,
-                            modifier = Modifier.align(Alignment.End),
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                         ) {
                             Text(
                                 text = stringResource(R.string.update_skip_version),
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelMedium,
                             )
                         }
                     }
@@ -258,42 +154,6 @@ private fun UpdateDialog(
             }
         },
     )
-}
-
-@Composable
-private fun VersionTransitionRow(current: String, target: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = current,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f),
-        )
-        Icon(
-            imageVector = AppIcons.ArrowForward,
-            contentDescription = null,
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .size(16.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = target,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.weight(1f),
-        )
-    }
 }
 
 @Composable
@@ -339,15 +199,3 @@ private fun downloadLabel(state: DownloadState.Downloading): String {
         stringResource(R.string.update_download_size, mb(state.bytesRead))
     }
 }
-
-@Composable
-private fun ChangelogCategory.localizedDisplayName(): String = stringResource(
-    when (this) {
-        ChangelogCategory.FEATURES -> R.string.changelog_features
-        ChangelogCategory.BUG_FIXES -> R.string.changelog_bug_fixes
-        ChangelogCategory.SOURCES -> R.string.changelog_sources
-        ChangelogCategory.DOCUMENTATION -> R.string.changelog_documentation
-        ChangelogCategory.OTHER -> R.string.changelog_other
-        ChangelogCategory.CHANGES -> R.string.changelog_changes
-    },
-)

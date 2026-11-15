@@ -332,8 +332,6 @@
     <string name="about_updates_section">Aktualizacje</string>
     <string name="about_update_popups">Automatyczne powiadomienia o aktualizacjach</string>
     <string name="about_update_popups_summary">Pokazuj okno po uruchomieniu, gdy dostępna jest aktualizacja</string>
-    <string name="about_changelog_after_update">Lista zmian po aktualizacji</string>
-    <string name="about_changelog_after_update_summary">Pokazuj informacje o wydaniu przy pierwszym uruchomieniu nowej wersji</string>
     <string name="about_build_section">Kompilacja</string>
     <string name="about_build_details">Szczegóły kompilacji</string>
     <string name="about_build_details_summary">Kompilacja %1$d · commit %2$s · Extensions API %3$s</string>
@@ -342,24 +340,15 @@
     <string name="about_channel_beta">Beta</string>
     <string name="about_channel_stable_summary">Tylko oznaczone wydania. Zalecane.</string>
     <string name="about_channel_beta_summary">Świeże kompilacje z gałęzi main po każdym commicie. Mogą być niestabilne.</string>
-    <string name="update_whats_new">Co nowego w %1$s</string>
-    <string name="update_got_it">Rozumiem</string>
     <string name="update_ready">Aktualizacja gotowa</string>
     <string name="update_available">Dostępna aktualizacja</string>
     <string name="update_unknown_error">Nieznany błąd</string>
-    <string name="update_no_changelog">Brak listy zmian dla %1$s.</string>
     <string name="action_update">Aktualizuj</string>
     <string name="update_download_complete">Pobieranie zakończone — dotknij Zainstaluj, aby dokończyć aktualizację.</string>
     <string name="update_skip_version">Pomiń tę wersję</string>
     <string name="update_downloading_background">Pobieranie w tle — możesz zamknąć aplikację.</string>
     <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
     <string name="update_download_size">%1$s MB</string>
-    <string name="changelog_features">Nowe funkcje</string>
-    <string name="changelog_bug_fixes">Poprawki błędów</string>
-    <string name="changelog_sources">Źródła</string>
-    <string name="changelog_documentation">Dokumentacja</string>
-    <string name="changelog_other">Inne zmiany</string>
-    <string name="changelog_changes">Zmiany</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">Zastąp globalne języki treści</string>

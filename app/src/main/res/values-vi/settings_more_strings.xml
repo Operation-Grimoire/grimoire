@@ -267,8 +267,6 @@
     <string name="about_updates_section">Cập nhật</string>
     <string name="about_update_popups">Tự động thông báo cập nhật</string>
     <string name="about_update_popups_summary">Hiện hộp thoại khi khởi động nếu có bản cập nhật</string>
-    <string name="about_changelog_after_update">Nhật ký thay đổi sau khi cập nhật</string>
-    <string name="about_changelog_after_update_summary">Hiện ghi chú phát hành vào lần đầu mở phiên bản mới</string>
     <string name="about_build_section">Bản dựng</string>
     <string name="about_build_details">Chi tiết bản dựng</string>
     <string name="about_build_details_summary">Bản dựng %1$d · commit %2$s · Extensions API %3$s</string>
@@ -277,24 +275,15 @@
     <string name="about_channel_beta">Thử nghiệm</string>
     <string name="about_channel_stable_summary">Chỉ các bản phát hành chính thức. Khuyên dùng.</string>
     <string name="about_channel_beta_summary">Bản dựng mới từ nhánh main sau mỗi commit. Có thể không ổn định.</string>
-    <string name="update_whats_new">Có gì mới trong %1$s</string>
-    <string name="update_got_it">Đã hiểu</string>
     <string name="update_ready">Bản cập nhật đã sẵn sàng</string>
     <string name="update_available">Có bản cập nhật</string>
     <string name="update_unknown_error">Lỗi không xác định</string>
-    <string name="update_no_changelog">Không có nhật ký thay đổi cho %1$s.</string>
     <string name="action_update">Cập nhật</string>
     <string name="update_download_complete">Đã tải xong — chạm Cài đặt để hoàn tất cập nhật.</string>
     <string name="update_skip_version">Bỏ qua phiên bản này</string>
     <string name="update_downloading_background">Đang tải trong nền — bạn có thể đóng ứng dụng.</string>
     <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
     <string name="update_download_size">%1$s MB</string>
-    <string name="changelog_features">Tính năng</string>
-    <string name="changelog_bug_fixes">Sửa lỗi</string>
-    <string name="changelog_sources">Nguồn</string>
-    <string name="changelog_documentation">Tài liệu</string>
-    <string name="changelog_other">Thay đổi khác</string>
-    <string name="changelog_changes">Thay đổi</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">Tùy chỉnh riêng ngôn ngữ nội dung</string>

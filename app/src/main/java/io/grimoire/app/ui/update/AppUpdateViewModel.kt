@@ -6,14 +6,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.app.BuildConfig
-import io.grimoire.app.data.preferences.AppPreferences
 import io.grimoire.app.data.preferences.UpdateChannel
 import io.grimoire.app.data.preferences.UpdatePreferences
 import io.grimoire.app.data.update.AppUpdateChecker
 import io.grimoire.app.data.update.AppUpdateDownloadStore
 import io.grimoire.app.data.update.AppUpdateService
-import io.grimoire.app.data.update.Changelog
 import io.grimoire.app.data.update.DownloadState
 import io.grimoire.app.data.update.ReleaseInfo
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,23 +27,14 @@ sealed class CheckState {
     data class Error(val message: String) : CheckState()
 }
 
-sealed interface ChangelogContent {
-    data class Notes(val text: String) : ChangelogContent
-    data object Unavailable : ChangelogContent
-}
-
 @HiltViewModel
 class AppUpdateViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val checker: AppUpdateChecker,
-    private val appPreferences: AppPreferences,
     private val updatePreferences: UpdatePreferences,
     private val downloadStore: AppUpdateDownloadStore,
     private val checkStore: AppUpdateCheckStore,
 ) : ViewModel() {
-
-    private val _changelogContent = MutableStateFlow<ChangelogContent?>(null)
-    val changelogContent: StateFlow<ChangelogContent?> = _changelogContent.asStateFlow()
 
     private val _availableRelease = MutableStateFlow<ReleaseInfo?>(null)
     val availableRelease: StateFlow<ReleaseInfo?> = _availableRelease.asStateFlow()
@@ -59,67 +47,14 @@ class AppUpdateViewModel @Inject constructor(
     // survives this ViewModel being recreated.
     val checkState: StateFlow<CheckState> = checkStore.state
 
-    private val _isLoadingChangelog = MutableStateFlow(false)
-    val isLoadingChangelog: StateFlow<Boolean> = _isLoadingChangelog.asStateFlow()
-
     init {
         viewModelScope.launch {
-            val lastSeen = appPreferences.lastSeenVersionCode.changes().first()
-            val channel = updatePreferences.channel.changes().first()
-            if (lastSeen == 0) {
-                // First install — mark without showing changelog.
-                appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
-                appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
-            } else if (BuildConfig.VERSION_CODE > lastSeen) {
-                val autoChangelogEnabled = updatePreferences.autoChangelogEnabled.changes().first()
-                // The user already read these notes in the update-available
-                // dialog when they started this update — don't repeat them.
-                val alreadySeen =
-                    updatePreferences.changelogSeenVersion.changes().first() == BuildConfig.VERSION_NAME
-                if (alreadySeen) {
-                    appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
-                    appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
-                } else if (autoChangelogEnabled) {
-                    val prevName = appPreferences.lastSeenVersionName.changes().first()
-                    val hasPrev = prevName.isNotBlank() && prevName != BuildConfig.VERSION_NAME
-                    val remote: String? = when (channel) {
-                        UpdateChannel.STABLE -> {
-                            if (hasPrev) {
-                                checker.fetchStableNotesSince(prevName, BuildConfig.VERSION_NAME)
-                            } else {
-                                checker.fetchNotesForVersion(BuildConfig.VERSION_NAME)
-                            }
-                        }
-                        UpdateChannel.BETA -> {
-                            if (hasPrev) {
-                                checker.fetchBetaNotesSince(prevName, BuildConfig.VERSION_NAME)
-                            } else {
-                                checker.fetchNotesForVersion(BuildConfig.VERSION_NAME)
-                            }
-                        }
-                    }
-                    if (remote != null && remote.isBlank()) {
-                        // A published internal-only build has no user-facing notes.
-                        appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
-                        appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
-                    }
-                    _changelogContent.value = (remote ?: Changelog.since(
-                        lastSeen,
-                        BuildConfig.VERSION_CODE,
-                    ))?.takeIf { it.isNotBlank() }?.let(ChangelogContent::Notes)
-                } else {
-                    // Popup disabled — mark this version as seen so we don't
-                    // accumulate fetches if the user re-enables it later.
-                    // The user can still open the dialog manually via
-                    // showCurrentChangelog().
-                    appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
-                    appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
-                }
-            }
-            val release = checker.checkForUpdate(channel).getOrNull() ?: return@launch
             val autoPopupEnabled = updatePreferences.autoPopupEnabled.changes().first()
+            if (!autoPopupEnabled) return@launch
+            val channel = updatePreferences.channel.changes().first()
+            val release = checker.checkForUpdate(channel).getOrNull() ?: return@launch
             val skippedVersion = updatePreferences.skippedVersion.changes().first()
-            if (!autoPopupEnabled || release.tagName == skippedVersion) return@launch
+            if (release.tagName == skippedVersion) return@launch
             _availableRelease.value = release
         }
     }
@@ -150,28 +85,6 @@ class AppUpdateViewModel @Inject constructor(
         checkStore.set(CheckState.Idle)
     }
 
-    fun showCurrentChangelog() {
-        if (_changelogContent.value != null || _isLoadingChangelog.value) return
-        viewModelScope.launch {
-            _isLoadingChangelog.value = true
-            try {
-                val remote = checker.fetchNotesForVersion(BuildConfig.VERSION_NAME)
-                _changelogContent.value = remote?.takeIf { it.isNotBlank() }?.let(ChangelogContent::Notes)
-                    ?: ChangelogContent.Unavailable
-            } finally {
-                _isLoadingChangelog.value = false
-            }
-        }
-    }
-
-    fun dismissChangelog() {
-        _changelogContent.value = null
-        viewModelScope.launch {
-            appPreferences.lastSeenVersionCode.set(BuildConfig.VERSION_CODE)
-            appPreferences.lastSeenVersionName.set(BuildConfig.VERSION_NAME)
-        }
-    }
-
     /**
      * Hands the download to a foreground service so it keeps running even if
      * the app is closed before it finishes. Progress and completion surface
@@ -180,11 +93,6 @@ class AppUpdateViewModel @Inject constructor(
     fun startDownload() {
         val release = _availableRelease.value ?: return
         if (downloadState.value is DownloadState.Downloading) return
-        // The update dialog is showing this release's notes right now — record
-        // that so the post-install "what's new" popup doesn't repeat them.
-        viewModelScope.launch {
-            updatePreferences.changelogSeenVersion.set(release.tagName.removePrefix("v"))
-        }
         downloadStore.set(DownloadState.Downloading(0L, 0L))
         AppUpdateService.start(context, release)
     }
