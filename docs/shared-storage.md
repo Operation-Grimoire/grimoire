@@ -57,8 +57,9 @@ handling. The shared loader below owns selection order; platforms supply source
 access, including desktop offline restrictions. The DAO adds no network policy.
 
 Saved-chapter adapters do not change schemas, file layouts, saved bytes, download status,
-word counts, progress or writes. Android remains database33; desktop library
-metadata remains schema1 and new chapter files remain schema2. See
+word counts, progress or writes. That slice retained Android database33; the
+download adoption below uses DB34.
+Desktop library metadata remains schema1 and new chapter files remain schema2. See
 [chapter content](chapter-content.md) for the existing format/rollback boundary.
 
 ## Implemented second slice: library metadata and membership
@@ -155,6 +156,35 @@ The shared module now declares coroutines-core explicitly for cancellation
 checks; it uses the same 1.9.0 dependency already used by desktop and shared tests.
 This slice changes no storage schema, file layout, writes or progress semantics.
 
+## Android guarded downloads
+
+`DownloadRepository` prepares versioned original content, digest and prose count
+and validates claim/commit/lookup confirmations. `DownloadDao` uses portable
+attempts and receipts with explicit committed/replayed/stale outcomes. Android's
+production queue claims through this facade; success, error and connectivity
+callbacks carry the attempt, including after cancellation/requeue.
+
+`RoomDownloadDao` commits content/version, completion, word count and a receipt
+together. A positive prose count replaces the old count; zero retains the old
+count, which may also be zero. DB34 adds `chapter_download_state`, with cascading ownership
+and receipt metadata outside chapter/progress rows. Triggers invalidate ownership
+for existing cancel/delete/status, content replacement/import, identity and lock
+writes. A per-store OS lease rejects a second protocol owner. Drain cleanup holds
+that lease and resets work only after its child jobs finish.
+
+Saved reads optionally carry a cache revision from the same transaction as the
+body. The reader and EPUB exporter use it to select matching illustrations.
+Legacy snapshots keep their existing image paths; guarded writes use revision
+subdirectories. Old image work can finish in an unreferenced directory without
+attaching to current/newly recreated content. Old revision files are retained
+until chapter/novel deletion; conservative cache garbage collection remains later
+work. Shared contracts contain no file paths or Android IDs.
+
+Desktop still uses its existing save implementation. The guarded desktop adapter
+and process-kill/competing-process acceptance are unfinished; an ownership lease
+or graceful Room reopen alone does not establish those runtime gates. The
+[download contract](download-commit.md) remains the acceptance target.
+
 ## Next extraction slices and acceptance gates
 
 An interface alone is not a completed feature-sharing slice. Each slice must
@@ -162,15 +192,15 @@ name the shared product decision table or state transition, move production
 callers to it, remove duplicated decisions, and run equivalent scenarios through
 both platform compositions. Platform adapters may keep different backends.
 
-1. **Guarded downloaded-text commit and recovery.** Before adding a write
-   interface, follow the [download-commit contract](download-commit.md). Its
+1. **Guarded downloaded-text commit and recovery.** Continue implementing the
+   [download-commit contract](download-commit.md). Its
    outcome table defines visibility on success, exceptions,
    cancellation before and after commit, restart recovery, crash/power-loss
-   durability and ownership scope. These target guarantees are not implemented
-   by Android's current status-only guard or desktop's separate body/index
-   writes. Next implement the shared facade and bring each adapter into
-   compliance, including stale error callbacks, receipt reconciliation and
-   revision-bound image caching. Transactions, journals, locking and recovery
+   durability and ownership scope. Android now uses the shared facade, guarded
+   attempts, receipts and
+   revision-bound images. Next migrate desktop and complete the remaining
+   restart/process-ownership acceptance through both production compositions.
+   Transactions, journals, locking and recovery
    remain adapter responsibilities; backend selection stays per platform.
 2. **Reading position and completion.** Define a canonical content sequence,
    portable content-relative anchor, content revision mismatch fallback, and
@@ -222,3 +252,13 @@ runs through real Room and file adapters. Native `ChapterCodecMigrationTest` now
 requires four executed successes (plus the four host and three library tests).
 Desktop packaged-source and UI journeys use the production loader composition;
 these fixtures do not establish live-site or physical-phone acceptance.
+
+`DownloadRepositoryTest` checks preparation, stale outcomes, explicit replay,
+confirmation identity/count/digest/version, propagated failures and cancellation
+with reconciliation after a lost reply. Native `DownloadCommitTest` requires nine
+executed successes: frozen DB33 migration, commit/replay/reopen, fresh/refresh ABA
+callbacks, invalidating writers, SQL fault rollback and in-flight cancellation,
+single-owner refusal/reset, coherent image snapshots, production queue gates and
+atomic backup restore preserving active status before invalidation.
+The script requires 20 native successes total; native execution remains separate
+from compilation and the signed beta.347-to-target DB34 compatibility harness.

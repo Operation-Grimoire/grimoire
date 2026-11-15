@@ -1,4 +1,4 @@
-"""Signed, isolated CI-only DB32 -> DB33 upgrade; no reader-UI acceptance claim."""
+"""Signed, isolated CI-only DB33 -> DB34 upgrade; no reader-UI acceptance claim."""
 
 import hashlib
 import json
@@ -12,8 +12,8 @@ import sys
 
 OUTPUT = Path("build/chapter-codec-beta")
 PACKAGE = "io.grimoire.app"
-BASELINE = "v1.0.5-beta.342"
-BASELINE_SHA256 = "7caae98d569f918715d83e15c90cef86655988114f4a7ae561f8ba4047383650"
+BASELINE = "v1.0.5-beta.347"
+BASELINE_SHA256 = "ac5569f882663ec3aa8e653f1b0cf61384b91bb103dead8a564511342727ef71"
 SIGNER = "64af06095973e42f943c8bd9bdafb4cf168a33cd4d570b381c31e0524eb454de"
 BODY = "Codec checkpoint first.\x1c<b>Codec checkpoint first.</b>\x1f\x1d\x1f\x1ehttps://fixture.invalid/i.png\x1fCodec checkpoint second.\x1fCodec checkpoint final."
 
@@ -93,7 +93,7 @@ def main():
         assert uid.isdigit()
         fixture = OUTPUT / "fixture.db"
         with sqlite3.connect(fixture) as db:
-            db.executescript(Path("app/src/androidTest/assets/chapter-codec/v32.sql").read_text())
+            db.executescript(Path("app/src/androidTest/assets/chapter-codec/v33.sql").read_text())
             db.execute("""INSERT INTO novels (id,sourceId,url,title,genres,status,favorite,lastUpdated,
                 chapterSortOrder,lastReadAt,lastAccessedAt,readerTextAlign,notifyOnNewChapters,
                 notifyOnNewLockedChapters,autoDownloadNewChapters)
@@ -119,7 +119,7 @@ def main():
                 metadata = db.execute("SELECT * FROM chapters ORDER BY id").fetchall()
                 body = db.execute("SELECT content FROM chapter_content WHERE chapterId=1").fetchone()[0]
                 assert body.encode() == BODY.encode()
-                format_version = db.execute("SELECT contentVersion FROM chapter_content WHERE chapterId=1").fetchone()[0] if version == 33 else 1
+                format_version = db.execute("SELECT contentVersion FROM chapter_content WHERE chapterId=1").fetchone()[0] if version in (33, 34) else 1
                 assert format_version == 1
             return version, metadata
 
@@ -140,10 +140,10 @@ def main():
                 assert metadata == expected_metadata
             return metadata
 
-        before = launch("before", 32)
+        before = launch("before", 33)
         run(*adb, "install", "-r", artifacts["target"]["apk"])
-        launch("upgraded", 33, before)
-        launch("restart", 33, before)
+        launch("upgraded", 34, before)
+        launch("restart", 34, before)
         # Negative rollback check with the actual old signed APK. No data clear
         # or destructive fallback is allowed; reinstalling the new APK recovers.
         downgrade = run(*adb, "install", "-r", "-d", artifacts["baseline"]["apk"], check=False)
@@ -153,16 +153,16 @@ def main():
             run(*adb, "shell", "uiautomator", "dump", "/sdcard/rollback.xml", check=False)
             logs = run(*adb, "logcat", "-d").stdout
             (OUTPUT / "rollback.log").write_text(logs)
-            assert re.search(r"(?i)(migration|downgrade)[^\n]*33\D+32", logs), "Old Room did not reject DB33"
-            report["rollbackGuard"] = "Old signed APK refuses DB33; expected negative migration failure recorded"
+            assert re.search(r"(?i)(migration|downgrade)[^\n]*34\D+33", logs), "Old Room did not reject DB34"
+            report["rollbackGuard"] = "Old signed APK refuses DB34; expected negative migration failure recorded"
         else:
             assert "VERSION_DOWNGRADE" in downgrade.stdout
             report["rollbackGuard"] = "Android package manager refuses older APK before data access"
         version, metadata = capture("after-rollback")
-        assert version == 33 and metadata == before
+        assert version == 34 and metadata == before
         run(*adb, "install", "-r", artifacts["target"]["apk"])
-        launch("recovered", 33, before)
-        report.update(result="PASS", artifacts=artifacts, schemaBefore=32, schemaAfter=33,
+        launch("recovered", 34, before)
+        report.update(result="PASS", artifacts=artifacts, schemaBefore=33, schemaAfter=34,
                       legacyBodyUnchanged=True, readingMetadataUnchanged=True,
                       legacyBodySha256=hashlib.sha256(BODY.encode()).hexdigest(), chapterMetadataBefore=before,
                       restart="PASS", recovery="PASS", readerUi="UNEXECUTED")

@@ -36,19 +36,21 @@ class ChapterImageStore @Inject constructor(
 
     private val maintenance by lazy { ImageFileMaintenance(rootDir) }
 
-    private fun chapterDir(novelId: Long, chapterUrl: String): File =
-        File(File(rootDir, novelId.toString()), chapterUrl.sha256())
+    private fun chapterDir(novelId: Long, chapterUrl: String, revision: String? = null): File {
+        val chapter = File(File(rootDir, novelId.toString()), chapterUrl.sha256())
+        return if (revision == null) chapter else File(chapter, "revision-${revision.sha256()}")
+    }
 
     /**
      * Fetches every illustration in [pages] and writes it alongside the chapter.
      * Best-effort: a failed image is skipped so the reader can still stream it.
      */
-    suspend fun saveImages(novelId: Long, chapterUrl: String, pages: List<NovelPage>) {
-        val images = pages.mapNotNull { page -> page.imageUrl?.let { page.index to it } }.toMap()
+    suspend fun saveImages(novelId: Long, chapterUrl: String, pages: List<NovelPage>, revision: String) {
+        val images = pages.mapIndexedNotNull { index, page -> page.imageUrl?.let { index to it } }.toMap()
         if (images.isEmpty()) return
         withContext(Dispatchers.IO) {
             maintenance.prepare()
-            updateImageFiles(chapterDir(novelId, chapterUrl), images.keys) { index, destination ->
+            updateImageFiles(chapterDir(novelId, chapterUrl, revision), images.keys) { index, destination ->
                 httpClient.newCall(Request.Builder().url(images.getValue(index)).build()).execute().use { response ->
                     val body = response.body
                     if (!response.isSuccessful || body == null) throw IOException("Image download failed")
@@ -70,12 +72,13 @@ class ChapterImageStore @Inject constructor(
         novelId: Long,
         chapterUrl: String,
         images: List<Pair<Int, ByteArray>>,
+        revision: String? = null,
     ) {
         if (images.isEmpty()) return
         val indexed = images.toMap()
         withContext(Dispatchers.IO) {
             maintenance.prepare()
-            updateImageFiles(chapterDir(novelId, chapterUrl), indexed.keys) { index, destination ->
+            updateImageFiles(chapterDir(novelId, chapterUrl, revision), indexed.keys) { index, destination ->
                 val bytes = indexed.getValue(index)
                 writeImageAtomically(destination, bytes.size.toLong()) { it.write(bytes) }
             }
@@ -83,12 +86,12 @@ class ChapterImageStore @Inject constructor(
     }
 
     /** A `file://` URI for a saved illustration, or null when it was not downloaded. */
-    fun localImageUri(novelId: Long, chapterUrl: String, index: Int): String? =
-        localImageFile(novelId, chapterUrl, index)?.let { Uri.fromFile(it).toString() }
+    fun localImageUri(novelId: Long, chapterUrl: String, index: Int, revision: String? = null): String? =
+        localImageFile(novelId, chapterUrl, index, revision)?.let { Uri.fromFile(it).toString() }
 
     /** The on-disk [File] for a saved illustration, or null when it was not downloaded. */
-    fun localImageFile(novelId: Long, chapterUrl: String, index: Int): File? =
-        File(chapterDir(novelId, chapterUrl), index.toString()).takeIf { it.isFile }
+    fun localImageFile(novelId: Long, chapterUrl: String, index: Int, revision: String? = null): File? =
+        File(chapterDir(novelId, chapterUrl, revision), index.toString()).takeIf { it.isFile }
 
     /** Removes the saved illustrations for a single chapter. */
     suspend fun deleteChapter(novelId: Long, chapterUrl: String) {

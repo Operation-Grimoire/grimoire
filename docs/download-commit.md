@@ -1,30 +1,34 @@
 # Guarded download commits
 
-This is the target behaviour for the next shared storage slice, before adding a
-write interface. The current adapters do not yet meet every requirement below.
-Android and desktop keep their own backend implementations. This contract does
-not choose Room, SQLite or files for desktop.
+This defines the shared download-write contract. The shared facade and Android
+adapter are implemented; desktop still uses its previous save implementation.
+Process-kill, competing-process and full cross-platform acceptance remain open.
+Each platform retains its own backend choice.
 
 The unit of success is one committed chapter payload and its completion metadata.
 Fetching, queue scheduling, image caching, library membership and reading position
 are separate operations. Existing content formats and Android status ordinals
 remain compatible until an implementation explicitly migrates them.
 
-## Current implementation and gaps
+## Adapter adoption and remaining gaps
 
-| Area | Implemented behaviour | Gap before shared writes |
+| Area | Android adoption | Remaining acceptance |
 | --- | --- | --- |
-| Android success | `finishDownload` guards active status, then changes body/version, completion status and word count in a Room transaction. | Status alone does not identify the attempt that owns the response. |
-| Android failure | `updateActiveDownloadStatus` changes only active rows. Refresh errors retain saved content. | An old error or connectivity retry can change a newer active attempt. |
-| Android cancellation/restart | Cancel restores fresh attempts to NONE and refreshes to DOWNLOADED. Drain reset puts interrupted active rows back in the queue. | All cancellation, deletion, claim and reset paths must revoke the old attempt identity. |
-| Desktop save | `LocalLibrary.download` writes the body, changes memory, then writes `library.json`. A monitor serializes that instance. | Body and index have separate publication points; failed saves can leave memory or an existing body's bytes changed. Multiple instances/processes are not coordinated. |
-| Desktop file replacement | Temporary file, then atomic move when supported; otherwise ordinary replacement. | This is not a transaction over body and index, or a power-loss durability guarantee. |
-| Images | Android fetches images after text commit; image failure does not undo text. | Image publication must be tied to the committed content revision, including deletion and replacement races. |
+| Claim/terminal callbacks | Portable attempts, guarded success/error/connectivity callbacks and transactional receipts. | Desktop must implement the same contract. |
+| Cancel/delete/replacement/reset | SQL triggers revoke ownership across existing writers; deletes cascade protocol state. | Actual process-kill recovery remains separate from transaction rollback/reopen checks. |
+| Saved content and images | Coherent cache revision on saved reads; revision-specific image directories. Legacy paths remain readable. | Cross-platform image adoption and conservative orphan-cache collection remain later work. |
+| Writer scope | OS lease rejects a second Android protocol-owner instance. | Competing-process and process-death runtime acceptance remain open. |
+| Desktop | Existing body write, memory change, then library-index write remain unchanged. | Requires one coherent commit/recovery boundary, publication after persistence and owner coordination. |
 
-These are source-inspection findings, not newly executed failure-injection proof.
-See [ChapterDao](../app/src/main/java/io/grimoire/app/data/local/dao/ChapterDao.kt),
-[DownloadManager](../app/src/main/java/io/grimoire/app/data/download/DownloadManager.kt),
-[DownloadDrain](../app/src/main/java/io/grimoire/app/data/download/DownloadDrain.kt)
+DB34 adds a side table and invalidation triggers without rewriting chapter bodies
+or reading metadata. Its frozen DB33 migration and the existing DB32-to-current
+chain are native test cases. Older DB33/DB32 apps refuse DB34; retain a coherent
+pre-upgrade app-data copy for downgrade, or reinstall the newer app without
+clearing data. A metadata-only library backup does not contain offline payloads.
+
+See [RoomDownloadDao](../app/src/main/java/io/grimoire/app/data/local/RoomDownloadDao.kt),
+[DownloadSchema](../app/src/main/java/io/grimoire/app/data/local/DownloadSchema.kt),
+[DownloadManager](../app/src/main/java/io/grimoire/app/data/download/DownloadManager.kt)
 and [LocalLibrary](../desktop/src/main/kotlin/io/grimoire/desktop/LocalLibrary.kt).
 
 ## Attempt ownership and committed state
@@ -76,9 +80,9 @@ sequenceDiagram
     Store-->>B: Committed receipt for new revision
 ```
 
-With the current Android guard, A can see status DOWNLOADING after B is claimed
-and be accepted. The same problem applies to A's error callback. The new contract
-must reject both, even if source code ignores cancellation or a row ID is reused.
+With the former Android status-only guard, A could see DOWNLOADING after B was
+claimed and be accepted. The shared facade/Android adapter now reject both A's
+success and error callbacks, even if source code ignores cancellation or a row ID is reused.
 
 ## Outcome table
 
@@ -187,14 +191,14 @@ committed revision. Missing images retain the existing platform rendering policy
 
 ## Implementation order and acceptance
 
-1. Add shared attempt/receipt/result models and a guarded commit facade, with
-   shared state-transition scenarios. Keep queue execution and backend mechanisms
-   local. Require cancellation and unknown-outcome handling in the API contract.
-2. Implement the Android adapter and migrate success, error and connectivity
-   callbacks together with every ownership-invalidating path. Preserve existing
-   queue status ordinals, source gates and refresh content. Validate migration
-   and retained bytes before publishing a signed beta.
-3. Implement the independently selected desktop adapter and migrate its save
+1. Shared attempt/receipt/result models and a guarded facade are implemented.
+   Queue execution and backend mechanisms remain local; cancellation and lost
+   confirmation have explicit shared scenarios.
+2. Android success/error/connectivity callbacks and invalidating writers are
+   migrated, with revision-bound image lookup. Native execution and signed-beta
+   migration evidence must accompany this adoption; process-kill acceptance is
+   still a separate gate.
+3. Next implement the independently selected desktop adapter and migrate its save
    action. Prove body/index recovery, ownership and commit-before-memory behaviour
    before presenting it as equivalent to the Android contract.
 4. Run the same scenario matrix through both production compositions; then
@@ -214,9 +218,9 @@ committed revision. Missing images retain the existing platform rendering policy
 | Image failure and old image completion after refresh/delete | Text stays committed; obsolete images cannot attach to current content. |
 | Migration and rollback | Legacy data/progress retained; unsupported old versions fail without destructive fallback. |
 
-These are future acceptance gates. Existing
-[codec migration tests](../app/src/androidTest/java/io/grimoire/app/data/local/ChapterCodecMigrationTest.kt)
-prove versioned content and the current status guard, not attempt ownership or
-crash recovery. Existing desktop storage tests do not prove a transactional
+This matrix remains the acceptance target; Android native `DownloadCommitTest`
+covers its implemented subset and the desktop adapter is not yet migrated.
+Existing [codec migration tests](../app/src/androidTest/java/io/grimoire/app/data/local/ChapterCodecMigrationTest.kt)
+prove versioned content and migration, not process-kill crash recovery. Existing desktop storage tests do not prove a transactional
 body/index commit. JVM tests, native execution, process-kill recovery, signed-beta
 compatibility, reader UI and physical-device acceptance remain separate evidence.

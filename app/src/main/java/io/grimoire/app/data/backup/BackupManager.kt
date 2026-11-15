@@ -421,7 +421,7 @@ class BackupManager @Inject constructor(
                 val merged = novel.chapters.map { c ->
                     mergeBackupChapter(c, existingChapters[c.url], effectiveId)
                 }
-                chapterDao.upsertAll(merged)
+                chapterDao.restoreChapters(merged)
             }
         }
         return RestoreResult.Success(novelCount, chapterCount)

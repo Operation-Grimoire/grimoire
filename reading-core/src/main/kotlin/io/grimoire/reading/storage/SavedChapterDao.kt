@@ -13,4 +13,9 @@ import io.grimoire.reading.StoredChapterContent
  */
 fun interface SavedChapterDao {
     suspend fun read(key: ChapterKey): StoredChapterContent?
+
+    /** Optional cache identity must be read in the same snapshot as the body. Null retains legacy cache paths. */
+    suspend fun readSnapshot(key: ChapterKey): SavedChapterSnapshot? = read(key)?.let { SavedChapterSnapshot(it) }
 }
+
+data class SavedChapterSnapshot(val content: StoredChapterContent, val cacheRevision: String? = null)

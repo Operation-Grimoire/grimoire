@@ -78,8 +78,10 @@ partial file; this is not an atomic replacement guarantee for document providers
 This does not change EPUB navigation/chapter splitting (#411), or add rich-HTML
 export beyond the existing exporter. See the [XML character rule](https://www.w3.org/TR/xml/#charsets).
 
-**Downgrading Android:** the old app's Room database version is 32. It has no
-33-to-32 migration and no destructive fallback, so it refuses the upgraded DB.
+**Downgrading Android:** current Room database version is 34. DB33 and DB32
+apps have no downgrade migration or destructive fallback, so they refuse the
+updated DB. DB34 adds only download protocol metadata/triggers; the existing
+chapter bodies, content versions and progress columns are not rewritten.
 Do not clear app data to work around that guard. Reinstall the newer app to use
 the intact DB, or restore a coherent full app-data copy made before the upgrade
 when returning to the older app. That copy must include downloaded images and
@@ -100,19 +102,19 @@ legacy downgrade: that representation cannot express every source string safely.
 `ChapterCodecMigrationTest` runs on native Android in the existing host workflow.
 Its frozen v32 schema predates this change. It checks Room's full migration/schema
 validation, byte-preserved legacy bodies over 2 MB, metadata/progress, chunked
-exports, mixed version-2 writes, cancelled writes, unsupported-version rollback,
+exports, mixed version-2 writes, unsupported-version rollback,
 and reopen behavior. Native results are recorded separately from JVM tests.
 
 After the merged commit produces a signed beta, dispatch
 `chapter-codec-beta.yml` at that beta tag, with `tag` set to the same tag. This
-CI-only harness uses a fresh API-35 emulator, verifies the frozen signed beta.342
-baseline and target artifacts/signers, seeds a known v32 fixture, upgrades without
+CI-only harness uses a fresh API-35 emulator, verifies the frozen signed beta.347
+DB33 baseline and target artifacts/signers, seeds the frozen v33 fixture, upgrades to DB34 without
 clearing data, verifies schema/content/reading metadata, restarts, checks actual
 old-APK downgrade refusal, and recovers by reinstalling the new APK. It retains
 the first result, logs and database copies. It does not claim a reader UI journey
 or acceptance on the user's phone. Never run its DB-replacement setup on a personal
 device. Stable release remains an explicit user decision after beta validation.
-The nightly pruner retains beta.342 in addition to the newest ten Android betas
-while this pinned migration harness is maintained. Retire the retention pin and
-the harness together. CI-context checks guard accidental local execution; they
+The nightly pruner retains the recorded beta.342 and active beta.347 baselines
+in addition to the newest ten Android betas. Retire each retention pin with its
+compatibility coverage. CI-context checks guard accidental local execution; they
 are not a security sandbox for someone deliberately modifying the script/host.

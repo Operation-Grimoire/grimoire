@@ -133,6 +133,7 @@ class EpubExporter @Inject constructor(
             requireEpubXmlText(chapter.name)
             val stored = chapterDao.getContent(chapter.id)
                 ?: error("Chapter content was removed during export: ${chapter.name}")
+            val cacheRevision = database.chapterDownloadStateDao().find(chapter.id)?.cacheRevision
             val pages = decodeChapterContent(stored)
             val images = ArrayList<ImageEntry>()
             val body = StringBuilder()
@@ -149,7 +150,7 @@ class EpubExporter @Inject constructor(
                         }
                     }
                     is PageContent.Image -> {
-                        val file = chapterImageStore.localImageFile(novelId, chapter.url, page.index)
+                        val file = chapterImageStore.localImageFile(novelId, chapter.url, page.index, cacheRevision)
                         if (file != null) {
                             val bytes = file.readBytes()
                             val ext = imageExtension(bytes)

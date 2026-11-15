@@ -6,5 +6,11 @@ import io.grimoire.reading.decodeChapterContent
 
 /** Shared interpretation of saved content; source/network fallback belongs to the caller. */
 class SavedChapterRepository(private val dao: SavedChapterDao) {
-    suspend fun read(key: ChapterKey): List<NovelPage>? = dao.read(key)?.let(::decodeChapterContent)
+    suspend fun read(key: ChapterKey): List<NovelPage>? = readSnapshot(key)?.pages
+
+    suspend fun readSnapshot(key: ChapterKey): SavedChapterPages? = dao.readSnapshot(key)?.let {
+        SavedChapterPages(decodeChapterContent(it.content), it.cacheRevision)
+    }
 }
+
+data class SavedChapterPages(val pages: List<NovelPage>, val cacheRevision: String?)
