@@ -81,8 +81,8 @@ Storage generations and image-cache ownership remain separate guards.
 
 ## Portable position and local layout hint
 
-A version1 anchor contains `modelVersion=1`, the chapter key, logical revision,
-capture precision and one position:
+A version1 anchor contains `modelVersion=1`, the chapter key, logical revision
+and one position:
 
 | Position | Meaning |
 | --- | --- |
@@ -92,9 +92,10 @@ capture precision and one position:
 
 A block offset is in `0..text.length` and cannot split a valid high/low surrogate
 pair. Reject invalid offsets instead of silently clamping a corrupt anchor. Do
-not clamp an invalid canonical ordinal to the last block. Anchor precision is
-explicit: `TextOffset` when layout can map to the plain text, otherwise
-`BlockStart` with offset0. Block precision never promises restoration to the same
+not clamp an invalid canonical ordinal to the last block. Block-position precision
+is explicit: `TextOffset` when layout can map to the plain text, otherwise
+`BlockStart` with offset0. Images/separators use BlockStart; Start/End are boundaries
+without a text-precision field. Block precision never promises restoration to the same
 line or glyph. Preserve this precision in every resolver outcome.
 These offsets count string units, not glyphs or grapheme clusters. A renderer may
 place the viewport at the containing line without rewriting the logical offset.
@@ -139,6 +140,12 @@ the other's rendered index. A font change affects a local hint, not this anchor.
 Resolve against a complete canonical document for the same chapter key. The
 resolver is pure and has no DAO, source, browser or network dependency. Access,
 locked-chapter and saved-content integrity checks remain in their existing layers.
+Check key, model version and field shape before document resolution. Fingerprints
+must be 64 lowercase hexadecimal characters; reject negative ordinals/offsets and
+invalid position/precision combinations. Then handle an empty document or choose
+the same-revision/changed-revision path. Whenever a block is located, including
+unique relocation, validate its ordinal, fingerprint, offset and precision against
+that block. A changed revision never permits an out-of-bounds or split-pair offset.
 
 | Condition | Result and required behavior |
 | --- | --- |
@@ -196,6 +203,8 @@ Position commands carry a positive sequence number within their session and the
 anchor/local hint from one capture. Compare sequence numbers, not offsets,
 percentages, wall-clock time or completion order. A later command may legitimately
 move backward. Validate and commit the checkpoint, sequence and local hint together.
+The command's key and logical revision must match its registered immutable document;
+possession of a session token cannot authorize a different document or revision.
 There is one current writing session per chapter per store. Another reader/window
 may view the same chapter, but registering its session revokes the previous
 writer; independent simultaneous position merging is outside this contract.
