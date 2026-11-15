@@ -94,8 +94,8 @@ With the flag, missing fixture packages fail the run. Use the workflow's pinned
 source revision to reproduce its APKs. A successful run reports `OK (4 tests)`.
 
 The workflow separately runs `ChapterCodecMigrationTest` and `LibraryStorageTest`,
-requiring three executed successes each and rejecting skipped/assumption-failure
-statuses. It retains `codec-result.log` and `library-result.log` alongside the host
+requiring four codec/loading successes and three library successes, rejecting
+skipped/assumption-failure statuses. It retains `codec-result.log` and `library-result.log` alongside the host
 result. See [shared storage](docs/shared-storage.md) for the adapter contracts.
 
 ### Extension API requirements

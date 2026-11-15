@@ -24,7 +24,8 @@ import javax.inject.Singleton
  * Loads chapter lists and original pages for the TTS service without going through
  * [io.grimoire.app.ui.screen.reader.ReaderViewModel]. Uses the shared reader's
  * saved-first loading: downloaded content is reconstructed from the database,
- * otherwise the extension source is queried.
+ * otherwise the extension source is queried. Active reader snapshots are handled
+ * separately by TtsPlaybackManager; this loader preserves its immediate source lookup.
  */
 @Singleton
 class TtsChapterLoader @Inject constructor(

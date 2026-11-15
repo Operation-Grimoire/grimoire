@@ -100,13 +100,14 @@ class ChapterLoaderTest {
 
     @Test fun cancellationBeforeEntryNeverReadsStorageOrSource() = runBlocking {
         val loader = ChapterLoader(SavedChapterRepository { error("Cancelled read") })
+        var outcome: Result<LoadedChapter>? = null
         val job = launch(start = CoroutineStart.UNDISPATCHED) {
             currentCoroutineContext().cancel()
-            loader.load(key) { error("Cancelled source resolution") }
-            fail("Cancelled load returned")
+            outcome = runCatching { loader.load(key) { error("Cancelled source resolution") } }
         }
         job.join()
-        assertTrue(job.isCancelled)
+        assertTrue("Loader must throw cancellation, not return or call a forbidden capability",
+            outcome?.exceptionOrNull() is CancellationException)
     }
 
     @Test fun nonCooperativeStorageResolutionAndSourceCannotReturnLatePagesOrStartFallback() = runBlocking {
@@ -117,20 +118,23 @@ class ChapterLoaderTest {
                 if (stage == 0) currentCoroutineContext().cancel()
                 null
             })
+            var outcome: Result<LoadedChapter>? = null
             val job = launch(start = CoroutineStart.UNDISPATCHED) {
-                loader.load(key) {
-                    resolutions++
-                    if (stage == 1) currentCoroutineContext().cancel()
-                    ChapterPageAccess.Available {
-                        reads++
-                        currentCoroutineContext().cancel()
-                        pages
+                outcome = runCatching {
+                    loader.load(key) {
+                        resolutions++
+                        if (stage == 1) currentCoroutineContext().cancel()
+                        ChapterPageAccess.Available {
+                            reads++
+                            currentCoroutineContext().cancel()
+                            pages
+                        }
                     }
                 }
-                fail("Late pages returned")
             }
             job.join()
-            assertTrue(job.isCancelled)
+            assertTrue("Stage $stage must throw cancellation, not return late pages",
+                outcome?.exceptionOrNull() is CancellationException)
             assertEquals(if (stage == 0) 0 else 1, resolutions)
             assertEquals(if (stage == 2) 1 else 0, reads)
         }

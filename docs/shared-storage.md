@@ -107,8 +107,8 @@ Neither adapter adds a schema or file-format migration.
 
 ## Implemented third slice: reader loading
 
-`ChapterLoader` owns the shared decision table, used by the Android reader, TTS
-and desktop reader. Its result includes original pages and their origin. It
+`ChapterLoader` owns the shared decision table, used by both visual readers and
+by TTS when it needs to load chapter content. Its result includes original pages and their origin. It
 checks cancellation before loading, after storage, after source-access resolution
 and after source reads, including providers that return after cancellation.
 Corruption, access errors, I/O failures and source errors propagate without retries.
@@ -139,8 +139,14 @@ Android constructs saved keys from stored novel identity, preserving row-based
 navigation when source URLs change. If the stored novel is absent, a null key
 skips saved lookup without inventing an identity. Android retains saved-only
 blank-page filtering and local-image URI mapping; preloaded and source pages
-remain unfiltered. TTS retains original pages and its existing immediate source
-lookup. The visual reader still waits for extension readiness before lookup.
+remain unfiltered. TTS loading retains original pages and its existing immediate
+source lookup. The visual reader still waits for extension readiness before lookup.
+The TTS playback manager's existing active-content shortcut stays outside this
+extraction: a nonempty snapshot from the visible reader is spoken directly, and
+an empty snapshot requests a load. That snapshot preserves displayed page indices
+and image mapping; this slice does not replace it with a potentially different
+saved representation. TTS startup readiness and empty-snapshot policy are not
+unified here; any later change needs playback/reader-position acceptance.
 Desktop supplies no preloaded content, checks offline access only after saved
 lookup, and retains source identity, locked-chapter and readable-text guards.
 Each platform maps unavailable reasons to its existing error wording.
