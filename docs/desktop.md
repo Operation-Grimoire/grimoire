@@ -2,9 +2,10 @@
 
 The maintained JVM target is `:desktop`. It reads a trusted local Royal Road JAR,
 stores a local library and paragraph position, and saves chapter text for offline
-reading. Android and desktop use `:reading-core` for API compatibility and the
-existing chapter-content encoding. Android storage and legacy APK behavior remain
-unchanged. Both package formats use the extension repository's existing source;
+reading. Android and desktop use `:reading-core` for API compatibility, versioned
+chapter encoding and the saved-chapter read contract/repository. Each platform
+selects its backend adapter; see [shared storage](shared-storage.md). Both package
+formats use the extension repository's existing source;
 the application does not compile or copy a Royal Road implementation.
 
 ## Build and run
@@ -109,9 +110,10 @@ in downloads, but formatting and illustrations are not rendered yet. The local
 library format is versioned separately from Android's Room database. Source ID plus
 the source's novel and chapter URLs identify records; local row IDs are not sync
 identities. URL migration and sync conflict policy remain future work.
-The extracted codec retains Android's legacy delimiter format. Escaping reserved
-control characters needs a versioned migration; track that separately in
-[#409](https://github.com/Operation-Grimoire/grimoire/issues/409).
+New writes use the versioned shared codec delivered in
+[#413](https://github.com/Operation-Grimoire/grimoire/pull/413); existing legacy
+downloads retain their original bytes and interpretation. See
+[chapter content](chapter-content.md) for format and rollback details.
 
 Track runtime evidence and remaining acceptance in [#407](https://github.com/Operation-Grimoire/grimoire/issues/407).
 Authenticated/browser-dependent sources, browser lifecycle work, macOS/Linux UI

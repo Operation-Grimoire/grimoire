@@ -40,7 +40,7 @@ fun main(args: Array<String>) {
     val hostApi = HostRuntime.apiVersion
     val networkEnabled = AtomicBoolean(true)
     SourceNetwork.install(DesktopHttpPlatform(networkEnabled))
-    val model = ReaderModel(LocalLibrary(data), hostApi, networkEnabled)
+    val model = desktopReaderModel(LocalLibrary(data), hostApi, networkEnabled)
     options["--extension"]?.let { model.load(Paths.get(it)) }
     application {
         val scope = rememberCoroutineScope()

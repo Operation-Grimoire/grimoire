@@ -16,7 +16,7 @@ class ReaderModelCloseTest {
 
     @Test fun autosaveFailureIsReportedWithoutThrowingAndCanBeRetried() = runBlocking {
         val directory = temporary.newFolder().toPath()
-        val model = ReaderModel(LocalLibrary(directory), "1.5.0", AtomicBoolean(true))
+        val model = desktopReaderModel(LocalLibrary(directory), "1.5.0", AtomicBoolean(true))
         val blocked = directory.resolve("library.json")
         Files.createDirectory(blocked)
         try {
@@ -34,7 +34,7 @@ class ReaderModelCloseTest {
 
     @Test fun failedSaveDuringCloseLeavesModelUsableAndCloseCanBeRetried() = runBlocking {
         val directory = temporary.newFolder().toPath()
-        val model = ReaderModel(LocalLibrary(directory), "1.5.0", AtomicBoolean(true))
+        val model = desktopReaderModel(LocalLibrary(directory), "1.5.0", AtomicBoolean(true))
         val blocked = directory.resolve("library.json")
         Files.createDirectory(blocked)
         try {

@@ -9,6 +9,7 @@ import io.grimoire.api.source.web.ChapterListSource
 import io.grimoire.api.source.web.PageListSource
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
+import io.grimoire.reading.storage.SavedChapterRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +36,7 @@ class ReaderModel(
     private val library: LocalLibrary,
     private val hostApi: String,
     private val networkEnabled: AtomicBoolean,
+    private val savedChapters: SavedChapterRepository,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val closing = AtomicBoolean(false)
@@ -94,7 +96,7 @@ class ReaderModel(
         require(!chapter.locked && book.chapters.any { it == chapter }) { "This chapter is locked or unavailable" }
         library.flush()
         val key = ChapterKey(book.key, chapter.url)
-        val pages = library.downloaded(key) ?: run {
+        val pages = savedChapters.read(key) ?: run {
             check(!state.value.offline) { "Download this chapter before reading offline" }
             val loaded = extension?.takeIf { it.sourceId == book.key.sourceId }
                 ?: error("Open this novel's extension to read chapters that have not been downloaded")

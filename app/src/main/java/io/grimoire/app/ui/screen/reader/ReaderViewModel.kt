@@ -26,7 +26,9 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.ReaderTextAlign
 import io.grimoire.app.data.local.entity.ReadingHistoryEntity
 import io.grimoire.app.util.ContentLanguages
-import io.grimoire.app.data.local.entity.decodeChapterContent
+import io.grimoire.reading.ChapterKey
+import io.grimoire.reading.NovelKey
+import io.grimoire.reading.storage.SavedChapterRepository
 import io.grimoire.app.data.local.entity.effectiveTotal
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.app.data.preferences.LibraryPreferences
@@ -72,6 +74,7 @@ class ReaderViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
+    private val savedChapters: SavedChapterRepository,
     private val novelDao: NovelDao,
     private val readingHistoryDao: ReadingHistoryDao,
     private val incognitoManager: io.grimoire.app.data.preferences.IncognitoManager,
@@ -380,9 +383,11 @@ class ReaderViewModel @Inject constructor(
             try {
                 // A download may have completed since the chapter list was loaded.
                 val fresh = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
-                val cached = chapterDao.getContent(fresh.id)
+                val cached = novelDao.getById(fresh.novelId)?.let { novel ->
+                    savedChapters.read(ChapterKey(NovelKey(novel.sourceId, novel.url), fresh.url))
+                }
                 val loaded = when {
-                    cached != null -> decodeChapterContent(cached)
+                    cached != null -> cached
                         .filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
                         .map { page ->
                             if (page.imageUrl == null) return@map page

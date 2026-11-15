@@ -9,6 +9,10 @@ import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.ChapterContentEntity
+import io.grimoire.app.data.local.entity.NovelEntity
+import io.grimoire.reading.ChapterKey
+import io.grimoire.reading.NovelKey
+import io.grimoire.reading.storage.SavedChapterRepository
 import io.grimoire.app.di.MIGRATION_32_33
 import io.grimoire.app.data.book.BookPage
 import io.grimoire.app.data.download.ChapterImageStore
@@ -31,6 +35,7 @@ class ChapterCodecMigrationTest {
     private val name = "chapter-codec-409-test.db"
     private var database: AppDatabase? = null
     private val legacy = "Legacy prose\u001c<i>Legacy prose</i>\u001f\u001d\u001f\u001ehttps://example.org/i"
+    private val key = ChapterKey(NovelKey(409, "/book"), "/legacy")
     private val metadata = ChapterEntity(id = 1, novelId = 1, url = "/legacy", name = "Legacy",
         uploadDate = 1234, chapterNumber = 1.5f, translator = "T", read = true,
         readProgress = 0.625f, readAnchorItemIndex = 2, readAnchorItemOffset = 17,
@@ -83,6 +88,19 @@ class ChapterCodecMigrationTest {
         assertTrue(pages[1].content is PageContent.Separator)
         assertEquals(PageContent.Image("https://example.org/i"), pages[2].content)
         assertEquals(PageContent.Text(large), pages[3].content)
+        val repository = SavedChapterRepository(RoomSavedChapterDao(db))
+        assertEquals(encodeChapterContent(pages), encodeChapterContent(repository.read(key)!!))
+        assertNull(repository.read(key.copy(novel = NovelKey(410, "/book"))))
+        assertNull(repository.read(key.copy(novel = NovelKey(409, "/different-book"))))
+        assertNull(repository.read(key.copy(url = "/missing")))
+        db.chapterDao().insertAll(listOf(metadata.copy(id = 4, url = "/no-content", downloadStatus = 0)))
+        assertNull(repository.read(key.copy(url = "/no-content")))
+        val otherNovel = db.novelDao().upsert(NovelEntity(sourceId = 410, url = "/book", title = "Other source"))
+        db.chapterDao().insertAll(listOf(metadata.copy(id = 9, novelId = otherNovel)))
+        db.chapterDao().setDownloadedContent(9,
+            encodeChapterContent(listOf(NovelPage(0, PageContent.Text("Other source")))), 3)
+        assertEquals(PageContent.Text("Other source"),
+            repository.read(key.copy(novel = NovelKey(410, "/book")))!!.single().content)
         // The export path also uses chunked reads, not a body-sized CursorWindow.
         assertEquals(listOf(metadata), db.chapterDao().getDownloadedChapterMetadata(1))
         db.chapterDao().insertAll(listOf(metadata.copy(id = 2, url = "/new", name = "New chapter", chapterNumber = 2f)))
@@ -105,6 +123,8 @@ class ChapterCodecMigrationTest {
         db.close()
         db = open()
         assertEquals(stored, db.chapterDao().getContent(1))
+        assertEquals(encodeChapterContent(pages),
+            encodeChapterContent(SavedChapterRepository(RoomSavedChapterDao(db)).read(key)!!))
         assertEquals(metadata, db.chapterDao().getByUrl(1, "/legacy"))
     }
 
@@ -141,6 +161,7 @@ class ChapterCodecMigrationTest {
         db = open()
         val stored = db.chapterDao().getContent(1)!!
         assertEquals(encoded, stored)
+        assertEquals(encoded, encodeChapterContent(SavedChapterRepository(RoomSavedChapterDao(db)).read(key)!!))
         val actual = decodeChapterContent(stored)
         assertEquals(pages[0], actual[0])
         assertEquals(pages[1], actual[1])
@@ -163,11 +184,15 @@ class ChapterCodecMigrationTest {
         val unknown = db.chapterDao().getContent(1)!!
         try { decodeChapterContent(unknown); fail("Unknown stored version was treated as legacy") }
         catch (_: IllegalArgumentException) { }
+        try { SavedChapterRepository(RoomSavedChapterDao(db)).read(key); fail("Repository hid an unsupported version") }
+        catch (_: IllegalArgumentException) { }
         assertEquals(StoredChapterContent(legacy, 99), db.chapterDao().getContent(1))
         assertEquals(metadata, db.chapterDao().getByUrl(1, "/legacy"))
         for (token in listOf("'not-a-version'", "2.5", "4294967298")) {
             db.openHelper.writableDatabase.execSQL("UPDATE chapter_content SET contentVersion=$token WHERE chapterId=1")
             try { db.chapterDao().getContent(1); fail("Version was coerced to a supported integer") }
+            catch (_: IllegalArgumentException) { }
+            try { SavedChapterRepository(RoomSavedChapterDao(db)).read(key); fail("Repository accepted a coerced version") }
             catch (_: IllegalArgumentException) { }
             db.openHelper.readableDatabase.query("SELECT CAST(content AS BLOB) FROM chapter_content WHERE chapterId=1").use { cursor ->
                 assertTrue(cursor.moveToFirst())

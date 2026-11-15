@@ -44,7 +44,7 @@ class RoyalRoadUiTest {
             })
         })
         val data = temporary.newFolder().toPath()
-        var model = ReaderModel(LocalLibrary(data), "1.5.0", allowed)
+        var model = desktopReaderModel(LocalLibrary(data), "1.5.0", allowed)
         val active = mutableStateOf(model)
         try {
             model.load(Path.of(checkNotNull(System.getProperty("desktop.test.manifest"))))
@@ -74,7 +74,7 @@ class RoyalRoadUiTest {
             val count = requests.get()
             runBlocking { model.close() }
             allowed.set(false)
-            model = ReaderModel(LocalLibrary(data), "1.5.0", allowed)
+            model = desktopReaderModel(LocalLibrary(data), "1.5.0", allowed)
             model.offline(true)
             compose.runOnIdle { active.value = model }
             compose.onNodeWithText("No extension open").assertIsDisplayed()

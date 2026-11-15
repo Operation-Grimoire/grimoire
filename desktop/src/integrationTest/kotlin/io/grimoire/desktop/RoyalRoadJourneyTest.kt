@@ -26,7 +26,7 @@ class RoyalRoadJourneyTest {
         SourceNetwork.install(platform)
         allowed.set(true)
         requests.set(0)
-        val model = ReaderModel(LocalLibrary(temporary.newFolder().toPath()), "1.5.0", allowed)
+        val model = desktopReaderModel(LocalLibrary(temporary.newFolder().toPath()), "1.5.0", allowed)
         val manifest = Paths.get(checkNotNull(System.getProperty("desktop.test.manifest")))
         try {
             model.load(manifest)
@@ -51,7 +51,7 @@ class RoyalRoadJourneyTest {
         allowed.set(true)
         requests.set(0)
         val directory = temporary.newFolder().toPath()
-        val model = ReaderModel(LocalLibrary(directory), "1.5.0", allowed)
+        val model = desktopReaderModel(LocalLibrary(directory), "1.5.0", allowed)
         try {
             model.load(Paths.get(checkNotNull(System.getProperty("desktop.test.manifest"))))
             model.settled()
@@ -87,7 +87,7 @@ class RoyalRoadJourneyTest {
             model.close()
             val requestCount = requests.get()
             allowed.set(false) // Any accidental network request now fails, rather than returning fixture data.
-            val restarted = ReaderModel(LocalLibrary(directory), "1.5.0", allowed)
+            val restarted = desktopReaderModel(LocalLibrary(directory), "1.5.0", allowed)
             try {
                 restarted.offline(true)
                 assertNull(restarted.state.value.sourceName) // No JAR or source instance in the restarted host.

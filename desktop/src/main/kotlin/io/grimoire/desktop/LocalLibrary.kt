@@ -83,6 +83,11 @@ class LocalLibrary(private val directory: Path) {
 
     /** No Source or network dependency: this path also works with the extension removed. */
     @Synchronized fun downloaded(key: ChapterKey): List<NovelPage>? {
+        return readSavedContent(key)?.let(::decodeChapterContent)
+    }
+
+    /** Raw storage boundary; the shared repository owns content-format interpretation. */
+    @Synchronized internal fun readSavedContent(key: ChapterKey): StoredChapterContent? {
         val book = books[key.novel] ?: return null
         if (key.url !in book.downloaded) return null
         require(book.chapters.any { it.url == key.url && !it.locked }) { "Chapter is unavailable or locked" }
@@ -97,7 +102,7 @@ class LocalLibrary(private val directory: Path) {
             root.getString("novelUrl") == key.novel.url && root.getString("chapterUrl") == key.url) { "Downloaded chapter identity mismatch" }
         val content = root.getString("content")
         require(root.getString("sha256") == sha256(content.toByteArray(Charsets.UTF_8))) { "Downloaded chapter is corrupt" }
-        return decodeChapterContent(StoredChapterContent(content, version))
+        return StoredChapterContent(content, version)
     }
 
     /** Update memory synchronously; UI debounces disk flush and flushes on navigation/close. */

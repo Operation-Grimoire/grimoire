@@ -7,8 +7,11 @@ import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.source.web.PageListSource
 import io.grimoire.app.R
 import io.grimoire.app.data.local.dao.ChapterDao
+import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
-import io.grimoire.app.data.local.entity.decodeChapterContent
+import io.grimoire.reading.ChapterKey
+import io.grimoire.reading.NovelKey
+import io.grimoire.reading.storage.SavedChapterRepository
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.util.AppLocale
 import javax.inject.Inject
@@ -25,6 +28,8 @@ class TtsChapterLoader @Inject constructor(
     @ApplicationContext private val context: Context,
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
+    private val novelDao: NovelDao,
+    private val savedChapters: SavedChapterRepository,
 ) {
 
     // Resolved per use: these singletons outlive an in-app language change.
@@ -37,9 +42,11 @@ class TtsChapterLoader @Inject constructor(
         // Re-read the row (the passed entity may be a stale snapshot) and serve a
         // downloaded chapter's saved pages instead of hitting the network.
         val full = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
-        val cached = chapterDao.getContent(full.id)
+        val cached = novelDao.getById(full.novelId)?.let { novel ->
+            savedChapters.read(ChapterKey(NovelKey(novel.sourceId, novel.url), full.url))
+        }
         if (cached != null) {
-            return decodeChapterContent(cached)
+            return cached
         }
         val source = extensionManager.extensions.value
             .firstOrNull { it.info.packageName == pkg }
