@@ -94,6 +94,9 @@ chapter serialization to reading-core. New chapter writes use explicit content
 version 2. DB33 retains legacy payloads unchanged; desktop reads schema1 files
 unchanged and writes new chapter files as schema2/content version 2.
 See [`docs/chapter-content.md`](docs/chapter-content.md) for migration and rollback.
+Saved chapter reads in the Android reader/TTS and desktop reader use the shared
+`SavedChapterDao` contract and `SavedChapterRepository`. Room and file adapters
+remain platform-owned; see [`docs/shared-storage.md`](docs/shared-storage.md).
 Desktop loads trusted local packaged JARs, not source copies.
 Run shared/desktop unit checks and the packaged-source fixture/UI journeys when
 changing this boundary. Live reading, fixture results and native window lifecycle

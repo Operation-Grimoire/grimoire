@@ -11,6 +11,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.grimoire.app.data.local.AppDatabase
+import io.grimoire.app.data.local.RoomSavedChapterDao
+import io.grimoire.reading.storage.SavedChapterRepository
 import io.grimoire.app.data.local.ChapterContentPrepassFactory
 import io.grimoire.app.data.local.SupportSqlExecutor
 import io.grimoire.app.data.local.rebuildChaptersWithoutContent
@@ -413,6 +415,8 @@ object DatabaseModule {
 
     @Provides fun provideNovelDao(db: AppDatabase): NovelDao = db.novelDao()
     @Provides fun provideChapterDao(db: AppDatabase): ChapterDao = db.chapterDao()
+    @Provides @Singleton
+    fun provideSavedChapterRepository(dao: RoomSavedChapterDao): SavedChapterRepository = SavedChapterRepository(dao)
     @Provides fun provideRepoDao(db: AppDatabase): RepoDao = db.repoDao()
     @Provides fun provideCategoryDao(db: AppDatabase): CategoryDao = db.categoryDao()
     @Provides fun provideLibraryUpdateDao(db: AppDatabase): LibraryUpdateDao = db.libraryUpdateDao()
