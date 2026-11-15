@@ -34,4 +34,3 @@ internal fun decodeBook(root: JSONObject): SavedBook {
     }
     return SavedBook(key, novel, chapters, root.getBoolean("favorite"), downloaded, position)
 }
-
