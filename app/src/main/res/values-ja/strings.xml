@@ -99,7 +99,7 @@
     <string name="onboarding_quickstart_extensions_subtitle">ソースを追加してウェブ小説を探したりフォローしたりできます。</string>
     <string name="onboarding_quickstart_import_subtitle">端末内の EPUB や TXT ファイルを直接読み込みます。</string>
     <string name="onboarding_tour_card_title">簡単なガイドツアーを始めますか？</string>
-    <string name="onboarding_tour_card_subtitle">ライブラリ、ブラウズ、拡張機能、その他の基本を約20秒で紹介します。その他 › ガイドツアーからいつでも見直せます。</string>
+    <string name="onboarding_tour_card_subtitle">ライブラリ、ブラウズ、拡張機能、その他の基本を約20秒で紹介します。その他 › ツアーからいつでも見直せます。</string>
     <string name="onboarding_tour_start">ガイドツアーを開始</string>
     <plurals name="onboarding_languages_selected">
         <item quantity="other">%1$d件選択中</item>

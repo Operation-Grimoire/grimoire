@@ -99,7 +99,7 @@
     <string name="onboarding_quickstart_extensions_subtitle">Instala fuentes de lectura para descubrir y seguir novelas web.</string>
     <string name="onboarding_quickstart_import_subtitle">Abre archivos EPUB o TXT locales directamente desde tu dispositivo.</string>
     <string name="onboarding_tour_card_title">¿Hacer un recorrido interactivo rápido?</string>
-    <string name="onboarding_tour_card_subtitle">Un paseo de 20 segundos por Biblioteca, Explorar, Extensiones y Más. También puedes repetirlo en Más › Recorridos guiados.</string>
+    <string name="onboarding_tour_card_subtitle">Un paseo de 20 segundos por Biblioteca, Explorar, Extensiones y Más. También puedes repetirlo en Más › Recorridos.</string>
     <string name="onboarding_tour_start">Iniciar recorrido</string>
     <plurals name="onboarding_languages_selected">
         <item quantity="one">%1$d seleccionado</item>

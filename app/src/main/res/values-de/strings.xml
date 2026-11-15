@@ -98,7 +98,7 @@
     <string name="onboarding_quickstart_extensions_subtitle">Installiere Lesequellen, um Webromane zu entdecken und zu verfolgen.</string>
     <string name="onboarding_quickstart_import_subtitle">Öffne lokale EPUB- oder TXT-Dateien direkt von deinem Gerät.</string>
     <string name="onboarding_tour_card_title">Kurze interaktive Tour starten?</string>
-    <string name="onboarding_tour_card_subtitle">Ein 20-sekündiger Rundgang durch Bibliothek, Entdecken, Erweiterungen und Mehr. Jederzeit wiederholbar unter Mehr › Geführte Touren.</string>
+    <string name="onboarding_tour_card_subtitle">Ein 20-sekündiger Rundgang durch Bibliothek, Entdecken, Erweiterungen und Mehr. Jederzeit wiederholbar unter Mehr › Touren.</string>
     <string name="onboarding_tour_start">Interaktive Tour starten</string>
     <plurals name="onboarding_languages_selected">
         <item quantity="one">%1$d ausgewählt</item>

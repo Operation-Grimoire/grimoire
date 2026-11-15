@@ -99,7 +99,7 @@
     <string name="onboarding_quickstart_extensions_subtitle">Встановіть джерела, щоб знаходити та відстежувати вебромани.</string>
     <string name="onboarding_quickstart_import_subtitle">Відкривайте локальні файли EPUB або TXT прямо з пристрою.</string>
     <string name="onboarding_tour_card_title">Пройти короткий інтерактивний тур?</string>
-    <string name="onboarding_tour_card_subtitle">20-секундне знайомство з Бібліотекою, Оглядом, Розширеннями та Більше. Повторити можна в Більше › Інтерактивні тури.</string>
+    <string name="onboarding_tour_card_subtitle">20-секундне знайомство з Бібліотекою, Оглядом, Розширеннями та Більше. Повторити можна в Більше › Тури.</string>
     <string name="onboarding_tour_start">Почати тур</string>
     <plurals name="onboarding_languages_selected">
         <item quantity="one">Обрано %1$d</item>

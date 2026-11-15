@@ -99,7 +99,7 @@
     <string name="onboarding_quickstart_extensions_subtitle">읽기 소스를 설치해 웹소설을 찾고 구독하세요.</string>
     <string name="onboarding_quickstart_import_subtitle">기기에 있는 EPUB 또는 TXT 파일을 바로 불러옵니다.</string>
     <string name="onboarding_tour_card_title">간단한 대화형 둘러보기를 시작할까요?</string>
-    <string name="onboarding_tour_card_subtitle">라이브러리, 탐색, 확장, 더보기를 20초 만에 살펴보세요. 더보기 › 가이드 투어에서 언제든 다시 볼 수 있어요.</string>
+    <string name="onboarding_tour_card_subtitle">서재, 탐색, 확장 기능, 더보기를 20초 만에 살펴보세요. 더보기 › 둘러보기에서 언제든 다시 볼 수 있어요.</string>
     <string name="onboarding_tour_start">둘러보기 시작</string>
     <plurals name="onboarding_languages_selected">
         <item quantity="other">%1$d개 선택됨</item>

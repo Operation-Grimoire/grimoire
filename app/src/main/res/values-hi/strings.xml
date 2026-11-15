@@ -99,7 +99,7 @@
     <string name="onboarding_quickstart_extensions_subtitle">वेब उपन्यास खोजने और फ़ॉलो करने के लिए स्रोत इंस्टॉल करें।</string>
     <string name="onboarding_quickstart_import_subtitle">अपने डिवाइस से सीधे स्थानीय EPUB या TXT फ़ाइलें खोलें।</string>
     <string name="onboarding_tour_card_title">त्वरित इंटरैक्टिव टूर लें?</string>
-    <string name="onboarding_tour_card_subtitle">लाइब्रेरी, ब्राउज़, एक्सटेंशन और अन्य का 20 सेकंड का परिचय। अधिक › गाइडेड टूर से कभी भी दोबारा देखें।</string>
+    <string name="onboarding_tour_card_subtitle">लाइब्रेरी, ब्राउज़, एक्सटेंशन और अन्य टैब का 20 सेकंड का परिचय। और › टूर से कभी भी दोबारा देखें।</string>
     <string name="onboarding_tour_start">इंटरैक्टिव टूर शुरू करें</string>
     <plurals name="onboarding_languages_selected">
         <item quantity="one">%1$d चयनित</item>
