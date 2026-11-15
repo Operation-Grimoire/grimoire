@@ -1,7 +1,6 @@
 package io.grimoire.app.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
@@ -103,7 +102,7 @@ interface ChapterDao {
     @Query("DELETE FROM chapter_content WHERE chapterId = :chapterId")
     suspend fun deleteContent(chapterId: Long)
 
-    /** A novel's chapters that have saved text, with that text, in reading order. */
+    /** Metadata for a novel's locally saved chapters, in reading order. */
     @Query("""
         SELECT c.* FROM chapters c
         INNER JOIN chapter_content cc ON cc.chapterId = c.id
@@ -111,12 +110,6 @@ interface ChapterDao {
         ORDER BY c.chapterNumber ASC, c.id ASC
     """)
     suspend fun getDownloadedChapterMetadata(novelId: Long): List<ChapterEntity>
-
-    @Transaction
-    suspend fun getDownloadedChaptersWithContent(novelId: Long): List<ChapterWithContent> =
-        getDownloadedChapterMetadata(novelId).mapNotNull { chapter ->
-            getContent(chapter.id)?.let { ChapterWithContent(chapter, it.content, it.version) }
-        }
 
     @Query("DELETE FROM chapters WHERE id IN (:ids)")
     suspend fun deleteByIds(ids: List<Long>)
@@ -516,13 +509,6 @@ data class StorageChapterStats(
     val libraryChapters: Int,
     val downloadedTextCount: Int,
     val downloadedTextBytes: Long,
-)
-
-/** A chapter row plus its saved text; see [ChapterDao.getDownloadedChaptersWithContent]. */
-data class ChapterWithContent(
-    @Embedded val chapter: ChapterEntity,
-    val content: String,
-    val contentVersion: Int = 1,
 )
 
 /** A single in-place chapter-metadata update applied by [ChapterDao.reconcileChapters]. */

@@ -66,6 +66,11 @@ EPUB export decodes the explicit stored version. XML 1.0 cannot represent the
 reserved C0 controls, even as numeric references. Export rejects incompatible
 text or metadata before opening the destination, rather than removing characters
 or writing invalid XML. Valid Unicode and markup escaping remain supported.
+Export reads and decodes one chapter at a time into a temporary ZIP, retaining
+only navigation/manifest metadata for the whole book. It opens the destination
+only after that ZIP is complete, and deletes the temporary file on success or
+failure. A destination I/O failure during the final copy can still leave a
+partial file; this is not an atomic replacement guarantee for document providers.
 This does not change EPUB navigation/chapter splitting (#411), or add rich-HTML
 export beyond the existing exporter. See the [XML character rule](https://www.w3.org/TR/xml/#charsets).
 

@@ -83,17 +83,20 @@ class ChapterCodecMigrationTest {
         assertEquals(PageContent.Image("https://example.org/i"), pages[2].content)
         assertEquals(PageContent.Text(large), pages[3].content)
         // The export path also uses chunked reads, not a body-sized CursorWindow.
-        val exported = db.chapterDao().getDownloadedChaptersWithContent(1).single()
-        assertEquals(content, exported.content)
-        assertEquals(1, exported.contentVersion)
+        assertEquals(listOf(metadata), db.chapterDao().getDownloadedChapterMetadata(1))
+        db.chapterDao().insertAll(listOf(metadata.copy(id = 2, url = "/new", name = "New chapter", chapterNumber = 2f)))
+        db.chapterDao().setDownloadedContent(2,
+            encodeChapterContent(listOf(NovelPage(0, PageContent.Text("New format chapter")))), 3)
         val file = context.cacheDir.resolve("codec-409-legacy.epub")
         try {
-            EpubExporter(context, db.novelDao(), db.chapterDao(), ChapterImageStore(context))
+            val result = EpubExporter(context, db.novelDao(), db.chapterDao(), ChapterImageStore(context))
                 .export(1, Uri.fromFile(file)).getOrThrow()
+            assertEquals(2, result.chapterCount)
             val parsed = EpubParser.parse(file, "legacy.epub")
             val text = parsed.chapters.flatMap { it.pages }.filterIsInstance<BookPage.Text>().map { it.text }
             assertTrue(text.contains("Legacy prose"))
             assertTrue(text.contains(large))
+            assertTrue(text.contains("New format chapter"))
         } finally { file.delete() }
         db.close()
         db = open()
@@ -113,14 +116,21 @@ class ChapterCodecMigrationTest {
         assertTrue(db.chapterDao().finishDownload(1, encoded))
         assertEquals("2", db.chapterDao().getContentVersionToken(1))
         assertEquals(metadata.copy(wordCount = 5), db.chapterDao().getByUrl(1, "/legacy"))
+        // Write a valid chapter first, then fail on the later invalid chapter.
+        // Even a partially generated temporary ZIP must not reach the destination.
+        db.chapterDao().insertAll(listOf(metadata.copy(id = 2, url = "/first", name = "First", chapterNumber = 0.5f)))
+        db.chapterDao().setDownloadedContent(2,
+            encodeChapterContent(listOf(NovelPage(0, PageContent.Text("Valid first chapter")))), 3)
         val file = context.cacheDir.resolve("codec-409-destination.epub")
         val sentinel = "Do not truncate an existing destination".toByteArray()
         file.writeBytes(sentinel)
+        val temporaryFiles = context.cacheDir.list()!!.filter { it.startsWith("grimoire-export-") }.toSet()
         try {
             val result = EpubExporter(context, db.novelDao(), db.chapterDao(), ChapterImageStore(context))
                 .export(1, Uri.fromFile(file))
             assertTrue(result.isFailure)
             assertArrayEquals(sentinel, file.readBytes())
+            assertEquals(temporaryFiles, context.cacheDir.list()!!.filter { it.startsWith("grimoire-export-") }.toSet())
         } finally { file.delete() }
         assertFalse(db.chapterDao().finishDownload(1, encodeChapterContent(emptyList())))
         db.close()
