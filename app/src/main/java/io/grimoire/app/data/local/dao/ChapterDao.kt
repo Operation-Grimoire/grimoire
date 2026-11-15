@@ -160,6 +160,29 @@ interface ChapterDao {
     @Upsert
     suspend fun upsertAll(chapters: List<ChapterEntity>)
 
+    @Query("UPDATE chapter_download_state SET activeAttemptId=NULL, activeOwner=NULL, baseRevision=NULL, " +
+        "committedAttemptId=NULL, digest=NULL, contentVersion=NULL, wordCount=NULL, " +
+        "revision=lower(hex(randomblob(16))) WHERE chapterId IN (:ids)")
+    suspend fun invalidateRestoredOwnership(ids: List<Long>)
+
+    @Query("UPDATE chapters SET downloadStatus=CASE WHEN downloadStatus=6 THEN 5 ELSE 1 END " +
+        "WHERE id IN (:ids) AND downloadStatus IN (2,6)")
+    suspend fun requeueRestoredDownloads(ids: List<Long>)
+
+    @Query(io.grimoire.app.data.local.NORMALIZE_INELIGIBLE_DOWNLOADS)
+    suspend fun normalizeIneligibleDownloads()
+
+    /** Restore is an explicit invalidation even when merge preserves the active ordinal. */
+    @Transaction
+    suspend fun restoreChapters(chapters: List<ChapterEntity>) {
+        upsertAll(chapters)
+        chapters.map { it.id }.filter { it != 0L }.chunked(999).forEach {
+            invalidateRestoredOwnership(it)
+            requeueRestoredDownloads(it)
+        }
+        normalizeIneligibleDownloads()
+    }
+
     @Query(
         "UPDATE chapters SET read = :read, " +
             "firstReadAt = CASE WHEN :read AND firstReadAt IS NULL " +
@@ -263,7 +286,7 @@ interface ChapterDao {
     @Query("SELECT downloadStatus FROM chapters WHERE id = :id")
     suspend fun getDownloadStatus(id: Long): Int?
 
-    @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus IN (1, 2, 5, 6)")
+    @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus IN (1, 2, 5, 6) AND locked=0 AND novelId IN (SELECT id FROM novels WHERE sourceId != 0)")
     suspend fun getPendingDownloadCount(): Int
 
     @Query(
@@ -281,8 +304,7 @@ interface ChapterDao {
         clearDownloadStatus(id)
     }
 
-    // Picks up either a fresh QUEUED (1) or a REDOWNLOAD_QUEUED (5) — the worker reads
-    // chapter.downloadStatus to decide which DOWNLOADING / ERROR variant to write back.
+    // AndroidDownloadQueue claims eligible queued rows through the shared facade.
     @Query("SELECT * FROM chapters WHERE downloadStatus IN (1, 5) AND locked = 0 AND novelId IN (SELECT id FROM novels WHERE sourceId != 0) ORDER BY queueOrder DESC, id ASC LIMIT 1")
     suspend fun getNextQueued(): ChapterEntity?
 
@@ -292,10 +314,10 @@ interface ChapterDao {
     @Query("UPDATE chapters SET queueOrder = :order WHERE id = :id")
     suspend fun setChapterQueueOrder(id: Long, order: Long)
 
-    @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus IN (1, 5)")
+    @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus IN (1, 5) AND locked=0 AND novelId IN (SELECT id FROM novels WHERE sourceId != 0)")
     suspend fun getQueuedCount(): Int
 
-    @Query("SELECT COUNT(*) FROM chapters WHERE id IN (:ids) AND locked = 0 AND downloadStatus IN (1, 5)")
+    @Query("SELECT COUNT(*) FROM chapters WHERE id IN (:ids) AND locked = 0 AND downloadStatus IN (1, 5) AND novelId IN (SELECT id FROM novels WHERE sourceId != 0)")
     suspend fun countQueuedDownloads(ids: List<Long>): Int
 
     // Reset both DOWNLOADING (2) → QUEUED (1) and REDOWNLOADING (6) → REDOWNLOAD_QUEUED (5).

@@ -8,6 +8,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
+import io.grimoire.app.data.backup.BackupChapter
+import io.grimoire.app.data.backup.mergeBackupChapter
 import io.grimoire.app.data.download.AndroidDownloadQueue
 import io.grimoire.app.data.download.ChapterImageStore
 import io.grimoire.app.data.local.entity.ChapterEntity
@@ -83,9 +85,21 @@ class DownloadCommitTest {
                 readProgress,readAnchorItemIndex,readAnchorItemOffset,downloadStatus,queueOrder,firstReadAt,wordCount,locked)
                 VALUES (1,1,'/chapter','Chapter',0,-1,1,0.625,3,17,3,0,789,7,0)""")
             legacy.execSQL("INSERT INTO chapter_content(chapterId,content,contentVersion) VALUES(1,?,1)", arrayOf("Old\u001c<i>Old</i>"))
+            for ((id, status, url) in listOf(Triple(2, 1, "/locked-fresh"), Triple(3, 6, "/locked-refresh"))) {
+                legacy.execSQL("""INSERT INTO chapters (id,novelId,url,name,uploadDate,chapterNumber,read,
+                    readProgress,readAnchorItemIndex,readAnchorItemOffset,downloadStatus,queueOrder,firstReadAt,wordCount,locked)
+                    SELECT ?,novelId,?,name,uploadDate,chapterNumber,read,readProgress,readAnchorItemIndex,
+                    readAnchorItemOffset,?,queueOrder,firstReadAt,wordCount,1 FROM chapters WHERE id=1""", arrayOf(id, url, status))
+            }
+            legacy.execSQL("INSERT INTO chapter_content(chapterId,content,contentVersion) VALUES(3,'Keep refresh bytes',1)")
         }
         open()
         assertEquals(metadata.copy(downloadStatus = 3), db.chapterDao().getByUrl(1, key.url))
+        assertEquals(metadata.copy(id = 2, url = "/locked-fresh", locked = true), db.chapterDao().getByUrl(1, "/locked-fresh"))
+        assertEquals(metadata.copy(id = 3, url = "/locked-refresh", locked = true, downloadStatus = 3), db.chapterDao().getByUrl(1, "/locked-refresh"))
+        assertEquals(StoredChapterContent("Keep refresh bytes", 1), db.chapterDao().getContent(3))
+        assertEquals(0, db.chapterDao().getPendingDownloadCount())
+        assertEquals(0, db.chapterDao().getQueuedCount())
         val before = db.chapterDao().getContent(1)!!
         assertEquals(StoredChapterContent("Old\u001c<i>Old</i>", 1), before)
         assertNull(db.chapterDownloadStateDao().find(1))
@@ -286,8 +300,49 @@ class DownloadCommitTest {
         assertTrue(repository.commit(again.attempt, pages) is DownloadCommit.NotApplied)
         assertNull(queue.take())
         db.openHelper.writableDatabase.execSQL("UPDATE chapters SET locked=0, downloadStatus=1 WHERE id=1")
+        val beforeMove = requireNotNull(queue.take())
+        db.openHelper.writableDatabase.execSQL("UPDATE chapters SET url='/moved' WHERE id=1")
+        assertEquals(1, db.chapterDao().getDownloadStatus(1))
+        assertEquals(1, db.chapterDao().getQueuedCount())
+        assertTrue(repository.commit(beforeMove.attempt, pages) is DownloadCommit.NotApplied)
+        val moved = requireNotNull(queue.take())
+        assertEquals("/moved", moved.attempt.key.url)
+        db.openHelper.writableDatabase.execSQL("UPDATE novels SET sourceId=18, url='/new-book' WHERE id=1")
+        assertEquals(1, db.chapterDao().getDownloadStatus(1))
+        assertFalse(repository.fail(moved.attempt, DownloadFailure.CONNECTIVITY))
+        val newNovel = requireNotNull(queue.take())
+        assertEquals(NovelKey(18, "/new-book"), newNovel.attempt.key.novel)
         db.openHelper.writableDatabase.execSQL("UPDATE novels SET sourceId=0 WHERE id=1")
+        assertEquals(0, db.chapterDao().getPendingDownloadCount())
+        assertEquals(0, db.chapterDao().getQueuedCount())
         assertNull(queue.take())
-        assertNull(repository.claim(key.copy(novel = NovelKey(0, "/book"))))
+        assertNull(repository.claim(ChapterKey(NovelKey(0, "/new-book"), "/moved")))
     }
+
+    @Test fun productionRestoreMergeRevokesFreshAndRefreshOwnershipAtomically() = runBlocking {
+        fresh()
+        for (refresh in listOf(false, true)) {
+            val a = claim(refresh)
+            val prior = db.chapterDao().getByUrl(1, key.url)!!
+            val body = db.chapterDao().getContent(1)
+            val merged = mergeBackupChapter(BackupChapter(key.url, "Restored", readProgress = 0.9f, wordCount = 10), prior, 1)
+            assertEquals(if (refresh) 6 else 2, merged.downloadStatus)
+            try {
+                db.withTransaction { db.chapterDao().restoreChapters(listOf(merged)); error("Abort restore") }
+            } catch (_: IllegalStateException) { }
+            assertEquals(prior, db.chapterDao().getByUrl(1, key.url))
+            assertEquals(a.id, db.chapterDownloadStateDao().find(1)!!.activeAttemptId)
+            db.chapterDao().restoreChapters(listOf(merged))
+            assertEquals(if (refresh) 5 else 1, db.chapterDao().getDownloadStatus(1))
+            assertNull(repository.currentReceipt(key))
+            assertTrue(repository.commit(a, pages) is DownloadCommit.NotApplied)
+            for (kind in DownloadFailure.entries) assertFalse(repository.fail(a, kind))
+            assertEquals(body, db.chapterDao().getContent(1))
+            assertEquals(0.9f, db.chapterDao().getByUrl(1, key.url)!!.readProgress)
+            val b = requireNotNull(repository.claim(key))
+            assertTrue(repository.commit(b, pages) is DownloadCommit.Committed)
+            assertEquals(0.9f, db.chapterDao().getByUrl(1, key.url)!!.readProgress)
+        }
+    }
+
 }

@@ -1,4 +1,6 @@
 import os
+import hashlib
+import json
 from pathlib import Path
 import subprocess
 import sqlite3
@@ -44,8 +46,16 @@ class FrozenBaselineTest(unittest.TestCase):
             db.executescript(schema.read_text(encoding="utf-8"))
             self.assertEqual(33, db.execute("PRAGMA user_version").fetchone()[0])
             self.assertEqual([("af03604692f0d6032635caa46a5b4683",)], db.execute("SELECT identity_hash FROM room_master_table WHERE id=42").fetchall())
-            self.assertEqual(0, db.execute("SELECT COUNT(*) FROM novels").fetchone()[0])
-            self.assertEqual(0, db.execute("SELECT COUNT(*) FROM chapters").fetchone()[0])
+            # Independent complete oracle from signed beta347 run43687721590's verified DB33 snapshot,
+            # not generated from v33.sql. Exclude SQLite/Android-owned implementation tables only.
+            objects = db.execute("SELECT type,name,tbl_name,sql FROM sqlite_master WHERE sql IS NOT NULL "
+                                 "AND name NOT LIKE 'sqlite_%' AND name != 'android_metadata' ORDER BY type,name").fetchall()
+            self.assertEqual(22, len(objects))
+            digest = hashlib.sha256(json.dumps(objects, separators=(",", ":"), ensure_ascii=True).encode()).hexdigest()
+            self.assertEqual("4c6fc65baef38fab434d5ea1b157d105a8bdcbd5bf3848a2105fd994684ce3bf", digest)
+            for kind, table, _, _ in objects:
+                if kind == "table" and table != "room_master_table":
+                    self.assertEqual(0, db.execute('SELECT COUNT(*) FROM "' + table + '"').fetchone()[0], table)
             columns = {row[1]: row for row in db.execute("PRAGMA table_info(chapter_content)")}
             self.assertEqual("1", columns["contentVersion"][4])
             self.assertNotIn("chapter_download_state", {row[0] for row in db.execute("SELECT name FROM sqlite_master")})

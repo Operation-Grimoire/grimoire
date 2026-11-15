@@ -22,7 +22,7 @@ class RoomDownloadDao @Inject constructor(private val database: AppDatabase, pri
     /** Only called under DownloadDrain, before fetching or after all its children have exited. */
     suspend fun resetInterruptedDownloads() {
         owner.requireOwner()
-        database.withTransaction { chapters.resetStuckDownloads() }
+        database.withTransaction { chapters.resetStuckDownloads(); chapters.normalizeIneligibleDownloads() }
     }
 
     override suspend fun claim(key: ChapterKey): DownloadAttempt? {

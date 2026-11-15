@@ -33,7 +33,7 @@ if grep -Eq 'FAILURES|INSTRUMENTATION_(FAILED|ABORTED)|INSTRUMENTATION_STATUS_CO
 adb shell am instrument -w -r \
   -e class io.grimoire.app.data.local.DownloadCommitTest \
   io.grimoire.app.test/androidx.test.runner.AndroidJUnitRunner | tee download-result.log
-grep -Fq 'OK (8 tests)' download-result.log
+grep -Fq 'OK (9 tests)' download-result.log
 grep -Fq 'INSTRUMENTATION_CODE: -1' download-result.log
-test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' download-result.log)" -eq 8
+test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' download-result.log)" -eq 9
 if grep -Eq 'FAILURES|INSTRUMENTATION_(FAILED|ABORTED)|INSTRUMENTATION_STATUS_CODE: -[234]' download-result.log; then exit 1; fi

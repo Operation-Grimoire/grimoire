@@ -164,8 +164,9 @@ attempts and receipts with explicit committed/replayed/stale outcomes. Android's
 production queue claims through this facade; success, error and connectivity
 callbacks carry the attempt, including after cancellation/requeue.
 
-`RoomDownloadDao` commits content/version, completion, positive word count and a
-receipt together. DB34 adds `chapter_download_state`, with cascading ownership
+`RoomDownloadDao` commits content/version, completion, word count and a receipt
+together. A positive prose count replaces the old count; zero retains the old
+count, which may also be zero. DB34 adds `chapter_download_state`, with cascading ownership
 and receipt metadata outside chapter/progress rows. Triggers invalidate ownership
 for existing cancel/delete/status, content replacement/import, identity and lock
 writes. A per-store OS lease rejects a second protocol owner. Drain cleanup holds
@@ -254,9 +255,10 @@ these fixtures do not establish live-site or physical-phone acceptance.
 
 `DownloadRepositoryTest` checks preparation, stale outcomes, explicit replay,
 confirmation identity/count/digest/version, propagated failures and cancellation
-with reconciliation after a lost reply. Native `DownloadCommitTest` requires eight
+with reconciliation after a lost reply. Native `DownloadCommitTest` requires nine
 executed successes: frozen DB33 migration, commit/replay/reopen, fresh/refresh ABA
 callbacks, invalidating writers, SQL fault rollback and in-flight cancellation,
-single-owner refusal/reset, coherent image snapshots and production queue gates.
-The script requires 19 native successes total; native execution remains separate
+single-owner refusal/reset, coherent image snapshots, production queue gates and
+atomic backup restore preserving active status before invalidation.
+The script requires 20 native successes total; native execution remains separate
 from compilation and the signed beta.347-to-target DB34 compatibility harness.
