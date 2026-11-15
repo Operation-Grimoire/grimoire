@@ -35,6 +35,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -62,16 +63,18 @@ private const val ONBOARDING_STEP_COUNT = 6
 @Composable
 fun OnboardingScreen(
     viewModel: OnboardingViewModel,
-    onOpenExtensions: () -> Unit = {},
-    onImportBook: (Uri) -> Unit = {},
+    onOpenExtensions: () -> Unit,
+    onImportBook: (Uri) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { ONBOARDING_STEP_COUNT })
     val scope = rememberCoroutineScope()
+    val restoreState by viewModel.restoreState.collectAsState()
+    val isRestoring = restoreState is OnboardingRestoreState.Restoring
     val currentPage = pagerState.currentPage
     val isLastStep = currentPage == ONBOARDING_STEP_COUNT - 1
 
-    BackHandler(enabled = currentPage > 0) {
+    BackHandler(enabled = currentPage > 0 && !isRestoring) {
         scope.launch { pagerState.animateScrollToPage(currentPage - 1) }
     }
 
@@ -81,7 +84,7 @@ fun OnboardingScreen(
             OnboardingTopBar(
                 currentPage = currentPage,
                 pageCount = ONBOARDING_STEP_COUNT,
-                showSkip = !isLastStep,
+                showSkip = !isLastStep && !isRestoring,
                 onSkip = viewModel::skip,
             )
         },
@@ -89,6 +92,7 @@ fun OnboardingScreen(
             OnboardingBottomBar(
                 canGoBack = currentPage > 0,
                 isLastStep = isLastStep,
+                enabled = !isRestoring,
                 onBack = {
                     scope.launch { pagerState.animateScrollToPage(currentPage - 1) }
                 },
@@ -105,6 +109,7 @@ fun OnboardingScreen(
         HorizontalPager(
             state = pagerState,
             beyondViewportPageCount = 1,
+            userScrollEnabled = !isRestoring,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -181,6 +186,7 @@ private fun OnboardingTopBar(
 private fun OnboardingBottomBar(
     canGoBack: Boolean,
     isLastStep: Boolean,
+    enabled: Boolean,
     onBack: () -> Unit,
     onNext: () -> Unit,
 ) {
@@ -201,7 +207,7 @@ private fun OnboardingBottomBar(
                     .padding(horizontal = 24.dp, vertical = 14.dp),
             ) {
                 if (canGoBack) {
-                    OutlinedButton(onClick = onBack) {
+                    OutlinedButton(onClick = onBack, enabled = enabled) {
                         Icon(
                             imageVector = AppIcons.ArrowBack,
                             contentDescription = null,
@@ -213,6 +219,7 @@ private fun OnboardingBottomBar(
                 }
                 Button(
                     onClick = onNext,
+                    enabled = enabled,
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(

@@ -64,7 +64,7 @@
     <string name="onboarding_skip">スキップ</string>
     <string name="onboarding_hero_tagline">拡張機能でウェブ小説を読み、端末の EPUB・TXT を取り込み、内蔵の読み上げ機能で聴くこともできます。</string>
     <string name="onboarding_restore_title">すでに Grimoire をお使いですか？</string>
-    <string name="onboarding_restore_subtitle">バックアップからライブラリ、読書履歴、設定を復元します。</string>
+    <string name="onboarding_restore_subtitle">バックアップからライブラリ、読書の進捗、設定を復元します。</string>
     <string name="onboarding_restore_action">バックアップを復元</string>
     <string name="onboarding_restoring">バックアップを復元中…</string>
     <string name="onboarding_restore_done_title">バックアップを復元しました</string>
@@ -102,8 +102,7 @@
     <string name="onboarding_tour_card_subtitle">ライブラリ、ブラウズ、拡張機能、その他の基本を約20秒で紹介します。その他 › ガイドツアーからいつでも見直せます。</string>
     <string name="onboarding_tour_start">ガイドツアーを開始</string>
     <plurals name="onboarding_languages_selected">
-        <item quantity="one">%1$d 件選択中</item>
-        <item quantity="other">%1$d 件選択中</item>
+        <item quantity="other">%1$d件選択中</item>
     </plurals>
 
     <!-- Library -->

@@ -101,6 +101,7 @@
     <string name="onboarding_tour_start">Avvia tour interattivo</string>
     <plurals name="onboarding_languages_selected">
         <item quantity="one">%1$d selezionata</item>
+        <item quantity="many">%1$d selezionate</item>
         <item quantity="other">%1$d selezionate</item>
     </plurals>
 

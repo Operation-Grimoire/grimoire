@@ -103,6 +103,8 @@
     <string name="onboarding_tour_start">Почати тур</string>
     <plurals name="onboarding_languages_selected">
         <item quantity="one">Обрано %1$d</item>
+        <item quantity="few">Обрано %1$d</item>
+        <item quantity="many">Обрано %1$d</item>
         <item quantity="other">Обрано %1$d</item>
     </plurals>
 

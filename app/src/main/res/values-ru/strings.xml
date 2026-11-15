@@ -75,7 +75,7 @@
     <string name="onboarding_appearance_subtitle">Выберите светлую или тёмную тему и любимую палитру. Это всегда можно изменить в Настройках.</string>
     <string name="onboarding_appearance_preview_title">Хроники Астрального Архива</string>
     <string name="onboarding_appearance_preview_meta">Глава 42 из 64 · Читаю</string>
-    <string name="onboarding_appearance_preview_badge">Читать</string>
+    <string name="onboarding_appearance_preview_badge">Продолжить</string>
     <string name="onboarding_notifications_title">Будьте в курсе</string>
     <string name="onboarding_notifications_subtitle">Включите уведомления, чтобы узнавать о новых главах и завершении загрузок.</string>
     <string name="onboarding_notifications_benefit_chapters_title">Оповещения о главах</string>
@@ -102,7 +102,9 @@
     <string name="onboarding_tour_card_subtitle">20-секундное знакомство с Библиотекой, Обзором, Расширениями и разделом Ещё. Повторить можно в Ещё › Обучение.</string>
     <string name="onboarding_tour_start">Начать тур</string>
     <plurals name="onboarding_languages_selected">
-        <item quantity="one">Выбран %1$d</item>
+        <item quantity="one">Выбрано: %1$d</item>
+        <item quantity="few">Выбрано: %1$d</item>
+        <item quantity="many">Выбрано: %1$d</item>
         <item quantity="other">Выбрано: %1$d</item>
     </plurals>
 

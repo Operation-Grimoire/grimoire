@@ -31,13 +31,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
+import io.grimoire.app.data.book.BOOK_MIME_TYPES
 import io.grimoire.app.ui.icon.AppIcons
 import io.grimoire.app.ui.icon.AutoAwesome
 import io.grimoire.app.ui.icon.Explore
 import io.grimoire.app.ui.icon.Extension
 import io.grimoire.app.ui.icon.KeyboardArrowRight
 import io.grimoire.app.ui.icon.LibraryAdd
-import io.grimoire.app.ui.screen.library.BOOK_MIME_TYPES
 
 @Composable
 internal fun OnboardingReadyStep(

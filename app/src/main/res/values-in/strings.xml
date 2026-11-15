@@ -99,10 +99,9 @@
     <string name="onboarding_quickstart_extensions_subtitle">Pasang sumber baca untuk menemukan dan mengikuti novel web.</string>
     <string name="onboarding_quickstart_import_subtitle">Buka file EPUB atau TXT lokal langsung dari perangkat Anda.</string>
     <string name="onboarding_tour_card_title">Ikuti tur interaktif singkat?</string>
-    <string name="onboarding_tour_card_subtitle">Panduan 20 detik untuk Pustaka, Jelajah, Ekstensi, dan Lainnya. Dapat diulang kapan saja di Lainnya › Tur panduan.</string>
+    <string name="onboarding_tour_card_subtitle">Panduan 20 detik untuk Pustaka, Jelajahi, Ekstensi, dan Lainnya. Dapat diulang kapan saja di Lainnya › Tur.</string>
     <string name="onboarding_tour_start">Mulai tur interaktif</string>
     <plurals name="onboarding_languages_selected">
-        <item quantity="one">%1$d dipilih</item>
         <item quantity="other">%1$d dipilih</item>
     </plurals>
 

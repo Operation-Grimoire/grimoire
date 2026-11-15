@@ -4,6 +4,7 @@ import io.grimoire.app.ui.tour.tourTarget
 import io.grimoire.app.ui.tour.TourKey
 import io.grimoire.app.ui.icon.*
 import android.net.Uri
+import io.grimoire.app.data.book.BOOK_MIME_TYPES
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import io.grimoire.app.ui.component.ScrollToTopButton
 import io.grimoire.app.ui.component.showScrollToTop
@@ -104,13 +105,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
-
-internal val BOOK_MIME_TYPES = arrayOf(
-    "application/epub+zip",
-    "application/zip",
-    "text/plain",
-    "application/octet-stream",
-)
 
 private val EmptyExternalBookUri: StateFlow<Uri?> = MutableStateFlow(null).asStateFlow()
 

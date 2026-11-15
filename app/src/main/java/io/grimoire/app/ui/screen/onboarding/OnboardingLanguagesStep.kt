@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.onboarding
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,12 +13,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,10 +32,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.grimoire.api.model.lang.Language
 import io.grimoire.app.R
+import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.Clear
 import io.grimoire.app.ui.icon.Language as LanguageIcon
-import io.grimoire.app.ui.icon.Search
 
 @Composable
 internal fun OnboardingLanguagesStep(
@@ -56,27 +53,21 @@ internal fun OnboardingLanguagesStep(
             modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 12.dp),
         )
 
-        OutlinedTextField(
-            value = query,
-            onValueChange = viewModel::setLanguageQuery,
-            singleLine = true,
-            leadingIcon = { Icon(AppIcons.Search, contentDescription = null) },
-            trailingIcon = {
-                if (query.isNotEmpty()) {
-                    IconButton(onClick = { viewModel.setLanguageQuery("") }) {
-                        Icon(
-                            imageVector = AppIcons.Clear,
-                            contentDescription = stringResource(R.string.action_clear),
-                        )
-                    }
-                }
-            },
-            placeholder = { Text(stringResource(R.string.onboarding_languages_search_hint)) },
+        Surface(
             shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp, vertical = 10.dp),
-        )
+        ) {
+            AppSearchField(
+                value = query,
+                onValueChange = viewModel::setLanguageQuery,
+                placeholder = stringResource(R.string.onboarding_languages_search_hint),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,

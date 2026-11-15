@@ -3,7 +3,8 @@ package io.grimoire.app.ui.component
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
@@ -102,7 +104,8 @@ internal fun ColorThemePicker(
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp),
+                .padding(top = 12.dp)
+                .selectableGroup(),
             contentPadding = rowContentPadding,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -156,7 +159,12 @@ private fun ColorThemeChip(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .clip(RoundedCornerShape(16.dp))
-            .clickable(enabled = isEnabled, onClick = onClick)
+            .selectable(
+                selected = isSelected,
+                enabled = isEnabled,
+                role = Role.RadioButton,
+                onClick = onClick,
+            )
             .border(BorderStroke(borderWidth, borderColor), RoundedCornerShape(16.dp))
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {

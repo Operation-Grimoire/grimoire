@@ -97,7 +97,7 @@
     <string name="onboarding_quickstart_extensions_subtitle">Web romanlarını keşfetmek ve takip etmek için kaynaklar yükleyin.</string>
     <string name="onboarding_quickstart_import_subtitle">Cihazınızdaki yerel EPUB veya TXT dosyalarını doğrudan açın.</string>
     <string name="onboarding_tour_card_title">Hızlı bir etkileşimli tur ister misiniz?</string>
-    <string name="onboarding_tour_card_subtitle">Kitaplık, Keşfet, Eklentiler ve Daha Fazlası için 20 saniyelik bir rehber. Daha Fazla › Rehberli turlar altından tekrar açılabilir.</string>
+    <string name="onboarding_tour_card_subtitle">Kitaplık, Göz at, Eklentiler ve Daha fazla için 20 saniyelik bir rehber. Daha fazla › Turlar altından tekrar açılabilir.</string>
     <string name="onboarding_tour_start">Etkileşimli turu başlat</string>
     <plurals name="onboarding_languages_selected">
         <item quantity="one">%1$d seçildi</item>

@@ -101,7 +101,6 @@
     <string name="onboarding_tour_card_subtitle">แนะนำคลัง เรียกดู ส่วนเสริม และเพิ่มเติมภายใน 20 วินาที ดูซ้ำได้ทุกเมื่อที่ เพิ่มเติม › ทัวร์แนะนำ</string>
     <string name="onboarding_tour_start">เริ่มทัวร์แนะนำ</string>
     <plurals name="onboarding_languages_selected">
-        <item quantity="one">เลือก %1$d ภาษา</item>
         <item quantity="other">เลือก %1$d ภาษา</item>
     </plurals>
 

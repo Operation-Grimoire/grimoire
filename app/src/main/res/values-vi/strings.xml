@@ -102,7 +102,6 @@
     <string name="onboarding_tour_card_subtitle">Giới thiệu 20 giây về Thư viện, Duyệt, Tiện ích và Thêm. Có thể xem lại trong Thêm › Hướng dẫn.</string>
     <string name="onboarding_tour_start">Bắt đầu hướng dẫn</string>
     <plurals name="onboarding_languages_selected">
-        <item quantity="one">Đã chọn %1$d</item>
         <item quantity="other">Đã chọn %1$d</item>
     </plurals>
 

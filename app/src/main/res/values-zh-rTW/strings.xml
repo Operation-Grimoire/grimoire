@@ -99,10 +99,9 @@
     <string name="onboarding_quickstart_extensions_subtitle">安裝閱讀來源以探索並追蹤網路小說。</string>
     <string name="onboarding_quickstart_import_subtitle">直接從裝置開啟本機 EPUB 或 TXT 檔案。</string>
     <string name="onboarding_tour_card_title">要進行快速互動導覽嗎？</string>
-    <string name="onboarding_tour_card_subtitle">花 20 秒認識書櫃、探索、擴充套件與更多功能。之後也能在「更多 › 引導教學」隨時重播。</string>
+    <string name="onboarding_tour_card_subtitle">花 20 秒認識書櫃、瀏覽、擴充套件與更多功能。之後也能在「更多 › 導覽」隨時重播。</string>
     <string name="onboarding_tour_start">開始互動導覽</string>
     <plurals name="onboarding_languages_selected">
-        <item quantity="one">已選取 %1$d 項</item>
         <item quantity="other">已選取 %1$d 項</item>
     </plurals>
 

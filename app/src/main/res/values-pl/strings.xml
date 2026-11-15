@@ -103,6 +103,8 @@
     <string name="onboarding_tour_start">Rozpocznij przewodnik</string>
     <plurals name="onboarding_languages_selected">
         <item quantity="one">Wybrano %1$d</item>
+        <item quantity="few">Wybrano %1$d</item>
+        <item quantity="many">Wybrano %1$d</item>
         <item quantity="other">Wybrano %1$d</item>
     </plurals>
 

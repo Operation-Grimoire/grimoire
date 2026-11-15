@@ -70,7 +70,7 @@
     <string name="onboarding_enter_library">Zur Bibliothek</string>
     <string name="onboarding_languages_search_hint">Sprachen suchen…</string>
     <string name="onboarding_languages_all">Alle Sprachen</string>
-    <string name="onboarding_appearance_title">Mach es zu deinem</string>
+    <string name="onboarding_appearance_title">Passe es an dich an</string>
     <string name="onboarding_appearance_subtitle">Wähle Hell- oder Dunkelmodus und deine Lieblingspalette. Das lässt sich jederzeit in den Einstellungen ändern.</string>
     <string name="onboarding_appearance_preview_title">Chroniken des Astralarchivs</string>
     <string name="onboarding_appearance_preview_meta">Kapitel 42 von 64 · Am Lesen</string>

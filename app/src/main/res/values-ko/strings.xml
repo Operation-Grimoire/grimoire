@@ -64,7 +64,7 @@
     <string name="onboarding_skip">건너뛰기</string>
     <string name="onboarding_hero_tagline">커뮤니티 확장으로 웹소설을 읽고, 기기의 EPUB·TXT 파일을 가져오며, 기본 내장 읽어주기 기능으로 들을 수 있어요.</string>
     <string name="onboarding_restore_title">이미 Grimoire를 쓰고 계신가요?</string>
-    <string name="onboarding_restore_subtitle">백업 파일에서 라이브러리, 읽기 기록, 설정을 복원합니다.</string>
+    <string name="onboarding_restore_subtitle">백업 파일에서 라이브러리, 읽기 진행 상황, 설정을 복원합니다.</string>
     <string name="onboarding_restore_action">백업 복원</string>
     <string name="onboarding_restoring">백업 복원 중…</string>
     <string name="onboarding_restore_done_title">백업이 복원됨</string>
@@ -85,7 +85,7 @@
     <string name="onboarding_notifications_benefit_backups_title">예약 백업</string>
     <string name="onboarding_notifications_benefit_backups_body">자동 백업에 문제가 생기면 알림으로 알려드려요.</string>
     <string name="onboarding_notifications_enabled_title">알림이 켜져 있어요</string>
-    <string name="onboarding_notifications_enabled_body">챕터 및 다운로드 알림을 받을 준비가 되었습니다.</string>
+    <string name="onboarding_notifications_enabled_body">챕터 및 다운로드 알림을 받을 준비가 됐어요.</string>
     <string name="onboarding_notifications_allow">알림 허용</string>
     <string name="onboarding_notifications_denied_hint">Grimoire 알림이 차단되어 있습니다. 시스템 설정에서 언제든 켤 수 있어요.</string>
     <string name="onboarding_notifications_open_settings">앱 설정 열기</string>
@@ -102,7 +102,6 @@
     <string name="onboarding_tour_card_subtitle">라이브러리, 탐색, 확장, 더보기를 20초 만에 살펴보세요. 더보기 › 가이드 투어에서 언제든 다시 볼 수 있어요.</string>
     <string name="onboarding_tour_start">둘러보기 시작</string>
     <plurals name="onboarding_languages_selected">
-        <item quantity="one">%1$d개 선택됨</item>
         <item quantity="other">%1$d개 선택됨</item>
     </plurals>
 

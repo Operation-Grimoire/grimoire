@@ -99,10 +99,14 @@
     <string name="onboarding_quickstart_extensions_subtitle">ثبّت مصادر القراءة لاكتشاف روايات الويب ومتابعتها.</string>
     <string name="onboarding_quickstart_import_subtitle">افتح ملفات EPUB أو TXT المحلية مباشرة من جهازك.</string>
     <string name="onboarding_tour_card_title">هل تريد جولة تفاعلية سريعة؟</string>
-    <string name="onboarding_tour_card_subtitle">جولة من 20 ثانية في المكتبة والتصفح والإضافات والمزيد. يمكنك إعادتها لاحقًا من المزيد › الجولات الإرشادية.</string>
+    <string name="onboarding_tour_card_subtitle">جولة تفاعلية قصيرة في المكتبة والتصفّح والإضافات والمزيد. يمكنك إعادتها لاحقًا من المزيد › الجولات.</string>
     <string name="onboarding_tour_start">بدء الجولة التفاعلية</string>
     <plurals name="onboarding_languages_selected">
+        <item quantity="zero">تم تحديد %1$d</item>
         <item quantity="one">تم تحديد %1$d</item>
+        <item quantity="two">تم تحديد %1$d</item>
+        <item quantity="few">تم تحديد %1$d</item>
+        <item quantity="many">تم تحديد %1$d</item>
         <item quantity="other">تم تحديد %1$d</item>
     </plurals>
 

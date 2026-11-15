@@ -98,7 +98,7 @@
     <string name="onboarding_quickstart_extensions_subtitle">Install reading sources to discover and follow web novels.</string>
     <string name="onboarding_quickstart_import_subtitle">Open local EPUB or TXT files directly from your device.</string>
     <string name="onboarding_tour_card_title">Take a quick interactive tour?</string>
-    <string name="onboarding_tour_card_subtitle">A 20-second walkthrough of Library, Browse, Extensions, and More. Also replayable anytime under More › Guided tours.</string>
+    <string name="onboarding_tour_card_subtitle">A 20-second walkthrough of Library, Browse, Extensions, and More. Also replayable anytime under More › Tours.</string>
     <string name="onboarding_tour_start">Start interactive tour</string>
     <plurals name="onboarding_languages_selected">
         <item quantity="one">%1$d selected</item>

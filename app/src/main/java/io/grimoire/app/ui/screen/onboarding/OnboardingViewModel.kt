@@ -149,10 +149,7 @@ class OnboardingViewModel @Inject constructor(
         _restoreState.value = OnboardingRestoreState.Restoring
         when (val result = backupManager.restoreFrom(fileUri)) {
             is RestoreResult.Success -> {
-                val restoredLanguages = appLanguages.enabled.changes().first()
-                if (restoredLanguages.isNotEmpty()) {
-                    _selected.value = restoredLanguages
-                }
+                _selected.value = appLanguages.enabled.changes().first()
                 _restoreState.value = OnboardingRestoreState.Success(
                     novelCount = result.novelCount,
                     chapterCount = result.chapterCount,
@@ -170,6 +167,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun enterAfterRestore() = viewModelScope.launch {
+        if (_restoreState.value is OnboardingRestoreState.Restoring) return@launch
         extensionManager.reapplyAllPreferences()
         tourController.markCompleted(TourId.Welcome)
         holdForRestore.value = false
@@ -182,6 +180,7 @@ class OnboardingViewModel @Inject constructor(
         startTour: Boolean = false,
         onBeforeEnter: () -> Unit = {},
     ) = viewModelScope.launch {
+        if (_restoreState.value is OnboardingRestoreState.Restoring) return@launch
         appLanguages.enabled.set(_selected.value)
         extensionManager.reapplyAllPreferences()
         if (startTour) {
