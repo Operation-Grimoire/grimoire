@@ -110,6 +110,24 @@ class LocalLibraryTest {
         }
     }
 
+    @Test fun scrollAfterFailedAutosavePersistsLatestPositionWithoutAnInterveningRead() {
+        for (point in listOf(StorageCheckpoint.BEFORE_COMMIT, StorageCheckpoint.AFTER_COMMIT)) {
+            val directory = temporary.newFolder().toPath()
+            var inject = false
+            LocalLibrary(directory) { if (inject && it == point) throw IOException("autosave failed") }.use { store ->
+                store.seed()
+                store.position(fixtureKey, 0, 10)
+                inject = true
+                try { store.flush(); fail("Flush reply delivered") } catch (_: IOException) { }
+                inject = false
+                // Matches the reader scroll flow: next position arrives before any lookup or retry.
+                store.position(fixtureKey, 0, 42)
+                store.flush()
+            }
+            LocalLibrary(directory).use { assertEquals(ReadPosition("/chapter", 0, 42), it.book(fixtureKey.novel)!!.position) }
+        }
+    }
+
     @Test fun postCommitFailureDoesNotPublishAnOldMemorySnapshotOverTheCommittedState() {
         val directory = temporary.newFolder().toPath()
         var inject = false

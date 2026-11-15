@@ -53,11 +53,12 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
         }.let { it.copy(position = pendingPositions[key] ?: it.position) }
     }
     private fun refresh(): List<SavedBook> = readBooks().also { positionBooks = it.associateBy { b -> b.key } }
-    private fun <T> write(beforeCommit: () -> Unit = {}, action: () -> T): T = try {
+    private fun <T> write(beforeCommit: () -> Unit = {}, invalidatesPositionEligibility: Boolean = false, action: () -> T): T = try {
         database.transaction(beforeCommit, action)
     } catch (failure: Throwable) {
-        // A failed reply can follow a successful commit. Scroll callbacks must not use old eligibility.
-        positionBooks = emptyMap()
+        // Only chapter-list changes can make cached scroll eligibility stale after a lost reply.
+        // Autosave/content/membership failures must keep accepting the next scroll position.
+        if (invalidatesPositionEligibility) positionBooks = emptyMap()
         throw failure
     }
     @Synchronized fun saved(): List<SavedBook> = refresh().filter { it.favorite }
@@ -71,7 +72,7 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
 
     @Synchronized fun remember(key: NovelKey, novel: Novel, chapters: List<Chapter>): SavedBook {
         require(novel.url == key.url && chapters.map { it.url }.distinct().size == chapters.size)
-        write {
+        write(invalidatesPositionEligibility = true) {
             val old = book(key)
             val metadata = SavedBook(key, novel, chapters, old?.favorite ?: false, position = old?.position)
             db.execute("INSERT INTO books VALUES(?,?,?) ON CONFLICT(source_id,novel_url) DO UPDATE SET metadata=excluded.metadata",

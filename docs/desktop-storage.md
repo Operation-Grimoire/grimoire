@@ -80,7 +80,8 @@ prove survival of arbitrary hardware/filesystem failure or sudden power loss.
    including identity, digest and codec. Invalid or missing indexed data aborts
    the upgrade; unknown database/file versions are never silently reset.
 3. Import metadata and raw payloads into an app-owned temporary SQLite database,
-   processing one chapter at a time so library size does not determine heap use.
+   processing one chapter payload at a time. Manifest metadata and per-chapter
+   fingerprints still load fully into memory.
    Persist the source fingerprints with an `imported` phase, recheck the sources,
    then atomically publish `library.sqlite`.
 4. Atomically publish the exact manifest bytes in `library.json.before-sqlite`

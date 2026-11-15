@@ -90,7 +90,7 @@ Room updates only the membership column, then reads the projection in the same
 transaction. It does not copy a stale whole entity over concurrent metadata.
 The desktop backend patches current metadata in a SQLite transaction before
 returning a committed projection. A failed pre-commit write retains the previous
-membership; an uncertain reply is reconciled from SQL.
+membership; after a lost reply, retry the explicit desired membership value.
 The Room adapter preserves Android categories and other novel fields. The desktop
 adapter preserves its chapters, content, pending position and saved metadata. Library removal remains distinct from deleting saved content.
 
