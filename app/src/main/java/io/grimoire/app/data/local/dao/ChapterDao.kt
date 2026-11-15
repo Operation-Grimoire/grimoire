@@ -106,7 +106,7 @@ interface ChapterDao {
     @Query("""
         SELECT c.* FROM chapters c
         INNER JOIN chapter_content cc ON cc.chapterId = c.id
-        WHERE c.novelId = :novelId AND c.downloadStatus IN (3, 5, 6, 7)
+        WHERE c.novelId = :novelId AND c.downloadStatus IN (3, 5, 6, 7) AND cc.content != ''
         ORDER BY c.chapterNumber ASC, c.id ASC
     """)
     suspend fun getDownloadedChapterMetadata(novelId: Long): List<ChapterEntity>

@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.app.data.local.entity.ChapterContentEntity
 import io.grimoire.app.di.MIGRATION_32_33
 import io.grimoire.app.data.book.BookPage
 import io.grimoire.app.data.download.ChapterImageStore
@@ -87,9 +88,12 @@ class ChapterCodecMigrationTest {
         db.chapterDao().insertAll(listOf(metadata.copy(id = 2, url = "/new", name = "New chapter", chapterNumber = 2f)))
         db.chapterDao().setDownloadedContent(2,
             encodeChapterContent(listOf(NovelPage(0, PageContent.Text("New format chapter")))), 3)
+        db.chapterDao().insertAll(listOf(metadata.copy(id = 3, url = "/empty", name = "Empty", chapterNumber = 3f)))
+        db.chapterDao().upsertContent(ChapterContentEntity(3, ""))
+        assertEquals(listOf(1L, 2L), db.chapterDao().getDownloadedChapterMetadata(1).map { it.id })
         val file = context.cacheDir.resolve("codec-409-legacy.epub")
         try {
-            val result = EpubExporter(context, db.novelDao(), db.chapterDao(), ChapterImageStore(context))
+            val result = EpubExporter(context, db, ChapterImageStore(context))
                 .export(1, Uri.fromFile(file)).getOrThrow()
             assertEquals(2, result.chapterCount)
             val parsed = EpubParser.parse(file, "legacy.epub")
@@ -126,7 +130,7 @@ class ChapterCodecMigrationTest {
         file.writeBytes(sentinel)
         val temporaryFiles = context.cacheDir.list()!!.filter { it.startsWith("grimoire-export-") }.toSet()
         try {
-            val result = EpubExporter(context, db.novelDao(), db.chapterDao(), ChapterImageStore(context))
+            val result = EpubExporter(context, db, ChapterImageStore(context))
                 .export(1, Uri.fromFile(file))
             assertTrue(result.isFailure)
             assertArrayEquals(sentinel, file.readBytes())

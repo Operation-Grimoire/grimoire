@@ -2,13 +2,13 @@ package io.grimoire.app.data.epub
 
 import android.content.Context
 import android.net.Uri
+import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.api.network.defaultOkHttpClient
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.ChapterImageStore
-import io.grimoire.app.data.local.dao.ChapterDao
-import io.grimoire.app.data.local.dao.NovelDao
+import io.grimoire.app.data.local.AppDatabase
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
@@ -43,11 +43,12 @@ data class EpubExportResult(val title: String, val chapterCount: Int)
 @Singleton
 class EpubExporter @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val novelDao: NovelDao,
-    private val chapterDao: ChapterDao,
+    private val database: AppDatabase,
     private val chapterImageStore: ChapterImageStore,
 ) {
     private val httpClient by lazy { defaultOkHttpClient() }
+    private val novelDao get() = database.novelDao()
+    private val chapterDao get() = database.chapterDao()
 
     suspend fun export(novelId: Long, dest: Uri): Result<EpubExportResult> =
         withContext(Dispatchers.IO) {
@@ -58,17 +59,27 @@ class EpubExporter @Inject constructor(
                 listOf(novel.effectiveTitle, novel.effectiveAuthor.orEmpty(),
                     (novel.overrideDescription ?: novel.description).orEmpty(),
                     novel.overrideGenres ?: novel.genres, novel.language.orEmpty()).forEach(::requireEpubXmlText)
-                val chapters = chapterDao.getDownloadedChapterMetadata(novelId)
-                require(chapters.isNotEmpty()) {
-                    "No downloaded chapters to export. Download chapters first."
+                // Network/cover work must not hold a database transaction.
+                val cover = loadCover(novel)?.let { bytes ->
+                    val ext = imageExtension(bytes)
+                    CoverEntry("cover.$ext", imageMediaType(ext), bytes)
                 }
 
                 // Spool one chapter at a time. All content is validated before the
                 // destination is opened, without retaining the whole novel in RAM.
                 val temporary = File.createTempFile("grimoire-export-", ".epub", context.cacheDir)
+                val chapterCount: Int
                 try {
-                    ZipOutputStream(temporary.outputStream()).use { zip ->
-                        writeEpub(zip, novelId, novel, chapters)
+                    chapterCount = database.withTransaction {
+                        require(novelDao.getById(novelId) == novel) { "Novel changed during export. Try again." }
+                        val chapters = chapterDao.getDownloadedChapterMetadata(novelId)
+                        require(chapters.isNotEmpty()) {
+                            "No downloaded chapters to export. Download chapters first."
+                        }
+                        ZipOutputStream(temporary.outputStream()).use { zip ->
+                            writeEpub(zip, novelId, novel, chapters, cover)
+                        }
+                        chapters.size
                     }
                     val output = context.contentResolver.openOutputStream(dest)
                         ?: error("Unable to open the selected file for writing")
@@ -78,7 +89,7 @@ class EpubExporter @Inject constructor(
                 } finally {
                     temporary.delete()
                 }
-                EpubExportResult(novel.effectiveTitle, chapters.size)
+                EpubExportResult(novel.effectiveTitle, chapterCount)
             }
         }
 
@@ -87,6 +98,7 @@ class EpubExporter @Inject constructor(
         novelId: Long,
         novel: NovelEntity,
         chapters: List<ChapterEntity>,
+        cover: CoverEntry?,
     ) {
         // The mimetype entry must be first and stored uncompressed (OCF spec).
         zip.putStored("mimetype", "application/epub+zip".toByteArray(Charsets.US_ASCII))
@@ -102,12 +114,6 @@ class EpubExporter @Inject constructor(
             </container>
             """.trimIndent(),
         )
-
-        // Resolve the cover image up front so it can appear in the manifest.
-        val cover = loadCover(novel)?.let { bytes ->
-            val ext = imageExtension(bytes)
-            CoverEntry("cover.$ext", imageMediaType(ext), bytes)
-        }
 
         // Collect per-chapter illustrations from the on-disk image store, keyed by
         // the page index the reader resolves them by.
