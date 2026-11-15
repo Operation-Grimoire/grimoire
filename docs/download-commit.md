@@ -94,8 +94,10 @@ Kotlin declarations. Settle API names when implementing the contract.
 | Chapter missing, recreated or no longer eligible | `NotApplied` with a reason, or an access failure according to platform policy. | No record creation or resurrection. |
 | Invalid identity, codec version or payload | Validation failure before publication. | No change. |
 | Cancellation observed before entering commit | Propagate cancellation. | No new committed snapshot; any earlier claim still needs its normal owner cleanup. |
-| Cancellation/invalidation wins the serialized race | Commit is stale. Fresh cancellation restores NONE; refresh cancellation retains the previous saved snapshot. | Prior snapshot retained. |
-| Commit wins that race | Content is committed; a later cancel cannot undo it. | New snapshot retained. Use explicit delete or a new refresh for a later user action. |
+| Cancellation wins the serialized race | Commit is stale. Fresh cancellation restores NONE; refresh cancellation retains the previous saved snapshot. | Prior snapshot retained. |
+| Authorized deletion wins the serialized race | Commit is stale; the deleted snapshot/receipt cannot be revived. | Content remains absent. Chapter metadata follows the delete operation's scope. |
+| Authorized replacement/import wins the serialized race | Commit is stale; the replacement controls the current snapshot and receipt. | Replacement content retained, or absence if that operation removed content. Never restore the pre-replacement snapshot. |
+| Commit wins before a later cancellation | Content is committed; a later cancel cannot undo it. | New snapshot retained. Explicit delete or replacement may still change it. |
 | I/O failure or cancellation after commit began, including lost confirmation | Propagate failure/cancellation; outcome may be unknown to the caller. | Never infer rollback from the exception. Reconcile against the current receipt. |
 | Source fetch fails or loses connectivity | Only the owning attempt may enter error or requeue state. | Prior saved content retained, including failed refreshes. |
 | Image caching fails after text commit | Report/cache failure separately; text success remains success. | No text rollback, error downgrade or implicit refetch. |
@@ -105,6 +107,10 @@ digest/version and resulting completion metadata. It is recorded with the
 snapshot, not issued earlier. Supply a coherent lookup of the current receipt
 for reconciliation; `SavedChapterRepository.read` alone cannot identify which
 attempt committed. Do not deduce success from matching prose or word count.
+
+If delete or replacement is ordered after a commit, that later operation still
+applies. A previously confirmed receipt does not pin content against subsequent
+authorized changes; replay cannot resurrect it.
 
 A caller that loses the reply may look up the receipt or retry the **same**
 attempt and payload. If another commit or deletion has since won, the old attempt
