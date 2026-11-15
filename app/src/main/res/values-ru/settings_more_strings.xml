@@ -267,8 +267,6 @@
     <string name="about_updates_section">Обновления</string>
     <string name="about_update_popups">Уведомления об обновлениях</string>
     <string name="about_update_popups_summary">Показывать окно при запуске, если доступно обновление</string>
-    <string name="about_changelog_after_update">Изменения после обновления</string>
-    <string name="about_changelog_after_update_summary">Показывать примечания к выпуску при первом запуске новой версии</string>
     <string name="about_build_section">Сборка</string>
     <string name="about_build_details">Сведения о сборке</string>
     <string name="about_build_details_summary">Сборка %1$d · коммит %2$s · Extensions API %3$s</string>
@@ -277,24 +275,15 @@
     <string name="about_channel_beta">Бета</string>
     <string name="about_channel_stable_summary">Только релизы с тегами. Рекомендуется.</string>
     <string name="about_channel_beta_summary">Свежие сборки из main после каждого коммита. Могут быть нестабильны.</string>
-    <string name="update_whats_new">Что нового в %1$s</string>
-    <string name="update_got_it">Понятно</string>
     <string name="update_ready">Обновление готово</string>
     <string name="update_available">Доступно обновление</string>
     <string name="update_unknown_error">Неизвестная ошибка</string>
-    <string name="update_no_changelog">Нет списка изменений для %1$s.</string>
     <string name="action_update">Обновить</string>
     <string name="update_download_complete">Загрузка завершена — нажмите «Установить», чтобы закончить обновление.</string>
     <string name="update_skip_version">Пропустить эту версию</string>
     <string name="update_downloading_background">Загрузка идёт в фоне — приложение можно закрыть.</string>
     <string name="update_download_progress">%1$s / %2$s МБ · %3$d%%</string>
     <string name="update_download_size">%1$s МБ</string>
-    <string name="changelog_features">Новые функции</string>
-    <string name="changelog_bug_fixes">Исправления ошибок</string>
-    <string name="changelog_sources">Источники</string>
-    <string name="changelog_documentation">Документация</string>
-    <string name="changelog_other">Прочие изменения</string>
-    <string name="changelog_changes">Изменения</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">Свои языки контента</string>

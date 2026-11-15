@@ -5,7 +5,20 @@ import io.grimoire.app.data.preferences.UpdateChannel
 private val ANDROID_TAG = Regex("""^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-beta\.(0|[1-9][0-9]*))?$""")
 private val SHA256 = Regex("[0-9a-fA-F]{64}")
 private val CHECKSUM_WHITESPACE = Regex("""\s+""")
-private const val MAX_AGGREGATED_RELEASES = 10
+private const val DEFAULT_MINIMUM_RELEASE_MATCHES = 10
+internal const val GITHUB_RELEASES_URL = "https://github.com/Operation-Grimoire/grimoire/releases"
+
+/**
+ * Returns the GitHub release page URL for [versionOrTag] (`"1.2.3"` or `"v1.2.3"`),
+ * or the main releases list when the version is missing or an untagged local `0.0.0` build.
+ */
+internal fun releaseChangelogUrl(versionOrTag: String?): String {
+    val core = versionOrTag?.substringBefore('+')?.trim().orEmpty()
+    if (core.isEmpty() || core == "–") return GITHUB_RELEASES_URL
+    val tag = if (core.startsWith("v")) core else "v$core"
+    if (tag == "v0.0.0" || tag.startsWith("v0.0.0-")) return GITHUB_RELEASES_URL
+    return "$GITHUB_RELEASES_URL/tag/$tag"
+}
 
 /** Mirrors app/build.gradle.kts; nightly.yml uses the tag's beta number as APP_BETA_NUMBER. */
 internal fun releaseVersionCode(tag: String): Int {
@@ -39,7 +52,7 @@ internal fun collectAndroidReleases(
     fetchPage: (Int) -> List<GitHubRelease>,
     pageSize: Int = 100,
     maxPages: Int = 10,
-    minimumMatches: Int = MAX_AGGREGATED_RELEASES,
+    minimumMatches: Int = DEFAULT_MINIMUM_RELEASE_MATCHES,
     countMatch: (GitHubRelease) -> Boolean = { true },
 ): List<GitHubRelease> {
     require(pageSize > 0 && maxPages > 0 && minimumMatches > 0)
@@ -88,37 +101,9 @@ internal fun checkAppUpdate(
         tagName = release.tag_name,
         displayVersion = release.name.orEmpty().ifBlank { release.tag_name }
             .removePrefix("Grimoire").trim().removePrefix("v"),
-        releaseNotes = release.body.orEmpty(),
+        releaseUrl = release.html_url.ifBlank { releaseChangelogUrl(release.tag_name) },
         apkUrl = apk.browser_download_url,
         isPrerelease = release.prerelease,
         sha256 = checksum,
     )
 }
-
-internal fun notesReleasesSince(
-    releases: List<GitHubRelease>,
-    fromTag: String,
-    toTag: String,
-    channel: UpdateChannel,
-    fetchLatestStable: () -> GitHubRelease? = { null },
-): List<GitHubRelease> {
-    val latestStable = runCatching { fetchLatestStable() }.getOrNull()?.takeIf(::isAndroidStableRelease)
-    val included = releases.withLatestStable(latestStable).filter { isInNotesRange(it, fromTag, toTag, channel) }
-    val order = when (channel) {
-        UpdateChannel.STABLE -> compareBy<GitHubRelease> { AppUpdateChecker.SemverKey(it.tag_name.removePrefix("v")) }
-        UpdateChannel.BETA -> VERSION_CODE_ORDER
-    }
-    return included.sortedWith(order.reversed()).take(MAX_AGGREGATED_RELEASES)
-}
-
-internal fun isInNotesRange(release: GitHubRelease, fromTag: String, toTag: String, channel: UpdateChannel): Boolean =
-    isAndroidRelease(release) && when (channel) {
-        UpdateChannel.STABLE -> !release.prerelease &&
-            compareSemver(release.tag_name, fromTag) > 0 && compareSemver(release.tag_name, toTag) <= 0
-        UpdateChannel.BETA -> releaseVersionCode(release.tag_name) > releaseVersionCode(fromTag) &&
-            releaseVersionCode(release.tag_name) <= releaseVersionCode(toTag)
-    }
-
-internal fun aggregateReleaseNotes(releases: List<GitHubRelease>): String = releases
-    .filterNot { it.body.isNullOrBlank() }
-    .joinToString("\n\n") { "## ${it.tag_name}\n\n${it.body.orEmpty().trim()}" }

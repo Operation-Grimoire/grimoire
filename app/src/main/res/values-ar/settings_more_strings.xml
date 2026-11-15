@@ -358,8 +358,6 @@
     <string name="about_updates_section">التحديثات</string>
     <string name="about_update_popups">نوافذ التحديث التلقائية</string>
     <string name="about_update_popups_summary">إظهار نافذة عند التشغيل إذا توفّر تحديث</string>
-    <string name="about_changelog_after_update">سجل التغييرات بعد التحديثات</string>
-    <string name="about_changelog_after_update_summary">إظهار ملاحظات الإصدار عند أول تشغيل لإصدار جديد</string>
     <string name="about_build_section">البنية</string>
     <string name="about_build_details">تفاصيل البنية</string>
     <string name="about_build_details_summary">البنية %1$d · الإيداع %2$s · Extensions API %3$s</string>
@@ -368,24 +366,15 @@
     <string name="about_channel_beta">تجريبي</string>
     <string name="about_channel_stable_summary">الإصدارات الموسومة فقط. موصى به.</string>
     <string name="about_channel_beta_summary">بنيات جديدة من main مع كل إيداع. قد تكون غير مستقرة.</string>
-    <string name="update_whats_new">ما الجديد في %1$s</string>
-    <string name="update_got_it">فهمت</string>
     <string name="update_ready">التحديث جاهز</string>
     <string name="update_available">يتوفر تحديث</string>
     <string name="update_unknown_error">خطأ غير معروف</string>
-    <string name="update_no_changelog">لا يتوفر سجل تغييرات للإصدار %1$s.</string>
     <string name="action_update">تحديث</string>
     <string name="update_download_complete">اكتمل التنزيل — انقر «تثبيت» لإنهاء التحديث.</string>
     <string name="update_skip_version">تخطي هذا الإصدار</string>
     <string name="update_downloading_background">جارٍ التنزيل في الخلفية — يمكنك إغلاق التطبيق.</string>
     <string name="update_download_progress">%1$s / %2$s ميغابايت · %3$d%%</string>
     <string name="update_download_size">%1$s ميغابايت</string>
-    <string name="changelog_features">الميزات</string>
-    <string name="changelog_bug_fixes">إصلاحات الأخطاء</string>
-    <string name="changelog_sources">المصادر</string>
-    <string name="changelog_documentation">التوثيق</string>
-    <string name="changelog_other">تغييرات أخرى</string>
-    <string name="changelog_changes">التغييرات</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">تجاوز لغات المحتوى العامة</string>

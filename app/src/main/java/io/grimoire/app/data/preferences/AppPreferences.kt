@@ -5,9 +5,6 @@ import javax.inject.Singleton
 
 @Singleton
 class AppPreferences @Inject constructor(store: PreferenceStore) {
-    val lastSeenVersionCode = store.getInt("last_seen_version_code", 0)
-    val lastSeenVersionName = store.getString("last_seen_version_name", "")
-
     // Whether the bundled default extension repo has been seeded. Guards a
     // one-time insert so a user who removes the default repo doesn't get it
     // re-added on the next launch.

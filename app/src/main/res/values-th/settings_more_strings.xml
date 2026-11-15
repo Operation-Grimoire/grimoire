@@ -266,8 +266,6 @@
     <string name="about_updates_section">อัปเดต</string>
     <string name="about_update_popups">ป๊อปอัปแจ้งอัปเดตอัตโนมัติ</string>
     <string name="about_update_popups_summary">แสดงกล่องโต้ตอบเมื่อเปิดแอปหากมีอัปเดต</string>
-    <string name="about_changelog_after_update">บันทึกการเปลี่ยนแปลงหลังอัปเดต</string>
-    <string name="about_changelog_after_update_summary">แสดงบันทึกประจำรุ่นเมื่อเปิดเวอร์ชันใหม่ครั้งแรก</string>
     <string name="about_build_section">บิลด์</string>
     <string name="about_build_details">รายละเอียดบิลด์</string>
     <string name="about_build_details_summary">บิลด์ %1$d · คอมมิต %2$s · Extensions API %3$s</string>
@@ -276,24 +274,15 @@
     <string name="about_channel_beta">เบต้า</string>
     <string name="about_channel_stable_summary">เฉพาะรุ่นที่ติดแท็กแล้ว แนะนำ</string>
     <string name="about_channel_beta_summary">บิลด์ใหม่จาก main ทุกคอมมิต อาจไม่เสถียร</string>
-    <string name="update_whats_new">มีอะไรใหม่ใน %1$s</string>
-    <string name="update_got_it">เข้าใจแล้ว</string>
     <string name="update_ready">อัปเดตพร้อมแล้ว</string>
     <string name="update_available">มีอัปเดต</string>
     <string name="update_unknown_error">ข้อผิดพลาดที่ไม่รู้จัก</string>
-    <string name="update_no_changelog">ไม่มีบันทึกการเปลี่ยนแปลงสำหรับ %1$s</string>
     <string name="action_update">อัปเดต</string>
     <string name="update_download_complete">ดาวน์โหลดเสร็จแล้ว — แตะติดตั้งเพื่ออัปเดตให้เสร็จ</string>
     <string name="update_skip_version">ข้ามเวอร์ชันนี้</string>
     <string name="update_downloading_background">กำลังดาวน์โหลดในเบื้องหลัง — คุณปิดแอปได้</string>
     <string name="update_download_progress">%1$s / %2$s MB · %3$d%%</string>
     <string name="update_download_size">%1$s MB</string>
-    <string name="changelog_features">ฟีเจอร์</string>
-    <string name="changelog_bug_fixes">แก้ไขข้อบกพร่อง</string>
-    <string name="changelog_sources">แหล่งที่มา</string>
-    <string name="changelog_documentation">เอกสาร</string>
-    <string name="changelog_other">การเปลี่ยนแปลงอื่น ๆ</string>
-    <string name="changelog_changes">การเปลี่ยนแปลง</string>
 
     <!-- Shared language picker -->
     <string name="language_override_global">กำหนดภาษาของเนื้อหาแทนค่าส่วนกลาง</string>
