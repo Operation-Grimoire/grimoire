@@ -2,7 +2,7 @@
   "android": [
     {
       "category": "fix",
-      "text": "Unify modal bottom sheet styling across Library, Browse, Downloads, Extensions, and Quick View sheets"
+      "text": "Unify modal bottom sheet styling across Library, Browse, Downloads, Extensions, Novel Detail, and Quick View sheets"
     }
   ],
   "desktop": []
