@@ -6,23 +6,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RangeSlider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,6 +41,17 @@ import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
 import io.grimoire.app.ui.component.SwipeTabRow
 import io.grimoire.app.ui.component.SwipeTabStyle
+import io.grimoire.app.ui.component.sheet.FilterTriState
+import io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow
+import io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog
+import io.grimoire.app.ui.component.sheet.SearchableTriStateDialog
+import io.grimoire.app.ui.component.sheet.SheetDivider
+import io.grimoire.app.ui.component.sheet.SheetSectionLabel
+import io.grimoire.app.ui.component.sheet.SheetSwitchRow
+import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
+import io.grimoire.app.ui.component.sheet.TriStateFilterRow
+import io.grimoire.app.ui.component.sheet.TriStateSummaryRow
+import io.grimoire.app.ui.component.sheet.sheetListItemColors
 
 internal val STATUS_OPTIONS = listOf(
     1 to R.string.library_status_ongoing,
@@ -114,7 +122,12 @@ internal fun FilterSortContent(
     ) { page ->
         // Each page scrolls on its own so a long status/source list (or the
         // sort list on a short screen) is always reachable inside the sheet.
-        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp),
+        ) {
             when (page) {
                 0 -> FilterTab(
                     onRatingSliderDragged = { ratingSliderDragged = it },
@@ -148,12 +161,11 @@ internal fun FilterSortContent(
                     onToggleSortDirection = onToggleSortDirection,
                 )
             }
-            Spacer(Modifier.height(32.dp))
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterTab(
     onRatingSliderDragged: (Boolean) -> Unit,
@@ -230,30 +242,31 @@ private fun FilterTab(
                 )
             }
         }
-        io.grimoire.app.ui.component.sheet.SheetSectionLabel(stringResource(R.string.library_filter_type))
-        io.grimoire.app.ui.component.sheet.SingleChoiceSegmented(
+        SheetSectionLabel(stringResource(R.string.library_filter_type))
+        Spacer(Modifier.height(4.dp))
+        SingleChoiceSegmented(
             options = NOVEL_TYPE_OPTIONS.map { it.first },
             selected = filterType,
             onSelect = onFilterTypeChange,
             label = { option ->
                 stringResource(NOVEL_TYPE_OPTIONS.first { it.first == option }.second)
             },
-            modifier = Modifier.padding(vertical = 4.dp),
+            modifier = Modifier.padding(top = 2.dp, bottom = 6.dp),
         )
         // 18+ tri-state: include-only or exclude novels from adult sources.
-        io.grimoire.app.ui.component.sheet.TriStateFilterRow(
+        TriStateFilterRow(
             name = stringResource(R.string.library_filter_adult),
             state = when (filterAdult) {
-                AdultFilter.ONLY_ADULT -> io.grimoire.app.ui.component.sheet.FilterTriState.INCLUDE
-                AdultFilter.HIDE_ADULT -> io.grimoire.app.ui.component.sheet.FilterTriState.EXCLUDE
-                AdultFilter.ANY -> io.grimoire.app.ui.component.sheet.FilterTriState.ANY
+                AdultFilter.ONLY_ADULT -> FilterTriState.INCLUDE
+                AdultFilter.HIDE_ADULT -> FilterTriState.EXCLUDE
+                AdultFilter.ANY -> FilterTriState.ANY
             },
             onStateChange = { state ->
                 onFilterAdultChange(
                     when (state) {
-                        io.grimoire.app.ui.component.sheet.FilterTriState.INCLUDE -> AdultFilter.ONLY_ADULT
-                        io.grimoire.app.ui.component.sheet.FilterTriState.EXCLUDE -> AdultFilter.HIDE_ADULT
-                        io.grimoire.app.ui.component.sheet.FilterTriState.ANY -> AdultFilter.ANY
+                        FilterTriState.INCLUDE -> AdultFilter.ONLY_ADULT
+                        FilterTriState.EXCLUDE -> AdultFilter.HIDE_ADULT
+                        FilterTriState.ANY -> AdultFilter.ANY
                     },
                 )
             },
@@ -269,7 +282,7 @@ private fun FilterTab(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
@@ -330,50 +343,30 @@ private fun FilterTab(
                     }
                 },
         )
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.library_filter_unread_only)) },
-            supportingContent = {
-                Text(stringResource(R.string.library_filter_unread_only_description))
-            },
-            trailingContent = {
-                Switch(checked = filterUnreadOnly, onCheckedChange = onUnreadOnlyChange)
-            },
-            modifier = Modifier.clickable { onUnreadOnlyChange(!filterUnreadOnly) },
+        SheetDivider(Modifier.padding(vertical = 6.dp))
+        SheetSwitchRow(
+            title = stringResource(R.string.library_filter_unread_only),
+            hint = stringResource(R.string.library_filter_unread_only_description),
+            checked = filterUnreadOnly,
+            onCheckedChange = onUnreadOnlyChange,
         )
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.library_filter_has_downloads)) },
-            supportingContent = {
-                Text(stringResource(R.string.library_filter_has_downloads_description))
-            },
-            trailingContent = {
-                Switch(checked = filterDownloadedOnly, onCheckedChange = onDownloadedOnlyChange)
-            },
-            modifier = Modifier.clickable { onDownloadedOnlyChange(!filterDownloadedOnly) },
+        SheetSwitchRow(
+            title = stringResource(R.string.library_filter_has_downloads),
+            hint = stringResource(R.string.library_filter_has_downloads_description),
+            checked = filterDownloadedOnly,
+            onCheckedChange = onDownloadedOnlyChange,
         )
-        ListItem(
-            headlineContent = {
-                Text(stringResource(R.string.library_filter_notifications_on))
-            },
-            supportingContent = {
-                Text(stringResource(R.string.library_filter_notifications_on_description))
-            },
-            trailingContent = {
-                Switch(checked = filterNotifyEnabled, onCheckedChange = onNotifyEnabledChange)
-            },
-            modifier = Modifier.clickable { onNotifyEnabledChange(!filterNotifyEnabled) },
+        SheetSwitchRow(
+            title = stringResource(R.string.library_filter_notifications_on),
+            hint = stringResource(R.string.library_filter_notifications_on_description),
+            checked = filterNotifyEnabled,
+            onCheckedChange = onNotifyEnabledChange,
         )
-        ListItem(
-            headlineContent = {
-                Text(stringResource(R.string.library_filter_auto_download_on))
-            },
-            supportingContent = {
-                Text(stringResource(R.string.library_filter_auto_download_on_description))
-            },
-            trailingContent = {
-                Switch(checked = filterAutoDownloadEnabled, onCheckedChange = onAutoDownloadEnabledChange)
-            },
-            modifier = Modifier.clickable { onAutoDownloadEnabledChange(!filterAutoDownloadEnabled) },
+        SheetSwitchRow(
+            title = stringResource(R.string.library_filter_auto_download_on),
+            hint = stringResource(R.string.library_filter_auto_download_on_description),
+            checked = filterAutoDownloadEnabled,
+            onCheckedChange = onAutoDownloadEnabledChange,
         )
     }
 }
@@ -393,6 +386,7 @@ private fun SortTab(
             // is the standard Material sort pattern and avoids needing a separate
             // arrow button per row.
             ListItem(
+                colors = sheetListItemColors(),
                 headlineContent = { Text(stringResource(labelRes)) },
                 leadingContent = {
                     if (selected) {
