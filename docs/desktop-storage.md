@@ -124,4 +124,6 @@ Royal Road JAR fixture and Compose journeys run on Windows/Linux using the same
 production composition. Native app chrome, dialogs, installer/signing/update
 behavior, real macOS UI and power-loss testing remain separate acceptance gates.
 Android process-death acceptance and shared reading-anchor semantics remain future
-work; desktop storage adoption does not claim those gates passed.
+runtime work; desktop storage adoption does not claim those gates passed. The
+[reading-anchor contract](reading-anchors.md) defines the next shared slice;
+its resolver and platform checkpoint adapters are not implemented.
