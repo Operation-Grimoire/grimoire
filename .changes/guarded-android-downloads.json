@@ -1,0 +1,8 @@
+{
+  "android": [
+    {"category": "fix", "text": "Fixed canceled downloads overwriting newer chapter content or download state."},
+    {"category": "fix", "text": "Refreshed chapters now use matching saved illustrations."},
+    {"category": "other", "text": "The library database is updated. Older app versions cannot open it."}
+  ],
+  "desktop": []
+}

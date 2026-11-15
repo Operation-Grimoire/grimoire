@@ -7,7 +7,7 @@ import kotlinx.coroutines.ensureActive
 
 enum class ChapterOrigin { SAVED, PRELOADED, SOURCE }
 
-data class LoadedChapter(val pages: List<NovelPage>, val origin: ChapterOrigin)
+data class LoadedChapter(val pages: List<NovelPage>, val origin: ChapterOrigin, val cacheRevision: String? = null)
 
 enum class ChapterLoadFailure { OFFLINE, SOURCE_UNAVAILABLE, PAGES_UNSUPPORTED }
 
@@ -32,9 +32,9 @@ class ChapterLoader(private val savedChapters: SavedChapterRepository) {
         sourceAccess: suspend () -> ChapterPageAccess,
     ): LoadedChapter {
         currentCoroutineContext().ensureActive()
-        val saved = key?.let { savedChapters.read(it) }
+        val saved = key?.let { savedChapters.readSnapshot(it) }
         currentCoroutineContext().ensureActive()
-        if (saved != null) return LoadedChapter(saved, ChapterOrigin.SAVED)
+        if (saved != null) return LoadedChapter(saved.pages, ChapterOrigin.SAVED, saved.cacheRevision)
         if (preloaded != null) return LoadedChapter(preloaded, ChapterOrigin.PRELOADED)
         val access = sourceAccess()
         currentCoroutineContext().ensureActive()

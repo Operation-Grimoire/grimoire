@@ -263,17 +263,6 @@ interface ChapterDao {
     @Query("SELECT downloadStatus FROM chapters WHERE id = :id")
     suspend fun getDownloadStatus(id: Long): Int?
 
-    /** A cancelled request must not overwrite its restored state or saved text. */
-    @Transaction
-    suspend fun finishDownload(id: Long, content: StoredChapterContent): Boolean {
-        if (getDownloadStatus(id) !in listOf(2, 6)) return false
-        setDownloadedContent(id, content, 3)
-        return true
-    }
-
-    @Query("UPDATE chapters SET downloadStatus = :status WHERE id = :id AND downloadStatus IN (2, 6)")
-    suspend fun updateActiveDownloadStatus(id: Long, status: Int): Int
-
     @Query("SELECT COUNT(*) FROM chapters WHERE downloadStatus IN (1, 2, 5, 6)")
     suspend fun getPendingDownloadCount(): Int
 
@@ -294,15 +283,8 @@ interface ChapterDao {
 
     // Picks up either a fresh QUEUED (1) or a REDOWNLOAD_QUEUED (5) — the worker reads
     // chapter.downloadStatus to decide which DOWNLOADING / ERROR variant to write back.
-    @Query("SELECT * FROM chapters WHERE downloadStatus IN (1, 5) ORDER BY queueOrder DESC, id ASC LIMIT 1")
+    @Query("SELECT * FROM chapters WHERE downloadStatus IN (1, 5) AND locked = 0 AND novelId IN (SELECT id FROM novels WHERE sourceId != 0) ORDER BY queueOrder DESC, id ASC LIMIT 1")
     suspend fun getNextQueued(): ChapterEntity?
-
-    @Transaction
-    suspend fun takeNextQueued(): ChapterEntity? {
-        val chapter = getNextQueued() ?: return null
-        setDownloadStatus(chapter.id, if (chapter.downloadStatus == 5) 6 else 2)
-        return chapter
-    }
 
     @Query("UPDATE chapters SET queueOrder = :order WHERE novelId = :novelId AND downloadStatus IN (1, 5)")
     suspend fun setQueueOrder(novelId: Long, order: Long)

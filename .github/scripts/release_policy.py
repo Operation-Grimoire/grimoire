@@ -18,9 +18,9 @@ CATEGORIES = {"feature": "Features", "fix": "Bug fixes", "source": "Sources",
 TAG = re.compile(r"^(desktop-)?v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\."
                  r"(0|[1-9][0-9]*)(?:-beta\.(0|[1-9][0-9]*))?$")
 FRAGMENT = re.compile(r"^\.changes/[a-z0-9][a-z0-9-]*\.json$")
-# Keep the signed DB32 baseline available for #409's upgrade/rollback proof.
-# Retire this pin together with the dedicated signed-beta harness.
-PINNED_ANDROID_BETAS = {"v1.0.5-beta.342"}
+# Keep recorded DB32 and active DB33 signed baselines available for upgrade proof.
+# Retire these pins with their dedicated compatibility coverage.
+PINNED_ANDROID_BETAS = {"v1.0.5-beta.342", "v1.0.5-beta.347"}
 
 
 def git(*args):

@@ -406,7 +406,7 @@ class ReaderViewModel @Inject constructor(
                         .filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
                         .map { page ->
                             if (page.imageUrl == null) return@map page
-                            val local = chapterImageStore.localImageUri(fresh.novelId, fresh.url, page.index)
+                            val local = chapterImageStore.localImageUri(fresh.novelId, fresh.url, page.index, result.cacheRevision)
                             if (local != null) page.copy(content = PageContent.Image(local)) else page
                         }
                 } else result.pages

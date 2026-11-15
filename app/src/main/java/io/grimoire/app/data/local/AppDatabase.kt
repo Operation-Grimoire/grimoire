@@ -2,6 +2,8 @@ package io.grimoire.app.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import io.grimoire.app.data.local.entity.ChapterDownloadStateEntity
+import io.grimoire.app.data.local.dao.ChapterDownloadStateDao
 import io.grimoire.app.data.local.dao.BrowsingHistoryDao
 import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
@@ -29,6 +31,7 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
         NovelEntity::class,
         ChapterEntity::class,
         ChapterContentEntity::class,
+        ChapterDownloadStateEntity::class,
         RepoEntity::class,
         CategoryEntity::class,
         LibraryUpdateEntity::class,
@@ -38,11 +41,12 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
         ReadingHistoryEntity::class,
         BrowsingHistoryEntity::class,
     ],
-    version = 33,
+    version = 34,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun novelDao(): NovelDao
+    abstract fun chapterDownloadStateDao(): ChapterDownloadStateDao
     abstract fun chapterDao(): ChapterDao
     abstract fun repoDao(): RepoDao
     abstract fun categoryDao(): CategoryDao

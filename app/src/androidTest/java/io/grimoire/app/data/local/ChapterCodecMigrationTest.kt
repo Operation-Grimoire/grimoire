@@ -72,10 +72,10 @@ class ChapterCodecMigrationTest {
     }
 
     private fun open(): AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, name)
-        .addMigrations(MIGRATION_32_33).build().also {
+        .addMigrations(MIGRATION_32_33, MIGRATION_33_34).build().also {
             database = it
             // Forces the real migration and Room's full schema/identity validation.
-            assertEquals(33, it.openHelper.writableDatabase.version)
+            assertEquals(34, it.openHelper.writableDatabase.version)
         }
 
     @Test fun legacyBytesAndAllReadingMetadataSurviveMigrationAndReopen() = runBlocking {
@@ -141,8 +141,7 @@ class ChapterCodecMigrationTest {
             NovelPage(1, PageContent.Image("https://example.org/\u001c\u001d\u001e\u001f")),
             NovelPage(2, PageContent.Separator()), NovelPage(3, PageContent.Text("", "")))
         val encoded = encodeChapterContent(pages)
-        db.chapterDao().setDownloadStatus(1, 2)
-        assertTrue(db.chapterDao().finishDownload(1, encoded))
+        db.chapterDao().setDownloadedContent(1, encoded, 3)
         assertEquals("2", db.chapterDao().getContentVersionToken(1))
         assertEquals(metadata.copy(wordCount = 5), db.chapterDao().getByUrl(1, "/legacy"))
         // Write a valid chapter first, then fail on the later invalid chapter.
@@ -161,7 +160,6 @@ class ChapterCodecMigrationTest {
             assertArrayEquals(sentinel, file.readBytes())
             assertEquals(temporaryFiles, context.cacheDir.list()!!.filter { it.startsWith("grimoire-export-") }.toSet())
         } finally { file.delete() }
-        assertFalse(db.chapterDao().finishDownload(1, encodeChapterContent(emptyList())))
         db.close()
         db = open()
         val stored = db.chapterDao().getContent(1)!!

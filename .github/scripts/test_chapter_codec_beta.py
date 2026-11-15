@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
 import subprocess
+import sqlite3
+import chapter_codec_beta as beta
+import release_policy as policy
 import sys
 import tempfile
 import unittest
@@ -29,6 +32,23 @@ class SignedBetaHarnessGuardTest(unittest.TestCase):
 
     def test_ci_looking_environment_cannot_enable_a_workstation_directory(self):
         self.run_guard(False, ci_like=True)
+
+
+class FrozenBaselineTest(unittest.TestCase):
+    def test_frozen_schema_matches_the_pinned_db33_baseline_without_user_rows(self):
+        self.assertEqual("v1.0.5-beta.347", beta.BASELINE)
+        self.assertIn(beta.BASELINE, policy.PINNED_ANDROID_BETAS)
+        self.assertEqual("ac5569f882663ec3aa8e653f1b0cf61384b91bb103dead8a564511342727ef71", beta.BASELINE_SHA256)
+        schema = Path(__file__).resolve().parents[2] / "app/src/androidTest/assets/chapter-codec/v33.sql"
+        with sqlite3.connect(":memory:") as db:
+            db.executescript(schema.read_text(encoding="utf-8"))
+            self.assertEqual(33, db.execute("PRAGMA user_version").fetchone()[0])
+            self.assertEqual([("af03604692f0d6032635caa46a5b4683",)], db.execute("SELECT identity_hash FROM room_master_table WHERE id=42").fetchall())
+            self.assertEqual(0, db.execute("SELECT COUNT(*) FROM novels").fetchone()[0])
+            self.assertEqual(0, db.execute("SELECT COUNT(*) FROM chapters").fetchone()[0])
+            columns = {row[1]: row for row in db.execute("PRAGMA table_info(chapter_content)")}
+            self.assertEqual("1", columns["contentVersion"][4])
+            self.assertNotIn("chapter_download_state", {row[0] for row in db.execute("SELECT name FROM sqlite_master")})
 
 
 if __name__ == "__main__":

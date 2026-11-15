@@ -9,7 +9,9 @@ import io.grimoire.app.data.local.dao.CategoryDao
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
-import io.grimoire.app.data.local.entity.encodeChapterContent
+import io.grimoire.reading.storage.DownloadRepository
+import io.grimoire.reading.storage.DownloadCommit
+import io.grimoire.reading.storage.DownloadFailure
 import io.grimoire.app.data.preferences.DownloadPreferences
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
@@ -40,6 +42,8 @@ import javax.inject.Singleton
 class DownloadManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val chapterDao: ChapterDao,
+    private val downloads: DownloadRepository,
+    private val downloadQueue: AndroidDownloadQueue,
     private val novelDao: NovelDao,
     private val categoryDao: CategoryDao,
     private val extensionManager: ExtensionManager,
@@ -79,7 +83,7 @@ class DownloadManager @Inject constructor(
     suspend fun restartPendingDownloads() {
         pauseLoaded.await()
         queueWrites.await()
-        drain.run(false) { chapterDao.resetStuckDownloads() }
+        drain.run(false) { downloadQueue.resetInterrupted() }
         if (!_isPaused.value && chapterDao.getPendingDownloadCount() > 0) {
             currentCoroutineContext().ensureActive()
             serviceRequests.allow()
@@ -187,7 +191,7 @@ class DownloadManager @Inject constructor(
         waitForTurn: Boolean = false,
         onProgress: (chapterName: String, remaining: Int) -> Unit,
     ): DownloadBatchResult = withContext(Dispatchers.IO) {
-        drain.run(waitForTurn, onExit = { chapterDao.resetStuckDownloads() }) {
+        drain.run(waitForTurn, onExit = { downloadQueue.resetInterrupted() }) {
             pauseLoaded.await()
             queueWrites.await()
             // Wait for the extension scan: a drain kicked off right after process start
@@ -202,27 +206,24 @@ class DownloadManager @Inject constructor(
             val networkInterrupted = AtomicBoolean(false)
             val mutex = Mutex()
             val progress = DownloadProgressThrottle()
-            chapterDao.resetStuckDownloads()
+            downloadQueue.resetInterrupted()
             coroutineScope {
                 repeat(n) {
                     launch {
                         while (!_isPaused.value && !networkInterrupted.get()) {
                             val picked = mutex.withLock {
                                 if (_isPaused.value || networkInterrupted.get()) return@withLock null
-                                val ch = chapterDao.takeNextQueued() ?: return@withLock null
-                                val isRefresh = ch.downloadStatus == ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal
-                                ch to isRefresh
+                                downloadQueue.take()
                             } ?: break
-                            val chapter = picked.first
-                            val isRefresh = picked.second
+                            val chapter = picked.chapter
+                            val attempt = picked.attempt
                             // Look up the novel before starting the fetch so the progress
                             // notification can announce what's currently being downloaded —
                             // not just what just finished. With concurrent downloads the
                             // post-completion callback alone made the notification look
                             // frozen on whichever chapter happened to finish last.
                             val novel = novelDao.getById(chapter.novelId)
-                            val redactName = novel != null &&
-                                !authManager.isUnlocked.value &&
+                            val redactName = novel != null && !authManager.isUnlocked.value &&
                                 novel.categoryId != null &&
                                 categoryDao.getAllOnce()
                                     .firstOrNull { it.id == novel.categoryId }?.isHidden == true
@@ -232,9 +233,11 @@ class DownloadManager @Inject constructor(
                             }
 
                             runCatching {
-                                if (novel == null) error("Novel not found")
+                                require(novel != null && novel.sourceId == attempt.key.novel.sourceId && novel.url == attempt.key.novel.url) {
+                                    "Novel identity changed during download"
+                                }
                                 val src = extensionManager.extensions.value
-                                    .firstOrNull { it.id == novel.sourceId }?.source
+                                    .firstOrNull { it.id == attempt.key.novel.sourceId }?.source
                                     ?: error("Source not available")
                                 // Retry transient empty responses (the Royal Road blank-chapter
                                 // bug) before giving up; throws EmptyChapterContentException when
@@ -244,27 +247,21 @@ class DownloadManager @Inject constructor(
                                     (src as? PageListSource)?.getPageList(chapter.toChapter())
                                         ?: error("Source does not provide chapter pages")
                                 }
-                                val content = encodeChapterContent(pages)
-                                val saved = chapterDao.finishDownload(chapter.id, content)
-                                if (!saved) return@runCatching
+                                val committed = downloads.commit(attempt, pages)
+                                if (committed !is DownloadCommit.Committed || committed.replayed) return@runCatching
                                 // Best-effort: text is already saved, so a failed image
                                 // fetch must not flip the chapter to ERROR.
                                 runCatching {
-                                    chapterImageStore.saveImages(chapter.novelId, chapter.url, pages)
+                                    chapterImageStore.saveImages(chapter.novelId, chapter.url, pages, committed.receipt.revision)
                                 }.onFailure { if (it is CancellationException) throw it }
                                 downloaded.incrementAndGet()
                             }.onFailure {
                                 if (it is CancellationException) throw it
                                 if (it.isConnectivityFailure()) {
-                                    networkInterrupted.set(true)
-                                    val queued = if (isRefresh) ChapterDownloadStatus.REDOWNLOAD_QUEUED.ordinal
-                                                 else ChapterDownloadStatus.QUEUED.ordinal
-                                    chapterDao.updateActiveDownloadStatus(chapter.id, queued)
+                                    if (downloads.fail(attempt, DownloadFailure.CONNECTIVITY)) networkInterrupted.set(true)
                                     return@onFailure
                                 }
-                                val errorStatus = if (isRefresh) ChapterDownloadStatus.REDOWNLOAD_ERROR.ordinal
-                                                  else ChapterDownloadStatus.ERROR.ordinal
-                                if (chapterDao.updateActiveDownloadStatus(chapter.id, errorStatus) > 0) {
+                                if (downloads.fail(attempt, DownloadFailure.ERROR)) {
                                     failed.incrementAndGet()
                                 }
                             }

@@ -239,7 +239,7 @@ class ReleaseMetadataTest(unittest.TestCase):
         unrelated = [{"tag_name": tag, "prerelease": beta, "created_at": "2099-01-01T00:00:00Z"}
                      for tag, beta in (("desktop-v9.0.0-beta.99", True), ("v2.0.0", False), ("v1.0.5-beta.366", False))]
         actual = policy.android_betas_to_prune([releases[:10], unrelated + releases[10:]])
-        self.assertEqual([f"v1.0.5-beta.{number}" for number in range(355, 340, -1) if number != 342], actual)
+        self.assertEqual([f"v1.0.5-beta.{number}" for number in range(355, 340, -1) if number not in (342, 347)], actual)
 
     def test_small_beta_catalog_is_not_pruned_and_zero_retention_is_rejected(self):
         releases = [{"tag_name": f"v1.0.5-beta.{number}", "prerelease": True} for number in (341, 342, 343)]
