@@ -163,17 +163,15 @@ callers to it, remove duplicated decisions, and run equivalent scenarios through
 both platform compositions. Platform adapters may keep different backends.
 
 1. **Guarded downloaded-text commit and recovery.** Before adding a write
-   interface, freeze an outcome table covering visibility on success, exceptions,
+   interface, follow the [download-commit contract](download-commit.md). Its
+   outcome table defines visibility on success, exceptions,
    cancellation before and after commit, restart recovery, crash/power-loss
-   durability, and single-process versus multi-process scope. Preserve Android's
-   atomic body/status/word-count update. Desktop currently writes body and index
-   separately, with a non-atomic move fallback; it cannot promise equivalent
-   crash durability without adapter work. A late result must carry attempt
-   ownership so cancel/requeue cannot accept an earlier attempt merely because
-   the enum status is active again. Define accepted versus stale outcomes.
-   Transactions, journals, locking and recovery belong in adapters. Images are
-   currently best effort after Android text completion; define their scope
-   separately rather than silently claiming text-and-images atomicity.
+   durability and ownership scope. These target guarantees are not implemented
+   by Android's current status-only guard or desktop's separate body/index
+   writes. Next implement the shared facade and bring each adapter into
+   compliance, including stale error callbacks, receipt reconciliation and
+   revision-bound image caching. Transactions, journals, locking and recovery
+   remain adapter responsibilities; backend selection stays per platform.
 2. **Reading position and completion.** Define a canonical content sequence,
    portable content-relative anchor, content revision mismatch fallback, and
    preservation of legacy positions before extracting storage operations.
