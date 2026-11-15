@@ -53,7 +53,9 @@ class DesktopStorageTest {
                 val attempt = repository.claim(fixtureKey)!!
                 store.remember(fixtureKey.novel, fixtureNovel, chapters)
                 assertNull(repository.currentReceipt(fixtureKey))
-                assertTrue(repository.commit(attempt, prose("late")) is DownloadCommit.NotApplied)
+                val reason = if (chapters.isEmpty()) DownloadRejection.MISSING else DownloadRejection.LOCKED
+                assertEquals(DownloadCommit.NotApplied(reason), repository.commit(attempt, prose("late")))
+                try { store.downloaded(fixtureKey); fail("Unavailable chapter was read") } catch (_: IllegalArgumentException) { }
                 store.seed()
                 assertEquals(DownloadCommit.NotApplied(DownloadRejection.STALE), repository.commit(attempt, prose("late")))
                 assertEquals(DownloadCommit.NotApplied(DownloadRejection.STALE), repository.commit(saved, prose()))
@@ -176,6 +178,26 @@ class DesktopStorageTest {
             assertEquals(prose(), store.downloaded(fixtureKey))
             assertFalse(store.book(fixtureKey.novel)!!.favorite)
         } finally { model.close() }
+    }
+
+    @Test fun chapterLookupAndCommitReadOnlyTheRequestedNovel() = runBlocking {
+        val directory = temporary.newFolder().toPath()
+        LocalLibrary(directory).use { store ->
+            store.seed()
+            store.remember(NovelKey(18, "/novel"), fixtureNovel, fixtureChapters)
+            val otherMetadata = java.sql.DriverManager.getConnection("jdbc:sqlite:${directory.resolve("library.sqlite")}").use { raw ->
+                raw.query("SELECT metadata FROM books WHERE source_id=18") { it.getString(1) }.single()
+            }
+            mutateDatabase(directory, "UPDATE books SET metadata='{broken' WHERE source_id=18")
+            try {
+                assertEquals(fixtureNovel.title, store.book(fixtureKey.novel)!!.novel.title)
+                val repository = DownloadRepository(DesktopDownloadDao(store))
+                assertTrue(repository.commit(repository.claim(fixtureKey)!!, prose()) is DownloadCommit.Committed)
+                assertEquals(prose(), store.downloaded(fixtureKey))
+            } finally {
+                mutateDatabase(directory, "UPDATE books SET metadata=? WHERE source_id=18", otherMetadata)
+            }
+        }
     }
 
     private suspend fun ReaderModel.settled() { withTimeout(5_000) { state.first { !it.busy } } }

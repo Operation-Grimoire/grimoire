@@ -48,7 +48,7 @@ Removing library membership still retains downloaded content and position.
 | Valid legacy or current record | Return decoded pages without rewriting storage. |
 | Valid empty content | Return a present empty page list, or the legacy empty-text page; never turn it into absence. |
 | Invalid content/version/identity/digest | Propagate the failure; never retrieve a replacement or overwrite evidence. |
-| I/O or access failure | Propagate the failure, including a missing indexed body or corrupt imported legacy file. |
+| I/O or access failure | Propagate the failure, including a missing or corrupt stored body. |
 | Cancellation | Propagate cancellation unchanged. |
 
 The adapter owns storage-level integrity and existing access checks. Feature
@@ -201,7 +201,8 @@ both platform compositions. Platform adapters may keep different backends.
    cancellation before and after commit, restart recovery, crash/power-loss
    durability and ownership scope. Android now uses the shared facade, guarded
    attempts, receipts and
-   revision-bound images. Desktop now uses the same facade with a JDBC transaction adapter. Complete the remaining
+   revision-bound images. Desktop now uses the same facade with a JDBC transaction
+   adapter. Hardware power-loss proof remains open. Complete the remaining
    restart/process-ownership acceptance through both production compositions.
    Transactions, journals, locking and recovery
    remain adapter responsibilities; backend selection stays per platform.

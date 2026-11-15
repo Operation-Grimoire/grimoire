@@ -21,8 +21,16 @@ dependencies {
     testImplementation(libs.junit)
 }
 
+abstract class DesktopTestClasspathArguments : CommandLineArgumentProvider {
+    @get:Classpath
+    abstract val runtimeFiles: ConfigurableFileCollection
+    override fun asArguments() = listOf("-Ddesktop.test.classpath=${runtimeFiles.asPath}")
+}
+
 tasks.test {
-    systemProperty("desktop.test.classpath", sourceSets.test.get().runtimeClasspath.asPath)
+    jvmArgumentProviders.add(objects.newInstance<DesktopTestClasspathArguments>().apply {
+        runtimeFiles.from(sourceSets.test.get().runtimeClasspath)
+    })
 }
 
 compose.desktop {

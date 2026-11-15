@@ -120,13 +120,6 @@ internal class DesktopDatabase(
         require(books.map { it.key }.distinct().size == books.size) { "Duplicate desktop novel identity" }
         require(books.all { book -> book.chapters.map { it.url }.distinct().size == book.chapters.size }) { "Duplicate desktop chapter identity" }
         val fingerprints = JSONObject().put("library.json", manifest?.let(::sha256) ?: JSONObject.NULL)
-        val stored = books.flatMap { book -> book.downloaded.map { url ->
-            val key = ChapterKey(book.key, url)
-            val file = legacyContentFile(directory, key)
-            val bytes = Files.readAllBytes(file)
-            fingerprints.put(file.fileName.toString(), sha256(bytes))
-            key to legacyContent(key, bytes)
-        } }
         val staging = Files.createTempFile(directory, ".library-import-", ".sqlite")
         try {
             DriverManager.getConnection("jdbc:sqlite:$staging").use { db ->
@@ -146,14 +139,23 @@ internal class DesktopDatabase(
                     active_attempt TEXT, active_owner TEXT, base_revision TEXT,
                     PRIMARY KEY(source_id,novel_url,chapter_url),
                     FOREIGN KEY(source_id,novel_url) REFERENCES books(source_id,novel_url) ON DELETE CASCADE)""")
-                db.execute("INSERT INTO settings VALUES('id',?),('phase','imported'),('legacy',?)", UUID.randomUUID().toString(), fingerprints.toString())
+                db.execute("INSERT INTO settings VALUES('id',?),('phase','imported')", UUID.randomUUID().toString())
                 books.forEach { book -> db.execute("INSERT INTO books VALUES(?,?,?)", book.key.sourceId, book.key.url,
                     encodeBook(book).apply { remove("downloaded") }.toString()) }
-                stored.forEach { (key, body) -> db.execute("""INSERT INTO contents
+                // Keep only one chapter payload alive, even for libraries larger than the JVM heap.
+                books.forEach { book -> book.downloaded.forEach { url ->
+                    val key = ChapterKey(book.key, url)
+                    val file = legacyContentFile(directory, key)
+                    val bytes = Files.readAllBytes(file)
+                    fingerprints.put(file.fileName.toString(), sha256(bytes))
+                    val body = legacyContent(key, bytes)
+                    db.execute("""INSERT INTO contents
                     (source_id,novel_url,chapter_url,has_content,content,content_version,digest,revision,word_count)
                     VALUES(?,?,?,1,?,?,?,?,?)""", key.novel.sourceId, key.novel.url, key.url,
                     body.content, body.version, downloadDigest(body), UUID.randomUUID().toString(),
-                    chapterWordCount(decodeChapterContent(body))) }
+                    chapterWordCount(decodeChapterContent(body)))
+                } }
+                db.execute("INSERT INTO settings VALUES('legacy',?)", fingerprints.toString())
                 db.commit()
             }
             verifyLegacy(fingerprints)

@@ -11,6 +11,7 @@ import org.json.JSONObject
 import java.io.Closeable
 import java.nio.file.Path
 import java.util.UUID
+import java.sql.ResultSet
 
 data class ReadPosition(val chapterUrl: String, val paragraph: Int, val offset: Int)
 data class SavedBook(
@@ -31,7 +32,6 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
     private val pendingPositions = linkedMapOf<NovelKey, ReadPosition>()
     private var positionBooks = emptyMap<NovelKey, SavedBook>()
     private var closed = false
-    private var positionCacheValid = true
 
     init {
         try { positionBooks = readBooks().associateBy { it.key } }
@@ -41,24 +41,33 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
     private fun readBooks(): List<SavedBook> {
         database.verifyMarker()
         return db.query("SELECT source_id,novel_url,metadata FROM books ORDER BY rowid") { row ->
-            val key = NovelKey(row.getLong(1), row.getString(2))
-            val downloaded = db.query("SELECT chapter_url FROM contents WHERE source_id=? AND novel_url=? AND has_content=1",
-                key.sourceId, key.url) { it.getString(1) }
-            decodeBook(JSONObject(row.getString(3)).put("downloaded", JSONArray(downloaded))).also {
-                require(it.key == key) { "Desktop novel identity mismatch" }
-            }.let { it.copy(position = pendingPositions[key] ?: it.position) }
+            readBook(row)
         }
     }
-    private fun refresh(): List<SavedBook> = readBooks().also { positionBooks = it.associateBy { b -> b.key }; positionCacheValid = true }
+    private fun readBook(row: ResultSet): SavedBook {
+        val key = NovelKey(row.getLong(1), row.getString(2))
+        val downloaded = db.query("SELECT chapter_url FROM contents WHERE source_id=? AND novel_url=? AND has_content=1",
+            key.sourceId, key.url) { it.getString(1) }
+        return decodeBook(JSONObject(row.getString(3)).put("downloaded", JSONArray(downloaded))).also {
+            require(it.key == key) { "Desktop novel identity mismatch" }
+        }.let { it.copy(position = pendingPositions[key] ?: it.position) }
+    }
+    private fun refresh(): List<SavedBook> = readBooks().also { positionBooks = it.associateBy { b -> b.key } }
     private fun <T> write(beforeCommit: () -> Unit = {}, action: () -> T): T = try {
         database.transaction(beforeCommit, action)
     } catch (failure: Throwable) {
         // A failed reply can follow a successful commit. Scroll callbacks must not use old eligibility.
-        positionCacheValid = false
+        positionBooks = emptyMap()
         throw failure
     }
     @Synchronized fun saved(): List<SavedBook> = refresh().filter { it.favorite }
-    @Synchronized fun book(key: NovelKey): SavedBook? = refresh().find { it.key == key }
+    @Synchronized fun book(key: NovelKey): SavedBook? {
+        database.verifyMarker()
+        val current = db.query("SELECT source_id,novel_url,metadata FROM books WHERE source_id=? AND novel_url=?",
+            key.sourceId, key.url, read = ::readBook).singleOrNull()
+        positionBooks = if (current == null) positionBooks - key else positionBooks + (key to current)
+        return current
+    }
 
     @Synchronized fun remember(key: NovelKey, novel: Novel, chapters: List<Chapter>): SavedBook {
         require(novel.url == key.url && chapters.map { it.url }.distinct().size == chapters.size)
@@ -164,8 +173,7 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
     @Synchronized fun position(key: ChapterKey, paragraph: Int, offset: Int) {
         check(!closed) { "Desktop library is closed" }
         require(paragraph >= 0 && offset >= 0)
-        if (!positionCacheValid) return
-        val book = positionBooks.getValue(key.novel)
+        val book = positionBooks[key.novel] ?: return
         require(book.chapters.any { it.url == key.url && !it.locked })
         pendingPositions[key.novel] = ReadPosition(key.url, paragraph, offset)
     }

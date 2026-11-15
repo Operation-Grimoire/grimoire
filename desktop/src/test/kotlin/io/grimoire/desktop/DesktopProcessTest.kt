@@ -25,7 +25,7 @@ object DesktopCrashWorker {
         }
         try {
             LocalLibrary(directory) { if (armed && it.name == mode) pause() }.use { store ->
-                if (mode == "compete") exitProcess(0)
+                if (mode == "compete" || mode == "migrate") return@runBlocking
                 if (mode == "hold") pause()
                 val repository = DownloadRepository(DesktopDownloadDao(store))
                 val attempt = repository.claim(fixtureKey)!!
@@ -143,11 +143,47 @@ class DesktopProcessTest {
         } finally { if (child.isAlive) kill(child, directory) }
     }
 
+    @Test fun legacyLibraryLargerThanWorkerHeapImportsOneChapterAtATime() {
+        val directory = temporary.newFolder("large legacy store").toPath()
+        legacyFixture(directory)
+        val manifest = directory.resolve("library.json")
+        val root = JSONObject(Files.readString(manifest))
+        val book = root.getJSONArray("books").getJSONObject(0)
+        val chapters = org.json.JSONArray()
+        val downloaded = org.json.JSONArray()
+        // 80 MiB of legacy payloads in a worker capped at 48 MiB heap.
+        val text = "x".repeat(1024 * 1024)
+        val body = "$text\u001c$text"
+        val digest = sha256(body.toByteArray(Charsets.UTF_8))
+        for (index in 0 until 40) {
+            val url = if (index == 0) "/chapter" else "/bulk$index"
+            chapters.put(JSONObject().put("url", url).put("name", "Chapter $index").put("locked", false).put("number", index).put("uploadDate", 0))
+            downloaded.put(url)
+            val key = fixtureKey.copy(url = url)
+            val record = JSONObject().put("schema", 1).put("sourceId", 17).put("novelUrl", "/novel").put("chapterUrl", url)
+                .put("content", body).put("sha256", digest)
+            Files.writeString(legacyContentFile(directory, key), record.toString())
+        }
+        book.put("chapters", chapters).put("downloaded", downloaded)
+        Files.writeString(manifest, root.toString())
+        val original = Files.readAllBytes(manifest)
+        val child = worker(directory, "migrate", directory.resolve("ready"))
+        try {
+            assertTrue("Bounded-heap migration timed out", child.waitFor(90, TimeUnit.SECONDS))
+            assertEquals(Files.readString(directory.resolve("worker-migrate.log")), 0, child.exitValue())
+            LocalLibrary(directory).use { store ->
+                assertEquals(40, store.saved().single().downloaded.size)
+                assertEquals(text, (store.downloaded(fixtureKey.copy(url = "/bulk39"))!!.single().content as io.grimoire.api.model.novel.PageContent.Text).text)
+            }
+            assertArrayEquals(original, Files.readAllBytes(directory.resolve("library.json.before-sqlite")))
+        } finally { if (child.isAlive) kill(child, directory) }
+    }
+
     private fun worker(directory: Path, mode: String, ready: Path): Process {
         val java = Path.of(System.getProperty("java.home"), "bin", if (System.getProperty("os.name").startsWith("Windows")) "java.exe" else "java")
         // Java argfiles avoid the Windows command-line length limit. Quote each argument independently.
         fun quote(value: String) = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
-        val args = listOf("-cp", System.getProperty("desktop.test.classpath"), DesktopCrashWorker::class.java.name,
+        val args = listOf("-Xmx48m", "-cp", System.getProperty("desktop.test.classpath"), DesktopCrashWorker::class.java.name,
             directory.toString(), mode, ready.toString())
         val file = temporary.newFile("$mode-${System.nanoTime()}.args").toPath()
         Files.writeString(file, args.joinToString("\n", transform = ::quote))

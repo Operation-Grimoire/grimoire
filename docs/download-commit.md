@@ -199,9 +199,10 @@ committed revision. Missing images retain the existing platform rendering policy
    migrated, with revision-bound image lookup. Native execution and signed-beta
    migration evidence must accompany this adoption; process-kill acceptance is
    still a separate gate.
-3. Next implement the independently selected desktop adapter and migrate its save
-   action. Prove body/index recovery, ownership and commit-before-memory behaviour
-   before presenting it as equivalent to the Android contract.
+3. Desktop now uses its selected JDBC adapter through the shared facade. Real SQL
+   rollback, lost-reply, cancellation, stale ownership, subprocess death/reopen and
+   competing-owner tests cover body/index/receipt consistency. Migration retains
+   raw legacy data, including interrupted database/backup/marker publication.
 4. Run the same scenario matrix through both production compositions; then
    complete revision-bound image-cache adoption before closing the write slice.
    Each intermediate PR must state which callers and gates remain unfinished.
@@ -220,8 +221,11 @@ committed revision. Missing images retain the existing platform rendering policy
 | Migration and rollback | Legacy data/progress retained; unsupported old versions fail without destructive fallback. |
 
 This matrix remains the acceptance target; Android native `DownloadCommitTest`
-covers its implemented subset and the desktop adapter is not yet migrated.
+covers its implemented subset. Desktop now runs its adapter through equivalent
+repository scenarios and actual process-kill/competing-process tests.
 Existing [codec migration tests](../app/src/androidTest/java/io/grimoire/app/data/local/ChapterCodecMigrationTest.kt)
-prove versioned content and migration, not process-kill crash recovery. Existing desktop storage tests do not prove a transactional
-body/index commit. JVM tests, native execution, process-kill recovery, signed-beta
+prove versioned content and migration, not process-kill crash recovery. Desktop storage tests now prove a transactional body/index/receipt commit and
+recovery around its boundaries. Android process death, hardware power-loss,
+installer/native-window lifecycle and full cross-platform image acceptance remain
+open. JVM tests, native execution, process-kill recovery, signed-beta
 compatibility, reader UI and physical-device acceptance remain separate evidence.

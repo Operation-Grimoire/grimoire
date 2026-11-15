@@ -79,7 +79,8 @@ prove survival of arbitrary hardware/filesystem failure or sudden power loss.
 2. On first open, validate schema1 `library.json` and every indexed chapter file,
    including identity, digest and codec. Invalid or missing indexed data aborts
    the upgrade; unknown database/file versions are never silently reset.
-3. Import metadata and raw payloads into an app-owned temporary SQLite database.
+3. Import metadata and raw payloads into an app-owned temporary SQLite database,
+   processing one chapter at a time so library size does not determine heap use.
    Persist the source fingerprints with an `imported` phase, recheck the sources,
    then atomically publish `library.sqlite`.
 4. Atomically publish the exact manifest bytes in `library.json.before-sqlite`
@@ -115,6 +116,7 @@ untouched; partial temporary backups are never adopted.
 Tests inspect raw SQL, reopen through the production facade, verify old/new receipt
 and body consistency, and reject a competing process. Fixtures use isolated
 temporary directories; no test opens a personal library or kills unrelated Java.
+A bounded-heap worker imports 80 MiB of legacy payloads with a 48 MiB heap.
 
 CI runs these unit/storage tests on Windows, Linux and macOS. The maintained
 Royal Road JAR fixture and Compose journeys run on Windows/Linux using the same

@@ -50,12 +50,14 @@ chapter file is independently
 versioned: old schema-1 files are interpreted as content version 1, and new
 schema-2 files explicitly declare `contentVersion: 2`. Reads verify identity and
 content digest before decoding. Reading an old chapter does not rewrite it;
-replacing a download uses the existing atomic-file writer. Membership, source
+replacing a download in the original layout uses its atomic-file writer. Membership, source
 identity, reading position and image indexes retain their existing behavior.
 
-Desktop now imports these files without changing their content/version into
-[SQLite storage](desktop-storage.md), retaining the files as recovery evidence.
-Its schema2 library handoff marker also makes older builds refuse the store.
+Desktop now imports these files into [SQLite storage](desktop-storage.md) without
+changing their content or version, and retains the files as recovery evidence.
+The SQLite store's schema2 library handoff marker makes older builds refuse the
+store. Close every older reader before upgrading: a running old reader does not
+honor the new lease.
 
 An older desktop build rejects a schema-2 chapter file. It does not silently read
 the JSON payload as prose. Unsupported or inconsistent metadata is rejected and
