@@ -1,7 +1,6 @@
 package io.grimoire.app.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
@@ -11,6 +10,9 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryStats
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.ReadingStats
+import io.grimoire.reading.StoredChapterContent
+import io.grimoire.reading.chapterWordCount
+import io.grimoire.reading.decodeChapterContent
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -64,7 +66,7 @@ interface ChapterDao {
     suspend fun replaceChaptersWithContent(
         novelId: Long,
         chapters: List<ChapterEntity>,
-        contents: List<String?>,
+        contents: List<StoredChapterContent?>,
     ) {
         require(chapters.size == contents.size) { "chapters/contents size mismatch" }
         deleteByNovelId(novelId)
@@ -74,12 +76,19 @@ interface ChapterDao {
 
     /** Downloaded text of one chapter, or null when nothing is saved. */
     @Transaction
-    suspend fun getContent(chapterId: Long): String? {
+    suspend fun getContent(chapterId: Long): StoredChapterContent? {
+        val token = getContentVersionToken(chapterId) ?: return null
+        val version = requireNotNull(token.toIntOrNull()) { "Invalid chapter content version" }
         val byteLength = getContentByteLength(chapterId) ?: return null
-        return readChapterContentInChunks(byteLength) { start, length ->
+        val content = readChapterContentInChunks(byteLength) { start, length ->
             getContentChunk(chapterId, start, length)
-        }
+        } ?: return null
+        return StoredChapterContent(content, version)
     }
+
+    // Avoid cursor integer coercion truncating corrupt/future values to a known version.
+    @Query("SELECT CAST(contentVersion AS TEXT) FROM chapter_content WHERE chapterId = :chapterId")
+    suspend fun getContentVersionToken(chapterId: Long): String?
 
     @Query(CHAPTER_CONTENT_LENGTH_QUERY)
     suspend fun getContentByteLength(chapterId: Long): Long?
@@ -93,14 +102,14 @@ interface ChapterDao {
     @Query("DELETE FROM chapter_content WHERE chapterId = :chapterId")
     suspend fun deleteContent(chapterId: Long)
 
-    /** A novel's chapters that have saved text, with that text, in reading order. */
+    /** Metadata for a novel's locally saved chapters, in reading order. */
     @Query("""
-        SELECT c.*, cc.content AS content FROM chapters c
+        SELECT c.* FROM chapters c
         INNER JOIN chapter_content cc ON cc.chapterId = c.id
-        WHERE c.novelId = :novelId AND c.downloadStatus IN (3, 5, 6, 7)
+        WHERE c.novelId = :novelId AND c.downloadStatus IN (3, 5, 6, 7) AND cc.content != ''
         ORDER BY c.chapterNumber ASC, c.id ASC
     """)
-    suspend fun getDownloadedChaptersWithContent(novelId: Long): List<ChapterWithContent>
+    suspend fun getDownloadedChapterMetadata(novelId: Long): List<ChapterEntity>
 
     @Query("DELETE FROM chapters WHERE id IN (:ids)")
     suspend fun deleteByIds(ids: List<Long>)
@@ -246,7 +255,7 @@ interface ChapterDao {
 
     /** Saves [content] as the chapter's downloaded text and flips its download state. */
     @Transaction
-    suspend fun setDownloadedContent(id: Long, content: String, status: Int) {
+    suspend fun setDownloadedContent(id: Long, content: StoredChapterContent, status: Int) {
         upsertContent(ChapterContentEntity(id, content))
         setDownloadedStatusRaw(id, status, countWordsIn(content))
     }
@@ -256,7 +265,7 @@ interface ChapterDao {
 
     /** A cancelled request must not overwrite its restored state or saved text. */
     @Transaction
-    suspend fun finishDownload(id: Long, content: String): Boolean {
+    suspend fun finishDownload(id: Long, content: StoredChapterContent): Boolean {
         if (getDownloadStatus(id) !in listOf(2, 6)) return false
         setDownloadedContent(id, content, 3)
         return true
@@ -502,12 +511,6 @@ data class StorageChapterStats(
     val downloadedTextBytes: Long,
 )
 
-/** A chapter row plus its saved text; see [ChapterDao.getDownloadedChaptersWithContent]. */
-data class ChapterWithContent(
-    @Embedded val chapter: ChapterEntity,
-    val content: String,
-)
-
 /** A single in-place chapter-metadata update applied by [ChapterDao.reconcileChapters]. */
 data class ChapterMetaUpdate(
     val id: Long,
@@ -519,24 +522,4 @@ data class ChapterMetaUpdate(
     val locked: Boolean,
 )
 
-private fun countWordsIn(s: String): Int {
-    var count = 0
-    var inWord = false
-    // When a page carries a formattedText payload (rich-HTML duplicate of the
-    // plain text, delimited by CHAPTER_FORMATTED_MARKER … CHAPTER_PAGE_SEPARATOR),
-    // skip those characters — counting them would inflate the per-chapter total
-    // by the same prose appearing twice plus all the HTML tags.
-    val FS = 28.toChar()
-    val US = 31.toChar()
-    var skipping = false
-    for (ch in s) {
-        when {
-            ch == FS -> { skipping = true; inWord = false }
-            ch == US -> { skipping = false; inWord = false }
-            skipping -> Unit
-            ch.isWhitespace() -> inWord = false
-            !inWord -> { inWord = true; count++ }
-        }
-    }
-    return count
-}
+private fun countWordsIn(content: StoredChapterContent): Int = chapterWordCount(decodeChapterContent(content))

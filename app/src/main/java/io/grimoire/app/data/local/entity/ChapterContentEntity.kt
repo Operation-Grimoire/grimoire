@@ -1,5 +1,6 @@
 package io.grimoire.app.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
@@ -26,4 +27,7 @@ import androidx.room.PrimaryKey
 data class ChapterContentEntity(
     @PrimaryKey val chapterId: Long,
     val content: String,
-)
+    @ColumnInfo(defaultValue = "1") val contentVersion: Int = 1,
+) {
+    constructor(chapterId: Long, stored: StoredChapterContent) : this(chapterId, stored.content, stored.version)
+}

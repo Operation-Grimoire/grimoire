@@ -10,6 +10,7 @@ import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
 import io.grimoire.reading.decodeChapterContent
 import io.grimoire.reading.encodeChapterContent
+import io.grimoire.reading.StoredChapterContent
 import org.json.JSONArray
 import org.json.JSONObject
 import java.nio.file.AtomicMoveNotSupportedException
@@ -69,9 +70,11 @@ class LocalLibrary(private val directory: Path) {
         val book = books.getValue(key.novel)
         require(book.chapters.any { it.url == key.url && !it.locked }) { "Chapter is unavailable or locked" }
         require(pages.any { (it.content as? PageContent.Text)?.text?.isNotBlank() == true }) { "Chapter has no readable text" }
-        val content = encodeChapterContent(pages)
-        val root = JSONObject().put("schema", 1).put("sourceId", key.novel.sourceId)
+        val stored = encodeChapterContent(pages)
+        val content = stored.content
+        val root = JSONObject().put("schema", 2).put("sourceId", key.novel.sourceId)
             .put("novelUrl", key.novel.url).put("chapterUrl", key.url)
+            .put("contentVersion", stored.version)
             .put("content", content).put("sha256", sha256(content.toByteArray(Charsets.UTF_8)))
         atomicWrite(contentFile(key), root.toString())
         books[key.novel] = book.copy(downloaded = book.downloaded + key.url)
@@ -84,11 +87,17 @@ class LocalLibrary(private val directory: Path) {
         if (key.url !in book.downloaded) return null
         require(book.chapters.any { it.url == key.url && !it.locked }) { "Chapter is unavailable or locked" }
         val root = JSONObject(Files.readString(contentFile(key)))
-        require(root.getInt("schema") == 1 && root.getLong("sourceId") == key.novel.sourceId &&
+        val schema = root.opt("schema") as? Int ?: throw IllegalArgumentException("Invalid desktop chapter format")
+        require(schema in 1..2) { "Unsupported desktop chapter format" }
+        val version = if (schema == 1) 1 else root.opt("contentVersion") as? Int
+            ?: throw IllegalArgumentException("Invalid desktop chapter content version")
+        require(schema != 2 || version == 2) { "Unsupported desktop chapter content version" }
+        require(schema != 1 || !root.has("contentVersion")) { "Legacy chapter cannot declare a different content format" }
+        require(root.getLong("sourceId") == key.novel.sourceId &&
             root.getString("novelUrl") == key.novel.url && root.getString("chapterUrl") == key.url) { "Downloaded chapter identity mismatch" }
         val content = root.getString("content")
         require(root.getString("sha256") == sha256(content.toByteArray(Charsets.UTF_8))) { "Downloaded chapter is corrupt" }
-        return decodeChapterContent(content)
+        return decodeChapterContent(StoredChapterContent(content, version))
     }
 
     /** Update memory synchronously; UI debounces disk flush and flushes on navigation/close. */

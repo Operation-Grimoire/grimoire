@@ -10,6 +10,7 @@ java {
 }
 
 dependencies {
+    implementation(libs.kotlinx.serialization.json)
     api("io.grimoire:extensions-core:${providers.gradleProperty("extensionsApiVersion").getOrElse(libs.versions.extensionsApi.get())}")
     testImplementation(libs.junit)
 }

@@ -6,13 +6,15 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import io.grimoire.api.model.novel.NovelPage
 
-// Keep existing Android call sites and persisted bytes stable; both hosts use one codec.
+// Legacy markers remain readable; new writes carry explicit version metadata in both hosts.
 val CHAPTER_PAGE_SEPARATOR = io.grimoire.reading.CHAPTER_PAGE_SEPARATOR
 val CHAPTER_IMAGE_MARKER = io.grimoire.reading.CHAPTER_IMAGE_MARKER
 val CHAPTER_SEPARATOR_MARKER = io.grimoire.reading.CHAPTER_SEPARATOR_MARKER
 val CHAPTER_FORMATTED_MARKER = io.grimoire.reading.CHAPTER_FORMATTED_MARKER
 
-fun encodeChapterContent(pages: List<NovelPage>): String = io.grimoire.reading.encodeChapterContent(pages)
+typealias StoredChapterContent = io.grimoire.reading.StoredChapterContent
+fun encodeChapterContent(pages: List<NovelPage>): StoredChapterContent = io.grimoire.reading.encodeChapterContent(pages)
+fun decodeChapterContent(content: StoredChapterContent): List<NovelPage> = io.grimoire.reading.decodeChapterContent(content)
 fun decodeChapterContent(content: String): List<NovelPage> = io.grimoire.reading.decodeChapterContent(content)
 
 @Entity(

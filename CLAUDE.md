@@ -90,8 +90,11 @@ All route constants live in `AppRoutes.kt`. The externally-visible `NAV_TARGET_U
 
 The maintained `:desktop` JVM target and `:reading-core` module are documented in
 [`docs/desktop.md`](docs/desktop.md). Android delegates minimum-API decisions and
-chapter serialization to reading-core; retain its legacy APK behavior and exact
-persisted bytes. Desktop loads trusted local packaged JARs, not source copies.
+chapter serialization to reading-core. New chapter writes use explicit content
+version 2. DB33 retains legacy payloads unchanged; desktop reads schema1 files
+unchanged and writes new chapter files as schema2/content version 2.
+See [`docs/chapter-content.md`](docs/chapter-content.md) for migration and rollback.
+Desktop loads trusted local packaged JARs, not source copies.
 Run shared/desktop unit checks and the packaged-source fixture/UI journeys when
 changing this boundary. Live reading, fixture results and native window lifecycle
 are separate acceptance evidence. Desktop browser/login, installers and sync remain

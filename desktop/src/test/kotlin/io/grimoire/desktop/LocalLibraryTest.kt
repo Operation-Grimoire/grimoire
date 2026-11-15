@@ -9,8 +9,56 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.nio.file.Files
+import org.json.JSONObject
 
 class LocalLibraryTest {
+    @Test fun legacyChapterReadsWithoutRewritingBytesAndRetainsPosition() {
+        val directory = temporary.newFolder().toPath()
+        val key = NovelKey(17, novel.url)
+        val chapter = ChapterKey(key, "/chapter")
+        val library = LocalLibrary(directory)
+        library.remember(key, novel, chapters)
+        library.favorite(key, true)
+        library.download(chapter, pages)
+        library.position(chapter, 0, 17)
+        library.flush()
+        val file = Files.list(directory).use { paths -> paths.filter { it.fileName.toString().startsWith("chapter-") }.findFirst().get() }
+        val legacy = "Legacy prose\u001c<i>Legacy prose</i>\u001f\u001d\u001f\u001ehttps://example.org/i"
+        val record = JSONObject(Files.readString(file)).put("schema", 1).put("content", legacy)
+            .put("sha256", sha256(legacy.toByteArray(Charsets.UTF_8)))
+        record.remove("contentVersion")
+        Files.writeString(file, record.toString())
+        val before = Files.readAllBytes(file)
+        val restarted = LocalLibrary(directory)
+        val actual = restarted.downloaded(chapter)!!
+        assertEquals(PageContent.Text("Legacy prose", "<i>Legacy prose</i>"), actual[0].content)
+        assertTrue(actual[1].content is PageContent.Separator)
+        assertEquals(PageContent.Image("https://example.org/i"), actual[2].content)
+        assertEquals(ReadPosition("/chapter", 0, 17), restarted.saved().single().position)
+        assertArrayEquals(before, Files.readAllBytes(file))
+    }
+
+    @Test fun versionedControlsSurviveRestartAndUnsupportedMetadataIsNotRewritten() {
+        val directory = temporary.newFolder().toPath()
+        val key = NovelKey(17, novel.url)
+        val chapter = ChapterKey(key, "/chapter")
+        val library = LocalLibrary(directory)
+        library.remember(key, novel, chapters)
+        val text = "Prose\u0000\u001c\u001d\u001e\u001f中文😀"
+        val expected = listOf(NovelPage(0, PageContent.Text(text, "<b>$text</b>")),
+            NovelPage(1, PageContent.Image("https://example.org/\u001c\u001d\u001e\u001f")))
+        library.download(chapter, expected)
+        val file = Files.list(directory).use { paths -> paths.filter { it.fileName.toString().startsWith("chapter-") }.findFirst().get() }
+        assertEquals(expected, LocalLibrary(directory).downloaded(chapter))
+        for (version in listOf(1, 99, "2", 2.5, 4_294_967_298L)) {
+            val changed = JSONObject(Files.readString(file)).put("contentVersion", version).toString()
+            Files.writeString(file, changed)
+            try { LocalLibrary(directory).downloaded(chapter); fail("Accepted incompatible format") }
+            catch (_: IllegalArgumentException) { }
+            assertEquals(changed, Files.readString(file))
+        }
+    }
+
     @get:Rule val temporary = TemporaryFolder()
     private val novel = Novel("/novel", "A public novel", Language.EN)
     private val chapters = listOf(Chapter("/chapter", "First"), Chapter("/locked", "Locked", locked = true))

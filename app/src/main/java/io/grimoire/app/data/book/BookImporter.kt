@@ -14,6 +14,8 @@ import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.encodeChapterContent
+import io.grimoire.reading.StoredChapterContent
+import io.grimoire.reading.chapterWordCount
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -195,7 +197,7 @@ class BookImporter @Inject constructor(
         val previous = chapterDao.getChaptersOnce(novelId)
         val priorByIndex = matchPreviousBookChapters(previous, parsed.chapters.map { it.title })
 
-        val contents = ArrayList<String>(parsed.chapters.size)
+        val contents = ArrayList<StoredChapterContent>(parsed.chapters.size)
         val entities = parsed.chapters.mapIndexed { index, ch ->
             val chapterUrl = "$url/$index"
             val prior = priorByIndex[index]
@@ -213,7 +215,7 @@ class BookImporter @Inject constructor(
                 name = ch.title,
                 chapterNumber = (index + 1).toFloat(),
                 downloadStatus = ChapterDownloadStatus.DOWNLOADED.ordinal,
-                wordCount = encoded.countWords(),
+                wordCount = chapterWordCount(novelPages),
             ).withBookReadingState(prior)
         }
         chapterDao.replaceChaptersWithContent(novelId, entities, contents)
@@ -232,18 +234,4 @@ class BookImporter @Inject constructor(
 
         return BookImportResult(novelId, parsed.title)
     }
-}
-
-private fun String.countWords(): Int {
-    var count = 0
-    var inWord = false
-    for (ch in this) {
-        if (ch.isWhitespace()) {
-            inWord = false
-        } else if (!inWord) {
-            inWord = true
-            count++
-        }
-    }
-    return count
 }

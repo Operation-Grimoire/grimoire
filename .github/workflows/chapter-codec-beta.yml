@@ -1,0 +1,55 @@
+name: Chapter codec signed beta upgrade
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Published Android beta at this workflow ref, e.g. v1.0.5-beta.343'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Upgrade signed APK with a legacy download and test rollback refusal
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CODEC_BETA_TAG: ${{ inputs.tag }}
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -memory 2048
+          script: python .github/scripts/chapter_codec_beta.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chapter-codec-beta
+          path: |
+            build/chapter-codec-beta/*.json
+            build/chapter-codec-beta/*.log
+            build/chapter-codec-beta/*.xml
+            build/chapter-codec-beta/**/*.db*
+          if-no-files-found: error

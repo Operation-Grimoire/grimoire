@@ -2,14 +2,14 @@ package io.grimoire.app.data.epub
 
 import android.content.Context
 import android.net.Uri
+import androidx.room.withTransaction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.api.network.defaultOkHttpClient
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.ChapterImageStore
-import io.grimoire.app.data.local.dao.ChapterDao
-import io.grimoire.app.data.local.dao.NovelDao
-import io.grimoire.app.data.local.dao.ChapterWithContent
+import io.grimoire.app.data.local.AppDatabase
+import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.decodeChapterContent
 import kotlinx.coroutines.Dispatchers
@@ -43,38 +43,67 @@ data class EpubExportResult(val title: String, val chapterCount: Int)
 @Singleton
 class EpubExporter @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val novelDao: NovelDao,
-    private val chapterDao: ChapterDao,
+    private val database: AppDatabase,
     private val chapterImageStore: ChapterImageStore,
 ) {
     private val httpClient by lazy { defaultOkHttpClient() }
+    private val novelDao get() = database.novelDao()
+    private val chapterDao get() = database.chapterDao()
 
     suspend fun export(novelId: Long, dest: Uri): Result<EpubExportResult> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val novel = novelDao.getById(novelId) ?: error("Novel not found")
-                val chapters = chapterDao.getDownloadedChaptersWithContent(novelId)
-                    .filter { it.content.isNotEmpty() }
-                require(chapters.isNotEmpty()) {
+                // Validate before opening/truncating the destination. The storage codec
+                // preserves controls, but XML 1.0 cannot represent them faithfully.
+                listOf(novel.effectiveTitle, novel.effectiveAuthor.orEmpty(),
+                    (novel.overrideDescription ?: novel.description).orEmpty(),
+                    novel.overrideGenres ?: novel.genres, novel.language.orEmpty()).forEach(::requireEpubXmlText)
+                // Fail promptly without fetching a cover for an empty export.
+                // Recheck inside the transaction because downloads can change.
+                require(chapterDao.getDownloadedChapterMetadata(novelId).isNotEmpty()) {
                     "No downloaded chapters to export. Download chapters first."
                 }
-
-                val output = context.contentResolver.openOutputStream(dest)
-                    ?: error("Unable to open the selected file for writing")
-                output.use { stream ->
-                    ZipOutputStream(stream).use { zip ->
-                        writeEpub(zip, novelId, novel, chapters)
-                    }
+                // Network/cover work must not hold a database transaction.
+                val cover = loadCover(novel)?.let { bytes ->
+                    val ext = imageExtension(bytes)
+                    CoverEntry("cover.$ext", imageMediaType(ext), bytes)
                 }
-                EpubExportResult(novel.effectiveTitle, chapters.size)
+
+                // Spool one chapter at a time. All content is validated before the
+                // destination is opened, without retaining the whole novel in RAM.
+                val temporary = File.createTempFile("grimoire-export-", ".epub", context.cacheDir)
+                val chapterCount: Int
+                try {
+                    chapterCount = database.withTransaction {
+                        require(novelDao.getById(novelId) == novel) { "Novel changed during export. Try again." }
+                        val chapters = chapterDao.getDownloadedChapterMetadata(novelId)
+                        require(chapters.isNotEmpty()) {
+                            "No downloaded chapters to export. Download chapters first."
+                        }
+                        ZipOutputStream(temporary.outputStream()).use { zip ->
+                            writeEpub(zip, novelId, novel, chapters, cover)
+                        }
+                        chapters.size
+                    }
+                    val output = context.contentResolver.openOutputStream(dest)
+                        ?: error("Unable to open the selected file for writing")
+                    output.use { stream ->
+                        temporary.inputStream().use { it.copyTo(stream) }
+                    }
+                } finally {
+                    temporary.delete()
+                }
+                EpubExportResult(novel.effectiveTitle, chapterCount)
             }
         }
 
-    private fun writeEpub(
+    private suspend fun writeEpub(
         zip: ZipOutputStream,
         novelId: Long,
         novel: NovelEntity,
-        chapters: List<ChapterWithContent>,
+        chapters: List<ChapterEntity>,
+        cover: CoverEntry?,
     ) {
         // The mimetype entry must be first and stored uncompressed (OCF spec).
         zip.putStored("mimetype", "application/epub+zip".toByteArray(Charsets.US_ASCII))
@@ -91,30 +120,29 @@ class EpubExporter @Inject constructor(
             """.trimIndent(),
         )
 
-        // Resolve the cover image up front so it can appear in the manifest.
-        val cover = loadCover(novel)?.let { bytes ->
-            val ext = imageExtension(bytes)
-            CoverEntry("cover.$ext", imageMediaType(ext), bytes)
-        }
-
         // Collect per-chapter illustrations from the on-disk image store, keyed by
         // the page index the reader resolves them by.
         data class ChapterDoc(
             val id: String,
             val href: String,
             val title: String,
-            val xhtml: String,
             val images: List<ImageEntry>,
         )
 
-        val chapterDocs = chapters.mapIndexed { index, (chapter, content) ->
-            val pages = decodeChapterContent(content)
+        val chapterDocs = chapters.mapIndexed { index, chapter ->
+            requireEpubXmlText(chapter.name)
+            val stored = chapterDao.getContent(chapter.id)
+                ?: error("Chapter content was removed during export: ${chapter.name}")
+            val pages = decodeChapterContent(stored)
             val images = ArrayList<ImageEntry>()
             val body = StringBuilder()
             body.append("    <h1>").append(escape(chapter.name)).append("</h1>\n")
             for (page in pages) {
                 when (val content = page.content) {
                     is PageContent.Text -> {
+                        // Check before trim so invalid leading/trailing controls
+                        // cannot disappear silently at the XML boundary.
+                        requireEpubXmlText(content.text)
                         val text = content.text.trim()
                         if (text.isNotEmpty()) {
                             body.append("    <p>").append(escape(text)).append("</p>\n")
@@ -130,19 +158,20 @@ class EpubExporter @Inject constructor(
                                 id = "img_${index}_${page.index}",
                                 href = href,
                                 mediaType = imageMediaType(ext),
-                                bytes = bytes,
                             )
+                            zip.putStored("OEBPS/$href", bytes)
                             body.append("    <p><img src=\"").append(href).append("\" alt=\"\"/></p>\n")
                         }
                     }
                     is PageContent.Separator -> body.append("    <hr/>\n")
                 }
             }
+            val href = "ch$index.xhtml"
+            zip.putText("OEBPS/$href", chapterXhtml(chapter.name, body.toString()))
             ChapterDoc(
                 id = "ch$index",
-                href = "ch$index.xhtml",
+                href = href,
                 title = chapter.name,
-                xhtml = chapterXhtml(chapter.name, body.toString()),
                 images = images,
             )
         }
@@ -206,12 +235,6 @@ class EpubExporter @Inject constructor(
         zip.putText("OEBPS/content.opf", opf)
         zip.putText("OEBPS/nav.xhtml", toc)
         cover?.let { zip.putStored("OEBPS/${it.href}", it.bytes) }
-        for (doc in chapterDocs) {
-            zip.putText("OEBPS/${doc.href}", doc.xhtml)
-            for (img in doc.images) {
-                zip.putStored("OEBPS/${img.href}", img.bytes)
-            }
-        }
     }
 
     private fun chapterXhtml(title: String, body: String): String = buildString {
@@ -243,7 +266,7 @@ class EpubExporter @Inject constructor(
     }
 
     private data class CoverEntry(val href: String, val mediaType: String, val bytes: ByteArray)
-    private data class ImageEntry(val id: String, val href: String, val mediaType: String, val bytes: ByteArray)
+    private data class ImageEntry(val id: String, val href: String, val mediaType: String)
 }
 
 private fun ZipOutputStream.putText(name: String, content: String) {
@@ -264,16 +287,7 @@ private fun ZipOutputStream.putStored(name: String, bytes: ByteArray) {
     closeEntry()
 }
 
-private fun escape(s: String): String = buildString(s.length) {
-    for (c in s) when (c) {
-        '&' -> append("&amp;")
-        '<' -> append("&lt;")
-        '>' -> append("&gt;")
-        '"' -> append("&quot;")
-        '\'' -> append("&#39;")
-        else -> append(c)
-    }
-}
+private fun escape(s: String): String = escapeEpubXml(s)
 
 private fun utcTimestamp(): String =
     SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
