@@ -3,7 +3,9 @@ package io.grimoire.app.data.source
 import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.source.web.ChapterListSource
+import io.grimoire.api.source.web.CursorPaginatedSource
 import io.grimoire.api.source.web.PaginatedSource
+import io.grimoire.api.source.web.getAllChapters
 import io.grimoire.api.source.Source
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -45,6 +47,8 @@ class TruncatedChapterListException(page: Int) : Exception(
  *
  * For [PaginatedSource]s, pages are fetched in parallel windows of [window] so a
  * novel with many chapter-list pages no longer pays linear network latency.
+ * [CursorPaginatedSource]s use the shared sequential cursor walk instead;
+ * [window] does not apply because each continuation depends on the previous one.
  *
  * When the source declares its page count ([PaginatedSource.getPageCount]),
  * exactly that many pages are fetched and **any** empty page in range is a
@@ -71,6 +75,9 @@ suspend fun fetchAllChapters(
     retryDelayMs: Long = PAGE_RETRY_DELAY_MS,
     onPageProgress: (page: Int, totalPages: Int?) -> Unit = { _, _ -> },
 ): List<Chapter> {
+    if (src is CursorPaginatedSource) {
+        return src.getAllChapters(novel, maxPages) { page -> onPageProgress(page, null) }
+    }
     if (src !is PaginatedSource) {
         return (src as? ChapterListSource)?.getChapterList(novel) ?: emptyList()
     }

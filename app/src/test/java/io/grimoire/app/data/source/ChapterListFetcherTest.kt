@@ -2,8 +2,10 @@ package io.grimoire.app.data.source
 
 import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.Chapter
+import io.grimoire.api.model.novel.ChapterPage
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.source.web.ChapterListSource
+import io.grimoire.api.source.web.CursorPaginatedSource
 import io.grimoire.api.source.web.PaginatedSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -192,8 +194,40 @@ class ChapterListFetcherTest {
         assertEquals(listOf(4 to 7, 7 to 7), seen)
     }
 
+    @Test
+    fun fetchAllChapters_cursorSource_usesSequentialTokensAndReportsProgress() = runBlocking {
+        val src = FakeCursorSource()
+        val progress = mutableListOf<Pair<Int, Int?>>()
+
+        val result = fetchAllChapters(
+            src, Novel(url = "n", title = "", language = Language.UNKNOWN),
+            window = 16, retryDelayMs = 0,
+        ) { page, total -> progress += page to total }
+
+        assertEquals(listOf(null, "cursor-1", "cursor-2"), src.cursors)
+        assertEquals(listOf(1f, 2f, 3f), result.map { it.chapterNumber })
+        assertEquals(listOf(1 to null, 2 to null, 3 to null), progress)
+    }
+
     private fun chapter(suffix: String) =
         Chapter(url = suffix, name = "Chapter $suffix")
+
+    private class FakeCursorSource : CursorPaginatedSource {
+        override val name = "cursor"
+        override val lang = Language.EN
+        val cursors = mutableListOf<String?>()
+
+        override suspend fun getNovelDetails(novel: Novel): Novel = novel
+
+        override suspend fun getChapterList(novel: Novel, cursor: String?): ChapterPage {
+            cursors += cursor
+            val page = cursors.size
+            return ChapterPage(
+                listOf(Chapter(url = "cursor-chapter-$page", name = "Chapter $page", chapterNumber = page.toFloat())),
+                nextCursor = if (page < 3) "cursor-$page" else null,
+            )
+        }
+    }
 
     private class FakePaginatedSource(
         private val totalNonEmptyPages: Int,
