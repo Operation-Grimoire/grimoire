@@ -60,9 +60,10 @@ class LibraryRepositoryTest {
 
     @Test fun storageAccessAndCancellationFailuresPropagateWithoutRetry() = runBlocking {
         for (failure in listOf(IOException("disk"), SecurityException("denied"), CancellationException("cancelled"))) {
+            var reads = 0
             var writes = 0
             val repository = LibraryRepository(object : LibraryDao {
-                override suspend fun find(key: NovelKey): LibraryEntry? = throw failure
+                override suspend fun find(key: NovelKey): LibraryEntry? { reads++; throw failure }
                 override suspend fun setMembership(key: NovelKey, inLibrary: Boolean): LibraryEntry? {
                     writes++
                     throw failure
@@ -72,6 +73,7 @@ class LibraryRepositoryTest {
             catch (actual: Exception) { assertSame(failure, actual) }
             try { repository.setMembership(key, true); fail("Write failure hidden") }
             catch (actual: Exception) { assertSame(failure, actual) }
+            assertEquals(1, reads)
             assertEquals(1, writes)
         }
     }

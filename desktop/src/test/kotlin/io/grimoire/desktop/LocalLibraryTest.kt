@@ -42,6 +42,12 @@ class LocalLibraryTest {
             Files.move(original, file)
         }
         assertFalse(LocalLibrary(directory).book(key)!!.favorite)
+        kotlinx.coroutines.runBlocking {
+            val repository = io.grimoire.reading.storage.LibraryRepository(FileLibraryDao(library))
+            assertTrue(repository.setMembership(key, true)!!.inLibrary)
+        }
+        assertTrue(library.book(key)!!.favorite)
+        assertTrue(LocalLibrary(directory).book(key)!!.favorite)
     }
 
     @Test fun legacyChapterReadsWithoutRewritingBytesAndRetainsPosition() {

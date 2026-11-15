@@ -2,6 +2,7 @@ package io.grimoire.app.data.local
 
 import android.database.sqlite.SQLiteException
 import androidx.room.Room
+import androidx.room.withTransaction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.grimoire.api.model.novel.NovelPage
@@ -12,11 +13,18 @@ import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.reading.NovelKey
 import io.grimoire.reading.encodeChapterContent
 import io.grimoire.reading.storage.LibraryEntry
+import io.grimoire.reading.storage.LibraryDao
 import io.grimoire.reading.storage.LibraryRepository
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -79,7 +87,7 @@ class LibraryStorageTest {
         assertEquals("Book 0", repository.find(key)!!.title)
     }
 
-    @Test fun sqliteFailureRollsBackAndCancelledCommandsDoNotStartWriting() = runBlocking {
+    @Test fun sqliteFailureAndCancellationBeforeCommitPreserveMembership() = runBlocking {
         val novel = NovelEntity(id = 1, sourceId = key.sourceId, url = key.url, title = "Book")
         db.novelDao().upsert(novel)
         db.openHelper.writableDatabase.execSQL("""CREATE TRIGGER reject_membership BEFORE UPDATE OF favorite ON novels
@@ -91,6 +99,24 @@ class LibraryStorageTest {
         val cancelled = Job().apply { cancel() }
         try { withContext(cancelled) { repository.setMembership(key, true) }; fail("Cancellation hidden") }
         catch (_: CancellationException) { }
+        assertEquals(novel, db.novelDao().getById(1))
+
+        // Execute the real Room write, but hold its surrounding transaction
+        // before commit. Cancellation must roll this unacknowledged write back.
+        val written = CompletableDeferred<Unit>()
+        val room = RoomLibraryDao(db)
+        val inFlight = LibraryRepository(object : LibraryDao {
+            override suspend fun find(key: NovelKey) = room.find(key)
+            override suspend fun setMembership(key: NovelKey, inLibrary: Boolean): LibraryEntry? = db.withTransaction {
+                checkNotNull(room.setMembership(key, inLibrary))
+                written.complete(Unit)
+                awaitCancellation()
+            }
+        })
+        val command = launch(Dispatchers.IO) { inFlight.setMembership(key, true) }
+        withTimeout(5_000) { written.await() }
+        command.cancelAndJoin()
+        assertTrue(command.isCancelled)
         assertEquals(novel, db.novelDao().getById(1))
         assertTrue(repository.setMembership(key, true)!!.inLibrary)
     }

@@ -89,8 +89,9 @@ transaction. It does not copy a stale whole entity over concurrent metadata.
 The desktop backend persists a current library snapshot before publishing the
 new membership in memory. Its existing file layout and atomic-replacement helper
 are retained; a failed pre-commit file write leaves the previous cached membership.
-Both adapters retain categories, chapters, download indexes, pending position and
-other metadata. Library removal remains distinct from deleting saved content.
+The Room adapter preserves Android categories and other novel fields. The file
+adapter preserves its chapters, download index, pending position and saved
+metadata. Library removal remains distinct from deleting saved content.
 
 Storage/access errors and cancellation propagate. Cancellation or a lost reply
 after commit does not prove that a write was rolled back; retry the explicit
@@ -142,5 +143,6 @@ include a fail-before/pass-after blocked-file membership regression, preservatio
 of pending position/download bytes, restart, source isolation and the production
 reader facade. Native `LibraryStorageTest` runs separately with three required
 executed successes: full field/offline-state preservation, identity/missing keys,
-and SQLite-trigger rollback plus cancellation-before-entry. Its result is retained
+and SQLite-trigger rollback plus cancellation-before-entry and a real in-flight
+write cancelled before transaction commit. Its result is retained
 as `library-result.log`; skipped tests cannot satisfy the CI count.
