@@ -3,7 +3,8 @@ package io.grimoire.app.ui.component.sheet
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,25 +28,36 @@ fun StepperRow(
     modifier: Modifier = Modifier,
     decrementEnabled: Boolean = true,
     incrementEnabled: Boolean = true,
+    enabled: Boolean = true,
     hint: String? = null,
 ) {
+    val labelColor = if (enabled) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    }
+    val hintColor = if (enabled) {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+    }
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(text = label, style = MaterialTheme.typography.bodyMedium)
+            Text(text = label, style = MaterialTheme.typography.bodyMedium, color = labelColor)
             hint?.let {
                 Text(
                     it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = hintColor,
                 )
             }
         }
         PlainTooltipIconButton(
             onClick = onDecrement,
-            enabled = decrementEnabled,
+            enabled = enabled && decrementEnabled,
             tooltip = stringResource(R.string.action_decrease),
         ) {
             Icon(AppIcons.Remove, contentDescription = stringResource(R.string.action_decrease))
@@ -53,12 +65,17 @@ fun StepperRow(
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
+            color = labelColor,
             textAlign = TextAlign.Center,
-            modifier = Modifier.width(56.dp),
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier
+                .widthIn(min = 56.dp)
+                .padding(horizontal = 4.dp),
         )
         PlainTooltipIconButton(
             onClick = onIncrement,
-            enabled = incrementEnabled,
+            enabled = enabled && incrementEnabled,
             tooltip = stringResource(R.string.action_increase),
         ) {
             Icon(AppIcons.Add, contentDescription = stringResource(R.string.action_increase))

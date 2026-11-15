@@ -8,12 +8,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -64,14 +66,37 @@ fun SheetTitle(text: String, modifier: Modifier = Modifier) {
 
 /** Section label inside a sheet — labelMedium on onSurfaceVariant. */
 @Composable
-fun SheetSectionLabel(text: String, modifier: Modifier = Modifier) {
+fun SheetSectionLabel(
+    text: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
     Text(
         text,
         style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = if (enabled) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+        },
         modifier = modifier.padding(start = 16.dp, top = 12.dp, bottom = 2.dp),
     )
 }
+
+@Composable
+private fun sheetListItemColors(enabled: Boolean = true) = ListItemDefaults.colors(
+    containerColor = Color.Transparent,
+    headlineColor = if (enabled) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    },
+    supportingColor = if (enabled) {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+    },
+)
 
 /**
  * Entry row for a large multi-select: title left, "All" / "N selected"
@@ -101,6 +126,7 @@ fun MultiSelectSummaryRow(
                 active = selectedCount > 0,
             )
         },
+        colors = sheetListItemColors(),
         modifier = modifier.clickable(onClick = onClick),
     )
 }
@@ -132,6 +158,7 @@ fun TriStateSummaryRow(
                 active = active,
             )
         },
+        colors = sheetListItemColors(enabled),
         modifier = modifier.clickable(enabled = enabled, onClick = onClick),
     )
 }
@@ -147,13 +174,15 @@ fun SheetSwitchRow(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     hint: String? = null,
+    enabled: Boolean = true,
 ) {
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = hint?.let { { Text(it) } },
         trailingContent = {
-            Switch(checked = checked, onCheckedChange = onCheckedChange)
+            Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
         },
-        modifier = modifier.clickable { onCheckedChange(!checked) },
+        colors = sheetListItemColors(enabled),
+        modifier = modifier.clickable(enabled = enabled) { onCheckedChange(!checked) },
     )
 }

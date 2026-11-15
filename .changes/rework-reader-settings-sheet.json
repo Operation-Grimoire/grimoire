@@ -1,0 +1,9 @@
+{
+  "android": [
+    {
+      "category": "fix",
+      "text": "Reworked the reader Display and Read aloud settings sheets to pin the live preview, fix double padding and clipped stepper values, remove dark switch-row boxes, and match disabled states."
+    }
+  ],
+  "desktop": []
+}
