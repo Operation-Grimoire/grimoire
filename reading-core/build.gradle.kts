@@ -11,7 +11,7 @@ java {
 
 dependencies {
     implementation(libs.kotlinx.serialization.json)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
     api("io.grimoire:extensions-core:${providers.gradleProperty("extensionsApiVersion").getOrElse(libs.versions.extensionsApi.get())}")
     testImplementation(libs.junit)
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 }

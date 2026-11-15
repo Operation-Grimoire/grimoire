@@ -28,7 +28,11 @@ import io.grimoire.app.data.local.entity.ReadingHistoryEntity
 import io.grimoire.app.util.ContentLanguages
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
-import io.grimoire.reading.storage.SavedChapterRepository
+import io.grimoire.reading.ChapterLoader
+import io.grimoire.reading.ChapterOrigin
+import io.grimoire.reading.ChapterPageAccess
+import io.grimoire.reading.ChapterLoadFailure
+import io.grimoire.reading.ChapterLoadException
 import io.grimoire.app.data.local.entity.effectiveTotal
 import io.grimoire.api.source.SourceInfo
 import io.grimoire.app.data.preferences.LibraryPreferences
@@ -74,7 +78,7 @@ class ReaderViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
-    private val savedChapters: SavedChapterRepository,
+    private val chapterLoader: ChapterLoader,
     private val novelDao: NovelDao,
     private val readingHistoryDao: ReadingHistoryDao,
     private val incognitoManager: io.grimoire.app.data.preferences.IncognitoManager,
@@ -383,29 +387,29 @@ class ReaderViewModel @Inject constructor(
             try {
                 // A download may have completed since the chapter list was loaded.
                 val fresh = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
-                val cached = novelDao.getById(fresh.novelId)?.let { novel ->
-                    savedChapters.read(ChapterKey(NovelKey(novel.sourceId, novel.url), fresh.url))
+                val key = novelDao.getById(fresh.novelId)?.let { novel ->
+                    ChapterKey(NovelKey(novel.sourceId, novel.url), fresh.url)
                 }
-                val loaded = when {
-                    cached != null -> cached
+                val result = chapterLoader.load(key, preloaded) {
+                    extensionManager.awaitReady()
+                    currentCoroutineContext().ensureActive()
+                    val src = source
+                    val pageSource = src as? PageListSource
+                    when {
+                        src == null -> ChapterPageAccess.Unavailable(ChapterLoadFailure.SOURCE_UNAVAILABLE)
+                        pageSource == null -> ChapterPageAccess.Unavailable(ChapterLoadFailure.PAGES_UNSUPPORTED)
+                        else -> ChapterPageAccess.Available { pageSource.getPageList(fresh.toChapter()) }
+                    }
+                }
+                val loaded = if (result.origin == ChapterOrigin.SAVED) {
+                    result.pages
                         .filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
                         .map { page ->
                             if (page.imageUrl == null) return@map page
                             val local = chapterImageStore.localImageUri(fresh.novelId, fresh.url, page.index)
                             if (local != null) page.copy(content = PageContent.Image(local)) else page
                         }
-                    preloaded != null -> preloaded
-                    else -> {
-                        extensionManager.awaitReady()
-                        currentCoroutineContext().ensureActive()
-                        val src = source ?: run {
-                            _error.value = localizedContext.getString(R.string.error_source_not_available)
-                            return@launch
-                        }
-                        (src as? PageListSource)?.getPageList(fresh.toChapter())
-                            ?: error(localizedContext.getString(R.string.error_no_readable_pages))
-                    }
-                }
+                } else result.pages
                 // Some extensions return normally even after cancellation.
                 currentCoroutineContext().ensureActive()
                 if (_chapters.value.getOrNull(_currentIndex.value)?.id != chapter.id) return@launch
@@ -414,6 +418,13 @@ class ReaderViewModel @Inject constructor(
                 recordWordCount(fresh, loaded)
             } catch (cancelled: CancellationException) {
                 throw cancelled
+            } catch (failure: ChapterLoadException) {
+                currentCoroutineContext().ensureActive()
+                _error.value = when (failure.reason) {
+                    ChapterLoadFailure.SOURCE_UNAVAILABLE -> localizedContext.getString(R.string.error_source_not_available)
+                    ChapterLoadFailure.PAGES_UNSUPPORTED -> "IllegalStateException: ${localizedContext.getString(R.string.error_no_readable_pages)}"
+                    ChapterLoadFailure.OFFLINE -> error("Android reader does not restrict source access to offline mode")
+                }
             } catch (error: Exception) {
                 currentCoroutineContext().ensureActive()
                 _error.value = "${error::class.simpleName}: ${error.message ?: "(no message)"}"

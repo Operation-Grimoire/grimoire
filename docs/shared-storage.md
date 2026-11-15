@@ -44,7 +44,7 @@ Removing library membership still retains downloaded content and position.
 
 | Outcome | Required behaviour |
 | --- | --- |
-| No saved record | Return null; the caller may use its existing source/preloaded fallback. |
+| No saved record | Return null; the shared loader may consider preloaded pages, then platform source access. |
 | Valid legacy or current record | Return decoded pages without rewriting storage. |
 | Valid empty content | Return a present empty page list, or the legacy empty-text page; never turn it into absence. |
 | Invalid content/version/identity/digest | Propagate the failure; never retrieve a replacement or overwrite evidence. |
@@ -52,9 +52,9 @@ Removing library membership still retains downloaded content and position.
 | Cancellation | Propagate cancellation unchanged. |
 
 The adapter owns storage-level integrity and existing access checks. Feature
-layers retain source permissions, locked-chapter navigation, offline mode,
-preloaded-page precedence and user-facing error handling. This interface adds no
-new network fallback or authorization policy.
+layers retain source permissions, locked-chapter navigation and user-facing error
+handling. The shared loader below owns selection order; platforms supply source
+access, including desktop offline restrictions. The DAO adds no network policy.
 
 Saved-chapter adapters do not change schemas, file layouts, saved bytes, download status,
 word counts, progress or writes. Android remains database33; desktop library
@@ -105,23 +105,87 @@ existing platform implementations until their contracts are extracted. Desktop
 favorite and automatic membership after saving a chapter use the shared facade.
 Neither adapter adds a schema or file-format migration.
 
-## Next extraction slices
+## Implemented third slice: reader loading
 
-| Responsibility | Shared direction | Platform responsibility |
-| --- | --- | --- |
-| Library projections and metadata editing | Reactive/list/edit contracts with privacy and category rules | Existing backend adapters and device identity mapping |
-| Chapter writes and downloads | Explicit atomic-write/cancellation contracts and shared orchestration | Backend transactions, file replacement and background execution |
-| Reading state | Logical anchors, read/completion rules and progress operations | Viewport/input integration and device-only preferences |
-| Feature presentation | Common feature state, actions and reusable UI components | Navigation, windows, touch/keyboard/mouse behaviour |
-| Host services | File, browser, scheduler and audio capability contracts | OS-specific implementations |
+`ChapterLoader` owns the shared decision table, used by the Android reader, TTS
+and desktop reader. Its result includes original pages and their origin. It
+checks cancellation before loading, after storage, after source-access resolution
+and after source reads, including providers that return after cancellation.
+Corruption, access errors, I/O failures and source errors propagate without retries.
 
-Each slice must move a production caller and preserve its existing behaviour.
-Write contracts must retain Android's atomic content/status/word-count changes
-and cancelled-download guard; a generic unguarded put would lose those semantics.
-Shared SQL, schemas and migrations can be evaluated after the contracts, alongside
-the selected backends. The interfaces alone do not imply backend implementation
-reuse or identical physical database layouts.
+| Saved content | Preloaded pages | Source access | Result |
+| --- | --- | --- | --- |
+| Present, including empty | Any | Not resolved | Saved pages |
+| Read fails | Any | Not resolved | Original failure |
+| Absent | Present, including empty | Not resolved | Preloaded pages |
+| Absent | Absent | Offline, missing source or unsupported pages | Typed unavailable reason |
+| Absent | Absent | Available | Source pages or original source failure |
 
+```mermaid
+flowchart TB
+    Android[Android reader and TTS] --> Loader[Shared ChapterLoader]
+    Desktop[Desktop reader] --> Loader
+    Loader --> Saved[SavedChapterRepository and DAO adapters]
+    Saved --> Present[Return saved pages]
+    Saved --> Failure[Propagate failure]
+    Saved --> Missing[No saved record]
+    Missing --> Preloaded[Return preloaded pages if present]
+    Missing --> Access[Otherwise resolve platform source access]
+    Access --> Blocked[Offline / source unavailable / unsupported pages]
+    Access --> Source[Read original source pages]
+```
+
+Android constructs saved keys from stored novel identity, preserving row-based
+navigation when source URLs change. If the stored novel is absent, a null key
+skips saved lookup without inventing an identity. Android retains saved-only
+blank-page filtering and local-image URI mapping; preloaded and source pages
+remain unfiltered. TTS retains original pages and its existing immediate source
+lookup. The visual reader still waits for extension readiness before lookup.
+Desktop supplies no preloaded content, checks offline access only after saved
+lookup, and retains source identity, locked-chapter and readable-text guards.
+Each platform maps unavailable reasons to its existing error wording.
+
+The shared module now declares coroutines-core explicitly for cancellation
+checks; it uses the same 1.9.0 dependency already used by desktop and shared tests.
+This slice changes no storage schema, file layout, writes or progress semantics.
+
+## Next extraction slices and acceptance gates
+
+An interface alone is not a completed feature-sharing slice. Each slice must
+name the shared product decision table or state transition, move production
+callers to it, remove duplicated decisions, and run equivalent scenarios through
+both platform compositions. Platform adapters may keep different backends.
+
+1. **Guarded downloaded-text commit and recovery.** Before adding a write
+   interface, freeze an outcome table covering visibility on success, exceptions,
+   cancellation before and after commit, restart recovery, crash/power-loss
+   durability, and single-process versus multi-process scope. Preserve Android's
+   atomic body/status/word-count update. Desktop currently writes body and index
+   separately, with a non-atomic move fallback; it cannot promise equivalent
+   crash durability without adapter work. A late result must carry attempt
+   ownership so cancel/requeue cannot accept an earlier attempt merely because
+   the enum status is active again. Define accepted versus stale outcomes.
+   Transactions, journals, locking and recovery belong in adapters. Images are
+   currently best effort after Android text completion; define their scope
+   separately rather than silently claiming text-and-images atomicity.
+2. **Reading position and completion.** Define a canonical content sequence,
+   portable content-relative anchor, content revision mismatch fallback, and
+   preservation of legacy positions before extracting storage operations.
+   Android display filtering can change indices; desktop paragraph/pixel offsets
+   and Android viewport offsets are device hints, not portable anchors. Separate
+   completion, explicit unread/rereading and first-read history rules.
+3. **Library projections and metadata editing.** Edit commands must distinguish
+   unchanged, reset override, and set (including empty); `LibraryEntry` is only a
+   display projection. Category IDs are device-owned, but category membership,
+   names and privacy are product semantics. Define a coherent visibility/category
+   snapshot for initial loading, relock, search, totals and continue-reading.
+   Resolve source URL aliasing before operations that depend on canonical identity.
+4. **Feature presentation and host capabilities.** Share feature state/actions
+   and reusable UI where appropriate; keep navigation, windows, viewport/input,
+   file/browser/scheduler/audio implementations and device preferences local.
+
+Shared SQL, schemas and migrations can be evaluated after contracts, alongside
+selected backends. These seams do not require identical physical database layouts.
 Account sync remains later work. Each device keeps local offline data; future
 sync exchanges domain records under separately defined identity/conflict rules.
 
@@ -146,3 +210,11 @@ executed successes: full field/offline-state preservation, identity/missing keys
 and SQLite-trigger rollback plus cancellation-before-entry and a real in-flight
 write cancelled before transaction commit. Its result is retained
 as `library-result.log`; skipped tests cannot satisfy the CI count.
+
+`ChapterLoaderTest` covers the shared selection table, unavailable capabilities,
+original failure propagation and cancellation before/after every boundary.
+The same saved/empty/corrupt/missing/preloaded/source/offline scenario sequence
+runs through real Room and file adapters. Native `ChapterCodecMigrationTest` now
+requires four executed successes (plus the four host and three library tests).
+Desktop packaged-source and UI journeys use the production loader composition;
+these fixtures do not establish live-site or physical-phone acceptance.

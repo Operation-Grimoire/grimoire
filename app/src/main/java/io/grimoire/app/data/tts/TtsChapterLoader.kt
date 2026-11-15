@@ -11,7 +11,10 @@ import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
-import io.grimoire.reading.storage.SavedChapterRepository
+import io.grimoire.reading.ChapterLoader
+import io.grimoire.reading.ChapterPageAccess
+import io.grimoire.reading.ChapterLoadFailure
+import io.grimoire.reading.ChapterLoadException
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.util.AppLocale
 import javax.inject.Inject
@@ -19,8 +22,8 @@ import javax.inject.Singleton
 
 /**
  * Loads chapter lists and original pages for the TTS service without going through
- * [io.grimoire.app.ui.screen.reader.ReaderViewModel]. Mirrors the reader's
- * cached-or-live loading: downloaded content is reconstructed from the database,
+ * [io.grimoire.app.ui.screen.reader.ReaderViewModel]. Uses the shared reader's
+ * saved-first loading: downloaded content is reconstructed from the database,
  * otherwise the extension source is queried.
  */
 @Singleton
@@ -29,7 +32,7 @@ class TtsChapterLoader @Inject constructor(
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
     private val novelDao: NovelDao,
-    private val savedChapters: SavedChapterRepository,
+    private val chapterLoader: ChapterLoader,
 ) {
 
     // Resolved per use: these singletons outlive an in-app language change.
@@ -42,23 +45,27 @@ class TtsChapterLoader @Inject constructor(
         // Re-read the row (the passed entity may be a stale snapshot) and serve a
         // downloaded chapter's saved pages instead of hitting the network.
         val full = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
-        val cached = novelDao.getById(full.novelId)?.let { novel ->
-            savedChapters.read(ChapterKey(NovelKey(novel.sourceId, novel.url), full.url))
+        val key = novelDao.getById(full.novelId)?.let { novel ->
+            ChapterKey(NovelKey(novel.sourceId, novel.url), full.url)
         }
-        if (cached != null) {
-            return cached
+        return try {
+            chapterLoader.load(key) {
+                val source = extensionManager.extensions.value
+                    .firstOrNull { it.info.packageName == pkg }?.source
+                val pageSource = source as? PageListSource
+                when {
+                    source == null -> ChapterPageAccess.Unavailable(ChapterLoadFailure.SOURCE_UNAVAILABLE)
+                    pageSource == null -> ChapterPageAccess.Unavailable(ChapterLoadFailure.PAGES_UNSUPPORTED)
+                    else -> ChapterPageAccess.Available { pageSource.getPageList(full.toChapter()) }
+                }
+            }.pages
+        } catch (failure: ChapterLoadException) {
+            throw IllegalStateException(localizedContext.getString(when (failure.reason) {
+                ChapterLoadFailure.SOURCE_UNAVAILABLE -> R.string.tts_error_source_unavailable
+                ChapterLoadFailure.PAGES_UNSUPPORTED -> R.string.tts_error_source_no_text
+                ChapterLoadFailure.OFFLINE -> error("TTS does not restrict source access to offline mode")
+            }))
         }
-        val source = extensionManager.extensions.value
-            .firstOrNull { it.info.packageName == pkg }
-            ?.source
-            ?: throw IllegalStateException(
-                localizedContext.getString(R.string.tts_error_source_unavailable),
-            )
-        val pageSource = source as? PageListSource
-            ?: throw IllegalStateException(
-                localizedContext.getString(R.string.tts_error_source_no_text),
-            )
-        return pageSource.getPageList(full.toChapter())
     }
 }
 

@@ -6,6 +6,7 @@ import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.reading.ChapterKey
+import io.grimoire.reading.ChapterLoader
 import io.grimoire.reading.NovelKey
 import io.grimoire.reading.storage.LibraryDao
 import io.grimoire.reading.storage.LibraryEntry
@@ -86,7 +87,7 @@ class LibraryStorageTest {
             }
         })
         val failedModel = ReaderModel(library, "1.5.0", AtomicBoolean(false),
-            SavedChapterRepository(FileSavedChapterDao(library)), failing)
+            ChapterLoader(SavedChapterRepository(FileSavedChapterDao(library))), failing)
         try {
             failedModel.openSaved(library.book(key)!!)
             withTimeout(5_000) { failedModel.state.first { !it.busy } }

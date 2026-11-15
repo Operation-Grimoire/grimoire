@@ -5,6 +5,12 @@ import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
+import io.grimoire.reading.ChapterLoader
+import io.grimoire.reading.ChapterOrigin
+import io.grimoire.reading.ChapterPageAccess
+import io.grimoire.reading.ChapterLoadException
+import io.grimoire.reading.ChapterLoadFailure
+import io.grimoire.reading.encodeChapterContent
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
 import io.grimoire.reading.storage.SavedChapterRepository
@@ -91,7 +97,7 @@ class DesktopStorageTest {
         val library = LocalLibrary(temporary.newFolder().toPath())
         library.remember(key.novel, novel, listOf(chapter))
         val repository = SavedChapterRepository { throw IOException("saved chapter disk failure") }
-        val model = ReaderModel(library, "1.5.0", AtomicBoolean(false), repository, LibraryRepository(FileLibraryDao(library)))
+        val model = ReaderModel(library, "1.5.0", AtomicBoolean(false), ChapterLoader(repository), LibraryRepository(FileLibraryDao(library)))
         try {
             model.openSaved(library.book(key.novel)!!)
             withTimeout(5_000) { model.state.first { !it.busy } }
@@ -100,5 +106,47 @@ class DesktopStorageTest {
             assertEquals("saved chapter disk failure", state.error)
             assertTrue(state.pages.isEmpty())
         } finally { model.close() }
+    }
+
+    @Test fun sharedLoadingScenariosThroughTheRealFileAdapter() = runBlocking {
+        val directory = temporary.newFolder().toPath()
+        val library = LocalLibrary(directory)
+        library.remember(key.novel, novel, listOf(chapter))
+        library.download(key, pages)
+        val file = Files.list(directory).use { paths -> paths.filter { it.fileName.toString().startsWith("chapter-") }.findFirst().get() }
+        val loader = ChapterLoader(SavedChapterRepository(FileSavedChapterDao(LocalLibrary(directory))))
+        var resolutions = 0
+        val offline: suspend () -> ChapterPageAccess = {
+            resolutions++
+            ChapterPageAccess.Unavailable(ChapterLoadFailure.OFFLINE)
+        }
+        val source: suspend () -> ChapterPageAccess = {
+            resolutions++
+            ChapterPageAccess.Available { pages }
+        }
+        assertEquals(ChapterOrigin.SAVED, loader.load(key, emptyList(), offline).origin)
+        for (original in listOf(pages, emptyList())) {
+            val stored = encodeChapterContent(original)
+            val record = JSONObject(Files.readString(file)).put("content", stored.content)
+                .put("sha256", sha256(stored.content.toByteArray(Charsets.UTF_8)))
+            Files.writeString(file, record.toString())
+            val result = loader.load(key, pages, offline)
+            assertEquals(ChapterOrigin.SAVED, result.origin)
+            assertEquals(stored, encodeChapterContent(result.pages))
+        }
+        val corrupt = JSONObject(Files.readString(file)).put("contentVersion", 99).toString()
+        Files.writeString(file, corrupt)
+        try { loader.load(key, pages, source); fail("Corrupt content triggered fallback") }
+        catch (_: IllegalArgumentException) { }
+        assertEquals(corrupt, Files.readString(file))
+        assertEquals(0, resolutions)
+        val missing = key.copy(url = "/missing")
+        assertEquals(ChapterOrigin.PRELOADED, loader.load(missing, emptyList(), offline).origin)
+        assertEquals(0, resolutions)
+        assertEquals(ChapterOrigin.SOURCE, loader.load(missing, sourceAccess = source).origin)
+        assertEquals(1, resolutions)
+        try { loader.load(missing, sourceAccess = offline); fail("Missing offline content was loaded") }
+        catch (failure: ChapterLoadException) { assertEquals(ChapterLoadFailure.OFFLINE, failure.reason) }
+        assertEquals(2, resolutions)
     }
 }
