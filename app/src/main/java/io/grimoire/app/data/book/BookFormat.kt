@@ -7,6 +7,13 @@ enum class BookFormat(val extension: String) {
     TXT("txt"),
 }
 
+internal val BOOK_MIME_TYPES = arrayOf(
+    "application/epub+zip",
+    "application/zip",
+    "text/plain",
+    "application/octet-stream",
+)
+
 internal fun detectBookFormat(mimeType: String?, fileName: String?): BookFormat {
     val extension = fileName?.substringAfterLast('.', "")?.lowercase(Locale.ROOT)
     when (extension) {
