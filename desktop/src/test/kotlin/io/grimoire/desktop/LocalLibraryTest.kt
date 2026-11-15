@@ -1,186 +1,203 @@
 package io.grimoire.desktop
 
-import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.*
-import io.grimoire.reading.ChapterKey
-import io.grimoire.reading.NovelKey
+import io.grimoire.reading.*
+import io.grimoire.reading.storage.*
+import kotlinx.coroutines.*
+import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.IOException
 import java.nio.file.Files
-import org.json.JSONObject
 
 class LocalLibraryTest {
-    @Test fun failedMembershipWriteDoesNotPublishUnsavedState() {
-        val directory = temporary.newFolder().toPath()
-        val key = NovelKey(17, novel.url)
-        val library = LocalLibrary(directory)
-        library.remember(key, novel, chapters)
-        val file = directory.resolve("library.json")
-        val original = directory.resolve("original.json")
-        val before = Files.readAllBytes(file)
-        Files.move(file, original)
-        Files.createDirectory(file)
-        val blocker = file.resolve("blocker")
-        Files.writeString(blocker, "keep")
-        try {
-            try { library.favorite(key, true); fail("Membership write unexpectedly succeeded") }
-            catch (_: java.io.IOException) { }
-            assertFalse(library.book(key)!!.favorite)
-            assertArrayEquals(before, Files.readAllBytes(original))
-            assertEquals("keep", Files.readString(blocker))
-            kotlinx.coroutines.runBlocking {
-                val repository = io.grimoire.reading.storage.LibraryRepository(FileLibraryDao(library))
-                try { repository.setMembership(key, true); fail("Adapter hid the failed membership write") }
-                catch (_: java.io.IOException) { }
-            }
-            assertFalse(library.book(key)!!.favorite)
-        } finally {
-            Files.delete(blocker)
-            Files.delete(file)
-            Files.move(original, file)
-        }
-        assertFalse(LocalLibrary(directory).book(key)!!.favorite)
-        kotlinx.coroutines.runBlocking {
-            val repository = io.grimoire.reading.storage.LibraryRepository(FileLibraryDao(library))
-            assertTrue(repository.setMembership(key, true)!!.inLibrary)
-        }
-        assertTrue(library.book(key)!!.favorite)
-        assertTrue(LocalLibrary(directory).book(key)!!.favorite)
-    }
+    @get:Rule val temporary = TemporaryFolder()
 
     @Test fun legacyChapterReadsWithoutRewritingBytesAndRetainsPosition() {
         val directory = temporary.newFolder().toPath()
-        val key = NovelKey(17, novel.url)
-        val chapter = ChapterKey(key, "/chapter")
-        val library = LocalLibrary(directory)
-        library.remember(key, novel, chapters)
-        library.favorite(key, true)
-        library.download(chapter, pages)
-        library.position(chapter, 0, 17)
-        library.flush()
-        val file = Files.list(directory).use { paths -> paths.filter { it.fileName.toString().startsWith("chapter-") }.findFirst().get() }
-        val legacy = "Legacy prose\u001c<i>Legacy prose</i>\u001f\u001d\u001f\u001ehttps://example.org/i"
-        val record = JSONObject(Files.readString(file)).put("schema", 1).put("content", legacy)
-            .put("sha256", sha256(legacy.toByteArray(Charsets.UTF_8)))
-        record.remove("contentVersion")
-        Files.writeString(file, record.toString())
+        val file = legacyFixture(directory)
+        val manifest = Files.readAllBytes(directory.resolve("library.json"))
+        val body = Files.readAllBytes(file)
+        LocalLibrary(directory).use { store ->
+            assertEquals(PageContent.Text("Legacy prose", "<i>Legacy prose</i>"), store.downloaded(fixtureKey)!!.single().content)
+            assertEquals(ReadPosition("/chapter", 0, 17), store.saved().single().position)
+        }
+        assertArrayEquals(manifest, Files.readAllBytes(directory.resolve("library.json.before-sqlite")))
+        assertArrayEquals(body, Files.readAllBytes(file))
+        // Same predicate used by the old writer: it refuses schema2 before touching any book.
+        assertNotEquals(1, JSONObject(Files.readString(directory.resolve("library.json"))).getInt("schema"))
+        LocalLibrary(directory).use { assertEquals(ReadPosition("/chapter", 0, 17), it.saved().single().position) }
+    }
+
+    @Test fun versionTwoImportPreservesControlCharactersAndExactLegacyBytes() {
+        val directory = temporary.newFolder().toPath()
+        val text = "Prose\u0000\u001c\u001d\u001e\u001f\u4e2d\u6587\uD83D\uDE00"
+        val pages = prose(text)
+        val file = legacyFixture(directory, 2, encodeChapterContent(pages).content)
         val before = Files.readAllBytes(file)
-        val restarted = LocalLibrary(directory)
-        val actual = restarted.downloaded(chapter)!!
-        assertEquals(PageContent.Text("Legacy prose", "<i>Legacy prose</i>"), actual[0].content)
-        assertTrue(actual[1].content is PageContent.Separator)
-        assertEquals(PageContent.Image("https://example.org/i"), actual[2].content)
-        assertEquals(ReadPosition("/chapter", 0, 17), restarted.saved().single().position)
+        LocalLibrary(directory).use { assertEquals(pages, it.downloaded(fixtureKey)) }
         assertArrayEquals(before, Files.readAllBytes(file))
     }
 
-    @Test fun versionedControlsSurviveRestartAndUnsupportedMetadataIsNotRewritten() {
-        val directory = temporary.newFolder().toPath()
-        val key = NovelKey(17, novel.url)
-        val chapter = ChapterKey(key, "/chapter")
-        val library = LocalLibrary(directory)
-        library.remember(key, novel, chapters)
-        val text = "Prose\u0000\u001c\u001d\u001e\u001f中文😀"
-        val expected = listOf(NovelPage(0, PageContent.Text(text, "<b>$text</b>")),
-            NovelPage(1, PageContent.Image("https://example.org/\u001c\u001d\u001e\u001f")))
-        library.download(chapter, expected)
-        val file = Files.list(directory).use { paths -> paths.filter { it.fileName.toString().startsWith("chapter-") }.findFirst().get() }
-        assertEquals(expected, LocalLibrary(directory).downloaded(chapter))
-        for (version in listOf(1, 99, "2", 2.5, 4_294_967_298L)) {
-            val changed = JSONObject(Files.readString(file)).put("contentVersion", version).toString()
-            Files.writeString(file, changed)
-            try { LocalLibrary(directory).downloaded(chapter); fail("Accepted incompatible format") }
-            catch (_: IllegalArgumentException) { }
-            assertEquals(changed, Files.readString(file))
+    @Test fun invalidLegacyMetadataOrMissingBodyNeverCreatesAnEmptyStore() {
+        for (invalid in listOf(1, 99, "2", 2.5, 4_294_967_298L, null)) {
+            val directory = temporary.newFolder().toPath()
+            val file = legacyFixture(directory, 2, encodeChapterContent(prose()).content)
+            if (invalid == null) Files.delete(file)
+            else Files.writeString(file, JSONObject(Files.readString(file)).put("contentVersion", invalid).toString())
+            val manifest = Files.readAllBytes(directory.resolve("library.json"))
+            try { LocalLibrary(directory).close(); fail("Accepted invalid legacy body: $invalid") }
+            catch (_: Exception) { }
+            assertFalse(Files.exists(directory.resolve("library.sqlite")))
+            assertArrayEquals(manifest, Files.readAllBytes(directory.resolve("library.json")))
         }
     }
 
-    @get:Rule val temporary = TemporaryFolder()
-    private val novel = Novel("/novel", "A public novel", Language.EN)
-    private val chapters = listOf(Chapter("/chapter", "First"), Chapter("/locked", "Locked", locked = true))
-    private val pages = listOf(NovelPage(0, PageContent.Text("Faithful prose.", "<b>Faithful</b> prose.")))
-
-    @Test fun restartRestoresLibraryPositionAndRichContentWithoutAnExtension() {
-        val directory = temporary.newFolder().toPath()
-        val key = NovelKey(17, novel.url)
-        val chapter = ChapterKey(key, chapters.first().url)
-        val library = LocalLibrary(directory)
-        library.remember(key, novel, chapters)
-        library.favorite(key, true)
-        library.download(chapter, pages)
-        library.position(chapter, 0, 37)
-        library.flush()
-        val restarted = LocalLibrary(directory)
-        assertEquals(ReadPosition(chapters.first().url, 0, 37), restarted.saved().single().position)
-        assertEquals(pages, restarted.downloaded(chapter))
-        assertNull(restarted.downloaded(ChapterKey(NovelKey(18, novel.url), chapters.first().url)))
-        assertNull(restarted.downloaded(ChapterKey(key, "/other")))
+    @Test fun corruptLegacyIdentityDigestAndCodecFailWithoutRewritingEvidence() {
+        for (field in listOf("sourceId", "sha256", "schema")) {
+            val directory = temporary.newFolder().toPath()
+            val file = legacyFixture(directory)
+            val value: Any = if (field == "sha256") "wrong" else 99
+            val damaged = JSONObject(Files.readString(file)).put(field, value).toString()
+            Files.writeString(file, damaged)
+            try { LocalLibrary(directory).close(); fail("Accepted corrupt $field") } catch (_: IllegalArgumentException) { }
+            assertEquals(damaged, Files.readString(file))
+            assertFalse(Files.exists(directory.resolve("library.sqlite")))
+        }
     }
 
-    @Test fun lockedChapterCannotBeDownloadedAndDoesNotMutateStorage() {
+    @Test fun removingMembershipPreservesContentProgressAndSourceIsolation() {
         val directory = temporary.newFolder().toPath()
-        val key = NovelKey(17, novel.url)
-        val library = LocalLibrary(directory)
-        library.remember(key, novel, chapters)
-        val before = Files.readString(directory.resolve("library.json"))
-        try { library.download(ChapterKey(key, "/locked"), pages); fail("Locked chapter was saved") }
-        catch (_: IllegalArgumentException) { }
-        assertEquals(before, Files.readString(directory.resolve("library.json")))
-        assertEquals(1, Files.list(directory).use { it.count() }.toInt())
+        LocalLibrary(directory).use { store ->
+            for (source in listOf(17L, 18L)) {
+                val key = fixtureKey.copy(novel = NovelKey(source, fixtureKey.novel.url))
+                store.remember(key.novel, fixtureNovel, fixtureChapters)
+                store.download(key, prose("Source $source"))
+            }
+            store.position(fixtureKey, 0, 37)
+            store.favorite(fixtureKey.novel, true)
+            store.favorite(fixtureKey.novel, false)
+        }
+        LocalLibrary(directory).use { store ->
+            assertTrue(store.saved().isEmpty())
+            assertEquals(ReadPosition("/chapter", 0, 37), store.book(fixtureKey.novel)!!.position)
+            for (source in listOf(17L, 18L)) assertEquals(prose("Source $source"), store.downloaded(fixtureKey.copy(novel = NovelKey(source, "/novel"))))
+            assertNull(store.downloaded(fixtureKey.copy(novel = NovelKey(19, "/novel"))))
+            assertNull(store.downloaded(fixtureKey.copy(url = "/missing")))
+        }
     }
 
-    @Test fun corruptDownloadFailsExplicitlyWithoutFetchingOrReplacingIt() {
+    @Test fun failedMembershipTransactionDoesNotPublishAndPendingPositionCanRetry() {
         val directory = temporary.newFolder().toPath()
-        val key = NovelKey(17, novel.url)
-        val chapter = ChapterKey(key, "/chapter")
-        val library = LocalLibrary(directory)
-        library.remember(key, novel, chapters)
-        library.download(chapter, pages)
-        val file = Files.list(directory).use { paths -> paths.filter { it.fileName.toString().startsWith("chapter-") }.findFirst().get() }
-        val damaged = Files.readString(file).replace("Faithful prose.", "Changed prose.")
-        Files.writeString(file, damaged)
-        try { LocalLibrary(directory).downloaded(chapter); fail("Corrupt content was accepted") }
-        catch (_: IllegalArgumentException) { }
-        assertEquals(damaged, Files.readString(file))
+        var inject = false
+        LocalLibrary(directory) { if (inject && it == StorageCheckpoint.BEFORE_COMMIT) throw IOException("disk failure") }.use { store ->
+            store.seed()
+            store.position(fixtureKey, 0, 21)
+            inject = true
+            try { store.favorite(fixtureKey.novel, true); fail("Write succeeded") } catch (_: IOException) { }
+            assertFalse(store.book(fixtureKey.novel)!!.favorite)
+            try { store.flush(); fail("Flush succeeded") } catch (_: IOException) { }
+            assertEquals(ReadPosition("/chapter", 0, 21), store.book(fixtureKey.novel)!!.position)
+            inject = false
+            store.flush()
+            store.favorite(fixtureKey.novel, true)
+        }
+        LocalLibrary(directory).use {
+            assertTrue(it.saved().single().favorite)
+            assertEquals(ReadPosition("/chapter", 0, 21), it.saved().single().position)
+        }
     }
 
-    @Test fun unreadableLibraryIsNotSilentlyReset() {
+    @Test fun postCommitFailureDoesNotPublishAnOldMemorySnapshotOverTheCommittedState() {
         val directory = temporary.newFolder().toPath()
-        Files.writeString(directory.resolve("library.json"), "{broken")
-        try { LocalLibrary(directory); fail("Corrupt library was reset") }
-        catch (_: org.json.JSONException) { }
-        assertEquals("{broken", Files.readString(directory.resolve("library.json")))
+        var inject = false
+        LocalLibrary(directory) { if (inject && it == StorageCheckpoint.AFTER_COMMIT) throw IOException("reply lost") }.use { store ->
+            store.seed()
+            inject = true
+            try { store.favorite(fixtureKey.novel, true); fail("Reply delivered") } catch (_: IOException) { }
+            inject = false
+            assertTrue(store.book(fixtureKey.novel)!!.favorite)
+            store.position(fixtureKey, 0, 22)
+            store.flush()
+        }
+        LocalLibrary(directory).use { assertTrue(it.saved().single().favorite) }
     }
 
-    @Test fun removingLibraryMembershipPreservesSavedContentAndProgress() {
-        val directory = temporary.newFolder().toPath()
-        val key = NovelKey(17, novel.url)
-        val chapter = ChapterKey(key, "/chapter")
-        val library = LocalLibrary(directory)
-        library.remember(key, novel, chapters)
-        library.download(chapter, pages)
-        library.position(chapter, 0, 21)
-        library.favorite(key, true)
-        library.favorite(key, false)
-        val restarted = LocalLibrary(directory)
-        assertTrue(restarted.saved().isEmpty())
-        assertEquals(pages, restarted.downloaded(chapter))
-        assertEquals(ReadPosition("/chapter", 0, 21), restarted.book(key)!!.position)
+    @Test fun lockedOrUnreadableDownloadCannotCommit() {
+        LocalLibrary(temporary.newFolder().toPath()).use { store ->
+            store.seed()
+            try { store.download(fixtureKey.copy(url = "/locked"), prose()); fail("Locked save") } catch (_: IllegalArgumentException) { }
+            try { store.download(fixtureKey, emptyList()); fail("Empty save") } catch (_: IllegalArgumentException) { }
+            assertTrue(store.book(fixtureKey.novel)!!.downloaded.isEmpty())
+        }
     }
 
-    @Test fun missingDownloadedFileReportsAnIntegrityFailureWithoutResettingTheRecord() {
+    @Test fun corruptSqlBodiesRemainIndexedAndNeverFallBackToLegacyFiles() {
+        for (sql in listOf("content='damaged'", "content=NULL", "content_version=99", "content_version='wrong'", "content_version=2.5", "content_version=4294967298", "digest='wrong'")) {
+            val directory = temporary.newFolder().toPath()
+            val legacy = legacyFixture(directory)
+            val before = Files.readAllBytes(legacy)
+            LocalLibrary(directory).close()
+            mutateDatabase(directory, "UPDATE contents SET $sql")
+            LocalLibrary(directory).use { store ->
+                assertTrue("/chapter" in store.book(fixtureKey.novel)!!.downloaded)
+                try { store.downloaded(fixtureKey); fail("Accepted $sql") } catch (_: IllegalArgumentException) { }
+            }
+            assertArrayEquals(before, Files.readAllBytes(legacy))
+        }
+    }
+
+    @Test fun changedLegacyManifestAfterHandoffFailsClosedWithoutOverwritingIt() {
         val directory = temporary.newFolder().toPath()
-        val key = NovelKey(17, novel.url)
-        val library = LocalLibrary(directory)
-        library.remember(key, novel, chapters)
-        library.download(ChapterKey(key, "/chapter"), pages)
-        val file = Files.list(directory).use { paths -> paths.filter { it.fileName.toString().startsWith("chapter-") }.findFirst().get() }
-        Files.delete(file)
-        try { library.downloaded(ChapterKey(key, "/chapter")); fail("Missing download was silently accepted") }
-        catch (_: java.nio.file.NoSuchFileException) { }
-        assertTrue("/chapter" in library.book(key)!!.downloaded)
-        assertFalse(Files.exists(file))
+        LocalLibrary(directory).use { store ->
+            store.seed()
+            val marker = Files.readAllBytes(directory.resolve("library.json"))
+            val original = "{\"schema\":1,\"books\":[]}"
+            Files.writeString(directory.resolve("library.json"), original)
+            try { store.favorite(fixtureKey.novel, true); fail("Old writer was ignored") } catch (_: IOException) { }
+            assertEquals(original, Files.readString(directory.resolve("library.json")))
+            Files.write(directory.resolve("library.json"), marker)
+            assertFalse(store.book(fixtureKey.novel)!!.favorite)
+        }
+    }
+
+    @Test fun unsupportedDatabaseAndUnreadableManifestAreNeverReset() {
+        val directory = temporary.newFolder().toPath()
+        LocalLibrary(directory).use { it.seed() }
+        mutateDatabase(directory, "PRAGMA user_version=99")
+        try { LocalLibrary(directory).close(); fail("Unknown database version reset") } catch (_: IllegalArgumentException) { }
+        val corrupt = temporary.newFolder().toPath()
+        Files.writeString(corrupt.resolve("library.json"), "{broken")
+        try { LocalLibrary(corrupt).close(); fail("Corrupt JSON reset") } catch (_: org.json.JSONException) { }
+        assertEquals("{broken", Files.readString(corrupt.resolve("library.json")))
+    }
+
+    @Test fun secondOwnerIsRejectedUntilExplicitClose() {
+        val directory = temporary.newFolder().toPath()
+        LocalLibrary(directory).use { first ->
+            first.seed()
+            try { LocalLibrary(directory).close(); fail("Second owner opened") } catch (_: IOException) { }
+        }
+        LocalLibrary(directory).use { assertNotNull(it.book(fixtureKey.novel)) }
+    }
+
+    @Test fun incompleteHandoffCanResumeButChangedLegacySourceCannot() {
+        for (checkpoint in listOf(StorageCheckpoint.BEFORE_HANDOFF, StorageCheckpoint.AFTER_HANDOFF)) {
+            val directory = temporary.newFolder().toPath()
+            val legacy = legacyFixture(directory)
+            val before = Files.readAllBytes(legacy)
+            try { LocalLibrary(directory) { if (it == checkpoint) throw IOException("interrupted") }; fail("Did not interrupt") } catch (_: IOException) { }
+            LocalLibrary(directory).use { assertEquals(ReadPosition("/chapter", 0, 17), it.saved().single().position) }
+            assertArrayEquals(before, Files.readAllBytes(legacy))
+        }
+        val changed = temporary.newFolder().toPath()
+        val legacy = legacyFixture(changed)
+        try { LocalLibrary(changed) { if (it == StorageCheckpoint.BEFORE_HANDOFF) throw IOException("interrupted") } } catch (_: IOException) { }
+        Files.writeString(legacy, "changed")
+        try { LocalLibrary(changed).close(); fail("Changed source imported") } catch (_: IllegalArgumentException) { }
+        assertEquals("changed", Files.readString(legacy))
+        assertEquals(1, JSONObject(Files.readString(changed.resolve("library.json"))).getInt("schema"))
     }
 }

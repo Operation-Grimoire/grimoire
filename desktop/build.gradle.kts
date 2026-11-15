@@ -17,7 +17,12 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.json) { version { strictly(libs.versions.json.get()) } }
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
+    implementation("org.xerial:sqlite-jdbc:3.54.1.0")
     testImplementation(libs.junit)
+}
+
+tasks.test {
+    systemProperty("desktop.test.classpath", sourceSets.test.get().runtimeClasspath.asPath)
 }
 
 compose.desktop {

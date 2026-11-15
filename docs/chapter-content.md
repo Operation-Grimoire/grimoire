@@ -45,12 +45,17 @@ Saving a fresh copy from the source/import uses the safe new format.
 
 ## Desktop
 
-Library metadata remains schema 1. Each downloaded chapter file is independently
+The original desktop file layout uses library metadata schema 1. Each downloaded
+chapter file is independently
 versioned: old schema-1 files are interpreted as content version 1, and new
 schema-2 files explicitly declare `contentVersion: 2`. Reads verify identity and
 content digest before decoding. Reading an old chapter does not rewrite it;
 replacing a download uses the existing atomic-file writer. Membership, source
 identity, reading position and image indexes retain their existing behavior.
+
+Desktop now imports these files without changing their content/version into
+[SQLite storage](desktop-storage.md), retaining the files as recovery evidence.
+Its schema2 library handoff marker also makes older builds refuse the store.
 
 An older desktop build rejects a schema-2 chapter file. It does not silently read
 the JSON payload as prose. Unsupported or inconsistent metadata is rejected and

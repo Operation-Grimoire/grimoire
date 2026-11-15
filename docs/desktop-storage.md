@@ -1,0 +1,122 @@
+# Desktop storage
+
+Desktop implements the shared saved-chapter, membership and guarded-download
+contracts with SQLite via JDBC. Android keeps Room. The shared interfaces carry
+portable keys and values; neither platform imports the other's database classes.
+Extensions still have one source implementation, packaged as APK or JAR.
+
+## Backend decision
+
+| Option | Fit for the current desktop JVM module | Cost |
+| --- | --- | --- |
+| SQLite via JDBC (selected) | One transaction covers chapter content, downloaded state and receipt; keeps existing JVM build. | Handwritten SQL/migrations and native driver validation on every supported OS. |
+| Room for desktop | Viable desktop backend with generated DAOs. | Adds ORM/code-generation/build integration; the existing Android entities and triggers still need platform-specific adaptation. |
+| JSON plus chapter files | Retains the old layout. | Requires our own journal, transaction/recovery protocol and multi-file consistency implementation. |
+
+[Xerial's driver](https://github.com/xerial/sqlite-jdbc) bundles native libraries
+for Windows, macOS and Linux. Desktop pins
+[3.54.1.0](https://github.com/xerial/sqlite-jdbc/releases/tag/3.54.1.0).
+Driver/native extraction failures are startup errors, never reasons to reset a
+store. Room is also a supported
+[desktop option](https://developer.android.com/kotlin/multiplatform/room);
+this decision follows the current module's needs, rather than restricting the
+shared contract to JDBC or one ORM. The dependency belongs only to `desktop`.
+
+```mermaid
+flowchart TB
+    Reader[Desktop ReaderModel] --> Shared[Shared repositories and ChapterLoader]
+    Shared --> Saved[DesktopSavedChapterDao]
+    Shared --> Membership[DesktopLibraryDao]
+    Shared --> Download[DesktopDownloadDao]
+    Saved --> Local[LocalLibrary facade]
+    Membership --> Local
+    Download --> Local
+    Local --> DB[SQLite via JDBC: metadata, content, attempts, receipts]
+    Local --> Position[Debounced in-memory position]
+```
+
+## Storage and ownership
+
+`library.sqlite` has application ID `0x4752494D` and schema version 1.
+`books` stores the existing metadata projection; `contents` stores payload,
+explicit codec version, digest, revision, word count and ownership/receipt data.
+The downloaded set derives from `has_content`, so an indexed corrupt or missing
+body is an integrity error. It never becomes a network fallback or legacy-file
+repair. Format1 imports retain their original body and format version; new saves
+use the existing shared format2 codec.
+
+One OS file lease (`.library.lock`) permits one writer process. Connection access
+is serialized by the facade, and coroutine adapters dispatch blocking work to IO.
+The lease spans the reader lifetime and is released only after a successful flush
+and close. A failed flush retains pending positions and a usable model for retry.
+No database write runs on the scroll callback. Metadata patches read current SQL
+state; pending positions cannot overwrite committed content or receipts.
+
+Claim records a random attempt ID, current revision and owner. Commit rechecks
+current chapter eligibility, owner and revision. The body, download projection,
+word count and receipt become visible together after SQL commit. Identical retries
+return the current receipt; changed payloads conflict. Superseded/canceled tokens
+are stale. Removal/relock invalidates tokens and replay receipts; deletion also
+removes the downloaded projection. Failure/cancellation preserves prior content.
+Opening under the exclusive lease revokes abandoned live tokens from a dead owner.
+A committed receipt remains replayable after restart.
+
+An exception after commit can mean a lost confirmation. The reader checks that
+attempt's current receipt and digest before reporting failure. Adding the novel
+to the library is separate: a failed membership update explicitly reports that
+the chapter was saved. Neither operation changes reading history or navigation.
+
+The store requires local storage, enables foreign keys and a busy timeout, and
+verifies WAL and `synchronous=FULL`. SQLite describes these settings in its
+[PRAGMA reference](https://www.sqlite.org/pragma.html#pragma_synchronous).
+[WAL requires a local filesystem](https://www.sqlite.org/wal.html), and the
+handoff requires atomic rename support. These settings and process tests do not
+prove survival of arbitrary hardware/filesystem failure or sudden power loss.
+
+## Upgrade and downgrade
+
+1. Close every older desktop reader. Retain a complete copy of its data directory.
+2. On first open, validate schema1 `library.json` and every indexed chapter file,
+   including identity, digest and codec. Invalid or missing indexed data aborts
+   the upgrade; unknown database/file versions are never silently reset.
+3. Import metadata and raw payloads into an app-owned temporary SQLite database.
+   Persist the source fingerprints with an `imported` phase, recheck the sources,
+   then atomically publish `library.sqlite`.
+4. Retain the exact manifest bytes in `library.json.before-sqlite` and leave every
+   old chapter file unchanged. Atomically replace `library.json` with a schema2
+   handoff marker containing this database's random ID, then mark the DB active.
+5. A restart with an imported database validates the retained source fingerprints
+   before completing an unwritten handoff, or validates the matching marker after
+   handoff. Conflicts abort without overwriting the evidence. Unpublished temporary
+   databases are never automatically adopted.
+
+Older readers require manifest schema1 and therefore refuse the upgraded directory.
+They do not honor the new OS lease; the new reader checks its marker before access
+and refuses an overwritten marker. This cannot safely coordinate with an already
+running old reader, hence the close-before-upgrade requirement.
+
+Downgrade requires restoring the coherent full pre-upgrade directory while all
+readers are closed. The retained files are recovery evidence, not an automatic
+reverse migration: they do not contain new SQLite downloads or later metadata.
+Do not replace just the marker or delete the database to force an old reader to
+open. For backup of an active WAL database use a coherent SQLite backup, or close
+the reader and copy its complete data directory, rather than copying the main DB
+alone. There is no automatic data deletion or old-file garbage collection.
+
+## Verification boundaries
+
+`:desktop:test` exercises real SQLite, shared repository compositions, integrity
+failures, rollback, cancellation, idempotency, stale callbacks, metadata changes,
+source isolation, pending positions and reader save/error behavior. Separate JVMs
+are forcibly stopped before/after SQL commit and before/after migration handoff.
+Migration death before publication also leaves an unpublished database untouched.
+Tests inspect raw SQL, reopen through the production facade, verify old/new receipt
+and body consistency, and reject a competing process. Fixtures use isolated
+temporary directories; no test opens a personal library or kills unrelated Java.
+
+CI runs these unit/storage tests on Windows, Linux and macOS. The maintained
+Royal Road JAR fixture and Compose journeys run on Windows/Linux using the same
+production composition. Native app chrome, dialogs, installer/signing/update
+behavior, real macOS UI and power-loss testing remain separate acceptance gates.
+Android process-death acceptance and shared reading-anchor semantics remain future
+work; desktop storage adoption does not claim those gates passed.

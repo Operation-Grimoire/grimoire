@@ -1,0 +1,7 @@
+{
+  "android": [],
+  "desktop": [
+    {"category": "fix", "text": "Saved chapters now commit together with their download state and recover safely after an interrupted save."},
+    {"category": "other", "text": "Desktop storage upgrades on first open. Close older readers and keep a full pre-upgrade data-directory copy to return to an older build."}
+  ]
+}

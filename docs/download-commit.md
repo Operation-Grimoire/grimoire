@@ -1,8 +1,9 @@
 # Guarded download commits
 
-This defines the shared download-write contract. The shared facade and Android
-adapter are implemented; desktop still uses its previous save implementation.
-Process-kill, competing-process and full cross-platform acceptance remain open.
+This defines the shared download-write contract. The shared facade and both platform
+adapters are implemented. Desktop uses SQLite via JDBC; Android uses Room.
+Desktop subprocess recovery and lease tests supplement the Android transaction tests.
+Android process-kill, competing-process and full cross-platform acceptance remain open.
 Each platform retains its own backend choice.
 
 The unit of success is one committed chapter payload and its completion metadata.
@@ -14,11 +15,11 @@ remain compatible until an implementation explicitly migrates them.
 
 | Area | Android adoption | Remaining acceptance |
 | --- | --- | --- |
-| Claim/terminal callbacks | Portable attempts, guarded success/error/connectivity callbacks and transactional receipts. | Desktop must implement the same contract. |
+| Claim/terminal callbacks | Portable attempts, guarded success/error/connectivity callbacks and transactional receipts. | Both adapters implement this contract; see desktop storage tests. |
 | Cancel/delete/replacement/reset | SQL triggers revoke ownership across existing writers; deletes cascade protocol state. | Actual process-kill recovery remains separate from transaction rollback/reopen checks. |
 | Saved content and images | Coherent cache revision on saved reads; revision-specific image directories. Legacy paths remain readable. | Cross-platform image adoption and conservative orphan-cache collection remain later work. |
 | Writer scope | OS lease rejects a second Android protocol-owner instance. | Competing-process and process-death runtime acceptance remain open. |
-| Desktop | Existing body write, memory change, then library-index write remain unchanged. | Requires one coherent commit/recovery boundary, publication after persistence and owner coordination. |
+| Desktop | Body, downloaded projection, word count, revision and receipt commit in one SQLite transaction. | Subprocess tests cover death before/after commit, handoff recovery and competing owners on CI OS targets; installer/OS lifecycle acceptance remains separate. |
 
 DB34 adds a side table and invalidation triggers without rewriting chapter bodies
 or reading metadata. Its frozen DB33 migration and the existing DB32-to-current
@@ -26,7 +27,7 @@ chain are native test cases. Older DB33/DB32 apps refuse DB34; retain a coherent
 pre-upgrade app-data copy for downgrade, or reinstall the newer app without
 clearing data. A metadata-only library backup does not contain offline payloads.
 
-See [RoomDownloadDao](../app/src/main/java/io/grimoire/app/data/local/RoomDownloadDao.kt),
+See [desktop storage](desktop-storage.md), [RoomDownloadDao](../app/src/main/java/io/grimoire/app/data/local/RoomDownloadDao.kt),
 [DownloadSchema](../app/src/main/java/io/grimoire/app/data/local/DownloadSchema.kt),
 [DownloadManager](../app/src/main/java/io/grimoire/app/data/download/DownloadManager.kt)
 and [LocalLibrary](../desktop/src/main/kotlin/io/grimoire/desktop/LocalLibrary.kt).

@@ -13,7 +13,8 @@ import io.grimoire.reading.ChapterLoader
 import io.grimoire.reading.ChapterPageAccess
 import io.grimoire.reading.ChapterLoadFailure
 import io.grimoire.reading.ChapterLoadException
-import io.grimoire.reading.storage.LibraryRepository
+import io.grimoire.reading.storage.*
+import io.grimoire.reading.encodeChapterContent
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,6 +43,7 @@ class ReaderModel(
     private val networkEnabled: AtomicBoolean,
     private val chapterLoader: ChapterLoader,
     private val membership: LibraryRepository,
+    private val downloads: DownloadRepository,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val closing = AtomicBoolean(false)
@@ -131,9 +133,29 @@ class ReaderModel(
         val current = state.value
         val book = current.book ?: return@operate
         val chapter = current.chapter ?: return@operate
-        library.download(ChapterKey(book.key, chapter.url), current.pages)
-        val updated = setMembership(book.key, true)
-        mutable.update { it.copy(book = updated, library = library.saved()) }
+        val key = ChapterKey(book.key, chapter.url)
+        val attempt = downloads.claim(key) ?: error("Chapter is unavailable or locked")
+        val expected = downloadDigest(encodeChapterContent(current.pages))
+        try {
+            check(downloads.commit(attempt, current.pages) is DownloadCommit.Committed) { "Download attempt is no longer current" }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            // The commit may have succeeded even when its reply was lost. Never start a new attempt here.
+            val receipt = try { downloads.currentReceipt(key) }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (readFailure: Exception) { failure.addSuppressed(readFailure); throw failure }
+            if (receipt?.attemptId != attempt.id || receipt.digest != expected) throw failure
+        }
+        mutable.update { it.copy(book = library.book(book.key), library = library.saved()) }
+        try {
+            val updated = setMembership(book.key, true)
+            mutable.update { it.copy(book = updated, library = library.saved()) }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            error("Chapter saved, but could not add the novel to your library: ${failure.message ?: failure.javaClass.simpleName}")
+        }
     }
 
     fun offline(value: Boolean) {
@@ -173,7 +195,7 @@ class ReaderModel(
         try {
             // Let the claimed operation finish, then save before cancelling the usable scope.
             scope.coroutineContext.job.children.toList().joinAll()
-            withContext(Dispatchers.IO) { library.flush() }
+            withContext(Dispatchers.IO) { library.close() }
         } catch (failure: Exception) {
             closing.set(false)
             throw failure

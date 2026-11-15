@@ -18,16 +18,19 @@ class ReaderModelCloseTest {
         val directory = temporary.newFolder().toPath()
         val model = desktopReaderModel(LocalLibrary(directory), "1.5.0", AtomicBoolean(true))
         val blocked = directory.resolve("library.json")
+        val original = Files.readAllBytes(blocked)
+        Files.delete(blocked)
         Files.createDirectory(blocked)
         try {
             model.flushPosition()
             assertTrue(model.state.value.error?.contains("Could not save reading position") == true)
             Files.delete(blocked)
+            Files.write(blocked, original)
             model.flushPosition()
             assertNull(model.state.value.error)
             assertTrue(Files.isRegularFile(blocked))
         } finally {
-            if (Files.isDirectory(blocked)) Files.delete(blocked)
+            if (Files.isDirectory(blocked)) { Files.delete(blocked); Files.write(blocked, original) }
             model.close()
         }
     }
@@ -36,17 +39,20 @@ class ReaderModelCloseTest {
         val directory = temporary.newFolder().toPath()
         val model = desktopReaderModel(LocalLibrary(directory), "1.5.0", AtomicBoolean(true))
         val blocked = directory.resolve("library.json")
+        val original = Files.readAllBytes(blocked)
+        Files.delete(blocked)
         Files.createDirectory(blocked)
         try {
             try { model.close(); fail("Close should report the save failure") }
             catch (_: IOException) { }
             Files.delete(blocked)
+            Files.write(blocked, original)
             model.showLibrary()
             withTimeout(5_000) { model.state.first { !it.busy } }
             assertNull(model.state.value.error)
             assertTrue("The recovered model did not execute the operation", Files.isRegularFile(blocked))
         } finally {
-            if (Files.isDirectory(blocked)) Files.delete(blocked)
+            if (Files.isDirectory(blocked)) { Files.delete(blocked); Files.write(blocked, original) }
             model.close()
         }
     }

@@ -1,152 +1,182 @@
 package io.grimoire.desktop
 
-import io.grimoire.api.model.lang.Language
-import io.grimoire.api.model.novel.Chapter
-import io.grimoire.api.model.novel.Novel
-import io.grimoire.api.model.novel.NovelPage
-import io.grimoire.api.model.novel.PageContent
-import io.grimoire.reading.ChapterLoader
-import io.grimoire.reading.ChapterOrigin
-import io.grimoire.reading.ChapterPageAccess
-import io.grimoire.reading.ChapterLoadException
-import io.grimoire.reading.ChapterLoadFailure
-import io.grimoire.reading.encodeChapterContent
-import io.grimoire.reading.ChapterKey
-import io.grimoire.reading.NovelKey
-import io.grimoire.reading.storage.SavedChapterRepository
-import io.grimoire.reading.storage.LibraryRepository
+import io.grimoire.api.model.novel.*
+import io.grimoire.reading.*
+import io.grimoire.reading.storage.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.NoSuchFileException
 import java.util.concurrent.atomic.AtomicBoolean
 
 class DesktopStorageTest {
     @get:Rule val temporary = TemporaryFolder()
-    private val novel = Novel("/book", "Book", Language.EN)
-    private val chapter = Chapter("/chapter", "Chapter")
-    private val key = ChapterKey(NovelKey(17, novel.url), chapter.url)
-    private val pages = listOf(NovelPage(0, PageContent.Text("Saved prose", "<b>Saved prose</b>")))
 
-    @Test fun restartKeepsContentAndPositionAfterLibraryRemovalAndSeparatesSourceIdentities() = runBlocking {
-        val directory = temporary.newFolder().toPath()
-        val library = LocalLibrary(directory)
-        for (source in listOf(17L, 18L)) {
-            val otherKey = key.copy(novel = NovelKey(source, novel.url))
-            library.remember(otherKey.novel, novel, listOf(chapter))
-            library.download(otherKey, listOf(NovelPage(0, PageContent.Text("Source $source"))))
+    @Test fun commitReplayConflictSupersessionFailureAndDeleteThroughSharedRepository() = runBlocking {
+        LocalLibrary(temporary.newFolder().toPath()).use { store ->
+            store.seed()
+            val repository = DownloadRepository(DesktopDownloadDao(store))
+            val first = repository.claim(fixtureKey)!!
+            val second = repository.claim(fixtureKey)!!
+            assertEquals(DownloadCommit.NotApplied(DownloadRejection.STALE), repository.commit(first, prose("stale")))
+            assertFalse(repository.fail(first, DownloadFailure.ERROR))
+            val committed = repository.commit(second, prose()) as DownloadCommit.Committed
+            assertFalse(committed.replayed)
+            assertEquals(2, committed.receipt.wordCount)
+            assertEquals(committed.receipt, repository.currentReceipt(fixtureKey))
+            assertEquals(committed.copy(replayed = true), repository.commit(second, prose()))
+            try { repository.commit(second, prose("conflicting")); fail("Conflicting retry accepted") } catch (_: IllegalArgumentException) { }
+            val refresh = repository.claim(fixtureKey)!!
+            assertTrue(repository.fail(refresh, DownloadFailure.CONNECTIVITY))
+            assertEquals(DownloadCommit.NotApplied(DownloadRejection.STALE), repository.commit(refresh, prose("cancelled")))
+            assertEquals(prose(), store.downloaded(fixtureKey))
+            val pending = repository.claim(fixtureKey)!!
+            store.deleteDownload(fixtureKey)
+            assertNull(repository.currentReceipt(fixtureKey))
+            assertEquals(DownloadCommit.NotApplied(DownloadRejection.STALE), repository.commit(second, prose()))
+            assertEquals(DownloadCommit.NotApplied(DownloadRejection.STALE), repository.commit(pending, prose()))
+            assertNull(store.downloaded(fixtureKey))
+            assertTrue(store.book(fixtureKey.novel)!!.downloaded.isEmpty())
         }
-        library.favorite(key.novel, true)
-        library.position(key, 0, 17)
-        library.favorite(key.novel, false)
-        val restarted = LocalLibrary(directory)
-        val repository = SavedChapterRepository(FileSavedChapterDao(restarted))
-        assertTrue(restarted.saved().isEmpty())
-        assertEquals(ReadPosition(chapter.url, 0, 17), restarted.book(key.novel)!!.position)
-        for (source in listOf(17L, 18L)) {
-            assertEquals(PageContent.Text("Source $source"),
-                repository.read(key.copy(novel = NovelKey(source, novel.url)))!!.single().content)
-        }
-        assertNull(repository.read(key.copy(novel = NovelKey(19, novel.url))))
-        assertNull(repository.read(key.copy(url = "/missing")))
     }
 
-    @Test fun adapterPreservesLegacyBytesAndRejectsCorruptionAndMissingIndexedFiles() = runBlocking {
-        val directory = temporary.newFolder().toPath()
-        val library = LocalLibrary(directory)
-        library.remember(key.novel, novel, listOf(chapter))
-        library.download(key, pages)
-        val file = Files.list(directory).use { paths -> paths.filter { it.fileName.toString().startsWith("chapter-") }.findFirst().get() }
-        val legacy = "Legacy\u001c<i>Legacy</i>"
-        val record = JSONObject(Files.readString(file)).put("schema", 1).put("content", legacy)
-            .put("sha256", sha256(legacy.toByteArray(Charsets.UTF_8)))
-        record.remove("contentVersion")
-        Files.writeString(file, record.toString())
-        val before = Files.readAllBytes(file)
-        val repository = SavedChapterRepository(FileSavedChapterDao(LocalLibrary(directory)))
-        assertEquals(PageContent.Text("Legacy", "<i>Legacy</i>"), repository.read(key)!!.single().content)
-        assertArrayEquals(before, Files.readAllBytes(file))
-        library.remember(key.novel, novel, listOf(chapter.copy(locked = true)))
-        try {
-            SavedChapterRepository(FileSavedChapterDao(LocalLibrary(directory))).read(key)
-            fail("Locked chapter was read")
-        } catch (_: IllegalArgumentException) { }
-        assertArrayEquals(before, Files.readAllBytes(file))
-        library.remember(key.novel, novel, listOf(chapter))
-        for (invalid in listOf(JSONObject(record.toString()).put("sha256", "wrong").toString(),
-            JSONObject(record.toString()).put("sourceId", 18).toString(),
-            JSONObject(record.toString()).put("schema", 99).toString())) {
-            Files.writeString(file, invalid)
-            try { repository.read(key); fail("Invalid content was accepted") }
-            catch (_: IllegalArgumentException) { }
-            assertEquals(invalid, Files.readString(file))
+    @Test fun metadataRemovalRelockAndRecreationRevokeAttemptsAndReplayReceipts() = runBlocking {
+        LocalLibrary(temporary.newFolder().toPath()).use { store ->
+            store.seed()
+            val repository = DownloadRepository(DesktopDownloadDao(store))
+            val saved = repository.claim(fixtureKey)!!
+            repository.commit(saved, prose())
+            for (chapters in listOf(emptyList(), fixtureChapters.map { it.copy(locked = true) })) {
+                val attempt = repository.claim(fixtureKey)!!
+                store.remember(fixtureKey.novel, fixtureNovel, chapters)
+                assertNull(repository.currentReceipt(fixtureKey))
+                assertTrue(repository.commit(attempt, prose("late")) is DownloadCommit.NotApplied)
+                store.seed()
+                assertEquals(DownloadCommit.NotApplied(DownloadRejection.STALE), repository.commit(attempt, prose("late")))
+                assertEquals(DownloadCommit.NotApplied(DownloadRejection.STALE), repository.commit(saved, prose()))
+                assertEquals(prose(), store.downloaded(fixtureKey))
+            }
         }
-        Files.delete(file)
-        try { repository.read(key); fail("An indexed missing file was treated as no download") }
-        catch (_: NoSuchFileException) { }
     }
 
-    @Test fun readerSurfacesStorageFailureInsteadOfTryingTheSource() = runBlocking {
-        val library = LocalLibrary(temporary.newFolder().toPath())
-        library.remember(key.novel, novel, listOf(chapter))
-        val repository = SavedChapterRepository { throw IOException("saved chapter disk failure") }
-        val model = ReaderModel(library, "1.5.0", AtomicBoolean(false), ChapterLoader(repository), LibraryRepository(FileLibraryDao(library)))
+    @Test fun realSqlRollbackAndLostReplyKeepBodyIndexAndReceiptCoherentAcrossReopen() = runBlocking {
+        val directory = temporary.newFolder().toPath()
+        var inject: StorageCheckpoint? = null
+        lateinit var receipt: DownloadReceipt
+        lateinit var attempt: DownloadAttempt
+        LocalLibrary(directory) { if (it == inject) throw IOException("injected $it") }.use { store ->
+            store.seed()
+            val repository = DownloadRepository(DesktopDownloadDao(store))
+            val original = repository.claim(fixtureKey)!!
+            receipt = (repository.commit(original, prose("old")) as DownloadCommit.Committed).receipt
+            attempt = repository.claim(fixtureKey)!!
+            inject = StorageCheckpoint.BEFORE_COMMIT
+            try { repository.commit(attempt, prose("new")); fail("Delivered") } catch (_: IOException) { }
+            assertEquals(prose("old"), store.downloaded(fixtureKey))
+            assertEquals(receipt, repository.currentReceipt(fixtureKey))
+            inject = StorageCheckpoint.AFTER_COMMIT
+            try { repository.commit(attempt, prose("new")); fail("Delivered") } catch (_: IOException) { }
+            assertEquals(prose("new"), store.downloaded(fixtureKey))
+            inject = null
+        }
+        LocalLibrary(directory).use { store ->
+            val repository = DownloadRepository(DesktopDownloadDao(store))
+            val replay = repository.commit(attempt, prose("new")) as DownloadCommit.Committed
+            assertTrue(replay.replayed)
+            assertNotEquals(receipt.revision, replay.receipt.revision)
+            assertEquals(setOf("/chapter"), store.book(fixtureKey.novel)!!.downloaded)
+            assertEquals(replay.receipt.revision, DesktopSavedChapterDao(store).readSnapshot(fixtureKey)!!.cacheRevision)
+        }
+    }
+
+    @Test fun cancellationObservedInsideSqlTransactionRollsBackButAfterCommitCanLoseReply() = runBlocking {
+        val directory = temporary.newFolder().toPath()
+        var cancelAt: StorageCheckpoint? = null
+        var operation: Job? = null
+        LocalLibrary(directory) { if (it == cancelAt) operation!!.cancel() }.use { store ->
+            store.seed()
+            val repository = DownloadRepository(DesktopDownloadDao(store))
+            val attempt = repository.claim(fixtureKey)!!
+            for (point in listOf(StorageCheckpoint.BEFORE_COMMIT, StorageCheckpoint.AFTER_COMMIT)) {
+                cancelAt = point
+                val deferred = async(start = CoroutineStart.LAZY) { repository.commit(attempt, prose()) }
+                operation = deferred
+                deferred.start()
+                try { deferred.await(); fail("Cancelled reply delivered") } catch (_: CancellationException) { }
+                cancelAt = null
+                if (point == StorageCheckpoint.BEFORE_COMMIT) {
+                    assertNull(repository.currentReceipt(fixtureKey)); assertNull(store.downloaded(fixtureKey))
+                } else {
+                    assertEquals(attempt.id, repository.currentReceipt(fixtureKey)!!.attemptId)
+                    assertEquals(prose(), store.downloaded(fixtureKey))
+                    assertTrue((repository.commit(attempt, prose()) as DownloadCommit.Committed).replayed)
+                }
+            }
+        }
+    }
+
+    @Test fun sharedLoadingScenariosThroughRealSqlAdapterNeverRepairCorruptOrEmptySavedContent() = runBlocking {
+        val directory = temporary.newFolder().toPath()
+        LocalLibrary(directory).use { store ->
+            store.seed()
+            store.download(fixtureKey, prose())
+            val loader = ChapterLoader(SavedChapterRepository(DesktopSavedChapterDao(store)))
+            var resolutions = 0
+            val source: suspend () -> ChapterPageAccess = { resolutions++; ChapterPageAccess.Available { prose("network") } }
+            assertEquals(ChapterOrigin.SAVED, loader.load(fixtureKey, emptyList(), source).origin)
+            val empty = encodeChapterContent(emptyList())
+            mutateDatabase(directory, "UPDATE contents SET content=?,content_version=?,digest=?", empty.content, empty.version, downloadDigest(empty))
+            assertTrue(loader.load(fixtureKey, prose(), source).pages.isEmpty())
+            mutateDatabase(directory, "UPDATE contents SET content_version=99")
+            try { loader.load(fixtureKey, prose(), source); fail("Corrupt content repaired") } catch (_: IllegalArgumentException) { }
+            assertEquals(0, resolutions)
+            val missing = fixtureKey.copy(url = "/missing")
+            assertEquals(ChapterOrigin.PRELOADED, loader.load(missing, emptyList(), source).origin)
+            assertEquals(ChapterOrigin.SOURCE, loader.load(missing, sourceAccess = source).origin)
+            assertEquals(1, resolutions)
+            try { loader.load(missing) { ChapterPageAccess.Unavailable(ChapterLoadFailure.OFFLINE) }; fail("Offline missing loaded") }
+            catch (failure: ChapterLoadException) { assertEquals(ChapterLoadFailure.OFFLINE, failure.reason) }
+        }
+    }
+
+    @Test fun readerSurfacesStorageFailureInsteadOfTryingSource() = runBlocking {
+        val store = LocalLibrary(temporary.newFolder().toPath()).apply { seed() }
+        val model = ReaderModel(store, "1.5.0", AtomicBoolean(false), ChapterLoader(SavedChapterRepository { throw IOException("saved chapter disk failure") }),
+            LibraryRepository(DesktopLibraryDao(store)), DownloadRepository(DesktopDownloadDao(store)))
         try {
-            model.openSaved(library.book(key.novel)!!)
-            withTimeout(5_000) { model.state.first { !it.busy } }
-            model.read(chapter)
-            val state = withTimeout(5_000) { model.state.first { !it.busy } }
-            assertEquals("saved chapter disk failure", state.error)
-            assertTrue(state.pages.isEmpty())
+            model.openSaved(store.book(fixtureKey.novel)!!); model.settled()
+            model.read(fixtureChapters.first()); model.settled()
+            assertEquals("saved chapter disk failure", model.state.value.error)
+            assertTrue(model.state.value.pages.isEmpty())
         } finally { model.close() }
     }
 
-    @Test fun sharedLoadingScenariosThroughTheRealFileAdapter() = runBlocking {
-        val directory = temporary.newFolder().toPath()
-        val library = LocalLibrary(directory)
-        library.remember(key.novel, novel, listOf(chapter))
-        library.download(key, pages)
-        val file = Files.list(directory).use { paths -> paths.filter { it.fileName.toString().startsWith("chapter-") }.findFirst().get() }
-        val loader = ChapterLoader(SavedChapterRepository(FileSavedChapterDao(LocalLibrary(directory))))
-        var resolutions = 0
-        val offline: suspend () -> ChapterPageAccess = {
-            resolutions++
-            ChapterPageAccess.Unavailable(ChapterLoadFailure.OFFLINE)
+    @Test fun readerReportsSavedContentSeparatelyFromMembershipFailureAndReconcilesLostCommitReply() = runBlocking {
+        var inject = false
+        val store = LocalLibrary(temporary.newFolder().toPath()) { if (inject && it == StorageCheckpoint.AFTER_COMMIT) { inject = false; throw IOException("reply lost") } }.apply { seed() }
+        val failingMembership = object : LibraryDao {
+            override suspend fun find(key: NovelKey): LibraryEntry? = null
+            override suspend fun setMembership(key: NovelKey, inLibrary: Boolean): LibraryEntry? = throw IOException("membership unavailable")
         }
-        val source: suspend () -> ChapterPageAccess = {
-            resolutions++
-            ChapterPageAccess.Available { pages }
+        val delegate = DesktopDownloadDao(store)
+        val downloads = object : DownloadDao by delegate {
+            override suspend fun commit(attempt: DownloadAttempt, prepared: PreparedDownload): DownloadCommit { inject = true; return delegate.commit(attempt, prepared) }
         }
-        assertEquals(ChapterOrigin.SAVED, loader.load(key, emptyList(), offline).origin)
-        for (original in listOf(pages, emptyList())) {
-            val stored = encodeChapterContent(original)
-            val record = JSONObject(Files.readString(file)).put("content", stored.content)
-                .put("sha256", sha256(stored.content.toByteArray(Charsets.UTF_8)))
-            Files.writeString(file, record.toString())
-            val result = loader.load(key, pages, offline)
-            assertEquals(ChapterOrigin.SAVED, result.origin)
-            assertEquals(stored, encodeChapterContent(result.pages))
-        }
-        val corrupt = JSONObject(Files.readString(file)).put("contentVersion", 99).toString()
-        Files.writeString(file, corrupt)
-        try { loader.load(key, pages, source); fail("Corrupt content triggered fallback") }
-        catch (_: IllegalArgumentException) { }
-        assertEquals(corrupt, Files.readString(file))
-        assertEquals(0, resolutions)
-        val missing = key.copy(url = "/missing")
-        assertEquals(ChapterOrigin.PRELOADED, loader.load(missing, emptyList(), offline).origin)
-        assertEquals(0, resolutions)
-        assertEquals(ChapterOrigin.SOURCE, loader.load(missing, sourceAccess = source).origin)
-        assertEquals(1, resolutions)
-        try { loader.load(missing, sourceAccess = offline); fail("Missing offline content was loaded") }
-        catch (failure: ChapterLoadException) { assertEquals(ChapterLoadFailure.OFFLINE, failure.reason) }
-        assertEquals(2, resolutions)
+        val model = ReaderModel(store, "1.5.0", AtomicBoolean(false), ChapterLoader(SavedChapterRepository { encodeChapterContent(prose()) }),
+            LibraryRepository(failingMembership), DownloadRepository(downloads))
+        try {
+            model.openSaved(store.book(fixtureKey.novel)!!); model.settled()
+            model.read(fixtureChapters.first()); model.settled()
+            model.download(); model.settled()
+            assertTrue(model.state.value.error!!.startsWith("Chapter saved, but could not add"))
+            assertEquals(setOf("/chapter"), model.state.value.book!!.downloaded)
+            assertEquals(prose(), store.downloaded(fixtureKey))
+            assertFalse(store.book(fixtureKey.novel)!!.favorite)
+        } finally { model.close() }
     }
+
+    private suspend fun ReaderModel.settled() { withTimeout(5_000) { state.first { !it.busy } } }
 }

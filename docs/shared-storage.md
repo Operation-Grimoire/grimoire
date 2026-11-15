@@ -18,9 +18,9 @@ flowchart TB
     Desktop[Desktop reader] --> Repository
     Repository --> Contract[Shared SavedChapterDao contract]
     Contract --> Room[Android RoomSavedChapterDao]
-    Contract --> Files[Desktop FileSavedChapterDao]
+    Contract --> SQL[Desktop DesktopSavedChapterDao]
     Room --> Database[Existing Android database]
-    Files --> Library[Existing desktop library and chapter files]
+    SQL --> Library[Desktop SQLite database]
 ```
 
 The repository interprets the explicit stored version through the shared codec.
@@ -33,11 +33,11 @@ portable key using the stored novel identity, not navigation URL assumptions.
 transaction, retaining bounded body-chunk reads. Reader-specific blank-page
 filtering and cached-image URI mapping remain in the Android reader.
 
-`FileSavedChapterDao` delegates to the desktop library's raw saved-content read.
+`DesktopSavedChapterDao` delegates to the desktop library's raw saved-content read.
 It retains source/novel/chapter identity, format, digest, download-index and
 locked-chapter checks. The existing synchronous `LocalLibrary.downloaded` helper
 remains available; production reader loading goes through the shared repository.
-The file adapter dispatches blocking reads to IO; Room owns its query execution.
+The desktop adapter dispatches blocking reads to IO; Room owns its query execution.
 Removing library membership still retains downloaded content and position.
 
 ## Read contract
@@ -48,7 +48,7 @@ Removing library membership still retains downloaded content and position.
 | Valid legacy or current record | Return decoded pages without rewriting storage. |
 | Valid empty content | Return a present empty page list, or the legacy empty-text page; never turn it into absence. |
 | Invalid content/version/identity/digest | Propagate the failure; never retrieve a replacement or overwrite evidence. |
-| I/O or access failure | Propagate the failure, including an indexed desktop chapter whose file is missing. |
+| I/O or access failure | Propagate the failure, including a missing indexed body or corrupt imported legacy file. |
 | Cancellation | Propagate cancellation unchanged. |
 
 The adapter owns storage-level integrity and existing access checks. Feature
@@ -59,7 +59,8 @@ access, including desktop offline restrictions. The DAO adds no network policy.
 Saved-chapter adapters do not change schemas, file layouts, saved bytes, download status,
 word counts, progress or writes. That slice retained Android database33; the
 download adoption below uses DB34.
-Desktop library metadata remains schema1 and new chapter files remain schema2. See
+Desktop now imports those files into its own SQLite schema1; a schema2 JSON marker
+prevents older readers from writing the upgraded store. See [desktop storage](desktop-storage.md) and
 [chapter content](chapter-content.md) for the existing format/rollback boundary.
 
 ## Implemented second slice: library metadata and membership
@@ -76,7 +77,7 @@ flowchart TB
     Desktop[Desktop membership and add-after-download] --> Repository
     Repository --> Contract[Shared LibraryDao contract]
     Contract --> Room[Android RoomLibraryDao]
-    Contract --> Files[Desktop FileLibraryDao]
+    Contract --> SQL[Desktop DesktopLibraryDao]
 ```
 
 `find` returns the existing record or null. `setMembership` sets an explicit
@@ -104,7 +105,8 @@ browsing-history cleanup in the existing view models. Category selection, bulk
 operations and privacy-filtered/reactive library listings remain behind their
 existing platform implementations until their contracts are extracted. Desktop
 favorite and automatic membership after saving a chapter use the shared facade.
-Neither adapter adds a schema or file-format migration.
+The initial membership extraction added no schema or file-format migration;
+desktop subsequently moved storage as described above.
 
 ## Implemented third slice: reader loading
 
@@ -180,9 +182,11 @@ attaching to current/newly recreated content. Old revision files are retained
 until chapter/novel deletion; conservative cache garbage collection remains later
 work. Shared contracts contain no file paths or Android IDs.
 
-Desktop still uses its existing save implementation. The guarded desktop adapter
-and process-kill/competing-process acceptance are unfinished; an ownership lease
-or graceful Room reopen alone does not establish those runtime gates. The
+Desktop now implements guarded saves using `DesktopDownloadDao` and SQLite via JDBC.
+See [desktop storage](desktop-storage.md) for backend choice, migration and process tests.
+Desktop process-kill and competing-process tests exercise the actual lease and
+SQLite recovery. Android process-kill/competing-process acceptance remains open;
+a graceful Room reopen alone does not establish those runtime gates. The
 [download contract](download-commit.md) remains the acceptance target.
 
 ## Next extraction slices and acceptance gates
@@ -198,7 +202,7 @@ both platform compositions. Platform adapters may keep different backends.
    cancellation before and after commit, restart recovery, crash/power-loss
    durability and ownership scope. Android now uses the shared facade, guarded
    attempts, receipts and
-   revision-bound images. Next migrate desktop and complete the remaining
+   revision-bound images. Desktop now uses the same facade with a JDBC transaction adapter. Complete the remaining
    restart/process-ownership acceptance through both production compositions.
    Transactions, journals, locking and recovery
    remain adapter responsibilities; backend selection stays per platform.
@@ -248,7 +252,7 @@ as `library-result.log`; skipped tests cannot satisfy the CI count.
 `ChapterLoaderTest` covers the shared selection table, unavailable capabilities,
 original failure propagation and cancellation before/after every boundary.
 The same saved/empty/corrupt/missing/preloaded/source/offline scenario sequence
-runs through real Room and file adapters. Native `ChapterCodecMigrationTest` now
+runs through real Room and SQLite adapters. Native `ChapterCodecMigrationTest` now
 requires four executed successes (plus the four host and three library tests).
 Desktop packaged-source and UI journeys use the production loader composition;
 these fixtures do not establish live-site or physical-phone acceptance.
