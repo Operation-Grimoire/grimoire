@@ -126,4 +126,5 @@ behavior, real macOS UI and power-loss testing remain separate acceptance gates.
 Android process-death acceptance and shared reading-anchor semantics remain future
 runtime work; desktop storage adoption does not claim those gates passed. The
 [reading-anchor contract](reading-anchors.md) defines the next shared slice;
-its resolver and platform checkpoint adapters are not implemented.
+its pure resolver is implemented but is not wired into either reader. Projection
+mappings and platform checkpoint adapters remain unimplemented.
