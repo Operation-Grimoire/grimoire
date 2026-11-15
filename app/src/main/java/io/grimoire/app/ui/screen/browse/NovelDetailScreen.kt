@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -302,7 +303,7 @@ fun NovelDetailScreen(
             onDismissRequest = { showNotifSheet = false },
             sheetState = notifSheetState,
         ) {
-            Column(modifier = Modifier.padding(bottom = 16.dp)) {
+            Column(modifier = Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
                 io.grimoire.app.ui.component.sheet.SheetTitle(stringResource(R.string.novel_new_chapters_title))
                 Text(
                     stringResource(R.string.novel_new_chapters_description),

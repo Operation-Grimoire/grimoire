@@ -64,6 +64,7 @@ fun ChapterItem(
     onDeleteDownload: () -> Unit,
     onRedownload: () -> Unit,
     modifier: Modifier = Modifier,
+    containerColor: Color = Color.Unspecified,
 ) {
     // Read chapters dim to signal "done"; locked chapters instead use a gold
     // accent to signal "premium", so the two states stay visually distinct.
@@ -87,7 +88,7 @@ fun ChapterItem(
                 containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
             )
         } else {
-            ListItemDefaults.colors()
+            ListItemDefaults.colors(containerColor = containerColor)
         },
         headlineContent = {
             Text(

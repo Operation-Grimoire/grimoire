@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -84,8 +86,21 @@ fun SheetSectionLabel(
     )
 }
 
+/** Subtle divider separating sheet groups without hard high-contrast bands. */
 @Composable
-private fun sheetListItemColors(enabled: Boolean = true) = ListItemDefaults.colors(
+fun SheetDivider(modifier: Modifier = Modifier) {
+    HorizontalDivider(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+    )
+}
+
+/**
+ * Shared [ListItem] colors for bottom sheets so rows inherit the sheet's
+ * container surface cleanly instead of drawing opaque dark surface cutouts.
+ */
+@Composable
+fun sheetListItemColors(enabled: Boolean = true): ListItemColors = ListItemDefaults.colors(
     containerColor = Color.Transparent,
     headlineColor = if (enabled) {
         MaterialTheme.colorScheme.onSurface
