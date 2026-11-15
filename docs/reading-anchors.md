@@ -82,12 +82,12 @@ Storage generations and image-cache ownership remain separate guards.
 ## Portable position and local layout hint
 
 A version1 anchor contains `modelVersion=1`, the chapter key, logical revision
-and one position:
+and one position. A Block position includes an explicit `precision` field:
 
 | Position | Meaning |
 | --- | --- |
 | Start | Before the first canonical block. A title/decorative heading can map here. |
-| Block | Canonical ordinal, block fingerprint and text offset. Text offsets use UTF-16 code units in the exact plain text. Images and separators require offset0. |
+| Block | Canonical ordinal, block fingerprint, text offset and precision (`TextOffset` or `BlockStart`). Text offsets use UTF-16 code units in the exact plain text. Images and separators require offset0 with BlockStart. |
 | End | After the last canonical block. A navigation footer can map here; End does not mean read/completed. |
 
 A block offset is in `0..text.length` and cannot split a valid high/low surrogate
@@ -143,9 +143,14 @@ locked-chapter and saved-content integrity checks remain in their existing layer
 Check key, model version and field shape before document resolution. Fingerprints
 must be 64 lowercase hexadecimal characters; reject negative ordinals/offsets and
 invalid position/precision combinations. Then handle an empty document or choose
-the same-revision/changed-revision path. Whenever a block is located, including
-unique relocation, validate its ordinal, fingerprint, offset and precision against
-that block. A changed revision never permits an out-of-bounds or split-pair offset.
+the same-revision/changed-revision path. For a same-revision Block anchor, validate
+the stored ordinal against the current sequence and check its block evidence.
+For unique relocation, find the block by fingerprint without requiring its old
+ordinal to exist or match in the new sequence. In either path, validate offset and
+precision against the located block; relocation never permits an out-of-bounds or
+split-pair offset. A relocated result uses the current logical revision and located
+ordinal with the retained offset/precision. Return the old anchor alongside the
+result; calculating that result does not persist it.
 
 | Condition | Result and required behavior |
 | --- | --- |
