@@ -68,6 +68,19 @@ class SourceBrowseEmptyStateTest {
             ),
         )
         assertEquals(
+            SourceBrowseContent.EMPTY_RESULTS,
+            resolveSourceBrowseContent(
+                isLoading = false,
+                cloudflareBlocked = false,
+                error = null,
+                mode = BrowseMode.SEARCH,
+                query = "   ",
+                hasActiveFilters = true,
+                hasLoaded = true,
+                hasNovels = false,
+            ),
+        )
+        assertEquals(
             SourceBrowseContent.SEARCH_PROMPT,
             resolveSourceBrowseContent(
                 isLoading = false,

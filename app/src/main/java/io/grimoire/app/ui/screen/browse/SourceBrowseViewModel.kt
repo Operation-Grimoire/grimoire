@@ -26,6 +26,8 @@ import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.util.AppLocale
 import android.util.Log
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -148,6 +150,9 @@ class SourceBrowseViewModel @Inject constructor(
     private val _hasLoaded = MutableStateFlow(false)
     val hasLoaded: StateFlow<Boolean> = _hasLoaded.asStateFlow()
 
+    private var loadJob: Job? = null
+    private var loadGeneration = 0L
+
     private val _mode = MutableStateFlow(BrowseMode.POPULAR)
     val mode: StateFlow<BrowseMode> = _mode.asStateFlow()
 
@@ -264,9 +269,6 @@ class SourceBrowseViewModel @Inject constructor(
 
     fun setQuery(q: String) {
         _query.value = q
-        if (_mode.value == BrowseMode.SEARCH && _novels.value.isEmpty()) {
-            _hasLoaded.value = false
-        }
     }
 
     fun submitSearch() {
@@ -314,14 +316,21 @@ class SourceBrowseViewModel @Inject constructor(
         get() = supportsSearch && !supportsPopular && !supportsLatest
 
     private fun load(reset: Boolean) {
+        loadJob?.cancel()
+        val generation = ++loadGeneration
         if (loaded?.source == null) {
+            _isLoading.value = false
+            _isLoadingMore.value = false
             _error.value = localizedContext.getString(R.string.error_source_not_available)
             return
         }
+        val requestMode = _mode.value
+        val requestQuery = _query.value
+        val requestFilters = _activeFilters.value
         // A blank, unfiltered search has nothing to browse: wait for the user to
         // type instead of auto-firing an empty query (which some sources answer
         // with a seeded browse). Clears any prior results and stops loading.
-        if (_mode.value == BrowseMode.SEARCH && _query.value.isBlank() && _activeFilters.value.isEmpty()) {
+        if (requestMode == BrowseMode.SEARCH && requestQuery.isBlank() && requestFilters.isEmpty()) {
             page = 1
             _novels.value = emptyList()
             _hasMore.value = false
@@ -332,7 +341,7 @@ class SourceBrowseViewModel @Inject constructor(
             _cloudflareBlocked.value = false
             return
         }
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             if (reset) {
                 _isLoading.value = true
                 _hasLoaded.value = false
@@ -347,11 +356,17 @@ class SourceBrowseViewModel @Inject constructor(
             _cloudflareBlocked.value = false
 
             runCatching {
-                val result = when (_mode.value) {
+                val result = when (requestMode) {
                     BrowseMode.POPULAR -> popularSource?.getPopularNovels(page).orEmpty()
                     BrowseMode.LATEST -> latestSource?.getLatestUpdates(page).orEmpty()
                     BrowseMode.SEARCH ->
-                        searchSource?.searchNovels(_query.value, page, _activeFilters.value).orEmpty()
+                        searchSource?.searchNovels(requestQuery, page, requestFilters).orEmpty()
+                }
+                if (generation != loadGeneration ||
+                    (requestMode == BrowseMode.SEARCH && _query.value != requestQuery)
+                ) {
+                    if (!reset && generation == loadGeneration) page--
+                    return@runCatching
                 }
                 // Always de-duplicate by URL: a source can legitimately return
                 // the same item twice (on one page or across pages), and the
@@ -364,7 +379,13 @@ class SourceBrowseViewModel @Inject constructor(
                 _hasMore.value = if (reset) result.isNotEmpty() else grew
                 _hasLoaded.value = true
             }.onFailure { e ->
-                Log.e(TAG, "Load failed [mode=${_mode.value} page=$page pkg=$packageName]", e)
+                if (e is CancellationException) throw e
+                if (generation != loadGeneration) return@onFailure
+                Log.e(TAG, "Load failed [mode=$requestMode page=$page pkg=$packageName]", e)
+                if (requestMode == BrowseMode.SEARCH && _query.value != requestQuery) {
+                    if (!reset) page--
+                    return@onFailure
+                }
                 if (e is CloudflareException) {
                     _cloudflareBlocked.value = true
                 } else {
@@ -373,8 +394,10 @@ class SourceBrowseViewModel @Inject constructor(
                 if (!reset) page--
             }
 
-            _isLoading.value = false
-            _isLoadingMore.value = false
+            if (generation == loadGeneration) {
+                _isLoading.value = false
+                _isLoadingMore.value = false
+            }
         }
     }
 }
