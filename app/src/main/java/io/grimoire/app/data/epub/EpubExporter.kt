@@ -59,6 +59,11 @@ class EpubExporter @Inject constructor(
                 listOf(novel.effectiveTitle, novel.effectiveAuthor.orEmpty(),
                     (novel.overrideDescription ?: novel.description).orEmpty(),
                     novel.overrideGenres ?: novel.genres, novel.language.orEmpty()).forEach(::requireEpubXmlText)
+                // Fail promptly without fetching a cover for an empty export.
+                // Recheck inside the transaction because downloads can change.
+                require(chapterDao.getDownloadedChapterMetadata(novelId).isNotEmpty()) {
+                    "No downloaded chapters to export. Download chapters first."
+                }
                 // Network/cover work must not hold a database transaction.
                 val cover = loadCover(novel)?.let { bytes ->
                     val ext = imageExtension(bytes)
