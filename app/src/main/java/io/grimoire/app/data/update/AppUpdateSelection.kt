@@ -14,7 +14,7 @@ internal const val GITHUB_RELEASES_URL = "https://github.com/Operation-Grimoire/
  */
 internal fun releaseChangelogUrl(versionOrTag: String?): String {
     val core = versionOrTag?.substringBefore('+')?.trim().orEmpty()
-    if (core.isEmpty() || core == "–") return GITHUB_RELEASES_URL
+    if (core.isEmpty()) return GITHUB_RELEASES_URL
     val tag = if (core.startsWith("v")) core else "v$core"
     if (tag == "v0.0.0" || tag.startsWith("v0.0.0-")) return GITHUB_RELEASES_URL
     return "$GITHUB_RELEASES_URL/tag/$tag"

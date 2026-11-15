@@ -31,7 +31,7 @@ class AppUpdateSelectionTest {
         assertEquals("$GITHUB_RELEASES_URL/tag/v1.0.5", releaseChangelogUrl("v1.0.5+abc123"))
         assertEquals(GITHUB_RELEASES_URL, releaseChangelogUrl("0.0.0"))
         assertEquals(GITHUB_RELEASES_URL, releaseChangelogUrl("v0.0.0-beta.1"))
-        assertEquals(GITHUB_RELEASES_URL, releaseChangelogUrl("–"))
+        assertEquals(GITHUB_RELEASES_URL, releaseChangelogUrl("  "))
         assertEquals(GITHUB_RELEASES_URL, releaseChangelogUrl(null))
     }
 

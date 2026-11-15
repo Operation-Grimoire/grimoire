@@ -68,7 +68,7 @@ fun AboutSettingsScreen(
     val version = remember {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        }.getOrDefault("–")
+        }.getOrNull()?.takeIf { it.isNotBlank() }
     }
     val versionCode = remember {
         runCatching {
