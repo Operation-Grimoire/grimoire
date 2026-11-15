@@ -1,8 +1,8 @@
 # Portable reading anchors
 
 The pure canonical document, anchor model and resolver are implemented in
-`reading-core`. Renderer mappings, local hints/legacy fallback, checkpoint DAO
-and production reader adoption are **not implemented**. The contract below also
+`reading-core`. Projection mappings, local layout hints, legacy/presentation
+fallback, checkpoint DAO and production reader adoption are **not implemented**. The contract below also
 defines their required behavior. [#425](https://github.com/Operation-Grimoire/grimoire/pull/425)
 completed desktop download/storage adoption; its remaining runtime gates still
 apply. This contract does not select a new database or define account sync.
@@ -100,6 +100,9 @@ without a text-precision field. Block precision never promises restoration to th
 line or glyph. Preserve this precision in every resolver outcome.
 These offsets count string units, not glyphs or grapheme clusters. A renderer may
 place the viewport at the containing line without rewriting the logical offset.
+TextOffset/BlockStart are contract labels; the Kotlin values are
+`AnchorPrecision.TEXT_OFFSET` and `AnchorPrecision.BLOCK_START`. This model does
+not define a persisted anchor encoding or wire representation for those labels.
 
 A separate optional device-local hint holds the rendered item/pixel offset. Bind
 it to the same capture, platform renderer, logical revision and layout token.
