@@ -115,4 +115,7 @@ const val NAV_TARGET_UPDATES = "updates"
 /** Stable name for the crash-report screen, surfaced on the first launch after a crash. */
 const val NAV_TARGET_CRASH = "crash"
 
+/** Stable name for jumping straight into Extension management (e.g. after onboarding). */
+const val NAV_TARGET_EXTENSIONS = "extensions"
+
 internal const val SETTINGS_GRAPH_ROUTE = "settings_graph"

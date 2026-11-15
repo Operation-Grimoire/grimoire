@@ -67,6 +67,9 @@ class TourController @Inject constructor(
     /** Clears a first-visit tour's completion so it runs again on its screen. */
     fun rearm(tourId: TourId) = saveCompleted(tourId, 0)
 
+    /** Marks a tour completed so it won't auto-start on launch or first visit. */
+    fun markCompleted(tourId: TourId) = saveCompleted(tourId, tourById(tourId).version)
+
     fun next() {
         val s = _state.value
         if (!s.running) return

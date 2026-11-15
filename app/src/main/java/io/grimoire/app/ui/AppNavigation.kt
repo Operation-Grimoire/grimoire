@@ -91,6 +91,7 @@ fun AppNavigation(
         val route = when {
             t == NAV_TARGET_UPDATES -> ROUTE_UPDATES
             t == NAV_TARGET_CRASH -> ROUTE_CRASH_REPORT
+            t == NAV_TARGET_EXTENSIONS -> extensionManageRoute()
             // A per-novel notification passes the navigate-ready route directly.
             t.startsWith("novel?") -> t
             else -> null

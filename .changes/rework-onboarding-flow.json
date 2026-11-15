@@ -1,0 +1,6 @@
+{
+  "android": [
+    {"category": "feature", "text": "Reworked first-run onboarding with theme selection, backup restore, contextual notifications, privacy toggles, quick-start actions, and an optional interactive tour."}
+  ],
+  "desktop": []
+}

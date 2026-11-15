@@ -1,202 +1,243 @@
 package io.grimoire.app.ui.screen.onboarding
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
+import android.net.Uri
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import io.grimoire.api.model.lang.Language
 import io.grimoire.app.R
-import io.grimoire.app.util.AppLocale
-import io.grimoire.app.util.ContentLanguages
+import io.grimoire.app.ui.icon.AppIcons
+import io.grimoire.app.ui.icon.ArrowBack
+import io.grimoire.app.ui.icon.ArrowForward
+import kotlinx.coroutines.launch
+
+private const val ONBOARDING_STEP_COUNT = 6
 
 /**
- * First-run welcome flow: a hello, the app UI language, then the reading
- * (content) languages. Both choices stay editable later under Settings →
- * Languages. Picking an app language recreates the activity so the flow
- * itself re-renders in it; the current step survives via [rememberSaveable].
+ * First-run guided setup flow using a swipeable [HorizontalPager]:
+ * 0. Welcome, App UI language, and returning-user backup restore
+ * 1. Reading (content) languages with search & quick clear
+ * 2. Theme & appearance with live preview
+ * 3. Contextual notification permission
+ * 4. Privacy & diagnostics toggles
+ * 5. Quick-start actions (extensions / book import) and optional spotlight tour
  */
 @Composable
 fun OnboardingScreen(
     viewModel: OnboardingViewModel,
+    onOpenExtensions: () -> Unit,
+    onImportBook: (Uri) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var step by rememberSaveable { mutableIntStateOf(0) }
-    BackHandler(enabled = step > 0) { step = 0 }
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { ONBOARDING_STEP_COUNT })
+    val scope = rememberCoroutineScope()
+    val restoreState by viewModel.restoreState.collectAsState()
+    val isRestoring = restoreState is OnboardingRestoreState.Restoring
+    val currentPage = pagerState.currentPage
+    val isLastStep = currentPage == ONBOARDING_STEP_COUNT - 1
 
-    Scaffold(modifier = modifier) { padding ->
-        when (step) {
-            0 -> WelcomeStep(
-                onContinue = { step = 1 },
-                modifier = Modifier.padding(padding),
-            )
-            else -> ReadingLanguagesStep(
-                viewModel = viewModel,
-                modifier = Modifier.padding(padding),
-            )
-        }
+    BackHandler(enabled = currentPage > 0 && !isRestoring) {
+        scope.launch { pagerState.animateScrollToPage(currentPage - 1) }
     }
-}
 
-@Composable
-private fun WelcomeStep(
-    onContinue: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val context = LocalContext.current
-    val currentTag = remember { AppLocale.storedTag(context) }
-
-    Column(modifier.fillMaxSize().padding(horizontal = 24.dp)) {
-        Spacer(Modifier.height(64.dp))
-        Text(
-            stringResource(R.string.onboarding_welcome_title),
-            style = MaterialTheme.typography.headlineMedium,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(R.string.onboarding_welcome_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(32.dp))
-        Text(
-            stringResource(R.string.languages_app_language_title),
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            AppLocale.supported.forEach { tag ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = tag == currentTag,
-                            onClick = {
-                                if (tag != currentTag) {
-                                    if (AppLocale.setTag(context, tag)) {
-                                        context.findActivity()?.recreate()
-                                    }
-                                }
-                            },
-                        )
-                        .padding(vertical = 4.dp),
-                ) {
-                    RadioButton(selected = tag == currentTag, onClick = null)
-                    Text(appLanguageLabel(tag))
-                }
-            }
-        }
-        Button(
-            onClick = onContinue,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-        ) {
-            Text(stringResource(R.string.onboarding_continue))
-        }
-    }
-}
-
-@Composable
-private fun ReadingLanguagesStep(
-    viewModel: OnboardingViewModel,
-    modifier: Modifier = Modifier,
-) {
-    val selected by viewModel.selected.collectAsState()
-
-    Column(modifier.fillMaxSize()) {
-        Spacer(Modifier.height(48.dp))
-        Text(
-            stringResource(R.string.onboarding_reading_title),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(horizontal = 24.dp),
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            stringResource(R.string.onboarding_reading_helper),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 24.dp),
-        )
-        Spacer(Modifier.height(8.dp))
-        LazyColumn(Modifier.weight(1f)) {
-            items(ContentLanguages.SELECTABLE, key = { it.code }) { lang ->
-                LanguageRow(
-                    language = lang,
-                    checked = lang in selected,
-                    onClick = { viewModel.toggle(lang) },
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            OnboardingTopBar(
+                currentPage = currentPage,
+                pageCount = ONBOARDING_STEP_COUNT,
+                showSkip = !isLastStep && !isRestoring,
+                onSkip = viewModel::skip,
+            )
+        },
+        bottomBar = {
+            OnboardingBottomBar(
+                canGoBack = currentPage > 0,
+                isLastStep = isLastStep,
+                enabled = !isRestoring,
+                onBack = {
+                    scope.launch { pagerState.animateScrollToPage(currentPage - 1) }
+                },
+                onNext = {
+                    if (isLastStep) {
+                        viewModel.finish(startTour = false)
+                    } else {
+                        scope.launch { pagerState.animateScrollToPage(currentPage + 1) }
+                    }
+                },
+            )
+        },
+    ) { padding ->
+        HorizontalPager(
+            state = pagerState,
+            beyondViewportPageCount = 1,
+            userScrollEnabled = !isRestoring,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+        ) { page ->
+            when (page) {
+                0 -> OnboardingWelcomeStep(viewModel = viewModel)
+                1 -> OnboardingLanguagesStep(viewModel = viewModel)
+                2 -> OnboardingAppearanceStep(viewModel = viewModel)
+                3 -> OnboardingNotificationsStep()
+                4 -> OnboardingPrivacyStep(viewModel = viewModel)
+                else -> OnboardingReadyStep(
+                    viewModel = viewModel,
+                    onOpenExtensions = onOpenExtensions,
+                    onImportBook = onImportBook,
                 )
             }
         }
-        Button(
-            onClick = viewModel::finish,
+    }
+}
+
+@Composable
+private fun OnboardingTopBar(
+    currentPage: Int,
+    pageCount: Int,
+    showSkip: Boolean,
+    onSkip: () -> Unit,
+) {
+    val progress by animateFloatAsState(
+        targetValue = (currentPage + 1) / pageCount.toFloat(),
+        animationSpec = tween(durationMillis = 250),
+        label = "onboardingProgress",
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 24.dp, vertical = 8.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .heightIn(min = 48.dp),
         ) {
-            Text(stringResource(R.string.onboarding_get_started))
+            Text(
+                text = stringResource(R.string.onboarding_step_progress, currentPage + 1, pageCount),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            AnimatedVisibility(
+                visible = showSkip,
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                TextButton(onClick = onSkip) {
+                    Text(stringResource(R.string.onboarding_skip))
+                }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(999.dp)),
+        )
+    }
+}
+
+@Composable
+private fun OnboardingBottomBar(
+    canGoBack: Boolean,
+    isLastStep: Boolean,
+    enabled: Boolean,
+    onBack: () -> Unit,
+    onNext: () -> Unit,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier
+            .fillMaxWidth()
+            .imePadding(),
+    ) {
+        Column {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 24.dp, vertical = 14.dp),
+            ) {
+                if (canGoBack) {
+                    OutlinedButton(onClick = onBack, enabled = enabled) {
+                        Icon(
+                            imageVector = AppIcons.ArrowBack,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.action_back))
+                    }
+                }
+                Button(
+                    onClick = onNext,
+                    enabled = enabled,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        stringResource(
+                            if (isLastStep) R.string.onboarding_enter_library
+                            else R.string.onboarding_continue,
+                        ),
+                    )
+                    if (!isLastStep) {
+                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            imageVector = AppIcons.ArrowForward,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
         }
     }
-}
-
-@Composable
-private fun LanguageRow(
-    language: Language,
-    checked: Boolean,
-    onClick: () -> Unit,
-) {
-    ListItem(
-        headlineContent = { Text(language.displayName) },
-        supportingContent = language.nativeName
-            .takeIf { it != language.displayName }
-            ?.let { native -> { Text(native) } },
-        leadingContent = { Checkbox(checked = checked, onCheckedChange = null) },
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-    )
-}
-
-/** Label for a stored app-language tag ([AppLocale.SYSTEM] = follow system). */
-@Composable
-private fun appLanguageLabel(tag: String): String = when (tag) {
-    AppLocale.SYSTEM -> stringResource(R.string.language_option_system)
-    else -> AppLocale.nativeName(tag) ?: tag
-}
-
-/** Walks the ContextWrapper chain to the hosting Activity so we can recreate it. */
-private fun Context.findActivity(): Activity? {
-    var ctx = this
-    while (ctx is ContextWrapper) {
-        if (ctx is Activity) return ctx
-        ctx = ctx.baseContext
-    }
-    return null
 }
