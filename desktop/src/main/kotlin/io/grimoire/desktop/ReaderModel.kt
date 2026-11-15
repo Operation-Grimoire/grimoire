@@ -9,7 +9,10 @@ import io.grimoire.api.source.web.ChapterListSource
 import io.grimoire.api.source.web.PageListSource
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
-import io.grimoire.reading.storage.SavedChapterRepository
+import io.grimoire.reading.ChapterLoader
+import io.grimoire.reading.ChapterPageAccess
+import io.grimoire.reading.ChapterLoadFailure
+import io.grimoire.reading.ChapterLoadException
 import io.grimoire.reading.storage.LibraryRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +40,7 @@ class ReaderModel(
     private val library: LocalLibrary,
     private val hostApi: String,
     private val networkEnabled: AtomicBoolean,
-    private val savedChapters: SavedChapterRepository,
+    private val chapterLoader: ChapterLoader,
     private val membership: LibraryRepository,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -98,12 +101,27 @@ class ReaderModel(
         require(!chapter.locked && book.chapters.any { it == chapter }) { "This chapter is locked or unavailable" }
         library.flush()
         val key = ChapterKey(book.key, chapter.url)
-        val pages = savedChapters.read(key) ?: run {
-            check(!state.value.offline) { "Download this chapter before reading offline" }
-            val loaded = extension?.takeIf { it.sourceId == book.key.sourceId }
-                ?: error("Open this novel's extension to read chapters that have not been downloaded")
-            val source = loaded.source as? PageListSource ?: error("This source cannot provide chapter pages")
-            source.getPageList(chapter)
+        val pages = try {
+            chapterLoader.load(key) {
+                when {
+                    state.value.offline -> ChapterPageAccess.Unavailable(ChapterLoadFailure.OFFLINE)
+                    else -> {
+                        val loaded = extension?.takeIf { it.sourceId == book.key.sourceId }
+                        val source = loaded?.source as? PageListSource
+                        when {
+                            loaded == null -> ChapterPageAccess.Unavailable(ChapterLoadFailure.SOURCE_UNAVAILABLE)
+                            source == null -> ChapterPageAccess.Unavailable(ChapterLoadFailure.PAGES_UNSUPPORTED)
+                            else -> ChapterPageAccess.Available { source.getPageList(chapter) }
+                        }
+                    }
+                }
+            }.pages
+        } catch (failure: ChapterLoadException) {
+            error(when (failure.reason) {
+                ChapterLoadFailure.OFFLINE -> "Download this chapter before reading offline"
+                ChapterLoadFailure.SOURCE_UNAVAILABLE -> "Open this novel's extension to read chapters that have not been downloaded"
+                ChapterLoadFailure.PAGES_UNSUPPORTED -> "This source cannot provide chapter pages"
+            })
         }
         check(pages.any { (it.content as? PageContent.Text)?.text?.isNotBlank() == true }) { "The chapter has no readable text" }
         mutable.update { it.copy(view = View.READER, book = library.book(book.key), chapter = chapter, pages = pages) }

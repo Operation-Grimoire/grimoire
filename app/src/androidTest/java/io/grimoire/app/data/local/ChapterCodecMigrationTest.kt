@@ -11,6 +11,11 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.ChapterContentEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.reading.ChapterKey
+import io.grimoire.reading.ChapterLoader
+import io.grimoire.reading.ChapterOrigin
+import io.grimoire.reading.ChapterPageAccess
+import io.grimoire.reading.ChapterLoadException
+import io.grimoire.reading.ChapterLoadFailure
 import io.grimoire.reading.NovelKey
 import io.grimoire.reading.storage.SavedChapterRepository
 import io.grimoire.app.di.MIGRATION_32_33
@@ -168,6 +173,45 @@ class ChapterCodecMigrationTest {
         assertTrue(actual[2].content is PageContent.Separator)
         assertEquals(pages[3], actual[3])
         assertEquals(metadata.copy(wordCount = 5), db.chapterDao().getByUrl(1, "/legacy"))
+    }
+
+    @Test fun sharedLoadingScenariosThroughTheRealRoomAdapter() = runBlocking {
+        createLegacy()
+        val db = open()
+        val loader = ChapterLoader(SavedChapterRepository(RoomSavedChapterDao(db)))
+        val pages = listOf(NovelPage(0, PageContent.Text("Original")))
+        var resolutions = 0
+        val offline: suspend () -> ChapterPageAccess = {
+            resolutions++
+            ChapterPageAccess.Unavailable(ChapterLoadFailure.OFFLINE)
+        }
+        val source: suspend () -> ChapterPageAccess = {
+            resolutions++
+            ChapterPageAccess.Available { pages }
+        }
+        assertEquals(ChapterOrigin.SAVED, loader.load(key, emptyList(), offline).origin)
+        for (original in listOf(pages, emptyList())) {
+            val stored = encodeChapterContent(original)
+            db.chapterDao().upsertContent(ChapterContentEntity(1, stored))
+            val result = loader.load(key, pages, offline)
+            assertEquals(ChapterOrigin.SAVED, result.origin)
+            assertEquals(stored, encodeChapterContent(result.pages))
+        }
+        db.openHelper.writableDatabase.execSQL("UPDATE chapter_content SET contentVersion=99 WHERE chapterId=1")
+        val corrupt = db.chapterDao().getContent(1)
+        try { loader.load(key, pages, source); fail("Corrupt content triggered fallback") }
+        catch (_: IllegalArgumentException) { }
+        assertEquals(corrupt, db.chapterDao().getContent(1))
+        assertEquals(0, resolutions)
+        val missing = key.copy(url = "/missing")
+        assertEquals(ChapterOrigin.PRELOADED, loader.load(missing, emptyList(), offline).origin)
+        assertEquals(0, resolutions)
+        assertEquals(ChapterOrigin.SOURCE, loader.load(missing, sourceAccess = source).origin)
+        assertEquals(1, resolutions)
+        try { loader.load(missing, sourceAccess = offline); fail("Missing offline content was loaded") }
+        catch (failure: ChapterLoadException) { assertEquals(ChapterLoadFailure.OFFLINE, failure.reason) }
+        assertEquals(2, resolutions)
+        assertEquals(metadata, db.chapterDao().getByUrl(1, "/legacy"))
     }
 
     @Test fun unsupportedWritesRollBackAndUnknownStoredVersionsFailWithoutRewriting() = runBlocking {

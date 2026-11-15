@@ -15,6 +15,7 @@ import io.grimoire.app.data.local.RoomSavedChapterDao
 import io.grimoire.app.data.local.RoomLibraryDao
 import io.grimoire.reading.storage.LibraryRepository
 import io.grimoire.reading.storage.SavedChapterRepository
+import io.grimoire.reading.ChapterLoader
 import io.grimoire.app.data.local.ChapterContentPrepassFactory
 import io.grimoire.app.data.local.SupportSqlExecutor
 import io.grimoire.app.data.local.rebuildChaptersWithoutContent
@@ -419,6 +420,9 @@ object DatabaseModule {
     @Provides fun provideChapterDao(db: AppDatabase): ChapterDao = db.chapterDao()
     @Provides @Singleton
     fun provideSavedChapterRepository(dao: RoomSavedChapterDao): SavedChapterRepository = SavedChapterRepository(dao)
+
+    @Provides @Singleton
+    fun provideChapterLoader(repository: SavedChapterRepository): ChapterLoader = ChapterLoader(repository)
 
     @Provides @Singleton
     fun provideLibraryRepository(dao: RoomLibraryDao): LibraryRepository = LibraryRepository(dao)

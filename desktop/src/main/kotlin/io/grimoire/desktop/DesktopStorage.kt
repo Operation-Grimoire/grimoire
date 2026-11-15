@@ -1,5 +1,6 @@
 package io.grimoire.desktop
 
+import io.grimoire.reading.ChapterLoader
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
 import io.grimoire.reading.StoredChapterContent
@@ -33,5 +34,5 @@ private fun SavedBook.toLibraryEntry() = LibraryEntry(key, novel.title, favorite
 
 /** Desktop composition root: backend selection stays outside the reader workflow. */
 fun desktopReaderModel(library: LocalLibrary, hostApi: String, networkEnabled: AtomicBoolean): ReaderModel =
-    ReaderModel(library, hostApi, networkEnabled, SavedChapterRepository(FileSavedChapterDao(library)),
+    ReaderModel(library, hostApi, networkEnabled, ChapterLoader(SavedChapterRepository(FileSavedChapterDao(library))),
         LibraryRepository(FileLibraryDao(library)))
