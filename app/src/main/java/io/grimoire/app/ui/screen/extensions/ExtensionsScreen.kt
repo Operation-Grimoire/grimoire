@@ -23,8 +23,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -83,8 +86,13 @@ import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.PendingAddRepo
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.SearchCancelToolbar
+import io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow
+import io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog
+import io.grimoire.app.ui.component.sheet.SheetDivider
 import io.grimoire.app.ui.component.sheet.SheetSectionLabel
+import io.grimoire.app.ui.component.sheet.SheetTitle
 import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
+import io.grimoire.app.ui.component.sheet.sheetListItemColors
 import io.grimoire.app.ui.component.LinkText
 import io.grimoire.app.ui.component.SourceListItem
 import io.grimoire.app.util.ContentLanguages
@@ -346,13 +354,10 @@ fun ExtensionsScreen(
             onDismissRequest = { showFilters = false },
             sheetState = filterSheetState,
         ) {
-            Column(Modifier.padding(bottom = 24.dp)) {
-                Text(
-                    stringResource(R.string.extensions_filters),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                )
+            Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
+                SheetTitle(stringResource(R.string.extensions_filters))
                 SheetSectionLabel(stringResource(R.string.extensions_show))
+                Spacer(Modifier.height(4.dp))
                 SingleChoiceSegmented(
                     options = ExtensionSection.entries,
                     selected = section,
@@ -375,13 +380,13 @@ fun ExtensionsScreen(
                 if (ui.languages.size > 1) {
                     val enabledCodes = enabledLanguages.mapTo(mutableSetOf()) { it.code }
                     SheetSectionLabel(stringResource(R.string.extensions_language))
-                    io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow(
+                    MultiSelectSummaryRow(
                         title = stringResource(R.string.extensions_language),
                         selectedCount = enabledCodes.size,
                         onClick = { showLanguagePicker = true },
                     )
                     if (showLanguagePicker) {
-                        io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog(
+                        SearchableMultiSelectDialog(
                             title = stringResource(R.string.extensions_language),
                             options = ui.languages,
                             optionLabel = ::languageLabel,
@@ -394,6 +399,7 @@ fun ExtensionsScreen(
                     }
                 }
                 SheetSectionLabel(stringResource(R.string.extensions_adult_content))
+                Spacer(Modifier.height(4.dp))
                 SingleChoiceSegmented(
                     options = AdultFilter.entries,
                     selected = adultFilter,
@@ -419,7 +425,7 @@ fun ExtensionsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -431,11 +437,12 @@ fun ExtensionsScreen(
                     Icon(AppIcons.Add, contentDescription = stringResource(R.string.extensions_add_repository))
                 }
             }
-            HorizontalDivider()
+            SheetDivider()
             if (repos.isEmpty()) {
                 Box(
                     Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(48.dp),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -446,10 +453,14 @@ fun ExtensionsScreen(
                     )
                 }
             } else {
-                LazyColumn {
+                LazyColumn(
+                    modifier = Modifier.navigationBarsPadding(),
+                    contentPadding = PaddingValues(bottom = 16.dp),
+                ) {
                     items(repos, key = { it.id }) { repo ->
                         var menuExpanded by remember { mutableStateOf(false) }
                         ListItem(
+                            colors = sheetListItemColors(),
                             headlineContent = { Text(repo.name) },
                             supportingContent = {
                                 Text(
@@ -488,7 +499,7 @@ fun ExtensionsScreen(
                                 }
                             },
                         )
-                        HorizontalDivider()
+                        SheetDivider()
                     }
                 }
             }

@@ -83,8 +83,8 @@ class RoyalRoadJourneyTest {
             model.position(io.grimoire.reading.ChapterKey(book.key, book.chapters.first().url), 2, 19)
             model.browse()
             model.settled()
-            assertEquals(ReadPosition(book.chapters.first().url, 2, 19), LocalLibrary(directory).saved().single().position)
             model.close()
+            LocalLibrary(directory).use { assertEquals(ReadPosition(book.chapters.first().url, 2, 19), it.saved().single().position) }
             val requestCount = requests.get()
             allowed.set(false) // Any accidental network request now fails, rather than returning fixture data.
             val restarted = desktopReaderModel(LocalLibrary(directory), "1.5.0", allowed)

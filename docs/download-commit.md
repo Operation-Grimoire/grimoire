@@ -1,8 +1,9 @@
 # Guarded download commits
 
-This defines the shared download-write contract. The shared facade and Android
-adapter are implemented; desktop still uses its previous save implementation.
-Process-kill, competing-process and full cross-platform acceptance remain open.
+This defines the shared download-write contract. The shared facade and both platform
+adapters are implemented. Desktop uses SQLite via JDBC; Android uses Room.
+Desktop subprocess recovery and lease tests supplement the Android transaction tests.
+Android process-kill, competing-process and full cross-platform acceptance remain open.
 Each platform retains its own backend choice.
 
 The unit of success is one committed chapter payload and its completion metadata.
@@ -12,13 +13,13 @@ remain compatible until an implementation explicitly migrates them.
 
 ## Adapter adoption and remaining gaps
 
-| Area | Android adoption | Remaining acceptance |
+| Area | Implemented behavior | Remaining acceptance |
 | --- | --- | --- |
-| Claim/terminal callbacks | Portable attempts, guarded success/error/connectivity callbacks and transactional receipts. | Desktop must implement the same contract. |
+| Claim/terminal callbacks | Portable attempts, guarded success/error/connectivity callbacks and transactional receipts. | Both adapters implement this contract; see desktop storage tests. |
 | Cancel/delete/replacement/reset | SQL triggers revoke ownership across existing writers; deletes cascade protocol state. | Actual process-kill recovery remains separate from transaction rollback/reopen checks. |
 | Saved content and images | Coherent cache revision on saved reads; revision-specific image directories. Legacy paths remain readable. | Cross-platform image adoption and conservative orphan-cache collection remain later work. |
 | Writer scope | OS lease rejects a second Android protocol-owner instance. | Competing-process and process-death runtime acceptance remain open. |
-| Desktop | Existing body write, memory change, then library-index write remain unchanged. | Requires one coherent commit/recovery boundary, publication after persistence and owner coordination. |
+| Desktop | Body, downloaded projection, word count, revision and receipt commit in one SQLite transaction. | Subprocess tests cover death before/after commit, handoff recovery and competing owners on CI OS targets; installer/OS lifecycle acceptance remains separate. |
 
 DB34 adds a side table and invalidation triggers without rewriting chapter bodies
 or reading metadata. Its frozen DB33 migration and the existing DB32-to-current
@@ -26,7 +27,7 @@ chain are native test cases. Older DB33/DB32 apps refuse DB34; retain a coherent
 pre-upgrade app-data copy for downgrade, or reinstall the newer app without
 clearing data. A metadata-only library backup does not contain offline payloads.
 
-See [RoomDownloadDao](../app/src/main/java/io/grimoire/app/data/local/RoomDownloadDao.kt),
+See [desktop storage](desktop-storage.md), [RoomDownloadDao](../app/src/main/java/io/grimoire/app/data/local/RoomDownloadDao.kt),
 [DownloadSchema](../app/src/main/java/io/grimoire/app/data/local/DownloadSchema.kt),
 [DownloadManager](../app/src/main/java/io/grimoire/app/data/download/DownloadManager.kt)
 and [LocalLibrary](../desktop/src/main/kotlin/io/grimoire/desktop/LocalLibrary.kt).
@@ -198,9 +199,10 @@ committed revision. Missing images retain the existing platform rendering policy
    migrated, with revision-bound image lookup. Native execution and signed-beta
    migration evidence must accompany this adoption; process-kill acceptance is
    still a separate gate.
-3. Next implement the independently selected desktop adapter and migrate its save
-   action. Prove body/index recovery, ownership and commit-before-memory behaviour
-   before presenting it as equivalent to the Android contract.
+3. Desktop now uses its selected JDBC adapter through the shared facade. Real SQL
+   rollback, lost-reply, cancellation, stale ownership, subprocess death/reopen and
+   competing-owner tests cover body/index/receipt consistency. Migration retains
+   raw legacy data, including interrupted database/backup/marker publication.
 4. Run the same scenario matrix through both production compositions; then
    complete revision-bound image-cache adoption before closing the write slice.
    Each intermediate PR must state which callers and gates remain unfinished.
@@ -219,8 +221,11 @@ committed revision. Missing images retain the existing platform rendering policy
 | Migration and rollback | Legacy data/progress retained; unsupported old versions fail without destructive fallback. |
 
 This matrix remains the acceptance target; Android native `DownloadCommitTest`
-covers its implemented subset and the desktop adapter is not yet migrated.
+covers its implemented subset. Desktop now runs its adapter through equivalent
+repository scenarios and actual process-kill/competing-process tests.
 Existing [codec migration tests](../app/src/androidTest/java/io/grimoire/app/data/local/ChapterCodecMigrationTest.kt)
-prove versioned content and migration, not process-kill crash recovery. Existing desktop storage tests do not prove a transactional
-body/index commit. JVM tests, native execution, process-kill recovery, signed-beta
+prove versioned content and migration, not process-kill crash recovery. Desktop storage tests now prove a transactional body/index/receipt commit and
+recovery around its boundaries. Android process death, hardware power-loss,
+installer/native-window lifecycle and full cross-platform image acceptance remain
+open. JVM tests, native execution, process-kill recovery, signed-beta
 compatibility, reader UI and physical-device acceptance remain separate evidence.

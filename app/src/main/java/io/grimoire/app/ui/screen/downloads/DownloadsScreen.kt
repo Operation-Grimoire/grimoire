@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -116,10 +117,12 @@ fun DownloadsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .navigationBarsPadding()
+                    .padding(bottom = 16.dp),
             ) {
-                Text(stringResource(R.string.downloads_settings), style = MaterialTheme.typography.titleMedium)
+                io.grimoire.app.ui.component.sheet.SheetTitle(
+                    stringResource(R.string.downloads_settings),
+                )
                 io.grimoire.app.ui.component.sheet.StepperRow(
                     label = stringResource(R.string.downloads_parallel),
                     hint = stringResource(R.string.downloads_parallel_summary),
@@ -128,8 +131,8 @@ fun DownloadsScreen(
                     onIncrement = { viewModel.setConcurrency(concurrency + 1) },
                     decrementEnabled = concurrency > 1,
                     incrementEnabled = concurrency < 5,
+                    modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp),
                 )
-                Spacer(modifier = Modifier.size(8.dp))
             }
         }
     }

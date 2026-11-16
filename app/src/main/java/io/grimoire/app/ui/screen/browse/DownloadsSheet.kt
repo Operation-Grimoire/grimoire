@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -15,12 +16,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.grimoire.app.R
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
-import io.grimoire.app.R
+import io.grimoire.app.ui.component.sheet.SheetTitle
 import io.grimoire.app.ui.icon.*
 
 /** Bottom sheet of bulk download actions, each enabled per the current download state. */
@@ -47,19 +50,15 @@ internal fun DownloadsSheet(
     val canCancel = chapters.any { it.downloadStatus in ChapterDownloadStatus.QUEUED_ORDINALS }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(modifier = Modifier.padding(bottom = 8.dp)) {
-            Text(
-                stringResource(R.string.novel_downloads_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
+        Column(modifier = Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
+            SheetTitle(stringResource(R.string.novel_downloads_title))
             Text(
                 stringResource(R.string.novel_downloads_progress, downloaded, chapters.size),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 4.dp),
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
 
             DownloadAction(AppIcons.Download, stringResource(R.string.novel_download_all), canDownloadAll) { onDownloadAll(); onDismiss() }
             DownloadAction(AppIcons.Download, stringResource(R.string.novel_download_unread), canDownloadUnread) { onDownloadUnread(); onDismiss() }
@@ -87,6 +86,7 @@ private fun DownloadAction(
     ListItem(
         modifier = Modifier.clickable(enabled = enabled, onClick = onClick),
         colors = ListItemDefaults.colors(
+            containerColor = Color.Transparent,
             headlineColor = color,
             leadingIconColor = color,
         ),

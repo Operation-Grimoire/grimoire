@@ -8,6 +8,7 @@ import io.grimoire.api.model.novel.PageContent
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.ChapterLoader
 import io.grimoire.reading.NovelKey
+import io.grimoire.reading.storage.DownloadRepository
 import io.grimoire.reading.storage.LibraryDao
 import io.grimoire.reading.storage.LibraryEntry
 import io.grimoire.reading.storage.LibraryRepository
@@ -35,9 +36,8 @@ class LibraryStorageTest {
         for (source in listOf(17L, 18L)) library.remember(NovelKey(source, key.url), novel, listOf(chapter))
         val pages = listOf(NovelPage(0, PageContent.Text("Offline prose")))
         library.download(ChapterKey(key, chapter.url), pages)
-        val body = Files.list(directory).use { paths -> paths.filter { it.fileName.toString().startsWith("chapter-") }.findFirst().get() }
-        val before = Files.readAllBytes(body)
-        val repository = LibraryRepository(FileLibraryDao(library))
+        val before = library.readSnapshot(ChapterKey(key, chapter.url))
+        val repository = LibraryRepository(DesktopLibraryDao(library))
         library.remember(key, novel.copy(title = "Refreshed title"), listOf(chapter))
         library.position(ChapterKey(key, chapter.url), 0, 17)
         for (value in listOf(true, true, false, false)) {
@@ -54,15 +54,18 @@ class LibraryStorageTest {
             assertNull(repository.setMembership(missing, true))
             assertArrayEquals(metadata, Files.readAllBytes(directory.resolve("library.json")))
         }
+        library.close()
         val restarted = LocalLibrary(directory)
         assertEquals(ReadPosition(chapter.url, 0, 17), restarted.book(key)!!.position)
         assertEquals(pages, restarted.downloaded(ChapterKey(key, chapter.url)))
         assertTrue(restarted.saved().isEmpty())
-        assertArrayEquals(before, Files.readAllBytes(body))
+        assertEquals(before, restarted.readSnapshot(ChapterKey(key, chapter.url)))
+        restarted.close()
     }
 
     @Test fun readerUsesCommittedMetadataAndSurfacesMembershipWriteFailure() = runBlocking {
-        val library = LocalLibrary(temporary.newFolder().toPath())
+        val directory = temporary.newFolder().toPath()
+        var library = LocalLibrary(directory)
         library.remember(key, novel, listOf(chapter))
         val model = desktopReaderModel(library, "1.5.0", AtomicBoolean(false))
         try {
@@ -76,6 +79,7 @@ class LibraryStorageTest {
             assertTrue(state.book!!.favorite)
         } finally { model.close() }
 
+        library = LocalLibrary(directory)
         var writes = 0
         val failing = LibraryRepository(object : LibraryDao {
             override suspend fun find(key: NovelKey): LibraryEntry? = error("Unused")
@@ -87,7 +91,7 @@ class LibraryStorageTest {
             }
         })
         val failedModel = ReaderModel(library, "1.5.0", AtomicBoolean(false),
-            ChapterLoader(SavedChapterRepository(FileSavedChapterDao(library))), failing)
+            ChapterLoader(SavedChapterRepository(DesktopSavedChapterDao(library))), failing, DownloadRepository(DesktopDownloadDao(library)))
         try {
             failedModel.openSaved(library.book(key)!!)
             withTimeout(5_000) { failedModel.state.first { !it.busy } }

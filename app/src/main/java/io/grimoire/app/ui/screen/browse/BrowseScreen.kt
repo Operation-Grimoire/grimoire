@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -269,12 +272,11 @@ fun BrowseScreen(
             onDismissRequest = { showFilterSheet = false },
             sheetState = filterSheetState,
         ) {
-            Column(Modifier.padding(bottom = 24.dp)) {
-                Text(
+            Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
+                io.grimoire.app.ui.component.sheet.SheetTitle(
                     stringResource(R.string.browse_filter_sources),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
+                Spacer(Modifier.height(4.dp))
                 AppSearchField(
                     value = nameFilter,
                     onValueChange = viewModel::setNameFilter,
@@ -287,6 +289,7 @@ fun BrowseScreen(
                     io.grimoire.app.ui.component.sheet.SheetSectionLabel(
                         stringResource(R.string.browse_language),
                     )
+                    Spacer(Modifier.height(4.dp))
                     LanguageDropdown(
                         languages = ui.languages,
                         selected = languageFilter,

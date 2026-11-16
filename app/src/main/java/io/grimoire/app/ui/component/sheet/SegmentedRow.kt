@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component.sheet
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -10,6 +11,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 /**
@@ -25,18 +27,35 @@ fun <T> SingleChoiceSegmented(
     onSelect: (T) -> Unit,
     label: @Composable (T) -> String,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    showSelectedIcon: Boolean = options.size <= 4,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp),
 ) {
     SingleChoiceSegmentedButtonRow(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(contentPadding),
     ) {
         options.forEachIndexed { index, option ->
+            val isSelected = option == selected
             SegmentedButton(
-                selected = option == selected,
+                selected = isSelected,
                 onClick = { onSelect(option) },
+                enabled = enabled,
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                label = { Text(label(option), maxLines = 1) },
+                icon = {
+                    if (showSelectedIcon) {
+                        SegmentedButtonDefaults.Icon(isSelected)
+                    }
+                },
+                label = {
+                    Text(
+                        text = label(option),
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
             )
         }
     }

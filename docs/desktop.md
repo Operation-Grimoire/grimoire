@@ -121,3 +121,9 @@ acceptance, installers, signing, extension indexes/updates and accounts/sync rem
 later [#397](https://github.com/Operation-Grimoire/grimoire/issues/397) gates. Stable
 app/API/library releases require an explicit user request. Validate Android changes
 on the exact signed nightly beta after merge.
+
+Desktop storage now uses SQLite via JDBC behind the shared DAO contracts. See
+[desktop storage and upgrade safety](desktop-storage.md) before opening an existing
+data directory. Close older readers and retain a full pre-upgrade copy for downgrade.
+The desktop workflow also runs storage and process-recovery tests on macOS; this
+does not establish macOS UI or installer acceptance.

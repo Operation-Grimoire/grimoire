@@ -17,7 +17,20 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.json) { version { strictly(libs.versions.json.get()) } }
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
+    implementation("org.xerial:sqlite-jdbc:3.54.1.0")
     testImplementation(libs.junit)
+}
+
+abstract class DesktopTestClasspathArguments : CommandLineArgumentProvider {
+    @get:Classpath
+    abstract val runtimeFiles: ConfigurableFileCollection
+    override fun asArguments() = listOf("-Ddesktop.test.classpath=${runtimeFiles.asPath}")
+}
+
+tasks.test {
+    jvmArgumentProviders.add(objects.newInstance<DesktopTestClasspathArguments>().apply {
+        runtimeFiles.from(sourceSets.test.get().runtimeClasspath)
+    })
 }
 
 compose.desktop {
