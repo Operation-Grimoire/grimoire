@@ -1,4 +1,4 @@
-"""Signed, isolated CI-only DB33 -> DB34 upgrade; no reader-UI acceptance claim."""
+"""Signed, isolated CI-only DB33 -> DB35 upgrade; no reader-UI acceptance claim."""
 
 import hashlib
 import json
@@ -119,7 +119,7 @@ def main():
                 metadata = db.execute("SELECT * FROM chapters ORDER BY id").fetchall()
                 body = db.execute("SELECT content FROM chapter_content WHERE chapterId=1").fetchone()[0]
                 assert body.encode() == BODY.encode()
-                format_version = db.execute("SELECT contentVersion FROM chapter_content WHERE chapterId=1").fetchone()[0] if version in (33, 34) else 1
+                format_version = db.execute("SELECT contentVersion FROM chapter_content WHERE chapterId=1").fetchone()[0] if version in (33, 34, 35) else 1
                 assert format_version == 1
             return version, metadata
 
@@ -142,8 +142,8 @@ def main():
 
         before = launch("before", 33)
         run(*adb, "install", "-r", artifacts["target"]["apk"])
-        launch("upgraded", 34, before)
-        launch("restart", 34, before)
+        launch("upgraded", 35, before)
+        launch("restart", 35, before)
         # Negative rollback check with the actual old signed APK. No data clear
         # or destructive fallback is allowed; reinstalling the new APK recovers.
         downgrade = run(*adb, "install", "-r", "-d", artifacts["baseline"]["apk"], check=False)
@@ -153,16 +153,16 @@ def main():
             run(*adb, "shell", "uiautomator", "dump", "/sdcard/rollback.xml", check=False)
             logs = run(*adb, "logcat", "-d").stdout
             (OUTPUT / "rollback.log").write_text(logs)
-            assert re.search(r"(?i)(migration|downgrade)[^\n]*34\D+33", logs), "Old Room did not reject DB34"
-            report["rollbackGuard"] = "Old signed APK refuses DB34; expected negative migration failure recorded"
+            assert re.search(r"(?i)(migration|downgrade)[^\n]*35\D+33", logs), "Old Room did not reject DB35"
+            report["rollbackGuard"] = "Old signed APK refuses DB35; expected negative migration failure recorded"
         else:
             assert "VERSION_DOWNGRADE" in downgrade.stdout
             report["rollbackGuard"] = "Android package manager refuses older APK before data access"
         version, metadata = capture("after-rollback")
-        assert version == 34 and metadata == before
+        assert version == 35 and metadata == before
         run(*adb, "install", "-r", artifacts["target"]["apk"])
-        launch("recovered", 34, before)
-        report.update(result="PASS", artifacts=artifacts, schemaBefore=33, schemaAfter=34,
+        launch("recovered", 35, before)
+        report.update(result="PASS", artifacts=artifacts, schemaBefore=33, schemaAfter=35,
                       legacyBodyUnchanged=True, readingMetadataUnchanged=True,
                       legacyBodySha256=hashlib.sha256(BODY.encode()).hexdigest(), chapterMetadataBefore=before,
                       restart="PASS", recovery="PASS", readerUi="UNEXECUTED")

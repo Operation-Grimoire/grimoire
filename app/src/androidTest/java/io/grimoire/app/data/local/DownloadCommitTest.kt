@@ -51,8 +51,8 @@ class DownloadCommitTest {
 
     private fun open() {
         database = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(MIGRATION_33_34).addCallback(DOWNLOAD_SCHEMA_CALLBACK).build()
-        assertEquals(34, db.openHelper.writableDatabase.version)
+            .addMigrations(MIGRATION_33_34, MIGRATION_34_35).addCallback(DOWNLOAD_SCHEMA_CALLBACK).build()
+        assertEquals(35, db.openHelper.writableDatabase.version)
         owner = DownloadWriteOwner(File(directory, "owner.lock")).also { owners += it }
         adapter = RoomDownloadDao(db, owner)
         repository = DownloadRepository(adapter)

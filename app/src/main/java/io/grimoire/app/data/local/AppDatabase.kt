@@ -1,5 +1,7 @@
 package io.grimoire.app.data.local
 
+import io.grimoire.app.data.local.entity.ReadingCheckpointEntity
+import io.grimoire.app.data.local.dao.ReadingCheckpointStateDao
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import io.grimoire.app.data.local.entity.ChapterDownloadStateEntity
@@ -28,6 +30,7 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
 
 @Database(
     entities = [
+        ReadingCheckpointEntity::class,
         NovelEntity::class,
         ChapterEntity::class,
         ChapterContentEntity::class,
@@ -41,10 +44,11 @@ import io.grimoire.app.data.local.entity.UpdateIssueEntity
         ReadingHistoryEntity::class,
         BrowsingHistoryEntity::class,
     ],
-    version = 34,
+    version = 35,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
+    abstract fun readingCheckpointStateDao(): ReadingCheckpointStateDao
     abstract fun novelDao(): NovelDao
     abstract fun chapterDownloadStateDao(): ChapterDownloadStateDao
     abstract fun chapterDao(): ChapterDao

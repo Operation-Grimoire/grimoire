@@ -1,0 +1,14 @@
+{
+  "android": [
+    {
+      "category": "other",
+      "text": "Local storage upgrades on first open. Returning to an older app requires a full pre-update app-data copy; library backups omit downloaded chapters and images."
+    }
+  ],
+  "desktop": [
+    {
+      "category": "other",
+      "text": "Desktop storage upgrades on first open. Close older readers and keep a full pre-update data-directory copy to return to an older build."
+    }
+  ]
+}
