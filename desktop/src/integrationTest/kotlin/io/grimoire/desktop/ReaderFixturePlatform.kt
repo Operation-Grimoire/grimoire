@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
-import java.util.jar.JarFile
+import java.util.jar.JarInputStream
 
 /** Observes app/source calls; unmatched requests fail before any DNS/network access. */
 internal class ReaderFixturePlatform : SourceHttpPlatform {
@@ -41,11 +41,14 @@ internal class ReaderFixturePlatform : SourceHttpPlatform {
 
 /** Bind the locally built fixture JAR to the production loader, without putting its classes on the host classpath. */
 internal fun readerFixtureManifest(directory: Path): Path {
-    val jar = Path.of(checkNotNull(System.getProperty("desktop.readerFixtureJar"))).toAbsolutePath()
-    val attributes = JarFile(jar.toFile()).use { it.manifest.mainAttributes }
+    val builtJar = Path.of(checkNotNull(System.getProperty("desktop.readerFixtureJar")))
+    val bytes = Files.readAllBytes(builtJar)
+    val attributes = JarInputStream(bytes.inputStream()).use { it.manifest.mainAttributes }
+    val jar = directory.resolve("reader-fixture.jar").toAbsolutePath()
+    Files.write(jar, bytes)
     val properties = Properties().apply {
         setProperty("source.file", jar.toString())
-        setProperty("source.sha256", MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(jar))
+        setProperty("source.sha256", MessageDigest.getInstance("SHA-256").digest(bytes)
             .joinToString("") { "%02x".format(it) })
         for ((field, attribute) in mapOf("package" to "Source-Package", "class" to "Source-Class",
             "versionCode" to "Version-Code", "versionName" to "Version-Name",

@@ -114,6 +114,11 @@ external inputs fail this task, without becoming prerequisites of the app tests.
 Windows/Linux CI runs app tests first, then builds the pinned external JAR and runs
 the compatibility smoke as a separate step. Storage/shared tests also run on macOS.
 
+These CI runs currently select `1.6.0-SNAPSHOT` explicitly for coordinated
+development checks. Publish and pin immutable API `1.6.0`, remove the temporary
+overrides and rerun combined validation before merging or publishing the app.
+Snapshot-backed CI does not satisfy that merge/release gate.
+
 `:desktop:liveSmoke` is a separate, explicit opt-in using the compatibility inputs.
 It operates the Compose reader against the real public Royal Road catalog, reads
 the first unlocked chapter, then saves and reopens it offline without a source
