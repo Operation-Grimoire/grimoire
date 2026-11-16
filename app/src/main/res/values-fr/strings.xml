@@ -777,4 +777,16 @@
     <string name="source_validate_failed">Échec de la validation.</string>
     <plurals name="novel_export_success"><item quantity="one">%1$d chapitre exporté</item><item quantity="many">%1$d chapitres exportés</item><item quantity="other">%1$d chapitres exportés</item></plurals>
     <string name="extension_api_required">L’extension nécessite l’API %1$s (API de l’application : %2$s)</string>
+    <string name="reader_position_save_error">La position de lecture n’a pas été enregistrée</string>
+    <string name="reader_use_position">Utiliser cette position</string>
+    <string name="reader_position_legacy">Une ancienne position de lecture est utilisée.</string>
+    <string name="reader_position_relocated">Le chapitre a changé. Le paragraphe correspondant a été restauré.</string>
+    <string name="reader_position_changed">Le chapitre a changé. Affichage du début.</string>
+    <string name="reader_position_hidden">La position enregistrée est masquée ici. Affichage de la section visible suivante.</string>
+    <string name="reader_position_coarse">Retour au début du paragraphe enregistré.</string>
+    <string name="reader_position_invalid">La position de lecture enregistrée est invalide. Elle a été conservée.</string>
+    <string name="reader_position_unsupported">Le format de la position enregistrée n’est pas pris en charge. Elle a été conservée.</string>
+    <string name="reader_position_identity">La position enregistrée appartient à un autre chapitre. Elle a été conservée.</string>
+    <string name="reader_position_empty">Ce chapitre n’a aucun contenu visible.</string>
+    <string name="reader_position_reload">Rechargez ce chapitre pour enregistrer votre position de lecture.</string>
 </resources>

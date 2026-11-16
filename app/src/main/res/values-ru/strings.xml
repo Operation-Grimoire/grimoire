@@ -794,4 +794,16 @@
     <string name="source_validate_failed">Проверка не пройдена.</string>
     <plurals name="novel_export_success"><item quantity="one">Экспортирована %1$d глава</item><item quantity="few">Экспортировано %1$d главы</item><item quantity="many">Экспортировано %1$d глав</item><item quantity="other">Экспортировано %1$d главы</item></plurals>
     <string name="extension_api_required">Расширению требуется API %1$s (API приложения: %2$s)</string>
+    <string name="reader_position_save_error">Позиция чтения не сохранена</string>
+    <string name="reader_use_position">Использовать эту позицию</string>
+    <string name="reader_position_legacy">Используется ранее сохранённая позиция чтения.</string>
+    <string name="reader_position_relocated">Глава изменилась. Восстановлен соответствующий абзац.</string>
+    <string name="reader_position_changed">Глава изменилась. Показано начало.</string>
+    <string name="reader_position_hidden">Сохранённая позиция здесь скрыта. Показан следующий видимый раздел.</string>
+    <string name="reader_position_coarse">Восстановлено начало сохранённого абзаца.</string>
+    <string name="reader_position_invalid">Сохранённая позиция чтения недействительна. Запись сохранена.</string>
+    <string name="reader_position_unsupported">Формат сохранённой позиции чтения не поддерживается. Запись сохранена.</string>
+    <string name="reader_position_identity">Сохранённая позиция относится к другой главе. Запись сохранена.</string>
+    <string name="reader_position_empty">В этой главе нет видимого содержимого.</string>
+    <string name="reader_position_reload">Перезагрузите эту главу, чтобы сохранить позицию чтения.</string>
 </resources>

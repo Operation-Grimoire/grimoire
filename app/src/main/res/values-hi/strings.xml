@@ -760,4 +760,16 @@
     <string name="source_validate_failed">जाँच विफल रही।</string>
     <plurals name="novel_export_success"><item quantity="one">%1$d अध्याय एक्सपोर्ट किया गया</item><item quantity="other">%1$d अध्याय एक्सपोर्ट किए गए</item></plurals>
     <string name="extension_api_required">एक्सटेंशन के लिए API %1$s चाहिए (ऐप API: %2$s)</string>
+    <string name="reader_position_save_error">पढ़ने की स्थिति सहेजी नहीं गई</string>
+    <string name="reader_use_position">इस स्थिति का उपयोग करें</string>
+    <string name="reader_position_legacy">पहले सहेजी गई पढ़ने की स्थिति का उपयोग हो रहा है।</string>
+    <string name="reader_position_relocated">अध्याय बदल गया है। मेल खाता अनुच्छेद बहाल किया गया।</string>
+    <string name="reader_position_changed">अध्याय बदल गया है। शुरुआत दिखाई जा रही है।</string>
+    <string name="reader_position_hidden">सहेजी गई स्थिति यहाँ छिपी है। अगला दिखाई देने वाला भाग दिखाया जा रहा है।</string>
+    <string name="reader_position_coarse">सहेजे गए अनुच्छेद की शुरुआत बहाल की गई।</string>
+    <string name="reader_position_invalid">सहेजी गई पढ़ने की स्थिति अमान्य है। उसे सुरक्षित रखा गया है।</string>
+    <string name="reader_position_unsupported">सहेजी गई पढ़ने की स्थिति का प्रारूप समर्थित नहीं है। उसे सुरक्षित रखा गया है।</string>
+    <string name="reader_position_identity">सहेजी गई पढ़ने की स्थिति किसी अन्य अध्याय की है। उसे सुरक्षित रखा गया है।</string>
+    <string name="reader_position_empty">इस अध्याय में दिखाई देने वाली सामग्री नहीं है।</string>
+    <string name="reader_position_reload">पढ़ने की स्थिति सहेजने के लिए यह अध्याय फिर लोड करें।</string>
 </resources>

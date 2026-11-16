@@ -799,4 +799,16 @@
         <item quantity="other">Експортовано %1$d розділу</item>
     </plurals>
     <string name="extension_api_required">Розширення потребує API %1$s (API застосунку: %2$s)</string>
+    <string name="reader_position_save_error">Позицію читання не збережено</string>
+    <string name="reader_use_position">Використати цю позицію</string>
+    <string name="reader_position_legacy">Використовується раніше збережена позиція читання.</string>
+    <string name="reader_position_relocated">Розділ змінився. Відновлено відповідний абзац.</string>
+    <string name="reader_position_changed">Розділ змінився. Показано початок.</string>
+    <string name="reader_position_hidden">Збережена позиція тут прихована. Показано наступний видимий розділ.</string>
+    <string name="reader_position_coarse">Відновлено початок збереженого абзацу.</string>
+    <string name="reader_position_invalid">Збережена позиція читання недійсна. Запис збережено.</string>
+    <string name="reader_position_unsupported">Формат збереженої позиції читання не підтримується. Запис збережено.</string>
+    <string name="reader_position_identity">Збережена позиція стосується іншого розділу. Запис збережено.</string>
+    <string name="reader_position_empty">Цей розділ не має видимого вмісту.</string>
+    <string name="reader_position_reload">Перезавантажте цей розділ, щоб зберегти позицію читання.</string>
 </resources>

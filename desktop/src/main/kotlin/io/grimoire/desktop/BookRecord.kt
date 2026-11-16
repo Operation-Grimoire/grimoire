@@ -15,6 +15,7 @@ internal fun encodeBook(book: SavedBook): JSONObject = JSONObject()
         .put("number", chapter.chapterNumber).put("uploadDate", chapter.uploadDate) }))
     .apply { book.position?.let { put("position", JSONObject().put("chapterUrl", it.chapterUrl)
         .put("paragraph", it.paragraph).put("offset", it.offset)) } }
+    .apply { book.resumeChapterUrl?.let { put("resumeChapterUrl", it) } }
 
 internal fun decodeBook(root: JSONObject): SavedBook {
     val key = NovelKey(root.getLong("sourceId"), root.getString("url"))
@@ -32,5 +33,6 @@ internal fun decodeBook(root: JSONObject): SavedBook {
             require(p.paragraph >= 0 && p.offset >= 0)
         }
     }
-    return SavedBook(key, novel, chapters, root.getBoolean("favorite"), downloaded, position)
+    return SavedBook(key, novel, chapters, root.getBoolean("favorite"), downloaded, position,
+        if (root.isNull("resumeChapterUrl")) null else root.getString("resumeChapterUrl"))
 }

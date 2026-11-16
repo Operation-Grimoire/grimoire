@@ -758,4 +758,16 @@
     <string name="source_validate_failed">Doğrulama başarısız.</string>
     <plurals name="novel_export_success"><item quantity="one">%1$d bölüm dışa aktarıldı</item><item quantity="other">%1$d bölüm dışa aktarıldı</item></plurals>
     <string name="extension_api_required">Uzantı API %1$s gerektiriyor (uygulama API’si: %2$s)</string>
+    <string name="reader_position_save_error">Okuma konumu kaydedilmedi</string>
+    <string name="reader_use_position">Bu konumu kullan</string>
+    <string name="reader_position_legacy">Önceden kaydedilmiş okuma konumu kullanılıyor.</string>
+    <string name="reader_position_relocated">Bölüm değişti. Eşleşen paragraf geri yüklendi.</string>
+    <string name="reader_position_changed">Bölüm değişti. Başlangıç gösteriliyor.</string>
+    <string name="reader_position_hidden">Kayıtlı konum burada gizli. Sonraki görünür bölüm gösteriliyor.</string>
+    <string name="reader_position_coarse">Kaydedilen paragrafın başlangıcı geri yüklendi.</string>
+    <string name="reader_position_invalid">Kayıtlı okuma konumu geçersiz. Kayıt korundu.</string>
+    <string name="reader_position_unsupported">Kayıtlı okuma konumunun biçimi desteklenmiyor. Kayıt korundu.</string>
+    <string name="reader_position_identity">Kayıtlı okuma konumu başka bir bölüme ait. Kayıt korundu.</string>
+    <string name="reader_position_empty">Bu bölümde görünür içerik yok.</string>
+    <string name="reader_position_reload">Okuma konumunuzu kaydetmek için bu bölümü yeniden yükleyin.</string>
 </resources>

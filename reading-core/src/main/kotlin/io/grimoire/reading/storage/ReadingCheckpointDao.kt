@@ -4,7 +4,11 @@ import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.anchor.*
 
 /** Local write authority, separate from a portable anchor. Only the DAO issues the id. */
-data class ReadingSession(val id: String, val observation: ChapterStorageObservation, val document: CanonicalDocument) {
+data class ReadingSession(
+    val id: String, val observation: ChapterStorageObservation, val document: CanonicalDocument,
+    /** Previous portable evidence captured atomically with registration; never a new command. */
+    val checkpoint: ReadingAnchor?,
+) {
     val binding: ReadingSessionBinding get() = ReadingSessionBinding(id, observation, document.logicalRevision)
 }
 

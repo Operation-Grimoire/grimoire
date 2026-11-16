@@ -23,7 +23,12 @@ data class SavedBook(
     val favorite: Boolean = false,
     val downloaded: Set<String> = emptySet(),
     val position: ReadPosition? = null,
+    val resumeChapterUrl: String? = null,
 )
+
+internal fun SavedBook.resumeChapter(): Chapter? =
+    chapters.find { it.url == resumeChapterUrl && !it.locked }
+        ?: chapters.find { it.url == position?.chapterUrl && !it.locked }
 
 /** Desktop facade; SQL owns committed state, pending positions stay off the UI's disk path. */
 class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageCheckpoint) -> Unit) : Closeable {
@@ -32,6 +37,7 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
     private val db get() = database.connection
     private val owner = UUID.randomUUID().toString()
     private val pendingPositions = linkedMapOf<NovelKey, ReadPosition>()
+    private val pendingPositionOwners = mutableMapOf<NovelKey, Any?>()
     private var positionBooks = emptyMap<NovelKey, SavedBook>()
     private var closed = false
 
@@ -76,7 +82,8 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
         require(novel.url == key.url && chapters.map { it.url }.distinct().size == chapters.size)
         write(invalidatesPositionEligibility = true) {
             val old = book(key)
-            val metadata = SavedBook(key, novel, chapters, old?.favorite ?: false, position = old?.position)
+            val metadata = SavedBook(key, novel, chapters, old?.favorite ?: false, position = old?.position,
+                resumeChapterUrl = old?.resumeChapterUrl)
             db.execute("INSERT INTO books VALUES(?,?,?) ON CONFLICT(source_id,novel_url) DO UPDATE SET metadata=excluded.metadata",
                 key.sourceId, key.url, encodeBook(metadata).apply { remove("downloaded") }.toString())
             // Removal/relock revokes both live attempts and replay receipts, without discarding old content.
@@ -91,6 +98,15 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
     }
 
     @Synchronized fun favorite(key: NovelKey, value: Boolean): SavedBook = updateMembership(key, value) ?: error("Novel is no longer stored")
+
+    /** Navigation selects a chapter without inventing a position or altering a delayed checkpoint. */
+    @Synchronized internal fun selectResumeChapter(key: ChapterKey): SavedBook = write {
+        require(eligibility(key) == null) { "Chapter is unavailable or locked" }
+        val current = requireNotNull(book(key.novel))
+        if (current.resumeChapterUrl != key.url) db.execute("UPDATE books SET metadata=? WHERE source_id=? AND novel_url=?",
+            encodeBook(current.copy(resumeChapterUrl = key.url)).apply { remove("downloaded") }.toString(), key.novel.sourceId, key.novel.url)
+        requireNotNull(book(key.novel))
+    }
     @Synchronized internal fun updateMembership(key: NovelKey, value: Boolean): SavedBook? {
         write {
             val current = book(key) ?: return@write
@@ -141,7 +157,7 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
         return write(beforeCommit) {
             if (!canRegisterReadingSession(observation, document) || !observationCurrent(observation)) return@write null
             val previous = checkpointState(observation.key)
-            val session = ReadingSession(UUID.randomUUID().toString(), observation, document)
+            val session = ReadingSession(UUID.randomUUID().toString(), observation, document, previous?.anchor)
             putCheckpoint(ReadingCheckpointState(session.binding, anchor = previous?.anchor))
             session
         }
@@ -240,12 +256,20 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
     }
 
     /** No SQL or filesystem I/O on the scroll callback. */
-    @Synchronized fun position(key: ChapterKey, paragraph: Int, offset: Int) {
+    @Synchronized fun position(key: ChapterKey, paragraph: Int, offset: Int, owner: Any? = null) {
         check(!closed) { "Desktop library is closed" }
         require(paragraph >= 0 && offset >= 0)
         val book = positionBooks[key.novel] ?: return
         require(book.chapters.any { it.url == key.url && !it.locked })
         pendingPositions[key.novel] = ReadPosition(key.url, paragraph, offset)
+        pendingPositionOwners[key.novel] = owner
+    }
+
+    /** A retired flush cannot discard a newer view's legacy resume selection, even for the same chapter. */
+    @Synchronized internal fun discardPendingPosition(key: ChapterKey, owner: Any) {
+        if (pendingPositionOwners[key.novel] === owner && pendingPositions[key.novel]?.chapterUrl == key.url) {
+            pendingPositions.remove(key.novel); pendingPositionOwners.remove(key.novel)
+        }
     }
 
     @Synchronized fun flush() {
@@ -256,6 +280,7 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
             }
         }
         pendingPositions.clear()
+        pendingPositionOwners.clear()
         refresh()
     }
 

@@ -12,6 +12,34 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ReaderProgressTest {
+    @Test fun failedWriteRetainsNewestPositionForExplicitRetry() = runBlocking {
+        val written = mutableListOf<ReaderPosition>(); val failures = mutableListOf<Exception>()
+        var fail = true
+        val writer = ReaderProgressWriter(this, onFailure = { failures += it }) {
+            if (fail) throw java.io.IOException("Fixture failure")
+            written += it
+        }
+        writer.submit(ReaderPosition(1, 0.1f, 1, 0)); writer.flush()!!.join()
+        assertTrue(writer.hasPending()); assertEquals(1, failures.size); assertTrue(written.isEmpty())
+        val newest = ReaderPosition(1, 0.2f, 2, 17)
+        writer.submit(newest); fail = false; writer.flush()!!.join()
+        assertEquals(listOf(newest), written); assertFalse(writer.hasPending())
+    }
+
+    @Test fun olderWriteCompletionCannotDropCaptureArrivingDuringItsSuspension() = runBlocking {
+        val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>()
+        val written = mutableListOf<ReaderPosition>()
+        val writer = ReaderProgressWriter(this) {
+            if (written.isEmpty()) { entered.complete(Unit); release.await() }
+            written += it
+        }
+        val first = ReaderPosition(1, 0.7f, 7, 0); val backward = ReaderPosition(1, 0.1f, 1, 17)
+        writer.submit(first); val job = writer.flush()!!; entered.await()
+        writer.submit(backward); release.complete(Unit); job.join()
+        assertTrue(writer.hasPending()); writer.flush()!!.join()
+        assertEquals(listOf(first, backward), written); assertFalse(writer.hasPending())
+    }
+
     @Test fun progressMustBelongToBothTheCurrentChapterAndItsPages() {
         assertTrue(acceptsReaderProgress(2, 2, 2))
         assertFalse(acceptsReaderProgress(2, 1, 2))

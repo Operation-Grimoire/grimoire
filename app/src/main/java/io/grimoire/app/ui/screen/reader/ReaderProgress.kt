@@ -3,6 +3,8 @@ package io.grimoire.app.ui.screen.reader
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.reading.anchor.ReadingAnchor
+import io.grimoire.reading.anchor.ReaderCheckpointLoad
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -15,8 +17,9 @@ internal data class ReaderPosition(
     val fraction: Float,
     val anchorIndex: Int,
     val anchorOffset: Int,
-    /** Provisional content observation; the current writer still persists legacy fields only. */
+    /** Canonical observation accompanies compatibility fields; portable writes use the load-bound session. */
     val contentAnchor: ReadingAnchor? = null,
+    val checkpoint: ReaderCheckpointLoad? = null,
 )
 
 internal fun ChapterEntity.withReaderPosition(position: ReaderPosition?): ChapterEntity =
@@ -47,15 +50,16 @@ internal fun shouldMarkReaderChapterRead(
 internal class ReaderProgressWriter(
     private val scope: CoroutineScope,
     private val debounceMillis: Long = 500,
+    private val onFailure: (Exception) -> Unit = { throw it },
     private val write: suspend (ReaderPosition) -> Unit,
 ) {
-    private var pending: ReaderPosition? = null
+    private val pending = linkedMapOf<Long, ReaderPosition>()
     private var timer: Job? = null
     private val writes = Mutex()
 
     fun submit(position: ReaderPosition) {
-        if (pending?.chapterId != position.chapterId) flush()
-        pending = position
+        if (pending.isNotEmpty() && position.chapterId !in pending) flush()
+        pending[position.chapterId] = position
         timer?.cancel()
         timer = scope.launch {
             delay(debounceMillis)
@@ -66,8 +70,16 @@ internal class ReaderProgressWriter(
     fun flush(): Job? {
         timer?.cancel()
         timer = null
-        val position = pending ?: return null
-        pending = null
-        return scope.launch { writes.withLock { write(position) } }
+        if (pending.isEmpty()) return null
+        return scope.launch { writes.withLock {
+            for (position in pending.values.toList()) {
+                try { write(position) }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (failure: Exception) { onFailure(failure); continue }
+                if (pending[position.chapterId] === position) pending.remove(position.chapterId)
+            }
+        } }
     }
+
+    fun hasPending(): Boolean = pending.isNotEmpty()
 }

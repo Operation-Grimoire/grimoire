@@ -759,4 +759,16 @@
     <string name="source_validate_failed">Validation failed.</string>
     <plurals name="novel_export_success"><item quantity="one">Exported %1$d chapter</item><item quantity="other">Exported %1$d chapters</item></plurals>
     <string name="extension_api_required">Extension requires API %1$s (app API: %2$s)</string>
+    <string name="reader_position_save_error">Reading position was not saved</string>
+    <string name="reader_use_position">Use this position</string>
+    <string name="reader_position_legacy">Using an older saved reading position.</string>
+    <string name="reader_position_relocated">Chapter changed. Restored the matching paragraph.</string>
+    <string name="reader_position_changed">Chapter changed. Showing the beginning.</string>
+    <string name="reader_position_hidden">Saved position is hidden here. Showing the next visible section.</string>
+    <string name="reader_position_coarse">Restored to the start of the saved paragraph.</string>
+    <string name="reader_position_invalid">Saved reading position is invalid. It has been retained.</string>
+    <string name="reader_position_unsupported">Saved reading position uses an unsupported format. It has been retained.</string>
+    <string name="reader_position_identity">Saved reading position belongs to another chapter. It has been retained.</string>
+    <string name="reader_position_empty">This chapter has no visible content.</string>
+    <string name="reader_position_reload">Reload this chapter to save your reading position.</string>
 </resources>

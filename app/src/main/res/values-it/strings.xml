@@ -775,4 +775,16 @@
     <string name="source_validate_failed">Verifica non riuscita.</string>
     <plurals name="novel_export_success"><item quantity="one">%1$d capitolo esportato</item><item quantity="many">%1$d capitoli esportati</item><item quantity="other">%1$d capitoli esportati</item></plurals>
     <string name="extension_api_required">L’estensione richiede l’API %1$s (API dell’app: %2$s)</string>
+    <string name="reader_position_save_error">La posizione di lettura non è stata salvata</string>
+    <string name="reader_use_position">Usa questa posizione</string>
+    <string name="reader_position_legacy">Viene usata una posizione di lettura salvata in precedenza.</string>
+    <string name="reader_position_relocated">Il capitolo è cambiato. Ripristinato il paragrafo corrispondente.</string>
+    <string name="reader_position_changed">Il capitolo è cambiato. Viene mostrato l’inizio.</string>
+    <string name="reader_position_hidden">La posizione salvata è nascosta qui. Viene mostrata la sezione visibile successiva.</string>
+    <string name="reader_position_coarse">Ripristinato l’inizio del paragrafo salvato.</string>
+    <string name="reader_position_invalid">La posizione di lettura salvata non è valida. È stata conservata.</string>
+    <string name="reader_position_unsupported">Il formato della posizione salvata non è supportato. È stata conservata.</string>
+    <string name="reader_position_identity">La posizione salvata appartiene a un altro capitolo. È stata conservata.</string>
+    <string name="reader_position_empty">Questo capitolo non ha contenuti visibili.</string>
+    <string name="reader_position_reload">Ricarica questo capitolo per salvare la posizione di lettura.</string>
 </resources>

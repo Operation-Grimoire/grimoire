@@ -22,7 +22,7 @@ class RoomReadingCheckpointDao @Inject constructor(
         val key = observation.key
         val chapter = requireNotNull(database.chapterDao().getByNovelUrl(key.novel.sourceId, key.novel.url, key.url))
         val previous = state(chapter.id, key)
-        val session = ReadingSession(UUID.randomUUID().toString(), observation, document)
+        val session = ReadingSession(UUID.randomUUID().toString(), observation, document, previous?.anchor)
         database.readingCheckpointStateDao().put(ReadingCheckpointEntity(chapter.id,
             encodeReadingCheckpoint(ReadingCheckpointState(session.binding, anchor = previous?.anchor))))
         currentCoroutineContext().ensureActive()

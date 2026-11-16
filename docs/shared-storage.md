@@ -214,11 +214,12 @@ both platform compositions. Platform adapters may keep different backends.
    Its pure shared model/resolver is implemented with framing and resolution
    tests. Both production readers now retain raw content, render through shared
    projection mappings and capture provisional block anchors. The pure projection
-   API also defines hidden-item fallback; persisted restoration does not use it yet.
+   API also defines hidden-item fallback, now used by persisted restoration.
    Coherent load stamps are implemented through both adapters and the shared loader,
    including explicit absence before asynchronous source access. Registered sessions
    and the guarded checkpoint DAO are also implemented through both adapters. Local
-   hints, legacy-anchor conversion and durable reader adoption remain unimplemented.
+   hints and historical legacy-anchor conversion remain separate. Both readers now
+   adopt durable capture/restore/flush through the shared coordinator.
    Android display filtering can change indices; desktop paragraph/pixel offsets
    and Android viewport offsets are device hints, not portable anchors. Separate
    completion, explicit unread/rereading and first-read history rules.
@@ -279,7 +280,7 @@ ART, frozen UTF-16 framing, stale-load rejection and real legacy Room writes.
 Six ChapterObservationTest cases cover real Room observation/absence,
 legacy cache/field preservation, content/identity/restore ABA, live download
 ownership, delayed source access, reopen scope and allocation rollback.
-The script requires 37 native successes total; native execution remains separate
+The script requires 41 native successes total; native execution remains separate
 from compilation and the signed beta.347-to-target DB34 compatibility harness.
 
 ## Session and checkpoint adapters
@@ -292,9 +293,22 @@ authority. Registration supersedes one chapter session, preserves its old anchor
 and never allocates an observation or fetches content.
 
 Android DB35 and desktop SQL2 add isolated checkpoint tables. Legacy body/position,
-cache paths, membership, receipts and history are preserved. The production reader
-writers and novel resume pointers remain unchanged until the next capture/restore
-adoption slice. See [protocol and rollback](reading-anchors.md#guarded-checkpoint-storage).
+cache paths, membership, receipts and history are preserved. Production readers now use the shared coordinator for portable capture/restore/flush.
+Novel resume selection remains separate from checkpoint commits; legacy fields stay
+as compatibility metadata and labelled fallback. See [protocol and rollback](reading-anchors.md#guarded-checkpoint-storage).
 Seven native ReadingCheckpointTest cases cover the real Room protocol, ordering,
 identity/invalidation, rollback/cancellation/lost reply, observer reopen and frozen
 signed-DB34 migration. Compiling these cases is not proof of ART execution.
+
+## Reader workflow adoption
+
+Both production readers use `ReaderCheckpoints` above their platform DAOs. It shares
+registration-bound restoration, explicit capture enablement, retirement, ordered
+flush and retry handling. Room/JDBC remain independently selected backends. Portable
+restoration is at block boundaries; legacy viewport pixels are never certified
+against a new layout. Measured hints and character-level realization remain separate.
+See [capture/restore/flush and proof limits](reading-anchors.md#production-capture-restoration-and-flush).
+Four additional native ReaderCheckpointAdoptionTest cases cover the production Android
+preparation helper with real Room: mapping/reopen, retained fallback evidence, failed/
+uncertain writes and stale source/retired load rejection. The script requires all 41
+native successes; compiling cases alone is not native runtime acceptance.

@@ -742,4 +742,16 @@
     <string name="source_validate_failed">การตรวจสอบล้มเหลว</string>
     <plurals name="novel_export_success"><item quantity="other">ส่งออกแล้ว %1$d ตอน</item></plurals>
     <string name="extension_api_required">ส่วนขยายต้องใช้ API %1$s (API ของแอป: %2$s)</string>
+    <string name="reader_position_save_error">ไม่ได้บันทึกตำแหน่งการอ่าน</string>
+    <string name="reader_use_position">ใช้ตำแหน่งนี้</string>
+    <string name="reader_position_legacy">กำลังใช้ตำแหน่งการอ่านที่บันทึกไว้ก่อนหน้า</string>
+    <string name="reader_position_relocated">ตอนมีการเปลี่ยนแปลง คืนค่าไปยังย่อหน้าที่ตรงกันแล้ว</string>
+    <string name="reader_position_changed">ตอนมีการเปลี่ยนแปลง กำลังแสดงส่วนต้น</string>
+    <string name="reader_position_hidden">ตำแหน่งที่บันทึกไว้ถูกซ่อนอยู่ที่นี่ กำลังแสดงส่วนถัดไปที่มองเห็นได้</string>
+    <string name="reader_position_coarse">คืนค่าไปยังจุดเริ่มต้นของย่อหน้าที่บันทึกไว้แล้ว</string>
+    <string name="reader_position_invalid">ตำแหน่งการอ่านที่บันทึกไว้ไม่ถูกต้อง ข้อมูลเดิมยังถูกเก็บไว้</string>
+    <string name="reader_position_unsupported">ไม่รองรับรูปแบบตำแหน่งการอ่านที่บันทึกไว้ ข้อมูลเดิมยังถูกเก็บไว้</string>
+    <string name="reader_position_identity">ตำแหน่งการอ่านที่บันทึกไว้เป็นของตอนอื่น ข้อมูลเดิมยังถูกเก็บไว้</string>
+    <string name="reader_position_empty">ตอนนี้ไม่มีเนื้อหาที่มองเห็นได้</string>
+    <string name="reader_position_reload">โหลดตอนนี้ใหม่เพื่อบันทึกตำแหน่งการอ่าน</string>
 </resources>

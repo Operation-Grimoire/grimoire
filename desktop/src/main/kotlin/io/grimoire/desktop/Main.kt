@@ -1,5 +1,6 @@
 package io.grimoire.desktop
 
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,7 +11,16 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -22,6 +32,7 @@ import io.grimoire.api.model.novel.PageContent
 import io.grimoire.api.network.SourceNetwork
 import io.grimoire.reading.ChapterKey
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.awt.FileDialog
@@ -129,10 +140,10 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
                         val description = remember(book.novel.description) { org.jsoup.Jsoup.parse(book.novel.description.orEmpty()).text() }
                         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             item { Text("${book.chapters.size} chapters", style = MaterialTheme.typography.titleLarge) }
-                            book.position?.let { position -> book.chapters.find { it.url == position.chapterUrl }?.let { chapter ->
+                            book.resumeChapter()?.let { chapter ->
                                 item { Button(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked &&
                                     (!state.offline || chapter.url in book.downloaded)) { Text("Continue reading") } }
-                            } }
+                            }
                             item { Text(description, style = MaterialTheme.typography.bodyLarge) }
                         }
                     }
@@ -186,29 +197,52 @@ private fun ChapterPane(book: SavedBook, current: Chapter?, enabled: Boolean, of
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun ReaderPane(state: ReaderState, model: ReaderModel, modifier: Modifier = Modifier) {
     val book = checkNotNull(state.book)
     val chapter = checkNotNull(state.chapter)
     val projection = checkNotNull(state.projection)
     val position = book.position?.takeIf { it.chapterUrl == chapter.url }
-    val initialIndex = (position?.paragraph ?: 0).coerceIn(0, state.pages.lastIndex)
+    val viewport = state.checkpointLoad?.restore?.viewport
+    val initialIndex = (viewport?.index ?: position?.paragraph ?: 0).coerceIn(0, state.pages.lastIndex)
     val scroll = androidx.compose.runtime.key(projection) {
-        rememberLazyListState(initialIndex, if (initialIndex == position?.paragraph) position.offset else 0)
+        rememberLazyListState(initialIndex, viewport?.offset ?: if (initialIndex == position?.paragraph) position.offset else 0)
     }
+    var restored by remember(projection) { mutableStateOf(false) }
+    LaunchedEffect(projection) {
+        snapshotFlow { scroll.layoutInfo }.first { it.visibleItemsInfo.isNotEmpty() }
+        if (viewport?.end == true) {
+            scroll.scrollToItem(projection.itemCount - 1)
+            val info = snapshotFlow { scroll.layoutInfo }.first { it.visibleItemsInfo.any { item -> item.index == projection.itemCount - 1 } }
+            val last = info.visibleItemsInfo.last()
+            scroll.scrollBy((last.offset + last.size - info.viewportEndOffset).coerceAtLeast(0).toFloat())
+        }
+        restored = true
+    }
+    val input = remember(projection) { object : NestedScrollConnection {
+        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+            if (restored && source == NestedScrollSource.UserInput && available != Offset.Zero) model.userPosition(projection)
+            return Offset.Zero
+        }
+    } }
     val key = ChapterKey(book.key, chapter.url)
-    LaunchedEffect(key, projection) {
+    LaunchedEffect(key, projection, restored) {
+        if (!restored) return@LaunchedEffect
         snapshotFlow { scroll.firstVisibleItemIndex to scroll.firstVisibleItemScrollOffset }.collectLatest { (index, offset) ->
-            model.position(key, index, offset, projection)
+            model.position(key, index, offset, projection, userInitiated = false)
             delay(350)
             model.flushPosition()
         }
     }
     Column(modifier) {
         Text(chapter.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 16.dp))
+        state.positionNotice?.let { Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp)) }
         Box(Modifier.weight(1f)) {
             SelectionContainer {
-                LazyColumn(state = scroll, modifier = Modifier.fillMaxSize().padding(end = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                LazyColumn(state = scroll, modifier = Modifier.fillMaxSize().testTag("reader-body")
+                    .onPointerEvent(PointerEventType.Scroll, PointerEventPass.Initial) { if (restored) model.userPosition(projection) }
+                    .nestedScroll(input).padding(end = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     items(projection.body, key = { it.canonicalOrdinal }) { mapped ->
                         when (val content = mapped.page.content) {
                             is PageContent.Text -> Text(content.text, style = MaterialTheme.typography.bodyLarge)
@@ -218,7 +252,8 @@ private fun ReaderPane(state: ReaderState, model: ReaderModel, modifier: Modifie
                     }
                 }
             }
-            VerticalScrollbar(rememberScrollbarAdapter(scroll), Modifier.fillMaxHeight().align(androidx.compose.ui.Alignment.CenterEnd))
+            VerticalScrollbar(rememberScrollbarAdapter(scroll), Modifier.fillMaxHeight().align(androidx.compose.ui.Alignment.CenterEnd)
+                .onPointerEvent(PointerEventType.Press) { if (restored) model.userPosition(projection) })
         }
     }
 }

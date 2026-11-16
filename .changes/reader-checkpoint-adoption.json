@@ -1,0 +1,18 @@
+{
+  "android": [
+    {
+      "category": "feature",
+      "text": "Reading positions now restore at paragraph boundaries, relocate matching paragraphs after content changes within a chapter, and reject stale saves. Positions saved before this update restore approximately."
+    },
+    {
+      "category": "fix",
+      "text": "Restoring a saved position no longer marks chapters read automatically."
+    }
+  ],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Reading positions are now saved per chapter and restored at paragraph boundaries, with protection against stale saves. Positions saved before this update restore approximately."
+    }
+  ]
+}

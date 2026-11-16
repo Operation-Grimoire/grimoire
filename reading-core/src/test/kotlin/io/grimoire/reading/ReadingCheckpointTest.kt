@@ -11,7 +11,7 @@ class ReadingCheckpointTest {
     private val key = ChapterKey(NovelKey(17, "/novel"), "/chapter")
     private val document = CanonicalDocument.fromPages(key, listOf(NovelPage(0, PageContent.Text("A\uD83D\uDE00B"))))
     private val observation = ChapterStorageObservation(key, "open", "generation", ChapterContentPresence.ABSENT)
-    private val session = ReadingSession("session", observation, document)
+    private val session = ReadingSession("session", observation, document, null)
     private fun anchor(position: AnchorPosition = AnchorPosition.Start) = ReadingAnchor(key, document.logicalRevision, position)
     private fun command(sequence: Long, position: AnchorPosition = AnchorPosition.Start) = CheckpointCommand(session, sequence, anchor(position))
     private fun rejected(reason: CheckpointRejection, command: CheckpointCommand, state: ReadingCheckpointState) {
