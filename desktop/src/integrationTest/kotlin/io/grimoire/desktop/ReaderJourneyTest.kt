@@ -3,6 +3,9 @@ package io.grimoire.desktop
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.api.network.SourceNetwork
 import io.grimoire.reading.encodeChapterContent
+import io.grimoire.reading.ChapterKey
+import io.grimoire.reading.storage.*
+import io.grimoire.api.model.novel.NovelPage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import org.junit.Assert.*
@@ -11,9 +14,47 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class ReaderJourneyTest {
     @get:Rule val temporary = TemporaryFolder()
+
+    @Test fun sourceSnapshotKeepsItsEarlierAbsenceWhileAConcurrentSaveCommits() = runBlocking {
+        SourceNetwork.install(platform)
+        allowed.set(true); requests.set(0)
+        val library = LocalLibrary(temporary.newFolder().toPath())
+        val model = desktopReaderModel(library, "1.6.0", allowed)
+        val gate = CountDownLatch(1)
+        val entered = CountDownLatch(1)
+        try {
+            model.load(readerFixtureManifest(temporary.newFolder().toPath())); model.settled()
+            model.browse(); model.settled()
+            model.details(model.state.value.novels.single()); model.settled()
+            val book = requireNotNull(model.state.value.book)
+            val chapter = book.chapters.first()
+            val key = ChapterKey(book.key, chapter.url)
+            platform.chapterGate.set(gate); platform.chapterEntered.set(entered)
+            model.read(chapter)
+            assertTrue(withContext(Dispatchers.IO) { entered.await(5, TimeUnit.SECONDS) })
+            val downloads = DownloadRepository(DesktopDownloadDao(library))
+            assertTrue(downloads.commit(requireNotNull(downloads.claim(key)),
+                listOf(NovelPage(0, PageContent.Text("New stored body")))) is DownloadCommit.Committed)
+            gate.countDown(); model.settled()
+            val old = requireNotNull(model.state.value.storageObservation)
+            val adapter = DesktopSavedChapterDao(library)
+            assertEquals(ChapterContentPresence.ABSENT, old.presence)
+            assertFalse(adapter.isObservationCurrent(old))
+            assertNotEquals("New stored body", (model.state.value.pages.first().content as PageContent.Text).text)
+            model.read(chapter); model.settled()
+            val fresh = requireNotNull(model.state.value.storageObservation)
+            assertEquals(ChapterContentPresence.SAVED, fresh.presence)
+            assertTrue(adapter.isObservationCurrent(fresh))
+            assertEquals("New stored body", (model.state.value.pages.single().content as PageContent.Text).text)
+        } finally {
+            gate.countDown(); platform.chapterGate.set(null); platform.chapterEntered.set(null)
+            model.close()
+        }
+    }
 
     @Test fun reimportDropsCatalogAndRejectsStaleNovelBeforeHttp() = runBlocking {
         SourceNetwork.install(platform)

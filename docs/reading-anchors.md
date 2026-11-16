@@ -194,13 +194,21 @@ chapter key/incarnation, logical document revision, storage/content generation,
 and a platform-issued reading-session token. Session/sequence guards do not belong
 in the portable anchor itself. They establish local write authority, not sync order.
 
-The current loader's nullable `cacheRevision` is insufficient for this purpose:
-null can mean source/preloaded content or legacy saved content without a protocol
-revision. It is not proof of storage absence. Adoption must add a coherent,
-adapter-issued generation observation, including an explicit absence stamp,
-before asynchronous source retrieval. Registration checks that observation before
-accepting the returned document. A concurrent download, deletion, replacement or
-restore must not be certified as the same snapshot merely because a field is null.
+The loader now carries an optional `ChapterStorageObservation` separately from
+`cacheRevision`. A tracked observation contains the chapter key, observing-store
+scope, opaque generation and explicit SAVED/ABSENT presence, read with the body in
+one adapter transaction before source retrieval or preload selection. An empty
+saved body is SAVED. A null observation is untracked, including keyless loads,
+compatibility adapters and missing/locked subjects; it never certifies absence.
+The nullable image-cache revision remains insufficient for this purpose.
+
+The observation may be stale when asynchronous source access finishes. Both reader
+snapshots retain the original observation alongside their projection, without
+re-reading a newer generation to certify the older document. A separate read-only
+freshness check can detect staleness, but its result is not a session or write permit.
+Checkpoint registration and commit must validate generation/session in their own
+atomic transaction. A concurrent download, deletion, replacement or restore must
+not be certified as the same snapshot merely because logical content matches.
 The DAO never fetches content to settle a write.
 
 An unsaved source/preloaded document can have a logical revision without storing
@@ -293,12 +301,36 @@ Defining a normalized progress measure or changing those thresholds is later wor
    Shared tests cover decorations, blank items, image substitution, text/HTML
    disagreement, changed projections and block/text precision. Actual glyph-level
    capture and measured-layout hints remain later work.
-3. Define the additive checkpoint DAO/facade and coherent load-generation/session
-   registration. Implement per-chapter state, idempotency and invalidation in
+3. **Load observations implemented:** define the additive checkpoint DAO/facade
+   and session registration next. Implement per-chapter state, idempotency and invalidation in
    Android Room and desktop JDBC. Preserve both legacy layouts and unrelated fields.
 4. Move production capture, restore and flush paths through those shared decisions.
    Run equivalent scenarios through both compositions; retain host lifecycle and
    UI tests separately. Then design shared progress/completion commands.
+
+### Coherent load observations and remaining write authority
+
+`SavedChapterDao.readObserved` returns body/cache metadata and an optional storage
+observation together. Its compatibility default remains untracked; the existing
+`read`/`readSnapshot` APIs remain read-only. Production Room and desktop SQLite
+adapters reuse their existing protocol revisions. Observation can allocate missing
+protocol identity, without changing saved bytes, cache identity, chapter fields,
+legacy position, library membership or history. Allocation requires a writable
+store; I/O/cancellation errors propagate rather than becoming source fallback.
+
+Room uses its existing `chapter_download_state` invalidation triggers; desktop uses
+its existing `contents.revision` and serialized mutations. Seeding an absent body
+creates metadata only. Legacy Room image-cache identity remains null, so issuing a
+revision does not move old images to a new cache path. Scope is tied to the issuing
+observer/store lifetime; another observer or reopened store cannot reuse it.
+Validation never seeds/replaces identity and never grants persistence authority.
+
+This implements the load-observation prerequisite of step3, without changing a
+schema or content codec. Reading sessions, sequence/replay handling, checkpoint
+DAOs, guarded commit, portable restoration and local layout hints remain unimplemented.
+Current position writers still persist the same legacy fields; they do not consume
+these observations as permits. Download claim/failure without body changes need
+not invalidate an observation. Session reset/revocation is a separate future rule.
 
 ### Implemented core and proof limits
 
@@ -350,8 +382,9 @@ It still flushes the same legacy book position. Both hosts construct projections
 off the UI thread. No schema/codec change, per-chapter checkpoint, storage-generation
 registration or new completion/history policy is introduced.
 
-Local-hint reuse, LegacyApproximate, coherent generations/sessions and durable
-capture/restore remain steps3-4. Shared/host unit tests and a desktop Compose
+Local-hint reuse, LegacyApproximate, registered sessions/guarded checkpoint DAOs
+and durable capture/restore remain steps3-4. Coherent load observations are now
+implemented; they do not complete those write/restore gates. Shared/host unit tests and a desktop Compose
 journey exercise the new capture path. Android's four ReaderProjectionTest cases
 exercise the host helper/UTF-16 framing on ART and verify the real Room legacy
 write retains rendered indices and unrelated metadata. They are not Android

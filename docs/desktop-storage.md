@@ -131,3 +131,23 @@ its pure resolver and shared projection mapping are implemented. Desktop renders
 through the mapping and captures provisional anchors while continuing to persist
 legacy indices/pixels. Persistent anchor restoration, local layout hints,
 legacy-anchor conversion and platform checkpoint adapters remain unimplemented.
+
+
+### Coherent reader load observations
+
+The SQLite adapter now reads saved presence/body and protocol generation in one
+transaction. Unsaved available chapters receive an empty `contents` metadata row;
+this is not a download and changes no book, position or payload field. Existing
+saved rows retain bytes, cache revision and receipts. A scope tied to the open
+LocalLibrary prevents reuse after close/reopen, even if a revision is unchanged.
+Removal/relock, cache deletion and commit rotate the existing revision; identical
+content does not revive an old observation. Unknown/locked subjects are untracked.
+
+The production reader retains that observation with the loaded projection. A
+source fetch can finish after a concurrent save; it retains the earlier absence
+stamp and a freshness check rejects that stamp. It must not claim the new stored
+generation for the old source result. This check is read-only, never reseeds a
+missing record and grants no write authority. Session registration and checkpoint
+commits must later compare those guards inside their own transaction. Existing
+legacy position writes/restoration remain unchanged; no schema migration or new
+portable checkpoint write is introduced by these observations.

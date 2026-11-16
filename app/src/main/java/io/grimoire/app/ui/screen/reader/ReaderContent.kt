@@ -10,11 +10,15 @@ import io.grimoire.reading.ChapterOrigin
 import io.grimoire.reading.LoadedChapter
 import io.grimoire.reading.anchor.ProjectedPage
 import io.grimoire.reading.anchor.ReadingProjection
+import io.grimoire.reading.storage.ChapterStorageObservation
 import java.util.Collections
 import java.util.UUID
 
 /** Atomically published load. Audio keeps its previous input; the screen uses the mapped body. */
-internal class ReaderContent(val chapterId: Long, val projection: ReadingProjection, val pages: List<NovelPage>) {
+internal class ReaderContent(
+    val chapterId: Long, val projection: ReadingProjection, val pages: List<NovelPage>,
+    val storageObservation: ChapterStorageObservation? = null,
+) {
     // Stable lazy-item identity for this load; not a measured-layout or persistence/session token.
     val loadKey: String = UUID.randomUUID().toString()
 }
@@ -33,7 +37,7 @@ internal fun androidReaderContent(
     }
     val projection = ReadingProjection.create(key, raw, mapped, leadingStart = true, trailingEnd = true)
     val legacyPages = if (loaded.origin == ChapterOrigin.SAVED) mapped.map { it.page } else raw
-    return ReaderContent(chapterId, projection, Collections.unmodifiableList(legacyPages))
+    return ReaderContent(chapterId, projection, Collections.unmodifiableList(legacyPages), loaded.storageObservation)
 }
 
 /** Bind UI observations to the exact loaded projection, including reloads of the same chapter. */

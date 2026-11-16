@@ -2,12 +2,16 @@ package io.grimoire.reading
 
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.reading.storage.SavedChapterRepository
+import io.grimoire.reading.storage.ChapterStorageObservation
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 
 enum class ChapterOrigin { SAVED, PRELOADED, SOURCE }
 
-data class LoadedChapter(val pages: List<NovelPage>, val origin: ChapterOrigin, val cacheRevision: String? = null)
+data class LoadedChapter(
+    val pages: List<NovelPage>, val origin: ChapterOrigin, val cacheRevision: String? = null,
+    val storageObservation: ChapterStorageObservation? = null,
+)
 
 enum class ChapterLoadFailure { OFFLINE, SOURCE_UNAVAILABLE, PAGES_UNSUPPORTED }
 
@@ -32,10 +36,11 @@ class ChapterLoader(private val savedChapters: SavedChapterRepository) {
         sourceAccess: suspend () -> ChapterPageAccess,
     ): LoadedChapter {
         currentCoroutineContext().ensureActive()
-        val saved = key?.let { savedChapters.readSnapshot(it) }
+        val saved = key?.let { savedChapters.readObserved(it) }
         currentCoroutineContext().ensureActive()
-        if (saved != null) return LoadedChapter(saved.pages, ChapterOrigin.SAVED, saved.cacheRevision)
-        if (preloaded != null) return LoadedChapter(preloaded, ChapterOrigin.PRELOADED)
+        val savedPages = saved?.pages
+        if (savedPages != null) return LoadedChapter(savedPages, ChapterOrigin.SAVED, saved.cacheRevision, saved.observation)
+        if (preloaded != null) return LoadedChapter(preloaded, ChapterOrigin.PRELOADED, storageObservation = saved?.observation)
         val access = sourceAccess()
         currentCoroutineContext().ensureActive()
         val pages = when (access) {
@@ -44,6 +49,6 @@ class ChapterLoader(private val savedChapters: SavedChapterRepository) {
         }
         // A source may ignore cancellation and return normally. Never publish its late result.
         currentCoroutineContext().ensureActive()
-        return LoadedChapter(pages, ChapterOrigin.SOURCE)
+        return LoadedChapter(pages, ChapterOrigin.SOURCE, storageObservation = saved?.observation)
     }
 }
