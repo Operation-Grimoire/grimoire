@@ -9,12 +9,9 @@ import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
-import io.grimoire.api.network.SourceHttpPlatform
 import io.grimoire.api.network.SourceNetwork
 import io.grimoire.api.model.novel.PageContent
-import io.grimoire.contract.RoyalRoadContractPlatform
 import kotlinx.coroutines.runBlocking
-import okhttp3.Interceptor
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -22,32 +19,21 @@ import org.junit.rules.TemporaryFolder
 import org.jetbrains.skia.Image
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 
-class RoyalRoadUiTest {
+class ReaderUiTest {
     @get:Rule val compose = createComposeRule()
     @get:Rule val temporary = TemporaryFolder()
 
     @Test fun readerControlsSaveAndReopenChapterOffline() {
-        val allowed = AtomicBoolean(true)
-        val requests = AtomicInteger()
-        val live = System.getProperty("desktop.ui.live") == "true"
-        val platform = if (live) DesktopHttpPlatform(allowed) else RoyalRoadContractPlatform()
-        SourceNetwork.install(object : SourceHttpPlatform {
-            override val cookieJar = platform.cookieJar
-            override val userAgent = platform.userAgent
-            override val interceptors = listOf(Interceptor { chain ->
-                requests.incrementAndGet()
-                check(allowed.get()) { "Unexpected HTTP after offline restart" }
-                platform.interceptors.single().intercept(chain)
-            })
-        })
+        val platform = ReaderFixturePlatform()
+        val allowed = platform.allowed
+        val requests = platform.requests
+        SourceNetwork.install(platform)
         val data = temporary.newFolder().toPath()
         var model = desktopReaderModel(LocalLibrary(data), "1.5.0", allowed)
         val active = mutableStateOf(model)
         try {
-            model.load(Path.of(checkNotNull(System.getProperty("desktop.test.manifest"))))
+            model.load(readerFixtureManifest(temporary.newFolder().toPath()))
             compose.setContent {
                 key(active.value) {
                     MaterialTheme { Surface(Modifier.size(1100.dp, 760.dp)) { DesktopReader(active.value, false, null) {} } }
@@ -57,7 +43,6 @@ class RoyalRoadUiTest {
             compose.onNodeWithText("Browse").performClick()
             settled(model)
             val novel = model.state.value.novels.first()
-            if (!live) assertEquals("The Lantern Keeper", novel.title)
             compose.onNodeWithText(novel.title).performClick()
             settled(model)
             val chapter = checkNotNull(model.state.value.book).chapters.first { !it.locked }
@@ -89,7 +74,7 @@ class RoyalRoadUiTest {
             assertEquals(io.grimoire.reading.ChapterKey(model.state.value.book!!.key, chapter.url), model.state.value.observedAnchor!!.key)
             capture("offline-restart.png")
             assertEquals(count, requests.get())
-            if (!live) assertEquals(4, count) // fixture catalog, details, chapter list and chapter
+            assertEquals(4, count) // fixed test extension: catalog, details, chapter list and chapter
         } catch (failure: Throwable) {
             runCatching { capture("failure.png") }
             throw failure
