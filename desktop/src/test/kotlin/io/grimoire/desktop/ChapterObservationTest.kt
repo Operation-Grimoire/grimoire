@@ -90,6 +90,32 @@ class ChapterObservationTest {
         }
     }
 
+    @Test fun retainedContentOfLockedOrRemovedChaptersCannotFallBackToPreloadOrSource() = runBlocking {
+        LocalLibrary(temporary.newFolder().toPath()).use { library ->
+            library.seed(); library.download(fixtureKey, prose())
+            val dao = DesktopSavedChapterDao(library)
+            val loader = ChapterLoader(SavedChapterRepository(dao))
+            val old = requireNotNull(dao.readObserved(fixtureKey).observation)
+            var sourceCalls = 0
+            for (chapters in listOf(fixtureChapters.map { it.copy(locked = true) }, emptyList())) {
+                library.remember(fixtureKey.novel, fixtureNovel, chapters)
+                assertFalse(dao.isObservationCurrent(old))
+                for (preloaded in listOf(null, prose("Must not bypass access failure"))) {
+                    try {
+                        loader.load(fixtureKey, preloaded) {
+                            sourceCalls++
+                            ChapterPageAccess.Available { error("Must not fetch blocked content") }
+                        }
+                        fail("Blocked saved content was reclassified as absent")
+                    } catch (failure: IllegalArgumentException) {
+                        assertTrue(failure.message.orEmpty().contains("unavailable or locked"))
+                    }
+                }
+            }
+            assertEquals(0, sourceCalls)
+        }
+    }
+
     @Test fun reopenAndOtherStoresCannotReuseTheObserversScope() = runBlocking {
         val directory = temporary.newFolder().toPath()
         val first = LocalLibrary(directory).apply { seed() }

@@ -276,7 +276,7 @@ single-owner refusal/reset, coherent image snapshots, production queue gates and
 atomic backup restore preserving active status before invalidation.
 Four additional ReaderProjectionTest cases check Android projection/capture on
 ART, frozen UTF-16 framing, stale-load rejection and real legacy Room writes.
-Six ChapterObservationTest cases additionally verify real Room observation/absence,
+Six ChapterObservationTest cases cover real Room observation/absence,
 legacy cache/field preservation, content/identity/restore ABA, live download
 ownership, delayed source access, reopen scope and allocation rollback.
 The script requires 30 native successes total; native execution remains separate

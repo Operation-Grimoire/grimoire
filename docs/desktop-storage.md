@@ -133,7 +133,7 @@ legacy indices/pixels. Persistent anchor restoration, local layout hints,
 legacy-anchor conversion and platform checkpoint adapters remain unimplemented.
 
 
-### Coherent reader load observations
+## Coherent reader load observations
 
 The SQLite adapter now reads saved presence/body and protocol generation in one
 transaction. Unsaved available chapters receive an empty `contents` metadata row;
@@ -141,7 +141,9 @@ this is not a download and changes no book, position or payload field. Existing
 saved rows retain bytes, cache revision and receipts. A scope tied to the open
 LocalLibrary prevents reuse after close/reopen, even if a revision is unchanged.
 Removal/relock, cache deletion and commit rotate the existing revision; identical
-content does not revive an old observation. Unknown/locked subjects are untracked.
+content does not revive an old observation. Only available subjects receive an
+observation. Existing access errors for locked/removed chapters with retained
+content still propagate; they are not reclassified as absence for source fallback.
 
 The production reader retains that observation with the loaded projection. A
 source fetch can finish after a concurrent save; it retains the earlier absence
