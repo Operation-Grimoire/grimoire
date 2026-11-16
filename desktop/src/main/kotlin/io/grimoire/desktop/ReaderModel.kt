@@ -4,9 +4,12 @@ import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
+import io.grimoire.api.source.Source
 import io.grimoire.api.source.feature.PopularSource
 import io.grimoire.api.source.web.ChapterListSource
+import io.grimoire.api.source.web.CursorPaginatedSource
 import io.grimoire.api.source.web.PageListSource
+import io.grimoire.api.source.web.getAllChapters
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
 import io.grimoire.reading.ChapterLoader
@@ -74,9 +77,10 @@ class ReaderModel(
         check(state.value.view == View.BROWSE && novel in state.value.novels) { "This catalog selection is no longer current" }
         check(!state.value.offline) { "Novel refresh is unavailable offline" }
         val loaded = extension ?: error("Open a compatible local extension first")
-        val source = loaded.source as? ChapterListSource ?: error("This source's chapter list is unsupported")
+        val source = loaded.source
+        check(source is ChapterListSource || source is CursorPaginatedSource) { "This source's chapter list is unsupported" }
         val details = source.getNovelDetails(novel)
-        val chapters = source.getChapterList(details)
+        val chapters = sourceChapters(source, details)
         check(chapters.isNotEmpty()) { "The source returned no chapters" }
         val book = library.remember(NovelKey(loaded.sourceId, details.url), details, chapters)
         mutable.update { it.copy(view = View.BOOK, book = book, pages = emptyList(), chapter = null) }
@@ -220,4 +224,10 @@ class ReaderModel(
             }
         }
     }
+}
+
+internal suspend fun sourceChapters(source: Source, novel: Novel): List<Chapter> = when (source) {
+    is CursorPaginatedSource -> source.getAllChapters(novel)
+    is ChapterListSource -> source.getChapterList(novel)
+    else -> error("This source's chapter list is unsupported")
 }
