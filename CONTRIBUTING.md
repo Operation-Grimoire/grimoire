@@ -48,8 +48,8 @@ package-read credentials.
 
 ### Extension API consumer regression
 
-The `Extension host API` workflow builds the app with its normal published API
-pin and five extension APKs from a fixed revision of `grimoire-extensions`.
+The `Extension host API` workflow builds the app with its configured published
+API version and five extension APKs from a fixed revision of `grimoire-extensions`.
 It installs them on a fresh API 35 emulator and runs `ExtensionHostApiTest`.
 The APKs use the existing extension source directories; no source implementation
 is copied into the app or rewritten for the test.

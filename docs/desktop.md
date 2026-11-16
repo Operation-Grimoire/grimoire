@@ -13,8 +13,9 @@ the application does not compile or copy a Royal Road implementation.
 Use JDK 17 and the package-read credentials described in [CONTRIBUTING](../CONTRIBUTING.md).
 Building the external extension JAR uses that repository's JDK 21 toolchain;
 the application build and runtime use JDK 17. CI installs both explicitly.
-This development build uses `extensions-core` 1.6.0-SNAPSHOT. A local API
-composite can be selected with `-PgrimoireApiDir` for unreleased changes.
+The default remains `extensions-core` 1.5.0. Cursor-pagination development
+selects 1.6.0-SNAPSHOT with `-PextensionsApiVersion=1.6.0-SNAPSHOT`, as PR CI
+does. A local API composite can be selected with `-PgrimoireApiDir`.
 
 ```sh
 bash ./gradlew :reading-core:test :desktop:test
