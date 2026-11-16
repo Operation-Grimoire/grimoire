@@ -86,6 +86,14 @@ App behavior tests build their own small test-only extension JAR:
 bash ./gradlew :desktop:integrationTest :desktop:uiTest
 ```
 
+Compose tasks (`uiTest`, `extensionCompatibilityTest` and `liveSmoke`) require a
+display. On headless Linux, install Xvfb and prefix each UI command with
+`xvfb-run -a`, including the compatibility and live smoke commands below:
+
+```sh
+xvfb-run -a bash ./gradlew :desktop:integrationTest :desktop:uiTest
+```
+
 These tasks need no extensions checkout or external manifest. The fixture in
 `desktop/src/readerFixture` returns fixed API data, with no website parser.
 It is packaged separately and loaded by the production JAR loader; its classes
