@@ -5,6 +5,7 @@ import android.webkit.CookieManager
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import io.grimoire.app.BuildConfig
 import io.grimoire.api.source.Source
 import io.grimoire.api.source.feature.WebViewLoginSource
 import io.grimoire.api.source.http.HttpSource
@@ -80,7 +81,10 @@ class ExtensionHostApiTest {
         val info = fixtureInfo("en.webnovel")
         val cached = loader.load(info)!!.source
         assertNotNull(cached)
-        val future = loader.load(info.copy(minimumApiVersion = "1.6"))
+        val nextMinorApi = BuildConfig.EXTENSIONS_API_VERSION.substringBefore('-').split('.').let { parts ->
+            "${parts[0]}.${parts[1].toInt() + 1}"
+        }
+        val future = loader.load(info.copy(minimumApiVersion = nextMinorApi))
         assertNotNull("A rejected cached source must remain manageable", future)
         assertTrue(!future!!.isCompatible)
         assertNull(future.source)

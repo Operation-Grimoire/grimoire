@@ -40,7 +40,9 @@ Pure projection/logic changes should come with a unit test (see
 
 For local API development, pass `-PgrimoireApiDir=/path/to/grimoire-extensions-api`
 and `-PextensionsApiVersion=VERSION` to use the composite instead of published
-packages. Normal builds use the stable release without either property.
+packages. Without either property, builds use the `extensionsApi` catalog pin;
+`-PextensionsApiVersion=VERSION` also selects another published version. Release
+builds must use a concrete release rather than a mutable `-SNAPSHOT` version.
 The normal Android build resolves both GitHub Packages repositories with the same
 package-read credentials.
 
@@ -101,11 +103,11 @@ these counts. It retains `codec-result.log`, `library-result.log` and
 
 ### Extension API requirements
 
-APKs declare `grimoire.extension.minApi` through a string resource generated from
-the shared extension library's API catalog pin. JARs declare the matching
-`Grimoire-Core-Api` value. The format is `major.minor`; patch releases retain the
-same binary API contract. Extension authors change one catalog pin, not a second
-source implementation or a per-platform parser.
+APKs declare `grimoire.extension.minApi` through the shared extension library's
+string resource. An extension that uses a newer API overrides that requirement;
+JARs declare the matching `Grimoire-Core-Api` value. The format is `major.minor`;
+patch releases retain the same binary API contract. This selects compatibility
+metadata, not a second source implementation or a per-platform parser.
 
 The loader checks this declaration before creating a class loader or using a
 cached source. It requires the same major version and a sufficient minor

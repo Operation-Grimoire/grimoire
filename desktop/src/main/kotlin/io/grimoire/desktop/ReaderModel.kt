@@ -76,6 +76,7 @@ class ReaderModel(
         check(!state.value.offline) { "Novel refresh is unavailable offline" }
         val loaded = extension ?: error("Open a compatible local extension first")
         val source = loaded.source
+        check(source is ChapterListSource || source is CursorPaginatedSource) { "This source's chapter list is unsupported" }
         val details = source.getNovelDetails(novel)
         val chapters = sourceChapters(source, details)
         check(chapters.isNotEmpty()) { "The source returned no chapters" }
