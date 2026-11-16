@@ -17,6 +17,28 @@ import java.util.concurrent.atomic.AtomicBoolean
 class ReaderCheckpointAdoptionTest {
     @get:Rule val temporary = TemporaryFolder()
     private val pages = listOf("First", "Second", "Third").mapIndexed { i, text -> NovelPage(i, PageContent.Text(text)) }
+
+    @Test fun chapterRefreshAndReopenFallBackFromMissingOrLockedResumeSelection() {
+        val directory = temporary.newFolder().toPath()
+        val legacy = fixtureChapters.first()
+        val selected = legacy.copy(url = "/selected", locked = false)
+        LocalLibrary(directory).use { library ->
+            library.seed()
+            library.remember(fixtureKey.novel, fixtureNovel, listOf(legacy, selected))
+            library.position(fixtureKey, 1, 9); library.flush()
+            library.selectResumeChapter(ChapterKey(fixtureKey.novel, selected.url))
+            assertEquals(selected, library.book(fixtureKey.novel)!!.resumeChapter())
+            library.remember(fixtureKey.novel, fixtureNovel, listOf(legacy, selected.copy(locked = true)))
+            assertEquals(legacy, library.book(fixtureKey.novel)!!.resumeChapter())
+            library.remember(fixtureKey.novel, fixtureNovel, listOf(legacy))
+        }
+        LocalLibrary(directory).use { reopened ->
+            val book = reopened.book(fixtureKey.novel)!!
+            assertEquals(selected.url, book.resumeChapterUrl)
+            assertEquals(legacy, book.resumeChapter())
+            assertNull(book.copy(chapters = listOf(legacy.copy(locked = true))).resumeChapter())
+        }
+    }
     private fun model(library: LocalLibrary) = desktopReaderModel(library, "1.6.0", AtomicBoolean(false))
     private suspend fun ReaderModel.settled() { withTimeout(5_000) { state.first { !it.busy } }; assertNull(state.value.error) }
     private suspend fun ReaderModel.open(library: LocalLibrary, chapter: Chapter = fixtureChapters.first()) {

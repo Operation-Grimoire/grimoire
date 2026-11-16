@@ -305,7 +305,7 @@ signed-DB34 migration. Compiling these cases is not proof of ART execution.
 Both production readers use `ReaderCheckpoints` above their platform DAOs. It shares
 registration-bound restoration, explicit capture enablement, retirement, ordered
 flush and retry handling. Room/JDBC remain independently selected backends. Portable
-restoration is at paragraph boundaries; legacy viewport pixels are never certified
+restoration is at block boundaries; legacy viewport pixels are never certified
 against a new layout. Measured hints and character-level realization remain separate.
 See [capture/restore/flush and proof limits](reading-anchors.md#production-capture-restoration-and-flush).
 Four additional native ReaderCheckpointAdoptionTest cases cover the production Android

@@ -2,7 +2,7 @@
 
 The shared canonical document, resolver, projection, session/DAO protocol and
 production capture/restore/flush workflow are implemented. Both readers save guarded
-portable checkpoints and restore through their current projection at paragraph
+portable checkpoints and restore through their current projection at block
 boundaries. Measured pixel hints, glyph/character-level restoration and conversion
 of historical legacy fields remain separate. Legacy same-platform positions are a
 labelled approximate fallback, never a certified portable anchor. Existing progress,

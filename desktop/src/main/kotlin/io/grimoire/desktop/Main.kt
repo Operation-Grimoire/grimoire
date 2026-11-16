@@ -140,10 +140,10 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
                         val description = remember(book.novel.description) { org.jsoup.Jsoup.parse(book.novel.description.orEmpty()).text() }
                         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             item { Text("${book.chapters.size} chapters", style = MaterialTheme.typography.titleLarge) }
-                            (book.resumeChapterUrl ?: book.position?.chapterUrl)?.let { url -> book.chapters.find { it.url == url }?.let { chapter ->
+                            book.resumeChapter()?.let { chapter ->
                                 item { Button(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked &&
                                     (!state.offline || chapter.url in book.downloaded)) { Text("Continue reading") } }
-                            } }
+                            }
                             item { Text(description, style = MaterialTheme.typography.bodyLarge) }
                         }
                     }

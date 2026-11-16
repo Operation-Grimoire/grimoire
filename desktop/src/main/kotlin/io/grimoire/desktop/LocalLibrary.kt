@@ -26,6 +26,10 @@ data class SavedBook(
     val resumeChapterUrl: String? = null,
 )
 
+internal fun SavedBook.resumeChapter(): Chapter? =
+    chapters.find { it.url == resumeChapterUrl && !it.locked }
+        ?: chapters.find { it.url == position?.chapterUrl && !it.locked }
+
 /** Desktop facade; SQL owns committed state, pending positions stay off the UI's disk path. */
 class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageCheckpoint) -> Unit) : Closeable {
     constructor(directory: Path) : this(directory, {})
