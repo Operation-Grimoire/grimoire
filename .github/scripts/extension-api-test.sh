@@ -45,3 +45,11 @@ grep -Fq 'OK (4 tests)' projection-result.log
 grep -Fq 'INSTRUMENTATION_CODE: -1' projection-result.log
 test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' projection-result.log)" -eq 4
 if grep -Eq 'FAILURES|INSTRUMENTATION_(FAILED|ABORTED)|INSTRUMENTATION_STATUS_CODE: -[234]' projection-result.log; then exit 1; fi
+
+adb shell am instrument -w -r \
+  -e class io.grimoire.app.data.local.ChapterObservationTest \
+  io.grimoire.app.test/androidx.test.runner.AndroidJUnitRunner | tee observation-result.log
+grep -Fq 'OK (6 tests)' observation-result.log
+grep -Fq 'INSTRUMENTATION_CODE: -1' observation-result.log
+test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' observation-result.log)" -eq 6
+if grep -Eq 'FAILURES|INSTRUMENTATION_(FAILED|ABORTED)|INSTRUMENTATION_STATUS_CODE: -[234]' observation-result.log; then exit 1; fi

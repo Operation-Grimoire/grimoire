@@ -108,6 +108,29 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
         return SavedChapterSnapshot(row.validBody(), row.revision)
     }
 
+    /** Seed only protocol identity; the body, receipt, legacy position and membership stay untouched. */
+    @Synchronized internal fun readObserved(key: ChapterKey, beforeCommit: () -> Unit = {}): ObservedSavedChapter = write(beforeCommit) {
+        val saved = readSnapshot(key)
+        if (eligibility(key) != null) return@write ObservedSavedChapter(saved, null)
+        val row = content(key) ?: run {
+            db.execute("INSERT INTO contents(source_id,novel_url,chapter_url,revision) VALUES(?,?,?,?)",
+                key.novel.sourceId, key.novel.url, key.url, UUID.randomUUID().toString())
+            requireNotNull(content(key))
+        }
+        ObservedSavedChapter(saved, ChapterStorageObservation(key, owner, row.revision,
+            if (row.hasContent) ChapterContentPresence.SAVED else ChapterContentPresence.ABSENT))
+    }
+
+    @Synchronized internal fun isObservationCurrent(observation: ChapterStorageObservation, beforeCommit: () -> Unit = {}): Boolean {
+        if (closed || observation.scope != owner) return false
+        return write(beforeCommit) {
+            if (eligibility(observation.key) != null) return@write false
+            content(observation.key)?.let { row ->
+                row.revision == observation.generation && row.hasContent == (observation.presence == ChapterContentPresence.SAVED)
+            } == true
+        }
+    }
+
     @Synchronized internal fun claim(key: ChapterKey, beforeCommit: () -> Unit): DownloadAttempt? = write(beforeCommit) {
         if (eligibility(key) != null) return@write null
         val previous = content(key)

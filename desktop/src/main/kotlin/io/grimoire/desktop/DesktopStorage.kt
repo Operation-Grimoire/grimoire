@@ -12,6 +12,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** SQL-backed adapters implement the shared contracts; source access stays in the host. */
 class DesktopSavedChapterDao(private val library: LocalLibrary) : SavedChapterDao {
+    override suspend fun readObserved(key: ChapterKey): ObservedSavedChapter = withContext(Dispatchers.IO) {
+        val context = kotlinx.coroutines.currentCoroutineContext()
+        library.readObserved(key) { context.ensureActive() }
+    }
+    override suspend fun isObservationCurrent(observation: ChapterStorageObservation): Boolean = withContext(Dispatchers.IO) {
+        val context = kotlinx.coroutines.currentCoroutineContext()
+        library.isObservationCurrent(observation) { context.ensureActive() }
+    }
     override suspend fun readSnapshot(key: ChapterKey): SavedChapterSnapshot? = withContext(Dispatchers.IO) {
         library.readSnapshot(key)
     }

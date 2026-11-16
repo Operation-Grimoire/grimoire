@@ -22,6 +22,8 @@ internal class ReaderFixturePlatform : SourceHttpPlatform {
     val allowed = AtomicBoolean(true)
     val requests = AtomicInteger()
     val catalogGate = AtomicReference<CountDownLatch?>()
+    val chapterGate = AtomicReference<CountDownLatch?>()
+    val chapterEntered = AtomicReference<CountDownLatch?>()
     override val cookieJar = CookieJar.NO_COOKIES
     override val userAgent = "GrimoireReaderTest/1"
     override val interceptors = listOf(Interceptor { chain ->
@@ -33,6 +35,10 @@ internal class ReaderFixturePlatform : SourceHttpPlatform {
         requests.incrementAndGet()
         if (url.encodedPath == "/catalog") {
             check(catalogGate.get()?.await(5, TimeUnit.SECONDS) != false) { "Fixture catalog gate timed out" }
+        }
+        if (url.encodedPath == "/chapter") {
+            chapterEntered.get()?.countDown()
+            check(chapterGate.get()?.await(5, TimeUnit.SECONDS) != false) { "Fixture chapter gate timed out" }
         }
         Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200)
             .message("Fixture").body("".toResponseBody()).build()

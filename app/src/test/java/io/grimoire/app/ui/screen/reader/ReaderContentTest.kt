@@ -4,6 +4,8 @@ import io.grimoire.api.model.novel.*
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.reading.*
 import io.grimoire.reading.anchor.*
+import io.grimoire.reading.storage.ChapterStorageObservation
+import io.grimoire.reading.storage.ChapterContentPresence
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -15,10 +17,13 @@ class ReaderContentTest {
 
     @Test fun savedProjectionMapsImagesAfterCanonicalCaptureAndKeepsLegacyAudioInput() {
         var lookups = 0
-        val loaded = androidReaderContent(7, key, LoadedChapter(pages, ChapterOrigin.SAVED, "revision")) {
+        val observation = ChapterStorageObservation(key, "scope", "generation", ChapterContentPresence.SAVED)
+        val loaded = androidReaderContent(7, key, LoadedChapter(pages, ChapterOrigin.SAVED, "revision", observation)) {
             assertEquals(99, it.index); lookups++; "file:///cache"
         }
         assertEquals(1, lookups)
+        assertSame(observation, loaded.storageObservation)
+        assertEquals(observation.key, loaded.projection.document!!.key)
         assertEquals(pages, loaded.projection.originalPages)
         assertEquals(listOf(2, 3, 4, 5), loaded.projection.body.map { it.canonicalOrdinal })
         assertEquals(4, loaded.pages.size)
