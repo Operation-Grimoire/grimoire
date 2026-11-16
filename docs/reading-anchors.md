@@ -1,8 +1,9 @@
 # Portable reading anchors
 
-This is the contract for the next shared-storage slice. The anchor model,
-resolver, DAO and platform adoption are **not implemented**. Names below describe
-values and outcomes, not shipped Kotlin APIs. [#425](https://github.com/Operation-Grimoire/grimoire/pull/425)
+The pure canonical document, anchor model and resolver are implemented in
+`reading-core`. Projection mappings, local layout hints, legacy/presentation
+fallback, checkpoint DAO and production reader adoption are **not implemented**. The contract below also
+defines their required behavior. [#425](https://github.com/Operation-Grimoire/grimoire/pull/425)
 completed desktop download/storage adoption; its remaining runtime gates still
 apply. This contract does not select a new database or define account sync.
 
@@ -99,6 +100,9 @@ without a text-precision field. Block precision never promises restoration to th
 line or glyph. Preserve this precision in every resolver outcome.
 These offsets count string units, not glyphs or grapheme clusters. A renderer may
 place the viewport at the containing line without rewriting the logical offset.
+TextOffset/BlockStart are contract labels; the Kotlin values are
+`AnchorPrecision.TEXT_OFFSET` and `AnchorPrecision.BLOCK_START`. This model does
+not define a persisted anchor encoding or wire representation for those labels.
 
 A separate optional device-local hint holds the rendered item/pixel offset. Bind
 it to the same capture, platform renderer, logical revision and layout token.
@@ -280,9 +284,9 @@ Defining a normalized progress measure or changing those thresholds is later wor
 
 ## Implementation order and acceptance
 
-1. Add pure canonical-document, anchor and resolver models in `reading-core`,
-   with exact version/framing fixtures and the resolution matrix above. This
-   alone does not complete feature sharing.
+1. **Implemented:** pure canonical-document, anchor and resolver models in
+   `reading-core`, with exact version/framing fixtures and the core resolution
+   matrix. This alone does not complete feature sharing.
 2. Preserve original pages in both production readers and build explicit
    projection mappings. Test title/footer, blank items, image substitution,
    HTML/plain-text disagreement, reflow and block/text precision.
@@ -292,6 +296,30 @@ Defining a normalized progress measure or changing those thresholds is later wor
 4. Move production capture, restore and flush paths through those shared decisions.
    Run equivalent scenarios through both compositions; retain host lifecycle and
    UI tests separately. Then design shared progress/completion commands.
+
+### Implemented core and proof limits
+
+[CanonicalDocument](../reading-core/src/main/kotlin/io/grimoire/reading/anchor/CanonicalDocument.kt)
+copies original pages into immutable typed blocks and computes the contract's
+document/block fingerprints incrementally.
+[ReadingAnchor](../reading-core/src/main/kotlin/io/grimoire/reading/anchor/ReadingAnchor.kt)
+retains raw invalid/unsupported evidence and exposes the pure resolver. Its typed
+outcomes are Exact, Relocated, Unresolved, IdentityMismatch, UnsupportedVersion,
+Invalid and NoContent. Every outcome retains the original anchor; relocation
+also returns the current revision/ordinal. These results grant no write authority.
+
+Twenty-two new JVM tests cover immutable snapshots, 14 frozen framing vectors,
+a digest-buffer boundary, codec1/codec2 semantic equality, Unicode and the core
+resolution matrix. The independent Python stdlib
+[fixture generator](../reading-core/src/test/resources/anchors/generate_v1.py)
+can verify the frozen oracle with `--check`. Deliberately accepting duplicate
+matches or converting source strings through lossy UTF-8 makes the respective
+regression fail. NoContent remains distinct from a nonempty document of blank
+blocks; NoVisibleContent requires a renderer projection and is not a core result.
+
+The existing readers/loader/DAOs do not call this resolver yet. Local-hint reuse,
+LegacyApproximate and presentation fallback remain steps2-4; JVM core tests do
+not establish their UI, persistence, migration or process-death acceptance.
 
 | Required proof | Acceptance |
 | --- | --- |
@@ -305,6 +333,6 @@ Defining a normalized progress measure or changing those thresholds is later wor
 | Unrelated state | Payloads/download receipts, library membership, read flags, first-read/opened history and privacy behavior retain their existing semantics. |
 
 Native UI, emulator/phone, migration, process-death and local JVM evidence remain
-distinct. This document provides no new runtime acceptance, database migration or
-release. Track the remaining work in [#397](https://github.com/Operation-Grimoire/grimoire/issues/397)
+distinct. The implemented core does not establish new reader/persistence acceptance
+or change a database schema. Track the remaining work in [#397](https://github.com/Operation-Grimoire/grimoire/issues/397)
 and the [shared-storage plan](shared-storage.md).

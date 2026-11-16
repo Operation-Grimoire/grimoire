@@ -211,7 +211,9 @@ both platform compositions. Platform adapters may keep different backends.
    preservation of legacy positions before extracting storage operations.
    The [portable reading-anchor contract](reading-anchors.md) now defines those
    decisions, projection mappings, local layout hints and guarded write outcomes.
-   Its shared model/resolver, DAO and production adoption remain unimplemented.
+   Its pure shared model/resolver is implemented with framing and resolution
+   tests. Projection mappings, local layout hints, legacy/presentation fallback,
+   coherent load stamps, DAO and production adoption remain unimplemented.
    Android display filtering can change indices; desktop paragraph/pixel offsets
    and Android viewport offsets are device hints, not portable anchors. Separate
    completion, explicit unread/rereading and first-read history rules.
