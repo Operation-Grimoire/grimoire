@@ -2,8 +2,10 @@
 
 The pure canonical document, anchor model, resolver and projection mapping are
 implemented in `reading-core`. Both readers render through those mappings and
-capture provisional block anchors. Persisted anchor capture/restore, local layout
-hints, legacy-anchor conversion and checkpoint DAO are **not implemented**. The contract below also
+capture provisional block anchors. Production persisted anchor capture/restore,
+local layout hints and legacy-anchor conversion are **not implemented**.
+The additive checkpoint DAO and session protocol are implemented behind both adapters;
+the existing readers still persist their legacy positions. The contract below also
 defines their required behavior. [#425](https://github.com/Operation-Grimoire/grimoire/pull/425)
 completed desktop download/storage adoption; its remaining runtime gates still
 apply. This contract does not select a new database or define account sync.
@@ -301,9 +303,10 @@ Defining a normalized progress measure or changing those thresholds is later wor
    Shared tests cover decorations, blank items, image substitution, text/HTML
    disagreement, changed projections and block/text precision. Actual glyph-level
    capture and measured-layout hints remain later work.
-3. **Load observations implemented:** define the additive checkpoint DAO/facade
-   and session registration next. Implement per-chapter state, idempotency and invalidation in
-   Android Room and desktop JDBC. Preserve both legacy layouts and unrelated fields.
+3. **Implemented:** coherent load observations and additive checkpoint DAO/session
+   registration in Android Room and desktop JDBC. Shared decisions validate document,
+   observation, session and sequence inside each adapter transaction. New checkpoint
+   tables preserve legacy layouts and unrelated fields; production adoption follows.
 4. Move production capture, restore and flush paths through those shared decisions.
    Run equivalent scenarios through both compositions; retain host lifecycle and
    UI tests separately. Then design shared progress/completion commands.
@@ -325,12 +328,13 @@ revision does not move old images to a new cache path. Scope is tied to the issu
 observer/store lifetime; another observer or reopened store cannot reuse it.
 Validation never seeds/replaces identity and never grants persistence authority.
 
-This implements the load-observation prerequisite of step3, without changing a
-schema or content codec. Reading sessions, sequence/replay handling, checkpoint
-DAOs, guarded commit, portable restoration and local layout hints remain unimplemented.
+The load-observation prerequisite introduced no schema or codec change. Step3 now
+also supplies registered sessions and guarded checkpoint DAOs in separate additive
+tables. Portable restoration and local layout hints remain unimplemented.
 Current position writers still persist the same legacy fields; they do not consume
 these observations as permits. Download claim/failure without body changes need
-not invalidate an observation. Session reset/revocation is a separate future rule.
+not invalidate an observation. Session registration and guarded commits recheck
+these observations atomically, as described below.
 
 ### Implemented core and proof limits
 
@@ -382,9 +386,9 @@ It still flushes the same legacy book position. Both hosts construct projections
 off the UI thread. No schema/codec change, per-chapter checkpoint, storage-generation
 registration or new completion/history policy is introduced.
 
-Local-hint reuse, LegacyApproximate, registered sessions/guarded checkpoint DAOs
-and durable capture/restore remain steps3-4. Coherent load observations are now
-implemented; they do not complete those write/restore gates. Shared/host unit tests and a desktop Compose
+Local-hint reuse, LegacyApproximate and durable capture/restore remain step4.
+Registered sessions/guarded checkpoint DAOs and coherent load observations are
+implemented; they do not complete production write/restore adoption. Shared/host unit tests and a desktop Compose
 journey exercise the new capture path. Android's four ReaderProjectionTest cases
 exercise the host helper/UTF-16 framing on ART and verify the real Room legacy
 write retains rendered indices and unrelated metadata. They are not Android
@@ -405,3 +409,40 @@ Native UI, emulator/phone, migration, process-death and local JVM evidence remai
 distinct. The implemented core does not establish new reader/persistence acceptance
 or change a database schema. Track the remaining work in [#397](https://github.com/Operation-Grimoire/grimoire/issues/397)
 and the [shared-storage plan](shared-storage.md).
+
+## Guarded checkpoint storage
+
+`ReadingCheckpointDao` registers a fresh session against a coherent observation and
+an immutable canonical document. Registration checks eligibility/generation/presence
+inside the same transaction that replaces the current chapter session. It preserves
+the previous portable checkpoint and resets only the new session's sequence. A
+stale observation, wrong-key document or empty document cannot register. No source
+fetch, content identity allocation or legacy-position conversion occurs here.
+
+Both adapters call the same `decideCheckpoint` decision table. A command must match
+the registered key, document revision, observation and session, carry a positive
+sequence, and resolve exactly against its registered document. Newer sequences may
+move backward. An identical current-sequence retry replays; different content at
+the same sequence conflicts; older sequences and superseded sessions are stale.
+Generation/eligibility checks also precede replay, so content replacement, restore,
+relock/removal and delete/recreate cannot revive an old writer. The session's full
+document stays immutable in memory; only its revision/binding and anchor are stored.
+
+`read` returns raw portable evidence without registering or granting write authority.
+It preserves unsupported/invalid anchor evidence for the resolver; unsupported or
+corrupt protocol envelopes fail without overwriting the row. A new observer/open
+cannot reuse a previous scope, while the portable checkpoint remains readable.
+Lost confirmations require an identical retry; pre-commit cancellation/failure rolls
+back. Re-registration revokes the old session even if its document has identical text.
+
+Android DB34-to35 adds only `reading_checkpoints`, cascading with the chapter row.
+Desktop SQL1-to2 adds the equivalent table keyed by chapter and tied to its contents
+metadata row. No migration fabricates an anchor from legacy indices or rewrites body,
+cache revision, membership, download receipts, history or the novel resume pointer.
+Older builds refuse these newer schema versions. Close older readers and keep a full
+pre-upgrade app-data/library-directory copy to roll back; never lower user_version.
+
+This slice stores anchors only. Measured layout hints, portable capture/restore and
+flush coordination, legacy approximation and production reader adoption remain the
+next slice. Existing progress/completion/history policy is unchanged. Local tests and
+instrumentation compilation are separate from hosted ART, signed beta and UI acceptance.

@@ -6,6 +6,8 @@ import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.reading.*
 import io.grimoire.reading.storage.*
+import io.grimoire.reading.anchor.CanonicalDocument
+import io.grimoire.reading.anchor.ReadingAnchor
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.Closeable
@@ -122,13 +124,57 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
     }
 
     @Synchronized internal fun isObservationCurrent(observation: ChapterStorageObservation, beforeCommit: () -> Unit = {}): Boolean {
-        if (closed || observation.scope != owner) return false
+        if (closed) return false
+        return write(beforeCommit) { observationCurrent(observation) }
+    }
+
+    private fun observationCurrent(observation: ChapterStorageObservation): Boolean {
+        if (observation.scope != owner || eligibility(observation.key) != null) return false
+        return content(observation.key)?.let { row ->
+            row.revision == observation.generation && row.hasContent == (observation.presence == ChapterContentPresence.SAVED)
+        } == true
+    }
+
+    @Synchronized internal fun registerReadingSession(observation: ChapterStorageObservation, document: CanonicalDocument,
+        beforeCommit: () -> Unit): ReadingSession? {
+        if (closed) return null
         return write(beforeCommit) {
-            if (eligibility(observation.key) != null) return@write false
-            content(observation.key)?.let { row ->
-                row.revision == observation.generation && row.hasContent == (observation.presence == ChapterContentPresence.SAVED)
-            } == true
+            if (!canRegisterReadingSession(observation, document) || !observationCurrent(observation)) return@write null
+            val previous = checkpointState(observation.key)
+            val session = ReadingSession(UUID.randomUUID().toString(), observation, document)
+            putCheckpoint(ReadingCheckpointState(session.binding, anchor = previous?.anchor))
+            session
         }
+    }
+
+    @Synchronized internal fun commitReadingCheckpoint(command: CheckpointCommand, beforeCommit: () -> Unit): CheckpointCommit {
+        if (closed) return CheckpointCommit.NotApplied(CheckpointRejection.STALE)
+        return write(beforeCommit) {
+            val result = decideCheckpoint(command, checkpointState(command.session.observation.key),
+                observationCurrent(command.session.observation))
+            if (result is CheckpointCommit.Committed && !result.replayed) {
+                putCheckpoint(ReadingCheckpointState(command.session.binding, command.sequence, command.anchor))
+            }
+            result
+        }
+    }
+
+    @Synchronized internal fun readReadingCheckpoint(key: ChapterKey): ReadingAnchor? {
+        database.verifyMarker()
+        if (eligibility(key) != null) return null
+        return checkpointState(key)?.anchor
+    }
+
+    private fun checkpointState(key: ChapterKey): ReadingCheckpointState? = db.query(
+        "SELECT state FROM reading_checkpoints WHERE source_id=? AND novel_url=? AND chapter_url=?",
+        key.novel.sourceId, key.novel.url, key.url) { decodeReadingCheckpoint(it.getString(1)) }.singleOrNull()?.also {
+            require(it.binding.observation.key == key) { "Checkpoint identity mismatch" }
+        }
+
+    private fun putCheckpoint(state: ReadingCheckpointState) {
+        val key = state.binding.observation.key
+        db.execute("""INSERT INTO reading_checkpoints VALUES(?,?,?,?) ON CONFLICT(source_id,novel_url,chapter_url)
+            DO UPDATE SET state=excluded.state""", key.novel.sourceId, key.novel.url, key.url, encodeReadingCheckpoint(state))
     }
 
     @Synchronized internal fun claim(key: ChapterKey, beforeCommit: () -> Unit): DownloadAttempt? = write(beforeCommit) {

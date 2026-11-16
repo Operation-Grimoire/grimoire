@@ -62,3 +62,19 @@ class DesktopDownloadDao(private val library: LocalLibrary) : DownloadDao {
         library.currentReceipt(key)
     }
 }
+
+/** Additive durable checkpoint adapter; reader capture/restore adoption is a separate slice. */
+class DesktopReadingCheckpointDao(private val library: LocalLibrary) : ReadingCheckpointDao {
+    override suspend fun register(observation: ChapterStorageObservation,
+        document: io.grimoire.reading.anchor.CanonicalDocument): ReadingSession? = withContext(Dispatchers.IO) {
+        val context = kotlinx.coroutines.currentCoroutineContext()
+        library.registerReadingSession(observation, document) { context.ensureActive() }
+    }
+    override suspend fun commit(command: CheckpointCommand): CheckpointCommit = withContext(Dispatchers.IO) {
+        val context = kotlinx.coroutines.currentCoroutineContext()
+        library.commitReadingCheckpoint(command) { context.ensureActive() }
+    }
+    override suspend fun read(key: ChapterKey): io.grimoire.reading.anchor.ReadingAnchor? = withContext(Dispatchers.IO) {
+        library.readReadingCheckpoint(key)
+    }
+}

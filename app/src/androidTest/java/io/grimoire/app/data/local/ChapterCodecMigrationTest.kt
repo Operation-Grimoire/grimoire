@@ -72,10 +72,10 @@ class ChapterCodecMigrationTest {
     }
 
     private fun open(): AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, name)
-        .addMigrations(MIGRATION_32_33, MIGRATION_33_34).build().also {
+        .addMigrations(MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35).build().also {
             database = it
             // Forces the real migration and Room's full schema/identity validation.
-            assertEquals(34, it.openHelper.writableDatabase.version)
+            assertEquals(35, it.openHelper.writableDatabase.version)
         }
 
     @Test fun legacyBytesAndAllReadingMetadataSurviveMigrationAndReopen() = runBlocking {

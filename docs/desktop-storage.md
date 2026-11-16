@@ -37,7 +37,8 @@ flowchart TB
 
 ## Storage and ownership
 
-`library.sqlite` has application ID `0x4752494D` and schema version 1.
+`library.sqlite` has application ID `0x4752494D` and schema version 2. SQL1 upgrades atomically by adding an empty
+`reading_checkpoints` table; its books/content/attempt/receipt rows are unchanged.
 `books` stores the existing metadata projection; `contents` stores payload,
 explicit codec version, digest, revision, word count and ownership/receipt data.
 The downloaded set derives from `has_content`, so an indexed corrupt or missing
@@ -130,7 +131,8 @@ runtime work; desktop storage adoption does not claim those gates passed. The
 its pure resolver and shared projection mapping are implemented. Desktop renders
 through the mapping and captures provisional anchors while continuing to persist
 legacy indices/pixels. Persistent anchor restoration, local layout hints,
-legacy-anchor conversion and platform checkpoint adapters remain unimplemented.
+legacy-anchor conversion and production adoption of the new checkpoint adapter
+remain unimplemented.
 
 
 ## Coherent reader load observations
@@ -153,3 +155,16 @@ missing record and grants no write authority. Session registration and checkpoin
 commits must later compare those guards inside their own transaction. Existing
 legacy position writes/restoration remain unchanged; no schema migration or new
 portable checkpoint write is introduced by these observations.
+
+## Guarded reading checkpoints
+
+`DesktopReadingCheckpointDao` uses the same facade serialization and SQLite
+transaction boundary as content writers. It calls the shared registration and
+commit decisions described in [reading anchors](reading-anchors.md#guarded-checkpoint-storage).
+Checkpoint state is per chapter, separate from the legacy novel position. It does
+not select a resume chapter, update read/history flags, or store source bodies.
+Portable checkpoints survive reopening; session authority does not. SQL2 rejects
+old SQL1 readers. Retain a full pre-upgrade directory copy for rollback.
+
+The production reader still uses its legacy debounced position writer. Adopting
+portable capture, restore and flush is the next separate change.
