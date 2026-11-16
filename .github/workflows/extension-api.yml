@@ -102,5 +102,6 @@ jobs:
             build/extension-api/codec-result.log
             build/extension-api/library-result.log
             build/extension-api/download-result.log
+            build/extension-api/projection-result.log
             build/extension-api/sha256sums.txt
           if-no-files-found: error

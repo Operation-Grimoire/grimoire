@@ -80,7 +80,7 @@ class RoyalRoadJourneyTest {
             assertTrue(pages.none { (it.content as? PageContent.Text)?.text?.contains("HONEYPOT") == true })
             model.download()
             model.settled()
-            model.position(io.grimoire.reading.ChapterKey(book.key, book.chapters.first().url), 2, 19)
+            model.position(io.grimoire.reading.ChapterKey(book.key, book.chapters.first().url), 2, 19, model.state.value.projection!!)
             model.browse()
             model.settled()
             model.close()

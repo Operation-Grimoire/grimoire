@@ -2,6 +2,7 @@ package io.grimoire.app.ui.screen.reader
 
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
+import io.grimoire.reading.anchor.ReadingAnchor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -14,6 +15,8 @@ internal data class ReaderPosition(
     val fraction: Float,
     val anchorIndex: Int,
     val anchorOffset: Int,
+    /** Provisional content observation; the current writer still persists legacy fields only. */
+    val contentAnchor: ReadingAnchor? = null,
 )
 
 internal fun ChapterEntity.withReaderPosition(position: ReaderPosition?): ChapterEntity =

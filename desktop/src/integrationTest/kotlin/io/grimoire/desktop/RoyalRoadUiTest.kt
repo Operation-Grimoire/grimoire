@@ -65,6 +65,8 @@ class RoyalRoadUiTest {
             settled(model)
             val prose = model.state.value.pages.mapNotNull { (it.content as? PageContent.Text)?.text }.first { it.isNotBlank() }
             compose.onNodeWithText(prose).assertIsDisplayed()
+            compose.waitUntil(5_000) { model.state.value.observedAnchor != null }
+            assertEquals(model.state.value.projection!!.document!!.logicalRevision, model.state.value.observedAnchor!!.logicalRevision)
             capture("reader.png")
             compose.onNodeWithText("Offline").performClick()
             compose.onNode(hasText(chapter.name) and hasClickAction()).assertIsNotEnabled()
@@ -83,6 +85,8 @@ class RoyalRoadUiTest {
             compose.onNodeWithText("Continue reading").performClick()
             settled(model)
             compose.onNodeWithText(prose).assertIsDisplayed()
+            compose.waitUntil(5_000) { model.state.value.observedAnchor != null }
+            assertEquals(model.state.value.book!!.key, model.state.value.observedAnchor!!.key.novel)
             capture("offline-restart.png")
             assertEquals(count, requests.get())
             if (!live) assertEquals(4, count) // fixture catalog, details, chapter list and chapter
