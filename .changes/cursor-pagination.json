@@ -1,0 +1,8 @@
+{
+  "android": [
+    {"category": "feature", "text": "Add support for cursor-paginated chapter lists."}
+  ],
+  "desktop": [
+    {"category": "feature", "text": "Add support for cursor-paginated chapter lists."}
+  ]
+}
