@@ -1,6 +1,6 @@
 # Desktop reading slice
 
-The maintained JVM target is `:desktop`. It reads a trusted local Royal Road JAR,
+The maintained JVM target is `:desktop`. It reads a trusted local extension JAR,
 stores a local library and paragraph position, and saves chapter text for offline
 reading. Android and desktop use `:reading-core` for API compatibility, versioned
 chapter encoding, saved-chapter reads and library membership contracts/repositories. Each platform
@@ -13,9 +13,10 @@ the application does not compile or copy a Royal Road implementation.
 Use JDK 17 and the package-read credentials described in [CONTRIBUTING](../CONTRIBUTING.md).
 Building the external extension JAR uses that repository's JDK 21 toolchain;
 the application build and runtime use JDK 17. CI installs both explicitly.
-The default remains `extensions-core` 1.5.0. Cursor-pagination development
-selects 1.6.0-SNAPSHOT with `-PextensionsApiVersion=1.6.0-SNAPSHOT`, as PR CI
-does. A local API composite can be selected with `-PgrimoireApiDir`.
+The catalog pins immutable `extensions-core` 1.6.0, including cursor pagination.
+CI and app publication use that same catalog version. Local API development can
+select another version with `-PextensionsApiVersion=VERSION` or a local composite
+with `-PgrimoireApiDir`; release builds require a concrete published version.
 
 ```sh
 bash ./gradlew :reading-core:test :desktop:test
@@ -79,32 +80,61 @@ browsing are unavailable capabilities.
 
 ## Verification and limits
 
+App behavior tests build their own small test-only extension JAR:
+
 ```sh
-bash ./gradlew :desktop:integrationTest \
+bash ./gradlew :desktop:integrationTest :desktop:uiTest
+```
+
+Compose tasks (`uiTest`, `extensionCompatibilityTest` and `liveSmoke`) require a
+display. On headless Linux, install Xvfb and prefix each UI command with
+`xvfb-run -a`, including the compatibility and live smoke commands below:
+
+```sh
+xvfb-run -a bash ./gradlew :desktop:integrationTest :desktop:uiTest
+```
+
+These tasks need no extensions checkout or external manifest. The fixture in
+`desktop/src/readerFixture` returns fixed API data, with no website parser.
+It is packaged separately and loaded by the production JAR loader; its classes
+are absent from the host/test runtime classpath. A controlled HTTP platform records
+calls and rejects unmatched requests before network access.
+
+`ReaderJourneyTest` covers extension reimport/stale selection, duplicate-operation
+rejection, locked chapters, saved content/progress and offline restart without an
+extension. `ReaderUiTest` operates Compose controls and checks capture/save/offline
+reopen, with images under `desktop/build/ui-evidence/`. Neither test owns real-source
+selectors or parsing expectations. Both tasks always execute rather than reuse
+cached test results.
+
+A separate real packaged-extension compatibility smoke uses Royal Road and the
+fixture responses maintained in the trusted extensions checkout:
+
+```sh
+bash ./gradlew :desktop:extensionCompatibilityTest \
   -PdesktopFixturesRepo=/path/to/grimoire-extensions \
   -PdesktopTestManifest=desktop/build/royalroad.properties
 ```
 
-The integration test loads the packaged Royal Road JAR and reuses its maintained
-fixture contract's HTTP responses from the trusted checkout. It exercises the
-application's browse/details/chapter path, rejects locked chapters before HTTP,
-saves rich content and progress, then closes the source and restarts without an
-extension. Any network request after that restart fails the test. Integration
-tests always execute; they are not reused from a build cache. The desktop workflow
-runs these checks and a Compose UI fixture journey on Windows and Linux. Run the
-UI journey locally by replacing `:desktop:integrationTest` above with `:desktop:uiTest`.
-It operates the reader controls and captures images under `desktop/build/ui-evidence/`.
-These are controlled fixture checks, not
-live-source or cross-OS UI acceptance.
+This checks that a real extension can run through the app controls and reopen saved
+content offline. Source-specific parsing assertions belong to the extensions repo.
+Its Compose evidence is under `desktop/build/compatibility-evidence/`. Missing
+external inputs fail this task, without becoming prerequisites of the app tests.
+Windows/Linux CI runs app tests first, then builds the pinned external JAR and runs
+the compatibility smoke as a separate step. Storage/shared tests also run on macOS.
 
-`:desktop:liveSmoke` is a separate, explicit opt-in using the same arguments. It
-operates the Compose reader against the real public Royal Road catalog, reads the
-first unlocked chapter of the first listed novel, then saves and reopens it offline
-without a source instance. It uses no accounts, cookies or rendered-page browser.
-It is never included in normal CI/check. Preserve its first result and images in
-`desktop/build/live-evidence/`; a blocked/failed live request must not be reported as
-fixture acceptance. This harness exercises application composition and controls;
-native window chrome, file dialogs and OS lifecycle still need separate acceptance.
+The coordinated snapshot overrides have been removed. These checks and nightly
+publication resolve immutable API `1.6.0` from the catalog; development snapshot
+results are separate evidence from validation against the published release.
+
+`:desktop:liveSmoke` is a separate, explicit opt-in using the compatibility inputs.
+It operates the Compose reader against the real public Royal Road catalog, reads
+the first unlocked chapter, then saves and reopens it offline without a source
+instance. It uses no accounts, cookies or rendered-page browser and is never part
+of normal CI/check. Preserve its first result and images under
+`desktop/build/live-evidence/`; fixture success does not establish live-site success.
+Native window chrome, file dialogs, OS lifecycle and cross-OS runtime acceptance
+remain separate gates.
 
 The initial reader displays paragraph text and scene breaks. Rich HTML is retained
 in downloads, but formatting and illustrations are not rendered yet. The local

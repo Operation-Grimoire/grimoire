@@ -1,8 +1,9 @@
 # Portable reading anchors
 
-The pure canonical document, anchor model and resolver are implemented in
-`reading-core`. Projection mappings, local layout hints, legacy/presentation
-fallback, checkpoint DAO and production reader adoption are **not implemented**. The contract below also
+The pure canonical document, anchor model, resolver and projection mapping are
+implemented in `reading-core`. Both readers render through those mappings and
+capture provisional block anchors. Persisted anchor capture/restore, local layout
+hints, legacy-anchor conversion and checkpoint DAO are **not implemented**. The contract below also
 defines their required behavior. [#425](https://github.com/Operation-Grimoire/grimoire/pull/425)
 completed desktop download/storage adoption; its remaining runtime gates still
 apply. This contract does not select a new database or define account sync.
@@ -287,9 +288,11 @@ Defining a normalized progress measure or changing those thresholds is later wor
 1. **Implemented:** pure canonical-document, anchor and resolver models in
    `reading-core`, with exact version/framing fixtures and the core resolution
    matrix. This alone does not complete feature sharing.
-2. Preserve original pages in both production readers and build explicit
-   projection mappings. Test title/footer, blank items, image substitution,
-   HTML/plain-text disagreement, reflow and block/text precision.
+2. **Implemented:** both production readers preserve original content and render
+   through explicit projection mappings, with provisional BlockStart capture.
+   Shared tests cover decorations, blank items, image substitution, text/HTML
+   disagreement, changed projections and block/text precision. Actual glyph-level
+   capture and measured-layout hints remain later work.
 3. Define the additive checkpoint DAO/facade and coherent load-generation/session
    registration. Implement per-chapter state, idempotency and invalidation in
    Android Room and desktop JDBC. Preserve both legacy layouts and unrelated fields.
@@ -317,9 +320,42 @@ matches or converting source strings through lossy UTF-8 makes the respective
 regression fail. NoContent remains distinct from a nonempty document of blank
 blocks; NoVisibleContent requires a renderer projection and is not a core result.
 
-The existing readers/loader/DAOs do not call this resolver yet. Local-hint reuse,
-LegacyApproximate and presentation fallback remain steps2-4; JVM core tests do
-not establish their UI, persistence, migration or process-death acceptance.
+[ReadingProjection](../reading-core/src/main/kotlin/io/grimoire/reading/anchor/ReadingProjection.kt)
+retains immutable original pages and validates ordered canonical-to-rendered
+mappings. Image locators can change in the rendered copy; prose/types cannot.
+Title/footer slots map to Start/End. Its pure restore recommendation preserves
+the logical result and reports hidden-block presentation fallback or NoVisibleContent.
+This recommendation is not connected to persisted reader restoration yet.
+
+Both current UIs capture BlockStart only. The shared API can capture TextOffset
+when the renderer supplies matching plain text and a valid UTF-16 boundary; text
+disagreement falls back to BlockStart. It does not infer offsets from pixels.
+Projection changes can alter viewport item indices without altering the retained
+canonical document. No geometry or pixel-hint reuse is claimed by those tests.
+
+Android publishes one [ReaderContent](../app/src/main/java/io/grimoire/app/ui/screen/reader/ReaderContent.kt)
+snapshot containing the projection and retained page inputs. Blank filtering and
+saved image-URI replacement happen after original pages are retained. The audio
+controller remains separate and reads the retained pages through its existing path;
+saved/source inputs preserve their previous filtering/URI behavior. Per-load lazy-item keys and
+projection-instance checks reject stale layout/capture callbacks, including reloads
+of the same chapter. These load identities are not measured-layout/session tokens.
+The existing writer persists only rendered legacy index/pixels/fraction; a provisional
+anchor in the pending DTO does not activate checkpoint persistence.
+
+Desktop similarly renders the projected body, resets viewport state per load,
+retires the old projection before a replacement load can suspend, rejects old-load
+callbacks and keeps a provisional anchor in reader state.
+It still flushes the same legacy book position. Both hosts construct projections
+off the UI thread. No schema/codec change, per-chapter checkpoint, storage-generation
+registration or new completion/history policy is introduced.
+
+Local-hint reuse, LegacyApproximate, coherent generations/sessions and durable
+capture/restore remain steps3-4. Shared/host unit tests and a desktop Compose
+journey exercise the new capture path. Android's four ReaderProjectionTest cases
+exercise the host helper/UTF-16 framing on ART and verify the real Room legacy
+write retains rendered indices and unrelated metadata. They are not Android
+Compose UI, physical-phone or checkpoint-process-death acceptance.
 
 | Required proof | Acceptance |
 | --- | --- |

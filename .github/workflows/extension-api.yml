@@ -27,7 +27,6 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       APP_VERSION_TAG: v0.0.0
       APP_BETA_NUMBER: '1'
-      ORG_GRADLE_PROJECT_extensionsApiVersion: 1.6.0-SNAPSHOT
     steps:
       - name: Require successful release policy
         if: needs.impact.result != 'success'
@@ -103,5 +102,6 @@ jobs:
             build/extension-api/codec-result.log
             build/extension-api/library-result.log
             build/extension-api/download-result.log
+            build/extension-api/projection-result.log
             build/extension-api/sha256sums.txt
           if-no-files-found: error

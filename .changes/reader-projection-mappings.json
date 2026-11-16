@@ -1,0 +1,8 @@
+{
+  "android": [
+    {"category": "fix", "text": "Fixed stale scroll updates overwriting the current reading position after reloading a chapter."}
+  ],
+  "desktop": [
+    {"category": "fix", "text": "Fixed stale scroll updates overwriting the current reading position after reloading a chapter."}
+  ]
+}

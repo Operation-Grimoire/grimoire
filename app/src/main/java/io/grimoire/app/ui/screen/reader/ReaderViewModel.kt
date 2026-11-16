@@ -8,7 +8,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.NovelPage
-import io.grimoire.api.model.novel.PageContent
 import io.grimoire.api.source.web.PageListSource
 import io.grimoire.app.R
 import io.grimoire.app.util.imageUrl
@@ -26,10 +25,10 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.ReaderTextAlign
 import io.grimoire.app.data.local.entity.ReadingHistoryEntity
 import io.grimoire.app.util.ContentLanguages
+import io.grimoire.reading.anchor.ReadingProjection
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
 import io.grimoire.reading.ChapterLoader
-import io.grimoire.reading.ChapterOrigin
 import io.grimoire.reading.ChapterPageAccess
 import io.grimoire.reading.ChapterLoadFailure
 import io.grimoire.reading.ChapterLoadException
@@ -70,6 +69,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -136,10 +136,14 @@ class ReaderViewModel @Inject constructor(
         idx >= 0 && idx < chapters.size - 1
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    private val _pages = MutableStateFlow<List<NovelPage>>(emptyList())
-    val pages: StateFlow<List<NovelPage>> = _pages.asStateFlow()
-    private val _pagesChapterId = MutableStateFlow<Long?>(null)
-    val pagesChapterId: StateFlow<Long?> = _pagesChapterId.asStateFlow()
+    private val _content = MutableStateFlow<ReaderContent?>(null)
+    internal val content: StateFlow<ReaderContent?> = _content.asStateFlow()
+    // Compatibility projections. The screen observes content atomically instead.
+    val pages: StateFlow<List<NovelPage>> = _content.map { it?.pages.orEmpty() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val pagesChapterId: StateFlow<Long?> = _content.map { it?.chapterId }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    private val loadedPages get() = _content.value?.pages.orEmpty()
     private var loadPagesJob: Job? = null
 
     // Per-novel text alignment + the novel's language (for AUTO direction).
@@ -209,13 +213,13 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun revealAllImagesInCurrentChapter() {
-        val urls = _pages.value.mapNotNull { it.imageUrl }
+        val urls = loadedPages.mapNotNull { it.imageUrl }
         if (urls.isEmpty()) return
         _revealedImageUrls.update { it + urls }
     }
 
     fun hideAllImagesInCurrentChapter() {
-        val urls = _pages.value.mapNotNull { it.imageUrl }.toSet()
+        val urls = loadedPages.mapNotNull { it.imageUrl }.toSet()
         if (urls.isEmpty()) return
         _revealedImageUrls.update { it - urls }
     }
@@ -379,8 +383,7 @@ class ReaderViewModel @Inject constructor(
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
         flushProgress()
         loadPagesJob?.cancel()
-        _pagesChapterId.value = null
-        _pages.value = emptyList()
+        _content.value = null
         _isLoading.value = true
         _error.value = null
         loadPagesJob = viewModelScope.launch {
@@ -401,21 +404,16 @@ class ReaderViewModel @Inject constructor(
                         else -> ChapterPageAccess.Available { pageSource.getPageList(fresh.toChapter()) }
                     }
                 }
-                val loaded = if (result.origin == ChapterOrigin.SAVED) {
-                    result.pages
-                        .filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
-                        .map { page ->
-                            if (page.imageUrl == null) return@map page
-                            val local = chapterImageStore.localImageUri(fresh.novelId, fresh.url, page.index, result.cacheRevision)
-                            if (local != null) page.copy(content = PageContent.Image(local)) else page
-                        }
-                } else result.pages
+                val loaded = withContext(Dispatchers.IO) {
+                    androidReaderContent(chapter.id, key, result) { page ->
+                        chapterImageStore.localImageUri(fresh.novelId, fresh.url, page.index, result.cacheRevision)
+                    }
+                }
                 // Some extensions return normally even after cancellation.
                 currentCoroutineContext().ensureActive()
                 if (_chapters.value.getOrNull(_currentIndex.value)?.id != chapter.id) return@launch
-                _pages.value = loaded
-                _pagesChapterId.value = chapter.id
-                recordWordCount(fresh, loaded)
+                _content.value = loaded
+                recordWordCount(fresh, loaded.pages)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: ChapterLoadException) {
@@ -456,7 +454,7 @@ class ReaderViewModel @Inject constructor(
         if (_currentIndex.value < _chapters.value.size - 1) {
             flushProgress()
             val chapter = _chapters.value.getOrNull(_currentIndex.value)
-            if (chapter != null && chapter.id == _pagesChapterId.value && !chapter.read) {
+            if (chapter != null && chapter.id == _content.value?.chapterId && !chapter.read) {
                 persistenceScope.launch { chapterDao.setRead(chapter.id, true) }
                 _chapters.update { list ->
                     list.map { if (it.id == chapter.id) it.copy(read = true, readProgress = 1f) else it }
@@ -475,10 +473,11 @@ class ReaderViewModel @Inject constructor(
         anchorOffset: Int,
         lastVisibleIndex: Int,
         totalItems: Int,
+        projection: ReadingProjection,
     ) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
-        if (!acceptsReaderProgress(chapter.id, _pagesChapterId.value, chapterId)) return
-        val position = ReaderPosition(chapterId, fraction, anchorIndex, anchorOffset)
+        val position = captureReaderPosition(chapter.id, _content.value, projection,
+            chapterId, fraction, anchorIndex, anchorOffset) ?: return
         livePosition.value = position
         progressWriter.submit(position)
         val shouldMark = shouldMarkReaderChapterRead(
@@ -557,7 +556,7 @@ class ReaderViewModel @Inject constructor(
                 chapterUrl = chapter.url,
                 chapters = _chapters.value,
                 startIndex = _currentIndex.value,
-                pages = _pages.value,
+                pages = loadedPages,
             )
         }
     }

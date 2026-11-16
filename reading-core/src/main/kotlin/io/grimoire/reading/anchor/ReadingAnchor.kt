@@ -90,10 +90,14 @@ private fun validateOffset(position: AnchorPosition.Block, block: AnchorBlock): 
     if (block !is AnchorBlock.Text) {
         return if (position.precision == AnchorPrecision.BLOCK_START) null else InvalidAnchorReason.PRECISION
     }
-    val offset = position.textOffset
-    if (offset > block.text.length) return InvalidAnchorReason.OFFSET_OUT_OF_RANGE
-    if (offset > 0 && offset < block.text.length &&
-        block.text[offset - 1].isHighSurrogate() && block.text[offset].isLowSurrogate()) {
+    return textOffsetError(block.text, position.textOffset)
+}
+
+internal fun textOffsetError(text: String, offset: Int): InvalidAnchorReason? {
+    if (offset < 0) return InvalidAnchorReason.NEGATIVE_OFFSET
+    if (offset > text.length) return InvalidAnchorReason.OFFSET_OUT_OF_RANGE
+    if (offset > 0 && offset < text.length &&
+        text[offset - 1].isHighSurrogate() && text[offset].isLowSurrogate()) {
         return InvalidAnchorReason.SPLIT_SURROGATE_PAIR
     }
     return null

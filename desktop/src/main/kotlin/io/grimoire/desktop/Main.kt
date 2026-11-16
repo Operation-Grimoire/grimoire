@@ -4,7 +4,6 @@ import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.selection.toggleable
@@ -191,13 +190,16 @@ private fun ChapterPane(book: SavedBook, current: Chapter?, enabled: Boolean, of
 private fun ReaderPane(state: ReaderState, model: ReaderModel, modifier: Modifier = Modifier) {
     val book = checkNotNull(state.book)
     val chapter = checkNotNull(state.chapter)
+    val projection = checkNotNull(state.projection)
     val position = book.position?.takeIf { it.chapterUrl == chapter.url }
     val initialIndex = (position?.paragraph ?: 0).coerceIn(0, state.pages.lastIndex)
-    val scroll = rememberLazyListState(initialIndex, if (initialIndex == position?.paragraph) position.offset else 0)
+    val scroll = androidx.compose.runtime.key(projection) {
+        rememberLazyListState(initialIndex, if (initialIndex == position?.paragraph) position.offset else 0)
+    }
     val key = ChapterKey(book.key, chapter.url)
-    LaunchedEffect(key) {
+    LaunchedEffect(key, projection) {
         snapshotFlow { scroll.firstVisibleItemIndex to scroll.firstVisibleItemScrollOffset }.collectLatest { (index, offset) ->
-            model.position(key, index, offset)
+            model.position(key, index, offset, projection)
             delay(350)
             model.flushPosition()
         }
@@ -207,8 +209,8 @@ private fun ReaderPane(state: ReaderState, model: ReaderModel, modifier: Modifie
         Box(Modifier.weight(1f)) {
             SelectionContainer {
                 LazyColumn(state = scroll, modifier = Modifier.fillMaxSize().padding(end = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    itemsIndexed(state.pages, key = { index, _ -> index }) { _, page ->
-                        when (val content = page.content) {
+                    items(projection.body, key = { it.canonicalOrdinal }) { mapped ->
+                        when (val content = mapped.page.content) {
                             is PageContent.Text -> Text(content.text, style = MaterialTheme.typography.bodyLarge)
                             is PageContent.Separator -> HorizontalDivider(Modifier.padding(vertical = 12.dp))
                             is PageContent.Image -> Text("Image unavailable", style = MaterialTheme.typography.labelMedium)

@@ -17,6 +17,7 @@ import io.grimoire.reading.ChapterPageAccess
 import io.grimoire.reading.ChapterLoadFailure
 import io.grimoire.reading.ChapterLoadException
 import io.grimoire.reading.storage.*
+import io.grimoire.reading.anchor.*
 import io.grimoire.reading.encodeChapterContent
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,8 @@ data class ReaderState(
     val book: SavedBook? = null,
     val chapter: Chapter? = null,
     val pages: List<NovelPage> = emptyList(),
+    val projection: ReadingProjection? = null,
+    val observedAnchor: ReadingAnchor? = null,
     val sourceName: String? = null,
     val busy: Boolean = false,
     val offline: Boolean = false,
@@ -60,8 +63,11 @@ class ReaderModel(
         try { library.flush(); extension?.close() }
         catch (failure: Exception) { loaded.close(); throw failure }
         extension = loaded
-        mutable.update { it.copy(sourceName = loaded.source.name, view = View.LIBRARY,
-            novels = emptyList(), book = null, chapter = null, pages = emptyList(), library = library.saved()) }
+        val saved = library.saved()
+        val sourceName = loaded.source.name
+        publishView { it.copy(sourceName = sourceName, view = View.LIBRARY,
+            novels = emptyList(), book = null, chapter = null, pages = emptyList(), library = saved,
+            projection = null, observedAnchor = null) }
     }
 
     fun browse() = operate {
@@ -70,7 +76,7 @@ class ReaderModel(
         library.flush()
         val novels = source.getPopularNovels(1)
         check(novels.isNotEmpty()) { "The source returned no novels" }
-        mutable.update { it.copy(view = View.BROWSE, novels = novels) }
+        publishView { it.copy(view = View.BROWSE, novels = novels, projection = null, observedAnchor = null) }
     }
 
     fun details(novel: Novel) = operate {
@@ -83,17 +89,19 @@ class ReaderModel(
         val chapters = sourceChapters(source, details)
         check(chapters.isNotEmpty()) { "The source returned no chapters" }
         val book = library.remember(NovelKey(loaded.sourceId, details.url), details, chapters)
-        mutable.update { it.copy(view = View.BOOK, book = book, pages = emptyList(), chapter = null) }
+        publishView { it.copy(view = View.BOOK, book = book, pages = emptyList(), chapter = null, projection = null, observedAnchor = null) }
     }
 
     fun showLibrary() = operate {
         library.flush()
-        mutable.update { it.copy(view = View.LIBRARY, library = library.saved()) }
+        val saved = library.saved()
+        publishView { it.copy(view = View.LIBRARY, library = saved, projection = null, observedAnchor = null) }
     }
 
     fun openSaved(book: SavedBook) = operate {
         library.flush()
-        mutable.update { it.copy(view = View.BOOK, book = library.book(book.key), chapter = null, pages = emptyList()) }
+        val stored = library.book(book.key)
+        publishView { it.copy(view = View.BOOK, book = stored, chapter = null, pages = emptyList(), projection = null, observedAnchor = null) }
     }
 
     fun favorite() = operate {
@@ -105,6 +113,8 @@ class ReaderModel(
     fun read(chapter: Chapter) = operate {
         val book = state.value.book ?: error("Open a novel first")
         require(!chapter.locked && book.chapters.any { it == chapter }) { "This chapter is locked or unavailable" }
+        // Retire the old view before storage/source suspension can admit stale callbacks.
+        publishView { it.copy(view = View.BOOK, chapter = null, pages = emptyList(), projection = null, observedAnchor = null) }
         library.flush()
         val key = ChapterKey(book.key, chapter.url)
         val pages = try {
@@ -130,7 +140,10 @@ class ReaderModel(
             })
         }
         check(pages.any { (it.content as? PageContent.Text)?.text?.isNotBlank() == true }) { "The chapter has no readable text" }
-        mutable.update { it.copy(view = View.READER, book = library.book(book.key), chapter = chapter, pages = pages) }
+        val projection = ReadingProjection.create(key, pages, pages.mapIndexed { ordinal, page -> ProjectedPage(ordinal, page) })
+        val stored = library.book(book.key)
+        publishView { it.copy(view = View.READER, book = stored, chapter = chapter, pages = projection.originalPages,
+            projection = projection, observedAnchor = null) }
     }
 
     fun download() = operate {
@@ -173,13 +186,21 @@ class ReaderModel(
         return library.book(entry.key) ?: error("Novel is no longer stored")
     }
 
-    fun position(key: ChapterKey, paragraph: Int, offset: Int) {
-        if (closing.get()) return
-        val current = state.value
-        val book = current.book ?: return
-        val chapter = current.chapter ?: return
-        if (key != ChapterKey(book.key, chapter.url)) return
-        library.position(key, paragraph, offset)
+    private fun publishView(change: (ReaderState) -> ReaderState) = synchronized(operationLock) {
+        mutable.update(change)
+    }
+
+    fun position(key: ChapterKey, paragraph: Int, offset: Int, observed: ReadingProjection) {
+        synchronized(operationLock) {
+            if (closing.get() || offset < 0) return
+            val current = state.value
+            val book = current.book ?: return
+            val chapter = current.chapter ?: return
+            if (current.view != View.READER || current.projection !== observed ||
+                key != ChapterKey(book.key, chapter.url) || paragraph !in 0 until observed.itemCount) return
+            library.position(key, paragraph, offset)
+            mutable.update { it.copy(observedAnchor = observed.capture(paragraph)) }
+        }
     }
 
     suspend fun flushPosition() {

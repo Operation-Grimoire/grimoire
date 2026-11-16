@@ -128,8 +128,10 @@ fun ReaderScreen(
     modifier: Modifier = Modifier,
     viewModel: ReaderViewModel = hiltViewModel(),
 ) {
-    val pages by viewModel.pages.collectAsStateWithLifecycle()
-    val pagesChapterId by viewModel.pagesChapterId.collectAsStateWithLifecycle()
+    val readerContent by viewModel.content.collectAsStateWithLifecycle()
+    val pagesChapterId = readerContent?.chapterId
+    val projection = readerContent?.projection
+    val pageKeyPrefix = "$pagesChapterId:${readerContent?.loadKey}:"
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val currentChapter by viewModel.currentChapter.collectAsStateWithLifecycle()
@@ -217,9 +219,8 @@ fun ReaderScreen(
     }
 
     val listState = rememberLazyListState()
-    val visiblePages = remember(pages) {
-        pages.filter { it.text.isNotBlank() || it.imageUrl != null || it.isSeparator }
-    }
+    val projectedPages = projection?.body.orEmpty()
+    val visiblePages = remember(projectedPages) { projectedPages.map { it.page } }
     // Settings-sheet preview: a snippet of the actual chapter so the sample is in
     // the novel's language (and its content-derived direction matches the page).
     val chapterPreviewText = remember(visiblePages) {
@@ -238,7 +239,7 @@ fun ReaderScreen(
     var showSettings by remember { mutableStateOf(false) }
     var showGrimoirePopup by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-    var restoredScrollChapterId by remember { mutableStateOf<Long?>(null) }
+    var restoredScrollContent by remember { mutableStateOf<ReaderContent?>(null) }
 
     // Pause the easter-egg colour animation when the reader leaves the foreground —
     // avoids waking the recomposer for off-screen frames.
@@ -270,33 +271,34 @@ fun ReaderScreen(
 
     // Restore only after the new chapter has been laid out; old list measurements
     // must never become the new chapter's saved anchor or mark it read.
-    LaunchedEffect(currentChapter?.id, pagesChapterId, isLoading) {
+    LaunchedEffect(currentChapter?.id, pagesChapterId, isLoading, projection) {
         val chapter = currentChapter ?: return@LaunchedEffect
         if (isLoading || pagesChapterId != chapter.id) {
-            restoredScrollChapterId = null
+            restoredScrollContent = null
             return@LaunchedEffect
         }
-        if (restoredScrollChapterId == chapter.id) return@LaunchedEffect
-        restoredScrollChapterId = null
-        val prefix = "${chapter.id}:"
+        if (restoredScrollContent === readerContent) return@LaunchedEffect
+        restoredScrollContent = null
+        val prefix = pageKeyPrefix
         val total = snapshotFlow { listState.layoutInfo }
             .first { info -> info.visibleItemsInfo.any { it.key.toString().startsWith(prefix) } }
             .totalItemsCount
         val targetIndex = chapter.readAnchorItemIndex.coerceIn(0, total - 1)
         listState.scrollToItem(targetIndex, chapter.readAnchorItemOffset.coerceAtLeast(0))
-        restoredScrollChapterId = chapter.id
+        restoredScrollContent = readerContent
     }
 
-    LaunchedEffect(listState, currentChapter?.id, pagesChapterId, restoredScrollChapterId) {
+    LaunchedEffect(listState, currentChapter?.id, pagesChapterId, restoredScrollContent, projection) {
         val chapterId = currentChapter?.id ?: return@LaunchedEffect
-        if (pagesChapterId != chapterId || restoredScrollChapterId != chapterId) return@LaunchedEffect
+        val observedProjection = projection ?: return@LaunchedEffect
+        if (pagesChapterId != chapterId || restoredScrollContent !== readerContent) return@LaunchedEffect
         snapshotFlow {
             val info = listState.layoutInfo
             val total = info.totalItemsCount
             if (total <= 0) return@snapshotFlow null
             val first = info.visibleItemsInfo.firstOrNull() ?: return@snapshotFlow null
             val last = info.visibleItemsInfo.lastOrNull() ?: return@snapshotFlow null
-            if (!first.key.toString().startsWith("$chapterId:")) return@snapshotFlow null
+            if (!first.key.toString().startsWith(pageKeyPrefix)) return@snapshotFlow null
             // Fraction is last-visible-based so it matches the existing scrollbar percentage
             // (see ReaderScrollbar `readFraction`) — what the user has actually scrolled past.
             val fraction = ((last.index + 1).toFloat() / total).coerceIn(0f, 1f)
@@ -318,13 +320,14 @@ fun ReaderScreen(
                     anchorOffset = it.anchorOffset,
                     lastVisibleIndex = it.lastVisibleIndex,
                     totalItems = it.totalItems,
+                    projection = observedProjection,
                 )
             }
     }
 
     // Follow TTS: scroll the paragraph being spoken into view, unless the user is scrolling.
-    LaunchedEffect(ttsSpokenPageIndex, pagesChapterId, restoredScrollChapterId) {
-        if (pagesChapterId != currentChapter?.id || restoredScrollChapterId != pagesChapterId) return@LaunchedEffect
+    LaunchedEffect(ttsSpokenPageIndex, pagesChapterId, restoredScrollContent) {
+        if (pagesChapterId != currentChapter?.id || restoredScrollContent !== readerContent) return@LaunchedEffect
         val pageIndex = ttsSpokenPageIndex ?: return@LaunchedEffect
         val target = visiblePages.indexOfFirst { it.index == pageIndex }
         if (target >= 0 && !listState.isScrollInProgress) {
@@ -371,7 +374,7 @@ fun ReaderScreen(
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    item(key = "$pagesChapterId:title") {
+                    item(key = "${pageKeyPrefix}title") {
                         Text(
                             text = currentChapter?.name ?: "",
                             style = MaterialTheme.typography.titleLarge.copy(
@@ -383,7 +386,8 @@ fun ReaderScreen(
                             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                         )
                     }
-                    items(visiblePages, key = { "$pagesChapterId:page:${it.index}" }) { page ->
+                    items(projectedPages, key = { "${pageKeyPrefix}page:${it.canonicalOrdinal}" }) { mapped ->
+                        val page = mapped.page
                         val imageUrl = page.imageUrl
                         when {
                             page.isSeparator -> {
@@ -436,7 +440,7 @@ fun ReaderScreen(
                             }
                         }
                     }
-                    item(key = "$pagesChapterId:end") {
+                    item(key = "${pageKeyPrefix}end") {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()

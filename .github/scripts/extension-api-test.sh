@@ -37,3 +37,11 @@ grep -Fq 'OK (9 tests)' download-result.log
 grep -Fq 'INSTRUMENTATION_CODE: -1' download-result.log
 test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' download-result.log)" -eq 9
 if grep -Eq 'FAILURES|INSTRUMENTATION_(FAILED|ABORTED)|INSTRUMENTATION_STATUS_CODE: -[234]' download-result.log; then exit 1; fi
+
+adb shell am instrument -w -r \
+  -e class io.grimoire.app.ui.screen.reader.ReaderProjectionTest \
+  io.grimoire.app.test/androidx.test.runner.AndroidJUnitRunner | tee projection-result.log
+grep -Fq 'OK (4 tests)' projection-result.log
+grep -Fq 'INSTRUMENTATION_CODE: -1' projection-result.log
+test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' projection-result.log)" -eq 4
+if grep -Eq 'FAILURES|INSTRUMENTATION_(FAILED|ABORTED)|INSTRUMENTATION_STATUS_CODE: -[234]' projection-result.log; then exit 1; fi

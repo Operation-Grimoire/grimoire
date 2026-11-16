@@ -212,8 +212,11 @@ both platform compositions. Platform adapters may keep different backends.
    The [portable reading-anchor contract](reading-anchors.md) now defines those
    decisions, projection mappings, local layout hints and guarded write outcomes.
    Its pure shared model/resolver is implemented with framing and resolution
-   tests. Projection mappings, local layout hints, legacy/presentation fallback,
-   coherent load stamps, DAO and production adoption remain unimplemented.
+   tests. Both production readers now retain raw content, render through shared
+   projection mappings and capture provisional block anchors. The pure projection
+   API also defines hidden-item fallback; persisted restoration does not use it yet.
+   Local hints, legacy-anchor conversion, coherent load stamps, checkpoint DAO and
+   durable anchor adoption remain unimplemented.
    Android display filtering can change indices; desktop paragraph/pixel offsets
    and Android viewport offsets are device hints, not portable anchors. Separate
    completion, explicit unread/rereading and first-read history rules.
@@ -269,5 +272,7 @@ executed successes: frozen DB33 migration, commit/replay/reopen, fresh/refresh A
 callbacks, invalidating writers, SQL fault rollback and in-flight cancellation,
 single-owner refusal/reset, coherent image snapshots, production queue gates and
 atomic backup restore preserving active status before invalidation.
-The script requires 20 native successes total; native execution remains separate
+Four additional ReaderProjectionTest cases check Android projection/capture on
+ART, frozen UTF-16 framing, stale-load rejection and real legacy Room writes.
+The script requires 24 native successes total; native execution remains separate
 from compilation and the signed beta.347-to-target DB34 compatibility harness.
