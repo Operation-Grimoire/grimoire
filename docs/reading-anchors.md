@@ -18,7 +18,7 @@ offset identify a place in one rendered layout. Keep those values separate.
 | --- | --- | --- |
 | Android capture | `ReaderScreen` maps actual position input through its canonical projection. Title/footer and blank-item filtering remain explicit; legacy fraction/index/pixels stay compatibility metadata. | Map rendered items to original content before sharing an anchor. Do not reinterpret the percentage as a character offset. |
 | Android persistence | `ReaderProgressWriter` debounces for 500 ms, retains failed/newer captures and drains with guarded checkpoint flushes. Save failures expose retry; Back waits for confirmation. `setReadAnchor` remains separate compatibility metadata. | Preserve captured positions, ordering and separate read/history fields. Portable restoration cannot itself mark read; pause/onCleared flushing remains best-effort under forced termination. |
-| Desktop capture | `ReaderPane` recognizes user wheel/scrollbar/scroll input, captures through its projection and flushes after 350 ms. Portable restoration aligns to paragraph boundaries. | Preserve local restore behavior while adding a content-relative position. |
+| Desktop capture | `ReaderPane` recognizes user wheel/scrollbar/scroll input, captures through its projection and flushes after 350 ms. Portable restoration aligns to block boundaries. | Preserve local restore behavior while adding a content-relative position. |
 | Desktop persistence | The shared coordinator persists per-chapter checkpoints through JDBC. `LocalLibrary` also retains one legacy resume position per book; failed autosave keeps accepting captures and failed close can be retried. | Import only the legacy position that exists. Other chapters have unknown positions, not inferred starts or completion. |
 | Completion/history | Android has percentage, paragraphs-from-end and at-end policies, explicit read/unread commands and first-read history. Desktop has no equivalent completion policy. | Position resolution/migration must not set read/unread, invent completion/history or add Android policy to desktop. |
 
@@ -361,7 +361,8 @@ retains immutable original pages and validates ordered canonical-to-rendered
 mappings. Image locators can change in the rendered copy; prose/types cannot.
 Title/footer slots map to Start/End. Its pure restore recommendation preserves
 the logical result and reports hidden-block presentation fallback or NoVisibleContent.
-This recommendation is not connected to persisted reader restoration yet.
+The coordinator now uses this recommendation for persisted reader restoration,
+without treating resolution as a new capture.
 
 Both current UIs capture BlockStart only. The shared API can capture TextOffset
 when the renderer supplies matching plain text and a valid UTF-16 boundary; text
@@ -384,12 +385,13 @@ retires the old projection before a replacement load can suspend, rejects old-lo
 callbacks and keeps a provisional anchor in reader state.
 It retains the legacy book position for compatibility and resume selection, while
 guarded portable checkpoints are per chapter. Both hosts construct projections off
-the UI thread. Reader adoption introduces no schema/codec or completion/history policy change.
+the UI thread. Reader adoption introduces no SQL schema, chapter-content codec or completion/history policy change.
 
 Durable capture/restore and explicitly approximate same-platform legacy fallback
 now use step4. Measured local hints and character-level realization remain later. Shared/host unit tests and a desktop Compose
 journey exercise the new capture path. Android's four ReaderProjectionTest cases
-exercise the host helper/UTF-16 framing on ART and verify the real Room legacy
+cover the host helper/UTF-16 framing and real Room legacy behavior. ART execution
+is verified separately in the maintained CI artifacts; compilation alone is not that proof. The legacy
 write retains rendered indices and unrelated metadata. They are not Android
 Compose UI, physical-phone or checkpoint-process-death acceptance.
 
@@ -458,7 +460,7 @@ projects into each renderer. It never captures or persists a replacement anchor.
 
 Both hosts wait for the new body's layout before observing position. Direct scroll
 input or explicit position acceptance enables portable capture. Programmatic initial
-layout/restoration and TTS scrolling cannot enable it. All portable restores and
+layout/restoration and TTS scrolling cannot enable it. Initial layout, legacy/portable restoration and
 changed/hidden/coarse/error fallbacks suppress compatibility position/completion
 callbacks until user input; restoring End cannot itself mark a chapter read.
 A load that could not register because its observation went stale must reload; input
@@ -478,6 +480,8 @@ new same-chapter registration supersedes the old writer. Captures remain accepte
 while an autosave is pending; an old completion only clears its exact pending command,
 so newer/backward captures survive. Failed/uncertain commits retain the latest command.
 An identical retry replays; stale sessions are retired and reported as needing reload.
+Invalid/conflicting commands are retired, reported after draining the snapshot, and
+removed from the retry queue so future loads can recover without changing stored evidence.
 Desktop discards only the revoked load's legacy buffer, preserving a newer view's
 resume selection. Portable commits never select the novel resume chapter. Saving
 the active source chapter offline first drains existing captures, then performs a
@@ -497,3 +501,12 @@ and four native production-helper/Room cases are distinct. Instrumentation compi
 is not ART execution; Room helpers are not Android Compose/lifecycle/physical-phone
 acceptance. Signed upgrade snapshots preserve legacy data but do not exercise reader
 checkpoint capture. Native window/process-death and cross-process acceptance remain open.
+
+Desktop navigation stores an optional `resumeChapterUrl` in existing book metadata,
+separate from any position. Selecting a chapter can therefore support Continue
+without inventing a start checkpoint or recording layout as input. Old metadata
+falls back to its known legacy chapter; an old delayed position flush cannot replace
+the current selected chapter. No SQL schema or chapter-content codec changes.
+Navigation retires the old load atomically with the operation claim before dispatch.
+A successful save attempts library membership before refreshing the saved session;
+a reload failure cannot skip membership, and membership failure cannot skip refresh.

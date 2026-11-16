@@ -129,13 +129,10 @@ packaged-extension and Compose app journeys run on Windows/Linux using the same
 production composition. A separate Royal Road compatibility smoke uses external
 source fixtures; ordinary app tests need no external checkout. Native app chrome, dialogs, installer/signing/update
 behavior, real macOS UI and power-loss testing remain separate acceptance gates.
-Android process-death acceptance and shared reading-anchor semantics remain future
-runtime work; desktop storage adoption does not claim those gates passed. The
-[reading-anchor contract](reading-anchors.md) defines the next shared slice;
-its pure resolver and shared projection mapping are implemented. Desktop renders
-through the mapping and captures provisional anchors while continuing to persist
-legacy indices/pixels. Guarded per-chapter capture/restore/flush is now adopted. Measured local layout
-hints and historical legacy-anchor conversion remain separate.
+Android process-death and native-window acceptance remain future runtime gates.
+Shared reading-anchor semantics, projection and guarded per-chapter capture/restore/flush
+are implemented. Measured local layout hints and historical legacy-anchor conversion
+remain separate. See the [implemented contract and proof limits](reading-anchors.md).
 
 
 ## Coherent reader load observations
@@ -174,3 +171,9 @@ portable capture/restore/flush, with real scroll-input gating and paragraph-boun
 restoration. Its legacy debounced position remains compatibility metadata and resume
 selection. A rejected load can discard only its own buffer, never a newer view's
 selection. See the [workflow and acceptance limits](reading-anchors.md#production-capture-restoration-and-flush).
+
+The optional `resumeChapterUrl` book metadata field records explicit navigation
+without creating a position. Old libraries fall back to their known legacy chapter.
+This separates Continue reading from initial layout; checkpoint drains cannot select
+an older chapter. The new metadata field is additive; SQL schema and saved-content
+format are unchanged. Existing chapter selection and membership patches preserve it.

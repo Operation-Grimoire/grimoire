@@ -26,6 +26,10 @@ enum class CheckpointNotice(val message: String) {
 
 data class ReaderCheckpointRestore(val viewport: ReaderViewport, val notice: CheckpointNotice?, val logical: AnchorResolution? = null)
 
+/** Semantic rejection is terminal for those sessions, not a retryable IO failure. Stored evidence stays intact. */
+class ReaderCheckpointRejected(val revokedLoads: List<ReaderCheckpointLoad>) :
+    IllegalStateException("Reading position was rejected. Reload the chapter.")
+
 /** One immutable published load. Mutable authority/capture state belongs to its coordinator. */
 class ReaderCheckpointLoad internal constructor(
     val projection: ReadingProjection, val restore: ReaderCheckpointRestore,
@@ -81,15 +85,17 @@ class ReaderCheckpoints(private val dao: ReadingCheckpointDao) {
 
     /** Portable restoration cannot rewrite compatibility position or trigger completion before input either. */
     fun canRecordPosition(load: ReaderCheckpointLoad): Boolean = synchronized(lock) {
-        canObserve(load) && when (load.restore.notice) {
-            CheckpointNotice.RELOAD, CheckpointNotice.EMPTY -> false
-            CheckpointNotice.CHANGED, CheckpointNotice.HIDDEN, CheckpointNotice.COARSE,
-            CheckpointNotice.INVALID, CheckpointNotice.UNSUPPORTED, CheckpointNotice.IDENTITY -> load.enabled
-            else -> load.restore.logical == null || load.enabled
-        }
+        canObserve(load) && load.enabled && load.projection.body.isNotEmpty() && load.restore.notice != CheckpointNotice.RELOAD && load.restore.notice != CheckpointNotice.EMPTY
     }
 
     fun isRevoked(load: ReaderCheckpointLoad): Boolean = synchronized(lock) { load.revoked }
+
+    fun revoke(load: ReaderCheckpointLoad) { synchronized(lock) {
+        if (load.owner === this) {
+            load.revoked = true; load.retired = true; pending.remove(load)
+            if (active === load) { active = null; epoch++ }
+        }
+    } }
 
     /** Resume only a failed close's unchanged view, retaining the original session and pending sequence. */
     fun resume(load: ReaderCheckpointLoad) = synchronized(lock) {
@@ -110,6 +116,7 @@ class ReaderCheckpoints(private val dao: ReadingCheckpointDao) {
 
     private suspend fun flushPending(): List<ReaderCheckpointLoad> {
         val revoked = mutableListOf<ReaderCheckpointLoad>()
+        var rejected = false
         val snapshot = synchronized(lock) { pending.toList() }
         for ((load, command) in snapshot) {
             val result = dao.commit(command)
@@ -118,14 +125,15 @@ class ReaderCheckpoints(private val dao: ReadingCheckpointDao) {
                 when (result) {
                     is CheckpointCommit.Committed -> if (pending[load] == command) pending.remove(load)
                     is CheckpointCommit.NotApplied -> {
-                        if (result.reason != CheckpointRejection.STALE) error("Reading checkpoint rejected: ${result.reason}")
-                        // All later samples from this same revoked session are unusable too.
+                        if (result.reason != CheckpointRejection.STALE) rejected = true
+                        // Terminal semantic rejection cannot poison every future open/flush.
                         load.revoked = true; pending.remove(load)
                         revoked += load
                     }
                 }
             }
         }
+        if (rejected) throw ReaderCheckpointRejected(revoked)
         return revoked
     }
 }

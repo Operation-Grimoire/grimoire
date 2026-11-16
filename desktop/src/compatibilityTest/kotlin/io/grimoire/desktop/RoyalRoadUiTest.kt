@@ -64,8 +64,8 @@ class RoyalRoadUiTest {
             settled(model)
             val prose = model.state.value.pages.mapNotNull { (it.content as? PageContent.Text)?.text }.first { it.isNotBlank() }
             compose.onNodeWithText(prose).assertIsDisplayed()
-            compose.waitUntil(5_000) { model.state.value.observedAnchor != null }
-            assertEquals(model.state.value.projection!!.document!!.logicalRevision, model.state.value.observedAnchor!!.logicalRevision)
+            assertNull(model.state.value.observedAnchor)
+            assertNotNull(model.state.value.projection!!.document)
             capture("reader.png")
             compose.onNodeWithText("Offline").performClick()
             compose.onNode(hasText(chapter.name) and hasClickAction()).assertIsNotEnabled()
@@ -84,8 +84,8 @@ class RoyalRoadUiTest {
             compose.onNodeWithText("Continue reading").performClick()
             settled(model)
             compose.onNodeWithText(prose).assertIsDisplayed()
-            compose.waitUntil(5_000) { model.state.value.observedAnchor != null }
-            assertEquals(io.grimoire.reading.ChapterKey(model.state.value.book!!.key, chapter.url), model.state.value.observedAnchor!!.key)
+            assertNull(model.state.value.observedAnchor)
+            assertEquals(io.grimoire.reading.ChapterKey(model.state.value.book!!.key, chapter.url), model.state.value.projection!!.document!!.key)
             capture("offline-restart.png")
             assertEquals(count, requests.get())
         } catch (failure: Throwable) {

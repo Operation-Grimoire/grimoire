@@ -25,6 +25,7 @@ class ReaderCheckpointsTest {
         var release: CompletableDeferred<Unit>? = null
         var faultBefore = false
         var faultAfter = false
+        var rejected: CheckpointRejection? = null
         var reads = 0
         var registering: CompletableDeferred<Unit>? = null
         var registerRelease: CompletableDeferred<Unit>? = null
@@ -40,6 +41,7 @@ class ReaderCheckpointsTest {
         override suspend fun commit(command: CheckpointCommand): CheckpointCommit {
             entered?.complete(Unit); release?.await()
             if (faultBefore) throw IOException("Before commit")
+            rejected?.let { return CheckpointCommit.NotApplied(it) }
             return decideCheckpoint(command, state, current).also { result ->
                 if (result is CheckpointCommit.Committed) {
                     state = ReadingCheckpointState(command.session.binding, command.sequence, command.anchor)
@@ -186,6 +188,54 @@ class ReaderCheckpointsTest {
             coordinator.userPosition(load)
             assertFalse(coordinator.canRecordPosition(load)); assertNull(coordinator.capture(load, 0)); coordinator.flush()
             assertTrue(dao.committed.isEmpty())
+        }
+    }
+
+    @Test fun changedOrUnsupportedRetainedCheckpointCannotEnableAnEmptyRenderedBody() = runBlocking<Unit> {
+        for (version in listOf(1, 99)) {
+            val dao = Dao(); val original = projection()
+            val initial = requireNotNull(dao.register(observation, original.document!!))
+            val retained = anchor(original).copy(modelVersion = version)
+            dao.commit(CheckpointCommand(initial, 1, anchor(original)))
+            // Simulate a retained future-version record without asking the writer to produce it.
+            dao.state = dao.state!!.copy(anchor = retained)
+            val blank = listOf(NovelPage(0, PageContent.Text("   ")))
+            val projection = ReadingProjection.create(key, blank, emptyList(), leadingStart = true, trailingEnd = true)
+            val coordinator = ReaderCheckpoints(dao)
+            val load = coordinator.open(projection, observation, null)
+            assertEquals(if (version == 99) CheckpointNotice.UNSUPPORTED else CheckpointNotice.CHANGED, load.restore.notice)
+            coordinator.userPosition(load)
+            assertFalse(coordinator.canRecordPosition(load)); assertNull(coordinator.capture(load, 0))
+            coordinator.flush(); assertEquals(retained, dao.state!!.anchor)
+        }
+    }
+
+    @Test fun permanentSemanticRejectionIsReportedOnceAndDoesNotPoisonFutureLoads() = runBlocking<Unit> {
+        for (reason in listOf(CheckpointRejection.INVALID, CheckpointRejection.CONFLICT)) {
+            val dao = Dao(); val coordinator = ReaderCheckpoints(dao)
+            val initial = coordinator.open(projection(), observation, null)
+            coordinator.userPosition(initial); coordinator.capture(initial, 1); coordinator.flush()
+            val retained = dao.state!!.anchor
+            coordinator.capture(initial, 2); dao.rejected = reason
+            try { coordinator.flush(); fail("Semantic rejection was hidden") }
+            catch (e: ReaderCheckpointRejected) { assertEquals(listOf(initial), e.revokedLoads) }
+            assertTrue(coordinator.isRevoked(initial)); assertEquals(retained, dao.state!!.anchor)
+            dao.rejected = null
+            val fresh = coordinator.open(projection(), observation, null)
+            assertEquals(1, fresh.restore.viewport.index)
+            coordinator.userPosition(fresh); coordinator.capture(fresh, 2); coordinator.flush()
+            assertEquals(2, (dao.state!!.anchor!!.position as AnchorPosition.Block).ordinal)
+        }
+    }
+
+    @Test fun legacyAndInitialLayoutCannotRecordPositionsOrCompletionWithoutInput() = runBlocking<Unit> {
+        for (legacy in listOf(null, LegacyReaderViewport(2, 99))) {
+            val dao = Dao(); val coordinator = ReaderCheckpoints(dao)
+            val load = coordinator.open(projection(), observation, legacy)
+            assertFalse(coordinator.canRecordPosition(load)); assertNull(coordinator.capture(load, 2))
+            coordinator.flush(); assertNull(dao.state!!.anchor)
+            coordinator.userPosition(load); assertTrue(coordinator.canRecordPosition(load))
+            coordinator.capture(load, 2); coordinator.flush(); assertNotNull(dao.state!!.anchor)
         }
     }
 }

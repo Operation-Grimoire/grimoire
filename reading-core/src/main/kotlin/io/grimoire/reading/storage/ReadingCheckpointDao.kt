@@ -7,7 +7,7 @@ import io.grimoire.reading.anchor.*
 data class ReadingSession(
     val id: String, val observation: ChapterStorageObservation, val document: CanonicalDocument,
     /** Previous portable evidence captured atomically with registration; never a new command. */
-    val checkpoint: ReadingAnchor? = null,
+    val checkpoint: ReadingAnchor?,
 ) {
     val binding: ReadingSessionBinding get() = ReadingSessionBinding(id, observation, document.logicalRevision)
 }

@@ -155,9 +155,10 @@ fun ReaderScreen(
     }
     BackHandler { requestBack() }
     if (saveError != null) AlertDialog(
-        onDismissRequest = {},
+        onDismissRequest = { viewModel.dismissPositionSaveError() },
         title = { Text(stringResource(R.string.reader_position_save_error)) },
         confirmButton = { TextButton(onClick = { viewModel.retryPositionSave() }) { Text(stringResource(R.string.action_retry)) } },
+        dismissButton = { TextButton(onClick = { viewModel.dismissPositionSaveError() }) { Text(stringResource(R.string.action_close)) } },
     )
     val currentChapter by viewModel.currentChapter.collectAsStateWithLifecycle()
     val hasPrev by viewModel.hasPrev.collectAsStateWithLifecycle()

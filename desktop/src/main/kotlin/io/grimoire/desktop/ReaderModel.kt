@@ -56,8 +56,9 @@ class ReaderModel(
     private val membership: LibraryRepository,
     private val downloads: DownloadRepository,
     checkpointDao: ReadingCheckpointDao = DesktopReadingCheckpointDao(library),
+    operationDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + operationDispatcher)
     private val checkpoints = ReaderCheckpoints(checkpointDao)
     private val closing = AtomicBoolean(false)
     private val storageClosed = AtomicBoolean(false)
@@ -152,21 +153,21 @@ class ReaderModel(
         val pages = loaded.pages
         check(pages.any { (it.content as? PageContent.Text)?.text?.isNotBlank() == true }) { "The chapter has no readable text" }
         val projection = ReadingProjection.create(key, pages, pages.mapIndexed { ordinal, page -> ProjectedPage(ordinal, page) })
-        val stored = library.book(book.key)
-        val legacy = stored?.position?.takeIf { it.chapterUrl == chapter.url }?.let { LegacyReaderViewport(it.paragraph, it.offset) }
+        val legacyBook = library.book(book.key)
+        val legacy = legacyBook?.position?.takeIf { it.chapterUrl == chapter.url }?.let { LegacyReaderViewport(it.paragraph, it.offset) }
         val checkpoint = checkpoints.open(projection, loaded.storageObservation, legacy)
+        val stored = library.selectResumeChapter(key)
         publishView { it.copy(view = View.READER, book = stored, chapter = chapter, pages = projection.originalPages,
             projection = projection, observedAnchor = null, storageObservation = loaded.storageObservation,
             checkpointLoad = checkpoint, positionNotice = checkpoint.restore.notice?.message) }
     }
 
-    fun download() = operate {
+    fun download() = operate(retireReader = true) {
         val current = state.value
         val book = current.book ?: return@operate
         val chapter = current.chapter ?: return@operate
         val previous = current.checkpointLoad
         val key = ChapterKey(book.key, chapter.url)
-        checkpoints.retire()
         var committed = false
         try {
             // Persist already captured source positions before our save rotates the generation.
@@ -185,21 +186,29 @@ class ReaderModel(
             }
             committed = true
             mutable.update { it.copy(book = library.book(book.key), library = library.saved()) }
-            // Fresh saved read/registration, never authority inferred from equal logical text.
-            val saved = chapterLoader.load(key) { ChapterPageAccess.Unavailable(ChapterLoadFailure.SOURCE_UNAVAILABLE) }
-            publishChapter(book, chapter, saved)
+            var membershipFailure: Exception? = null
             try {
                 val updated = setMembership(book.key, true)
                 mutable.update { it.copy(book = updated, library = library.saved()) }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                error("Chapter saved, but could not add the novel to your library: ${failure.message ?: failure.javaClass.simpleName}")
+                membershipFailure = failure
             }
+            try {
+                // Fresh saved read/registration, never authority inferred from equal logical text.
+                val saved = chapterLoader.load(key) { ChapterPageAccess.Unavailable(ChapterLoadFailure.SOURCE_UNAVAILABLE) }
+                publishChapter(book, chapter, saved)
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) {
+                membershipFailure?.let(failure::addSuppressed)
+                throw IllegalStateException("Chapter saved, but could not reload its reading position: ${failure.message}", failure)
+            }
+            membershipFailure?.let { throw IllegalStateException("Chapter saved, but could not add the novel to your library: ${it.message}", it) }
         } catch (failure: Exception) {
             if (previous != null && state.value.checkpointLoad === previous) {
                 if (!committed) checkpoints.resume(previous)
-                else mutable.update { it.copy(positionNotice = CheckpointNotice.RELOAD.message) }
+                else { checkpoints.revoke(previous); mutable.update { it.copy(positionNotice = CheckpointNotice.RELOAD.message) } }
             }
             throw failure
         }
@@ -275,40 +284,47 @@ class ReaderModel(
         if (!closing.get() && state.value.projection === observed) state.value.checkpointLoad?.let(checkpoints::userPosition)
     }
 
-    private suspend fun flushStoredPositions() {
-        checkpoints.flush().forEach { load ->
-            load.projection.document?.key?.let { library.discardPendingPosition(it, load) }
-        }
-        library.flush()
+    private fun applyRevocations(loads: List<ReaderCheckpointLoad>) {
+        loads.forEach { load -> load.projection.document?.key?.let { library.discardPendingPosition(it, load) } }
         val current = state.value.checkpointLoad
         if (current != null && checkpoints.isRevoked(current)) mutable.update {
             if (it.checkpointLoad === current) it.copy(positionNotice = CheckpointNotice.RELOAD.message) else it
         }
     }
 
-    private fun navigate(action: suspend () -> Unit) = operate {
-        val previous = state.value.checkpointLoad
-        checkpoints.retire()
-        try { flushStoredPositions(); action() }
-        catch (failure: Exception) {
-            if (previous != null && state.value.checkpointLoad === previous) checkpoints.resume(previous)
-            throw failure
-        }
+    private suspend fun flushStoredPositions() {
+        try { applyRevocations(checkpoints.flush()) }
+        catch (rejected: ReaderCheckpointRejected) { applyRevocations(rejected.revokedLoads); throw rejected }
+        library.flush()
     }
 
-    private fun operate(action: suspend () -> Unit) {
+    private fun navigate(action: suspend () -> Unit) = operate(retireReader = true) {
+        flushStoredPositions(); action()
+    }
+
+    private fun resumeClaimedReader(previous: ReaderCheckpointLoad?) = synchronized(operationLock) {
+        if (!closing.get() && previous != null && state.value.checkpointLoad === previous) checkpoints.resume(previous)
+    }
+
+    private fun operate(retireReader: Boolean = false, action: suspend () -> Unit) {
         synchronized(operationLock) {
             if (state.value.busy || closing.get()) return
-            // Claim and register the job atomically with respect to other operations/close.
+            val previous = if (retireReader) state.value.checkpointLoad else null
+            if (retireReader) checkpoints.retire()
+            // Claim/retirement/job registration are atomic with callbacks and close.
             mutable.update { it.copy(busy = true, error = null) }
             scope.launch {
                 try { action() }
-                catch (cancelled: CancellationException) { throw cancelled }
-                catch (failure: Exception) { mutable.update { it.copy(error = failure.message ?: failure.javaClass.simpleName) } }
+                catch (cancelled: CancellationException) { resumeClaimedReader(previous); throw cancelled }
+                catch (failure: Exception) {
+                    resumeClaimedReader(previous)
+                    mutable.update { it.copy(error = failure.message ?: failure.javaClass.simpleName) }
+                }
                 finally { mutable.update { it.copy(busy = false) } }
             }
         }
     }
+
 }
 
 internal suspend fun sourceChapters(source: Source, novel: Novel): List<Chapter> = when (source) {

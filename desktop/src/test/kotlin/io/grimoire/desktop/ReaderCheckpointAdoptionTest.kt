@@ -59,6 +59,8 @@ class ReaderCheckpointAdoptionTest {
             reader.open(library); val firstProjection = reader.state.value.projection!!
             reader.position(fixtureKey, 2, 17, firstProjection)
             reader.read(second); reader.settled()
+            assertEquals(secondKey.url, library.book(fixtureKey.novel)!!.resumeChapterUrl)
+            assertEquals(fixtureKey.url, library.book(fixtureKey.novel)!!.position!!.chapterUrl)
             val secondProjection = reader.state.value.projection!!
             reader.position(fixtureKey, 0, 0, firstProjection)
             reader.position(secondKey, 1, 9, secondProjection); reader.flushPosition()
@@ -151,5 +153,85 @@ class ReaderCheckpointAdoptionTest {
             library.discardPendingPosition(fixtureKey, retired); library.flush()
             assertEquals(ReadPosition(fixtureKey.url, 2, 17), library.book(fixtureKey.novel)!!.position)
         }
+    }
+
+    @Test fun navigationClaimRetiresCallbacksBeforeItsCoroutineCanStart() = runBlocking<Unit> {
+        val dispatcher = java.util.concurrent.Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+        val library = LocalLibrary(temporary.newFolder().toPath()).apply { seed(); download(fixtureKey, pages) }
+        val reader = ReaderModel(library, "1.6.0", AtomicBoolean(false), ChapterLoader(SavedChapterRepository(DesktopSavedChapterDao(library))),
+            LibraryRepository(DesktopLibraryDao(library)), DownloadRepository(DesktopDownloadDao(library)), operationDispatcher = dispatcher)
+        val entered = java.util.concurrent.CountDownLatch(1); val release = java.util.concurrent.CountDownLatch(1)
+        try {
+            reader.open(library); val projection = reader.state.value.projection!!
+            reader.position(fixtureKey, 1, 9, projection)
+            val blocker = CoroutineScope(dispatcher).launch {
+                entered.countDown(); check(release.await(5, java.util.concurrent.TimeUnit.SECONDS))
+            }
+            check(entered.await(5, java.util.concurrent.TimeUnit.SECONDS))
+            reader.showLibrary()
+            reader.position(fixtureKey, 2, 17, projection)
+            assertEquals(ReadPosition(fixtureKey.url, 1, 9), library.book(fixtureKey.novel)!!.position)
+            release.countDown(); blocker.join(); reader.settled()
+            assertEquals(1, (DesktopReadingCheckpointDao(library).read(fixtureKey)!!.position as AnchorPosition.Block).ordinal)
+        } finally { release.countDown(); reader.close(); dispatcher.close() }
+    }
+
+    @Test fun semanticRejectionDropsOnlyItsLegacyBufferAndFreshReloadCanRecover() = runBlocking<Unit> {
+        val library = LocalLibrary(temporary.newFolder().toPath()).apply { seed(); download(fixtureKey, pages); position(fixtureKey, 0, 0); flush() }
+        var reject = true
+        val delegate = DesktopReadingCheckpointDao(library)
+        val dao = object : ReadingCheckpointDao by delegate {
+            override suspend fun commit(command: CheckpointCommand): CheckpointCommit =
+                if (reject) CheckpointCommit.NotApplied(CheckpointRejection.INVALID) else delegate.commit(command)
+        }
+        val reader = ReaderModel(library, "1.6.0", AtomicBoolean(false), ChapterLoader(SavedChapterRepository(DesktopSavedChapterDao(library))),
+            LibraryRepository(DesktopLibraryDao(library)), DownloadRepository(DesktopDownloadDao(library)), dao)
+        try {
+            reader.open(library); reader.position(fixtureKey, 2, 17, reader.state.value.projection!!); reader.flushPosition()
+            assertNotNull(reader.state.value.error); assertEquals(ReadPosition(fixtureKey.url, 0, 0), library.book(fixtureKey.novel)!!.position)
+            reject = false; reader.read(fixtureChapters.first()); reader.settled()
+            reader.position(fixtureKey, 1, 9, reader.state.value.projection!!); reader.flushPosition()
+            assertEquals(1, (delegate.read(fixtureKey)!!.position as AnchorPosition.Block).ordinal)
+        } finally { reader.close() }
+    }
+
+    @Test fun savedChapterStillJoinsLibraryWhenItsFreshCheckpointRegistrationFails() = runBlocking<Unit> {
+        val library = LocalLibrary(temporary.newFolder().toPath()).apply { seed(); download(fixtureKey, pages) }
+        var failRegistration = false
+        val delegate = DesktopReadingCheckpointDao(library)
+        val dao = object : ReadingCheckpointDao by delegate {
+            override suspend fun register(observation: ChapterStorageObservation, document: CanonicalDocument): ReadingSession? {
+                if (failRegistration) throw IOException("Reload fault")
+                return delegate.register(observation, document)
+            }
+        }
+        val reader = ReaderModel(library, "1.6.0", AtomicBoolean(false), ChapterLoader(SavedChapterRepository(DesktopSavedChapterDao(library))),
+            LibraryRepository(DesktopLibraryDao(library)), DownloadRepository(DesktopDownloadDao(library)), dao)
+        try {
+            reader.open(library); failRegistration = true; reader.download()
+            withTimeout(5_000) { reader.state.first { !it.busy } }
+            assertTrue(reader.state.value.error!!.contains("could not reload"))
+            assertTrue(library.book(fixtureKey.novel)!!.favorite); assertEquals(fixtureKey.novel, library.saved().single().key)
+            assertEquals(CheckpointNotice.RELOAD.message, reader.state.value.positionNotice)
+        } finally { reader.close() }
+    }
+
+    @Test fun membershipFailureStillRefreshesSavedSessionForContinuedReading() = runBlocking<Unit> {
+        val library = LocalLibrary(temporary.newFolder().toPath()).apply { seed(); download(fixtureKey, pages) }
+        val delegate = DesktopLibraryDao(library)
+        val membership = object : LibraryDao by delegate {
+            override suspend fun setMembership(key: NovelKey, inLibrary: Boolean): LibraryEntry? { throw IOException("Membership fault") }
+        }
+        val reader = ReaderModel(library, "1.6.0", AtomicBoolean(false), ChapterLoader(SavedChapterRepository(DesktopSavedChapterDao(library))),
+            LibraryRepository(membership), DownloadRepository(DesktopDownloadDao(library)))
+        try {
+            reader.open(library); val old = reader.state.value.projection
+            reader.download(); withTimeout(5_000) { reader.state.first { !it.busy } }
+            assertTrue(reader.state.value.error!!.contains("could not add the novel"))
+            assertNotSame(old, reader.state.value.projection)
+            assertTrue(DesktopSavedChapterDao(library).isObservationCurrent(reader.state.value.storageObservation!!))
+            reader.position(fixtureKey, 1, 9, reader.state.value.projection!!); reader.flushPosition()
+            assertNotNull(DesktopReadingCheckpointDao(library).read(fixtureKey)); assertFalse(library.book(fixtureKey.novel)!!.favorite)
+        } finally { reader.close() }
     }
 }

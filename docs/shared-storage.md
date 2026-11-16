@@ -214,7 +214,7 @@ both platform compositions. Platform adapters may keep different backends.
    Its pure shared model/resolver is implemented with framing and resolution
    tests. Both production readers now retain raw content, render through shared
    projection mappings and capture provisional block anchors. The pure projection
-   API also defines hidden-item fallback; persisted restoration does not use it yet.
+   API also defines hidden-item fallback, now used by persisted restoration.
    Coherent load stamps are implemented through both adapters and the shared loader,
    including explicit absence before asynchronous source access. Registered sessions
    and the guarded checkpoint DAO are also implemented through both adapters. Local
@@ -310,5 +310,5 @@ against a new layout. Measured hints and character-level realization remain sepa
 See [capture/restore/flush and proof limits](reading-anchors.md#production-capture-restoration-and-flush).
 Four additional native ReaderCheckpointAdoptionTest cases cover the production Android
 preparation helper with real Room: mapping/reopen, retained fallback evidence, failed/
-uncertain writes and stale source/retired load rejection. The script requires all41
+uncertain writes and stale source/retired load rejection. The script requires all 41
 native successes; compiling cases alone is not native runtime acceptance.

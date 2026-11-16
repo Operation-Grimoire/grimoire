@@ -746,13 +746,13 @@
     <string name="reader_position_save_error">읽기 위치를 저장하지 못했습니다</string>
     <string name="reader_use_position">이 위치 사용</string>
     <string name="reader_position_legacy">이전에 저장한 읽기 위치를 사용합니다.</string>
-    <string name="reader_position_relocated">장이 변경되었습니다. 일치하는 문단을 복원했습니다.</string>
-    <string name="reader_position_changed">장이 변경되었습니다. 처음부터 표시합니다.</string>
+    <string name="reader_position_relocated">챕터가 변경되었습니다. 일치하는 문단을 복원했습니다.</string>
+    <string name="reader_position_changed">챕터가 변경되었습니다. 처음부터 표시합니다.</string>
     <string name="reader_position_hidden">저장된 위치가 여기서는 숨겨져 있습니다. 다음 표시 가능한 부분을 보여 줍니다.</string>
     <string name="reader_position_coarse">저장된 문단의 시작 위치를 복원했습니다.</string>
     <string name="reader_position_invalid">저장된 읽기 위치가 올바르지 않습니다. 기록은 유지됩니다.</string>
     <string name="reader_position_unsupported">저장된 읽기 위치의 형식은 지원되지 않습니다. 기록은 유지됩니다.</string>
-    <string name="reader_position_identity">저장된 읽기 위치가 다른 장에 속합니다. 기록은 유지됩니다.</string>
-    <string name="reader_position_empty">이 장에는 표시할 내용이 없습니다.</string>
-    <string name="reader_position_reload">읽기 위치를 저장하려면 이 장을 다시 불러오세요.</string>
+    <string name="reader_position_identity">저장된 읽기 위치가 다른 챕터에 속합니다. 기록은 유지됩니다.</string>
+    <string name="reader_position_empty">이 챕터에는 표시할 내용이 없습니다.</string>
+    <string name="reader_position_reload">읽기 위치를 저장하려면 이 챕터를 다시 불러오세요.</string>
 </resources>

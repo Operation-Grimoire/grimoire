@@ -777,7 +777,7 @@
     <string name="extension_api_required">L’estensione richiede l’API %1$s (API dell’app: %2$s)</string>
     <string name="reader_position_save_error">La posizione di lettura non è stata salvata</string>
     <string name="reader_use_position">Usa questa posizione</string>
-    <string name="reader_position_legacy">È in uso una posizione di lettura salvata in precedenza.</string>
+    <string name="reader_position_legacy">Viene usata una posizione di lettura salvata in precedenza.</string>
     <string name="reader_position_relocated">Il capitolo è cambiato. Ripristinato il paragrafo corrispondente.</string>
     <string name="reader_position_changed">Il capitolo è cambiato. Viene mostrato l’inizio.</string>
     <string name="reader_position_hidden">La posizione salvata è nascosta qui. Viene mostrata la sezione visibile successiva.</string>

@@ -556,6 +556,8 @@ class ReaderViewModel @Inject constructor(
         _saveError.value = localizedContext.getString(R.string.reader_position_save_error)
     }
 
+    fun dismissPositionSaveError() { _saveError.value = null }
+
     fun retryPositionSave() = persistenceScope.launch {
         try {
             progressWriter.flush()?.join()
