@@ -426,7 +426,7 @@ move backward. An identical current-sequence retry replays; different content at
 the same sequence conflicts; older sequences and superseded sessions are stale.
 Generation/eligibility checks also precede replay, so content replacement, restore,
 relock/removal and delete/recreate cannot revive an old writer. The session's full
-document stays immutable in memory; only its revision/binding and anchor are stored.
+document stays immutable in memory; only its binding, sequence and anchor are stored.
 
 `read` returns raw portable evidence without registering or granting write authority.
 It preserves unsupported/invalid anchor evidence for the resolver; unsupported or
@@ -435,7 +435,9 @@ cannot reuse a previous scope, while the portable checkpoint remains readable.
 Lost confirmations require an identical retry; pre-commit cancellation/failure rolls
 back. Re-registration revokes the old session even if its document has identical text.
 
-Android DB34-to35 adds only `reading_checkpoints`, cascading with the chapter row.
+Android DB34-to35 adds `reading_checkpoints`, cascading with the chapter row,
+and two identity-retirement triggers. In-place chapter/novel identity changes
+atomically discard the old key's checkpoint, allowing a fresh session for the new key.
 Desktop SQL1-to2 adds the equivalent table keyed by chapter and tied to its contents
 metadata row. No migration fabricates an anchor from legacy indices or rewrites body,
 cache revision, membership, download receipts, history or the novel resume pointer.

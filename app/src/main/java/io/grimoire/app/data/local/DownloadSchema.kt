@@ -34,7 +34,10 @@ private fun installDownloadTriggers(db: SupportSQLiteDatabase) {
 }
 
 internal val DOWNLOAD_SCHEMA_CALLBACK = object : RoomDatabase.Callback() {
-    override fun onCreate(db: SupportSQLiteDatabase) = installDownloadTriggers(db)
+    override fun onCreate(db: SupportSQLiteDatabase) {
+        installDownloadTriggers(db)
+        installCheckpointTriggers(db)
+    }
 }
 
 internal val MIGRATION_33_34 = object : Migration(33, 34) {

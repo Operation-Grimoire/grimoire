@@ -16,6 +16,8 @@ import io.grimoire.app.data.local.DOWNLOAD_SCHEMA_CALLBACK
 import io.grimoire.app.data.local.RoomDownloadDao
 import io.grimoire.reading.storage.DownloadRepository
 import io.grimoire.app.data.local.AppDatabase
+import io.grimoire.app.data.local.RoomReadingCheckpointDao
+import io.grimoire.reading.storage.ReadingCheckpointDao
 import io.grimoire.app.data.local.RoomSavedChapterDao
 import io.grimoire.app.data.local.RoomLibraryDao
 import io.grimoire.reading.storage.LibraryRepository
@@ -425,7 +427,7 @@ object DatabaseModule {
     @Provides fun provideNovelDao(db: AppDatabase): NovelDao = db.novelDao()
     @Provides fun provideChapterDao(db: AppDatabase): ChapterDao = db.chapterDao()
     @Provides @Singleton
-    fun provideReadingCheckpointDao(dao: io.grimoire.app.data.local.RoomReadingCheckpointDao): io.grimoire.reading.storage.ReadingCheckpointDao = dao
+    fun provideReadingCheckpointDao(dao: RoomReadingCheckpointDao): ReadingCheckpointDao = dao
 
     @Provides @Singleton
     fun provideSavedChapterRepository(dao: RoomSavedChapterDao): SavedChapterRepository = SavedChapterRepository(dao)

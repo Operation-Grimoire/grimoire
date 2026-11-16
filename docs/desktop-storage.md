@@ -38,7 +38,8 @@ flowchart TB
 ## Storage and ownership
 
 `library.sqlite` has application ID `0x4752494D` and schema version 2. SQL1 upgrades atomically by adding an empty
-`reading_checkpoints` table; its books/content/attempt/receipt rows are unchanged.
+`reading_checkpoints` table. The migration does not rewrite existing rows;
+startup still resets abandoned active download ownership under the exclusive lease.
 `books` stores the existing metadata projection; `contents` stores payload,
 explicit codec version, digest, revision, word count and ownership/receipt data.
 The downloaded set derives from `has_content`, so an indexed corrupt or missing

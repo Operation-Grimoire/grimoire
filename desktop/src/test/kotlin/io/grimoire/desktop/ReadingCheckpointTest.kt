@@ -74,6 +74,7 @@ class ReadingCheckpointTest {
             var s = session(library); dao.commit(command(s))
             val mutations: List<() -> Unit> = listOf(
                 { library.download(fixtureKey, prose()) }, { library.download(fixtureKey, prose()) },
+                { library.download(fixtureKey, prose("Different")); library.download(fixtureKey, prose()) },
                 { library.deleteDownload(fixtureKey) },
                 { library.remember(fixtureKey.novel, fixtureNovel, fixtureChapters.map { it.copy(locked = true) }); library.seed() },
                 { library.remember(fixtureKey.novel, fixtureNovel, emptyList()); library.seed() })

@@ -78,7 +78,15 @@ class ReadingCheckpointTest {
         val state = ReadingCheckpointState(session.binding)
         assertEquals(state, decodeReadingCheckpoint(encodeReadingCheckpoint(state)))
         assertThrows(IllegalArgumentException::class.java) { decodeReadingCheckpoint(encodeReadingCheckpoint(state).replace("\"format\":1", "\"format\":99")) }
-        assertThrows(Exception::class.java) { decodeReadingCheckpoint("{}") }
+        assertThrows(NoSuchElementException::class.java) { decodeReadingCheckpoint("{}") }
+        assertThrows(IllegalArgumentException::class.java) { decodeReadingCheckpoint(encodeReadingCheckpoint(state.copy(binding = session.binding.copy(id = "")))) }
+        assertThrows(IllegalArgumentException::class.java) { decodeReadingCheckpoint(encodeReadingCheckpoint(state.copy(sequence = 1))) }
+        for ((from, to) in listOf("\"session\":\"session\"" to "\"session\":123", "\"novel\":\"/novel\"" to "\"novel\":true",
+            "\"format\":1" to "\"format\":\"1\"", "\"source\":17" to "\"source\":\"17\"", "\"sequence\":0" to "\"sequence\":\"0\"")) {
+            val encoded = encodeReadingCheckpoint(state)
+            assertTrue(encoded.contains(from))
+            assertThrows(IllegalArgumentException::class.java) { decodeReadingCheckpoint(encoded.replace(from, to)) }
+        }
         assertThrows(IllegalArgumentException::class.java) { encodeReadingCheckpoint(raw.copy(anchor = anchor().copy(key = key.copy(url = "/wrong")))) }
     }
 }

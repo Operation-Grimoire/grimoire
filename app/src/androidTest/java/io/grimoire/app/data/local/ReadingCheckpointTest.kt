@@ -94,6 +94,7 @@ class ReadingCheckpointTest {
         val mutations: List<suspend () -> Unit> = listOf(
             { db.chapterDao().upsertContent(ChapterContentEntity(1, legacy)) },
             { db.chapterDao().upsertContent(ChapterContentEntity(1, legacy)) },
+            { db.chapterDao().upsertContent(ChapterContentEntity(1, StoredChapterContent("Different", 1))); db.chapterDao().upsertContent(ChapterContentEntity(1, legacy)) },
             { db.chapterDao().deleteContent(1) },
             { db.chapterDao().restoreChapters(listOf(requireNotNull(db.chapterDao().getByUrl(1, key.url)))) },
             { sql.execSQL("UPDATE chapters SET locked=1 WHERE id=1"); sql.execSQL("UPDATE chapters SET locked=0 WHERE id=1") },
@@ -104,6 +105,26 @@ class ReadingCheckpointTest {
             assertNull(dao.register(s.observation, document))
             assertEquals(CheckpointCommit.NotApplied(CheckpointRejection.STALE), dao.commit(command(s)))
             s = session(); assertTrue(dao.commit(command(s)) is CheckpointCommit.Committed)
+        }
+        // Supported in-place identity migrations must not trap the new key behind old evidence.
+        var currentKey = key
+        db.novelDao().upsert(NovelEntity(id = 2, sourceId = 19, url = "/second-book", title = "Second book"))
+        for ((statement, newKey) in listOf(
+            "UPDATE chapters SET url='/renamed' WHERE id=1" to key.copy(url = "/renamed"),
+            "UPDATE novels SET sourceId=18 WHERE id=1" to key.copy(novel = key.novel.copy(sourceId = 18), url = "/renamed"),
+            "UPDATE novels SET url='/renamed-book' WHERE id=1" to ChapterKey(NovelKey(18, "/renamed-book"), "/renamed"),
+            "UPDATE chapters SET novelId=2 WHERE id=1" to ChapterKey(NovelKey(19, "/second-book"), "/renamed"))) {
+            val old = requireNotNull(dao.register(requireNotNull(saved.readObserved(currentKey).observation),
+                CanonicalDocument.fromPages(currentKey, pages)))
+            dao.commit(command(old))
+            sql.execSQL(statement)
+            assertEquals(CheckpointCommit.NotApplied(CheckpointRejection.STALE), dao.commit(command(old)))
+            assertNull(dao.read(newKey))
+            val fresh = requireNotNull(dao.register(requireNotNull(saved.readObserved(newKey).observation),
+                CanonicalDocument.fromPages(newKey, pages)))
+            assertNull(dao.read(newKey))
+            assertTrue(dao.commit(command(fresh)) is CheckpointCommit.Committed)
+            currentKey = newKey
         }
     }
 
@@ -173,7 +194,8 @@ class ReadingCheckpointTest {
             raw.execSQL("INSERT INTO chapters(id,novelId,url,name,uploadDate,chapterNumber,translator,read,readProgress,readAnchorItemIndex,readAnchorItemOffset,downloadStatus,queueOrder,firstReadAt,wordCount,locked) VALUES(1,1,'/chapter','Chapter',0,-1,NULL,1,0.625,3,17,0,0,789,7,0)")
             raw.execSQL("INSERT INTO chapter_content VALUES(1,?,1)", arrayOf(legacy.content))
             raw.execSQL("INSERT INTO chapter_download_state(chapterId,revision,committedAttemptId,cacheRevision) VALUES(1,'generation','receipt','cache')")
-            definitions = raw.rawQuery("SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY name", null).use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
+            raw.rawQuery("SELECT identity_hash FROM room_master_table WHERE id=42", null).use { it.moveToFirst(); assertEquals("48b6a00fea18bc03786b997000ee932e", it.getString(0)) }
+            definitions = raw.rawQuery("SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' AND name != 'room_master_table' ORDER BY name", null).use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
         }
         open(object : Migration(34, 35) { override fun migrate(db: SupportSQLiteDatabase) { MIGRATION_34_35.migrate(db); error("Migration fault") } })
         try { db.openHelper.writableDatabase; fail("migration must roll back") } catch (e: IllegalStateException) { assertTrue(e.message!!.contains("Migration fault")) }
@@ -186,7 +208,7 @@ class ReadingCheckpointTest {
         assertEquals(metadata, db.chapterDao().getByUrl(1, key.url)); assertEquals(legacy, db.chapterDao().getContent(1))
         assertEquals("receipt", db.chapterDownloadStateDao().find(1)!!.committedAttemptId)
         assertEquals("cache", db.chapterDownloadStateDao().find(1)!!.cacheRevision); assertNull(dao.read(key))
-        val after = db.openHelper.readableDatabase.query("SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' AND name NOT IN ('reading_checkpoints','room_master_table') ORDER BY name").use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
+        val after = db.openHelper.readableDatabase.query("SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' AND name NOT IN ('reading_checkpoints','room_master_table','checkpoint_chapter_identity','checkpoint_novel_identity') ORDER BY name").use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
         assertEquals(definitions, after)
     }
 }

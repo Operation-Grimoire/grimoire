@@ -23,7 +23,7 @@ sealed interface CheckpointCommit {
 }
 
 interface ReadingCheckpointDao {
-    /** No source access or identity allocation. A null result grants no authority. */
+    /** Allocates session identity, without source access or chapter identity allocation. Null grants no authority. */
     suspend fun register(observation: ChapterStorageObservation, document: CanonicalDocument): ReadingSession?
     /** Validate observation, binding and order inside the same transaction as persistence. */
     suspend fun commit(command: CheckpointCommand): CheckpointCommit

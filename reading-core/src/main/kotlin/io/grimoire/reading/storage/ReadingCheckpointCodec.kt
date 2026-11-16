@@ -39,7 +39,7 @@ fun encodeReadingCheckpoint(state: ReadingCheckpointState): String = buildJsonOb
 fun decodeReadingCheckpoint(encoded: String): ReadingCheckpointState {
     val obj = Json.parseToJsonElement(encoded).jsonObject
     require(obj.integer("format") == 1) { "Unsupported checkpoint format" }
-    val key = ChapterKey(NovelKey(obj.getValue("source").jsonPrimitive.long, obj.string("novel")), obj.string("chapter"))
+    val key = ChapterKey(NovelKey(obj.long("source"), obj.string("novel")), obj.string("chapter"))
     val observation = ChapterStorageObservation(key, obj.string("scope"), obj.string("generation"),
         ChapterContentPresence.valueOf(obj.string("presence")))
     val binding = ReadingSessionBinding(obj.string("session"), observation, obj.string("logical"))
@@ -53,10 +53,18 @@ fun decodeReadingCheckpoint(encoded: String): ReadingCheckpointState {
         }
         ReadingAnchor(key, a.string("logical"), position, a.integer("version"))
     }
-    return ReadingCheckpointState(binding, obj.getValue("sequence").jsonPrimitive.long, anchor).also {
-        require(binding.id.isNotBlank() && it.sequence >= 0 && (it.sequence == 0L || anchor != null)) { "Invalid checkpoint state" }
+    return ReadingCheckpointState(binding, obj.long("sequence"), anchor).also {
+        require(binding.id.isNotBlank() && Regex("[a-f0-9]{64}").matches(binding.logicalRevision) &&
+            it.sequence >= 0 && (it.sequence == 0L || anchor != null)) { "Invalid checkpoint state" }
     }
 }
 
-private fun JsonObject.string(key: String) = getValue(key).jsonPrimitive.content
-private fun JsonObject.integer(key: String) = getValue(key).jsonPrimitive.int
+private fun JsonObject.string(key: String) = getValue(key).jsonPrimitive.let {
+    require(it.isString) { "Invalid checkpoint string: $key" }
+    it.content
+}
+private fun JsonObject.number(key: String) = getValue(key).jsonPrimitive.also {
+    require(!it.isString) { "Invalid checkpoint number: $key" }
+}
+private fun JsonObject.integer(key: String) = number(key).int
+private fun JsonObject.long(key: String) = number(key).long
