@@ -1,0 +1,14 @@
+{
+  "android": [
+    {
+      "category": "feature",
+      "text": "Reading positions now restore at paragraph boundaries, recover matching paragraphs after chapter changes, and reject stale saves."
+    }
+  ],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Reading positions are now saved per chapter and restored at paragraph boundaries, with protection against stale saves."
+    }
+  ]
+}

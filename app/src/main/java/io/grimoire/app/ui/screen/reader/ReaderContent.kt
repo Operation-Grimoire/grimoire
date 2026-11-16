@@ -10,6 +10,9 @@ import io.grimoire.reading.ChapterOrigin
 import io.grimoire.reading.LoadedChapter
 import io.grimoire.reading.anchor.ProjectedPage
 import io.grimoire.reading.anchor.ReadingProjection
+import io.grimoire.reading.anchor.ReaderCheckpointLoad
+import io.grimoire.reading.anchor.ReaderCheckpoints
+import io.grimoire.reading.anchor.LegacyReaderViewport
 import io.grimoire.reading.storage.ChapterStorageObservation
 import java.util.Collections
 import java.util.UUID
@@ -18,10 +21,16 @@ import java.util.UUID
 internal class ReaderContent(
     val chapterId: Long, val projection: ReadingProjection, val pages: List<NovelPage>,
     val storageObservation: ChapterStorageObservation? = null,
+    val checkpoint: ReaderCheckpointLoad? = null,
 ) {
     // Stable lazy-item identity for this load; not a measured-layout or persistence/session token.
     val loadKey: String = UUID.randomUUID().toString()
 }
+
+/** Production preparation, also exercised with real Room in instrumentation. No restore callback writes. */
+internal suspend fun prepareReaderCheckpoint(content: ReaderContent, checkpoints: ReaderCheckpoints,
+    legacy: LegacyReaderViewport?): ReaderContent = ReaderContent(content.chapterId, content.projection, content.pages,
+        content.storageObservation, checkpoints.open(content.projection, content.storageObservation, legacy))
 
 internal fun androidReaderContent(
     chapterId: Long, key: ChapterKey?, loaded: LoadedChapter,
@@ -47,5 +56,5 @@ internal fun captureReaderPosition(
 ): ReaderPosition? {
     if (!acceptsReaderProgress(currentChapterId, content?.chapterId, chapterId) || content?.projection !== observed) return null
     if (index !in 0 until observed.itemCount || offset < 0) return null
-    return ReaderPosition(chapterId, fraction, index, offset, observed.capture(index))
+    return ReaderPosition(chapterId, fraction, index, offset, observed.capture(index), content.checkpoint)
 }

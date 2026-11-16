@@ -759,4 +759,16 @@
     <string name="source_validate_failed">Prüfung fehlgeschlagen.</string>
     <plurals name="novel_export_success"><item quantity="one">%1$d Kapitel exportiert</item><item quantity="other">%1$d Kapitel exportiert</item></plurals>
     <string name="extension_api_required">Erweiterung erfordert API %1$s (App-API: %2$s)</string>
+    <string name="reader_position_save_error">Leseposition wurde nicht gespeichert</string>
+    <string name="reader_use_position">Diese Position verwenden</string>
+    <string name="reader_position_legacy">Eine ältere gespeicherte Leseposition wird verwendet.</string>
+    <string name="reader_position_relocated">Kapitel geändert. Passenden Absatz wiederhergestellt.</string>
+    <string name="reader_position_changed">Kapitel geändert. Der Anfang wird angezeigt.</string>
+    <string name="reader_position_hidden">Die gespeicherte Position ist hier ausgeblendet. Der nächste sichtbare Abschnitt wird angezeigt.</string>
+    <string name="reader_position_coarse">Anfang des gespeicherten Absatzes wiederhergestellt.</string>
+    <string name="reader_position_invalid">Die gespeicherte Leseposition ist ungültig. Sie wurde beibehalten.</string>
+    <string name="reader_position_unsupported">Das Format der gespeicherten Leseposition wird nicht unterstützt. Sie wurde beibehalten.</string>
+    <string name="reader_position_identity">Die gespeicherte Leseposition gehört zu einem anderen Kapitel. Sie wurde beibehalten.</string>
+    <string name="reader_position_empty">Dieses Kapitel hat keinen sichtbaren Inhalt.</string>
+    <string name="reader_position_reload">Lade dieses Kapitel neu, um deine Leseposition zu speichern.</string>
 </resources>

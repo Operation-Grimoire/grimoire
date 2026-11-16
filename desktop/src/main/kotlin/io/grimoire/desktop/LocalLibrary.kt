@@ -32,6 +32,7 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
     private val db get() = database.connection
     private val owner = UUID.randomUUID().toString()
     private val pendingPositions = linkedMapOf<NovelKey, ReadPosition>()
+    private val pendingPositionOwners = mutableMapOf<NovelKey, Any?>()
     private var positionBooks = emptyMap<NovelKey, SavedBook>()
     private var closed = false
 
@@ -141,7 +142,7 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
         return write(beforeCommit) {
             if (!canRegisterReadingSession(observation, document) || !observationCurrent(observation)) return@write null
             val previous = checkpointState(observation.key)
-            val session = ReadingSession(UUID.randomUUID().toString(), observation, document)
+            val session = ReadingSession(UUID.randomUUID().toString(), observation, document, previous?.anchor)
             putCheckpoint(ReadingCheckpointState(session.binding, anchor = previous?.anchor))
             session
         }
@@ -240,12 +241,20 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
     }
 
     /** No SQL or filesystem I/O on the scroll callback. */
-    @Synchronized fun position(key: ChapterKey, paragraph: Int, offset: Int) {
+    @Synchronized fun position(key: ChapterKey, paragraph: Int, offset: Int, owner: Any? = null) {
         check(!closed) { "Desktop library is closed" }
         require(paragraph >= 0 && offset >= 0)
         val book = positionBooks[key.novel] ?: return
         require(book.chapters.any { it.url == key.url && !it.locked })
         pendingPositions[key.novel] = ReadPosition(key.url, paragraph, offset)
+        pendingPositionOwners[key.novel] = owner
+    }
+
+    /** A retired flush cannot discard a newer view's legacy resume selection, even for the same chapter. */
+    @Synchronized internal fun discardPendingPosition(key: ChapterKey, owner: Any) {
+        if (pendingPositionOwners[key.novel] === owner && pendingPositions[key.novel]?.chapterUrl == key.url) {
+            pendingPositions.remove(key.novel); pendingPositionOwners.remove(key.novel)
+        }
     }
 
     @Synchronized fun flush() {
@@ -256,6 +265,7 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
             }
         }
         pendingPositions.clear()
+        pendingPositionOwners.clear()
         refresh()
     }
 

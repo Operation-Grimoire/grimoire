@@ -743,4 +743,16 @@
     <string name="source_validate_failed">Kiểm tra thất bại.</string>
     <plurals name="novel_export_success"><item quantity="other">Đã xuất %1$d chương</item></plurals>
     <string name="extension_api_required">Tiện ích mở rộng yêu cầu API %1$s (API ứng dụng: %2$s)</string>
+    <string name="reader_position_save_error">Chưa lưu được vị trí đọc</string>
+    <string name="reader_use_position">Dùng vị trí này</string>
+    <string name="reader_position_legacy">Đang dùng vị trí đọc đã lưu trước đó.</string>
+    <string name="reader_position_relocated">Chương đã thay đổi. Đã khôi phục đoạn văn tương ứng.</string>
+    <string name="reader_position_changed">Chương đã thay đổi. Đang hiển thị phần đầu.</string>
+    <string name="reader_position_hidden">Vị trí đã lưu bị ẩn ở đây. Đang hiển thị phần tiếp theo có thể thấy.</string>
+    <string name="reader_position_coarse">Đã khôi phục đầu đoạn văn đã lưu.</string>
+    <string name="reader_position_invalid">Vị trí đọc đã lưu không hợp lệ. Bản ghi được giữ lại.</string>
+    <string name="reader_position_unsupported">Định dạng vị trí đọc đã lưu không được hỗ trợ. Bản ghi được giữ lại.</string>
+    <string name="reader_position_identity">Vị trí đã lưu thuộc chương khác. Bản ghi được giữ lại.</string>
+    <string name="reader_position_empty">Chương này không có nội dung hiển thị.</string>
+    <string name="reader_position_reload">Tải lại chương này để lưu vị trí đọc của bạn.</string>
 </resources>

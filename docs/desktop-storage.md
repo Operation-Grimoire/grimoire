@@ -28,6 +28,9 @@ flowchart TB
     Shared --> Saved[DesktopSavedChapterDao]
     Shared --> Membership[DesktopLibraryDao]
     Shared --> Download[DesktopDownloadDao]
+    Reader --> Checkpoints[Shared ReaderCheckpoints]
+    Checkpoints --> CheckpointDAO[DesktopReadingCheckpointDao]
+    CheckpointDAO --> Local
     Saved --> Local[LocalLibrary facade]
     Membership --> Local
     Download --> Local
@@ -131,9 +134,8 @@ runtime work; desktop storage adoption does not claim those gates passed. The
 [reading-anchor contract](reading-anchors.md) defines the next shared slice;
 its pure resolver and shared projection mapping are implemented. Desktop renders
 through the mapping and captures provisional anchors while continuing to persist
-legacy indices/pixels. Persistent anchor restoration, local layout hints,
-legacy-anchor conversion and production adoption of the new checkpoint adapter
-remain unimplemented.
+legacy indices/pixels. Guarded per-chapter capture/restore/flush is now adopted. Measured local layout
+hints and historical legacy-anchor conversion remain separate.
 
 
 ## Coherent reader load observations
@@ -153,9 +155,9 @@ source fetch can finish after a concurrent save; it retains the earlier absence
 stamp and a freshness check rejects that stamp. It must not claim the new stored
 generation for the old source result. This check is read-only, never reseeds a
 missing record and grants no write authority. Session registration and checkpoint
-commits must later compare those guards inside their own transaction. Existing
-legacy position writes/restoration remain unchanged; no schema migration or new
-portable checkpoint write is introduced by these observations.
+commits now compare those guards inside their own transaction. The observation
+stage alone introduced no portable writes; reader adoption now uses the registered
+coordinator below, with legacy fields retained as compatibility metadata.
 
 ## Guarded reading checkpoints
 
@@ -167,5 +169,8 @@ not select a resume chapter, update read/history flags, or store source bodies.
 Portable checkpoints survive reopening; session authority does not. SQL2 rejects
 old SQL1 readers. Retain a full pre-upgrade directory copy for rollback.
 
-The production reader still uses its legacy debounced position writer. Adopting
-portable capture, restore and flush is the next separate change.
+The production reader now uses the shared `ReaderCheckpoints` coordinator for
+portable capture/restore/flush, with real scroll-input gating and paragraph-boundary
+restoration. Its legacy debounced position remains compatibility metadata and resume
+selection. A rejected load can discard only its own buffer, never a newer view's
+selection. See the [workflow and acceptance limits](reading-anchors.md#production-capture-restoration-and-flush).

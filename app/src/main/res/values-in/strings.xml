@@ -743,4 +743,16 @@
     <string name="source_validate_failed">Validasi gagal.</string>
     <plurals name="novel_export_success"><item quantity="other">%1$d bab diekspor</item></plurals>
     <string name="extension_api_required">Ekstensi memerlukan API %1$s (API aplikasi: %2$s)</string>
+    <string name="reader_position_save_error">Posisi baca tidak tersimpan</string>
+    <string name="reader_use_position">Gunakan posisi ini</string>
+    <string name="reader_position_legacy">Menggunakan posisi baca yang tersimpan sebelumnya.</string>
+    <string name="reader_position_relocated">Bab berubah. Paragraf yang cocok dipulihkan.</string>
+    <string name="reader_position_changed">Bab berubah. Menampilkan bagian awal.</string>
+    <string name="reader_position_hidden">Posisi tersimpan tersembunyi di sini. Menampilkan bagian berikutnya yang terlihat.</string>
+    <string name="reader_position_coarse">Dipulihkan ke awal paragraf tersimpan.</string>
+    <string name="reader_position_invalid">Posisi baca tersimpan tidak valid. Posisi tersebut tetap disimpan.</string>
+    <string name="reader_position_unsupported">Format posisi baca tersimpan tidak didukung. Posisi tersebut tetap disimpan.</string>
+    <string name="reader_position_identity">Posisi baca tersimpan milik bab lain. Posisi tersebut tetap disimpan.</string>
+    <string name="reader_position_empty">Bab ini tidak memiliki konten yang terlihat.</string>
+    <string name="reader_position_reload">Muat ulang bab ini untuk menyimpan posisi baca Anda.</string>
 </resources>

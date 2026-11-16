@@ -8,6 +8,13 @@ import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import io.grimoire.reading.anchor.CheckpointNotice
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -134,6 +141,24 @@ fun ReaderScreen(
     val pageKeyPrefix = "$pagesChapterId:${readerContent?.loadKey}:"
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val saveError by viewModel.saveError.collectAsStateWithLifecycle()
+    val positionNotice by viewModel.positionNotice.collectAsStateWithLifecycle()
+    val exitScope = rememberCoroutineScope()
+    var exiting by remember { mutableStateOf(false) }
+    val requestBack: () -> Unit = {
+        if (!exiting) {
+            exiting = true
+            exitScope.launch {
+                try { if (viewModel.flushForExit()) onNavigateBack() } finally { exiting = false }
+            }
+        }
+    }
+    BackHandler { requestBack() }
+    if (saveError != null) AlertDialog(
+        onDismissRequest = {},
+        title = { Text(stringResource(R.string.reader_position_save_error)) },
+        confirmButton = { TextButton(onClick = { viewModel.retryPositionSave() }) { Text(stringResource(R.string.action_retry)) } },
+    )
     val currentChapter by viewModel.currentChapter.collectAsStateWithLifecycle()
     val hasPrev by viewModel.hasPrev.collectAsStateWithLifecycle()
     val hasNext by viewModel.hasNext.collectAsStateWithLifecycle()
@@ -283,8 +308,9 @@ fun ReaderScreen(
         val total = snapshotFlow { listState.layoutInfo }
             .first { info -> info.visibleItemsInfo.any { it.key.toString().startsWith(prefix) } }
             .totalItemsCount
-        val targetIndex = chapter.readAnchorItemIndex.coerceIn(0, total - 1)
-        listState.scrollToItem(targetIndex, chapter.readAnchorItemOffset.coerceAtLeast(0))
+        val viewport = readerContent?.checkpoint?.restore?.viewport
+        val targetIndex = (viewport?.index ?: chapter.readAnchorItemIndex).coerceIn(0, total - 1)
+        listState.scrollToItem(targetIndex, viewport?.offset ?: chapter.readAnchorItemOffset.coerceAtLeast(0))
         restoredScrollContent = readerContent
     }
 
@@ -324,6 +350,15 @@ fun ReaderScreen(
                 )
             }
     }
+
+    val positionInput = remember(projection) { object : NestedScrollConnection {
+        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+            if (restoredScrollContent === readerContent && source == NestedScrollSource.UserInput && available != Offset.Zero) {
+                projection?.let(viewModel::userPosition)
+            }
+            return Offset.Zero
+        }
+    } }
 
     // Follow TTS: scroll the paragraph being spoken into view, unless the user is scrolling.
     LaunchedEffect(ttsSpokenPageIndex, pagesChapterId, restoredScrollContent) {
@@ -368,11 +403,26 @@ fun ReaderScreen(
                     Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                     TextButton(onClick = viewModel::loadPages) { Text(stringResource(R.string.action_retry)) }
                 }
-                else -> SelectionContainer {
+                else -> Column(Modifier.fillMaxSize()) {
+                    positionNotice?.let { notice ->
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(checkpointNoticeResource(notice)), style = MaterialTheme.typography.bodySmall,
+                                color = colors.foreground, modifier = Modifier.weight(1f))
+                            if (readerContent?.storageObservation != null) TextButton(
+                                enabled = restoredScrollContent === readerContent,
+                                onClick = {
+                                    if (notice == CheckpointNotice.RELOAD) viewModel.loadPages()
+                                    else projection?.let { viewModel.acceptCheckpointPosition(it, listState.firstVisibleItemIndex) }
+                                },
+                            ) { Text(stringResource(if (notice == CheckpointNotice.RELOAD) R.string.action_retry else R.string.reader_use_position)) }
+                        }
+                    }
+                SelectionContainer(Modifier.weight(1f)) {
                 LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp),
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().nestedScroll(positionInput),
                 ) {
                     item(key = "${pageKeyPrefix}title") {
                         Text(
@@ -462,6 +512,7 @@ fun ReaderScreen(
                     }
                 }
                 }
+                }
             }
         }
 
@@ -482,7 +533,7 @@ fun ReaderScreen(
                     actionIconContentColor = colors.foreground,
                 ),
                 navigationIcon = {
-                    PlainTooltipIconButton(onClick = onNavigateBack, tooltip = stringResource(R.string.action_back)) {
+                    PlainTooltipIconButton(onClick = requestBack, tooltip = stringResource(R.string.action_back)) {
                         Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
@@ -695,4 +746,17 @@ private fun ReaderSystemBarAppearance(lightReader: Boolean) {
         controller.isAppearanceLightStatusBars = lightReader
         controller.isAppearanceLightNavigationBars = lightReader
     }
+}
+
+private fun checkpointNoticeResource(notice: CheckpointNotice): Int = when (notice) {
+    CheckpointNotice.LEGACY -> R.string.reader_position_legacy
+    CheckpointNotice.RELOCATED -> R.string.reader_position_relocated
+    CheckpointNotice.CHANGED -> R.string.reader_position_changed
+    CheckpointNotice.HIDDEN -> R.string.reader_position_hidden
+    CheckpointNotice.COARSE -> R.string.reader_position_coarse
+    CheckpointNotice.INVALID -> R.string.reader_position_invalid
+    CheckpointNotice.UNSUPPORTED -> R.string.reader_position_unsupported
+    CheckpointNotice.IDENTITY -> R.string.reader_position_identity
+    CheckpointNotice.EMPTY -> R.string.reader_position_empty
+    CheckpointNotice.RELOAD -> R.string.reader_position_reload
 }

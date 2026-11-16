@@ -835,4 +835,16 @@
         <item quantity="other">تم تصدير %1$d فصل</item>
     </plurals>
     <string name="extension_api_required">يتطلب الامتداد API %1$s (واجهة برمجة التطبيقات: %2$s)</string>
+    <string name="reader_position_save_error">لم يُحفظ موضع القراءة</string>
+    <string name="reader_use_position">استخدام هذا الموضع</string>
+    <string name="reader_position_legacy">يُستخدم موضع قراءة محفوظ سابقًا.</string>
+    <string name="reader_position_relocated">تغيّر الفصل. تمت استعادة الفقرة المطابقة.</string>
+    <string name="reader_position_changed">تغيّر الفصل. يُعرض الآن من البداية.</string>
+    <string name="reader_position_hidden">الموضع المحفوظ مخفي هنا. يُعرض القسم المرئي التالي.</string>
+    <string name="reader_position_coarse">تمت الاستعادة إلى بداية الفقرة المحفوظة.</string>
+    <string name="reader_position_invalid">موضع القراءة المحفوظ غير صالح. تم الاحتفاظ به.</string>
+    <string name="reader_position_unsupported">تنسيق موضع القراءة المحفوظ غير مدعوم. تم الاحتفاظ به.</string>
+    <string name="reader_position_identity">موضع القراءة المحفوظ يخص فصلًا آخر. تم الاحتفاظ به.</string>
+    <string name="reader_position_empty">لا يحتوي هذا الفصل على محتوى مرئي.</string>
+    <string name="reader_position_reload">أعد تحميل هذا الفصل لحفظ موضع القراءة.</string>
 </resources>

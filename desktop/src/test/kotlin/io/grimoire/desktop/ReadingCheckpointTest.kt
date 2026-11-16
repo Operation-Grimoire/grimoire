@@ -57,6 +57,7 @@ class ReadingCheckpointTest {
             val other = requireNotNull(dao.register(requireNotNull(DesktopSavedChapterDao(library).readObserved(secondKey).observation), otherDoc))
             assertTrue(dao.commit(command(other)) is CheckpointCommit.Committed)
             val current = session(library)
+            assertEquals(saved.anchor, current.checkpoint)
             assertEquals(saved.anchor, dao.read(fixtureKey))
             assertEquals(CheckpointCommit.NotApplied(CheckpointRejection.STALE), dao.commit(saved))
             assertEquals(CheckpointCommit.NotApplied(CheckpointRejection.INVALID), dao.commit(command(current).copy(anchor = command(other).anchor)))

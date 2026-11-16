@@ -62,3 +62,12 @@ grep -Fq 'OK (7 tests)' checkpoint-result.log
 grep -Fq 'INSTRUMENTATION_CODE: -1' checkpoint-result.log
 test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' checkpoint-result.log)" -eq 7
 if grep -Eq 'FAILURES|INSTRUMENTATION_(FAILED|ABORTED)|INSTRUMENTATION_STATUS_CODE: -[234]' checkpoint-result.log; then exit 1; fi
+
+adb shell am instrument -w -r \
+  -e class io.grimoire.app.ui.screen.reader.ReaderCheckpointAdoptionTest \
+  io.grimoire.app.test/androidx.test.runner.AndroidJUnitRunner | tee checkpoint-adoption-result.log
+
+grep -Fq 'OK (4 tests)' checkpoint-adoption-result.log
+grep -Fq 'INSTRUMENTATION_CODE: -1' checkpoint-adoption-result.log
+test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' checkpoint-adoption-result.log)" -eq 4
+if grep -Eq 'FAILURES|INSTRUMENTATION_(FAILED|ABORTED)|INSTRUMENTATION_STATUS_CODE: -[234]' checkpoint-adoption-result.log; then exit 1; fi

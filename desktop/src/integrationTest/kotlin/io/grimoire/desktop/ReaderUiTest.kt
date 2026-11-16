@@ -10,6 +10,8 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import io.grimoire.api.network.SourceNetwork
+import io.grimoire.reading.*
+import io.grimoire.reading.storage.*
 import io.grimoire.api.model.novel.PageContent
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -23,6 +25,53 @@ import java.nio.file.Path
 class ReaderUiTest {
     @get:Rule val compose = createComposeRule()
     @get:Rule val temporary = TemporaryFolder()
+
+    @Test fun actualScrollInputSavesCheckpointAndRestartRestoresItWithoutAnInitialLayoutRewrite() {
+        val fixtureKey = ChapterKey(NovelKey(17, "/checkpoint-book"), "/chapter")
+        val fixtureNovel = io.grimoire.api.model.novel.Novel(fixtureKey.novel.url, "Checkpoint book", io.grimoire.api.model.lang.Language.EN)
+        val fixtureChapters = listOf(io.grimoire.api.model.novel.Chapter(fixtureKey.url, "Local chapter"))
+        val directory = temporary.newFolder().toPath()
+        val paragraphs = (0 until 40).map { index -> io.grimoire.api.model.novel.NovelPage(index,
+            PageContent.Text("Paragraph $index. " + "The harbor bell rang while Mira followed the light. ".repeat(6))) }
+        var library = LocalLibrary(directory).apply {
+            remember(fixtureKey.novel, fixtureNovel, fixtureChapters); favorite(fixtureKey.novel, true)
+            runBlocking {
+                val downloads = DownloadRepository(DesktopDownloadDao(this@apply))
+                assertTrue(downloads.commit(requireNotNull(downloads.claim(fixtureKey)), paragraphs) is DownloadCommit.Committed)
+            }
+        }
+        var model = desktopReaderModel(library, "1.6.0", java.util.concurrent.atomic.AtomicBoolean(false))
+        model.offline(true)
+        val active = mutableStateOf(model)
+        try {
+            compose.setContent { key(active.value) {
+                MaterialTheme { Surface(Modifier.size(1100.dp, 760.dp)) { DesktopReader(active.value, false, null) {} } }
+            } }
+            compose.onNodeWithText(fixtureNovel.title).performClick(); settled(model)
+            compose.onNodeWithText(fixtureChapters.first().name).performClick(); settled(model)
+            assertNull(runBlocking { DesktopReadingCheckpointDao(library).read(fixtureKey) })
+            compose.onNodeWithTag("reader-body").performMouseInput { moveTo(center); scroll(800f) }
+            compose.waitUntil(5_000) { runBlocking { DesktopReadingCheckpointDao(library).read(fixtureKey) } != null }
+            val saved = runBlocking { DesktopReadingCheckpointDao(library).read(fixtureKey)!! }
+            val ordinal = (saved.position as io.grimoire.reading.anchor.AnchorPosition.Block).ordinal
+            assertTrue(ordinal > 0)
+            capture("checkpoint-input.png")
+            runBlocking { model.close() }
+            library = LocalLibrary(directory)
+            model = desktopReaderModel(library, "1.6.0", java.util.concurrent.atomic.AtomicBoolean(false)); model.offline(true)
+            compose.runOnIdle { active.value = model }
+            compose.onNodeWithText(fixtureNovel.title).performClick(); settled(model)
+            compose.onNodeWithText("Continue reading").performClick(); settled(model)
+            assertEquals(ordinal, model.state.value.checkpointLoad!!.restore.viewport.index)
+            assertEquals(0, model.state.value.checkpointLoad!!.restore.viewport.offset)
+            compose.onNodeWithText((paragraphs[ordinal].content as PageContent.Text).text).assertIsDisplayed()
+            runBlocking { model.flushPosition() }
+            assertEquals(saved, runBlocking { DesktopReadingCheckpointDao(library).read(fixtureKey) })
+            capture("checkpoint-restored.png")
+        } catch (failure: Throwable) {
+            runCatching { capture("checkpoint-failure.png") }; throw failure
+        } finally { runBlocking { model.close() } }
+    }
 
     @Test fun readerControlsSaveAndReopenChapterOffline() {
         val platform = ReaderFixturePlatform()

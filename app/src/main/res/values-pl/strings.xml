@@ -799,4 +799,16 @@
         <item quantity="other">Wyeksportowano %1$d rozdziału</item>
     </plurals>
     <string name="extension_api_required">Rozszerzenie wymaga API %1$s (API aplikacji: %2$s)</string>
+    <string name="reader_position_save_error">Nie zapisano pozycji czytania</string>
+    <string name="reader_use_position">Użyj tej pozycji</string>
+    <string name="reader_position_legacy">Używana jest wcześniej zapisana pozycja czytania.</string>
+    <string name="reader_position_relocated">Rozdział się zmienił. Przywrócono pasujący akapit.</string>
+    <string name="reader_position_changed">Rozdział się zmienił. Wyświetlany jest początek.</string>
+    <string name="reader_position_hidden">Zapisana pozycja jest tutaj ukryta. Wyświetlana jest następna widoczna sekcja.</string>
+    <string name="reader_position_coarse">Przywrócono początek zapisanego akapitu.</string>
+    <string name="reader_position_invalid">Zapisana pozycja czytania jest nieprawidłowa. Zachowano ją.</string>
+    <string name="reader_position_unsupported">Format zapisanej pozycji czytania nie jest obsługiwany. Zachowano ją.</string>
+    <string name="reader_position_identity">Zapisana pozycja dotyczy innego rozdziału. Zachowano ją.</string>
+    <string name="reader_position_empty">Ten rozdział nie zawiera widocznej treści.</string>
+    <string name="reader_position_reload">Wczytaj ponownie ten rozdział, aby zapisać pozycję czytania.</string>
 </resources>

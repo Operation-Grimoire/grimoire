@@ -1,0 +1,155 @@
+package io.grimoire.desktop
+
+import io.grimoire.api.model.novel.*
+import io.grimoire.reading.*
+import io.grimoire.reading.anchor.*
+import io.grimoire.reading.storage.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
+import org.junit.Assert.*
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import java.io.IOException
+import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicBoolean
+
+class ReaderCheckpointAdoptionTest {
+    @get:Rule val temporary = TemporaryFolder()
+    private val pages = listOf("First", "Second", "Third").mapIndexed { i, text -> NovelPage(i, PageContent.Text(text)) }
+    private fun model(library: LocalLibrary) = desktopReaderModel(library, "1.6.0", AtomicBoolean(false))
+    private suspend fun ReaderModel.settled() { withTimeout(5_000) { state.first { !it.busy } }; assertNull(state.value.error) }
+    private suspend fun ReaderModel.open(library: LocalLibrary, chapter: Chapter = fixtureChapters.first()) {
+        openSaved(library.book(fixtureKey.novel)!!); settled(); read(chapter); settled()
+    }
+
+    @Test fun productionCloseAndReopenRestorePortableBlockWithoutRewritingItFromLayout() = runBlocking<Unit> {
+        val directory = temporary.newFolder().toPath()
+        val library = LocalLibrary(directory).apply { seed(); download(fixtureKey, pages) }
+        val before = library.readSnapshot(fixtureKey)
+        var reader = model(library)
+        reader.open(library)
+        val projection = reader.state.value.projection!!
+        reader.position(fixtureKey, 2, 17, projection)
+        reader.close()
+        LocalLibrary(directory).use { reopened ->
+            val stored = DesktopReadingCheckpointDao(reopened).read(fixtureKey)!!
+            assertEquals(2, (stored.position as AnchorPosition.Block).ordinal)
+            reader = model(reopened)
+            try {
+                reader.open(reopened)
+                assertEquals(ReaderViewport(2), reader.state.value.checkpointLoad!!.restore.viewport)
+                assertTrue(reader.state.value.checkpointLoad!!.restore.logical is AnchorResolution.Exact)
+                reader.position(fixtureKey, 2, 0, reader.state.value.projection!!, userInitiated = false)
+                reader.flushPosition()
+                assertEquals(stored, DesktopReadingCheckpointDao(reopened).read(fixtureKey))
+                assertEquals(ReadPosition(fixtureKey.url, 2, 17), reopened.book(fixtureKey.novel)!!.position)
+                assertEquals(before, reopened.readSnapshot(fixtureKey))
+            } finally { reader.close() }
+        }
+    }
+
+    @Test fun navigationStoresEachChapterAndRejectsRetiredProjectionAndSameChapterCallbacks() = runBlocking<Unit> {
+        val library = LocalLibrary(temporary.newFolder().toPath()).apply { seed(); download(fixtureKey, pages) }
+        val second = Chapter("/second", "Second")
+        library.remember(fixtureKey.novel, fixtureNovel, fixtureChapters + second)
+        val secondKey = fixtureKey.copy(url = second.url); library.download(secondKey, pages)
+        val reader = model(library)
+        try {
+            reader.open(library); val firstProjection = reader.state.value.projection!!
+            reader.position(fixtureKey, 2, 17, firstProjection)
+            reader.read(second); reader.settled()
+            val secondProjection = reader.state.value.projection!!
+            reader.position(fixtureKey, 0, 0, firstProjection)
+            reader.position(secondKey, 1, 9, secondProjection); reader.flushPosition()
+            assertEquals(secondKey.url, library.book(fixtureKey.novel)!!.position!!.chapterUrl)
+            assertEquals(2, (DesktopReadingCheckpointDao(library).read(fixtureKey)!!.position as AnchorPosition.Block).ordinal)
+            reader.read(fixtureChapters.first()); reader.settled()
+            assertEquals(2, reader.state.value.checkpointLoad!!.restore.viewport.index)
+            reader.position(fixtureKey, 0, 0, firstProjection); reader.flushPosition()
+            assertEquals(2, (DesktopReadingCheckpointDao(library).read(fixtureKey)!!.position as AnchorPosition.Block).ordinal)
+            assertEquals(1, (DesktopReadingCheckpointDao(library).read(secondKey)!!.position as AnchorPosition.Block).ordinal)
+        } finally { reader.close() }
+    }
+
+    @Test fun changedChapterFallbackRetainsOldAnchorAndLegacyPositionUntilUserMoves() = runBlocking<Unit> {
+        val library = LocalLibrary(temporary.newFolder().toPath()).apply { seed(); download(fixtureKey, pages) }
+        val reader = model(library)
+        try {
+            reader.open(library); reader.position(fixtureKey, 2, 17, reader.state.value.projection!!); reader.flushPosition()
+            val old = DesktopReadingCheckpointDao(library).read(fixtureKey)
+            val legacy = library.book(fixtureKey.novel)!!.position
+            library.download(fixtureKey, prose("Replacement")); reader.read(fixtureChapters.first()); reader.settled()
+            val projection = reader.state.value.projection!!
+            assertEquals(CheckpointNotice.CHANGED, reader.state.value.checkpointLoad!!.restore.notice)
+            reader.position(fixtureKey, 0, 0, projection, userInitiated = false); reader.flushPosition()
+            assertEquals(old, DesktopReadingCheckpointDao(library).read(fixtureKey)); assertEquals(legacy, library.book(fixtureKey.novel)!!.position)
+            reader.position(fixtureKey, 0, 0, projection); reader.flushPosition()
+            assertEquals(projection.document!!.logicalRevision, DesktopReadingCheckpointDao(library).read(fixtureKey)!!.logicalRevision)
+            assertNull(reader.state.value.positionNotice)
+        } finally { reader.close() }
+    }
+
+    @Test fun failedAutosaveRetainsLaterCaptureAndCanBeRetriedWithoutLosingIt() = runBlocking<Unit> {
+        val directory = temporary.newFolder().toPath()
+        val library = LocalLibrary(directory).apply { seed(); download(fixtureKey, pages) }
+        val reader = model(library); val marker = directory.resolve("library.json"); val original = Files.readAllBytes(marker)
+        try {
+            reader.open(library); val projection = reader.state.value.projection!!
+            reader.position(fixtureKey, 1, 9, projection)
+            Files.delete(marker); Files.createDirectory(marker)
+            reader.flushPosition(); assertTrue(reader.state.value.error!!.contains("Could not save reading position"))
+            reader.position(fixtureKey, 2, 17, projection)
+            Files.delete(marker); Files.write(marker, original)
+            reader.flushPosition(); assertNull(reader.state.value.error)
+            assertEquals(2, (DesktopReadingCheckpointDao(library).read(fixtureKey)!!.position as AnchorPosition.Block).ordinal)
+        } finally {
+            if (Files.isDirectory(marker)) { Files.delete(marker); Files.write(marker, original) }
+            reader.close()
+        }
+    }
+
+    @Test fun failedCloseResumesSameWriterAndLaterCaptureSurvivesSuccessfulClose() = runBlocking<Unit> {
+        var fail = false
+        val directory = temporary.newFolder().toPath()
+        val library = LocalLibrary(directory) { if (fail && it == StorageCheckpoint.BEFORE_COMMIT) throw IOException("Checkpoint close fault") }
+        library.seed(); library.download(fixtureKey, pages)
+        val reader = model(library); reader.open(library)
+        val projection = reader.state.value.projection!!; reader.position(fixtureKey, 1, 9, projection)
+        fail = true
+        try { reader.close(); fail("Close failure must be surfaced") } catch (e: IOException) { assertEquals("Checkpoint close fault", e.message) }
+        fail = false
+        reader.position(fixtureKey, 2, 17, projection); reader.close()
+        LocalLibrary(directory).use { reopened ->
+            assertEquals(2, (DesktopReadingCheckpointDao(reopened).read(fixtureKey)!!.position as AnchorPosition.Block).ordinal)
+        }
+    }
+
+    @Test fun revokedCheckpointCannotPublishItsBufferedLegacyResumePosition() = runBlocking<Unit> {
+        val library = LocalLibrary(temporary.newFolder().toPath()).apply {
+            seed(); download(fixtureKey, pages); position(fixtureKey, 0, 0); flush()
+        }
+        val reader = model(library)
+        try {
+            reader.open(library); val old = reader.state.value.projection!!
+            reader.position(fixtureKey, 2, 17, old)
+            library.download(fixtureKey, prose("Changed"))
+            reader.flushPosition()
+            assertEquals(ReadPosition(fixtureKey.url, 0, 0), library.book(fixtureKey.novel)!!.position)
+            assertEquals(CheckpointNotice.RELOAD.message, reader.state.value.positionNotice)
+            assertNull(DesktopReadingCheckpointDao(library).read(fixtureKey))
+            reader.position(fixtureKey, 1, 9, old); reader.flushPosition()
+            assertEquals(ReadPosition(fixtureKey.url, 0, 0), library.book(fixtureKey.novel)!!.position)
+        } finally { reader.close() }
+    }
+
+    @Test fun oldFlushCannotDiscardANewerViewsPendingResumeSelectionForTheSameChapter() = runBlocking<Unit> {
+        LocalLibrary(temporary.newFolder().toPath()).use { library ->
+            library.seed(); val retired = Any(); val fresh = Any()
+            library.position(fixtureKey, 1, 9, retired)
+            library.position(fixtureKey, 2, 17, fresh)
+            library.discardPendingPosition(fixtureKey, retired); library.flush()
+            assertEquals(ReadPosition(fixtureKey.url, 2, 17), library.book(fixtureKey.novel)!!.position)
+        }
+    }
+}

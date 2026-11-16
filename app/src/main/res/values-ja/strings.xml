@@ -743,4 +743,16 @@
     <string name="source_validate_failed">検証に失敗しました。</string>
     <plurals name="novel_export_success"><item quantity="other">%1$d章をエクスポートしました</item></plurals>
     <string name="extension_api_required">拡張機能には API %1$s が必要です（アプリの API: %2$s）</string>
+    <string name="reader_position_save_error">読書位置を保存できませんでした</string>
+    <string name="reader_use_position">この位置を使用</string>
+    <string name="reader_position_legacy">以前に保存した読書位置を使用しています。</string>
+    <string name="reader_position_relocated">章が変更されました。一致する段落を復元しました。</string>
+    <string name="reader_position_changed">章が変更されました。先頭を表示しています。</string>
+    <string name="reader_position_hidden">保存位置はここでは非表示です。次の表示可能な部分を表示しています。</string>
+    <string name="reader_position_coarse">保存した段落の先頭を復元しました。</string>
+    <string name="reader_position_invalid">保存された読書位置は無効です。記録は保持されています。</string>
+    <string name="reader_position_unsupported">保存された読書位置の形式は未対応です。記録は保持されています。</string>
+    <string name="reader_position_identity">保存された読書位置は別の章のものです。記録は保持されています。</string>
+    <string name="reader_position_empty">この章には表示可能な内容がありません。</string>
+    <string name="reader_position_reload">読書位置を保存するには、この章を再読み込みしてください。</string>
 </resources>

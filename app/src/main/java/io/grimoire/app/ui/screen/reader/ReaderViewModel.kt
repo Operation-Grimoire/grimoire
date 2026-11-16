@@ -25,6 +25,10 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.ReaderTextAlign
 import io.grimoire.app.data.local.entity.ReadingHistoryEntity
 import io.grimoire.app.util.ContentLanguages
+import io.grimoire.reading.anchor.ReaderCheckpoints
+import io.grimoire.reading.anchor.CheckpointNotice
+import io.grimoire.reading.anchor.LegacyReaderViewport
+import io.grimoire.reading.storage.ReadingCheckpointDao
 import io.grimoire.reading.anchor.ReadingProjection
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
@@ -79,6 +83,7 @@ class ReaderViewModel @Inject constructor(
     private val extensionManager: ExtensionManager,
     private val chapterDao: ChapterDao,
     private val chapterLoader: ChapterLoader,
+    checkpointDao: ReadingCheckpointDao,
     private val novelDao: NovelDao,
     private val readingHistoryDao: ReadingHistoryDao,
     private val incognitoManager: io.grimoire.app.data.preferences.IncognitoManager,
@@ -117,11 +122,24 @@ class ReaderViewModel @Inject constructor(
     private val _chapters = MutableStateFlow<List<ChapterEntity>>(emptyList())
     private val _currentIndex = MutableStateFlow(-1)
 
+    private val checkpoints = ReaderCheckpoints(checkpointDao)
+    private var leaving = false
+    private val _saveError = MutableStateFlow<String?>(null)
+    internal val saveError: StateFlow<String?> = _saveError.asStateFlow()
+    private val _positionNotice = MutableStateFlow<CheckpointNotice?>(null)
+    internal val positionNotice: StateFlow<CheckpointNotice?> = _positionNotice.asStateFlow()
     private val livePosition = MutableStateFlow<ReaderPosition?>(null)
     private val persistenceJob = SupervisorJob()
     private val persistenceScope = CoroutineScope(persistenceJob + Dispatchers.Main.immediate)
-    private val progressWriter = ReaderProgressWriter(persistenceScope) { position ->
-        chapterDao.setReadAnchor(position.chapterId, position.fraction, position.anchorIndex, position.anchorOffset)
+    private val progressWriter = ReaderProgressWriter(persistenceScope, onFailure = ::positionSaveFailed) { position ->
+        checkpoints.flush()
+        val checkpoint = position.checkpoint
+        if (checkpoint != null && checkpoints.isRevoked(checkpoint)) {
+            if (_content.value?.checkpoint === checkpoint) _positionNotice.value = CheckpointNotice.RELOAD
+        } else {
+            chapterDao.setReadAnchor(position.chapterId, position.fraction, position.anchorIndex, position.anchorOffset)
+        }
+        _saveError.value = null
     }
 
     val currentChapter: StateFlow<ChapterEntity?> = combine(_chapters, _currentIndex, livePosition) { chapters, idx, position ->
@@ -381,6 +399,7 @@ class ReaderViewModel @Inject constructor(
 
     private fun loadPages(preloaded: List<NovelPage>?) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
+        checkpoints.retire()
         flushProgress()
         loadPagesJob?.cancel()
         _content.value = null
@@ -388,6 +407,9 @@ class ReaderViewModel @Inject constructor(
         _error.value = null
         loadPagesJob = viewModelScope.launch {
             try {
+                progressWriter.flush()?.join()
+                check(!progressWriter.hasPending()) { localizedContext.getString(R.string.reader_position_save_error) }
+
                 // A download may have completed since the chapter list was loaded.
                 val fresh = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
                 val key = novelDao.getById(fresh.novelId)?.let { novel ->
@@ -409,10 +431,15 @@ class ReaderViewModel @Inject constructor(
                         chapterImageStore.localImageUri(fresh.novelId, fresh.url, page.index, result.cacheRevision)
                     }
                 }
+                val prepared = prepareReaderCheckpoint(loaded, checkpoints,
+                    LegacyReaderViewport(fresh.readAnchorItemIndex, fresh.readAnchorItemOffset).takeIf {
+                        fresh.readAnchorItemIndex != 0 || fresh.readAnchorItemOffset != 0 || fresh.readProgress != 0f
+                    })
                 // Some extensions return normally even after cancellation.
                 currentCoroutineContext().ensureActive()
                 if (_chapters.value.getOrNull(_currentIndex.value)?.id != chapter.id) return@launch
-                _content.value = loaded
+                _content.value = prepared
+                _positionNotice.value = prepared.checkpoint?.restore?.notice
                 recordWordCount(fresh, loaded.pages)
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -476,8 +503,12 @@ class ReaderViewModel @Inject constructor(
         projection: ReadingProjection,
     ) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
+        if (leaving) return
+        val checkpoint = _content.value?.checkpoint
+        if (checkpoint != null && !checkpoints.canRecordPosition(checkpoint)) return
         val position = captureReaderPosition(chapter.id, _content.value, projection,
             chapterId, fraction, anchorIndex, anchorOffset) ?: return
+        if (checkpoint != null && checkpoints.capture(checkpoint, anchorIndex) != null) _positionNotice.value = null
         livePosition.value = position
         progressWriter.submit(position)
         val shouldMark = shouldMarkReaderChapterRead(
@@ -500,10 +531,56 @@ class ReaderViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        leaving = true
+        checkpoints.retire()
         flushProgress()
+        persistenceScope.launch { try { checkpoints.flush() } catch (failure: Exception) { positionSaveFailed(failure) } }
         // Finish queued writes after viewModelScope is cancelled, then release this scope.
         persistenceJob.complete()
         super.onCleared()
+    }
+
+    fun userPosition(projection: ReadingProjection) {
+        if (!leaving && _content.value?.projection === projection) _content.value?.checkpoint?.let(checkpoints::userPosition)
+    }
+
+    fun acceptCheckpointPosition(projection: ReadingProjection, index: Int) {
+        if (leaving || _content.value?.projection !== projection) return
+        val load = _content.value?.checkpoint ?: return
+        checkpoints.userPosition(load)
+        if (checkpoints.capture(load, index) != null) { _positionNotice.value = null; retryPositionSave() }
+    }
+
+    private fun positionSaveFailed(failure: Exception) {
+        if (failure is CancellationException) throw failure
+        _saveError.value = localizedContext.getString(R.string.reader_position_save_error)
+    }
+
+    fun retryPositionSave() = persistenceScope.launch {
+        try {
+            progressWriter.flush()?.join()
+            checkpoints.flush()
+            if (!progressWriter.hasPending()) _saveError.value = null
+            _content.value?.checkpoint?.takeIf(checkpoints::isRevoked)?.let { _positionNotice.value = CheckpointNotice.RELOAD }
+        } catch (failure: Exception) { positionSaveFailed(failure) }
+    }
+
+    /** Explicit back navigation waits for confirmation; failed writes keep this reader and its pending captures. */
+    suspend fun flushForExit(): Boolean {
+        if (leaving) return false
+        leaving = true
+        val load = _content.value?.checkpoint
+        checkpoints.retire()
+        return try {
+            flushProgress()
+            progressWriter.flush()?.join()
+            checkpoints.flush()
+            if (progressWriter.hasPending()) {
+                leaving = false; load?.let(checkpoints::resume); false
+            } else true
+        } catch (failure: Exception) {
+            leaving = false; load?.let(checkpoints::resume); positionSaveFailed(failure); false
+        }
     }
 
     fun toggleRead() {

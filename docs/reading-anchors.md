@@ -1,14 +1,13 @@
 # Portable reading anchors
 
-The pure canonical document, anchor model, resolver and projection mapping are
-implemented in `reading-core`. Both readers render through those mappings and
-capture provisional block anchors. Production persisted anchor capture/restore,
-local layout hints and legacy-anchor conversion are **not implemented**.
-The additive checkpoint DAO and session protocol are implemented behind both adapters;
-the existing readers still persist their legacy positions. The contract below also
-defines their required behavior. [#425](https://github.com/Operation-Grimoire/grimoire/pull/425)
-completed desktop download/storage adoption; its remaining runtime gates still
-apply. This contract does not select a new database or define account sync.
+The shared canonical document, resolver, projection, session/DAO protocol and
+production capture/restore/flush workflow are implemented. Both readers save guarded
+portable checkpoints and restore through their current projection at paragraph
+boundaries. Measured pixel hints, glyph/character-level restoration and conversion
+of historical legacy fields remain separate. Legacy same-platform positions are a
+labelled approximate fallback, never a certified portable anchor. Existing progress,
+completion and history policy remains platform-owned. This does not define account
+sync or complete physical-phone/native-window/process-death acceptance.
 
 A reading anchor identifies a place in chapter content. A list index and pixel
 offset identify a place in one rendered layout. Keep those values separate.
@@ -17,10 +16,10 @@ offset identify a place in one rendered layout. Keep those values separate.
 
 | Area | Current implementation | Required adoption boundary |
 | --- | --- | --- |
-| Android capture | `ReaderScreen` saves the first visible lazy-list index and pixel offset. That list filters blank text and adds a title and footer. Its percentage uses the last visible item and total list size. | Map rendered items to original content before sharing an anchor. Do not reinterpret the percentage as a character offset. |
-| Android persistence | `ReaderProgressWriter` debounces for 500 ms, serializes writes and drains captured positions on chapter change/exit. `ChapterDao.setReadAnchor` updates progress/index/offset separately from read status. | Preserve captured positions, ordering and separate read/history fields. Add observable error/retry handling before adopting a new writer. |
-| Desktop capture | `ReaderPane` saves an index into its page list and a pixel offset, with a 350 ms flush delay. | Preserve local restore behavior while adding a content-relative position. |
-| Desktop persistence | `LocalLibrary` retains one legacy position per book, accepts scroll updates in memory and persists on flush/close. Failed autosave keeps accepting later scroll positions. | Import only the legacy position that exists. Other chapters have unknown positions, not inferred starts or completion. |
+| Android capture | `ReaderScreen` maps actual position input through its canonical projection. Title/footer and blank-item filtering remain explicit; legacy fraction/index/pixels stay compatibility metadata. | Map rendered items to original content before sharing an anchor. Do not reinterpret the percentage as a character offset. |
+| Android persistence | `ReaderProgressWriter` debounces for 500 ms, retains failed/newer captures and drains with guarded checkpoint flushes. Save failures expose retry; Back waits for confirmation. `setReadAnchor` remains separate compatibility metadata. | Preserve captured positions, ordering and separate read/history fields. Portable restoration cannot itself mark read; pause/onCleared flushing remains best-effort under forced termination. |
+| Desktop capture | `ReaderPane` recognizes user wheel/scrollbar/scroll input, captures through its projection and flushes after 350 ms. Portable restoration aligns to paragraph boundaries. | Preserve local restore behavior while adding a content-relative position. |
+| Desktop persistence | The shared coordinator persists per-chapter checkpoints through JDBC. `LocalLibrary` also retains one legacy resume position per book; failed autosave keeps accepting captures and failed close can be retried. | Import only the legacy position that exists. Other chapters have unknown positions, not inferred starts or completion. |
 | Completion/history | Android has percentage, paragraphs-from-end and at-end policies, explicit read/unread commands and first-read history. Desktop has no equivalent completion policy. | Position resolution/migration must not set read/unread, invent completion/history or add Android policy to desktop. |
 
 Sources: [Android screen](../app/src/main/java/io/grimoire/app/ui/screen/reader/ReaderScreen.kt),
@@ -307,9 +306,10 @@ Defining a normalized progress measure or changing those thresholds is later wor
    registration in Android Room and desktop JDBC. Shared decisions validate document,
    observation, session and sequence inside each adapter transaction. New checkpoint
    tables preserve legacy layouts and unrelated fields; production adoption follows.
-4. Move production capture, restore and flush paths through those shared decisions.
-   Run equivalent scenarios through both compositions; retain host lifecycle and
-   UI tests separately. Then design shared progress/completion commands.
+4. **Implemented:** both production readers use shared capture, restore and flush
+   decisions with platform adapters. Equivalent scenarios cover both compositions;
+   UI/lifecycle/physical-device proof remains separate. Measured local hints,
+   character-layout mapping and shared progress/completion commands follow.
 
 ### Coherent load observations and remaining write authority
 
@@ -330,9 +330,9 @@ Validation never seeds/replaces identity and never grants persistence authority.
 
 The load-observation prerequisite introduced no schema or codec change. Step3 now
 also supplies registered sessions and guarded checkpoint DAOs in separate additive
-tables. Portable restoration and local layout hints remain unimplemented.
-Current position writers still persist the same legacy fields; they do not consume
-these observations as permits. Download claim/failure without body changes need
+tables. Portable restoration is now adopted below; measured local layout hints remain separate.
+Portable writes now consume registered sessions, never the observation alone.
+Legacy compatibility fields remain separate from that authority. Download claim/failure without body changes need
 not invalidate an observation. Session registration and guarded commits recheck
 these observations atomically, as described below.
 
@@ -376,19 +376,18 @@ controller remains separate and reads the retained pages through its existing pa
 saved/source inputs preserve their previous filtering/URI behavior. Per-load lazy-item keys and
 projection-instance checks reject stale layout/capture callbacks, including reloads
 of the same chapter. These load identities are not measured-layout/session tokens.
-The existing writer persists only rendered legacy index/pixels/fraction; a provisional
-anchor in the pending DTO does not activate checkpoint persistence.
+Fresh user captures now also queue guarded portable checkpoints. Legacy rendered
+index/pixels/fraction remain compatibility metadata, not portable identity.
 
 Desktop similarly renders the projected body, resets viewport state per load,
 retires the old projection before a replacement load can suspend, rejects old-load
 callbacks and keeps a provisional anchor in reader state.
-It still flushes the same legacy book position. Both hosts construct projections
-off the UI thread. No schema/codec change, per-chapter checkpoint, storage-generation
-registration or new completion/history policy is introduced.
+It retains the legacy book position for compatibility and resume selection, while
+guarded portable checkpoints are per chapter. Both hosts construct projections off
+the UI thread. Reader adoption introduces no schema/codec or completion/history policy change.
 
-Local-hint reuse, LegacyApproximate and durable capture/restore remain step4.
-Registered sessions/guarded checkpoint DAOs and coherent load observations are
-implemented; they do not complete production write/restore adoption. Shared/host unit tests and a desktop Compose
+Durable capture/restore and explicitly approximate same-platform legacy fallback
+now use step4. Measured local hints and character-level realization remain later. Shared/host unit tests and a desktop Compose
 journey exercise the new capture path. Android's four ReaderProjectionTest cases
 exercise the host helper/UTF-16 framing on ART and verify the real Room legacy
 write retains rendered indices and unrelated metadata. They are not Android
@@ -444,7 +443,57 @@ cache revision, membership, download receipts, history or the novel resume point
 Older builds refuse these newer schema versions. Close older readers and keep a full
 pre-upgrade app-data/library-directory copy to roll back; never lower user_version.
 
-This slice stores anchors only. Measured layout hints, portable capture/restore and
-flush coordination, legacy approximation and production reader adoption remain the
-next slice. Existing progress/completion/history policy is unchanged. Local tests and
+The storage slice stores anchors only. Production adoption now uses the shared
+coordinator below. Measured layout hints and historical-anchor conversion remain
+separate. Existing progress/completion/history policy is unchanged. Local tests and
 instrumentation compilation are separate from hosted ART, signed beta and UI acceptance.
+
+## Production capture, restoration and flush
+
+`ReaderCheckpoints` owns one published load identity and sequences actual captures.
+Session registration returns the previous checkpoint from the same adapter transaction;
+restoration does not use a separate, racy read. Portable checkpoints take precedence
+over same-platform legacy viewports. Restore resolves against canonical content and
+projects into each renderer. It never captures or persists a replacement anchor.
+
+Both hosts wait for the new body's layout before observing position. Direct scroll
+input or explicit position acceptance enables portable capture. Programmatic initial
+layout/restoration and TTS scrolling cannot enable it. All portable restores and
+changed/hidden/coarse/error fallbacks suppress compatibility position/completion
+callbacks until user input; restoring End cannot itself mark a chapter read.
+A load that could not register because its observation went stale must reload; input
+does not upgrade its authority. Invalid/unsupported anchors remain visible errors with
+retained evidence, rather than silent repair. Android provides explicit acceptance
+of the displayed position or reload where needed.
+
+Portable viewport restoration currently aligns to block boundaries. A retained
+TextOffset anchor with a nonzero offset receives an explicit paragraph-start notice;
+its original evidence survives until a fresh capture. No pixel hint is certified or
+reused for a portable anchor. Legacy pixels are used only for the labelled legacy
+fallback. Start/End are realized as boundaries; Android has title/footer items and
+desktop scrolls to the last item's bottom for End.
+
+Navigation seals the old load before draining its already captured positions. A
+new same-chapter registration supersedes the old writer. Captures remain accepted
+while an autosave is pending; an old completion only clears its exact pending command,
+so newer/backward captures survive. Failed/uncertain commits retain the latest command.
+An identical retry replays; stale sessions are retired and reported as needing reload.
+Desktop discards only the revoked load's legacy buffer, preserving a newer view's
+resume selection. Portable commits never select the novel resume chapter. Saving
+the active source chapter offline first drains existing captures, then performs a
+fresh saved-content load/registration; equal text never upgrades the old token.
+
+Desktop close seals captures, waits for current operations and flushes before releasing
+the library; a failed close surfaces the failure and resumes the unchanged view for
+retry. Android Back waits for pending position writes and retains the screen on failure.
+Pause/disposal also request a flush; onCleared drains accepted jobs in the independent
+persistence scope. These callbacks do not guarantee writes after forced process death
+or permanent IO failure. Android save failures expose retry and retain pending captures
+while the owner is alive. A durable crash outbox is not introduced.
+
+Proof boundaries: shared blocked-write/fault/replay tests, real desktop SQLite model
+restart/close cases, actual desktop Compose scroll input and offline restoration,
+and four native production-helper/Room cases are distinct. Instrumentation compilation
+is not ART execution; Room helpers are not Android Compose/lifecycle/physical-phone
+acceptance. Signed upgrade snapshots preserve legacy data but do not exercise reader
+checkpoint capture. Native window/process-death and cross-process acceptance remain open.

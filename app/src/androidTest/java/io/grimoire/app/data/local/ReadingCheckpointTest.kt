@@ -77,6 +77,7 @@ class ReadingCheckpointTest {
         val otherDoc = CanonicalDocument.fromPages(otherKey, pages)
         val other = requireNotNull(dao.register(requireNotNull(saved.readObserved(otherKey).observation), otherDoc))
         val newer = session()
+        assertEquals(first.anchor, newer.checkpoint)
         assertEquals(first.anchor, dao.read(key))
         assertEquals(CheckpointCommit.NotApplied(CheckpointRejection.STALE), dao.commit(first))
         assertNull(dao.register(newer.observation, otherDoc))

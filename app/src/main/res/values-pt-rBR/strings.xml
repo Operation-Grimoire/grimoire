@@ -777,4 +777,16 @@
     <string name="source_validate_failed">Falha na validação.</string>
     <plurals name="novel_export_success"><item quantity="one">%1$d capítulo exportado</item><item quantity="many">%1$d capítulos exportados</item><item quantity="other">%1$d capítulos exportados</item></plurals>
     <string name="extension_api_required">A extensão requer a API %1$s (API do app: %2$s)</string>
+    <string name="reader_position_save_error">A posição de leitura não foi salva</string>
+    <string name="reader_use_position">Usar esta posição</string>
+    <string name="reader_position_legacy">Usando uma posição de leitura salva anteriormente.</string>
+    <string name="reader_position_relocated">O capítulo mudou. O parágrafo correspondente foi restaurado.</string>
+    <string name="reader_position_changed">O capítulo mudou. Mostrando o início.</string>
+    <string name="reader_position_hidden">A posição salva está oculta aqui. Mostrando a próxima seção visível.</string>
+    <string name="reader_position_coarse">O início do parágrafo salvo foi restaurado.</string>
+    <string name="reader_position_invalid">A posição de leitura salva é inválida. Ela foi mantida.</string>
+    <string name="reader_position_unsupported">O formato da posição salva não é compatível. Ela foi mantida.</string>
+    <string name="reader_position_identity">A posição salva pertence a outro capítulo. Ela foi mantida.</string>
+    <string name="reader_position_empty">Este capítulo não tem conteúdo visível.</string>
+    <string name="reader_position_reload">Recarregue este capítulo para salvar sua posição de leitura.</string>
 </resources>

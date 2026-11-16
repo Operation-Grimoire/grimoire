@@ -777,4 +777,16 @@
     <string name="source_validate_failed">Error en la validación.</string>
     <plurals name="novel_export_success"><item quantity="one">Se exportó %1$d capítulo</item><item quantity="many">Se exportaron %1$d capítulos</item><item quantity="other">Se exportaron %1$d capítulos</item></plurals>
     <string name="extension_api_required">La extensión requiere la API %1$s (API de la app: %2$s)</string>
+    <string name="reader_position_save_error">No se guardó la posición de lectura</string>
+    <string name="reader_use_position">Usar esta posición</string>
+    <string name="reader_position_legacy">Se usa una posición de lectura guardada anteriormente.</string>
+    <string name="reader_position_relocated">El capítulo cambió. Se restauró el párrafo coincidente.</string>
+    <string name="reader_position_changed">El capítulo cambió. Se muestra el inicio.</string>
+    <string name="reader_position_hidden">La posición guardada está oculta aquí. Se muestra la siguiente sección visible.</string>
+    <string name="reader_position_coarse">Se restauró el inicio del párrafo guardado.</string>
+    <string name="reader_position_invalid">La posición de lectura guardada no es válida. Se ha conservado.</string>
+    <string name="reader_position_unsupported">El formato de la posición guardada no es compatible. Se ha conservado.</string>
+    <string name="reader_position_identity">La posición guardada pertenece a otro capítulo. Se ha conservado.</string>
+    <string name="reader_position_empty">Este capítulo no tiene contenido visible.</string>
+    <string name="reader_position_reload">Vuelve a cargar este capítulo para guardar tu posición de lectura.</string>
 </resources>
