@@ -113,6 +113,8 @@ class ReaderModel(
     fun read(chapter: Chapter) = operate {
         val book = state.value.book ?: error("Open a novel first")
         require(!chapter.locked && book.chapters.any { it == chapter }) { "This chapter is locked or unavailable" }
+        // Retire the old view before storage/source suspension can admit stale callbacks.
+        publishView { it.copy(view = View.BOOK, chapter = null, pages = emptyList(), projection = null, observedAnchor = null) }
         library.flush()
         val key = ChapterKey(book.key, chapter.url)
         val pages = try {

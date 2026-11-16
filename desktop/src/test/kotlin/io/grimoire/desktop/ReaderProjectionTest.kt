@@ -2,6 +2,8 @@ package io.grimoire.desktop
 
 import io.grimoire.api.model.novel.*
 import io.grimoire.reading.anchor.*
+import io.grimoire.reading.ChapterLoader
+import io.grimoire.reading.storage.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import org.junit.Assert.*
@@ -60,6 +62,37 @@ class ReaderProjectionTest {
             assertNull(model.state.value.observedAnchor)
             assertEquals(ReadPosition("/chapter", 3, 5), library.book(fixtureKey.novel)!!.position)
         } finally { model.close() }
+    }
+
+    @Test fun reloadRejectsOldCallbacksWhileReplacementLoadIsSuspended() = runBlocking {
+        val library = LocalLibrary(temporary.newFolder().toPath()).apply { seed(); download(fixtureKey, pages) }
+        val pause = AtomicBoolean(false)
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val dao = SavedChapterDao { key ->
+            if (pause.get()) { entered.complete(Unit); release.await() }
+            DesktopSavedChapterDao(library).read(key)
+        }
+        val model = ReaderModel(library, "1.5.0", AtomicBoolean(false), ChapterLoader(SavedChapterRepository(dao)),
+            LibraryRepository(DesktopLibraryDao(library)), DownloadRepository(DesktopDownloadDao(library)))
+        try {
+            model.openSaved(library.book(fixtureKey.novel)!!); model.settled()
+            model.read(fixtureChapters.first()); model.settled()
+            val old = model.state.value.projection!!
+            model.position(fixtureKey, 2, 17, old)
+            pause.set(true)
+            model.read(fixtureChapters.first())
+            withTimeout(5_000) { entered.await() }
+            model.position(fixtureKey, 5, 99, old)
+            assertEquals(ReadPosition("/chapter", 2, 17), library.book(fixtureKey.novel)!!.position)
+            assertNull(model.state.value.projection)
+            assertNull(model.state.value.observedAnchor)
+            release.complete(Unit); model.settled()
+            val fresh = model.state.value.projection!!
+            assertNotSame(old, fresh)
+            model.position(fixtureKey, 3, 5, fresh)
+            assertEquals(3, (model.state.value.observedAnchor!!.position as AnchorPosition.Block).ordinal)
+        } finally { release.complete(Unit); model.close() }
     }
 
     @Test fun invalidOrOtherKeySamplesCannotChangeTheCurrentLegacyPosition() = runBlocking {

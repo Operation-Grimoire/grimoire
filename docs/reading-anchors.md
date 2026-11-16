@@ -334,16 +334,18 @@ Projection changes can alter viewport item indices without altering the retained
 canonical document. No geometry or pixel-hint reuse is claimed by those tests.
 
 Android publishes one [ReaderContent](../app/src/main/java/io/grimoire/app/ui/screen/reader/ReaderContent.kt)
-snapshot containing projection and existing audio input. Blank filtering and saved
-image-URI replacement happen after original pages are retained. Saved/source audio
-inputs preserve their previous filtering/URI behavior. Per-load lazy-item keys and
+snapshot containing the projection and retained page inputs. Blank filtering and
+saved image-URI replacement happen after original pages are retained. The audio
+controller remains separate and reads the retained pages through its existing path;
+saved/source inputs preserve their previous filtering/URI behavior. Per-load lazy-item keys and
 projection-instance checks reject stale layout/capture callbacks, including reloads
 of the same chapter. These load identities are not measured-layout/session tokens.
 The existing writer persists only rendered legacy index/pixels/fraction; a provisional
 anchor in the pending DTO does not activate checkpoint persistence.
 
 Desktop similarly renders the projected body, resets viewport state per load,
-rejects old-projection callbacks and keeps a provisional anchor in reader state.
+retires the old projection before a replacement load can suspend, rejects old-load
+callbacks and keeps a provisional anchor in reader state.
 It still flushes the same legacy book position. Both hosts construct projections
 off the UI thread. No schema/codec change, per-chapter checkpoint, storage-generation
 registration or new completion/history policy is introduced.

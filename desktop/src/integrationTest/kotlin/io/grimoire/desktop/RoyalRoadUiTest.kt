@@ -86,7 +86,7 @@ class RoyalRoadUiTest {
             settled(model)
             compose.onNodeWithText(prose).assertIsDisplayed()
             compose.waitUntil(5_000) { model.state.value.observedAnchor != null }
-            assertEquals(model.state.value.book!!.key, model.state.value.observedAnchor!!.key.novel)
+            assertEquals(io.grimoire.reading.ChapterKey(model.state.value.book!!.key, chapter.url), model.state.value.observedAnchor!!.key)
             capture("offline-restart.png")
             assertEquals(count, requests.get())
             if (!live) assertEquals(4, count) // fixture catalog, details, chapter list and chapter
