@@ -13,9 +13,10 @@ the application does not compile or copy a Royal Road implementation.
 Use JDK 17 and the package-read credentials described in [CONTRIBUTING](../CONTRIBUTING.md).
 Building the external extension JAR uses that repository's JDK 21 toolchain;
 the application build and runtime use JDK 17. CI installs both explicitly.
-The default remains `extensions-core` 1.5.0. Cursor-pagination development
-selects 1.6.0-SNAPSHOT with `-PextensionsApiVersion=1.6.0-SNAPSHOT`, as PR CI
-does. A local API composite can be selected with `-PgrimoireApiDir`.
+The catalog pins immutable `extensions-core` 1.6.0, including cursor pagination.
+CI and app publication use that same catalog version. Local API development can
+select another version with `-PextensionsApiVersion=VERSION` or a local composite
+with `-PgrimoireApiDir`; release builds require a concrete published version.
 
 ```sh
 bash ./gradlew :reading-core:test :desktop:test
@@ -114,10 +115,9 @@ external inputs fail this task, without becoming prerequisites of the app tests.
 Windows/Linux CI runs app tests first, then builds the pinned external JAR and runs
 the compatibility smoke as a separate step. Storage/shared tests also run on macOS.
 
-These CI runs currently select `1.6.0-SNAPSHOT` explicitly for coordinated
-development checks. Publish and pin immutable API `1.6.0`, remove the temporary
-overrides and rerun combined validation before merging or publishing the app.
-Snapshot-backed CI does not satisfy that merge/release gate.
+The coordinated snapshot overrides have been removed. These checks and nightly
+publication resolve immutable API `1.6.0` from the catalog; development snapshot
+results are separate evidence from validation against the published release.
 
 `:desktop:liveSmoke` is a separate, explicit opt-in using the compatibility inputs.
 It operates the Compose reader against the real public Royal Road catalog, reads
