@@ -409,7 +409,7 @@ fun ReaderScreen(
                             verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(checkpointNoticeResource(notice)), style = MaterialTheme.typography.bodySmall,
                                 color = colors.foreground, modifier = Modifier.weight(1f))
-                            if (readerContent?.storageObservation != null) TextButton(
+                            if (readerContent?.storageObservation != null && notice != CheckpointNotice.EMPTY) TextButton(
                                 enabled = restoredScrollContent === readerContent,
                                 onClick = {
                                     if (notice == CheckpointNotice.RELOAD) viewModel.loadPages()

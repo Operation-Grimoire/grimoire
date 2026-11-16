@@ -55,7 +55,7 @@ class ReaderCheckpoints(private val dao: ReadingCheckpointDao) {
             val session = if (document != null && observation != null) dao.register(observation, document) else null
             val anchor = if (session != null) session.checkpoint else document?.let { dao.read(it.key) }
             val restore = restoreReaderCheckpoint(projection, anchor, legacy)
-            val load = ReaderCheckpointLoad(projection, if (observation != null && session == null)
+            val load = ReaderCheckpointLoad(projection, if (observation != null && session == null && restore.notice != CheckpointNotice.EMPTY)
                 restore.copy(notice = CheckpointNotice.RELOAD) else restore, session, this)
             currentCoroutineContext().ensureActive()
             synchronized(lock) {
@@ -82,10 +82,9 @@ class ReaderCheckpoints(private val dao: ReadingCheckpointDao) {
     /** Portable restoration cannot rewrite compatibility position or trigger completion before input either. */
     fun canRecordPosition(load: ReaderCheckpointLoad): Boolean = synchronized(lock) {
         canObserve(load) && when (load.restore.notice) {
-            CheckpointNotice.RELOAD -> false
+            CheckpointNotice.RELOAD, CheckpointNotice.EMPTY -> false
             CheckpointNotice.CHANGED, CheckpointNotice.HIDDEN, CheckpointNotice.COARSE,
-            CheckpointNotice.INVALID, CheckpointNotice.UNSUPPORTED, CheckpointNotice.IDENTITY,
-            CheckpointNotice.EMPTY -> load.enabled
+            CheckpointNotice.INVALID, CheckpointNotice.UNSUPPORTED, CheckpointNotice.IDENTITY -> load.enabled
             else -> load.restore.logical == null || load.enabled
         }
     }
@@ -134,6 +133,7 @@ class ReaderCheckpoints(private val dao: ReadingCheckpointDao) {
 /** Restore is a recommendation, never a capture or a rewrite of retained evidence. */
 fun restoreReaderCheckpoint(projection: ReadingProjection, anchor: ReadingAnchor?, legacy: LegacyReaderViewport?): ReaderCheckpointRestore {
     if (anchor == null) {
+        if (projection.body.isEmpty()) return ReaderCheckpointRestore(ReaderViewport(0), CheckpointNotice.EMPTY)
         if (legacy == null) return ReaderCheckpointRestore(ReaderViewport(0), null)
         val index = legacy.index.coerceIn(0, (projection.itemCount - 1).coerceAtLeast(0))
         return ReaderCheckpointRestore(ReaderViewport(index, if (index == legacy.index) legacy.offset.coerceAtLeast(0) else 0), CheckpointNotice.LEGACY)

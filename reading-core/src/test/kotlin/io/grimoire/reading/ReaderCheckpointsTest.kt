@@ -177,4 +177,15 @@ class ReaderCheckpointsTest {
         assertTrue(restoreReaderCheckpoint(original, end, null).viewport.end)
         assertEquals(1, (old.position as AnchorPosition.Block).ordinal)
     }
+
+    @Test fun emptyOrEntirelyHiddenBodyCannotCreatePositionOrCompletionEvenAfterInput() = runBlocking<Unit> {
+        for (view in listOf(projection(emptyList()), ReadingProjection.create(key, pages, emptyList(), leadingStart = true, trailingEnd = true))) {
+            val dao = Dao(); val coordinator = ReaderCheckpoints(dao)
+            val load = coordinator.open(view, observation, LegacyReaderViewport(7, 99))
+            assertEquals(CheckpointNotice.EMPTY, load.restore.notice)
+            coordinator.userPosition(load)
+            assertFalse(coordinator.canRecordPosition(load)); assertNull(coordinator.capture(load, 0)); coordinator.flush()
+            assertTrue(dao.committed.isEmpty())
+        }
+    }
 }

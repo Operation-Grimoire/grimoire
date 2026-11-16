@@ -85,6 +85,12 @@ class ReaderCheckpointAdoptionTest {
         coordinator.userPosition(current); coordinator.capture(current, 1); coordinator.flush()
         assertEquals(READING_ANCHOR_VERSION, dao.read(key)!!.modelVersion)
         assertEquals(metadata, db.chapterDao().getByUrl(1, key.url))
+        val retained = dao.read(key)
+        db.chapterDao().upsertContent(ChapterContentEntity(1, encodeChapterContent(emptyList())))
+        val empty = frame(coordinator).checkpoint!!
+        assertEquals(CheckpointNotice.EMPTY, empty.restore.notice)
+        coordinator.userPosition(empty); assertFalse(coordinator.canRecordPosition(empty)); coordinator.flush()
+        assertEquals(retained, dao.read(key)); assertEquals(metadata, db.chapterDao().getByUrl(1, key.url))
     }
 
     @Test fun realRoomFailureRetainsNewestCaptureAndLostReplyReplaysWithoutTouchingLegacyFields() = runBlocking<Unit> {
