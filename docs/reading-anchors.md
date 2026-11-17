@@ -292,6 +292,11 @@ history semantics. Android's existing completion policies and navigate-next acti
 remain platform behavior until their separate shared contract is implemented.
 Defining a normalized progress measure or changing those thresholds is later work.
 
+The [shared reading-state contract](reading-state.md) defines that follow-up under
+#432, including a separate canonical position measure, compatibility completion
+evidence, explicit read/unread ordering and history boundaries. It is a contract;
+the shared state model, guarded adapters and production adoption remain future work.
+
 ## Implementation order and acceptance
 
 1. **Implemented:** pure canonical-document, anchor and resolver models in
