@@ -394,8 +394,13 @@ class ReaderIntegrationTest {
             chapterNumber = 3f, read = true, firstReadAt = 42)
         io {
             val chapters = db.chapterDao()
+            val first = requireNotNull(chapters.getByUrl(1, key.url))
             val second = requireNotNull(chapters.getByUrl(1, "/integration/second"))
-            chapters.upsertAll(listOf(second.copy(read = true, firstReadAt = 24, readProgress = 0.5f)))
+            val downloaded = ChapterDownloadStatus.DOWNLOADED.ordinal
+            chapters.upsertAll(listOf(
+                first.copy(downloadStatus = downloaded),
+                second.copy(read = true, firstReadAt = 24, readProgress = 0.5f, downloadStatus = downloaded),
+            ))
             chapters.insertAll(listOf(unselected))
         }
         fun chapterRows() = io { db.chapterDao().getChapterMetadataOnce(1) }
@@ -406,7 +411,8 @@ class ReaderIntegrationTest {
 
         compose.onNodeWithText(firstName).performScrollTo().performTouchInput { longClick() }
         compose.onNodeWithContentDescription(context.getString(R.string.action_select_all)).assertExists()
-        compose.onNodeWithText(secondName).performScrollTo().performClick()
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(secondName))
+        compose.onNodeWithText(secondName).performClick()
         val sql = db.openHelper.writableDatabase
         io { sql.execSQL("CREATE TRIGGER integration_write_fault BEFORE UPDATE OF read ON chapters WHEN NEW.id=2 BEGIN SELECT RAISE(ABORT,'selected chapter write failure'); END") }
         val markUnread = context.getString(R.string.novel_mark_unread)
