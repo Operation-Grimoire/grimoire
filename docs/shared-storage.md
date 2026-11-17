@@ -315,7 +315,7 @@ against a new layout. Measured hints and character-level realization remain sepa
 See [capture/restore/flush and proof limits](reading-anchors.md#production-capture-restoration-and-flush).
 Four additional native ReaderCheckpointAdoptionTest cases cover the production Android
 preparation helper with real Room: mapping/reopen, retained fallback evidence, failed/
-uncertain writes and stale source/retired load rejection. The script requires all 49
+uncertain writes and stale source/retired load rejection. The script requires all 52
 native successes; compiling cases alone is not native runtime acceptance.
 
 ## Reading-state adapters
@@ -329,3 +329,7 @@ old bindings, including same-value writes. The production writers are a separate
 adoption step. Older DB35/SQL1/2 builds refuse the expanded schema. Downgrade
 requires a complete pre-upgrade app-data/store copy taken while the app is closed;
 the in-app library backup is insufficient. See [protocol, migrations and rollback](reading-state-storage.md).
+
+The shared [completion facade and writer retirement](reading-state-storage.md#completion-facade-and-writer-retirement)
+add command preparation/retry and separate word-count outcomes without changing
+DB36/SQL3 or their JSON format. Production writer adoption remains #451.

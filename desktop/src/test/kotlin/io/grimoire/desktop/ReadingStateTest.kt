@@ -160,6 +160,72 @@ class ReadingStateTest {
         }
     }
 
+    @Test fun exactWriterRetirementPreservesOtherKindValuesReceiptsAndLegacyData() = runBlocking<Unit> {
+        val directory = temporary.newFolder().toPath()
+        LocalLibrary(directory).use { library ->
+            library.seed(); library.download(fixtureKey, prose()); val before = library.book(fixtureKey.novel)
+            val body = DesktopSavedChapterDao(library).readSnapshot(fixtureKey); val dao = DesktopReadingStateDao(library)
+            val visual = session(library, ReadingStateWriterKind.VISUAL); val audio = session(library, ReadingStateWriterKind.AUDIO)
+            val accepted = automatic(visual); dao.commit(accepted); val value = dao.read(fixtureKey)
+            assertTrue(dao.retire(visual)); assertFalse(dao.retire(visual))
+            rejected(dao.commit(automatic(visual, 2)), ReadingStateRejection.STALE)
+            rejected(dao.commit(automatic(audio)), ReadingStateRejection.NO_CHANGE)
+            assertTrue((dao.commit(accepted) as ReadingStateCommit.Committed).replayed)
+            val newer = session(library, ReadingStateWriterKind.VISUAL)
+            assertFalse(dao.retire(visual)); rejected(dao.commit(automatic(newer)), ReadingStateRejection.NO_CHANGE)
+            assertEquals(1L, rows(directory, "reading_state_receipts")); assertEquals(value, dao.read(fixtureKey))
+            assertEquals(before, library.book(fixtureKey.novel)); assertEquals(body, DesktopSavedChapterDao(library).readSnapshot(fixtureKey))
+            library.remember(fixtureKey.novel, fixtureNovel, emptyList()); library.seed()
+            assertFalse(dao.retire(newer)); assertEquals(ReadStatus.UNKNOWN, dao.read(fixtureKey)!!.status)
+            assertEquals(0L, rows(directory, "reading_states"))
+        }
+    }
+
+    @Test fun retirementFaultRollsBackAndReopenRefusesTheOldOwner() = runBlocking<Unit> {
+        val directory = temporary.newFolder().toPath(); var fault = false; lateinit var old: ReadingStateSession
+        LocalLibrary(directory) { if (fault && it == StorageCheckpoint.BEFORE_COMMIT) throw IOException("Retire fault") }.use { library ->
+            library.seed(); val dao = DesktopReadingStateDao(library); old = session(library, ReadingStateWriterKind.AUDIO)
+            fault = true
+            try { dao.retire(old); fail("Must roll back") } catch (e: IOException) { assertEquals("Retire fault", e.message) }
+            fault = false; assertTrue(dao.commit(automatic(old)) is ReadingStateCommit.Committed)
+        }
+        LocalLibrary(directory).use { library ->
+            val dao = DesktopReadingStateDao(library); assertFalse(dao.retire(old))
+            val fresh = session(library, ReadingStateWriterKind.AUDIO); assertTrue(dao.retire(fresh))
+            assertEquals(100L, dao.read(fixtureKey)!!.firstReadAt)
+            mutateDatabase(directory, "UPDATE reading_states SET state=replace(state,'\"format\":1','\"format\":99')")
+            try { dao.retire(fresh); fail("Corrupt cannot become a no-op") } catch (_: IllegalArgumentException) { }
+        }
+    }
+
+    @Test fun cancellationBeforeRetirementCommitLeavesTheWriterUsable() = runBlocking<Unit> {
+        val entered = CountDownLatch(1); val release = CountDownLatch(1); var armed = false
+        LocalLibrary(temporary.newFolder().toPath()) {
+            if (armed && it == StorageCheckpoint.BEFORE_COMMIT) { entered.countDown(); check(release.await(5, TimeUnit.SECONDS)) }
+        }.use { library ->
+            library.seed(); val dao = DesktopReadingStateDao(library); val s = session(library, ReadingStateWriterKind.VISUAL)
+            armed = true; val pending = launch(Dispatchers.Default) { dao.retire(s) }
+            try { check(entered.await(5, TimeUnit.SECONDS)); pending.cancel() } finally { armed = false; release.countDown() }
+            pending.join(); assertTrue(pending.isCancelled)
+            assertTrue(dao.commit(automatic(s)) is ReadingStateCommit.Committed)
+        }
+    }
+
+    @Test fun sharedFacadeConfirmsLostReplyAndReconcilesNewerUnread() = runBlocking<Unit> {
+        var fault = false
+        LocalLibrary(temporary.newFolder().toPath()) { if (fault && it == StorageCheckpoint.AFTER_COMMIT) { fault = false; throw IOException("Lost reply") } }.use { library ->
+            library.seed(); val dao = DesktopReadingStateDao(library); val facade = ReadingStateFacade(dao, null)
+            val command = facade.prepareExplicit(ReadingCompletionInput.MarkRead(fixtureKey, 100), "read")!!
+            fault = true
+            try { facade.submit(command); fail("Lost reply expected") } catch (e: IOException) { assertEquals("Lost reply", e.message) }
+            facade.submit(facade.prepareExplicit(ReadingCompletionInput.MarkUnread(fixtureKey), "unread")!!)
+            val result = facade.submit(command)
+            assertTrue((result.confirmation as ReadingStateConfirmation.Confirmed).replayed)
+            assertEquals(ReadStatus.READ, (result.confirmation as ReadingStateConfirmation.Confirmed).valueAtCommit.status); assertEquals(ReadStatus.UNREAD, result.current!!.status)
+            assertEquals(100L, result.current!!.firstReadAt); assertEquals(ReadingWordCountOutcome.NotApplicable, result.wordCount)
+        }
+    }
+
     @Test fun sql2MigrationRollsBackAsAUnitAndPreservesEveryExistingTableAndRow() = runBlocking<Unit> {
         val directory = temporary.newFolder().toPath()
         Files.writeString(directory.resolve("library.json"), """{"schema":2,"storage":"sqlite","database":"library.sqlite","id":"frozen-sql2"}""")

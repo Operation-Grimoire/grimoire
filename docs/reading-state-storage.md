@@ -111,8 +111,8 @@ they do not establish concurrent-process acceptance beyond the existing lease.
   downgrade-refusal/recovery evidence. Keep helpers, UI/emulator, phone and real
   process-death/competing-process evidence separate.
 
-Android's eight native `ReadingStateTest` cases use real Room transactions and a
-frozen DB35 schema. Desktop's eight JDBC cases inspect preserved SQL2 tables and
+Android's 11 native `ReadingStateTest` cases use real Room transactions and a
+frozen DB35 schema. Desktop's 12 JDBC cases inspect preserved SQL2 tables and
 rows. They include cancellation before commit, an uncertain reply after commit,
 identity retirement, corruption rejection and known-receipt confirmation after
 reopen. The Android suite also checks two independently opened Room owners.
@@ -129,3 +129,39 @@ removing new tables would discard protocol authority and is unsupported.
 The production visual/manual/bulk/Next/TTS writers and shared opened-history writer
 remain later subissues. This protocol does not claim that all current writers
 already use durable intent ordering.
+
+## Completion facade and writer retirement
+
+`ReadingStateFacade` prepares explicit commands with the accepted input timestamp
+and a stable ID. Committed read proposals fill a null `firstReadAt` once and
+preserve an existing timestamp. Explicit MarkRead and eligible audio may fill it
+on an already-read row; visual and Next compatibility checks may instead return
+NO_CHANGE. Receipt confirmation never supplies a new timestamp. Automatic commands
+retain their registered session, evidence and sequence. Hosts serialize their own accepted explicit intents and retain each
+immutable command through uncertain IO or cancellation. Retrying submits that
+same command; it never prepares a replacement against newer intent automatically.
+The facade does not own a background queue, active playback or a durable outbox.
+
+Submission reports completion confirmation separately from word-count backfill.
+Android adoption must supply its existing backfill; desktop explicitly supplies
+no legacy effect (`NotApplicable`). Backfill must be idempotent because confirming
+a receipt can run it again. A failed backfill is a partial result, not a failed
+completion transaction. Eligible audio no-ops still request backfill, as the
+legacy audio setter does. Rejected/disabled inputs do not. Cancellation propagates.
+The returned `current` value is read after the side effect: a newer explicit
+unread committed while backfill waited must not be replaced by the old read result.
+A missing current value means the target was removed; historical `valueAtCommit`
+is confirmation only. A reconciliation-read failure also requires identical retry.
+Checkpoint/compatibility position and opened history remain separate outcomes.
+
+`ReadingStateDao.retire` clears only the exact matching writer kind, binding,
+content/document and store scope in one transaction. A superseded, other-owner,
+retired or old-incarnation handle cannot revoke a newer writer. Retirement leaves
+completion, explicit-intent revision, receipts and the other kind untouched.
+Repeated retirement returns false without mutation. Corrupt stored metadata still
+fails closed. Known receipts can confirm after retirement; new late samples are
+stale. Closing/replacing actual UI/playback authority remains the host's job.
+
+This #452 slice retains DB36/SQL3 and JSON version1. Shared workflow tests and
+real Room/JDBC retirement, cancellation, rollback and replay cases are separate
+from the production adoption in #451 and physical-device/process-death acceptance.

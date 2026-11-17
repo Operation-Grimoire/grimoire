@@ -39,6 +39,13 @@ class RoomReadingStateDao @Inject constructor(private val database: AppDatabase,
         database.readingStateStorageDao().put(ReadingStateEntity(c.id, encodeReadingStateRecord(bindReadingStateWriter(r, s))))
         currentCoroutineContext().ensureActive(); s
     }
+    override suspend fun retire(session: ReadingStateSession): Boolean = database.withTransaction {
+        val c = chapter(session.binding.key) ?: return@withTransaction false
+        val next = retireReadingStateWriter(record(session.binding.key, c), session, session.binding.scope == scope)
+            ?: return@withTransaction false
+        database.readingStateStorageDao().put(ReadingStateEntity(c.id, encodeReadingStateRecord(next)))
+        currentCoroutineContext().ensureActive(); true
+    }
     override suspend fun commit(command: ReadingStateCommand): ReadingStateCommit = database.withTransaction {
         val c = chapter(command.binding.key)
         val r = c?.let { record(command.binding.key, it) }

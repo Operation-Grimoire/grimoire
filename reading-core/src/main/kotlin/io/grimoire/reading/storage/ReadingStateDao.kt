@@ -41,12 +41,25 @@ interface ReadingStateDao {
     suspend fun prepare(key: ChapterKey): PreparedReadingState?
     suspend fun register(binding: ReadingStateBinding, content: ChapterStorageObservation, document: CanonicalDocument,
         kind: ReadingStateWriterKind): ReadingStateSession?
+    /** Retire only this exact current writer; preserve value, intent revision, receipts and the other kind. */
+    suspend fun retire(session: ReadingStateSession): Boolean
     /**
      * Commit completion values, protocol and receipt atomically. Word-count backfill, position and
      * opened history are separate platform-facade outcomes; Committed does not acknowledge them.
      */
     suspend fun commit(command: ReadingStateCommand): ReadingStateCommit
     suspend fun read(key: ChapterKey): ReadingCompletionState?
+}
+
+/** A null result is an idempotent no-op, including an old handle superseded by a newer writer. */
+fun retireReadingStateWriter(record: ReadingStateRecord?, session: ReadingStateSession, scopeCurrent: Boolean): ReadingStateRecord? {
+    if (record == null || !scopeCurrent || session.binding.key != record.value.key ||
+        session.binding.incarnation != record.incarnation || session.binding.intentRevision != record.intentRevision) return null
+    val writer = if (session.kind == ReadingStateWriterKind.VISUAL) record.visual else record.audio
+    if (writer == null || writer.id != session.id || writer.scope != session.binding.scope ||
+        writer.content != session.content || writer.logicalRevision != session.document.logicalRevision ||
+        session.document.key != session.binding.key) return null
+    return if (session.kind == ReadingStateWriterKind.VISUAL) record.copy(visual = null) else record.copy(audio = null)
 }
 
 fun bindReadingStateWriter(record: ReadingStateRecord, session: ReadingStateSession): ReadingStateRecord {
