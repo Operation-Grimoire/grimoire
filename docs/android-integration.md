@@ -12,6 +12,9 @@ The maintained suite exercises five paths:
 - Restoring a portable End checkpoint does not mark a chapter read. Explicit Next
   marks only the departed chapter read through the guarded production facade,
   creating one intent/receipt without setting stored compatibility progress to one.
+  Committed read proposals fill a null `firstReadAt` and preserve an existing time.
+  Explicit MarkRead can fill it on an already-read row; Next is unchanged when
+  already read, so that case does not create a timestamp.
 - A real SQLite checkpoint-write fault reaches the reader's error dialog. Dismiss
   retains pending input; removing the fault and navigating Back retries the save.
 - A real completion-write fault leaves the read flag unchanged. Retry commits one

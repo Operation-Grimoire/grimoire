@@ -30,6 +30,7 @@ class ExplicitReadingCommands(private val facade: ReadingStateFacade) {
     private class Pending(val accepted: AcceptedReadingCommand) {
         var command: ReadingStateCommand? = null
         var confirmed = false
+        var missing = false
     }
     private val lock = Any()
     private val flushes = Mutex()
@@ -53,19 +54,21 @@ class ExplicitReadingCommands(private val facade: ReadingStateFacade) {
         val batch = synchronized(lock) { pending.toList() }
         val blocked = mutableSetOf<ChapterKey>()
         val results = mutableListOf<ReadingCommandAttempt>()
+        val finished = mutableListOf<Pending>()
         for (entry in batch) {
             currentCoroutineContext().ensureActive()
             val accepted = entry.accepted
             if (accepted.input.key in blocked) continue
             val outcome = try {
-                val command = entry.command ?: facade.prepareExplicit(accepted.input, accepted.id).also { entry.command = it }
+                val command = if (entry.missing) null else entry.command ?: facade.prepareExplicit(accepted.input, accepted.id).also { entry.command = it }
                 if (command == null) {
-                    synchronized(lock) { pending.remove(entry) }
+                    entry.missing = true
+                    finished.add(entry)
                     ReadingCommandOutcome.Missing
                 } else {
                     val save = facade.submit(command)
                     if (save.confirmation is ReadingStateConfirmation.Confirmed) entry.confirmed = true
-                    if (save.wordCount !is ReadingWordCountOutcome.Failed) synchronized(lock) { pending.remove(entry) }
+                    if (save.wordCount !is ReadingWordCountOutcome.Failed) finished.add(entry)
                     ReadingCommandOutcome.Saved(save)
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
@@ -75,6 +78,10 @@ class ExplicitReadingCommands(private val facade: ReadingStateFacade) {
             }
             results.add(ReadingCommandAttempt(accepted, outcome))
         }
+        // Cancellation in a later entry must not lose earlier undelivered results. Leave those
+        // commands available for receipt replay/current reconciliation on the next flush.
+        currentCoroutineContext().ensureActive()
+        synchronized(lock) { pending.removeAll(finished.toSet()) }
         results
     }
 }

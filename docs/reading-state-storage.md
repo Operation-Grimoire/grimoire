@@ -176,6 +176,9 @@ retry, while commands for other chapters can proceed. Preparation itself may ret
 until a command exists. Missing targets and semantic rejections terminate an input
 and surface an error; retries never rebase a prepared command. Concurrent flushes
 are serialized; input accepted during a flush belongs to the next flush.
+If a later entry is cancelled, earlier undelivered commands remain available for
+receipt replay and fresh current-state reconciliation. A terminal missing target
+stays missing across that retry rather than preparing against a recreated target.
 
 A confirmed read with failed word-count backfill remains pending for identical
 retry, but permits later explicit intent. Its historical receipt cannot undo a

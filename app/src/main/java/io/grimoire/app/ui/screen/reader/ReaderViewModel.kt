@@ -477,6 +477,7 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun navigatePrev() {
+        if (leaving) return
         if (_currentIndex.value > 0) {
             flushProgress()
             _currentIndex.value--
@@ -486,6 +487,7 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun navigateNext() {
+        if (leaving) return
         if (_currentIndex.value < _chapters.value.size - 1) {
             flushProgress()
             val chapter = _chapters.value.getOrNull(_currentIndex.value)

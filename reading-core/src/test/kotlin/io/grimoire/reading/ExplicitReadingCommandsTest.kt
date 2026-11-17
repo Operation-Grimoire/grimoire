@@ -98,6 +98,25 @@ class ExplicitReadingCommandsTest {
         assertSame(store.commands[0], store.commands[1]); assertEquals(1, store.prepares); assertFalse(queue.hasPending())
     }
 
+    @Test fun cancellationInLaterEntryRetainsEarlierSaveForCurrentReconciliation() = runBlocking<Unit> {
+        val store = Store(); val facade = ReadingStateFacade(store, null); val queue = ExplicitReadingCommands(facade)
+        val first = queue.accept(ReadingCompletionInput.MarkRead(key, 100))
+        queue.accept(ReadingCompletionInput.MarkRead(other, 200))
+        val reached = CompletableDeferred<Unit>()
+        store.afterCommit = { if (store.commands.size == 2) { reached.complete(Unit); awaitCancellation() } }
+        val job = launch { queue.flush() }; reached.await(); job.cancelAndJoin()
+        store.afterCommit = null
+        facade.submit(facade.prepareExplicit(ReadingCompletionInput.MarkUnread(key))!!)
+        val attempts = queue.flush()
+        assertEquals(2, attempts.size); assertSame(first, attempts[0].accepted)
+        val save = (attempts[0].outcome as ReadingCommandOutcome.Saved).save
+        assertTrue((save.confirmation as ReadingStateConfirmation.Confirmed).replayed)
+        assertEquals(ReadStatus.READ, save.confirmation.valueAtCommit.status)
+        assertEquals(ReadStatus.UNREAD, save.current!!.status)
+        assertSame(store.commands[0], store.commands[3]); assertSame(store.commands[1], store.commands[4])
+        assertEquals(3, store.prepares); assertEquals(3, store.receipts.size); assertFalse(queue.hasPending())
+    }
+
     @Test fun competingIntentRejectsOldUnknownCommandWithoutRepreparation() = runBlocking<Unit> {
         val store = Store(); val facade = ReadingStateFacade(store, null); val queue = ExplicitReadingCommands(facade)
         queue.accept(ReadingCompletionInput.MarkRead(key, 100)); store.failKey = key
@@ -108,6 +127,22 @@ class ExplicitReadingCommandsTest {
         assertEquals(ReadingStateConfirmation.NotApplied(ReadingStateRejection.CONFLICT), result.confirmation)
         assertSame(old, store.commands.last()); assertEquals(2, store.prepares)
         assertEquals(ReadStatus.UNREAD, result.current!!.status); assertFalse(queue.hasPending())
+    }
+
+    @Test fun undeliveredMissingResultCannotBindARecreatedTargetAfterCancellation() = runBlocking<Unit> {
+        val store = Store(); val queue = ExplicitReadingCommands(ReadingStateFacade(store, null))
+        val old = store.records.remove(key)!!
+        val missing = queue.accept(ReadingCompletionInput.MarkRead(key, 100))
+        queue.accept(ReadingCompletionInput.MarkRead(other, 200))
+        val reached = CompletableDeferred<Unit>()
+        store.afterCommit = { reached.complete(Unit); awaitCancellation() }
+        val job = launch { queue.flush() }; reached.await(); job.cancelAndJoin()
+        store.afterCommit = null; store.records[key] = old.copy(incarnation = "replacement")
+        val results = queue.flush()
+        assertEquals(2, results.size); assertSame(missing, results[0].accepted)
+        assertEquals(ReadingCommandOutcome.Missing, results[0].outcome)
+        assertEquals(ReadStatus.UNREAD, store.read(key)!!.status)
+        assertEquals(2, store.prepares); assertEquals(1, store.receipts.size); assertFalse(queue.hasPending())
     }
 
     @Test fun newAcceptanceDuringSuspendedFlushIsPreservedForNextFlush() = runBlocking<Unit> {

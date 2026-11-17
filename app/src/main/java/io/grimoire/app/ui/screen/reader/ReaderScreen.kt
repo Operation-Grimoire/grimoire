@@ -154,10 +154,10 @@ fun ReaderScreen(
         }
     }
     BackHandler { requestBack() }
-    val completionNotice by viewModel.completionNotice.collectAsStateWithLifecycle()
+    val completionNotice = viewModel.completionNotice.collectAsStateWithLifecycle().value
     if (completionNotice != null) AlertDialog(
         onDismissRequest = viewModel::dismissCompletionError,
-        title = { Text(stringResource(when (completionNotice!!) {
+        title = { Text(stringResource(when (completionNotice) {
             ReaderCompletionNotice.SAVE_FAILED -> R.string.reader_completion_save_error
             ReaderCompletionNotice.WORD_COUNT_FAILED -> R.string.reader_completion_partial_error
             ReaderCompletionNotice.CHANGED -> R.string.reader_completion_changed_error
