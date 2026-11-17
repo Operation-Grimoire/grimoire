@@ -27,8 +27,10 @@ import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
 import io.grimoire.app.data.preferences.stateIn
+import io.grimoire.app.data.reading.BulkReadingCompletion
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.reading.state.NovelReadingCompletionFacade
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,7 +71,12 @@ class LibraryViewModel @Inject constructor(
     private val bookImporter: BookImporter,
     private val downloadManager: DownloadManager,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
+    readingCompletionFacade: NovelReadingCompletionFacade,
 ) : ViewModel() {
+
+    internal val bulkCompletion = BulkReadingCompletion(viewModelScope, readingCompletionFacade)
+    private var completionNovelIds: Set<Long> = emptySet()
+    private var completionRequiresUnlock = false
 
     // True while the picked file is being read/parsed for the preview.
     private val _staging = MutableStateFlow(false)
@@ -390,8 +397,26 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    fun setNovelsRead(ids: Set<Long>, read: Boolean) = viewModelScope.launch {
-        ids.forEach { chapterDao.markAllRead(it, read) }
+    fun setNovelsRead(ids: Set<Long>, read: Boolean) {
+        if (ids.isEmpty() || bulkCompletion.saving.value || bulkCompletion.notice.value != null) return
+        val hidden = includesHiddenNovel(ids)
+        if (hidden && !isUnlocked.value) return
+        completionNovelIds = ids.toSet()
+        completionRequiresUnlock = hidden
+        bulkCompletion.markNovels(completionNovelIds, read)
+    }
+
+    internal fun retryNovelsRead() {
+        if (!isUnlocked.value && (completionRequiresUnlock || includesHiddenNovel(completionNovelIds))) {
+            bulkCompletion.dismiss()
+        } else {
+            bulkCompletion.retry()
+        }
+    }
+
+    private fun includesHiddenNovel(ids: Set<Long>): Boolean {
+        val hidden = hiddenCategoryIds.value
+        return novels.value.orEmpty().any { it.id in ids && it.categoryId in hidden }
     }
 
     fun downloadNovels(ids: Set<Long>) = viewModelScope.launch {

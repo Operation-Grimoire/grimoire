@@ -774,4 +774,7 @@
     <string name="reader_completion_save_error">Read status was not saved</string>
     <string name="reader_completion_partial_error">Read status was saved, but word counts could not be updated.</string>
     <string name="reader_completion_changed_error">Read status could not be changed. Try the action again.</string>
+    <string name="bulk_completion_save_error">Some changes were saved. Retry to finish saving the selection.</string>
+    <string name="bulk_completion_word_count_error">Some changes were saved. Word counts could not be updated. Retry to continue.</string>
+    <string name="bulk_completion_changed_error">Some changes were saved. Select the remaining items again to update them.</string>
 </resources>

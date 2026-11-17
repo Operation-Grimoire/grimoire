@@ -758,4 +758,7 @@
     <string name="reader_completion_save_error">Chưa lưu trạng thái đọc</string>
     <string name="reader_completion_partial_error">Đã lưu trạng thái đọc nhưng không thể cập nhật số từ.</string>
     <string name="reader_completion_changed_error">Không thể thay đổi trạng thái đọc. Hãy thử lại thao tác.</string>
+    <string name="bulk_completion_save_error">Đã lưu một số thay đổi. Hãy thử lại để lưu các mục đã chọn còn lại.</string>
+    <string name="bulk_completion_word_count_error">Đã lưu một số thay đổi. Không thể cập nhật số từ. Hãy thử lại để tiếp tục.</string>
+    <string name="bulk_completion_changed_error">Đã lưu một số thay đổi. Hãy chọn lại các mục còn lại để cập nhật.</string>
 </resources>

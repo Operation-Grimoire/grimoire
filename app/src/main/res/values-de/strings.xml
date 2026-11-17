@@ -774,4 +774,7 @@
     <string name="reader_completion_save_error">Lesestatus wurde nicht gespeichert</string>
     <string name="reader_completion_partial_error">Lesestatus gespeichert, aber die Wortanzahl konnte nicht aktualisiert werden.</string>
     <string name="reader_completion_changed_error">Lesestatus konnte nicht geändert werden. Versuche die Aktion erneut.</string>
+    <string name="bulk_completion_save_error">Einige Änderungen wurden gespeichert. Versuche es erneut, um die übrigen zu speichern.</string>
+    <string name="bulk_completion_word_count_error">Einige Änderungen wurden gespeichert. Die Wortanzahl konnte nicht aktualisiert werden. Versuche es erneut, um fortzufahren.</string>
+    <string name="bulk_completion_changed_error">Einige Änderungen wurden gespeichert. Wähle die übrigen Einträge erneut aus, um sie zu aktualisieren.</string>
 </resources>

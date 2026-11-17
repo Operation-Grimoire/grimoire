@@ -758,4 +758,7 @@
     <string name="reader_completion_save_error">閱讀狀態未儲存</string>
     <string name="reader_completion_partial_error">閱讀狀態已儲存，但無法更新字數。</string>
     <string name="reader_completion_changed_error">無法變更閱讀狀態。請重試。</string>
+    <string name="bulk_completion_save_error">部分變更已儲存。請重試以儲存其餘選取項目。</string>
+    <string name="bulk_completion_word_count_error">部分變更已儲存，但無法更新字數。請重試以繼續。</string>
+    <string name="bulk_completion_changed_error">部分變更已儲存。請重新選取其餘項目以更新。</string>
 </resources>

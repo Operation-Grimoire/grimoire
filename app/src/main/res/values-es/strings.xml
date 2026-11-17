@@ -792,4 +792,7 @@
     <string name="reader_completion_save_error">No se guardó el estado de lectura</string>
     <string name="reader_completion_partial_error">Se guardó el estado de lectura, pero no se pudo actualizar el recuento de palabras.</string>
     <string name="reader_completion_changed_error">No se pudo cambiar el estado de lectura. Intenta la acción de nuevo.</string>
+    <string name="bulk_completion_save_error">Se guardaron algunos cambios. Vuelve a intentarlo para guardar el resto de la selección.</string>
+    <string name="bulk_completion_word_count_error">Se guardaron algunos cambios. No se pudo actualizar el recuento de palabras. Vuelve a intentarlo para continuar.</string>
+    <string name="bulk_completion_changed_error">Se guardaron algunos cambios. Vuelve a seleccionar los elementos restantes para actualizarlos.</string>
 </resources>

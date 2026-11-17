@@ -76,7 +76,7 @@ adb shell am instrument -w -r \
   -e class io.grimoire.app.data.local.ReadingStateTest \
   io.grimoire.app.test/androidx.test.runner.AndroidJUnitRunner | tee reading-state-result.log
 
-grep -Fq 'OK (22 tests)' reading-state-result.log
+grep -Fq 'OK (25 tests)' reading-state-result.log
 grep -Fq 'INSTRUMENTATION_CODE: -1' reading-state-result.log
-test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' reading-state-result.log)" -eq 22
+test "$(grep -Ec '^INSTRUMENTATION_STATUS_CODE: 0[[:space:]]*$' reading-state-result.log)" -eq 25
 if grep -Eq 'FAILURES|INSTRUMENTATION_(FAILED|ABORTED)|INSTRUMENTATION_STATUS_CODE: -[234]' reading-state-result.log; then exit 1; fi

@@ -773,4 +773,7 @@
     <string name="reader_completion_save_error">Okuma durumu kaydedilemedi</string>
     <string name="reader_completion_partial_error">Okuma durumu kaydedildi ancak kelime sayıları güncellenemedi.</string>
     <string name="reader_completion_changed_error">Okuma durumu değiştirilemedi. İşlemi tekrar deneyin.</string>
+    <string name="bulk_completion_save_error">Bazı değişiklikler kaydedildi. Seçimin geri kalanını kaydetmek için tekrar deneyin.</string>
+    <string name="bulk_completion_word_count_error">Bazı değişiklikler kaydedildi. Kelime sayıları güncellenemedi. Devam etmek için tekrar deneyin.</string>
+    <string name="bulk_completion_changed_error">Bazı değişiklikler kaydedildi. Kalan öğeleri güncellemek için yeniden seçin.</string>
 </resources>

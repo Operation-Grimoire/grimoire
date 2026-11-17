@@ -18,6 +18,9 @@ TESTS = (
     "partialWordCountRetryPreservesLaterExplicitUnread",
     "visualCompletionNeedsFreshScrollAfterLayoutAndExplicitUnread",
     "detailMarkAllRetriesAtomicWriteThenRetriesOnlyWordCount",
+    "detailSelectedChaptersUseGuardedCompletion",
+    "librarySelectedNovelsUseGuardedCompletion",
+    "updatesSelectedEntriesUseGuardedCompletion",
 )
 PACKAGE = "io.grimoire.app"
 

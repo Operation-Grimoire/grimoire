@@ -1,0 +1,9 @@
+{
+  "android": [
+    {
+      "category": "fix",
+      "text": "Bulk read and unread actions in Novel Detail, Library, and Library Updates now preserve the original selection on retry and protect it from earlier reader or read-aloud callbacks."
+    }
+  ],
+  "desktop": []
+}

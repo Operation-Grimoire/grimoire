@@ -757,4 +757,7 @@
     <string name="reader_completion_save_error">ไม่ได้บันทึกสถานะการอ่าน</string>
     <string name="reader_completion_partial_error">บันทึกสถานะการอ่านแล้ว แต่ไม่สามารถอัปเดตจำนวนคำได้</string>
     <string name="reader_completion_changed_error">ไม่สามารถเปลี่ยนสถานะการอ่านได้ โปรดลองอีกครั้ง</string>
+    <string name="bulk_completion_save_error">บันทึกการเปลี่ยนแปลงบางส่วนแล้ว ลองอีกครั้งเพื่อบันทึกรายการที่เลือกที่เหลือ</string>
+    <string name="bulk_completion_word_count_error">บันทึกการเปลี่ยนแปลงบางส่วนแล้ว แต่ไม่สามารถอัปเดตจำนวนคำได้ ลองอีกครั้งเพื่อดำเนินการต่อ</string>
+    <string name="bulk_completion_changed_error">บันทึกการเปลี่ยนแปลงบางส่วนแล้ว เลือกรายการที่เหลืออีกครั้งเพื่ออัปเดต</string>
 </resources>

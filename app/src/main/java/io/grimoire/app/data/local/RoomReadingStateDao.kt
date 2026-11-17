@@ -3,6 +3,7 @@ package io.grimoire.app.data.local
 import androidx.room.withTransaction
 import io.grimoire.app.data.local.entity.*
 import io.grimoire.reading.ChapterKey
+import io.grimoire.reading.NovelKey
 import io.grimoire.reading.anchor.CanonicalDocument
 import io.grimoire.reading.state.*
 import io.grimoire.reading.storage.*
@@ -17,11 +18,19 @@ class RoomReadingStateDao @Inject constructor(
     private val database: AppDatabase,
     private val saved: RoomSavedChapterDao,
 ) : ReadingStateDao, NovelReadingCompletionDao {
-    private data class NovelTarget(val rowId: Long, val storedUrl: String, val binding: ReadingStateBinding)
+    private data class ChapterTarget(val rowId: Long, val novelId: Long, val storedUrl: String, val binding: ReadingStateBinding)
+    private data class WholeNovel(val rowId: Long, val key: NovelKey)
+    private data class Batch(
+        override val read: Boolean,
+        val atMillis: Long,
+        val id: String,
+        val targets: List<ChapterTarget>,
+        val wholeNovel: WholeNovel? = null,
+    ) : PreparedReadingCompletionBatch
+
     private data class NovelBatch(
         override val intent: NovelReadingCompletionIntent,
-        val novelId: Long,
-        val targets: List<NovelTarget>,
+        val batch: Batch,
     ) : PreparedNovelReadingCompletion
 
     private val scope = UUID.randomUUID().toString()
@@ -50,50 +59,108 @@ class RoomReadingStateDao @Inject constructor(
         database.withTransaction {
             val novel = database.novelDao().getBySourceUrl(intent.novel.sourceId, intent.novel.url)
                 ?: return@withTransaction null
-            val targets = database.chapterDao().getChapterMetadataOnce(novel.id).map { chapter ->
-                // Legacy rows without a usable URL still participate in mark-all. Their receipt
-                // is local to the row, which cannot be opened by this internal key.
-                val key = ChapterKey(intent.novel, chapter.url.ifBlank { "legacy-blank-chapter:${chapter.id}" })
-                NovelTarget(chapter.id, chapter.url, prepareChapter(key, chapter).binding)
-            }
+            val batch = prepareWholeNovel(novel, intent.read, intent.atMillis, intent.id)
             currentCoroutineContext().ensureActive()
-            NovelBatch(intent, novel.id, targets)
+            NovelBatch(intent, batch)
         }
 
-    override suspend fun commitNovelCompletion(command: PreparedNovelReadingCompletion): NovelReadingCompletionCommit =
+    override suspend fun prepareSelectedCompletion(intent: SelectedReadingCompletionIntent): List<PreparedReadingCompletionBatch> =
         database.withTransaction {
-            val batch = command as? NovelBatch
-                ?: return@withTransaction NovelReadingCompletionCommit.NotApplied(ReadingStateRejection.INVALID)
-            val novel = database.novelDao().getBySourceUrl(batch.intent.novel.sourceId, batch.intent.novel.url)
-            if (novel?.id != batch.novelId) {
-                return@withTransaction NovelReadingCompletionCommit.NotApplied(ReadingStateRejection.STALE)
-            }
-            val chapters = database.chapterDao().getChapterMetadataOnce(batch.novelId).associateBy { it.id }
-            val writes = ArrayList<Pair<Long, ReadingStateTransition>>(batch.targets.size)
-            var replayed = false
-            for (target in batch.targets) {
-                val chapter = chapters[target.rowId]
-                if (chapter?.url != target.storedUrl) {
-                    return@withTransaction NovelReadingCompletionCommit.NotApplied(ReadingStateRejection.STALE)
+            val batches = when (val selection = intent.selection) {
+                is ReadingCompletionSelection.Novels -> {
+                    val ids = selection.rowIds.distinct()
+                    val novels = novelsById(ids)
+                    ids.mapIndexedNotNull { index, id ->
+                        novels[id]?.let { prepareWholeNovel(it, intent.read, intent.atMillis, "${intent.id}:$index") }
+                    }
                 }
-                val explicit = batch.intent.command(target.binding)
-                val transition = decide(explicit, chapter)
-                when (val result = transition.result) {
-                    is ReadingStateCommit.NotApplied -> return@withTransaction NovelReadingCompletionCommit.NotApplied(result.reason)
-                    is ReadingStateCommit.Committed -> {
-                        if (result.replayed) replayed = true else writes.add(target.rowId to transition)
+                is ReadingCompletionSelection.Chapters -> {
+                    val ids = selection.rowIds.distinct()
+                    val rows = selectedChapters(ids)
+                    val novels = novelsById(rows.values.map { it.novelId }.distinct())
+                    // Retain group boundaries even when a previously selected row is missing.
+                    val groups = selection.chunkSize?.let { ids.chunked(it) } ?: listOf(ids)
+                    groups.mapIndexedNotNull { index, group ->
+                        val targets = group.mapNotNull { id ->
+                            val chapter = rows[id] ?: return@mapNotNull null
+                            if (selection.novelId != null && chapter.novelId != selection.novelId) return@mapNotNull null
+                            val novel = checkNotNull(novels[chapter.novelId])
+                            prepareTarget(NovelKey(novel.sourceId, novel.url), chapter)
+                        }
+                        if (targets.isEmpty()) null else Batch(intent.read, intent.atMillis, "${intent.id}:$index", targets)
                     }
                 }
             }
-            // First writes require the entire current membership. A receipt confirms the original batch;
-            // later chapters are outside its scope. A batch may never combine a replay with new writes.
-            if ((replayed && writes.isNotEmpty()) || (!replayed && chapters.size != batch.targets.size)) {
-                return@withTransaction NovelReadingCompletionCommit.NotApplied(ReadingStateRejection.CONFLICT)
-            }
-            for ((rowId, transition) in writes) applyTransition(rowId, transition)
             currentCoroutineContext().ensureActive()
-            NovelReadingCompletionCommit.Committed(replayed)
+            batches
         }
+
+    private suspend fun prepareWholeNovel(novel: NovelEntity, read: Boolean, atMillis: Long, id: String): Batch {
+        val key = NovelKey(novel.sourceId, novel.url)
+        val targets = database.chapterDao().getChapterMetadataOnce(novel.id).map { prepareTarget(key, it) }
+        return Batch(read, atMillis, id, targets, WholeNovel(novel.id, key))
+    }
+
+    private suspend fun prepareTarget(novel: NovelKey, chapter: ChapterEntity): ChapterTarget {
+        // A legacy row without a usable URL still participates in bulk actions. Its receipt is
+        // local to the row, which cannot be opened by this internal key.
+        val key = ChapterKey(novel, chapter.url.ifBlank { "legacy-blank-chapter:${chapter.id}" })
+        return ChapterTarget(chapter.id, chapter.novelId, chapter.url, prepareChapter(key, chapter).binding)
+    }
+
+    // Lookup chunking avoids SQLite's bind limit. It does not split a commit's transaction.
+    private suspend fun selectedChapters(ids: List<Long>): Map<Long, ChapterEntity> =
+        ids.chunked(999).flatMap { database.readingStateStorageDao().selectedChapters(it) }.associateBy { it.id }
+
+    private suspend fun novelsById(ids: List<Long>): Map<Long, NovelEntity> =
+        ids.chunked(999).flatMap { database.novelDao().getByIds(it) }.associateBy { it.id }
+
+    override suspend fun commitNovelCompletion(command: PreparedNovelReadingCompletion): NovelReadingCompletionCommit =
+        commitBatch((command as? NovelBatch)?.batch)
+
+    override suspend fun commitSelectedCompletion(command: PreparedReadingCompletionBatch): NovelReadingCompletionCommit =
+        commitBatch(command as? Batch)
+
+    private suspend fun commitBatch(batch: Batch?): NovelReadingCompletionCommit = database.withTransaction {
+        if (batch == null) return@withTransaction NovelReadingCompletionCommit.NotApplied(ReadingStateRejection.INVALID)
+        val wholeNovel = batch.wholeNovel
+        val novels = novelsById(wholeNovel?.let { listOf(it.rowId) } ?: batch.targets.map { it.novelId }.distinct())
+        if (wholeNovel != null && !novels[wholeNovel.rowId].matches(wholeNovel.key)) {
+            return@withTransaction NovelReadingCompletionCommit.NotApplied(ReadingStateRejection.STALE)
+        }
+        val chapters = if (wholeNovel != null) {
+            database.chapterDao().getChapterMetadataOnce(wholeNovel.rowId).associateBy { it.id }
+        } else selectedChapters(batch.targets.map { it.rowId })
+        val writes = ArrayList<Pair<Long, ReadingStateTransition>>(batch.targets.size)
+        var replayed = false
+        for (target in batch.targets) {
+            val chapter = chapters[target.rowId]
+            if (chapter?.novelId != target.novelId || chapter.url != target.storedUrl ||
+                !novels[target.novelId].matches(target.binding.key.novel)
+            ) {
+                return@withTransaction NovelReadingCompletionCommit.NotApplied(ReadingStateRejection.STALE)
+            }
+            val explicit = markReadingStateCommand(target.binding, batch.read, batch.atMillis, batch.id)
+            val transition = decide(explicit, chapter)
+            when (val result = transition.result) {
+                is ReadingStateCommit.NotApplied -> return@withTransaction NovelReadingCompletionCommit.NotApplied(result.reason)
+                is ReadingStateCommit.Committed -> {
+                    if (result.replayed) replayed = true else writes.add(target.rowId to transition)
+                }
+            }
+        }
+        // A whole-novel first write requires the entire current membership. A receipt confirms
+        // the original batch. A batch may never combine a replay with new writes.
+        if ((replayed && writes.isNotEmpty()) || (!replayed && chapters.size != batch.targets.size)) {
+            return@withTransaction NovelReadingCompletionCommit.NotApplied(ReadingStateRejection.CONFLICT)
+        }
+        for ((rowId, transition) in writes) applyTransition(rowId, transition)
+        currentCoroutineContext().ensureActive()
+        NovelReadingCompletionCommit.Committed(replayed)
+    }
+
+    private fun NovelEntity?.matches(key: NovelKey): Boolean =
+        this != null && sourceId == key.sourceId && url == key.url
 
     override suspend fun register(binding: ReadingStateBinding, content: ChapterStorageObservation, document: CanonicalDocument,
         kind: ReadingStateWriterKind): ReadingStateSession? = database.withTransaction {

@@ -209,19 +209,6 @@ interface ChapterDao {
         "UPDATE chapters SET read = :read, " +
             "firstReadAt = CASE WHEN :read AND firstReadAt IS NULL " +
             "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
-            "WHERE novelId = :novelId"
-    )
-    suspend fun markAllReadRaw(novelId: Long, read: Boolean)
-
-    suspend fun markAllRead(novelId: Long, read: Boolean) {
-        markAllReadRaw(novelId, read)
-        if (read) backfillWordCountsFromDownloads()
-    }
-
-    @Query(
-        "UPDATE chapters SET read = :read, " +
-            "firstReadAt = CASE WHEN :read AND firstReadAt IS NULL " +
-            "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
             "WHERE novelId = :novelId AND chapterNumber <= :chapterNumber"
     )
     suspend fun markAllBeforeRaw(novelId: Long, chapterNumber: Float, read: Boolean)
@@ -241,19 +228,6 @@ interface ChapterDao {
 
     suspend fun markAllAfter(novelId: Long, chapterNumber: Float, read: Boolean) {
         markAllAfterRaw(novelId, chapterNumber, read)
-        if (read) backfillWordCountsFromDownloads()
-    }
-
-    @Query(
-        "UPDATE chapters SET read = :read, " +
-            "firstReadAt = CASE WHEN :read AND firstReadAt IS NULL " +
-            "  THEN CAST(strftime('%s','now') AS INTEGER) * 1000 ELSE firstReadAt END " +
-            "WHERE id IN (:ids)"
-    )
-    suspend fun markChaptersRaw(ids: List<Long>, read: Boolean)
-
-    suspend fun markChapters(ids: List<Long>, read: Boolean) {
-        markChaptersRaw(ids, read)
         if (read) backfillWordCountsFromDownloads()
     }
 
