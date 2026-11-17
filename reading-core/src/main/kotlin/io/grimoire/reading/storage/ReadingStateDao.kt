@@ -41,7 +41,10 @@ interface ReadingStateDao {
     suspend fun prepare(key: ChapterKey): PreparedReadingState?
     suspend fun register(binding: ReadingStateBinding, content: ChapterStorageObservation, document: CanonicalDocument,
         kind: ReadingStateWriterKind): ReadingStateSession?
-    /** Validate authority/order and commit values, protocol and receipt in the same transaction. */
+    /**
+     * Commit completion values, protocol and receipt atomically. Word-count backfill, position and
+     * opened history are separate platform-facade outcomes; Committed does not acknowledge them.
+     */
     suspend fun commit(command: ReadingStateCommand): ReadingStateCommit
     suspend fun read(key: ChapterKey): ReadingCompletionState?
 }

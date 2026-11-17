@@ -132,10 +132,13 @@ class ReadingStateTest {
     }
 
     @Test fun reopenAcknowledgesKnownCommitButRejectsUncommittedOldScopeAndOldIntent() = runBlocking<Unit> {
-        val directory = temporary.newFolder().toPath(); val library = LocalLibrary(directory); library.seed()
-        val dao = DesktopReadingStateDao(library); val initial = prepare(dao); val committed = explicit(initial, true)
-        dao.commit(committed); rejected(dao.commit(explicit(initial, false)), ReadingStateRejection.CONFLICT)
-        dao.commit(explicit(prepare(dao), false)); val uncommitted = explicit(prepare(dao), true); library.close()
+        val directory = temporary.newFolder().toPath()
+        val (committed, uncommitted) = LocalLibrary(directory).use { library ->
+            library.seed(); val dao = DesktopReadingStateDao(library); val initial = prepare(dao); val committed = explicit(initial, true)
+            dao.commit(committed); rejected(dao.commit(explicit(initial, false)), ReadingStateRejection.CONFLICT)
+            dao.commit(explicit(prepare(dao), false))
+            committed to explicit(prepare(dao), true)
+        }
         LocalLibrary(directory).use { reopened ->
             val next = DesktopReadingStateDao(reopened); val replay = next.commit(committed) as ReadingStateCommit.Committed
             assertTrue(replay.replayed); assertEquals(ReadStatus.UNREAD, replay.current.status)

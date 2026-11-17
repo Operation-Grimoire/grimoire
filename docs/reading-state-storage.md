@@ -78,6 +78,10 @@ before commit. The intermediate missing row is invisible outside the transaction
 Receipts survive that intermediate deletion. Cancellation or a fault rolls back
 the chapter fields, invalidation and new protocol together. Word-count backfill
 and opened history remain separate; this adapter cannot claim their success.
+In particular, it does not call the legacy global word-count backfill. A zero
+word count stays zero, even on MarkRead. Before production adoption, the platform
+facade must preserve that legacy side effect and report its failure separately;
+`Committed` acknowledges only read/first-read plus protocol/receipt persistence.
 
 ## Desktop expansion
 
@@ -116,7 +120,8 @@ Desktop retains its exclusive lease; its tests do not claim simultaneous process
 Hosted results and signed migration snapshots must be recorded separately from
 compilation or JVM results.
 
-Before upgrading, retain a complete, closed pre-upgrade database/store backup.
+Before upgrading, close the app and retain a full app-data/store copy, including
+the database and downloaded files. The in-app library backup is insufficient.
 Older Android DB35 and desktop SQL1/2 builds refuse the expanded schema. Downgrade
 requires restoring that coherent backup; changing only the version number or
 removing new tables would discard protocol authority and is unsupported.

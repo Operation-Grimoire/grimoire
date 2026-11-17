@@ -94,7 +94,10 @@ class ReadingStateTest {
             rejected(dao.commit(automatic(s, 2)), ReadingStateRejection.STALE)
             val replay = dao.commit(command) as ReadingStateCommit.Committed; assertEquals(ReadStatus.UNREAD, replay.current.status)
             val fresh = session(kind); assertTrue(dao.commit(automatic(fresh)) is ReadingStateCommit.Committed)
-            rejected(dao.commit(automatic(fresh, 2)), ReadingStateRejection.NO_CHANGE)
+            fun receipts() = db.openHelper.readableDatabase.query("SELECT count(*) FROM reading_state_receipts").use { it.moveToFirst(); it.getLong(0) }
+            val count = receipts()
+            repeat(10) { rejected(dao.commit(automatic(fresh, 2)), ReadingStateRejection.NO_CHANGE) }
+            assertEquals(count, receipts())
         }
         assertEquals(100L, dao.read(key)!!.firstReadAt)
     }
@@ -125,7 +128,11 @@ class ReadingStateTest {
         rejected(dao.commit(automatic(s)), ReadingStateRejection.STALE)
         db.openHelper.writableDatabase.execSQL("UPDATE chapters SET locked=1 WHERE id=1")
         assertNull(dao.register(prepare().binding, s.content, document, s.kind))
+        db.chapterDao().setWordCount(1, 0)
         assertTrue(dao.commit(explicit(prepare(), true)) is ReadingStateCommit.Committed)
+        assertEquals(0, db.chapterDao().getByUrl(1, key.url)!!.wordCount)
+        db.chapterDao().backfillWordCountsFromDownloads()
+        assertEquals(1, db.chapterDao().getByUrl(1, key.url)!!.wordCount)
         assertTrue(db.chapterDao().getByUrl(1, key.url)!!.locked)
     }
 

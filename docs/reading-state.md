@@ -3,9 +3,10 @@
 This contract defines the next work under [#432](https://github.com/Operation-Grimoire/grimoire/issues/432).
 Its contract task is [#443](https://github.com/Operation-Grimoire/grimoire/issues/443),
 under [roadmap #397](https://github.com/Operation-Grimoire/grimoire/issues/397).
-The pure model and decisions are implemented under #445. The DAO protocol,
-transactional adapters, schema expansion and production writer adoption remain
-future work; the requirements below distinguish that target from current behavior.
+The pure model and decisions are implemented under #445. The guarded DAO and
+Room/JDBC schema expansion follow under #447. Production completion and history
+writer adoption remain outstanding; the requirements distinguish that target
+from current reader behavior.
 
 Both readers already use [guarded portable checkpoints](reading-anchors.md).
 This contract keeps position, completion and history separate while defining the
@@ -280,7 +281,7 @@ Track each implementation slice as a subissue of #432 before starting it:
 
 1. **Implemented (#445):** pure versioned position measure and completion/state
    decisions with frozen vectors. Compatibility evidence and disabled policy remain explicit.
-2. Define the DAO command/observation/result protocol, then implement Room and JDBC
+2. **Implemented (#447):** shared DAO command/observation/result protocol and Room/JDBC
    transactions with real rollback/replay/intent-ordering/incarnation tests. Review
    additive migration, backup/restore interaction and downgrade requirements first.
 3. Adopt both production readers and every competing manual/bulk/Next/TTS writer.
@@ -303,7 +304,7 @@ approximate presentation value. No unresolved fallback becomes zero progress.
 
 [`decideReadingCompletion`](../reading-core/src/main/kotlin/io/grimoire/reading/state/ReadingCompletion.kt)
 returns Proposed, Unchanged or Rejected. UNKNOWN retains absent old desktop state.
-Explicit same-value intents still return a proposal because a future adapter must
+Explicit same-value intents still return a proposal because the guarded adapter must
 advance durable intent ordering even if the state values do not change.
 `AndroidViewportV1` checks the existing fraction/index formula and policy bounds.
 Visual inputs bind load ID, original projection/revision and storage observation;
@@ -312,7 +313,7 @@ audio inputs bind independent playback ID, content and completed utterance plan.
 Current contexts are caller-supplied facts, not write permits. Matching them only
 computes a pure proposal. There is no DAO/session allocation, intent revision,
 command receipt, clock, persistence, position mutation or history event in this model.
-Future adapters must validate real authority and ordering in their transaction.
+The guarded adapters validate real authority and ordering in their transaction.
 Both production readers and their manual/bulk/Next/TTS writers still use their
 existing completion/history behavior until the separately tracked adoption.
 
