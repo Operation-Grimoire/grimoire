@@ -21,7 +21,7 @@ the future ordering and transaction requirements.
 | Visual input | After the load/input gate, store the first visible rendered index/pixels and a fraction based on the last visible item. The denominator includes title/footer items. | Store a guarded per-chapter block checkpoint and a legacy chapter/index/pixel position. No stored completion fraction. |
 | Automatic completion | An unread chapter becomes read at the configured percentage, items-from-end or last-item threshold. The compatibility fraction can remain below one. | No automatic read policy or read flag. |
 | Next | If another chapter exists and the current chapter matches the loaded content, mark the unread current chapter read. The in-memory copy uses fraction one; the DAO call does not set stored progress to one. | Select the next requested chapter without a completion command. |
-| Explicit read/unread and bulk actions | Update `read`; first transition to read fills a null `firstReadAt`. Marking unread preserves progress, anchor and existing `firstReadAt`. | No equivalent read-state command/UI yet. |
+| Explicit read/unread and bulk actions | Update `read`; any accepted read=true command fills `firstReadAt` if null, even when already read. Marking unread preserves progress, anchor and existing `firstReadAt`. | No equivalent read-state command/UI yet. |
 | TTS | Persist an utterance-based compatibility fraction without a portable anchor. End-of-chapter separately writes fraction one and read=true. | No equivalent TTS path. |
 | Reader open/chapter switch | Launch an opened-history upsert, unless incognito is enabled when the open event is accepted. Initial reader open also updates the novel's last-read time. | Resume selection is separate from checkpoint position. No opened-history store. |
 | Restore/layout/content relocation | Restore a recommendation; no new position, completion or first-read write before input. | Same checkpoint rule. |
@@ -125,8 +125,9 @@ Let `N` be the total units and `B(i)` the units strictly before canonical ordina
 
 This measure counts content units, not words, pixels, visible exposure or time.
 A long paragraph and an image each contribute one unit. A BlockStart in the final
-block is below one; only a validated End or an exact final text-end offset reaches
-one. Neither result marks the chapter read.
+unit-bearing block is below one. End, an exact final text-end offset, or a boundary
+on a trailing zero-unit block can reach one. For example, the separator after the
+last unit has `B(i)=N`. None of these results marks the chapter read.
 
 Expose the measure version, key, logical revision, precision and numerator /
 denominator basis together. Compute using bounded counts and finite arithmetic;
@@ -155,11 +156,14 @@ the metric to imply platform-independent exposure.
 
 Validate finite fraction in 0..1, nonnegative indices, positive item count matching
 the loaded projection, and in-range `first <= last` indices before considering a
-completion sample. Require the
-same active load, current content/session authority, visible body and enabled user
-input as position capture. A restored footer or TTS-driven visual scroll cannot
-create that evidence. Audio completion comes from an explicit current playback
-event, not from its visual follower. A new canonical exposure policy needs its own
+completion sample. Visual evidence requires the same active load, current
+content/session authority, visible body and enabled user input as position capture.
+A restored footer or TTS-driven visual scroll cannot create that evidence.
+Background audio has its own authority: require the current playback generation,
+content observation, nonempty utterance plan and engine-completion event. It does
+not require an open visual reader or visual input. A stale engine callback, paused
+or replaced playback generation, or visual follower cannot certify audio completion.
+A new canonical exposure policy needs its own
 reviewed behavior change; it is not implied by the version 1 position measure.
 
 Shared policy supports disabled automatic completion. Desktop starts disabled to
@@ -217,8 +221,9 @@ Future state adapters must provide these transaction-level guarantees:
    Rebind the active reader/playback observer to the new intent revision before
    accepting fresh input; do not relabel old samples with the new revision.
    Apply this protocol to manual, bulk, Next, visual and audio writers before
-   claiming ordering. Explicit mark read/unread need not have a downloaded body
-   or an unlocked/visible renderer; automatic evidence does.
+   claiming ordering. Explicit mark read/unread need not have a downloaded body or
+   an unlocked/visible renderer. Automatic visual evidence requires the eligible
+   visual body; audio requires the independent playback authority defined above.
 4. Preserve the load/session/sequence checks for automatic position and completion.
    Serialize related commands without allowing a late chapter-A drain to select
    chapter B's resume pointer. Explicit intents for different chapters remain independent.
