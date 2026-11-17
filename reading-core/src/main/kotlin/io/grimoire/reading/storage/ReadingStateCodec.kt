@@ -25,7 +25,7 @@ private fun writerJson(value: ReadingStateWriter?) = value?.let { buildJsonObjec
 fun encodeReadingStateRecord(value: ReadingStateRecord): String = buildJsonObject {
     put("format", 1); put("incarnation", value.incarnation); put("revision", value.intentRevision); put("value", valueJson(value.value))
     put("visual", writerJson(value.visual)); put("audio", writerJson(value.audio))
-}.toString()
+}.toString().storageJson()
 
 fun decodeReadingStateRecord(encoded: String): ReadingStateRecord {
     val j = Json.parseToJsonElement(encoded).jsonObject
@@ -45,7 +45,7 @@ fun decodeReadingStateRecord(encoded: String): ReadingStateRecord {
 fun encodeReadingStateReceipt(value: ReadingStateReceipt): String = buildJsonObject {
     put("format", 1); put("command", value.commandId); put("incarnation", value.incarnation); put("fingerprint", value.fingerprint)
     put("value", valueJson(value.valueAtCommit)); put("revision", value.intentRevisionAtCommit)
-}.toString()
+}.toString().storageJson()
 
 fun decodeReadingStateReceipt(encoded: String): ReadingStateReceipt {
     val j = Json.parseToJsonElement(encoded).jsonObject
@@ -111,6 +111,12 @@ fun fingerprintReadingStateCommand(command: ReadingStateCommand): String {
 }
 
 private val fingerprint = Regex("[a-f0-9]{64}")
+/** SQLite stores UTF-8; JSON escapes preserve even isolated UTF-16 units without encoder replacement. */
+private fun String.storageJson() = buildString {
+    for (c in this@storageJson) {
+        if (c.code in 0xD800..0xDFFF) append("\\u").append(c.code.toString(16).padStart(4, '0')) else append(c)
+    }
+}
 private fun JsonObject.string(key: String) = getValue(key).jsonPrimitive.let { require(it.isString); it.content }
 private fun JsonObject.number(key: String) = getValue(key).jsonPrimitive.also { require(!it.isString) }
 private fun JsonObject.readKey() = ChapterKey(NovelKey(number("source").long, string("novel")), string("chapter"))

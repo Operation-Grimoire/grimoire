@@ -108,6 +108,26 @@ class ReadingStateProtocolTest {
         assertEquals(0L, active.visual!!.sequence)
     }
 
+    @Test fun unchangedAudioIsANoopButMissingFirstReadStillCommits() {
+        val s = session(ReadingStateWriterKind.AUDIO)
+        val known = bindReadingStateWriter(record.copy(value = value.copy(status = ReadStatus.READ, firstReadAt = 17)), s)
+        rejection(decide(automatic(s), known), ReadingStateRejection.NO_CHANGE)
+        val missing = bindReadingStateWriter(record.copy(value = value.copy(status = ReadStatus.READ)), s)
+        val filled = decide(automatic(s), missing)
+        assertEquals(100L, filled.record!!.value.firstReadAt); assertNotNull(filled.receipt)
+        rejection(decide(automatic(s, 2, "repeat"), filled.record), ReadingStateRejection.NO_CHANGE)
+    }
+
+    @Test fun storageCodecsPreserveIsolatedUtf16AcrossUtf8Storage() {
+        val unusual = key.copy(url = "/\uD800")
+        val r = record.copy(value = value.copy(key = unusual))
+        val encoded = encodeReadingStateRecord(r)
+        assertEquals(r, decodeReadingStateRecord(String(encoded.toByteArray(Charsets.UTF_8), Charsets.UTF_8)))
+        val receipt = ReadingStateReceipt("id", "inc", "a".repeat(64), value.copy(key = unusual), 1)
+        val receiptJson = encodeReadingStateReceipt(receipt)
+        assertEquals(receipt, decodeReadingStateReceipt(String(receiptJson.toByteArray(Charsets.UTF_8), Charsets.UTF_8)))
+    }
+
     @Test fun protocolAndReceiptCodecsRoundTripWithoutInferringLegacyState() {
         val s = session(); val active = bindReadingStateWriter(record, s); val first = decide(automatic(s), active)
         for (r in listOf(record, active, first.record!!, record.copy(value = value.copy(status = ReadStatus.UNKNOWN, firstReadAt = -17))))

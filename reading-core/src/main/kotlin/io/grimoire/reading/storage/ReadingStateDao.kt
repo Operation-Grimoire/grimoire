@@ -104,7 +104,8 @@ fun decideReadingState(command: ReadingStateCommand, record: ReadingStateRecord?
         CompletionRejection.INVALID, CompletionRejection.IDENTITY -> ReadingStateRejection.INVALID
         CompletionRejection.INELIGIBLE -> ReadingStateRejection.INELIGIBLE
     })
-    if (decision !is ReadingCompletionDecision.Proposed) return reject(ReadingStateRejection.NO_CHANGE)
+    if (decision !is ReadingCompletionDecision.Proposed || (automatic && decision.state == record.value))
+        return reject(ReadingStateRejection.NO_CHANGE)
     if (!automatic && record.intentRevision == Long.MAX_VALUE) return reject(ReadingStateRejection.INVALID)
     val next = if (!automatic) record.copy(intentRevision = record.intentRevision + 1, value = decision.state, visual = null, audio = null)
         else if (session!!.kind == ReadingStateWriterKind.VISUAL) record.copy(value = decision.state, visual = writer!!.copy(sequence = command.sequence))
