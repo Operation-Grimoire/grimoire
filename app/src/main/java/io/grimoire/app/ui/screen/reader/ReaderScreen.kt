@@ -154,7 +154,22 @@ fun ReaderScreen(
         }
     }
     BackHandler { requestBack() }
-    if (saveError != null) AlertDialog(
+    val completionNotice by viewModel.completionNotice.collectAsStateWithLifecycle()
+    if (completionNotice != null) AlertDialog(
+        onDismissRequest = viewModel::dismissCompletionError,
+        title = { Text(stringResource(when (completionNotice!!) {
+            ReaderCompletionNotice.SAVE_FAILED -> R.string.reader_completion_save_error
+            ReaderCompletionNotice.WORD_COUNT_FAILED -> R.string.reader_completion_partial_error
+            ReaderCompletionNotice.CHANGED -> R.string.reader_completion_changed_error
+        })) },
+        confirmButton = {
+            if (completionNotice != ReaderCompletionNotice.CHANGED) TextButton(onClick = { viewModel.retryCompletionSave() }) {
+                Text(stringResource(R.string.action_retry))
+            }
+        },
+        dismissButton = { TextButton(onClick = viewModel::dismissCompletionError) { Text(stringResource(R.string.action_close)) } },
+    )
+    if (saveError != null && completionNotice == null) AlertDialog(
         onDismissRequest = { viewModel.dismissPositionSaveError() },
         title = { Text(stringResource(R.string.reader_position_save_error)) },
         confirmButton = { TextButton(onClick = { viewModel.retryPositionSave() }) { Text(stringResource(R.string.action_retry)) } },

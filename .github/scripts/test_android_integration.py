@@ -37,8 +37,8 @@ class IntegrationResultTest(unittest.TestCase):
                 runner.parse_instrumentation(output)
 
     def test_wrong_class_count_or_incomplete_finish_fails(self):
-        for output in [events().replace(runner.CLASS, "another.Class"), events().replace("numtests=3", "numtests=4"),
-                       events().replace("INSTRUMENTATION_CODE: -1", ""), events().replace("OK (3 tests)", "")]:
+        for output in [events().replace(runner.CLASS, "another.Class"), events().replace(f"numtests={len(runner.TESTS)}", "numtests=99"),
+                       events().replace("INSTRUMENTATION_CODE: -1", ""), events().replace(f"OK ({len(runner.TESTS)} tests)", "")]:
             with self.assertRaises(ValueError):
                 runner.parse_instrumentation(output)
 

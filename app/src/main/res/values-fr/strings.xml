@@ -789,4 +789,7 @@
     <string name="reader_position_identity">La position enregistrée appartient à un autre chapitre. Elle a été conservée.</string>
     <string name="reader_position_empty">Ce chapitre n’a aucun contenu visible.</string>
     <string name="reader_position_reload">Rechargez ce chapitre pour enregistrer votre position de lecture.</string>
+    <string name="reader_completion_save_error">Le statut de lecture n’a pas été enregistré</string>
+    <string name="reader_completion_partial_error">Le statut de lecture a été enregistré, mais le nombre de mots n’a pas pu être mis à jour.</string>
+    <string name="reader_completion_changed_error">Le statut de lecture n’a pas pu être modifié. Réessayez cette action.</string>
 </resources>

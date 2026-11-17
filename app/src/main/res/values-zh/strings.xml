@@ -754,4 +754,7 @@
     <string name="reader_position_identity">保存的阅读位置属于另一章节，原记录已保留。</string>
     <string name="reader_position_empty">本章没有可见内容。</string>
     <string name="reader_position_reload">请重新加载本章以保存阅读位置。</string>
+    <string name="reader_completion_save_error">阅读状态未保存</string>
+    <string name="reader_completion_partial_error">阅读状态已保存，但无法更新字数。</string>
+    <string name="reader_completion_changed_error">无法更改阅读状态。请重试。</string>
 </resources>

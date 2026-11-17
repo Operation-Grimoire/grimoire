@@ -755,4 +755,7 @@
     <string name="reader_position_identity">保存された読書位置は別の章のものです。記録は保持されています。</string>
     <string name="reader_position_empty">この章には表示可能な内容がありません。</string>
     <string name="reader_position_reload">読書位置を保存するには、この章を再読み込みしてください。</string>
+    <string name="reader_completion_save_error">読書状態を保存できませんでした</string>
+    <string name="reader_completion_partial_error">読書状態は保存されましたが、単語数を更新できませんでした。</string>
+    <string name="reader_completion_changed_error">読書状態を変更できませんでした。もう一度操作してください。</string>
 </resources>

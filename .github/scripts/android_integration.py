@@ -14,6 +14,8 @@ TESTS = (
     "inputBackColdReopenAndRecreationRestoreOfflinePosition",
     "restoredEndDoesNotMarkReadUntilExplicitNextNavigation",
     "failedCheckpointSaveCanBeDismissedAndRetriedWithoutLosingInput",
+    "manualReadFailureRetriesExactCommandAndUnreadSurvivesReopen",
+    "partialWordCountRetryPreservesLaterExplicitUnread",
 )
 PACKAGE = "io.grimoire.app"
 

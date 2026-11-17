@@ -5,16 +5,20 @@ API 35 emulator gate for the real `MainActivity`, Hilt graph, Room store and
 reader UI. Local content keeps these tests independent of websites, extension
 parsers, credentials and external services.
 
-The maintained suite exercises three paths:
+The maintained suite exercises five paths:
 
 - Actual touch input, Back flush, cold Activity close/relaunch and configuration
   recreation restore the committed paragraph while networking is disabled.
 - Restoring a portable End checkpoint does not mark a chapter read. Explicit Next
-  marks only the departed chapter read through the existing production behavior.
-  Any accepted read=true command fills a null `firstReadAt`, including when the
-  chapter is already read, and preserves an existing first-read time.
+  marks only the departed chapter read through the guarded production facade,
+  creating one intent/receipt without setting stored compatibility progress to one.
 - A real SQLite checkpoint-write fault reaches the reader's error dialog. Dismiss
   retains pending input; removing the fault and navigating Back retries the save.
+- A real completion-write fault leaves the read flag unchanged. Retry commits one
+  intent/receipt; explicit unread preserves first-read time across Activity reopen.
+- A global downloaded-word-count backfill fault reports a committed read as partial.
+  A later explicit unread persists, and retrying the old read receipt fills the word
+  count without changing that unread or adding another completion intent/receipt.
 
 Fixture setup uses a debug-only Hilt entry point to existing bindings. It does not
 replace providers or add a production test switch. The interface is in
@@ -37,7 +41,7 @@ retains the existing extension-host workflow and its separate ART helper coverag
 The runner refuses non-emulator devices, clears only its disposable fixture app,
 enables airplane mode and disables Wi-Fi/mobile data, then passes the source SHA into the test. The test checks
 that SHA against `BuildConfig`, and independently verifies no active network.
-Three named starts and three paired successful completions are mandatory. Skips,
+Five named starts and five paired successful completions are mandatory. Skips,
 assumptions, duplicates, missing cases, wrong classes/counts and aborted runs fail.
 The parser has deterministic negative tests in the Python policy job.
 

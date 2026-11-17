@@ -772,4 +772,7 @@
     <string name="reader_position_identity">सहेजी गई पढ़ने की स्थिति किसी अन्य अध्याय की है। उसे सुरक्षित रखा गया है।</string>
     <string name="reader_position_empty">इस अध्याय में दिखाई देने वाली सामग्री नहीं है।</string>
     <string name="reader_position_reload">पढ़ने की स्थिति सहेजने के लिए यह अध्याय फिर लोड करें।</string>
+    <string name="reader_completion_save_error">पढ़ने की स्थिति सहेजी नहीं गई</string>
+    <string name="reader_completion_partial_error">पढ़ने की स्थिति सहेज ली गई, लेकिन शब्दों की संख्या अपडेट नहीं हो सकी।</string>
+    <string name="reader_completion_changed_error">पढ़ने की स्थिति बदली नहीं जा सकी। फिर से प्रयास करें।</string>
 </resources>

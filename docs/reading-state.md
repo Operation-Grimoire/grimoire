@@ -4,9 +4,10 @@ This contract defines the next work under [#432](https://github.com/Operation-Gr
 Its contract task is [#443](https://github.com/Operation-Grimoire/grimoire/issues/443),
 under [roadmap #397](https://github.com/Operation-Grimoire/grimoire/issues/397).
 The pure model and decisions are implemented under #445. The guarded DAO and
-Room/JDBC schema expansion follow under #447. Production completion and history
-writer adoption remain outstanding; the requirements distinguish that target
-from current reader behavior.
+Room/JDBC schema expansion follow under #447. Android reader explicit read/unread
+and Next adopt the facade under #454. Visual/TTS/bulk completion and history writer
+adoption remain outstanding; the requirements distinguish that target from current
+reader behavior.
 
 Both readers already use [guarded portable checkpoints](reading-anchors.md).
 This contract keeps position, completion and history separate while defining the

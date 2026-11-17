@@ -31,6 +31,7 @@ import io.grimoire.reading.NovelKey
 import io.grimoire.reading.anchor.*
 import io.grimoire.reading.storage.CheckpointCommand
 import io.grimoire.reading.storage.CheckpointCommit
+import io.grimoire.reading.storage.decodeReadingStateRecord
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -60,6 +61,16 @@ class ReaderIntegrationTest {
     private fun <T> io(block: suspend () -> T): T = runBlocking(Dispatchers.IO) { block() }
     private fun checkpoint(): ReadingAnchor? = io { RoomReadingCheckpointDao(db, RoomSavedChapterDao(db)).read(key) }
     private fun first() = io { requireNotNull(db.chapterDao().getByUrl(1, key.url)) }
+    private fun completionRecord() = io { decodeReadingStateRecord(requireNotNull(db.readingStateStorageDao().find(1)).state) }
+    private fun receipts(): Int = io {
+        db.openHelper.readableDatabase.query("SELECT COUNT(*) FROM reading_state_receipts WHERE chapterId=1").use {
+            check(it.moveToFirst()); it.getInt(0)
+        }
+    }
+    private fun showReaderActions() {
+        compose.onNodeWithText(paragraphs[0].trim()).performTouchInput { click(center) }
+        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription(context.getString(R.string.reader_mark_read)).fetchSemanticsNodes().isNotEmpty() }
+    }
 
     @Before fun seedOwnedEmulator() {
         val args = InstrumentationRegistry.getArguments()
@@ -171,9 +182,64 @@ class ReaderIntegrationTest {
         waitText("Second chapter saved offline.")
         compose.waitUntil(10_000) { first().read }
         assertNotNull(first().firstReadAt)
+        assertEquals(1L, completionRecord().intentRevision); assertEquals(1, receipts())
+        assertEquals(0f, first().readProgress, 0f)
         assertFalse(io { requireNotNull(db.chapterDao().getByUrl(1, "/integration/second")).read })
         snapshot("completion-passed")
         back()
+    }
+
+    @Test fun manualReadFailureRetriesExactCommandAndUnreadSurvivesReopen() = journey("manual-retry") {
+        openFirst(); showReaderActions()
+        io { db.openHelper.writableDatabase.execSQL("CREATE TRIGGER integration_write_fault BEFORE UPDATE OF read ON chapters WHEN OLD.id=1 BEGIN SELECT RAISE(ABORT,'completion write failure'); END") }
+        compose.onNodeWithContentDescription(context.getString(R.string.reader_mark_read)).performClick()
+        waitText(context.getString(R.string.reader_completion_save_error))
+        assertFalse(first().read); assertNull(first().firstReadAt); assertEquals(0, receipts())
+        assertEquals(0L, completionRecord().intentRevision)
+        snapshot("manual-retry-error")
+        io { db.openHelper.writableDatabase.execSQL("DROP TRIGGER integration_write_fault") }
+        compose.onNodeWithText(context.getString(R.string.action_retry)).performClick()
+        compose.waitUntil(10_000) { first().read }
+        val firstReadAt = requireNotNull(first().firstReadAt)
+        assertEquals(0L, firstReadAt % 1000); assertEquals(1L, completionRecord().intentRevision); assertEquals(1, receipts())
+        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription(context.getString(R.string.reader_mark_unread)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription(context.getString(R.string.reader_mark_unread)).performClick()
+        compose.waitUntil(10_000) { !first().read }
+        assertEquals(firstReadAt, first().firstReadAt); assertEquals(2L, completionRecord().intentRevision); assertEquals(2, receipts())
+        assertEquals(0f, first().readProgress, 0f); assertNull(checkpoint())
+        snapshot("manual-retry-passed")
+        back(); activity!!.close(); activity = null; openFirst()
+        assertFalse(first().read); assertEquals(firstReadAt, first().firstReadAt); assertEquals(2, receipts())
+        back()
+    }
+
+    @Test fun partialWordCountRetryPreservesLaterExplicitUnread() = journey("completion-partial") {
+        io {
+            db.chapterDao().insertAll(listOf(ChapterEntity(id=3, novelId=1, url="/integration/backfill", name="Backfill chapter",
+                chapterNumber=3f, read=true, firstReadAt=42, downloadStatus=2)))
+            db.chapterDao().upsertContent(ChapterContentEntity(3, encodeChapterContent(pages)))
+        }
+        openFirst(); showReaderActions()
+        io { db.openHelper.writableDatabase.execSQL("CREATE TRIGGER integration_write_fault BEFORE UPDATE OF wordCount ON chapters WHEN OLD.id=3 BEGIN SELECT RAISE(ABORT,'word count failure'); END") }
+        compose.onNodeWithContentDescription(context.getString(R.string.reader_mark_read)).performClick()
+        waitText(context.getString(R.string.reader_completion_partial_error))
+        assertTrue(first().read); val acceptedAt = first().firstReadAt
+        assertEquals(1L, completionRecord().intentRevision); assertEquals(1, receipts())
+        snapshot("completion-partial-error")
+        compose.onNodeWithText(context.getString(R.string.action_close)).performClick()
+        compose.onNodeWithContentDescription(context.getString(R.string.reader_mark_unread)).performClick()
+        waitText(context.getString(R.string.reader_completion_partial_error))
+        assertFalse(first().read); assertEquals(acceptedAt, first().firstReadAt)
+        assertEquals(2L, completionRecord().intentRevision); assertEquals(2, receipts())
+        io { db.openHelper.writableDatabase.execSQL("DROP TRIGGER integration_write_fault") }
+        compose.onNodeWithText(context.getString(R.string.action_retry)).performClick()
+        compose.waitUntil(10_000) { io { db.chapterDao().getByUrl(1,"/integration/backfill")!!.wordCount > 0 } }
+        compose.waitForIdle()
+        assertFalse(first().read); assertEquals(acceptedAt, first().firstReadAt)
+        assertEquals(2L, completionRecord().intentRevision); assertEquals(2, receipts())
+        compose.onNodeWithContentDescription(context.getString(R.string.reader_mark_read)).assertExists()
+        assertEquals(0f, first().readProgress, 0f); assertNull(checkpoint())
+        snapshot("completion-partial-passed"); back()
     }
 
     @Test fun failedCheckpointSaveCanBeDismissedAndRetriedWithoutLosingInput() = journey("retry") {

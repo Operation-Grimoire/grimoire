@@ -789,4 +789,7 @@
     <string name="reader_position_identity">A posição salva pertence a outro capítulo. Ela foi mantida.</string>
     <string name="reader_position_empty">Este capítulo não tem conteúdo visível.</string>
     <string name="reader_position_reload">Recarregue este capítulo para salvar sua posição de leitura.</string>
+    <string name="reader_completion_save_error">O status de leitura não foi salvo</string>
+    <string name="reader_completion_partial_error">O status de leitura foi salvo, mas não foi possível atualizar a contagem de palavras.</string>
+    <string name="reader_completion_changed_error">Não foi possível alterar o status de leitura. Tente a ação novamente.</string>
 </resources>

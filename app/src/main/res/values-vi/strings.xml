@@ -755,4 +755,7 @@
     <string name="reader_position_identity">Vị trí đã lưu thuộc chương khác. Bản ghi được giữ lại.</string>
     <string name="reader_position_empty">Chương này không có nội dung hiển thị.</string>
     <string name="reader_position_reload">Tải lại chương này để lưu vị trí đọc của bạn.</string>
+    <string name="reader_completion_save_error">Chưa lưu trạng thái đọc</string>
+    <string name="reader_completion_partial_error">Đã lưu trạng thái đọc nhưng không thể cập nhật số từ.</string>
+    <string name="reader_completion_changed_error">Không thể thay đổi trạng thái đọc. Hãy thử lại thao tác.</string>
 </resources>
