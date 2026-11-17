@@ -101,6 +101,7 @@ import io.grimoire.app.ui.component.showScrollToTop
 import io.grimoire.app.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.MoveToCategorySheet
+import io.grimoire.app.ui.component.ReadingCompletionErrorDialog
 import io.grimoire.app.ui.screen.library.HiddenCategoriesUnlockDialog
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
@@ -196,6 +197,12 @@ fun NovelDetailScreen(
     var showRateDialog by remember { mutableStateOf(false) }
     var showMissingSourceDialog by remember { mutableStateOf(false) }
     val userRating by viewModel.userRating.collectAsState()
+
+    val markAllSaving by viewModel.markAllSaving.collectAsState()
+    val markAllNotice by viewModel.markAllNotice.collectAsState()
+    markAllNotice?.let { notice ->
+        ReadingCompletionErrorDialog(notice, viewModel::retryMarkAll, viewModel::dismissMarkAllError)
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val isExporting by viewModel.isExporting.collectAsState()
@@ -666,10 +673,12 @@ fun NovelDetailScreen(
                                 if (hasBulkActions) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.novel_mark_all_read)) },
+                                        enabled = !markAllSaving,
                                         onClick = { viewModel.markAllRead(true); overflowMenuExpanded = false },
                                     )
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.novel_mark_all_unread)) },
+                                        enabled = !markAllSaving,
                                         onClick = { viewModel.markAllRead(false); overflowMenuExpanded = false },
                                     )
                                 }

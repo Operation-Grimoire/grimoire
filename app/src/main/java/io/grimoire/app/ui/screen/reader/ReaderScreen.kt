@@ -107,7 +107,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import io.grimoire.app.R
-import io.grimoire.app.data.reading.CompletionSaveNotice
+import io.grimoire.app.ui.component.ReadingCompletionErrorDialog
 
 private fun Context.findActivity(): Activity? {
     var c: Context? = this
@@ -157,21 +157,10 @@ fun ReaderScreen(
     val ttsNotice = viewModel.ttsCompletionNotice.collectAsStateWithLifecycle().value
     val completionNotice = readerNotice ?: ttsNotice
     val dismissCompletion = if (readerNotice != null) viewModel::dismissCompletionError else viewModel::dismissTtsCompletionError
-    if (completionNotice != null) AlertDialog(
-        onDismissRequest = dismissCompletion,
-        title = { Text(stringResource(when (completionNotice) {
-            CompletionSaveNotice.SAVE_FAILED -> R.string.reader_completion_save_error
-            CompletionSaveNotice.WORD_COUNT_FAILED -> R.string.reader_completion_partial_error
-            CompletionSaveNotice.CHANGED -> R.string.reader_completion_changed_error
-        })) },
-        confirmButton = {
-            if (completionNotice != CompletionSaveNotice.CHANGED) TextButton(onClick = {
-                if (readerNotice != null) viewModel.retryCompletionSave() else viewModel.retryTtsCompletionSave()
-            }) {
-                Text(stringResource(R.string.action_retry))
-            }
-        },
-        dismissButton = { TextButton(onClick = dismissCompletion) { Text(stringResource(R.string.action_close)) } },
+    if (completionNotice != null) ReadingCompletionErrorDialog(
+        notice = completionNotice,
+        retry = { if (readerNotice != null) viewModel.retryCompletionSave() else viewModel.retryTtsCompletionSave() },
+        dismiss = dismissCompletion,
     )
     if (saveError != null && completionNotice == null) AlertDialog(
         onDismissRequest = { viewModel.dismissPositionSaveError() },

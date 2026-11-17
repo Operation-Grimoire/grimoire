@@ -20,6 +20,7 @@ import io.grimoire.app.data.local.AppDatabase
 import io.grimoire.app.data.local.RoomReadingStateDao
 import io.grimoire.reading.storage.ReadingStateDao
 import io.grimoire.reading.state.ReadingStateFacade
+import io.grimoire.reading.state.NovelReadingCompletionFacade
 import io.grimoire.app.data.local.RoomReadingCheckpointDao
 import io.grimoire.reading.storage.ReadingCheckpointDao
 import io.grimoire.app.data.local.RoomSavedChapterDao
@@ -439,6 +440,10 @@ object DatabaseModule {
     @Provides @Singleton
     fun provideReadingStateFacade(dao: ReadingStateDao, chapters: ChapterDao): ReadingStateFacade =
         ReadingStateFacade(dao) { chapters.backfillWordCountsFromDownloads() }
+
+    @Provides @Singleton
+    fun provideNovelReadingCompletionFacade(dao: RoomReadingStateDao, chapters: ChapterDao): NovelReadingCompletionFacade =
+        NovelReadingCompletionFacade(dao) { chapters.backfillWordCountsFromDownloads() }
 
     @Provides @Singleton
     fun provideSavedChapterRepository(dao: RoomSavedChapterDao): SavedChapterRepository = SavedChapterRepository(dao)

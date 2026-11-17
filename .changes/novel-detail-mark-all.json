@@ -1,0 +1,9 @@
+{
+  "android": [
+    {
+      "category": "fix",
+      "text": "Marking all chapters unread on Novel Detail prevents earlier reader and read-aloud callbacks from marking them read again. Failed saves can be retried."
+    }
+  ],
+  "desktop": []
+}
