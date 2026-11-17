@@ -40,12 +40,19 @@ automatic decision returns NO_CHANGE without storing a receipt or advancing a
 sequence. It is not an accepted state mutation. This avoids a receipt row for every
 viewport sample. A later explicit unread changes intent revision, so old samples
 remain stale. Applied receipt IDs stay reserved for the incarnation; a fresh prepare
-after invalidation removes obsolete receipts. No receipt eviction policy is claimed.
+after invalidation removes obsolete receipts. Within one incarnation, E applied
+explicit intents permit at most E+1 automatic state transitions, so there are at
+most 2E+1 receipt rows. Repeated viewport/playback no-ops add none. This is linear
+growth with explicit intents, not a fixed storage cap. There is no eviction policy;
+future compaction must define which old commands become stale before discarding
+receipts. The proof plan must check the bound and no-op behavior.
 
 The shared decision returns the result, next protocol record and new receipt.
 Adapters commit value, record and receipt together or roll back all three. Replays
-must publish current, never valueAtCommit, as the screen's current state. Missing,
-malformed or unknown-version JSON fails closed rather than becoming an empty record.
+must publish current, never valueAtCommit, as the screen's current state. Missing
+required JSON fields, unexpected fields, malformed values or unknown versions fail
+closed. An absent protocol row after invalidation is normal: prepare then creates
+a new incarnation from actual values; it does not treat corrupt JSON as absence.
 Request fingerprints preserve exact UTF-16 units, including isolated surrogates.
 They cover semantic inputs and projection ordinals; they do not duplicate chapter
 bodies or device-local cached image paths.

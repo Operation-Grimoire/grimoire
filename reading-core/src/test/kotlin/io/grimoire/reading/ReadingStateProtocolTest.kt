@@ -86,26 +86,45 @@ class ReadingStateProtocolTest {
     }
 
     @Test fun activeSessionContentSequenceAndEvidenceMustAllAgree() {
-        val s = session(); val active = bindReadingStateWriter(record, s); val c = automatic(s)
-        rejection(decide(c, active, current = false), ReadingStateRejection.STALE)
-        rejection(decide(c.copy(session = s.copy(id = "forged")), active), ReadingStateRejection.STALE)
-        rejection(decide(c.copy(sequence = 0), active), ReadingStateRejection.INVALID)
-        rejection(decide(c.copy(session = null), active), ReadingStateRejection.INVALID)
-        rejection(decide(explicit(true).copy(session = s), active), ReadingStateRejection.INVALID)
-        val input = c.input as ReadingCompletionInput.Visual
-        rejection(decide(c.copy(input = input.copy(current = input.current.copy(loadId = "other"))), active), ReadingStateRejection.INVALID)
-        val newer = bindReadingStateWriter(active, s.copy(id = "new"))
-        rejection(decide(c, newer), ReadingStateRejection.STALE)
-        rejection(decide(c, active.copy(visual = active.visual!!.copy(sequence = 1))), ReadingStateRejection.CONFLICT)
-        rejection(decide(c, active.copy(visual = active.visual!!.copy(sequence = 2))), ReadingStateRejection.STALE)
+        for (kind in ReadingStateWriterKind.entries) {
+            val s = session(kind); val active = bindReadingStateWriter(record, s); val c = automatic(s)
+            rejection(decide(c, active, current = false), ReadingStateRejection.STALE)
+            rejection(decide(c.copy(session = s.copy(id = "forged")), active), ReadingStateRejection.STALE)
+            rejection(decide(c.copy(sequence = 0), active), ReadingStateRejection.INVALID)
+            rejection(decide(c.copy(session = null), active), ReadingStateRejection.INVALID)
+            rejection(decide(explicit(true).copy(session = s), active), ReadingStateRejection.INVALID)
+            val wrong = when (val input = c.input) {
+                is ReadingCompletionInput.Visual -> input.copy(current = input.current.copy(loadId = "other"))
+                is ReadingCompletionInput.Audio -> input.copy(current = input.current.copy(playbackId = "other"))
+                else -> error("Wrong fixture kind")
+            }
+            rejection(decide(c.copy(input = wrong), active), ReadingStateRejection.INVALID)
+            val newer = bindReadingStateWriter(active, s.copy(id = "new"))
+            rejection(decide(c, newer), ReadingStateRejection.STALE)
+            fun advanced(seq: Long) = if (kind == ReadingStateWriterKind.VISUAL) active.copy(visual = active.visual!!.copy(sequence = seq))
+                else active.copy(audio = active.audio!!.copy(sequence = seq))
+            rejection(decide(c, advanced(1)), ReadingStateRejection.CONFLICT)
+            rejection(decide(c, advanced(2)), ReadingStateRejection.STALE)
+        }
     }
 
     @Test fun noChangeAndIneligibleInputsReserveNoReceiptOrSequence() {
-        val s = session(); val active = bindReadingStateWriter(record, s); val c = automatic(s)
-        val input = c.input as ReadingCompletionInput.Visual
-        rejection(decide(c.copy(input = input.copy(policy = AutomaticReadPolicy.Disabled)), active), ReadingStateRejection.NO_CHANGE)
-        rejection(decide(c.copy(input = input.copy(current = input.current.copy(userInputEnabled = false))), active), ReadingStateRejection.INELIGIBLE)
-        assertEquals(0L, active.visual!!.sequence)
+        for (kind in ReadingStateWriterKind.entries) {
+            val s = session(kind); val active = bindReadingStateWriter(record, s); val c = automatic(s)
+            val ineligible = when (val input = c.input) {
+                is ReadingCompletionInput.Visual -> {
+                    rejection(decide(c.copy(input = input.copy(policy = AutomaticReadPolicy.Disabled)), active), ReadingStateRejection.NO_CHANGE)
+                    input.copy(current = input.current.copy(userInputEnabled = false))
+                }
+                is ReadingCompletionInput.Audio -> input.copy(current = input.current.copy(playing = false))
+                else -> error("Wrong fixture kind")
+            }
+            rejection(decide(c.copy(input = ineligible), active), ReadingStateRejection.INELIGIBLE)
+            rejection(decide(c, active.copy(value = value.copy(status = ReadStatus.READ, firstReadAt = 17))), ReadingStateRejection.NO_CHANGE)
+            val accepted = decide(c, active)
+            assertNotNull(accepted.receipt)
+            assertEquals(1L, if (kind == ReadingStateWriterKind.VISUAL) accepted.record!!.visual!!.sequence else accepted.record!!.audio!!.sequence)
+        }
     }
 
     @Test fun unchangedAudioIsANoopButMissingFirstReadStillCommits() {
@@ -135,8 +154,31 @@ class ReadingStateProtocolTest {
         assertEquals(first.receipt, decodeReadingStateReceipt(encodeReadingStateReceipt(first.receipt!!)))
         val json = encodeReadingStateRecord(active)
         for (bad in listOf(json.replace("\"format\":1", "\"format\":2"), json.replace("\"revision\":0", "\"revision\":\"0\""),
-            json.replace("\"sequence\":0", "\"sequence\":-1"), json.replace("UNREAD", "unknown")))
+            json.replace("\"sequence\":0", "\"sequence\":-1"), json.replace("UNREAD", "unknown"),
+            json.replace("\"format\":1", "\"format\":1,\"extra\":0"),
+            json.replace("\"source\":17", "\"source\":17,\"extra\":0"),
+            json.replace("\"status\":\"UNREAD\"", "\"status\":\"UNREAD\",\"extra\":0"),
+            json.replace("\"sequence\":0", "\"sequence\":0,\"extra\":0"),
+            json.replace("\"presence\":\"ABSENT\"", "\"presence\":\"ABSENT\",\"extra\":0")))
             assertThrows(IllegalArgumentException::class.java) { decodeReadingStateRecord(bad) }
+    }
+
+    @Test fun receiptGrowthTracksExplicitIntentsNotRepeatedPlaybackCompletions() {
+        val initial = session(ReadingStateWriterKind.AUDIO)
+        var current = bindReadingStateWriter(record, initial); var count = 0
+        fun apply(c: ReadingStateCommand) {
+            val transition = decide(c, current)
+            current = requireNotNull(transition.record); assertNotNull(transition.receipt); count++
+        }
+        apply(automatic(initial))
+        repeat(32) { index ->
+            val b = binding.copy(intentRevision = current.intentRevision)
+            apply(explicit(false, "unread-$index", b))
+            val s = session(ReadingStateWriterKind.AUDIO, binding.copy(intentRevision = current.intentRevision), "audio-$index")
+            current = bindReadingStateWriter(current, s); apply(automatic(s, id = "complete-$index"))
+            repeat(3) { rejection(decide(automatic(s, 2L + it, "noop-$index-$it"), current), ReadingStateRejection.NO_CHANGE) }
+        }
+        assertEquals(32L, current.intentRevision); assertEquals(65, count)
     }
 
     @Test fun fingerprintsAreDeterministicAndPreserveExactUtf16RequestDistinctions() {

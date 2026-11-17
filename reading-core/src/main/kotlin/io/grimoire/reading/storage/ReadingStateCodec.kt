@@ -28,10 +28,11 @@ fun encodeReadingStateRecord(value: ReadingStateRecord): String = buildJsonObjec
 }.toString().storageJson()
 
 fun decodeReadingStateRecord(encoded: String): ReadingStateRecord {
-    val j = Json.parseToJsonElement(encoded).jsonObject
+    val j = Json.parseToJsonElement(encoded).jsonObject.fields("format", "incarnation", "revision", "value", "visual", "audio")
     require(j.number("format").int == 1) { "Unsupported reading state format" }
     val value = j.getValue("value").jsonObject.readValue()
     fun writer(name: String) = j.getValue(name).takeUnless { it == JsonNull }?.jsonObject?.let {
+        it.fields("id", "scope", "content", "logical", "sequence")
         ReadingStateWriter(it.string("id"), it.string("scope"), it.getValue("content").jsonObject.readObservation(),
             it.string("logical"), it.number("sequence").long).also { w ->
             require(w.id.isNotBlank() && w.scope.isNotBlank() && w.content.key == value.key && w.sequence >= 0 && fingerprint.matches(w.logicalRevision))
@@ -48,7 +49,7 @@ fun encodeReadingStateReceipt(value: ReadingStateReceipt): String = buildJsonObj
 }.toString().storageJson()
 
 fun decodeReadingStateReceipt(encoded: String): ReadingStateReceipt {
-    val j = Json.parseToJsonElement(encoded).jsonObject
+    val j = Json.parseToJsonElement(encoded).jsonObject.fields("format", "command", "incarnation", "fingerprint", "value", "revision")
     require(j.number("format").int == 1) { "Unsupported reading state receipt" }
     return ReadingStateReceipt(j.string("command"), j.string("incarnation"), j.string("fingerprint"),
         j.getValue("value").jsonObject.readValue(), j.number("revision").long).also {
@@ -119,8 +120,9 @@ private fun String.storageJson() = buildString {
 }
 private fun JsonObject.string(key: String) = getValue(key).jsonPrimitive.let { require(it.isString); it.content }
 private fun JsonObject.number(key: String) = getValue(key).jsonPrimitive.also { require(!it.isString) }
-private fun JsonObject.readKey() = ChapterKey(NovelKey(number("source").long, string("novel")), string("chapter"))
-private fun JsonObject.readValue() = ReadingCompletionState(getValue("key").jsonObject.readKey(), ReadStatus.valueOf(string("status")),
-    getValue("firstReadAt").takeUnless { it == JsonNull }?.jsonPrimitive?.let { require(!it.isString); it.long })
-private fun JsonObject.readObservation() = ChapterStorageObservation(getValue("key").jsonObject.readKey(), string("scope"), string("generation"),
-    ChapterContentPresence.valueOf(string("presence")))
+private fun JsonObject.fields(vararg names: String) = apply { require(keys == names.toSet()) { "Unexpected or missing reading-state fields" } }
+private fun JsonObject.readKey() = fields("source", "novel", "chapter").let { ChapterKey(NovelKey(number("source").long, string("novel")), string("chapter")) }
+private fun JsonObject.readValue() = fields("key", "status", "firstReadAt").let { ReadingCompletionState(getValue("key").jsonObject.readKey(), ReadStatus.valueOf(string("status")),
+    getValue("firstReadAt").takeUnless { it == JsonNull }?.jsonPrimitive?.let { require(!it.isString); it.long }) }
+private fun JsonObject.readObservation() = fields("key", "scope", "generation", "presence").let {
+    ChapterStorageObservation(getValue("key").jsonObject.readKey(), string("scope"), string("generation"), ChapterContentPresence.valueOf(string("presence"))) }
