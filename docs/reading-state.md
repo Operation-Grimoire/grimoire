@@ -23,7 +23,7 @@ the future ordering and transaction requirements.
 | Next | If another chapter exists and the current chapter matches the loaded content, mark the unread current chapter read. The in-memory copy uses fraction one; the DAO call does not set stored progress to one. | Select the next requested chapter without a completion command. |
 | Explicit read/unread and bulk actions | Update `read`; first transition to read fills a null `firstReadAt`. Marking unread preserves progress, anchor and existing `firstReadAt`. | No equivalent read-state command/UI yet. |
 | TTS | Persist an utterance-based compatibility fraction without a portable anchor. End-of-chapter separately writes fraction one and read=true. | No equivalent TTS path. |
-| Reader open/chapter switch | Best-effort opened-history upsert, unless incognito is enabled when the open event is accepted. Initial reader open also updates the novel's last-read time. | Resume selection is separate from checkpoint position. No opened-history store. |
+| Reader open/chapter switch | Launch an opened-history upsert, unless incognito is enabled when the open event is accepted. Initial reader open also updates the novel's last-read time. | Resume selection is separate from checkpoint position. No opened-history store. |
 | Restore/layout/content relocation | Restore a recommendation; no new position, completion or first-read write before input. | Same checkpoint rule. |
 
 Source references:
@@ -50,6 +50,10 @@ Incognito currently suppresses opened/browsing history. It does not suppress
 position, completion, first-read statistics or the initial novel last-read update.
 Keep that distinction during extraction; changing it needs a separate product decision.
 Do not replay a suppressed open when incognito is turned off later.
+
+The current `recordHistory` helper launches work without awaiting it, but does not
+contain DAO exceptions itself. The nonblocking/failure-isolation requirement below
+is an adoption requirement, not an existing failure guarantee.
 
 [Backup merging](../app/src/main/java/io/grimoire/app/data/backup/BackupRestoreMerge.kt)
 currently ORs read flags and takes the larger legacy progress, with its own anchor
