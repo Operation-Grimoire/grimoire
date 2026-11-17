@@ -294,8 +294,9 @@ Defining a normalized progress measure or changing those thresholds is later wor
 
 The [shared reading-state contract](reading-state.md) defines that follow-up under
 #432, including a separate canonical position measure, compatibility completion
-evidence, explicit read/unread ordering and history boundaries. It is a contract;
-the shared state model, guarded adapters and production adoption remain future work.
+evidence, explicit read/unread ordering and history boundaries. The pure state model
+and decisions are implemented under #445; guarded adapters and production adoption
+remain future work.
 
 ## Implementation order and acceptance
 
