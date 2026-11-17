@@ -154,9 +154,9 @@ the items-from-end and at-end comparisons retain their current denominator and
 inclusive boundaries. Do not substitute the canonical position measure or rename
 the metric to imply platform-independent exposure.
 
-Validate finite fraction in 0..1, nonnegative indices, positive item count matching
-the loaded projection, and in-range `first <= last` indices before considering a
-completion sample. Visual evidence requires the same active load, current
+For visual evidence, validate finite fraction in 0..1, nonnegative indices,
+positive item count matching the loaded projection, and in-range `first <= last`
+indices. A visual sample requires the same active load, current
 content/session authority, visible body and enabled user input as position capture.
 A restored footer or TTS-driven visual scroll cannot create that evidence.
 Background audio has its own authority: require the current playback generation,
