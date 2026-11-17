@@ -175,6 +175,59 @@ class ReadingStateTest {
         assertEquals(corrupt, storage.find(1)); assertEquals(metadata, db.chapterDao().getByUrl(1, key.url))
     }
 
+    @Test fun exactWriterRetirementPreservesOtherKindValuesAndReceipts() = runBlocking<Unit> {
+        seed(); val visual = session(ReadingStateWriterKind.VISUAL); val audio = session(ReadingStateWriterKind.AUDIO)
+        val accepted = automatic(visual); dao.commit(accepted)
+        val before = db.chapterDao().getByUrl(1, key.url); val receipt = db.readingStateStorageDao().receipt(1, accepted.id)
+        assertTrue(dao.retire(visual)); assertFalse(dao.retire(visual))
+        rejected(dao.commit(automatic(visual, 2)), ReadingStateRejection.STALE)
+        rejected(dao.commit(automatic(audio)), ReadingStateRejection.NO_CHANGE)
+        assertTrue((dao.commit(accepted) as ReadingStateCommit.Committed).replayed)
+        val newer = session(ReadingStateWriterKind.VISUAL)
+        assertFalse(dao.retire(visual)); rejected(dao.commit(automatic(newer)), ReadingStateRejection.NO_CHANGE)
+        assertTrue(dao.retire(audio)); assertEquals(before, db.chapterDao().getByUrl(1, key.url))
+        assertEquals(receipt, db.readingStateStorageDao().receipt(1, accepted.id)); assertEquals(legacy, db.chapterDao().getContent(1))
+        db.openHelper.writableDatabase.execSQL("UPDATE chapters SET url='/temporary' WHERE id=1")
+        db.openHelper.writableDatabase.execSQL("UPDATE chapters SET url='/chapter' WHERE id=1")
+        assertFalse(dao.retire(newer)); assertNull(db.readingStateStorageDao().find(1))
+    }
+
+    @Test fun retirementRollbackCancellationAndReopenNeverRevokeTheWrongOwner() = runBlocking<Unit> {
+        seed(); val s = session(ReadingStateWriterKind.VISUAL); val storage = db.readingStateStorageDao(); val before = storage.find(1)
+        val sql = db.openHelper.writableDatabase
+        sql.execSQL("CREATE TRIGGER retire_fault BEFORE UPDATE ON reading_states BEGIN SELECT RAISE(ABORT,'retire fault'); END")
+        try { dao.retire(s); fail("Expected retirement fault") } catch (e: Exception) { assertTrue(e.message!!.contains("retire fault")) }
+        assertEquals(before, storage.find(1)); assertEquals(metadata, db.chapterDao().getByUrl(1, key.url)); sql.execSQL("DROP TRIGGER retire_fault")
+        val entered = CompletableDeferred<Unit>()
+        val pending = launch(Dispatchers.Default) { db.withTransaction { assertTrue(dao.retire(s)); entered.complete(Unit); awaitCancellation() } }
+        entered.await(); pending.cancelAndJoin(); assertEquals(before, storage.find(1))
+        val other = Room.databaseBuilder(context, AppDatabase::class.java, name).addCallback(DOWNLOAD_SCHEMA_CALLBACK).build()
+        try { assertFalse(RoomReadingStateDao(other, RoomSavedChapterDao(other)).retire(s)) } finally { other.close() }
+        assertEquals(before, storage.find(1)); assertTrue(dao.commit(automatic(s)) is ReadingStateCommit.Committed)
+        db.close(); open(); assertFalse(dao.retire(s))
+        val fresh = session(ReadingStateWriterKind.VISUAL); assertTrue(dao.retire(fresh))
+        val current = db.readingStateStorageDao().find(1)!!
+        db.readingStateStorageDao().put(current.copy(state = current.state.replace("\"format\":1", "\"format\":99")))
+        try { dao.retire(fresh); fail("Corruption cannot become a no-op") } catch (_: IllegalArgumentException) { }
+    }
+
+    @Test fun sharedFacadeReportsBackfillFailureAndRetriesWithoutUndoingUnread() = runBlocking<Unit> {
+        seed(); db.chapterDao().setWordCount(1, 0); var broken = true
+        val facade = ReadingStateFacade(dao) { if (broken) throw IOException("Backfill failed") else db.chapterDao().backfillWordCountsFromDownloads() }
+        val command = facade.prepareExplicit(ReadingCompletionInput.MarkRead(key, 100), "read")!!
+        val partial = facade.submit(command)
+        assertTrue(partial.confirmation is ReadingStateConfirmation.Confirmed)
+        assertTrue(partial.wordCount is ReadingWordCountOutcome.Failed); assertTrue(db.chapterDao().getByUrl(1, key.url)!!.read)
+        facade.submit(facade.prepareExplicit(ReadingCompletionInput.MarkUnread(key), "unread")!!); broken = false
+        val replay = facade.submit(command)
+        assertTrue((replay.confirmation as ReadingStateConfirmation.Confirmed).replayed)
+        assertEquals(ReadStatus.READ, (replay.confirmation as ReadingStateConfirmation.Confirmed).valueAtCommit.status); assertEquals(ReadStatus.UNREAD, replay.current!!.status)
+        assertEquals(ReadingWordCountOutcome.Completed, replay.wordCount); assertEquals(0, db.chapterDao().getByUrl(1, key.url)!!.wordCount)
+        facade.submit(facade.prepareExplicit(ReadingCompletionInput.MarkRead(key, 201), "reread")!!)
+        assertEquals(metadata.copy(read = true, firstReadAt = 100, wordCount = 1), db.chapterDao().getByUrl(1, key.url))
+        assertEquals(legacy, db.chapterDao().getContent(1))
+    }
+
     @Test fun frozenDb35MigrationRollsBackAndPreservesOldSchemaAndEveryLegacyValue() = runBlocking<Unit> {
         context.getDatabasePath(name).parentFile!!.mkdirs()
         val oldCheckpoint = encodeReadingCheckpoint(ReadingCheckpointState(ReadingSessionBinding("old", ChapterStorageObservation(key, "old", "old", ChapterContentPresence.SAVED), document.logicalRevision), 1,

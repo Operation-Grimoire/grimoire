@@ -231,6 +231,15 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
             ReadingStateSession(UUID.randomUUID().toString(), binding, content, document, kind).also { putStateRecord(bindReadingStateWriter(r, it)) }
         }
     }
+    @Synchronized internal fun retireStateWriter(session: ReadingStateSession, beforeCommit: () -> Unit): Boolean {
+        if (closed) return false
+        return write(beforeCommit) {
+            if (!hasReadingStateChapter(session.binding.key)) return@write false
+            val next = retireReadingStateWriter(stateRecord(session.binding.key), session, session.binding.scope == owner)
+                ?: return@write false
+            putStateRecord(next); true
+        }
+    }
     @Synchronized internal fun commitReadingState(command: ReadingStateCommand, beforeCommit: () -> Unit): ReadingStateCommit {
         if (closed) return ReadingStateCommit.NotApplied(ReadingStateRejection.STALE)
         return write(beforeCommit) {

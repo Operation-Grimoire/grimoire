@@ -80,6 +80,10 @@ class DesktopReadingCheckpointDao(private val library: LocalLibrary) : ReadingCh
 }
 
 class DesktopReadingStateDao(private val library: LocalLibrary) : ReadingStateDao {
+    override suspend fun retire(session: ReadingStateSession): Boolean = withContext(Dispatchers.IO) {
+        val context = kotlinx.coroutines.currentCoroutineContext()
+        library.retireStateWriter(session) { context.ensureActive() }
+    }
     override suspend fun prepare(key: ChapterKey): PreparedReadingState? = withContext(Dispatchers.IO) {
         val context = kotlinx.coroutines.currentCoroutineContext()
         library.prepareReadingState(key) { context.ensureActive() }
