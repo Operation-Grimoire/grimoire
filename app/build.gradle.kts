@@ -163,6 +163,13 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.monitor)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // Match the existing instrumentation core. Its helper Activities must run in the host,
+    // alongside ActivityInvoker already provided by the host runtime (see #456).
+    debugImplementation(libs.androidx.test.core)
+    // Align the compile graph with the host's existing runtime version and trusted CI cache.
+    debugImplementation(libs.androidx.test.monitor)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

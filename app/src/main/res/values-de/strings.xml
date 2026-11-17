@@ -771,4 +771,7 @@
     <string name="reader_position_identity">Die gespeicherte Leseposition gehört zu einem anderen Kapitel. Sie wurde beibehalten.</string>
     <string name="reader_position_empty">Dieses Kapitel hat keinen sichtbaren Inhalt.</string>
     <string name="reader_position_reload">Lade dieses Kapitel neu, um deine Leseposition zu speichern.</string>
+    <string name="reader_completion_save_error">Lesestatus wurde nicht gespeichert</string>
+    <string name="reader_completion_partial_error">Lesestatus gespeichert, aber die Wortanzahl konnte nicht aktualisiert werden.</string>
+    <string name="reader_completion_changed_error">Lesestatus konnte nicht geändert werden. Versuche die Aktion erneut.</string>
 </resources>

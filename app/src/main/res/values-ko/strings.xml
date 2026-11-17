@@ -755,4 +755,7 @@
     <string name="reader_position_identity">저장된 읽기 위치가 다른 챕터에 속합니다. 기록은 유지됩니다.</string>
     <string name="reader_position_empty">이 챕터에는 표시할 내용이 없습니다.</string>
     <string name="reader_position_reload">읽기 위치를 저장하려면 이 챕터를 다시 불러오세요.</string>
+    <string name="reader_completion_save_error">읽기 상태를 저장하지 못했습니다</string>
+    <string name="reader_completion_partial_error">읽기 상태는 저장했지만 단어 수를 업데이트하지 못했습니다.</string>
+    <string name="reader_completion_changed_error">읽기 상태를 변경하지 못했습니다. 다시 시도하세요.</string>
 </resources>

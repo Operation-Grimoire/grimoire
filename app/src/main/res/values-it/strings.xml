@@ -787,4 +787,7 @@
     <string name="reader_position_identity">La posizione salvata appartiene a un altro capitolo. È stata conservata.</string>
     <string name="reader_position_empty">Questo capitolo non ha contenuti visibili.</string>
     <string name="reader_position_reload">Ricarica questo capitolo per salvare la posizione di lettura.</string>
+    <string name="reader_completion_save_error">Lo stato di lettura non è stato salvato</string>
+    <string name="reader_completion_partial_error">Lo stato di lettura è stato salvato, ma non è stato possibile aggiornare il conteggio delle parole.</string>
+    <string name="reader_completion_changed_error">Impossibile modificare lo stato di lettura. Riprova l’azione.</string>
 </resources>

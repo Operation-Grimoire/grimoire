@@ -126,9 +126,10 @@ Older Android DB35 and desktop SQL1/2 builds refuse the expanded schema. Downgra
 requires restoring that coherent backup; changing only the version number or
 removing new tables would discard protocol authority and is unsupported.
 
-The production visual/manual/bulk/Next/TTS writers and shared opened-history writer
-remain later subissues. This protocol does not claim that all current writers
-already use durable intent ordering.
+Android reader read/unread and Next adopt this protocol in #454. Visual thresholds,
+TTS and detail/library/updates bulk writers remain legacy callers under #451;
+their writes still invalidate prepared bindings. Global all-writer ordering and
+shared opened-history adoption remain outstanding.
 
 ## Completion facade and writer retirement
 
@@ -165,3 +166,33 @@ stale. Closing/replacing actual UI/playback authority remains the host's job.
 This #452 slice retains DB36/SQL3 and JSON version1. Shared workflow tests and
 real Room/JDBC retirement, cancellation, rollback and replay cases are separate
 from the production adoption in #451 and physical-device/process-death acceptance.
+
+## Reader explicit actions
+
+`ExplicitReadingCommands` owns accepted explicit inputs for one reader instance.
+It prepares/submits them in acceptance order. An uncertain command retains the same
+ID, prepared binding and timestamp; later commands for that chapter wait for its
+retry, while commands for other chapters can proceed. Preparation itself may retry
+until a command exists. Missing targets and semantic rejections terminate an input
+and surface an error; retries never rebase a prepared command. Concurrent flushes
+are serialized; input accepted during a flush belongs to the next flush.
+If a later entry is cancelled, earlier undelivered commands remain available for
+receipt replay and fresh current-state reconciliation. A terminal missing target
+stays missing across that retry rather than preparing against a recreated target.
+
+A confirmed read with failed word-count backfill remains pending for identical
+retry, but permits later explicit intent. Its historical receipt cannot undo a
+later unread. The reader only presents the latest accepted command's reconciled
+`current` value. Its Hilt facade retains the legacy global backfill of downloaded
+read chapters with zero word count, including chapters outside the current reader.
+Read timestamps retain the legacy seconds precision and are captured at acceptance.
+
+Next continues navigation immediately; its confirmed result updates the departed
+chapter's in-memory status/fraction without setting stored compatibility progress
+to one. Explicit unread preserves position and first-read time. Completion failure,
+partial backfill and terminal conflict/removal have separate notices from position
+errors. Dismiss retains pending work; Retry and explicit Back drain it. Accepted
+saves use the reader's persistence scope after ViewModel cancellation. The queue
+is in memory: it supplies no process-death outbox, background retry timer or durable
+UI error journal. Unexecuted phone/process-death checks remain separate from the
+owned-emulator journeys.

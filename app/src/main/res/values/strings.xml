@@ -771,4 +771,7 @@
     <string name="reader_position_identity">Saved reading position belongs to another chapter. It has been retained.</string>
     <string name="reader_position_empty">This chapter has no visible content.</string>
     <string name="reader_position_reload">Reload this chapter to save your reading position.</string>
+    <string name="reader_completion_save_error">Read status was not saved</string>
+    <string name="reader_completion_partial_error">Read status was saved, but word counts could not be updated.</string>
+    <string name="reader_completion_changed_error">Read status could not be changed. Try the action again.</string>
 </resources>

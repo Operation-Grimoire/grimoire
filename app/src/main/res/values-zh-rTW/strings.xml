@@ -755,4 +755,7 @@
     <string name="reader_position_identity">儲存的閱讀位置屬於另一章節，原紀錄已保留。</string>
     <string name="reader_position_empty">本章沒有可見內容。</string>
     <string name="reader_position_reload">請重新載入本章以儲存閱讀位置。</string>
+    <string name="reader_completion_save_error">閱讀狀態未儲存</string>
+    <string name="reader_completion_partial_error">閱讀狀態已儲存，但無法更新字數。</string>
+    <string name="reader_completion_changed_error">無法變更閱讀狀態。請重試。</string>
 </resources>

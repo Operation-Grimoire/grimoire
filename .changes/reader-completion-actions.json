@@ -1,0 +1,9 @@
+{
+  "android": [
+    {
+      "category": "fix",
+      "text": "Reader read/unread and Next actions retain failed saves for retry and report word-count update failures separately."
+    }
+  ],
+  "desktop": []
+}

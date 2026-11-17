@@ -811,4 +811,7 @@
     <string name="reader_position_identity">Збережена позиція стосується іншого розділу. Запис збережено.</string>
     <string name="reader_position_empty">Цей розділ не має видимого вмісту.</string>
     <string name="reader_position_reload">Перезавантажте цей розділ, щоб зберегти позицію читання.</string>
+    <string name="reader_completion_save_error">Статус читання не збережено</string>
+    <string name="reader_completion_partial_error">Статус читання збережено, але не вдалося оновити кількість слів.</string>
+    <string name="reader_completion_changed_error">Не вдалося змінити статус читання. Повторіть дію.</string>
 </resources>

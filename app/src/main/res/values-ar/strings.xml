@@ -847,4 +847,7 @@
     <string name="reader_position_identity">موضع القراءة المحفوظ يخص فصلًا آخر. تم الاحتفاظ به.</string>
     <string name="reader_position_empty">لا يحتوي هذا الفصل على محتوى مرئي.</string>
     <string name="reader_position_reload">أعد تحميل هذا الفصل لحفظ موضع القراءة.</string>
+    <string name="reader_completion_save_error">لم يتم حفظ حالة القراءة</string>
+    <string name="reader_completion_partial_error">تم حفظ حالة القراءة، ولكن تعذر تحديث عدد الكلمات.</string>
+    <string name="reader_completion_changed_error">تعذر تغيير حالة القراءة. حاول تنفيذ الإجراء مرة أخرى.</string>
 </resources>

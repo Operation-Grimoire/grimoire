@@ -29,6 +29,7 @@ import io.grimoire.reading.anchor.ReaderCheckpoints
 import io.grimoire.reading.anchor.CheckpointNotice
 import io.grimoire.reading.anchor.LegacyReaderViewport
 import io.grimoire.reading.storage.ReadingCheckpointDao
+import io.grimoire.reading.state.*
 import io.grimoire.reading.anchor.ReadingProjection
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
@@ -84,6 +85,7 @@ class ReaderViewModel @Inject constructor(
     private val chapterDao: ChapterDao,
     private val chapterLoader: ChapterLoader,
     checkpointDao: ReadingCheckpointDao,
+    completionFacade: ReadingStateFacade,
     private val novelDao: NovelDao,
     private val readingHistoryDao: ReadingHistoryDao,
     private val incognitoManager: io.grimoire.app.data.preferences.IncognitoManager,
@@ -123,6 +125,11 @@ class ReaderViewModel @Inject constructor(
     private val _currentIndex = MutableStateFlow(-1)
 
     private val checkpoints = ReaderCheckpoints(checkpointDao)
+    private val completionCommands = ExplicitReadingCommands(completionFacade)
+    private var completionNovelKey: NovelKey? = null
+    private val requestedCompletion = mutableMapOf<ChapterKey, Pair<AcceptedReadingCommand, Boolean>>()
+    private val _completionNotice = MutableStateFlow<ReaderCompletionNotice?>(null)
+    internal val completionNotice: StateFlow<ReaderCompletionNotice?> = _completionNotice.asStateFlow()
     private var leaving = false
     private val _saveError = MutableStateFlow<String?>(null)
     internal val saveError: StateFlow<String?> = _saveError.asStateFlow()
@@ -314,6 +321,7 @@ class ReaderViewModel @Inject constructor(
             }
             novelDao.updateLastReadAt(chapter.novelId, System.currentTimeMillis())
             novelDao.getById(chapter.novelId)?.let { novel ->
+                completionNovelKey = NovelKey(novel.sourceId, novel.url)
                 novelIdForAlign = novel.id
                 _textAlign.value =
                     ReaderTextAlign.entries.getOrElse(novel.readerTextAlign) { ReaderTextAlign.AUTO }
@@ -469,6 +477,7 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun navigatePrev() {
+        if (leaving) return
         if (_currentIndex.value > 0) {
             flushProgress()
             _currentIndex.value--
@@ -478,13 +487,14 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun navigateNext() {
+        if (leaving) return
         if (_currentIndex.value < _chapters.value.size - 1) {
             flushProgress()
             val chapter = _chapters.value.getOrNull(_currentIndex.value)
-            if (chapter != null && chapter.id == _content.value?.chapterId && !chapter.read) {
-                persistenceScope.launch { chapterDao.setRead(chapter.id, true) }
-                _chapters.update { list ->
-                    list.map { if (it.id == chapter.id) it.copy(read = true, readProgress = 1f) else it }
+            if (chapter != null && chapter.id == _content.value?.chapterId &&
+                !(completionKey(chapter)?.let { requestedCompletion[it]?.second } ?: chapter.read)) {
+                completionKey(chapter)?.let { key ->
+                    submitCompletion(ReadingCompletionInput.Next(key, _content.value?.projection?.document?.key, true, completionTime()), true)
                 }
             }
             _currentIndex.value++
@@ -534,6 +544,7 @@ class ReaderViewModel @Inject constructor(
         leaving = true
         checkpoints.retire()
         flushProgress()
+        persistenceScope.launch { flushCompletions() }
         persistenceScope.launch { try { checkpoints.flush() } catch (failure: Exception) { positionSaveFailed(failure) } }
         // Finish queued writes after viewModelScope is cancelled, then release this scope.
         persistenceJob.complete()
@@ -574,10 +585,11 @@ class ReaderViewModel @Inject constructor(
         val load = _content.value?.checkpoint
         checkpoints.retire()
         return try {
+            flushCompletions()
             flushProgress()
             progressWriter.flush()?.join()
             checkpoints.flush()
-            if (progressWriter.hasPending()) {
+            if (progressWriter.hasPending() || completionCommands.hasPending() || _completionNotice.value != null) {
                 leaving = false; load?.let(checkpoints::resume); false
             } else true
         } catch (failure: Exception) {
@@ -586,15 +598,63 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun toggleRead() {
+        if (leaving) return
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
-        val next = !chapter.read
-        viewModelScope.launch {
-            chapterDao.setRead(chapter.id, next)
-            _chapters.update { list ->
-                list.map { if (it.id == chapter.id) it.copy(read = next) else it }
+        val key = completionKey(chapter) ?: return
+        val next = !(requestedCompletion[key]?.second ?: chapter.read)
+        submitCompletion(if (next) ReadingCompletionInput.MarkRead(key, completionTime()) else ReadingCompletionInput.MarkUnread(key), next)
+    }
+
+    private fun completionKey(chapter: ChapterEntity): ChapterKey? = completionNovelKey
+        ?.takeIf { chapter.novelId == novelIdForAlign }?.let { ChapterKey(it, chapter.url) }
+
+    // Preserve the legacy SQL clock precision, captured when input is accepted, not on retry.
+    private fun completionTime(): Long = (System.currentTimeMillis() / 1000) * 1000
+
+    private fun submitCompletion(input: ReadingCompletionInput, desired: Boolean) {
+        if (leaving) return
+        val accepted = completionCommands.accept(input)
+        requestedCompletion[input.key] = accepted to desired
+        persistenceScope.launch { flushCompletions() }
+    }
+
+    private suspend fun flushCompletions() {
+        var notice: ReaderCompletionNotice? = null
+        for (attempt in completionCommands.flush()) {
+            when (val outcome = attempt.outcome) {
+                is ReadingCommandOutcome.Failed -> notice = ReaderCompletionNotice.SAVE_FAILED
+                ReadingCommandOutcome.Missing -> if (notice == null) notice = ReaderCompletionNotice.CHANGED
+                is ReadingCommandOutcome.Saved -> {
+                    val confirmation = outcome.save.confirmation
+                    if (outcome.save.current == null && notice == null) notice = ReaderCompletionNotice.CHANGED
+                    if (outcome.save.wordCount is ReadingWordCountOutcome.Failed && notice != ReaderCompletionNotice.SAVE_FAILED)
+                        notice = ReaderCompletionNotice.WORD_COUNT_FAILED
+                    if (confirmation is ReadingStateConfirmation.NotApplied && notice == null &&
+                        confirmation.reason != io.grimoire.reading.storage.ReadingStateRejection.NO_CHANGE)
+                        notice = ReaderCompletionNotice.CHANGED
+                    if (completionCommands.isLatest(attempt.accepted)) outcome.save.current?.let { current ->
+                        _chapters.update { list -> list.map {
+                            if (completionKey(it) == current.key) it.copy(read = current.status == ReadStatus.READ, firstReadAt = current.firstReadAt,
+                                readProgress = if (attempt.accepted.input is ReadingCompletionInput.Next && current.status == ReadStatus.READ) 1f else it.readProgress)
+                            else it
+                        } }
+                    }
+                }
             }
+            if (completionCommands.isLatest(attempt.accepted) && attempt.outcome !is ReadingCommandOutcome.Failed)
+                requestedCompletion.remove(attempt.accepted.input.key)
+        }
+        // An earlier uncertain command may have blocked a later input in this flush.
+        _completionNotice.value = notice ?: when {
+            completionCommands.hasPending() -> ReaderCompletionNotice.SAVE_FAILED
+            _completionNotice.value == ReaderCompletionNotice.CHANGED -> ReaderCompletionNotice.CHANGED
+            else -> null
         }
     }
+
+    fun dismissCompletionError() { _completionNotice.value = null }
+
+    fun retryCompletionSave() = persistenceScope.launch { flushCompletions() }
 
     fun setFontSize(sp: Int) = viewModelScope.launch {
         readerPreferences.fontSize.set(sp.coerceIn(12, 32))

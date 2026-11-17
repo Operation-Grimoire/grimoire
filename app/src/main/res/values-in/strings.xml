@@ -755,4 +755,7 @@
     <string name="reader_position_identity">Posisi baca tersimpan milik bab lain. Posisi tersebut tetap disimpan.</string>
     <string name="reader_position_empty">Bab ini tidak memiliki konten yang terlihat.</string>
     <string name="reader_position_reload">Muat ulang bab ini untuk menyimpan posisi baca Anda.</string>
+    <string name="reader_completion_save_error">Status baca tidak tersimpan</string>
+    <string name="reader_completion_partial_error">Status baca tersimpan, tetapi jumlah kata tidak dapat diperbarui.</string>
+    <string name="reader_completion_changed_error">Status baca tidak dapat diubah. Coba tindakan ini lagi.</string>
 </resources>

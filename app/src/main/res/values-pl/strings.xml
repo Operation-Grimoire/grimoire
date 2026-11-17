@@ -811,4 +811,7 @@
     <string name="reader_position_identity">Zapisana pozycja dotyczy innego rozdziału. Zachowano ją.</string>
     <string name="reader_position_empty">Ten rozdział nie zawiera widocznej treści.</string>
     <string name="reader_position_reload">Wczytaj ponownie ten rozdział, aby zapisać pozycję czytania.</string>
+    <string name="reader_completion_save_error">Nie zapisano stanu przeczytania</string>
+    <string name="reader_completion_partial_error">Zapisano stan przeczytania, ale nie udało się zaktualizować liczby słów.</string>
+    <string name="reader_completion_changed_error">Nie udało się zmienić stanu przeczytania. Spróbuj ponownie.</string>
 </resources>

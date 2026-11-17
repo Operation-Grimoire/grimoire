@@ -754,4 +754,7 @@
     <string name="reader_position_identity">ตำแหน่งการอ่านที่บันทึกไว้เป็นของตอนอื่น ข้อมูลเดิมยังถูกเก็บไว้</string>
     <string name="reader_position_empty">ตอนนี้ไม่มีเนื้อหาที่มองเห็นได้</string>
     <string name="reader_position_reload">โหลดตอนนี้ใหม่เพื่อบันทึกตำแหน่งการอ่าน</string>
+    <string name="reader_completion_save_error">ไม่ได้บันทึกสถานะการอ่าน</string>
+    <string name="reader_completion_partial_error">บันทึกสถานะการอ่านแล้ว แต่ไม่สามารถอัปเดตจำนวนคำได้</string>
+    <string name="reader_completion_changed_error">ไม่สามารถเปลี่ยนสถานะการอ่านได้ โปรดลองอีกครั้ง</string>
 </resources>
