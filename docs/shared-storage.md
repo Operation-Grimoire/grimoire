@@ -224,8 +224,9 @@ both platform compositions. Platform adapters may keep different backends.
    and Android viewport offsets are device hints, not portable anchors. Separate
    completion, explicit unread/rereading and first-read history rules.
    The [shared reading-state contract](reading-state.md) now specifies the follow-up
-   model, ordering and adapter acceptance under #432. Its runtime implementation and
-   schema expansion remain separate tasks; checkpoint adoption does not complete them.
+   model, ordering and adapter acceptance under #432. The pure model and decisions
+   are implemented under #445; state adapters, schema expansion and production
+   adoption remain separate tasks. Checkpoint adoption does not complete them.
 3. **Library projections and metadata editing.** Edit commands must distinguish
    unchanged, reset override, and set (including empty); `LibraryEntry` is only a
    display projection. Category IDs are device-owned, but category membership,

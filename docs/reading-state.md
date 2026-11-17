@@ -3,8 +3,9 @@
 This contract defines the next work under [#432](https://github.com/Operation-Grimoire/grimoire/issues/432).
 Its contract task is [#443](https://github.com/Operation-Grimoire/grimoire/issues/443),
 under [roadmap #397](https://github.com/Operation-Grimoire/grimoire/issues/397).
-The decisions below are requirements for future implementation. They do not add a
-shared reading-state model, DAO, schema or production writer in this change.
+The pure model and decisions are implemented under #445. The DAO protocol,
+transactional adapters, schema expansion and production writer adoption remain
+future work; the requirements below distinguish that target from current behavior.
 
 Both readers already use [guarded portable checkpoints](reading-anchors.md).
 This contract keeps position, completion and history separate while defining the
@@ -255,7 +256,7 @@ incognito behavior. No checkpoint retry may create a history event.
 
 These requirements need an additive state protocol and migration review. Do not
 choose table layout, alter Room/JDBC schemas or assume existing checkpoint rows
-contain read-state authority in this contract-only change.
+contain read-state authority in this pure-model slice.
 
 ## Equivalent acceptance scenarios
 
@@ -273,8 +274,8 @@ contain read-state authority in this contract-only change.
 
 Track each implementation slice as a subissue of #432 before starting it:
 
-1. Add the pure versioned position measure and completion/state decisions with
-   frozen vectors. Retain explicit compatibility evidence and disabled policy.
+1. **Implemented (#445):** pure versioned position measure and completion/state
+   decisions with frozen vectors. Compatibility evidence and disabled policy remain explicit.
 2. Define the DAO command/observation/result protocol, then implement Room and JDBC
    transactions with real rollback/replay/intent-ordering/incarnation tests. Review
    additive migration, backup/restore interaction and downgrade requirements first.
@@ -284,6 +285,33 @@ Track each implementation slice as a subissue of #432 before starting it:
    equivalent adapter tests. Keep existing history/statistics data distinct.
 
 Runtime slices must pass exact-head CI/review and the appropriate named beta gates.
-This contract-only change produces no runtime, schema, codec or user-facing release.
+The pure model does not change schemas, codecs or existing production writers.
 Measured layout realization remains #433, broader reader durability acceptance #435,
 and account identity/conflict/service work #441/#442.
+
+## Pure model implementation and proof boundary
+
+[`measureReadingPosition`](../reading-core/src/main/kotlin/io/grimoire/reading/state/CanonicalProgress.kt)
+retains the existing resolver result, including the original evidence. Only exact
+or unique relocated positions receive a measure. Its version/key/revision/precision,
+unit count and exact `Long` numerator/denominator travel together; `fraction` is an
+approximate presentation value. No unresolved fallback becomes zero progress.
+
+[`decideReadingCompletion`](../reading-core/src/main/kotlin/io/grimoire/reading/state/ReadingCompletion.kt)
+returns Proposed, Unchanged or Rejected. UNKNOWN retains absent old desktop state.
+Explicit same-value intents still return a proposal because a future adapter must
+advance durable intent ordering even if the state values do not change.
+`AndroidViewportV1` checks the existing fraction/index formula and policy bounds.
+Visual inputs bind load ID, original projection/revision and storage observation;
+audio inputs bind independent playback ID, content and completed utterance plan.
+
+Current contexts are caller-supplied facts, not write permits. Matching them only
+computes a pure proposal. There is no DAO/session allocation, intent revision,
+command receipt, clock, persistence, position mutation or history event in this model.
+Future adapters must validate real authority and ordering in their transaction.
+Both production readers and their manual/bulk/Next/TTS writers still use their
+existing completion/history behavior until the separately tracked adoption.
+
+Core JVM tests cover frozen position/UTF-16/overflow and completion/evidence vectors.
+Consumer builds and existing host tests do not establish new state-model ART,
+Android reader UI, physical-phone, process-death or competing-process acceptance.
