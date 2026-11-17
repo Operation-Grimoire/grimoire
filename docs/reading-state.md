@@ -325,9 +325,17 @@ after a lost reply confirms the original receipts without including later chapte
 After a confirmed read, the existing Android word-count backfill runs separately and
 can retry without resubmitting the batch.
 
-Detail selected chapters, Library selected novels and Library Updates remain legacy
-writers under #451. Desktop still has no completion UI or automatic policy. Shared
-opened-history adoption remains separate on both platforms.
+The remaining Android selection actions also use guarded completion. Novel Detail
+selected chapters retain their existing 999-ID groups (#463). Library commits
+each selected novel independently (#464). Library Updates deduplicates live chapters
+from selected entries and commits them together, including selections across novels
+(#465). One screen controller captures the selection before asynchronous preparation,
+keeps the prepared groups for exact Retry, and skips confirmed groups. Word-count
+backfill remains a separate outcome. The operation uses existing chapter receipts
+and introduces no database migration.
+
+Desktop still has no completion UI or automatic policy. Shared opened-history
+adoption remains separate on both platforms.
 
 Core JVM tests cover frozen position/UTF-16/overflow and completion/evidence vectors.
 Consumer builds and existing host tests do not establish new state-model ART,

@@ -198,7 +198,7 @@ fun LibraryScreen(
     BackHandler(enabled = selectionMode) { clearSelection() }
 
     completionNotice?.let { notice ->
-        ReadingCompletionErrorDialog(notice, viewModel.bulkCompletion::retry, viewModel.bulkCompletion::dismiss)
+        ReadingCompletionErrorDialog(notice, viewModel::retryNovelsRead, viewModel.bulkCompletion::dismiss)
     }
 
     // Let the app nav hide while selecting so the selection bar can replace it.

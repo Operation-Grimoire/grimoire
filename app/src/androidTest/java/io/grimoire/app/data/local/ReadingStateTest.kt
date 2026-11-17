@@ -194,6 +194,87 @@ class ReadingStateTest {
         assertEquals(metadata.copy(firstReadAt = 200, wordCount = 0), db.chapterDao().getByUrl(1, key.url))
     }
 
+    @Test fun selectedChaptersKeep999RowGroupsAndCannotCrossDetailsNovel() = runBlocking<Unit> {
+        seed()
+        val chapters = db.chapterDao()
+        val other = metadata.copy(id = 1003, novelId = 2, url = "/other-chapter")
+        db.novelDao().upsert(NovelEntity(id = 2, sourceId = 17, url = "/other", title = "Other"))
+        chapters.insertAll((2L..1002L).map { metadata.copy(id = it, url = "/chapter-$it") } + other)
+        val selection = ReadingCompletionSelection.Chapters((1L..1001L).toList() + listOf(1L, 1003L), novelId = 1, chunkSize = 999)
+        val groups = dao.prepareSelectedCompletion(SelectedReadingCompletionIntent(selection, true, 200))
+        assertEquals(2, groups.size)
+        assertEquals(NovelReadingCompletionCommit.Committed(false), dao.commitSelectedCompletion(groups[0]))
+        val sql = db.openHelper.writableDatabase
+        sql.execSQL("CREATE TRIGGER selection_fault BEFORE UPDATE OF read ON chapters WHEN NEW.id=1001 BEGIN SELECT RAISE(ABORT,'late chunk'); END")
+        try {
+            dao.commitSelectedCompletion(groups[1])
+            fail("Expected the second group to roll back")
+        } catch (failure: Exception) {
+            assertTrue(failure.message!!.contains("late chunk"))
+        } finally {
+            sql.execSQL("DROP TRIGGER selection_fault")
+        }
+        assertEquals((1L..999L).toList(), chapters.getChapterMetadataOnce(1).filter { it.read }.map { it.id })
+        assertEquals(listOf(other), chapters.getChapterMetadataOnce(2))
+        assertEquals(NovelReadingCompletionCommit.Committed(false), dao.commitSelectedCompletion(groups[1]))
+        assertEquals((1L..1001L).toList(), chapters.getChapterMetadataOnce(1).filter { it.read }.map { it.id })
+        assertNull(db.readingStateStorageDao().find(1002))
+        assertNull(db.readingStateStorageDao().find(1003))
+        assertEquals(legacy, chapters.getContent(1))
+    }
+
+    @Test fun selectedCrossNovelBatchRollsBackAndSameValueUnreadRevokesBothWriters() = runBlocking<Unit> {
+        seed()
+        val visual = automatic(session(ReadingStateWriterKind.VISUAL))
+        val audio = automatic(session(ReadingStateWriterKind.AUDIO))
+        db.novelDao().upsert(NovelEntity(id = 2, sourceId = 17, url = "/other", title = "Other"))
+        val second = metadata.copy(id = 2, novelId = 2, url = "/second", firstReadAt = 42, read = true)
+        val untouched = metadata.copy(id = 3, novelId = 2, url = "/unselected", read = true)
+        db.chapterDao().insertAll(listOf(second, untouched))
+        val selection = ReadingCompletionSelection.Chapters(listOf(1, 2, 1, 9999), novelId = null, chunkSize = null)
+        val batch = dao.prepareSelectedCompletion(SelectedReadingCompletionIntent(selection, false, 200, id = "updates")).single()
+        val storage = db.readingStateStorageDao()
+        val before = storage.find(1)
+        val sql = db.openHelper.writableDatabase
+        sql.execSQL("CREATE TRIGGER selection_fault BEFORE INSERT ON reading_state_receipts WHEN NEW.chapterId=2 BEGIN SELECT RAISE(ABORT,'multi-novel fault'); END")
+        try {
+            dao.commitSelectedCompletion(batch)
+            fail("Expected a failure on the later novel")
+        } catch (failure: Exception) {
+            assertTrue(failure.message!!.contains("multi-novel fault"))
+        } finally {
+            sql.execSQL("DROP TRIGGER selection_fault")
+        }
+        assertEquals(before, storage.find(1))
+        assertNull(storage.receipt(1, "updates:0"))
+        assertEquals(listOf(second, untouched), db.chapterDao().getChapterMetadataOnce(2))
+        assertEquals(NovelReadingCompletionCommit.Committed(false), dao.commitSelectedCompletion(batch))
+        rejected(dao.commit(visual), ReadingStateRejection.STALE)
+        rejected(dao.commit(audio), ReadingStateRejection.STALE)
+        dao.commit(explicit(prepare(), true))
+        db.close()
+        open()
+        assertEquals(NovelReadingCompletionCommit.Committed(true), dao.commitSelectedCompletion(batch))
+        assertEquals(ReadStatus.READ, dao.read(key)?.status)
+        assertEquals(listOf(second.copy(read = false), untouched), db.chapterDao().getChapterMetadataOnce(2))
+    }
+
+    @Test fun laterSelectedNovelMembershipChangeCannotExpandOrUndoEarlierGroup() = runBlocking<Unit> {
+        seed()
+        db.novelDao().upsert(NovelEntity(id = 2, sourceId = 17, url = "/other", title = "Other"))
+        val second = metadata.copy(id = 2, novelId = 2, url = "/second")
+        db.chapterDao().insertAll(listOf(second))
+        val selection = ReadingCompletionSelection.Novels(listOf(2, 1))
+        val groups = dao.prepareSelectedCompletion(SelectedReadingCompletionIntent(selection, true, 200))
+        assertEquals(2, groups.size)
+        assertEquals(NovelReadingCompletionCommit.Committed(false), dao.commitSelectedCompletion(groups[0]))
+        val appeared = metadata.copy(id = 3, url = "/new")
+        db.chapterDao().insertAll(listOf(appeared))
+        assertEquals(NovelReadingCompletionCommit.NotApplied(ReadingStateRejection.CONFLICT), dao.commitSelectedCompletion(groups[1]))
+        assertEquals(listOf(metadata, appeared), db.chapterDao().getChapterMetadataOnce(1))
+        assertEquals(listOf(second.copy(read = true, firstReadAt = 200)), db.chapterDao().getChapterMetadataOnce(2))
+    }
+
     private suspend fun audioInput() = TtsChapterInput.fromLoaded(
         ChapterLoader(SavedChapterRepository(saved)).load(key) { error("The saved fixture must supply the pages") }
     )

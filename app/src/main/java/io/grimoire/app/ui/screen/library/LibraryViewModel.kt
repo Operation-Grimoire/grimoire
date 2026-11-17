@@ -75,6 +75,8 @@ class LibraryViewModel @Inject constructor(
 ) : ViewModel() {
 
     internal val bulkCompletion = BulkReadingCompletion(viewModelScope, readingCompletionFacade)
+    private var completionNovelIds: Set<Long> = emptySet()
+    private var completionRequiresUnlock = false
 
     // True while the picked file is being read/parsed for the preview.
     private val _staging = MutableStateFlow(false)
@@ -396,7 +398,25 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun setNovelsRead(ids: Set<Long>, read: Boolean) {
-        bulkCompletion.markNovels(ids, read)
+        if (ids.isEmpty() || bulkCompletion.saving.value || bulkCompletion.notice.value != null) return
+        val hidden = includesHiddenNovel(ids)
+        if (hidden && !isUnlocked.value) return
+        completionNovelIds = ids.toSet()
+        completionRequiresUnlock = hidden
+        bulkCompletion.markNovels(completionNovelIds, read)
+    }
+
+    internal fun retryNovelsRead() {
+        if (!isUnlocked.value && (completionRequiresUnlock || includesHiddenNovel(completionNovelIds))) {
+            bulkCompletion.dismiss()
+        } else {
+            bulkCompletion.retry()
+        }
+    }
+
+    private fun includesHiddenNovel(ids: Set<Long>): Boolean {
+        val hidden = hiddenCategoryIds.value
+        return novels.value.orEmpty().any { it.id in ids && it.categoryId in hidden }
     }
 
     fun downloadNovels(ids: Set<Long>) = viewModelScope.launch {
