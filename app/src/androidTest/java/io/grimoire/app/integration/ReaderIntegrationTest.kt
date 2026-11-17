@@ -312,6 +312,45 @@ class ReaderIntegrationTest {
         snapshot("completion-partial-passed"); back()
     }
 
+    @Test fun detailSelectedChaptersUseGuardedCompletion() = journey("detail-selected-chapters") {
+        val unselected = ChapterEntity(id = 3, novelId = 1, url = "/integration/unselected", name = "Unselected chapter",
+            chapterNumber = 3f, read = true, firstReadAt = 42)
+        io {
+            val chapters = db.chapterDao()
+            val second = requireNotNull(chapters.getByUrl(1, "/integration/second"))
+            chapters.upsertAll(listOf(second.copy(read = true, firstReadAt = 24, readProgress = 0.5f)))
+            chapters.insertAll(listOf(unselected))
+        }
+        fun chapterRows() = io { db.chapterDao().getChapterMetadataOnce(1) }
+
+        openDetail()
+        val before = chapterRows()
+        val expected = before.map { if (it.id == 2L) it.copy(read = false) else it }
+
+        compose.onNodeWithText(firstName).performScrollTo().performTouchInput { longClick() }
+        compose.onNodeWithContentDescription(context.getString(R.string.action_select_all)).assertExists()
+        compose.onNodeWithText(secondName).performScrollTo().performClick()
+        val sql = db.openHelper.writableDatabase
+        io { sql.execSQL("CREATE TRIGGER integration_write_fault BEFORE UPDATE OF read ON chapters WHEN NEW.id=2 BEGIN SELECT RAISE(ABORT,'selected chapter write failure'); END") }
+        val markUnread = context.getString(R.string.novel_mark_unread)
+        compose.onNode(hasText(markUnread) and hasClickAction()).performClick()
+
+        val saveError = context.getString(R.string.reader_completion_save_error)
+        waitText(saveError)
+        assertEquals(before, chapterRows())
+        assertEquals(0, receipts())
+        snapshot("detail-selected-chapters-save-error")
+
+        io { sql.execSQL("DROP TRIGGER integration_write_fault") }
+        compose.onNodeWithText(context.getString(R.string.action_retry)).performClick()
+        compose.waitUntil(10_000) { chapterRows() == expected }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText(saveError).fetchSemanticsNodes().isEmpty() }
+        assertEquals(1L, completionRecord().intentRevision)
+        assertEquals(1, receipts())
+        assertNull(checkpoint())
+        snapshot("detail-selected-chapters-passed")
+    }
+
     @Test fun detailMarkAllRetriesAtomicWriteThenRetriesOnlyWordCount() = journey("detail-mark-all") {
         val hidden = ChapterEntity(id = 3, novelId = 1, url = "/integration/locked", name = "Locked chapter",
             chapterNumber = 3f, locked = true, readProgress = 0.25f, readAnchorItemIndex = 4, readAnchorItemOffset = 12)

@@ -198,10 +198,10 @@ fun NovelDetailScreen(
     var showMissingSourceDialog by remember { mutableStateOf(false) }
     val userRating by viewModel.userRating.collectAsState()
 
-    val markAllSaving by viewModel.markAllSaving.collectAsState()
-    val markAllNotice by viewModel.markAllNotice.collectAsState()
-    markAllNotice?.let { notice ->
-        ReadingCompletionErrorDialog(notice, viewModel::retryMarkAll, viewModel::dismissMarkAllError)
+    val bulkSaving by viewModel.bulkCompletion.saving.collectAsState()
+    val bulkNotice by viewModel.bulkCompletion.notice.collectAsState()
+    bulkNotice?.let { notice ->
+        ReadingCompletionErrorDialog(notice, viewModel.bulkCompletion::retry, viewModel.bulkCompletion::dismiss)
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -673,12 +673,12 @@ fun NovelDetailScreen(
                                 if (hasBulkActions) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.novel_mark_all_read)) },
-                                        enabled = !markAllSaving,
+                                        enabled = !bulkSaving,
                                         onClick = { viewModel.markAllRead(true); overflowMenuExpanded = false },
                                     )
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.novel_mark_all_unread)) },
-                                        enabled = !markAllSaving,
+                                        enabled = !bulkSaving,
                                         onClick = { viewModel.markAllRead(false); overflowMenuExpanded = false },
                                     )
                                 }
@@ -773,6 +773,7 @@ fun NovelDetailScreen(
                     val singleSelection = selectedIds.size == 1
                     TooltipIconButton(
                         visible = showMarkRead,
+                        enabled = !bulkSaving,
                         icon = AppIcons.DoneAll,
                         label = stringResource(R.string.novel_mark_read),
                         onClick = {
@@ -782,6 +783,7 @@ fun NovelDetailScreen(
                     )
                     TooltipIconButton(
                         visible = showMarkUnread,
+                        enabled = !bulkSaving,
                         icon = AppIcons.RemoveDone,
                         label = stringResource(R.string.novel_mark_unread),
                         onClick = {

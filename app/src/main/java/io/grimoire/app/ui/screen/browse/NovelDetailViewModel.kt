@@ -29,14 +29,9 @@ import io.grimoire.app.data.libraryupdate.ISSUE_CHAPTER_LIST_CHANGED
 import io.grimoire.app.data.libraryupdate.ISSUE_NO_CHAPTERS
 import io.grimoire.app.data.libraryupdate.reconcileFetchedChapters
 import io.grimoire.app.data.local.dao.ChapterDao
-import io.grimoire.app.data.reading.CompletionSaveNotice
+import io.grimoire.app.data.reading.BulkReadingCompletion
 import io.grimoire.reading.NovelKey
-import io.grimoire.reading.state.NovelReadingCompletionCommit
 import io.grimoire.reading.state.NovelReadingCompletionFacade
-import io.grimoire.reading.state.NovelReadingCompletionIntent
-import io.grimoire.reading.state.NovelReadingCompletionSave
-import io.grimoire.reading.state.PreparedNovelReadingCompletion
-import io.grimoire.reading.state.ReadingWordCountOutcome
 import io.grimoire.reading.storage.LibraryRepository
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.dao.UpdateIssueDao
@@ -62,7 +57,6 @@ import io.grimoire.app.domain.novelupdates.NovelUpdatesInfoRepository
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.ui.screen.webview.SOURCE_LOGIN_RESULT_KEY
 import io.grimoire.app.util.AppLocale
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -97,7 +91,7 @@ class NovelDetailViewModel @Inject constructor(
     private val novelDao: NovelDao,
     private val libraryRepository: LibraryRepository,
     private val chapterDao: ChapterDao,
-    private val novelCompletion: NovelReadingCompletionFacade,
+    novelCompletion: NovelReadingCompletionFacade,
     private val browsingHistoryDao: io.grimoire.app.data.local.dao.BrowsingHistoryDao,
     private val incognitoManager: io.grimoire.app.data.preferences.IncognitoManager,
     private val categoryDao: CategoryDao,
@@ -115,6 +109,8 @@ class NovelDetailViewModel @Inject constructor(
 
     /** Resources in the in-app UI language, for error text surfaced to the screen. */
     private val localizedContext = AppLocale.wrap(context)
+
+    internal val bulkCompletion = BulkReadingCompletion(viewModelScope, novelCompletion)
 
     /** Mirrors the library preference that decides whether locked chapters count toward totals. */
     val includeLockedInTotals: StateFlow<Boolean> =
@@ -875,77 +871,15 @@ class NovelDetailViewModel @Inject constructor(
         _chapterPageTotal.value = null
     }
 
-    private sealed interface PendingMarkAll {
-        data class Prepare(val intent: NovelReadingCompletionIntent) : PendingMarkAll
-        data class Commit(val batch: PreparedNovelReadingCompletion) : PendingMarkAll
-        data class Backfill(val save: NovelReadingCompletionSave) : PendingMarkAll
-    }
-
-    private var pendingMarkAll: PendingMarkAll? = null
-    private val _markAllSaving = MutableStateFlow(false)
-    internal val markAllSaving = _markAllSaving.asStateFlow()
-    private val _markAllNotice = MutableStateFlow<CompletionSaveNotice?>(null)
-    internal val markAllNotice = _markAllNotice.asStateFlow()
-
     fun markAllRead(read: Boolean) {
-        if (cachedNovelId <= 0L || pendingMarkAll != null || _markAllSaving.value) return
-        val atMillis = (System.currentTimeMillis() / 1000) * 1000
-        val intent = NovelReadingCompletionIntent(NovelKey(canonicalSourceId, novelUrl), read, atMillis)
-        submitMarkAll(PendingMarkAll.Prepare(intent))
-    }
-
-    internal fun retryMarkAll() {
-        pendingMarkAll?.let(::submitMarkAll)
-    }
-
-    internal fun dismissMarkAllError() {
-        if (_markAllSaving.value) return
-        pendingMarkAll = null
-        _markAllNotice.value = null
-    }
-
-    private fun submitMarkAll(pending: PendingMarkAll) {
-        if (_markAllSaving.value) return
-        pendingMarkAll = pending
-        _markAllSaving.value = true
-        _markAllNotice.value = null
-        viewModelScope.launch {
-            try {
-                val result = when (pending) {
-                    is PendingMarkAll.Prepare -> {
-                        val batch = novelCompletion.prepare(pending.intent)
-                        if (batch == null) {
-                            pendingMarkAll = null
-                            _markAllNotice.value = CompletionSaveNotice.CHANGED
-                            return@launch
-                        }
-                        pendingMarkAll = PendingMarkAll.Commit(batch)
-                        novelCompletion.submit(batch)
-                    }
-                    is PendingMarkAll.Commit -> novelCompletion.submit(pending.batch)
-                    is PendingMarkAll.Backfill -> novelCompletion.retryWordCount(pending.save)
-                }
-                pendingMarkAll = if (result.wordCount is ReadingWordCountOutcome.Failed) PendingMarkAll.Backfill(result) else null
-                _markAllNotice.value = when {
-                    result.confirmation is NovelReadingCompletionCommit.NotApplied -> CompletionSaveNotice.CHANGED
-                    result.wordCount is ReadingWordCountOutcome.Failed -> CompletionSaveNotice.WORD_COUNT_FAILED
-                    else -> null
-                }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (failure: Exception) {
-                _markAllNotice.value = CompletionSaveNotice.SAVE_FAILED
-            } finally {
-                _markAllSaving.value = false
-            }
-        }
+        if (cachedNovelId <= 0L) return
+        bulkCompletion.markNovel(NovelKey(canonicalSourceId, novelUrl), read)
     }
 
     fun markChaptersRead(ids: List<Long>, read: Boolean) {
-        if (ids.isEmpty()) return
-        viewModelScope.launch {
-            ids.chunked(999).forEach { chunk -> chapterDao.markChapters(chunk, read) }
-        }
+        val novelId = cachedNovelId
+        if (novelId <= 0L || ids.isEmpty()) return
+        bulkCompletion.markChapters(ids.toList(), read, novelId = novelId, chunkSize = 999)
     }
 
     fun setCategory(categoryId: Long?) {
