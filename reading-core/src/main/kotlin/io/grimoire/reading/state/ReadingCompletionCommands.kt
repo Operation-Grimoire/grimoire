@@ -20,15 +20,15 @@ sealed interface ReadingCommandOutcome {
 data class ReadingCommandAttempt(val accepted: AcceptedReadingCommand, val outcome: ReadingCommandOutcome)
 
 /**
- * An owner's in-memory explicit-intent queue. Acceptance is synchronous; flush serializes preparation
+ * An owner's in-memory completion queue. Acceptance is synchronous; flush serializes preparation
  * and submission without holding the acceptance lock across IO. Prepared commands survive uncertain
  * replies/cancellation unchanged. An uncertain command blocks later input for its chapter in that
  * flush, while other chapters can proceed. A confirmed command with a failed side effect can be
- * retried without blocking newer intent. No automatic writers, timers or crash outbox are owned here.
+ * retried without blocking newer intent. Automatic commands enter with their original writer and
+ * evidence already bound. The queue owns no writer lifecycle, timers or crash outbox.
  */
-class ExplicitReadingCommands(private val facade: ReadingStateFacade) {
-    private class Pending(val accepted: AcceptedReadingCommand) {
-        var command: ReadingStateCommand? = null
+class ReadingCompletionCommands(private val facade: ReadingStateFacade) {
+    private class Pending(val accepted: AcceptedReadingCommand, var command: ReadingStateCommand?) {
         var confirmed = false
         var missing = false
     }
@@ -39,10 +39,18 @@ class ExplicitReadingCommands(private val facade: ReadingStateFacade) {
 
     fun accept(input: ReadingCompletionInput): AcceptedReadingCommand {
         require(input !is ReadingCompletionInput.Visual && input !is ReadingCompletionInput.Audio)
-        return synchronized(lock) {
-            AcceptedReadingCommand(input, UUID.randomUUID().toString()).also {
-                pending.add(Pending(it)); latest[input.key] = it
-            }
+        return enqueue(input, UUID.randomUUID().toString(), null)
+    }
+
+    fun acceptAutomatic(command: ReadingStateCommand): AcceptedReadingCommand {
+        require(command.session != null && (command.input is ReadingCompletionInput.Visual || command.input is ReadingCompletionInput.Audio))
+        return enqueue(command.input, command.id, command)
+    }
+
+    private fun enqueue(input: ReadingCompletionInput, id: String, command: ReadingStateCommand?) = synchronized(lock) {
+        AcceptedReadingCommand(input, id).also {
+            pending.add(Pending(it, command))
+            latest[input.key] = it
         }
     }
 

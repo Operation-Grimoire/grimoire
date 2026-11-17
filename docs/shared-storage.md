@@ -226,8 +226,9 @@ both platform compositions. Platform adapters may keep different backends.
    The [shared reading-state contract](reading-state.md) now specifies the follow-up
    model, ordering and adapter acceptance under #432. The pure model and decisions
    are implemented under #445; guarded Room/JDBC state adapters and DB36/SQL3
-   expansion follow under #447. Production completion/history adoption remains
-   outstanding. Checkpoint adoption does not complete it.
+   expansion follow under #447. Android reader explicit and visual completion use
+   the shared protocol. The remaining completion writers and opened history
+   have separate adoption tasks.
 3. **Library projections and metadata editing.** Edit commands must distinguish
    unchanged, reset override, and set (including empty); `LibraryEntry` is only a
    display projection. Category IDs are device-owned, but category membership,
@@ -315,7 +316,7 @@ against a new layout. Measured hints and character-level realization remain sepa
 See [capture/restore/flush and proof limits](reading-anchors.md#production-capture-restoration-and-flush).
 Four additional native ReaderCheckpointAdoptionTest cases cover the production Android
 preparation helper with real Room: mapping/reopen, retained fallback evidence, failed/
-uncertain writes and stale source/retired load rejection. The script requires all 52
+uncertain writes and stale source/retired load rejection. The script requires all 53
 native successes; compiling cases alone is not native runtime acceptance.
 
 ## Reading-state adapters
@@ -325,8 +326,8 @@ commands across Room and desktop JDBC. Android DB36 and desktop SQL3 add protoco
 records and command receipts. Existing Android completion fields remain the source
 of compatibility state; desktop starts UNKNOWN. The transaction commits value,
 intent revision and receipt together. Legacy Android completion writes invalidate
-old bindings, including same-value writes. The production writers are a separate
-adoption step. Older DB35/SQL1/2 builds refuse the expanded schema. Downgrade
+old bindings, including same-value writes. Reader read/unread, Next and visual
+completion use guarded commands. Older DB35/SQL1/2 builds refuse the expanded schema. Downgrade
 requires a complete pre-upgrade app-data/store copy taken while the app is closed;
 the in-app library backup is insufficient. See [protocol, migrations and rollback](reading-state-storage.md).
 

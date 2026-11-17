@@ -1,0 +1,9 @@
+{
+  "android": [
+    {
+      "category": "fix",
+      "text": "Reader auto-mark as read now uses your scroll gestures. Restoring a position or automatically scrolling the page leaves the read status alone."
+    }
+  ],
+  "desktop": []
+}

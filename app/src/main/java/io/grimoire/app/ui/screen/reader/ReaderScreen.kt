@@ -10,9 +10,7 @@ import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.AlertDialog
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import io.grimoire.reading.state.AndroidViewportV1
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import io.grimoire.reading.anchor.CheckpointNotice
 import android.widget.Toast
@@ -92,6 +90,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.preferences.ReaderOrientation
@@ -121,8 +120,6 @@ private fun Context.findActivity(): Activity? {
 private data class ProgressSnapshot(
     val anchorIndex: Int,
     val anchorOffset: Int,
-    val lastVisibleIndex: Int,
-    val totalItems: Int,
     val fraction: Float,
 )
 
@@ -148,7 +145,8 @@ fun ReaderScreen(
     val requestBack: () -> Unit = {
         if (!exiting) {
             exiting = true
-            exitScope.launch {
+            // Drain Room writes and update navigation on the Android main thread.
+            exitScope.launch(Dispatchers.Main.immediate) {
                 try { if (viewModel.flushForExit()) onNavigateBack() } finally { exiting = false }
             }
         }
@@ -347,8 +345,6 @@ fun ReaderScreen(
             ProgressSnapshot(
                 anchorIndex = first.index,
                 anchorOffset = listState.firstVisibleItemScrollOffset,
-                lastVisibleIndex = last.index,
-                totalItems = total,
                 fraction = fraction,
             )
         }
@@ -360,21 +356,35 @@ fun ReaderScreen(
                     fraction = it.fraction,
                     anchorIndex = it.anchorIndex,
                     anchorOffset = it.anchorOffset,
-                    lastVisibleIndex = it.lastVisibleIndex,
-                    totalItems = it.totalItems,
                     projection = observedProjection,
                 )
             }
     }
 
-    val positionInput = remember(projection) { object : NestedScrollConnection {
-        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-            if (restoredScrollContent === readerContent && source == NestedScrollSource.UserInput && available != Offset.Zero) {
-                projection?.let(viewModel::userPosition)
-            }
-            return Offset.Zero
-        }
-    } }
+    val positionInput = remember(projection, listState) {
+        ReaderScrollInput(
+            onUserInput = {
+                if (restoredScrollContent === readerContent && projection != null) {
+                    viewModel.userPosition(projection)
+                    viewModel.visualAuthority(projection)
+                } else null
+            },
+            onConsumedInput = { writer ->
+                if (projection != null && restoredScrollContent === readerContent) {
+                    val info = listState.layoutInfo
+                    val first = info.visibleItemsInfo.firstOrNull()
+                    val last = info.visibleItemsInfo.lastOrNull()
+                    if (first != null && last != null && first.key.toString().startsWith(pageKeyPrefix) &&
+                        last.key.toString().startsWith(pageKeyPrefix)) {
+                        val fraction = (last.index + 1).toFloat() / info.totalItemsCount
+                        AndroidViewportV1.create(first.index, last.index, info.totalItemsCount, fraction)?.let {
+                            viewModel.completeFromVisualInput(writer, projection, it)
+                        }
+                    }
+                }
+            },
+        )
+    }
 
     // Follow TTS: scroll the paragraph being spoken into view, unless the user is scrolling.
     LaunchedEffect(ttsSpokenPageIndex, pagesChapterId, restoredScrollContent) {
@@ -382,6 +392,7 @@ fun ReaderScreen(
         val pageIndex = ttsSpokenPageIndex ?: return@LaunchedEffect
         val target = visiblePages.indexOfFirst { it.index == pageIndex }
         if (target >= 0 && !listState.isScrollInProgress) {
+            positionInput.resetVisualInput()
             listState.animateScrollToItem(target + 1) // +1 for the chapter-title item
         }
     }

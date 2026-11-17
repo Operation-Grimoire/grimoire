@@ -9,6 +9,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.grimoire.api.model.novel.*
 import io.grimoire.app.data.local.entity.*
+import io.grimoire.app.ui.screen.reader.ReaderContent
+import io.grimoire.app.ui.screen.reader.ReaderVisualWriter
 import io.grimoire.reading.*
 import io.grimoire.reading.StoredChapterContent
 import io.grimoire.reading.encodeChapterContent
@@ -62,6 +64,42 @@ class ReadingStateTest {
         return ReadingStateCommand(id, s.binding, input, s, sequence)
     }
     private fun rejected(result: ReadingStateCommit, why: ReadingStateRejection) = assertEquals(ReadingStateCommit.NotApplied(why), result)
+
+    @Test fun visualOwnerCannotRelabelOldSamplesAfterExplicitIntentOrReplacement() = runBlocking<Unit> {
+        seed()
+        val facade = ReadingStateFacade(dao, null)
+        val queue = ReadingCompletionCommands(facade)
+        val writer = ReaderVisualWriter(dao, facade)
+        val projection = ReadingProjection.create(key, pages, listOf(ProjectedPage(0, pages[0])))
+        val load = ReaderContent(1, projection, pages, saved.readObserved(key).observation)
+        val end = requireNotNull(AndroidViewportV1.create(0, 0, 1, 1f))
+        writer.setTarget(load)
+        writer.synchronize()
+        val old = requireNotNull(writer.authority(projection))
+        val queued = requireNotNull(writer.capture(old, projection, end, AutomaticReadPolicy.AtEnd, 100))
+        facade.submit(requireNotNull(facade.prepareExplicit(ReadingCompletionInput.MarkUnread(key))))
+        queue.acceptAutomatic(queued)
+        val result = (queue.flush().single().outcome as ReadingCommandOutcome.Saved).save
+        assertEquals(ReadingStateConfirmation.NotApplied(ReadingStateRejection.STALE), result.confirmation)
+        assertEquals(ReadStatus.UNREAD, result.current!!.status)
+
+        writer.invalidate(old.id)
+        writer.setTarget(load)
+        writer.synchronize()
+        val fresh = requireNotNull(writer.authority(projection))
+        assertNotEquals(old.id, fresh.id)
+        assertNull(writer.capture(old, projection, end, AutomaticReadPolicy.AtEnd, 100))
+        val current = requireNotNull(writer.capture(fresh, projection, end, AutomaticReadPolicy.AtEnd, 200))
+        queue.acceptAutomatic(current)
+        assertEquals(200L, (queue.flush().single().outcome as ReadingCommandOutcome.Saved).save.current!!.firstReadAt)
+        assertEquals(1L, prepare().binding.intentRevision)
+
+        writer.setTarget(null)
+        writer.synchronize()
+        assertNull(writer.authority(projection))
+        rejected(dao.commit(current.copy(id = "late", sequence = 2)), ReadingStateRejection.STALE)
+        assertTrue((dao.commit(current) as ReadingStateCommit.Committed).replayed)
+    }
 
     @Test fun explicitReplayAndSameValueIntentsPreserveEveryUnrelatedLegacyField() = runBlocking<Unit> {
         seed(); val novel = db.novelDao().getById(1); val content = db.chapterDao().getContent(1)

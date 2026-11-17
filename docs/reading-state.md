@@ -5,7 +5,7 @@ Its contract task is [#443](https://github.com/Operation-Grimoire/grimoire/issue
 under [roadmap #397](https://github.com/Operation-Grimoire/grimoire/issues/397).
 The pure model and decisions are implemented under #445. The guarded DAO and
 Room/JDBC schema expansion follow under #447. Android reader explicit read/unread
-and Next adopt the facade under #454. Visual/TTS/bulk completion and history writer
+and Next adopt the facade under #454, followed by visual completion under #457. TTS/bulk completion and history writer
 adoption remain outstanding; the requirements distinguish that target from current
 reader behavior.
 
@@ -315,8 +315,8 @@ Current contexts are caller-supplied facts, not write permits. Matching them onl
 computes a pure proposal. There is no DAO/session allocation, intent revision,
 command receipt, clock, persistence, position mutation or history event in this model.
 The guarded adapters validate real authority and ordering in their transaction.
-Android reader explicit read/unread and Next use the facade and ordered command
-queue under #454. Visual thresholds, TTS and detail/library/updates bulk completion
+Android reader explicit read/unread, Next and visual completion use the facade
+and ordered command queue under #454 and #457. TTS and detail/library/updates bulk completion
 remain legacy writers under #451. Desktop still has no completion UI/automatic
 policy; shared opened-history adoption remains separate on both platforms.
 
