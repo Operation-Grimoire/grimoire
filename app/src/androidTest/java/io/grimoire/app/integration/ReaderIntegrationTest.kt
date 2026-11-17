@@ -240,9 +240,14 @@ class ReaderIntegrationTest {
         assertEquals(retryWriter, completionRecord().visual?.id)
         assertFalse(first().read)
         assertEquals(2, receipts())
+        snapshot("visual-completion-retry")
         io { db.openHelper.writableDatabase.execSQL("DROP TRIGGER integration_write_fault") }
         compose.onNodeWithText(context.getString(R.string.action_retry)).performClick()
         compose.waitUntil(10_000) { first().read }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText(error).fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodesWithContentDescription(markUnread).fetchSemanticsNodes().isNotEmpty()
+        }
         assertEquals(at, first().firstReadAt)
         assertEquals(1L, completionRecord().intentRevision)
         assertEquals(3, receipts())
