@@ -37,6 +37,7 @@ internal val DOWNLOAD_SCHEMA_CALLBACK = object : RoomDatabase.Callback() {
     override fun onCreate(db: SupportSQLiteDatabase) {
         installDownloadTriggers(db)
         installCheckpointTriggers(db)
+        installReadingStateTriggers(db)
     }
 }
 

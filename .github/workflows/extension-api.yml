@@ -105,6 +105,7 @@ jobs:
             build/extension-api/projection-result.log
             build/extension-api/checkpoint-result.log
             build/extension-api/checkpoint-adoption-result.log
+            build/extension-api/reading-state-result.log
             build/extension-api/observation-result.log
             build/extension-api/sha256sums.txt
           if-no-files-found: error

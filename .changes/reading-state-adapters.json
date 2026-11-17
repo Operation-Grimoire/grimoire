@@ -1,0 +1,14 @@
+{
+  "android": [
+    {
+      "category": "other",
+      "text": "Updates local reading-state storage. Upgrading preserves existing reading data; returning to an older app requires restoring a full pre-update app-data copy taken while the app is closed. Library backups omit reading-state records."
+    }
+  ],
+  "desktop": [
+    {
+      "category": "other",
+      "text": "Updates local reading-state storage. Upgrading preserves the library; returning to an older desktop build requires restoring a full pre-update data-directory copy taken while the reader is closed."
+    }
+  ]
+}

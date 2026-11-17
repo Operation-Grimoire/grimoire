@@ -6,6 +6,7 @@ import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.reading.*
 import io.grimoire.reading.storage.*
+import io.grimoire.reading.state.*
 import io.grimoire.reading.anchor.CanonicalDocument
 import io.grimoire.reading.anchor.ReadingAnchor
 import org.json.JSONArray
@@ -86,6 +87,11 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
                 resumeChapterUrl = old?.resumeChapterUrl)
             db.execute("INSERT INTO books VALUES(?,?,?) ON CONFLICT(source_id,novel_url) DO UPDATE SET metadata=excluded.metadata",
                 key.sourceId, key.url, encodeBook(metadata).apply { remove("downloaded") }.toString())
+            db.query("SELECT chapter_url FROM reading_states WHERE source_id=? AND novel_url=?", key.sourceId, key.url) { it.getString(1) }
+                .filter { url -> chapters.none { it.url == url } }.forEach { url ->
+                    db.execute("DELETE FROM reading_state_receipts WHERE source_id=? AND novel_url=? AND chapter_url=?", key.sourceId, key.url, url)
+                    db.execute("DELETE FROM reading_states WHERE source_id=? AND novel_url=? AND chapter_url=?", key.sourceId, key.url, url)
+                }
             // Removal/relock revokes both live attempts and replay receipts, without discarding old content.
             db.query("SELECT chapter_url FROM contents WHERE source_id=? AND novel_url=?", key.sourceId, key.url) { it.getString(1) }
                 .filter { url -> chapters.none { it.url == url && !it.locked } }.forEach { url ->
@@ -191,6 +197,61 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
         val key = state.binding.observation.key
         db.execute("""INSERT INTO reading_checkpoints VALUES(?,?,?,?) ON CONFLICT(source_id,novel_url,chapter_url)
             DO UPDATE SET state=excluded.state""", key.novel.sourceId, key.novel.url, key.url, encodeReadingCheckpoint(state))
+    }
+
+    private fun hasReadingStateChapter(key: ChapterKey) = book(key.novel)?.chapters?.any { it.url == key.url } == true
+    private fun stateRecord(key: ChapterKey) = db.query("SELECT state FROM reading_states WHERE source_id=? AND novel_url=? AND chapter_url=?",
+        key.novel.sourceId, key.novel.url, key.url) { decodeReadingStateRecord(it.getString(1)) }.singleOrNull()?.also {
+        require(it.value.key == key) { "Reading state identity mismatch" }
+    }
+    private fun putStateRecord(record: ReadingStateRecord) {
+        val key = record.value.key
+        db.execute("INSERT INTO reading_states VALUES(?,?,?,?) ON CONFLICT(source_id,novel_url,chapter_url) DO UPDATE SET state=excluded.state",
+            key.novel.sourceId, key.novel.url, key.url, encodeReadingStateRecord(record))
+    }
+    @Synchronized internal fun prepareReadingState(key: ChapterKey, beforeCommit: () -> Unit): PreparedReadingState? {
+        if (closed) return null
+        return write(beforeCommit) {
+            if (!hasReadingStateChapter(key)) return@write null
+            val r = stateRecord(key) ?: ReadingStateRecord(UUID.randomUUID().toString(), 0, ReadingCompletionState(key, ReadStatus.UNKNOWN, null)).also {
+                db.execute("DELETE FROM reading_state_receipts WHERE source_id=? AND novel_url=? AND chapter_url=?", key.novel.sourceId, key.novel.url, key.url)
+                putStateRecord(it)
+            }
+            PreparedReadingState(ReadingStateBinding(key, owner, r.incarnation, r.intentRevision), r.value)
+        }
+    }
+    @Synchronized internal fun registerStateWriter(binding: ReadingStateBinding, content: ChapterStorageObservation, document: CanonicalDocument,
+        kind: ReadingStateWriterKind, beforeCommit: () -> Unit): ReadingStateSession? {
+        if (closed) return null
+        return write(beforeCommit) {
+            if (!hasReadingStateChapter(binding.key)) return@write null
+            val r = stateRecord(binding.key) ?: return@write null
+            if (binding.scope != owner || binding.incarnation != r.incarnation || binding.intentRevision != r.intentRevision ||
+                content.key != binding.key || !canRegisterReadingSession(content, document) || !observationCurrent(content)) return@write null
+            ReadingStateSession(UUID.randomUUID().toString(), binding, content, document, kind).also { putStateRecord(bindReadingStateWriter(r, it)) }
+        }
+    }
+    @Synchronized internal fun commitReadingState(command: ReadingStateCommand, beforeCommit: () -> Unit): ReadingStateCommit {
+        if (closed) return ReadingStateCommit.NotApplied(ReadingStateRejection.STALE)
+        return write(beforeCommit) {
+            val key = command.binding.key
+            val r = if (hasReadingStateChapter(key)) stateRecord(key) else null
+            val receipt = if (r?.incarnation == command.binding.incarnation) db.query(
+                "SELECT receipt FROM reading_state_receipts WHERE source_id=? AND novel_url=? AND chapter_url=? AND command_id=?",
+                key.novel.sourceId, key.novel.url, key.url, command.id) { decodeReadingStateReceipt(it.getString(1)) }.singleOrNull() else null
+            val transition = decideReadingState(command, r, receipt, command.binding.scope == owner,
+                command.session?.let { observationCurrent(it.content) } ?: false)
+            transition.record?.let {
+                putStateRecord(it)
+                db.execute("INSERT INTO reading_state_receipts VALUES(?,?,?,?,?)", key.novel.sourceId, key.novel.url, key.url,
+                    command.id, encodeReadingStateReceipt(requireNotNull(transition.receipt)))
+            }
+            transition.result
+        }
+    }
+    @Synchronized internal fun readReadingState(key: ChapterKey): ReadingCompletionState? {
+        database.verifyMarker()
+        return if (hasReadingStateChapter(key)) stateRecord(key)?.value ?: ReadingCompletionState(key, ReadStatus.UNKNOWN, null) else null
     }
 
     @Synchronized internal fun claim(key: ChapterKey, beforeCommit: () -> Unit): DownloadAttempt? = write(beforeCommit) {

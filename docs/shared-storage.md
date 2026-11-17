@@ -225,8 +225,9 @@ both platform compositions. Platform adapters may keep different backends.
    completion, explicit unread/rereading and first-read history rules.
    The [shared reading-state contract](reading-state.md) now specifies the follow-up
    model, ordering and adapter acceptance under #432. The pure model and decisions
-   are implemented under #445; state adapters, schema expansion and production
-   adoption remain separate tasks. Checkpoint adoption does not complete them.
+   are implemented under #445; guarded Room/JDBC state adapters and DB36/SQL3
+   expansion follow under #447. Production completion/history adoption remains
+   outstanding. Checkpoint adoption does not complete it.
 3. **Library projections and metadata editing.** Edit commands must distinguish
    unchanged, reset override, and set (including empty); `LibraryEntry` is only a
    display projection. Category IDs are device-owned, but category membership,
@@ -284,8 +285,8 @@ ART, frozen UTF-16 framing, stale-load rejection and real legacy Room writes.
 Six ChapterObservationTest cases cover real Room observation/absence,
 legacy cache/field preservation, content/identity/restore ABA, live download
 ownership, delayed source access, reopen scope and allocation rollback.
-The script requires 41 native successes total; native execution remains separate
-from compilation and the signed beta.347-to-target DB34 compatibility harness.
+These suites run alongside the checkpoint and reading-state suites below. Native
+execution remains separate from compilation and the signed beta compatibility harness.
 
 ## Session and checkpoint adapters
 
@@ -314,5 +315,17 @@ against a new layout. Measured hints and character-level realization remain sepa
 See [capture/restore/flush and proof limits](reading-anchors.md#production-capture-restoration-and-flush).
 Four additional native ReaderCheckpointAdoptionTest cases cover the production Android
 preparation helper with real Room: mapping/reopen, retained fallback evidence, failed/
-uncertain writes and stale source/retired load rejection. The script requires all 41
+uncertain writes and stale source/retired load rejection. The script requires all 49
 native successes; compiling cases alone is not native runtime acceptance.
+
+## Reading-state adapters
+
+`ReadingStateDao` shares preparation, writer registration and guarded completion
+commands across Room and desktop JDBC. Android DB36 and desktop SQL3 add protocol
+records and command receipts. Existing Android completion fields remain the source
+of compatibility state; desktop starts UNKNOWN. The transaction commits value,
+intent revision and receipt together. Legacy Android completion writes invalidate
+old bindings, including same-value writes. The production writers are a separate
+adoption step. Older DB35/SQL1/2 builds refuse the expanded schema. Downgrade
+requires a complete pre-upgrade app-data/store copy taken while the app is closed;
+the in-app library backup is insufficient. See [protocol, migrations and rollback](reading-state-storage.md).

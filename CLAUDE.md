@@ -103,6 +103,11 @@ remain platform-owned; see [`docs/shared-storage.md`](docs/shared-storage.md).
 Library metadata/membership use `LibraryDao`/`LibraryRepository` with Room/file
 adapters. Android detail/quick-view toggles and desktop membership commands use
 this boundary; category/bulk operations retain their existing platform paths.
+Guarded `ReadingStateDao` commands now share one protocol through Room (DB36)
+and desktop JDBC (SQL3). Legacy completion writes invalidate old Android bindings;
+production completion/history callers are a separate adoption step. See
+[`docs/reading-state-storage.md`](docs/reading-state-storage.md) for migration,
+receipt replay and rollback boundaries.
 Desktop loads trusted local packaged JARs, not source copies.
 Run shared/desktop unit checks and the packaged-source fixture/UI journeys when
 changing this boundary. Live reading, fixture results and native window lifecycle

@@ -68,7 +68,7 @@ class LibraryStorageTest {
             assertEquals(chapter, db.chapterDao().getByUrl(1, chapter.url))
             assertEquals(body, db.chapterDao().getContent(1))
         }
-        assertEquals(35, db.openHelper.readableDatabase.version)
+        assertEquals(36, db.openHelper.readableDatabase.version)
         assertEquals(listOf(category), db.categoryDao().getAllOnce())
     }
 

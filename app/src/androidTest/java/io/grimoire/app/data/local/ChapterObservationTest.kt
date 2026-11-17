@@ -66,7 +66,7 @@ class ChapterObservationTest {
         assertEquals(read, observer.readObserved(key))
         assertEquals(metadata, chapters.getByUrl(1, key.url))
         assertEquals(novel, db.novelDao().getById(1))
-        assertEquals(35, db.openHelper.readableDatabase.version)
+        assertEquals(36, db.openHelper.readableDatabase.version)
     }
 
     @Test fun explicitAbsenceIsDifferentFromEmptySavedMissingLockedAndForeignSubjects() = runBlocking {
