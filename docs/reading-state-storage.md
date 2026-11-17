@@ -229,5 +229,6 @@ Once accepted, a save retains its original command across transport changes.
 Progress writes the utterance fraction separately. A save error reports through
 the reader's completion dialog and playback continues with its configured
 auto-advance. Word-count failure can retry a committed receipt after retirement.
-If the original command did not commit and its authority expired, the retry
-reports that it could not apply. It never binds old audio to a newer intent.
+Retry first checks that a detached writer's retirement succeeded. If the
+original command did not commit and its authority expired, the retry reports
+that it could not apply. It never binds old audio to a newer intent.

@@ -162,11 +162,16 @@ class ReadingStateTest {
         seed()
         val submitted = mutableListOf<ReadingStateCommand>()
         var blocked = true
+        var retirementBlocked = true
         val failing = object : ReadingStateDao by dao {
             override suspend fun commit(command: ReadingStateCommand): ReadingStateCommit {
                 submitted.add(command)
                 if (blocked) throw IOException("Before completion commit")
                 return dao.commit(command)
+            }
+            override suspend fun retire(session: ReadingStateSession): Boolean {
+                if (retirementBlocked) throw IOException("Before writer retirement")
+                return dao.retire(session)
             }
         }
         val writer = TtsCompletionWriter(this, failing, ReadingStateFacade(failing, null))
@@ -177,14 +182,18 @@ class ReadingStateTest {
         requireNotNull(writer.complete(completed, 0, 1)).join()
         assertEquals(CompletionSaveNotice.SAVE_FAILED, writer.notice.value)
         writer.retire()
-        // Wait for exact durable retirement before asking the original command to retry.
-        withTimeout(5_000) {
-            while (decodeReadingStateRecord(db.readingStateStorageDao().find(1)!!.state).audio != null) yield()
-        }
         blocked = false
+        writer.retry().join()
+        assertEquals(1, submitted.size)
+        assertEquals(CompletionSaveNotice.SAVE_FAILED, writer.notice.value)
+        assertEquals(ReadStatus.UNREAD, dao.read(key)!!.status)
+        assertNotNull(decodeReadingStateRecord(db.readingStateStorageDao().find(1)!!.state).audio)
+
+        retirementBlocked = false
         writer.retry().join()
         assertSame(submitted[0], submitted[1])
         assertEquals(CompletionSaveNotice.CHANGED, writer.notice.value)
+        assertNull(decodeReadingStateRecord(db.readingStateStorageDao().find(1)!!.state).audio)
         assertEquals(ReadingCompletionState(key, ReadStatus.UNREAD, null), dao.read(key))
     }
 

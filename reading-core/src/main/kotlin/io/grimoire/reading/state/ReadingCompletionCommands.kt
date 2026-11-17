@@ -2,6 +2,7 @@ package io.grimoire.reading.state
 
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.storage.ReadingStateCommand
+import io.grimoire.reading.storage.ReadingStateSession
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -65,8 +66,13 @@ class ReadingCompletionCommands(private val facade: ReadingStateFacade) {
         }
     }
 
-    /** A snapshot: input accepted during IO is handled by the next flush, never silently coalesced. */
-    suspend fun flush(): List<ReadingCommandAttempt> = flushes.withLock {
+    /**
+     * A snapshot: input accepted during IO belongs to the next flush.
+     * A host can defer automatic commands while their detached writer still needs retirement.
+     */
+    suspend fun flush(
+        canSubmitAutomatic: (ReadingStateSession) -> Boolean = { true },
+    ): List<ReadingCommandAttempt> = flushes.withLock {
         val batch = synchronized(lock) { pending.toList() }
         val blocked = mutableSetOf<ChapterKey>()
         val results = mutableListOf<ReadingCommandAttempt>()
@@ -75,6 +81,8 @@ class ReadingCompletionCommands(private val facade: ReadingStateFacade) {
             currentCoroutineContext().ensureActive()
             val accepted = entry.accepted
             if (accepted.input.key in blocked) continue
+            val session = entry.command?.session
+            if (session != null && !canSubmitAutomatic(session)) continue
             val outcome = try {
                 val command = if (entry.missing) null else entry.command ?: facade.prepareExplicit(accepted.input, accepted.id).also { entry.command = it }
                 if (command == null) {

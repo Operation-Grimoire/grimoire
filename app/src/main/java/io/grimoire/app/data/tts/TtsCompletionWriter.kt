@@ -99,11 +99,14 @@ internal class TtsCompletionWriter(
 
     fun retry(): Job = scope.launch {
         flush()
-        retireWithNotice()
     }
 
     private suspend fun flush() {
-        val attempts = commands.flush()
+        // Finish detached writers before retrying their commands. A live writer can still
+        // complete independently if cleanup of a different writer encounters a failure.
+        retireWithNotice()
+        val attempts = commands.flush { session -> session !in retiring }
+        val retirementFailed = retiring.isNotEmpty()
         if (attempts.isEmpty() && _notice.value == CompletionSaveNotice.CHANGED) return
         val notices = attempts.mapNotNull { attempt ->
             val retry = failed.remove(attempt.accepted)
@@ -127,7 +130,7 @@ internal class TtsCompletionWriter(
             commands.acknowledgeDelivery(attempt.accepted)
             notice
         }
-        _notice.value = notices.minByOrNull { it.ordinal }
+        _notice.value = if (retirementFailed) CompletionSaveNotice.SAVE_FAILED else notices.minByOrNull { it.ordinal }
     }
 
     private suspend fun retireWithNotice() {
