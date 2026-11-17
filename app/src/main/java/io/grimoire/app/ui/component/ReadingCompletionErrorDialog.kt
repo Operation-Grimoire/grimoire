@@ -17,10 +17,13 @@ internal fun ReadingCompletionErrorDialog(notice: CompletionSaveNotice, retry: (
                 CompletionSaveNotice.SAVE_FAILED -> R.string.reader_completion_save_error
                 CompletionSaveNotice.WORD_COUNT_FAILED -> R.string.reader_completion_partial_error
                 CompletionSaveNotice.CHANGED -> R.string.reader_completion_changed_error
+                CompletionSaveNotice.PARTIAL_SAVE_FAILED -> R.string.bulk_completion_save_error
+                CompletionSaveNotice.PARTIAL_WORD_COUNT_FAILED -> R.string.bulk_completion_word_count_error
+                CompletionSaveNotice.PARTIAL_CHANGED -> R.string.bulk_completion_changed_error
             }))
         },
         confirmButton = {
-            if (notice != CompletionSaveNotice.CHANGED) TextButton(onClick = retry) {
+            if (notice != CompletionSaveNotice.CHANGED && notice != CompletionSaveNotice.PARTIAL_CHANGED) TextButton(onClick = retry) {
                 Text(stringResource(R.string.action_retry))
             }
         },
