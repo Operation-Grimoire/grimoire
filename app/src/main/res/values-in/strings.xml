@@ -758,4 +758,7 @@
     <string name="reader_completion_save_error">Status baca tidak tersimpan</string>
     <string name="reader_completion_partial_error">Status baca tersimpan, tetapi jumlah kata tidak dapat diperbarui.</string>
     <string name="reader_completion_changed_error">Status baca tidak dapat diubah. Coba tindakan ini lagi.</string>
+    <string name="bulk_completion_save_error">Sebagian perubahan telah disimpan. Coba lagi untuk menyimpan sisa pilihan.</string>
+    <string name="bulk_completion_word_count_error">Sebagian perubahan telah disimpan. Jumlah kata tidak dapat diperbarui. Coba lagi untuk melanjutkan.</string>
+    <string name="bulk_completion_changed_error">Sebagian perubahan telah disimpan. Pilih kembali item yang tersisa untuk memperbaruinya.</string>
 </resources>

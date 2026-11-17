@@ -814,4 +814,7 @@
     <string name="reader_completion_save_error">Nie zapisano stanu przeczytania</string>
     <string name="reader_completion_partial_error">Zapisano stan przeczytania, ale nie udało się zaktualizować liczby słów.</string>
     <string name="reader_completion_changed_error">Nie udało się zmienić stanu przeczytania. Spróbuj ponownie.</string>
+    <string name="bulk_completion_save_error">Zapisano część zmian. Spróbuj ponownie, aby zapisać pozostałe pozycje.</string>
+    <string name="bulk_completion_word_count_error">Zapisano część zmian. Nie udało się zaktualizować liczby słów. Spróbuj ponownie, aby kontynuować.</string>
+    <string name="bulk_completion_changed_error">Zapisano część zmian. Zaznacz ponownie pozostałe pozycje, aby je zaktualizować.</string>
 </resources>

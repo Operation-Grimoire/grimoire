@@ -792,4 +792,7 @@
     <string name="reader_completion_save_error">Le statut de lecture n’a pas été enregistré</string>
     <string name="reader_completion_partial_error">Le statut de lecture a été enregistré, mais le nombre de mots n’a pas pu être mis à jour.</string>
     <string name="reader_completion_changed_error">Le statut de lecture n’a pas pu être modifié. Réessayez cette action.</string>
+    <string name="bulk_completion_save_error">Certaines modifications ont été enregistrées. Réessayez pour enregistrer le reste de la sélection.</string>
+    <string name="bulk_completion_word_count_error">Certaines modifications ont été enregistrées. Le nombre de mots n’a pas pu être mis à jour. Réessayez pour continuer.</string>
+    <string name="bulk_completion_changed_error">Certaines modifications ont été enregistrées. Sélectionnez de nouveau les éléments restants pour les mettre à jour.</string>
 </resources>

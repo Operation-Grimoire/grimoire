@@ -792,4 +792,7 @@
     <string name="reader_completion_save_error">O status de leitura não foi salvo</string>
     <string name="reader_completion_partial_error">O status de leitura foi salvo, mas não foi possível atualizar a contagem de palavras.</string>
     <string name="reader_completion_changed_error">Não foi possível alterar o status de leitura. Tente a ação novamente.</string>
+    <string name="bulk_completion_save_error">Algumas alterações foram salvas. Tente novamente para salvar o restante da seleção.</string>
+    <string name="bulk_completion_word_count_error">Algumas alterações foram salvas. Não foi possível atualizar a contagem de palavras. Tente novamente para continuar.</string>
+    <string name="bulk_completion_changed_error">Algumas alterações foram salvas. Selecione novamente os itens restantes para atualizá-los.</string>
 </resources>

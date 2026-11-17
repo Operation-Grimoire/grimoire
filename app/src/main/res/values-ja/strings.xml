@@ -758,4 +758,7 @@
     <string name="reader_completion_save_error">読書状態を保存できませんでした</string>
     <string name="reader_completion_partial_error">読書状態は保存されましたが、単語数を更新できませんでした。</string>
     <string name="reader_completion_changed_error">読書状態を変更できませんでした。もう一度操作してください。</string>
+    <string name="bulk_completion_save_error">一部の変更が保存されました。残りの選択項目を保存するには、もう一度お試しください。</string>
+    <string name="bulk_completion_word_count_error">一部の変更が保存されました。単語数を更新できませんでした。続けるには、もう一度お試しください。</string>
+    <string name="bulk_completion_changed_error">一部の変更が保存されました。残りの項目を更新するには、もう一度選択してください。</string>
 </resources>

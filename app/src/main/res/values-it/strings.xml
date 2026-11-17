@@ -790,4 +790,7 @@
     <string name="reader_completion_save_error">Lo stato di lettura non è stato salvato</string>
     <string name="reader_completion_partial_error">Lo stato di lettura è stato salvato, ma non è stato possibile aggiornare il conteggio delle parole.</string>
     <string name="reader_completion_changed_error">Impossibile modificare lo stato di lettura. Riprova l’azione.</string>
+    <string name="bulk_completion_save_error">Alcune modifiche sono state salvate. Riprova per salvare gli altri elementi selezionati.</string>
+    <string name="bulk_completion_word_count_error">Alcune modifiche sono state salvate. Impossibile aggiornare il conteggio delle parole. Riprova per continuare.</string>
+    <string name="bulk_completion_changed_error">Alcune modifiche sono state salvate. Seleziona di nuovo gli elementi rimanenti per aggiornarli.</string>
 </resources>

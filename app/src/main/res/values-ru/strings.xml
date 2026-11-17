@@ -809,4 +809,7 @@
     <string name="reader_completion_save_error">Статус чтения не сохранён</string>
     <string name="reader_completion_partial_error">Статус чтения сохранён, но не удалось обновить количество слов.</string>
     <string name="reader_completion_changed_error">Не удалось изменить статус чтения. Повторите действие.</string>
+    <string name="bulk_completion_save_error">Часть изменений сохранена. Повторите попытку, чтобы сохранить остальные изменения.</string>
+    <string name="bulk_completion_word_count_error">Часть изменений сохранена. Не удалось обновить количество слов. Повторите попытку, чтобы продолжить.</string>
+    <string name="bulk_completion_changed_error">Часть изменений сохранена. Выберите оставшиеся элементы снова, чтобы обновить их.</string>
 </resources>

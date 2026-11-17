@@ -814,4 +814,7 @@
     <string name="reader_completion_save_error">Статус читання не збережено</string>
     <string name="reader_completion_partial_error">Статус читання збережено, але не вдалося оновити кількість слів.</string>
     <string name="reader_completion_changed_error">Не вдалося змінити статус читання. Повторіть дію.</string>
+    <string name="bulk_completion_save_error">Частину змін збережено. Повторіть спробу, щоб зберегти решту вибраного.</string>
+    <string name="bulk_completion_word_count_error">Частину змін збережено. Не вдалося оновити кількість слів. Повторіть спробу, щоб продовжити.</string>
+    <string name="bulk_completion_changed_error">Частину змін збережено. Виберіть решту елементів знову, щоб оновити їх.</string>
 </resources>

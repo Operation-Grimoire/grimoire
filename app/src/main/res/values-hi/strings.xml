@@ -775,4 +775,7 @@
     <string name="reader_completion_save_error">पढ़ा हुआ या अपठित चिह्न सहेजा नहीं गया</string>
     <string name="reader_completion_partial_error">पढ़ा हुआ या अपठित चिह्न सहेज लिया गया, लेकिन शब्दों की संख्या अपडेट नहीं हो सकी।</string>
     <string name="reader_completion_changed_error">पढ़ा हुआ या अपठित चिह्न बदला नहीं जा सका। फिर से प्रयास करें।</string>
+    <string name="bulk_completion_save_error">कुछ बदलाव सहेजे गए। बाकी चुने गए आइटम सहेजने के लिए फिर से प्रयास करें।</string>
+    <string name="bulk_completion_word_count_error">कुछ बदलाव सहेजे गए। शब्दों की संख्या अपडेट नहीं हो सकी। जारी रखने के लिए फिर से प्रयास करें।</string>
+    <string name="bulk_completion_changed_error">कुछ बदलाव सहेजे गए। बाकी आइटम अपडेट करने के लिए उन्हें फिर से चुनें।</string>
 </resources>
