@@ -11,6 +11,8 @@ The maintained suite exercises three paths:
   recreation restore the committed paragraph while networking is disabled.
 - Restoring a portable End checkpoint does not mark a chapter read. Explicit Next
   marks only the departed chapter read through the existing production behavior.
+  Any accepted read=true command fills a null `firstReadAt`, including when the
+  chapter is already read, and preserves an existing first-read time.
 - A real SQLite checkpoint-write fault reaches the reader's error dialog. Dismiss
   retains pending input; removing the fault and navigating Back retries the save.
 
@@ -23,12 +25,17 @@ CI without publishing a phone beta.
 ## CI and evidence
 
 `.github/workflows/android-integration.yml` runs for Android/shared impact on pull
-requests and master. It builds the exact commit with the published dependencies,
+requests and master. A token-scoped step first builds the trusted base commit to
+resolve published dependencies, without a persistent Gradle/Kotlin daemon or
+configuration cache. The exact head then builds offline with both token environment
+variables empty. Credentials are never stored in properties or passed to head code.
+A dependency-pin change needs trusted-base dependency preparation; the build never
+falls back to supplying a token to the head. The workflow
 hashes the debug host/test APKs, then runs a fresh headless API 35 emulator. It
 retains the existing extension-host workflow and its separate ART helper coverage.
 
 The runner refuses non-emulator devices, clears only its disposable fixture app,
-disables Wi-Fi/mobile data, and passes the source SHA into the test. The test checks
+enables airplane mode and disables Wi-Fi/mobile data, then passes the source SHA into the test. The test checks
 that SHA against `BuildConfig`, and independently verifies no active network.
 Three named starts and three paired successful completions are mandatory. Skips,
 assumptions, duplicates, missing cases, wrong classes/counts and aborted runs fail.
@@ -36,7 +43,7 @@ The parser has deterministic negative tests in the Python policy job.
 
 The `android-integration-apks` artifact binds host/test hashes. The results artifact
 contains the named inventory/report, instrumentation log, JUnit XML, command log,
-logcat, Activity state and screenshots. Fixture failures capture the live screen
+logcat, connectivity/Activity state and screenshots. Fixture failures capture the live screen
 before cleanup; the runner also captures the emulator screen. A failed setup is a
 failed setup, not successful app acceptance or a reason to silently rerun a test.
 

@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Build
+import android.os.SystemClock
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
@@ -66,7 +67,12 @@ class ReaderIntegrationTest {
         check(Build.HARDWARE in setOf("ranchu", "goldfish")) { "Integration fixtures require an emulator" }
         assertEquals(args.getString("integrationSourceSha"), BuildConfig.GIT_SHA)
         instrumentation.uiAutomation.adoptShellPermissionIdentity(Manifest.permission.ACCESS_NETWORK_STATE)
-        try { assertNull("Run these local-content journeys with emulator networking disabled", context.getSystemService(ConnectivityManager::class.java).activeNetwork) }
+        try {
+            val connectivity = context.getSystemService(ConnectivityManager::class.java)
+            val deadline = SystemClock.uptimeMillis() + 15_000
+            while (connectivity.activeNetwork != null && SystemClock.uptimeMillis() < deadline) Thread.sleep(100)
+            assertNull("Run these local-content journeys with emulator networking disabled", connectivity.activeNetwork)
+        }
         finally { instrumentation.uiAutomation.dropShellPermissionIdentity() }
         io {
             bindings.onboarding().done.set(true)

@@ -24,7 +24,6 @@ jobs:
     timeout-minutes: 20
     env:
       GITHUB_ACTOR: ${{ github.actor }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       APP_VERSION_TAG: v0.0.0
       APP_BETA_NUMBER: '1'
       APP_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -34,16 +33,38 @@ jobs:
         run: exit 1
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          path: trusted-base
           persist-credentials: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build exact-head production debug host and integration APK
+      - name: Resolve published dependencies using trusted base code
+        working-directory: trusted-base
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_GIT_SHA: ${{ github.event.pull_request.base.sha || github.sha }}
         run: |
-          bash ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --console=plain
+          bash ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --no-configuration-cache -Pkotlin.compiler.execution.strategy=in-process --console=plain
+          for attempt in $(seq 1 20); do
+            if ! jps -l | grep -Eq 'GradleDaemon|KotlinCompileDaemon'; then exit 0; fi
+            sleep 1
+          done
+          echo 'Trusted dependency build left a JVM daemon running'
+          jps -l
+          exit 1
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Build exact-head production debug host and integration APK
+        env:
+          GITHUB_TOKEN: ''
+          GH_TOKEN: ''
+        run: |
+          bash ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-daemon --no-configuration-cache -Pkotlin.compiler.execution.strategy=in-process --console=plain
           mkdir -p build/android-integration
           cp app/build/outputs/apk/debug/app-debug.apk build/android-integration/host.apk
           cp app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk build/android-integration/tests.apk

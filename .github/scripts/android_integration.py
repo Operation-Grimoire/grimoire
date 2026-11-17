@@ -106,6 +106,9 @@ def main():
             adb("install", "-r", "-t", str(root / name))
         if adb("shell", "pm", "clear", PACKAGE) != "Success":
             raise RuntimeError("Could not clear owned fixture app data")
+        adb("shell", "cmd", "connectivity", "airplane-mode", "enable")
+        if adb("shell", "settings", "get", "global", "airplane_mode_on") != "1":
+            raise RuntimeError("Emulator did not accept airplane mode")
         adb("shell", "svc", "wifi", "disable")
         adb("shell", "svc", "data", "disable")
         adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
@@ -122,6 +125,7 @@ def main():
     finally:
         if owned:
             for filename, args in [("logcat.log", ("logcat", "-d", "-v", "threadtime")),
+                                   ("connectivity.log", ("shell", "dumpsys", "connectivity")),
                                    ("activity.log", ("shell", "dumpsys", "activity", "activities"))]:
                 try:
                     (root / filename).write_text(adb(*args, required=False), encoding="utf-8")
