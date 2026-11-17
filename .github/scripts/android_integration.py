@@ -17,6 +17,7 @@ TESTS = (
     "manualReadFailureRetriesExactCommandAndUnreadSurvivesReopen",
     "partialWordCountRetryPreservesLaterExplicitUnread",
     "visualCompletionNeedsFreshScrollAfterLayoutAndExplicitUnread",
+    "detailMarkAllRetriesAtomicWriteThenRetriesOnlyWordCount",
 )
 PACKAGE = "io.grimoire.app"
 

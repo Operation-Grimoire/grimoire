@@ -59,19 +59,27 @@ class ReadingStateFacade(private val dao: ReadingStateDao, private val backfill:
         // Legacy audio completion invokes backfill even if the existing read/timestamp are unchanged.
         val readAccepted = (committed is ReadingStateCommit.Committed && committed.valueAtCommit.status == ReadStatus.READ) ||
             (command.input is ReadingCompletionInput.Audio && committed == ReadingStateCommit.NotApplied(ReadingStateRejection.NO_CHANGE))
-        val effect = when {
-            backfill == null -> ReadingWordCountOutcome.NotApplicable
-            !readAccepted -> ReadingWordCountOutcome.NotRequested
-            else -> try {
-                backfill.invoke(command.binding.key)
-                ReadingWordCountOutcome.Completed
-            } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { ReadingWordCountOutcome.Failed(failure) }
-        }
+        val effect = runReadingWordCountBackfill(readAccepted, backfill?.let { effect -> { effect(command.binding.key) } })
         currentCoroutineContext().ensureActive()
         // Another accepted intent may have committed while backfill was suspended.
         val current = dao.read(command.binding.key)
         currentCoroutineContext().ensureActive()
         return ReadingStateSave(confirmation, current, effect)
+    }
+}
+
+internal suspend fun runReadingWordCountBackfill(
+    readAccepted: Boolean,
+    backfill: (suspend () -> Unit)?,
+): ReadingWordCountOutcome = when {
+    backfill == null -> ReadingWordCountOutcome.NotApplicable
+    !readAccepted -> ReadingWordCountOutcome.NotRequested
+    else -> try {
+        backfill()
+        ReadingWordCountOutcome.Completed
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (failure: Exception) {
+        ReadingWordCountOutcome.Failed(failure)
     }
 }

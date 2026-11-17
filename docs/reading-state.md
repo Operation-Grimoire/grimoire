@@ -317,9 +317,17 @@ computes a pure proposal. There is no DAO/session allocation, intent revision,
 command receipt, clock, persistence, position mutation or history event in this model.
 The guarded adapters validate real authority and ordering in their transaction.
 Android reader explicit read/unread, Next, visual and TTS completion use the facade
-and ordered command queue under #454, #457 and #459. Detail/library/updates bulk completion
-remain legacy writers under #451. Desktop still has no completion UI/automatic
-policy; shared opened-history adoption remains separate on both platforms.
+and ordered command queue under #454, #457 and #459. Novel Detail mark-all (#461)
+prepares a novel-scoped batch from stored chapters, including chapters outside the
+displayed page. Room verifies membership and intent revisions before the first commit.
+It writes every read value, intent revision and receipt in one transaction. Retrying
+after a lost reply confirms the original receipts without including later chapters.
+After a confirmed read, the existing Android word-count backfill runs separately and
+can retry without resubmitting the batch.
+
+Detail selected chapters, Library selected novels and Library Updates remain legacy
+writers under #451. Desktop still has no completion UI or automatic policy. Shared
+opened-history adoption remains separate on both platforms.
 
 Core JVM tests cover frozen position/UTF-16/overflow and completion/evidence vectors.
 Consumer builds and existing host tests do not establish new state-model ART,

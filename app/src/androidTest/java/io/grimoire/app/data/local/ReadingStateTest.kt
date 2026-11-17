@@ -69,6 +69,131 @@ class ReadingStateTest {
     }
     private fun rejected(result: ReadingStateCommit, why: ReadingStateRejection) = assertEquals(ReadingStateCommit.NotApplied(why), result)
 
+    @Test fun novelMarkAllOrdersSameValueUnreadAndPreservesFieldsAndOtherNovel() = runBlocking<Unit> {
+        seed()
+        val visual = automatic(session(ReadingStateWriterKind.VISUAL))
+        val audio = automatic(session(ReadingStateWriterKind.AUDIO))
+        // Both rows with the same source URL are included because the platform pins the row identity.
+        val locked = metadata.copy(id = 2, name = "Locked duplicate URL", locked = true, firstReadAt = 42, queueOrder = 10)
+        val another = metadata.copy(id = 3, novelId = 2, read = true, firstReadAt = 44)
+        val blankUrl = metadata.copy(id = 4, url = "", name = "Legacy row without source URL")
+        db.novelDao().upsert(NovelEntity(id = 2, sourceId = key.novel.sourceId, url = "/other", title = "Other"))
+        db.chapterDao().insertAll(listOf(locked, another, blankUrl))
+        val chapters = db.chapterDao()
+        val facade = NovelReadingCompletionFacade(dao, null)
+        val unread = facade.prepare(NovelReadingCompletionIntent(key.novel, false, 100))!!
+        assertEquals(NovelReadingCompletionCommit.Committed(false), facade.submit(unread).confirmation)
+        assertEquals(listOf(metadata, locked, blankUrl), chapters.getChapterMetadataOnce(1))
+        rejected(dao.commit(visual), ReadingStateRejection.STALE)
+        rejected(dao.commit(audio), ReadingStateRejection.STALE)
+        for (id in listOf(1L, 2L, 4L)) {
+            val state = decodeReadingStateRecord(db.readingStateStorageDao().find(id)!!.state)
+            assertEquals(1L, state.intentRevision)
+            assertNull(state.visual)
+            assertNull(state.audio)
+        }
+        val read = facade.prepare(NovelReadingCompletionIntent(key.novel, true, 200))!!
+        assertEquals(NovelReadingCompletionCommit.Committed(false), facade.submit(read).confirmation)
+        assertEquals(
+            listOf(metadata.copy(read = true, firstReadAt = 200), locked.copy(read = true),
+                blankUrl.copy(read = true, firstReadAt = 200)),
+            chapters.getChapterMetadataOnce(1),
+        )
+        assertEquals(listOf(another), chapters.getChapterMetadataOnce(2))
+        assertNull(db.readingStateStorageDao().find(3))
+        assertEquals(legacy, chapters.getContent(1))
+    }
+
+    @Test fun novelMarkAllRollsBackEarlierRowsAndReceiptsWhenLaterWriteFails() = runBlocking<Unit> {
+        seed()
+        val chapters = db.chapterDao()
+        chapters.insertAll(listOf(metadata.copy(id = 2, url = "/second")))
+        val intent = NovelReadingCompletionIntent(key.novel, true, 200)
+        val batch = dao.prepareNovelCompletion(intent)!!
+        val storage = db.readingStateStorageDao()
+        val original = chapters.getChapterMetadataOnce(1)
+        val states = listOf(storage.find(1), storage.find(2))
+        val sql = db.openHelper.writableDatabase
+        sql.execSQL("CREATE TRIGGER batch_fault BEFORE INSERT ON reading_state_receipts WHEN NEW.chapterId=2 BEGIN SELECT RAISE(ABORT,'batch fault'); END")
+        try {
+            dao.commitNovelCompletion(batch)
+            fail("Expected a failure after the first target")
+        } catch (failure: Exception) {
+            assertTrue(failure.message!!.contains("batch fault"))
+        } finally {
+            sql.execSQL("DROP TRIGGER batch_fault")
+        }
+        assertEquals(original, chapters.getChapterMetadataOnce(1))
+        assertEquals(states, listOf(storage.find(1), storage.find(2)))
+        assertNull(storage.receipt(1, intent.id))
+        assertNull(storage.receipt(2, intent.id))
+        assertEquals(NovelReadingCompletionCommit.Committed(false), dao.commitNovelCompletion(batch))
+        assertEquals(original.map { it.copy(read = true, firstReadAt = 200) }, chapters.getChapterMetadataOnce(1))
+    }
+
+    @Test fun novelMarkAllRejectsMembershipDriftAndReplaysOnlyTheOriginalBatchAfterReopen() = runBlocking<Unit> {
+        seed()
+        val outdated = dao.prepareNovelCompletion(NovelReadingCompletionIntent(key.novel, true, 100))!!
+        val second = metadata.copy(id = 2, url = "/second")
+        db.chapterDao().insertAll(listOf(second))
+        assertEquals(NovelReadingCompletionCommit.NotApplied(ReadingStateRejection.CONFLICT), dao.commitNovelCompletion(outdated))
+        assertEquals(listOf(metadata, second), db.chapterDao().getChapterMetadataOnce(1))
+
+        val batch = dao.prepareNovelCompletion(NovelReadingCompletionIntent(key.novel, true, 200))!!
+        val lost = object : NovelReadingCompletionDao by dao {
+            override suspend fun commitNovelCompletion(command: PreparedNovelReadingCompletion): NovelReadingCompletionCommit {
+                assertEquals(NovelReadingCompletionCommit.Committed(false), dao.commitNovelCompletion(command))
+                throw IOException("Lost batch reply")
+            }
+        }
+        try {
+            NovelReadingCompletionFacade(lost, null).submit(batch)
+            fail("Expected a lost reply")
+        } catch (failure: IOException) {
+            assertEquals("Lost batch reply", failure.message)
+        }
+        val newcomer = metadata.copy(id = 3, url = "/later")
+        db.chapterDao().insertAll(listOf(newcomer))
+        assertTrue(dao.commit(explicit(prepare(), false)) is ReadingStateCommit.Committed)
+        db.close()
+        open()
+        assertEquals(NovelReadingCompletionCommit.Committed(true), dao.commitNovelCompletion(batch))
+        assertEquals(listOf(metadata.copy(firstReadAt = 200), second.copy(read = true, firstReadAt = 200), newcomer),
+            db.chapterDao().getChapterMetadataOnce(1))
+        assertNull(db.readingStateStorageDao().find(3))
+        assertNull(db.readingStateStorageDao().receipt(3, batch.intent.id))
+    }
+
+    @Test fun novelWordCountRetryDoesNotResubmitConfirmedBatch() = runBlocking<Unit> {
+        seed()
+        db.chapterDao().setWordCount(1, 0)
+        var commits = 0
+        val counted = object : NovelReadingCompletionDao by dao {
+            override suspend fun commitNovelCompletion(command: PreparedNovelReadingCompletion): NovelReadingCompletionCommit {
+                commits++
+                return dao.commitNovelCompletion(command)
+            }
+        }
+        var broken = true
+        var backfills = 0
+        val facade = NovelReadingCompletionFacade(counted) {
+            backfills++
+            if (broken) throw IOException("Count unavailable")
+            db.chapterDao().backfillWordCountsFromDownloads()
+        }
+        val batch = facade.prepare(NovelReadingCompletionIntent(key.novel, true, 200))!!
+        val partial = facade.submit(batch)
+        assertEquals(NovelReadingCompletionCommit.Committed(false), partial.confirmation)
+        assertTrue(partial.wordCount is ReadingWordCountOutcome.Failed)
+        dao.commit(explicit(prepare(), false))
+        broken = false
+        val recovered = facade.retryWordCount(partial)
+        assertEquals(ReadingWordCountOutcome.Completed, recovered.wordCount)
+        assertEquals(1, commits)
+        assertEquals(2, backfills)
+        assertEquals(metadata.copy(firstReadAt = 200, wordCount = 0), db.chapterDao().getByUrl(1, key.url))
+    }
+
     private suspend fun audioInput() = TtsChapterInput.fromLoaded(
         ChapterLoader(SavedChapterRepository(saved)).load(key) { error("The saved fixture must supply the pages") }
     )

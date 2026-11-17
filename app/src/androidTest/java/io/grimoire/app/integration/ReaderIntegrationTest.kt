@@ -106,10 +106,13 @@ class ReaderIntegrationTest {
     private fun waitText(text: String, substring: Boolean = false) {
         compose.waitUntil(30_000) { compose.onAllNodesWithText(text, substring = substring).fetchSemanticsNodes().isNotEmpty() }
     }
-    private fun openFirst() {
+    private fun openDetail() {
         val route = "novel?pkg=$LOCAL_PKG&url=${Uri.encode(novelUrl)}&sourceId=$LOCAL_SOURCE_ID"
         activity = ActivityScenario.launch(Intent(context, MainActivity::class.java).putExtra(MainActivity.EXTRA_NAV_TARGET, route))
         waitText(firstName)
+    }
+    private fun openFirst() {
+        openDetail()
         compose.onNodeWithText(firstName).performScrollTo().performClick()
         waitText("Integration paragraph", true)
         compose.waitForIdle()
@@ -307,6 +310,64 @@ class ReaderIntegrationTest {
         compose.onNodeWithContentDescription(context.getString(R.string.reader_mark_read)).assertExists()
         assertEquals(0f, first().readProgress, 0f); assertNull(checkpoint())
         snapshot("completion-partial-passed"); back()
+    }
+
+    @Test fun detailMarkAllRetriesAtomicWriteThenRetriesOnlyWordCount() = journey("detail-mark-all") {
+        val hidden = ChapterEntity(id = 3, novelId = 1, url = "/integration/locked", name = "Locked chapter",
+            chapterNumber = 3f, locked = true, readProgress = 0.25f, readAnchorItemIndex = 4, readAnchorItemOffset = 12)
+        val unrelated = hidden.copy(id = 4, novelId = 2, url = "/integration/other")
+        io {
+            db.novelDao().upsert(NovelEntity(id = 2, sourceId = LOCAL_SOURCE_ID, url = "local://other", title = "Other"))
+            db.chapterDao().insertAll(listOf(hidden, unrelated))
+        }
+        val sql = db.openHelper.writableDatabase
+        fun selectedRows() = io { db.chapterDao().getChapterMetadataOnce(1) }
+        fun menuAction(action: Int) {
+            compose.onNodeWithContentDescription(context.getString(R.string.action_more_actions)).performClick()
+            compose.onNodeWithText(context.getString(action)).performClick()
+        }
+        openDetail()
+        val before = selectedRows()
+        io { sql.execSQL("CREATE TRIGGER integration_write_fault BEFORE UPDATE OF read ON chapters WHEN NEW.id=2 BEGIN SELECT RAISE(ABORT,'atomic bulk failure'); END") }
+        menuAction(R.string.novel_mark_all_read)
+        waitText(context.getString(R.string.reader_completion_save_error))
+        assertEquals(before, selectedRows())
+        assertEquals(0, receipts())
+        snapshot("detail-mark-all-save-error")
+
+        io {
+            sql.execSQL("DROP TRIGGER integration_write_fault")
+            sql.execSQL("CREATE TRIGGER integration_write_fault BEFORE UPDATE OF wordCount ON chapters WHEN NEW.id=1 BEGIN SELECT RAISE(ABORT,'bulk word count failure'); END")
+        }
+        compose.onNodeWithText(context.getString(R.string.action_retry)).performClick()
+        waitText(context.getString(R.string.reader_completion_partial_error))
+        val committed = selectedRows()
+        val firstReadAt = requireNotNull(committed.first().firstReadAt)
+        assertEquals(0L, firstReadAt % 1000)
+        assertEquals(before.map { it.copy(read = true, firstReadAt = firstReadAt) }, committed)
+        assertEquals(1L, completionRecord().intentRevision)
+        assertEquals(1, receipts())
+        snapshot("detail-mark-all-partial-error")
+
+        io {
+            sql.execSQL("DROP TRIGGER integration_write_fault")
+            sql.execSQL("CREATE TRIGGER integration_write_fault BEFORE UPDATE OF read ON chapters BEGIN SELECT RAISE(ABORT,'unexpected read rewrite'); END")
+        }
+        compose.onNodeWithText(context.getString(R.string.action_retry)).performClick()
+        compose.waitUntil(10_000) { selectedRows().take(2).all { it.wordCount > 0 } }
+        compose.waitForIdle()
+        assertEquals(1L, completionRecord().intentRevision)
+        assertEquals(1, receipts())
+        val backfilled = selectedRows()
+        io { sql.execSQL("DROP TRIGGER integration_write_fault") }
+        menuAction(R.string.novel_mark_all_unread)
+        compose.waitUntil(10_000) { selectedRows().none { it.read } }
+        assertEquals(backfilled.map { it.copy(read = false) }, selectedRows())
+        assertEquals(listOf(unrelated), io { db.chapterDao().getChapterMetadataOnce(2) })
+        assertEquals(2L, completionRecord().intentRevision)
+        assertEquals(2, receipts())
+        assertNull(checkpoint())
+        snapshot("detail-mark-all-passed")
     }
 
     @Test fun failedCheckpointSaveCanBeDismissedAndRetriedWithoutLosingInput() = journey("retry") {
