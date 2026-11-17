@@ -9,6 +9,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.grimoire.api.model.novel.*
 import io.grimoire.app.data.local.entity.*
+import io.grimoire.app.data.reading.CompletionSaveNotice
+import io.grimoire.app.data.tts.TtsChapterInput
+import io.grimoire.app.data.tts.TtsCompletionWriter
+import io.grimoire.app.data.tts.TtsUtteranceCallbacks
 import io.grimoire.app.ui.screen.reader.ReaderContent
 import io.grimoire.app.ui.screen.reader.ReaderVisualWriter
 import io.grimoire.reading.*
@@ -64,6 +68,125 @@ class ReadingStateTest {
         return ReadingStateCommand(id, s.binding, input, s, sequence)
     }
     private fun rejected(result: ReadingStateCommit, why: ReadingStateRejection) = assertEquals(ReadingStateCommit.NotApplied(why), result)
+
+    private suspend fun audioInput() = TtsChapterInput.fromLoaded(
+        ChapterLoader(SavedChapterRepository(saved)).load(key) { error("The saved fixture must supply the pages") }
+    )
+
+    @Test fun audioCallbackUsesOriginalLoadAndCannotUndoExplicitUnread() = runBlocking<Unit> {
+        seed()
+        val facade = ReadingStateFacade(dao, null)
+        val writer = TtsCompletionWriter(this, dao, facade)
+        val original = audioInput()
+        val callbacks = TtsUtteranceCallbacks()
+        writer.bind(original)
+
+        callbacks.speak("generation:0:0")
+        val paused = requireNotNull(callbacks.finish("generation:0:0", playing = false, atMillis = 100))
+        assertNull(writer.complete(paused, 0, 1))
+        assertEquals(ReadStatus.UNREAD, dao.read(key)!!.status)
+
+        facade.submit(requireNotNull(facade.prepareExplicit(ReadingCompletionInput.MarkUnread(key))))
+        callbacks.speak("generation:1:0")
+        val stale = requireNotNull(callbacks.finish("generation:1:0", playing = true, atMillis = 200))
+        requireNotNull(writer.complete(stale, 1, 2)).join()
+        assertEquals(ReadingCompletionState(key, ReadStatus.UNREAD, null), dao.read(key))
+        writer.retire()
+
+        val replacement = StoredChapterContent("Replacement\u001c<b>Replacement</b>", 1)
+        db.chapterDao().upsertContent(ChapterContentEntity(1, replacement))
+        writer.bind(original)
+        assertNull(writer.complete(stale, 1, 2))
+        val fresh = audioInput()
+        assertNotEquals(original.observation, fresh.observation)
+        writer.bind(fresh)
+        callbacks.speak("fresh:0:0")
+        val completed = requireNotNull(callbacks.finish("fresh:0:0", playing = true, atMillis = 300))
+        val first = requireNotNull(writer.complete(completed, 0, 1))
+        assertSame(first, writer.complete(completed, 0, 1))
+        first.join()
+        assertEquals(ReadingCompletionState(key, ReadStatus.READ, 300), dao.read(key))
+        assertEquals(0.625f, db.chapterDao().getByUrl(1, key.url)!!.readProgress, 0f)
+        writer.retire()
+        writer.retry().join()
+        assertNull(decodeReadingStateRecord(db.readingStateStorageDao().find(1)!!.state).audio)
+    }
+
+    @Test fun audioPartialSaveRetriesReceiptAfterPlaybackRetiresAndChapterIsUnread() = runBlocking<Unit> {
+        seed()
+        var writes = 0
+        val facade = ReadingStateFacade(dao) { if (++writes == 1) throw IOException("Backfill") }
+        val writer = TtsCompletionWriter(this, dao, facade)
+        writer.bind(audioInput())
+        val callbacks = TtsUtteranceCallbacks()
+        callbacks.speak("playing")
+        val completed = requireNotNull(callbacks.finish("playing", playing = true, atMillis = 400))
+        requireNotNull(writer.complete(completed, 0, 1)).join()
+        assertEquals(CompletionSaveNotice.WORD_COUNT_FAILED, writer.notice.value)
+        assertEquals(ReadingCompletionState(key, ReadStatus.READ, 400), dao.read(key))
+        writer.retire()
+        facade.submit(requireNotNull(facade.prepareExplicit(ReadingCompletionInput.MarkUnread(key))))
+        writer.retry().join()
+        assertNull(writer.notice.value)
+        assertEquals(2, writes)
+        assertEquals(ReadingCompletionState(key, ReadStatus.UNREAD, 400), dao.read(key))
+        assertEquals(1L, prepare().binding.intentRevision)
+    }
+
+    @Test fun lateAudioRegistrationIsRetiredAfterItsPlaybackIsCancelled() = runBlocking<Unit> {
+        seed()
+        val reached = CompletableDeferred<Unit>()
+        val reply = CompletableDeferred<Unit>()
+        val delayed = object : ReadingStateDao by dao {
+            override suspend fun register(binding: ReadingStateBinding, content: ChapterStorageObservation,
+                document: CanonicalDocument, kind: ReadingStateWriterKind): ReadingStateSession? {
+                val session = dao.register(binding, content, document, kind)
+                reached.complete(Unit)
+                reply.await()
+                return session
+            }
+        }
+        coroutineScope {
+            val writer = TtsCompletionWriter(this, delayed, ReadingStateFacade(delayed, null))
+            val task = launch { writer.bind(audioInput()) }
+            withTimeout(5_000) { reached.await() }
+            writer.retire()
+            task.cancelAndJoin()
+            reply.complete(Unit)
+        }
+        assertNull(decodeReadingStateRecord(db.readingStateStorageDao().find(1)!!.state).audio)
+        assertEquals(ReadStatus.UNREAD, dao.read(key)!!.status)
+    }
+
+    @Test fun retryCannotCreateAnUncommittedAudioWriteAfterRetirement() = runBlocking<Unit> {
+        seed()
+        val submitted = mutableListOf<ReadingStateCommand>()
+        var blocked = true
+        val failing = object : ReadingStateDao by dao {
+            override suspend fun commit(command: ReadingStateCommand): ReadingStateCommit {
+                submitted.add(command)
+                if (blocked) throw IOException("Before completion commit")
+                return dao.commit(command)
+            }
+        }
+        val writer = TtsCompletionWriter(this, failing, ReadingStateFacade(failing, null))
+        writer.bind(audioInput())
+        val callbacks = TtsUtteranceCallbacks()
+        callbacks.speak("playing")
+        val completed = requireNotNull(callbacks.finish("playing", playing = true, atMillis = 500))
+        requireNotNull(writer.complete(completed, 0, 1)).join()
+        assertEquals(CompletionSaveNotice.SAVE_FAILED, writer.notice.value)
+        writer.retire()
+        // Wait for exact durable retirement before asking the original command to retry.
+        withTimeout(5_000) {
+            while (decodeReadingStateRecord(db.readingStateStorageDao().find(1)!!.state).audio != null) yield()
+        }
+        blocked = false
+        writer.retry().join()
+        assertSame(submitted[0], submitted[1])
+        assertEquals(CompletionSaveNotice.CHANGED, writer.notice.value)
+        assertEquals(ReadingCompletionState(key, ReadStatus.UNREAD, null), dao.read(key))
+    }
 
     @Test fun visualOwnerCannotRelabelOldSamplesAfterExplicitIntentOrReplacement() = runBlocking<Unit> {
         seed()

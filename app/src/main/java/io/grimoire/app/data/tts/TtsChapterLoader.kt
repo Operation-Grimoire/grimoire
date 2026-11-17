@@ -3,7 +3,6 @@ package io.grimoire.app.data.tts
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.grimoire.api.model.novel.Chapter
-import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.source.web.PageListSource
 import io.grimoire.app.R
 import io.grimoire.app.data.local.dao.ChapterDao
@@ -15,6 +14,7 @@ import io.grimoire.reading.ChapterLoader
 import io.grimoire.reading.ChapterPageAccess
 import io.grimoire.reading.ChapterLoadFailure
 import io.grimoire.reading.ChapterLoadException
+import io.grimoire.reading.LoadedChapter
 import io.grimoire.app.extension.ExtensionManager
 import io.grimoire.app.util.AppLocale
 import javax.inject.Inject
@@ -42,7 +42,7 @@ class TtsChapterLoader @Inject constructor(
     suspend fun loadChapterList(novelId: Long): List<ChapterEntity> =
         chapterDao.getChapterMetadataOnce(novelId)
 
-    suspend fun loadPages(pkg: String, chapter: ChapterEntity): List<NovelPage> {
+    suspend fun loadChapter(pkg: String, chapter: ChapterEntity): LoadedChapter {
         // Re-read the row (the passed entity may be a stale snapshot) and serve a
         // downloaded chapter's saved pages instead of hitting the network.
         val full = chapterDao.getByUrl(chapter.novelId, chapter.url) ?: chapter
@@ -59,7 +59,7 @@ class TtsChapterLoader @Inject constructor(
                     pageSource == null -> ChapterPageAccess.Unavailable(ChapterLoadFailure.PAGES_UNSUPPORTED)
                     else -> ChapterPageAccess.Available { pageSource.getPageList(full.toChapter()) }
                 }
-            }.pages
+            }
         } catch (failure: ChapterLoadException) {
             throw IllegalStateException(localizedContext.getString(when (failure.reason) {
                 ChapterLoadFailure.SOURCE_UNAVAILABLE -> R.string.tts_error_source_unavailable

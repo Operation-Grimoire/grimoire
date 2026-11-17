@@ -57,6 +57,14 @@ class ReadingCompletionCommands(private val facade: ReadingStateFacade) {
     fun hasPending(): Boolean = synchronized(lock) { pending.isNotEmpty() }
     fun isLatest(accepted: AcceptedReadingCommand): Boolean = synchronized(lock) { latest[accepted.input.key] === accepted }
 
+    /** Release completed evidence after an owner has consumed its result. Keep retryable inputs. */
+    fun acknowledgeDelivery(accepted: AcceptedReadingCommand) {
+        synchronized(lock) {
+            val key = accepted.input.key
+            if (latest[key] === accepted && pending.none { it.accepted === accepted }) latest.remove(key)
+        }
+    }
+
     /** A snapshot: input accepted during IO is handled by the next flush, never silently coalesced. */
     suspend fun flush(): List<ReadingCommandAttempt> = flushes.withLock {
         val batch = synchronized(lock) { pending.toList() }

@@ -1,0 +1,9 @@
+{
+  "android": [
+    {
+      "category": "fix",
+      "text": "Read-aloud completion follows the active playback, so late callbacks after switching chapters or stopping cannot mark the old chapter read."
+    }
+  ],
+  "desktop": []
+}
