@@ -10,12 +10,7 @@ import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.AlertDialog
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.unit.Velocity
 import io.grimoire.reading.state.AndroidViewportV1
-import io.grimoire.reading.storage.ReadingStateSession
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import io.grimoire.reading.anchor.CheckpointNotice
 import android.widget.Toast
@@ -364,63 +359,30 @@ fun ReaderScreen(
             }
     }
 
-    val positionInput = remember(projection, listState) { object : NestedScrollConnection {
-        private var inputWriter: ReadingStateSession? = null
-        private var lastConsumedWriter: ReadingStateSession? = null
-        private var flingWriter: ReadingStateSession? = null
-
-        fun resetVisualInput() {
-            inputWriter = null
-            lastConsumedWriter = null
-            flingWriter = null
-        }
-
-        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-            if (source == NestedScrollSource.UserInput) {
-                inputWriter = null
-                flingWriter = null
-                if (restoredScrollContent === readerContent && projection != null && available.y != 0f) {
+    val positionInput = remember(projection, listState) {
+        ReaderScrollInput(
+            onUserInput = {
+                if (restoredScrollContent === readerContent && projection != null) {
                     viewModel.userPosition(projection)
-                    inputWriter = viewModel.visualAuthority(projection)
-                }
-            }
-            return Offset.Zero
-        }
-
-        override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-            val writer = if (source == NestedScrollSource.UserInput) {
-                val captured = inputWriter
-                inputWriter = null
-                if (consumed.y != 0f) lastConsumedWriter = captured
-                captured
-            } else flingWriter
-            if (consumed.y != 0f && writer != null && projection != null && restoredScrollContent === readerContent) {
-                val info = listState.layoutInfo
-                val first = info.visibleItemsInfo.firstOrNull()
-                val last = info.visibleItemsInfo.lastOrNull()
-                if (first != null && last != null && first.key.toString().startsWith(pageKeyPrefix) &&
-                    last.key.toString().startsWith(pageKeyPrefix)) {
-                    val fraction = (last.index + 1).toFloat() / info.totalItemsCount
-                    AndroidViewportV1.create(first.index, last.index, info.totalItemsCount, fraction)?.let {
-                        viewModel.completeFromVisualInput(writer, projection, it)
+                    viewModel.visualAuthority(projection)
+                } else null
+            },
+            onConsumedInput = { writer ->
+                if (projection != null && restoredScrollContent === readerContent) {
+                    val info = listState.layoutInfo
+                    val first = info.visibleItemsInfo.firstOrNull()
+                    val last = info.visibleItemsInfo.lastOrNull()
+                    if (first != null && last != null && first.key.toString().startsWith(pageKeyPrefix) &&
+                        last.key.toString().startsWith(pageKeyPrefix)) {
+                        val fraction = (last.index + 1).toFloat() / info.totalItemsCount
+                        AndroidViewportV1.create(first.index, last.index, info.totalItemsCount, fraction)?.let {
+                            viewModel.completeFromVisualInput(writer, projection, it)
+                        }
                     }
                 }
-            }
-            return Offset.Zero
-        }
-
-        override suspend fun onPreFling(available: Velocity): Velocity {
-            // Keep the original writer for the fling even if an explicit intent rebinds the reader.
-            flingWriter = lastConsumedWriter
-            lastConsumedWriter = null
-            return Velocity.Zero
-        }
-
-        override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-            resetVisualInput()
-            return Velocity.Zero
-        }
-    } }
+            },
+        )
+    }
 
     // Follow TTS: scroll the paragraph being spoken into view, unless the user is scrolling.
     LaunchedEffect(ttsSpokenPageIndex, pagesChapterId, restoredScrollContent) {
