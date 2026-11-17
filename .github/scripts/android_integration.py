@@ -77,9 +77,13 @@ def main():
         except subprocess.TimeoutExpired as failure:
             if "instrument" in args:
                 (root / "instrumentation.log").write_bytes(failure.stdout or b"")
+            elif args[:2] == ("logcat", "-d"):
+                (root / "logcat.log").write_bytes(failure.stdout or b"")
             raise
         if "instrument" in args:
             (root / "instrumentation.log").write_bytes(result.stdout)
+        elif args[:2] == ("logcat", "-d"):
+            (root / "logcat.log").write_bytes(result.stdout)
         if required and result.returncode:
             raise RuntimeError(f"ADB command failed: {args}: {result.stderr.decode(errors='replace')}")
         return result.stdout if binary else result.stdout.decode("utf-8", errors="replace").strip()

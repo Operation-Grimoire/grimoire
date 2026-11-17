@@ -41,6 +41,12 @@ class IntegrationResultTest(unittest.TestCase):
             runner.validate_app_logcat("")
 
     def test_failed_logcat_exit_rejects_partial_output_and_preserves_primary_failure(self):
+        self.assert_logcat_failure(False)
+
+    def test_logcat_timeout_retains_partial_output_and_preserves_primary_failure(self):
+        self.assert_logcat_failure(True)
+
+    def assert_logcat_failure(self, timeout):
         for instrument in (events(), "INSTRUMENTATION_FAILED: primary failure"):
             def command(args, **kwargs):
                 tail = args[1:]
@@ -53,6 +59,8 @@ class IntegrationResultTest(unittest.TestCase):
                 elif tail[:3] == ["shell", "settings", "get"]: output = b"1"
                 elif "instrument" in tail: output = instrument.encode()
                 elif tail[:2] == ["logcat", "-d"]:
+                    if timeout:
+                        raise subprocess.TimeoutExpired(args, 90, output=b"Partial logcat output without a crash")
                     code = 1; output = b"Partial logcat output without a crash"
                 return subprocess.CompletedProcess(args, code, output, b"capture failed" if code else b"")
             previous = Path.cwd()
@@ -67,8 +75,11 @@ class IntegrationResultTest(unittest.TestCase):
                         self.assertEqual(1, runner.main())
                     report = json.loads((root / "report.json").read_text(encoding="utf-8"))
                     self.assertEqual("FAIL", report["result"])
-                    self.assertIn("ADB command failed", report["logcat.log"])
-                    if instrument == events(): self.assertIn("ADB command failed", report["error"])
+                    self.assertTrue((root / "logcat.log").exists(), "Keep partial failed-capture evidence")
+                    self.assertEqual(b"Partial logcat output without a crash", (root / "logcat.log").read_bytes())
+                    expected = "timed out" if timeout else "ADB command failed"
+                    self.assertIn(expected, report["logcat.log"])
+                    if instrument == events(): self.assertIn(expected, report["error"])
                     else: self.assertIn("Incomplete executed inventory", report["error"])
                 finally:
                     os.chdir(previous)
