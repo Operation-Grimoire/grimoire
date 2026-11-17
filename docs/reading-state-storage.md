@@ -2,8 +2,9 @@
 
 This is the protocol and adapter boundary for #447 under #432 and roadmap #397.
 It extends the [reading-state decisions](reading-state.md) without treating a pure
-proposal as permission to write. Room and desktop JDBC implement the same DAO and decision protocol. Production
-reader and playback adoption remain separate work.
+proposal as permission to write. Room and desktop JDBC implement the same DAO and
+decision protocol. Android reader explicit actions and visual completion use it in
+production. TTS completion and bulk actions remain under #451.
 
 ## Protocol boundary
 
@@ -111,7 +112,7 @@ they do not establish concurrent-process acceptance beyond the existing lease.
   downgrade-refusal/recovery evidence. Keep helpers, UI/emulator, phone and real
   process-death/competing-process evidence separate.
 
-Android's 11 native `ReadingStateTest` cases use real Room transactions and a
+Android's 12 native `ReadingStateTest` cases use real Room transactions and a
 frozen DB35 schema. Desktop's 12 JDBC cases inspect preserved SQL2 tables and
 rows. They include cancellation before commit, an uncertain reply after commit,
 identity retirement, corruption rejection and known-receipt confirmation after

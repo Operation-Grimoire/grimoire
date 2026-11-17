@@ -90,6 +90,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.preferences.ReaderOrientation
@@ -144,7 +145,8 @@ fun ReaderScreen(
     val requestBack: () -> Unit = {
         if (!exiting) {
             exiting = true
-            exitScope.launch {
+            // Drain Room writes and update navigation on the Android main thread.
+            exitScope.launch(Dispatchers.Main.immediate) {
                 try { if (viewModel.flushForExit()) onNavigateBack() } finally { exiting = false }
             }
         }

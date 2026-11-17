@@ -2,7 +2,7 @@
   "android": [
     {
       "category": "fix",
-      "text": "Reader auto-mark as read uses fresh scrolling input, so restoring a position or following text-to-speech does not mark a chapter read."
+      "text": "Reader auto-mark as read now uses your scroll gestures. Restoring a position or automatically scrolling the page leaves the read status alone."
     }
   ],
   "desktop": []
