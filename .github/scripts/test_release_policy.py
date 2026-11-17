@@ -19,6 +19,8 @@ class ImpactTest(unittest.TestCase):
             "new-module/src/main/Runtime.kt": (True, True, True, True),
             "app/src/test/java/ReaderTest.kt": (True, False, False, False),
             "app/src/androidTest/java/HostTest.kt": (True, False, False, False),
+            "app/src/debug/java/IntegrationTestEntryPoint.kt": (True, False, False, False),
+            "app/src/debug/AndroidManifest.xml": (True, False, False, False),
             "desktop/src/integrationTest/kotlin/Journey.kt": (False, True, False, False),
             "reading-core/src/test/kotlin/CodecTest.kt": (True, True, False, False),
             ".github/workflows/desktop.yml": (False, True, False, False),
@@ -36,6 +38,15 @@ class ImpactTest(unittest.TestCase):
         actual = policy.impact(["app/src/main/A.kt", "desktop/src/test/Test.kt"])
         self.assertEqual({"android_ci": True, "desktop_ci": True,
                           "android_release": True, "desktop_release": False}, actual)
+
+    def test_debug_integration_changes_do_not_publish_but_runtime_changes_still_do(self):
+        debug = ["app/src/debug/java/IntegrationTestEntryPoint.kt", "app/src/androidTest/java/ReaderTest.kt",
+                 ".github/workflows/android-integration.yml"]
+        self.assertEqual({"android_ci": True, "desktop_ci": True, "android_release": False,
+                          "desktop_release": False}, policy.impact(debug))
+        self.assertTrue(policy.impact(debug + ["app/src/main/java/Reader.kt"])["android_release"])
+        shared = policy.impact(debug + ["reading-core/src/main/kotlin/State.kt"])
+        self.assertTrue(shared["android_release"] and shared["desktop_release"])
 
 
 class GitPolicyTest(unittest.TestCase):
