@@ -20,6 +20,13 @@ TESTS = (
 PACKAGE = "io.grimoire.app"
 
 
+def validate_app_logcat(output):
+    if not output.strip():
+        raise ValueError("Missing application logcat evidence")
+    if re.search(r"AndroidRuntime:\s+Process: io\.grimoire\.app(?:\.test)?, PID:", output):
+        raise ValueError("Application/test-helper process crashed; successful test statuses are insufficient")
+
+
 def parse_instrumentation(output):
     """Reject skips, wrong inventory, duplicate completions and incomplete runner output."""
     expected = {(CLASS, name) for name in TESTS}
@@ -130,9 +137,15 @@ def main():
                                    ("connectivity.log", ("shell", "dumpsys", "connectivity")),
                                    ("activity.log", ("shell", "dumpsys", "activity", "activities"))]:
                 try:
-                    (root / filename).write_text(adb(*args, required=False), encoding="utf-8")
+                    output = adb(*args, required=False)
+                    (root / filename).write_text(output, encoding="utf-8")
+                    if filename == "logcat.log":
+                        validate_app_logcat(output)
                 except Exception as failure:
                     report[filename] = str(failure)
+                    if filename == "logcat.log":
+                        report["result"] = "FAIL"
+                        report["error"] = str(failure)
             try:
                 (root / "emulator-screen.png").write_bytes(adb("exec-out", "screencap", "-p", binary=True, required=False))
                 names = adb("shell", "run-as", PACKAGE, "ls", "files/integration-evidence", required=False).splitlines()

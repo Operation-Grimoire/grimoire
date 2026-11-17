@@ -164,5 +164,8 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // Match the existing instrumentation core. Its helper Activities must run in the host,
+    // alongside ActivityInvoker from the debug manifest's monitor dependency (see #456).
+    debugImplementation("androidx.test:core:1.5.0")
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

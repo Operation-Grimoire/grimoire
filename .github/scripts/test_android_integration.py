@@ -20,6 +20,18 @@ class IntegrationResultTest(unittest.TestCase):
     def test_complete_exact_inventory(self):
         self.assertEqual(sorted(runner.TESTS), runner.parse_instrumentation(events()))
 
+    def test_app_and_test_helper_crashes_fail_even_after_successful_statuses(self):
+        self.assertEqual(sorted(runner.TESTS), runner.parse_instrumentation(events()))
+        for package in ("io.grimoire.app", "io.grimoire.app.test"):
+            with self.assertRaises(ValueError):
+                runner.validate_app_logcat(f"E AndroidRuntime: Process: {package}, PID: 123\njava.lang.NoClassDefFoundError: ActivityInvoker")
+        runner.validate_app_logcat("E AndroidRuntime: Process: com.example.system, PID: 123")
+        runner.validate_app_logcat("E AndroidRuntime: Process: io.grimoire.application, PID: 123")
+
+    def test_missing_logcat_cannot_establish_crash_free_helper_execution(self):
+        with self.assertRaises(ValueError):
+            runner.validate_app_logcat("")
+
     def test_zero_and_partial_inventory_fail(self):
         for output in ["OK (3 tests)\nINSTRUMENTATION_CODE: -1", events().replace(runner.TESTS[0], "missing")]:
             with self.assertRaises(ValueError):

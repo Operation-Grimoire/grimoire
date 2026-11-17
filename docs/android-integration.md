@@ -29,6 +29,13 @@ replace providers or add a production test switch. The interface is in
 still trigger normal publication policy. Its own debug/test/workflow changes run
 CI without publishing a phone beta.
 
+The debug host includes the same AndroidX test-core version already used by
+instrumentation. ActivityScenario's helper activities then resolve in the host
+alongside the debug monitor classes. Splitting those helpers into the test APK
+while their `ActivityInvoker` interface is deduplicated into the host causes a
+separate helper process to crash and delays each Activity close by about45 seconds
+(#456). This dependency and its activities are excluded from release builds.
+
 ## CI and evidence
 
 `.github/workflows/android-integration.yml` runs for Android/shared impact on pull
@@ -46,6 +53,8 @@ enables airplane mode and disables Wi-Fi/mobile data, then passes the source SHA
 that SHA against `BuildConfig`, and independently verifies no active network.
 Five named starts and five paired successful completions are mandatory. Skips,
 assumptions, duplicates, missing cases, wrong classes/counts and aborted runs fail.
+App/test-helper process crashes in logcat also fail, even if every named status
+reports success; missing logcat cannot establish this check.
 The parser has deterministic negative tests in the Python policy job.
 
 The `android-integration-apks` artifact binds host/test hashes. The results artifact
