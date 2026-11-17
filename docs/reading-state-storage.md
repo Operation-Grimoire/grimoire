@@ -3,8 +3,8 @@
 This is the protocol and adapter boundary for #447 under #432 and roadmap #397.
 It extends the [reading-state decisions](reading-state.md) without treating a pure
 proposal as permission to write. Room and desktop JDBC implement the same DAO and
-decision protocol. Android reader explicit actions and visual completion use it in
-production. TTS completion and bulk actions remain under #451.
+decision protocol. Android reader explicit actions, visual completion and TTS
+completion use it in production. Bulk actions remain under #451.
 
 ## Protocol boundary
 
@@ -112,9 +112,9 @@ they do not establish concurrent-process acceptance beyond the existing lease.
   downgrade-refusal/recovery evidence. Keep helpers, UI/emulator, phone and real
   process-death/competing-process evidence separate.
 
-Android's 12 native `ReadingStateTest` cases use real Room transactions and a
-frozen DB35 schema. Desktop's 12 JDBC cases inspect preserved SQL2 tables and
-rows. They include cancellation before commit, an uncertain reply after commit,
+Android's 18 native `ReadingStateTest` cases use real Room transactions. The
+migration case starts from a frozen DB35 schema. Desktop's 12 JDBC cases
+inspect preserved SQL2 tables and rows. They include cancellation before commit, an uncertain reply after commit,
 identity retirement, corruption rejection and known-receipt confirmation after
 reopen. The Android suite also checks two independently opened Room owners.
 Desktop retains its exclusive lease; its tests do not claim simultaneous processes.
@@ -128,7 +128,8 @@ requires restoring that coherent backup; changing only the version number or
 removing new tables would discard protocol authority and is unsupported.
 
 Android reader read/unread and Next adopt this protocol in #454, followed by
-visual completion in #457. TTS and detail/library/updates bulk writers remain legacy callers under #451;
+visual completion in #457 and TTS completion in #459. Detail/library/updates
+bulk writers remain legacy callers under #451;
 their writes still invalidate prepared bindings. Global all-writer ordering and
 shared opened-history adoption remain outstanding.
 
@@ -207,3 +208,27 @@ evidence. Explicit intents detach the visual session when accepted, and a new
 session can take fresh scroll input once those intents settle. Completion results
 come from the guarded transaction and current state. Replacement and exit detach
 local authority and retire the exact durable session.
+
+## Audio completion
+
+The TTS manager carries the original storage observation and document from the
+chapter it is speaking. This applies to saved and source loads as well as input
+from an open reader. A reader following playback uses the audio load's exact
+original pages and observation so the spoken page indices and displayed body
+stay aligned. Other reader loads still prefer a downloaded copy.
+
+Audio authority belongs to a chapter playback and is independent of visual
+authority. The engine receives a unique utterance ID for the current generation
+and speech attempt. The final current callback may create a completion command
+when accepted while playing. A callback recorded during pause can resume
+transport without supplying completion evidence. Stop, replacement and error
+detach the writer. If registration returns after a replacement, the manager
+retires that returned session before acquiring a new one.
+
+Once accepted, a save retains its original command across transport changes.
+Progress writes the utterance fraction separately. A save error reports through
+the reader's completion dialog and playback continues with its configured
+auto-advance. Word-count failure can retry a committed receipt after retirement.
+Retry first checks that a detached writer's retirement succeeded. If the
+original command did not commit and its authority expired, the retry reports
+that it could not apply. It never binds old audio to a newer intent.

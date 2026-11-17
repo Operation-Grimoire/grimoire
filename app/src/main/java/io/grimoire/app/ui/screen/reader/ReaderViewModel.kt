@@ -10,6 +10,7 @@ import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.source.web.PageListSource
 import io.grimoire.app.R
+import io.grimoire.app.data.reading.CompletionSaveNotice
 import io.grimoire.app.util.imageUrl
 import io.grimoire.app.util.isSeparator
 import io.grimoire.app.util.text
@@ -52,6 +53,8 @@ import io.grimoire.app.data.preferences.ReaderPreferences
 import io.grimoire.app.data.preferences.TtsPreferences
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.data.tts.TtsController
+import io.grimoire.app.data.tts.TtsChapterContent
+import io.grimoire.app.data.tts.TtsChapterInput
 import io.grimoire.app.data.tts.TtsEngineType
 import io.grimoire.app.data.tts.TtsPlaybackState
 import io.grimoire.app.extension.ExtensionManager
@@ -134,8 +137,8 @@ class ReaderViewModel @Inject constructor(
     private val visualWriter = ReaderVisualWriter(readingStateDao, completionFacade)
     private var completionNovelKey: NovelKey? = null
     private val requestedCompletion = mutableMapOf<ChapterKey, Pair<AcceptedReadingCommand, Boolean>>()
-    private val _completionNotice = MutableStateFlow<ReaderCompletionNotice?>(null)
-    internal val completionNotice: StateFlow<ReaderCompletionNotice?> = _completionNotice.asStateFlow()
+    private val _completionNotice = MutableStateFlow<CompletionSaveNotice?>(null)
+    internal val completionNotice: StateFlow<CompletionSaveNotice?> = _completionNotice.asStateFlow()
     private var leaving = false
     private var cleared = false
     private val _saveError = MutableStateFlow<String?>(null)
@@ -307,6 +310,7 @@ class ReaderViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val ttsError: StateFlow<String?> = ttsController.errorMessage
+    internal val ttsCompletionNotice = ttsController.completionNotice
 
     val ttsEnabled: StateFlow<Boolean> = ttsPreferences.enabled.stateIn(viewModelScope)
     val ttsEngine: StateFlow<TtsEngineType> = ttsPreferences.engine.stateIn(viewModelScope)
@@ -355,7 +359,7 @@ class ReaderViewModel @Inject constructor(
                     flushProgress()
                     _currentIndex.value = index
                     onChapterChanged(url)
-                    loadPages(preloaded = content.pages)
+                    loadPages(preloaded = content)
                 }
             }
         }
@@ -412,7 +416,7 @@ class ReaderViewModel @Inject constructor(
 
     fun loadPages() = loadPages(preloaded = null)
 
-    private fun loadPages(preloaded: List<NovelPage>?) {
+    private fun loadPages(preloaded: TtsChapterContent?) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
         checkpoints.retire()
         flushProgress()
@@ -432,7 +436,8 @@ class ReaderViewModel @Inject constructor(
                 val key = novelDao.getById(fresh.novelId)?.let { novel ->
                     ChapterKey(NovelKey(novel.sourceId, novel.url), fresh.url)
                 }
-                val result = chapterLoader.load(key, preloaded) {
+                // Following playback must display the body whose page indices the engine speaks.
+                val result = preloaded?.loaded ?: chapterLoader.load(key) {
                     extensionManager.awaitReady()
                     currentCoroutineContext().ensureActive()
                     val src = source
@@ -656,24 +661,24 @@ class ReaderViewModel @Inject constructor(
     }
 
     private suspend fun flushCompletions() {
-        var notice: ReaderCompletionNotice? = null
+        var notice: CompletionSaveNotice? = null
         for (attempt in completionCommands.flush()) {
             when (val outcome = attempt.outcome) {
-                is ReadingCommandOutcome.Failed -> notice = ReaderCompletionNotice.SAVE_FAILED
-                ReadingCommandOutcome.Missing -> if (notice == null) notice = ReaderCompletionNotice.CHANGED
+                is ReadingCommandOutcome.Failed -> notice = CompletionSaveNotice.SAVE_FAILED
+                ReadingCommandOutcome.Missing -> if (notice == null) notice = CompletionSaveNotice.CHANGED
                 is ReadingCommandOutcome.Saved -> {
                     val confirmation = outcome.save.confirmation
                     val visual = attempt.accepted.input as? ReadingCompletionInput.Visual
                     val rejection = (confirmation as? ReadingStateConfirmation.NotApplied)?.reason
                     if (visual != null && rejection == ReadingStateRejection.STALE)
                         visualWriter.invalidate(visual.evidence.loadId)
-                    if (outcome.save.current == null && notice == null) notice = ReaderCompletionNotice.CHANGED
-                    if (outcome.save.wordCount is ReadingWordCountOutcome.Failed && notice != ReaderCompletionNotice.SAVE_FAILED)
-                        notice = ReaderCompletionNotice.WORD_COUNT_FAILED
+                    if (outcome.save.current == null && notice == null) notice = CompletionSaveNotice.CHANGED
+                    if (outcome.save.wordCount is ReadingWordCountOutcome.Failed && notice != CompletionSaveNotice.SAVE_FAILED)
+                        notice = CompletionSaveNotice.WORD_COUNT_FAILED
                     val expiredVisual = visual != null &&
                         (rejection == ReadingStateRejection.STALE || rejection == ReadingStateRejection.INELIGIBLE)
                     if (notice == null && rejection != null && rejection != ReadingStateRejection.NO_CHANGE && !expiredVisual)
-                        notice = ReaderCompletionNotice.CHANGED
+                        notice = CompletionSaveNotice.CHANGED
                     if (completionCommands.isLatest(attempt.accepted)) outcome.save.current?.let { current ->
                         _chapters.update { list -> list.map {
                             if (completionKey(it) == current.key) it.copy(read = current.status == ReadStatus.READ, firstReadAt = current.firstReadAt,
@@ -689,8 +694,8 @@ class ReaderViewModel @Inject constructor(
         }
         // An earlier uncertain command may have blocked a later input in this flush.
         _completionNotice.value = notice ?: when {
-            completionCommands.hasPending() -> ReaderCompletionNotice.SAVE_FAILED
-            _completionNotice.value == ReaderCompletionNotice.CHANGED -> ReaderCompletionNotice.CHANGED
+            completionCommands.hasPending() -> CompletionSaveNotice.SAVE_FAILED
+            _completionNotice.value == CompletionSaveNotice.CHANGED -> CompletionSaveNotice.CHANGED
             else -> null
         }
         synchronizeVisualWriter()
@@ -707,7 +712,7 @@ class ReaderViewModel @Inject constructor(
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
-            _completionNotice.value = ReaderCompletionNotice.SAVE_FAILED
+            _completionNotice.value = CompletionSaveNotice.SAVE_FAILED
         }
     }
 
@@ -754,12 +759,17 @@ class ReaderViewModel @Inject constructor(
                 chapterUrl = chapter.url,
                 chapters = _chapters.value,
                 startIndex = _currentIndex.value,
-                pages = loadedPages,
+                input = _content.value?.takeIf { it.chapterId == chapter.id }?.let { content ->
+                    content.loaded?.let { TtsChapterInput(it, content.pages, content.projection.document) }
+                },
             )
         }
     }
 
     fun stopTts() = ttsController.stop()
+
+    internal fun dismissTtsCompletionError() = ttsController.dismissCompletionError()
+    internal fun retryTtsCompletionSave() = ttsController.retryCompletionSave()
 
     fun clearTtsError() {
         ttsController.consumeError()

@@ -1,11 +1,14 @@
 package io.grimoire.app.data.tts
 
 import io.grimoire.app.data.local.entity.ChapterEntity
+import io.grimoire.reading.ChapterOrigin
+import io.grimoire.reading.LoadedChapter
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class TtsChapterContentTest {
-    private val content = TtsChapterContent(TtsNowPlaying("source", 1, "Book", "/chapter", "Chapter"), emptyList())
+    private val content = TtsChapterContent(TtsNowPlaying("source", 1, "Book", "/chapter", "Chapter"),
+        LoadedChapter(emptyList(), ChapterOrigin.SOURCE))
 
     @Test fun followingReaderFindsTheLoadedChapter() {
         val chapters = listOf(ChapterEntity(novelId = 1, url = "/previous", name = "Previous"),

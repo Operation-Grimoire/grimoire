@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.app.data.local.entity.ChapterEntity
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
@@ -24,6 +23,7 @@ class TtsController @Inject constructor(
     val chapterContent: StateFlow<TtsChapterContent?> = manager.chapterContent
     val progress: StateFlow<TtsProgress> = manager.progress
     val errorMessage: StateFlow<String?> = manager.errorMessage
+    internal val completionNotice = manager.completionNotice
 
     /** Starts reading a chapter aloud, reusing already-loaded chapter data. */
     fun play(
@@ -32,9 +32,9 @@ class TtsController @Inject constructor(
         chapterUrl: String,
         chapters: List<ChapterEntity>,
         startIndex: Int,
-        pages: List<NovelPage>,
+        input: TtsChapterInput?,
     ) {
-        manager.prepare(pkg, novelId, chapterUrl, chapters, startIndex, pages)
+        manager.prepare(pkg, novelId, chapterUrl, chapters, startIndex, input)
         val intent = Intent(context, TtsPlaybackService::class.java)
             .setAction(TtsPlaybackService.ACTION_START)
         ContextCompat.startForegroundService(context, intent)
@@ -45,4 +45,6 @@ class TtsController @Inject constructor(
     fun next() = manager.skipNext()
     fun previous() = manager.skipPrevious()
     fun consumeError(): String? = manager.consumeError()
+    internal fun dismissCompletionError() = manager.dismissCompletionError()
+    internal fun retryCompletionSave() = manager.retryCompletionSave()
 }
