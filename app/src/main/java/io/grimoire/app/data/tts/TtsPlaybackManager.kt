@@ -322,7 +322,7 @@ class TtsPlaybackManager @Inject constructor(
             withContext(Dispatchers.Default) { TtsChapterInput.fromLoaded(loaded) }
         }
         currentCoroutineContext().ensureActive()
-        _nowPlaying.value?.let { _chapterContent.value = TtsChapterContent(it, input.pages, input.observation) }
+        _nowPlaying.value?.let { _chapterContent.value = TtsChapterContent(it, input.loaded) }
         val locale = languageResolver.resolveLocale(novelLanguage)
         utterances = TtsTextChunker.chunk(input.pages, locale)
         if (utterances.isEmpty()) {
@@ -377,11 +377,13 @@ class TtsPlaybackManager @Inject constructor(
         override fun onStart(utteranceId: String) = Unit
 
         override fun onDone(utteranceId: String) {
+            val deliveredState = _state.value
+            if (deliveredState != TtsPlaybackState.PLAYING && deliveredState != TtsPlaybackState.PAUSED) return
+            val acceptedAt = (System.currentTimeMillis() / 1000) * 1000
             scope.launch {
                 val playing = _state.value == TtsPlaybackState.PLAYING
                 if (!playing && _state.value != TtsPlaybackState.PAUSED) return@launch
-                val acceptedAt = (System.currentTimeMillis() / 1000) * 1000
-                callbacks.finish(utteranceId, playing, acceptedAt) ?: return@launch
+                callbacks.finish(utteranceId, deliveredState == TtsPlaybackState.PLAYING, acceptedAt) ?: return@launch
                 if (playing) advanceCompletedUtterance()
             }
         }

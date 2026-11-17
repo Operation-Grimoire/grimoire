@@ -112,9 +112,9 @@ they do not establish concurrent-process acceptance beyond the existing lease.
   downgrade-refusal/recovery evidence. Keep helpers, UI/emulator, phone and real
   process-death/competing-process evidence separate.
 
-Android's 16 native `ReadingStateTest` cases use real Room transactions and a
-frozen DB35 schema. Desktop's 12 JDBC cases inspect preserved SQL2 tables and
-rows. They include cancellation before commit, an uncertain reply after commit,
+Android's 18 native `ReadingStateTest` cases use real Room transactions. The
+migration case starts from a frozen DB35 schema. Desktop's 12 JDBC cases
+inspect preserved SQL2 tables and rows. They include cancellation before commit, an uncertain reply after commit,
 identity retirement, corruption rejection and known-receipt confirmation after
 reopen. The Android suite also checks two independently opened Room owners.
 Desktop retains its exclusive lease; its tests do not claim simultaneous processes.
@@ -213,8 +213,9 @@ local authority and retire the exact durable session.
 
 The TTS manager carries the original storage observation and document from the
 chapter it is speaking. This applies to saved and source loads as well as input
-from an open reader. The reader follower preserves the audio load's observation
-when it reuses pages. It can independently prefer a newly saved body as usual.
+from an open reader. A reader following playback uses the audio load's exact
+original pages and observation so the spoken page indices and displayed body
+stay aligned. Other reader loads still prefer a downloaded copy.
 
 Audio authority belongs to a chapter playback and is independent of visual
 authority. The engine receives a unique utterance ID for the current generation

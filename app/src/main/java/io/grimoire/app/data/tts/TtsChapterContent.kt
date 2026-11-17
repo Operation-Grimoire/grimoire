@@ -8,15 +8,17 @@ import io.grimoire.reading.storage.ChapterStorageObservation
 
 /** The pages sent to the engine and the authority captured when their original body loaded. */
 data class TtsChapterInput(
+    val loaded: LoadedChapter,
     val pages: List<NovelPage>,
     val document: CanonicalDocument?,
-    val observation: ChapterStorageObservation?,
 ) {
+    val observation: ChapterStorageObservation? get() = loaded.storageObservation
+
     companion object {
         fun fromLoaded(loaded: LoadedChapter): TtsChapterInput {
             val pages = loaded.pages.toList()
             val observation = loaded.storageObservation
-            return TtsChapterInput(pages, observation?.let { CanonicalDocument.fromPages(it.key, pages) }, observation)
+            return TtsChapterInput(loaded.copy(pages = pages), pages, observation?.let { CanonicalDocument.fromPages(it.key, pages) })
         }
     }
 }
@@ -24,8 +26,7 @@ data class TtsChapterInput(
 /** The active chapter's original pages, shared with a reader following playback. */
 data class TtsChapterContent(
     val nowPlaying: TtsNowPlaying,
-    val pages: List<NovelPage>,
-    val observation: ChapterStorageObservation? = null,
+    val loaded: LoadedChapter,
 ) {
     internal fun readerChapterIndex(pkg: String, chapters: List<ChapterEntity>): Int {
         if (pkg != nowPlaying.pkg) return -1

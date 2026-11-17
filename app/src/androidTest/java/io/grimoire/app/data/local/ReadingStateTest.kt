@@ -188,6 +188,66 @@ class ReadingStateTest {
         assertEquals(ReadingCompletionState(key, ReadStatus.UNREAD, null), dao.read(key))
     }
 
+    @Test fun failedAudioRetirementDoesNotBlockReplacementPlayback() = runBlocking<Unit> {
+        seed()
+        var failRetirement = true
+        val failing = object : ReadingStateDao by dao {
+            override suspend fun retire(session: ReadingStateSession): Boolean {
+                if (failRetirement) throw IOException("Old writer still needs cleanup")
+                return dao.retire(session)
+            }
+        }
+        val writer = TtsCompletionWriter(this, failing, ReadingStateFacade(failing, null))
+        val input = audioInput()
+        writer.bind(input)
+        val old = decodeReadingStateRecord(db.readingStateStorageDao().find(1)!!.state).audio!!.id
+        writer.retire()
+        writer.bind(input)
+        val active = decodeReadingStateRecord(db.readingStateStorageDao().find(1)!!.state).audio!!.id
+        assertNotEquals(old, active)
+        failRetirement = false
+        writer.retry().join()
+        assertEquals(active, decodeReadingStateRecord(db.readingStateStorageDao().find(1)!!.state).audio!!.id)
+        val callbacks = TtsUtteranceCallbacks()
+        callbacks.speak("replacement")
+        val completed = requireNotNull(callbacks.finish("replacement", playing = true, atMillis = 600))
+        requireNotNull(writer.complete(completed, 0, 1)).join()
+        assertEquals(600L, dao.read(key)!!.firstReadAt)
+        writer.retire()
+    }
+
+    @Test fun retiringDuringTheFirstAudioCommitSurfacesItsTerminalResult() = runBlocking<Unit> {
+        seed()
+        val entered = CompletableDeferred<Unit>()
+        val proceed = CompletableDeferred<Unit>()
+        val retired = CompletableDeferred<Unit>()
+        val delayed = object : ReadingStateDao by dao {
+            override suspend fun commit(command: ReadingStateCommand): ReadingStateCommit {
+                entered.complete(Unit)
+                proceed.await()
+                return dao.commit(command)
+            }
+            override suspend fun retire(session: ReadingStateSession): Boolean =
+                dao.retire(session).also { retired.complete(Unit) }
+        }
+        val writer = TtsCompletionWriter(this, delayed, ReadingStateFacade(delayed, null))
+        writer.bind(audioInput())
+        val callbacks = TtsUtteranceCallbacks()
+        callbacks.speak("playing")
+        val completed = requireNotNull(callbacks.finish("playing", playing = true, atMillis = 700))
+        val saving = requireNotNull(writer.complete(completed, 0, 1))
+        try {
+            withTimeout(5_000) { entered.await() }
+            writer.retire()
+            withTimeout(5_000) { retired.await() }
+        } finally {
+            proceed.complete(Unit)
+        }
+        saving.join()
+        assertEquals(CompletionSaveNotice.CHANGED, writer.notice.value)
+        assertEquals(ReadingCompletionState(key, ReadStatus.UNREAD, null), dao.read(key))
+    }
+
     @Test fun visualOwnerCannotRelabelOldSamplesAfterExplicitIntentOrReplacement() = runBlocking<Unit> {
         seed()
         val facade = ReadingStateFacade(dao, null)

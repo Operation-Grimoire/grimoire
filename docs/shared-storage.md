@@ -316,7 +316,7 @@ against a new layout. Measured hints and character-level realization remain sepa
 See [capture/restore/flush and proof limits](reading-anchors.md#production-capture-restoration-and-flush).
 Four additional native ReaderCheckpointAdoptionTest cases cover the production Android
 preparation helper with real Room: mapping/reopen, retained fallback evidence, failed/
-uncertain writes and stale source/retired load rejection. The script requires all 57
+uncertain writes and stale source/retired load rejection. The script requires all 59
 native successes; compiling cases alone is not native runtime acceptance.
 
 ## Reading-state adapters

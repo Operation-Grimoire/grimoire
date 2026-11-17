@@ -22,6 +22,7 @@ internal class ReaderContent(
     val chapterId: Long, val projection: ReadingProjection, val pages: List<NovelPage>,
     val storageObservation: ChapterStorageObservation? = null,
     val checkpoint: ReaderCheckpointLoad? = null,
+    val loaded: LoadedChapter? = null,
 ) {
     // Stable lazy-item identity for this load; not a measured-layout or persistence/session token.
     val loadKey: String = UUID.randomUUID().toString()
@@ -30,7 +31,7 @@ internal class ReaderContent(
 /** Production preparation, also exercised with real Room in instrumentation. No restore callback writes. */
 internal suspend fun prepareReaderCheckpoint(content: ReaderContent, checkpoints: ReaderCheckpoints,
     legacy: LegacyReaderViewport?): ReaderContent = ReaderContent(content.chapterId, content.projection, content.pages,
-        content.storageObservation, checkpoints.open(content.projection, content.storageObservation, legacy))
+        content.storageObservation, checkpoints.open(content.projection, content.storageObservation, legacy), content.loaded)
 
 internal fun androidReaderContent(
     chapterId: Long, key: ChapterKey?, loaded: LoadedChapter,
@@ -46,7 +47,8 @@ internal fun androidReaderContent(
     }
     val projection = ReadingProjection.create(key, raw, mapped, leadingStart = true, trailingEnd = true)
     val legacyPages = if (loaded.origin == ChapterOrigin.SAVED) mapped.map { it.page } else raw
-    return ReaderContent(chapterId, projection, Collections.unmodifiableList(legacyPages), loaded.storageObservation)
+    return ReaderContent(chapterId, projection, Collections.unmodifiableList(legacyPages), loaded.storageObservation,
+        loaded = loaded.copy(pages = Collections.unmodifiableList(raw)))
 }
 
 /** Bind UI observations to the exact loaded projection, including reloads of the same chapter. */

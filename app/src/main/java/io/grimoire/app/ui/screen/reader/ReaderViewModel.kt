@@ -39,7 +39,6 @@ import io.grimoire.reading.anchor.ReadingProjection
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
 import io.grimoire.reading.ChapterLoader
-import io.grimoire.reading.ChapterOrigin
 import io.grimoire.reading.ChapterPageAccess
 import io.grimoire.reading.ChapterLoadFailure
 import io.grimoire.reading.ChapterLoadException
@@ -437,7 +436,8 @@ class ReaderViewModel @Inject constructor(
                 val key = novelDao.getById(fresh.novelId)?.let { novel ->
                     ChapterKey(NovelKey(novel.sourceId, novel.url), fresh.url)
                 }
-                val result = chapterLoader.load(key, preloaded?.pages) {
+                // Following playback must display the body whose page indices the engine speaks.
+                val result = preloaded?.loaded ?: chapterLoader.load(key) {
                     extensionManager.awaitReady()
                     currentCoroutineContext().ensureActive()
                     val src = source
@@ -447,12 +447,6 @@ class ReaderViewModel @Inject constructor(
                         pageSource == null -> ChapterPageAccess.Unavailable(ChapterLoadFailure.PAGES_UNSUPPORTED)
                         else -> ChapterPageAccess.Available { pageSource.getPageList(fresh.toChapter()) }
                     }
-                }.let { loaded ->
-                    if (loaded.origin == ChapterOrigin.PRELOADED) {
-                        // A follower reuses the playback load's observation, never the newer read
-                        // performed while checking for a saved copy.
-                        loaded.copy(storageObservation = preloaded?.observation?.takeIf { it.key == key })
-                    } else loaded
                 }
                 val loaded = withContext(Dispatchers.IO) {
                     androidReaderContent(chapter.id, key, result) { page ->
@@ -765,8 +759,8 @@ class ReaderViewModel @Inject constructor(
                 chapterUrl = chapter.url,
                 chapters = _chapters.value,
                 startIndex = _currentIndex.value,
-                input = _content.value?.takeIf { it.chapterId == chapter.id }?.let {
-                    TtsChapterInput(it.pages, it.projection.document, it.storageObservation)
+                input = _content.value?.takeIf { it.chapterId == chapter.id }?.let { content ->
+                    content.loaded?.let { TtsChapterInput(it, content.pages, content.projection.document) }
                 },
             )
         }

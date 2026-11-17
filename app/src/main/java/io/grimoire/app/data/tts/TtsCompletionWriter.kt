@@ -50,7 +50,6 @@ internal class TtsCompletionWriter(
         scope.async {
             lifecycle.withLock {
                 try {
-                    retirePending()
                     if (ticket != generation) return@withLock
                     val binding = dao.prepare(document.key)?.binding ?: return@withLock
                     if (ticket != generation) return@withLock
@@ -60,13 +59,15 @@ internal class TtsCompletionWriter(
                         writer = session
                     } else {
                         retiring.add(session)
-                        retirePending()
                     }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (_: Exception) {
                     if (ticket == generation) _notice.value = CompletionSaveNotice.CHANGED
-                    if (retiring.isNotEmpty()) _notice.value = CompletionSaveNotice.SAVE_FAILED
+                } finally {
+                    // Exact retirement can retry independently. A failed retirement of the old
+                    // writer must not prevent the replacement playback from getting authority.
+                    tryRetirePending()
                 }
             }
         }.await()
@@ -111,10 +112,12 @@ internal class TtsCompletionWriter(
                 ReadingCommandOutcome.Missing -> CompletionSaveNotice.CHANGED
                 is ReadingCommandOutcome.Saved -> {
                     val reason = (outcome.save.confirmation as? ReadingStateConfirmation.NotApplied)?.reason
+                    val audio = attempt.accepted.input as ReadingCompletionInput.Audio
+                    val retired = writer?.id != audio.evidence.playbackId
                     when {
                         outcome.save.wordCount is ReadingWordCountOutcome.Failed -> CompletionSaveNotice.WORD_COUNT_FAILED
                         reason == ReadingStateRejection.INVALID || reason == ReadingStateRejection.CONFLICT ||
-                            (retry && reason == ReadingStateRejection.STALE) -> CompletionSaveNotice.CHANGED
+                            ((retry || retired) && reason == ReadingStateRejection.STALE) -> CompletionSaveNotice.CHANGED
                         else -> null
                     }
                 }
@@ -128,8 +131,12 @@ internal class TtsCompletionWriter(
     }
 
     private suspend fun retireWithNotice() {
+        lifecycle.withLock { tryRetirePending() }
+    }
+
+    private suspend fun tryRetirePending() {
         try {
-            lifecycle.withLock { retirePending() }
+            retirePending()
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {

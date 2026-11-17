@@ -101,7 +101,7 @@ guarded-download successes. Skipped/assumption-failure statuses cannot satisfy
 these counts. It retains `codec-result.log`, `library-result.log` and
 `download-result.log` alongside the host result. See [shared storage](docs/shared-storage.md) for the adapter contracts.
 
-The same workflow requires 16 `ReadingStateTest` successes on real Room/ART
+The same workflow requires 18 `ReadingStateTest` successes on real Room/ART
 and retains `reading-state-result.log`. These exercise DB35-to-36 migration,
 completion intent ordering, legacy invalidation, cancellation, rollback, replay
 and exact writer retirement. It exercises the Android visual and TTS writers
