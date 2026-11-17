@@ -77,6 +77,12 @@ class ReadingStateTest {
         rejected(dao.commit(command.copy(input = ReadingCompletionInput.MarkRead(key, 101))), ReadingStateRejection.CONFLICT)
         assertEquals(metadata.copy(firstReadAt = 100), db.chapterDao().getByUrl(1, key.url))
         assertEquals(novel, db.novelDao().getById(1)); assertEquals(content, db.chapterDao().getContent(1))
+        val other = key.copy(url = "/second")
+        db.chapterDao().insertAll(listOf(metadata.copy(id = 2, url = other.url)))
+        val second = dao.prepare(other)!!
+        dao.commit(ReadingStateCommand("other", second.binding, ReadingCompletionInput.MarkRead(other, 200), null, 0))
+        assertEquals(200L, dao.read(other)!!.firstReadAt); assertEquals(ReadStatus.UNREAD, dao.read(key)!!.status)
+        assertEquals(100L, dao.read(key)!!.firstReadAt)
     }
 
     @Test fun queuedVisualAndAudioCannotUndoUnreadButFreshRebindCan() = runBlocking<Unit> {
@@ -95,9 +101,12 @@ class ReadingStateTest {
 
     @Test fun legacySameValueWritesIdentityAbaAndRecreationRetireOldBindings() = runBlocking<Unit> {
         seed(); val sql = db.openHelper.writableDatabase
+        db.novelDao().upsert(NovelEntity(id = 2, sourceId = 18, url = "/second-book", title = "Second"))
         val mutations: List<suspend () -> Unit> = listOf(
             { db.chapterDao().setReadRaw(1, false) },
             { sql.execSQL("UPDATE chapters SET url='/temporary' WHERE id=1"); sql.execSQL("UPDATE chapters SET url='/chapter' WHERE id=1") },
+            { sql.execSQL("UPDATE chapters SET novelId=2 WHERE id=1"); sql.execSQL("UPDATE chapters SET novelId=1 WHERE id=1") },
+            { sql.execSQL("UPDATE novels SET url='/temporary-book' WHERE id=1"); sql.execSQL("UPDATE novels SET url='/book' WHERE id=1") },
             { sql.execSQL("UPDATE novels SET sourceId=18 WHERE id=1"); sql.execSQL("UPDATE novels SET sourceId=17 WHERE id=1") },
             { sql.execSQL("DELETE FROM chapters WHERE id=1"); db.chapterDao().insertAll(listOf(metadata)) },
         )
@@ -164,6 +173,11 @@ class ReadingStateTest {
         val oldCheckpoint = encodeReadingCheckpoint(ReadingCheckpointState(ReadingSessionBinding("old", ChapterStorageObservation(key, "old", "old", ChapterContentPresence.SAVED), document.logicalRevision), 1,
             ReadingAnchor(key, document.logicalRevision, AnchorPosition.End)))
         val oldDefinitions: List<String>
+        lateinit var oldRows: Map<String, List<List<Pair<Int, String?>>>>
+        fun snapshot(query: (String) -> android.database.Cursor): Map<String, List<List<Pair<Int, String?>>>> {
+            val names = query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT IN ('room_master_table','android_metadata','reading_states','reading_state_receipts') ORDER BY name").use { c -> buildList { while(c.moveToNext()) add(c.getString(0)) } }
+            return names.associateWith { name -> query("SELECT * FROM \"$name\" ORDER BY rowid").use { c -> buildList { while(c.moveToNext()) add((0 until c.columnCount).map { c.getType(it) to c.getString(it) }) } } }
+        }
         SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(name), null).use { raw ->
             val schema = instrumentation.context.assets.open("chapter-codec/v35.sql").bufferedReader().use { it.readText() }
             schema.lineSequence().filter { it.isNotBlank() && !it.startsWith("--") }.forEach(raw::execSQL)
@@ -172,6 +186,11 @@ class ReadingStateTest {
             raw.execSQL("INSERT INTO chapter_content VALUES(1,?,1)", arrayOf(legacy.content))
             raw.execSQL("INSERT INTO chapter_download_state(chapterId,revision,committedAttemptId,cacheRevision) VALUES(1,'generation','receipt','cache')")
             raw.execSQL("INSERT INTO reading_checkpoints VALUES(1,?)", arrayOf(oldCheckpoint))
+            raw.execSQL("INSERT INTO categories(id,name,`order`,isDefault,isHidden) VALUES(3,'Fixture',0,0,1)")
+            raw.execSQL("UPDATE novels SET categoryId=3 WHERE id=1")
+            raw.execSQL("INSERT INTO reading_history(id,sourcePackage,novelId,novelUrl,novelTitle,chapterUrl,chapterName,chapterNumber,openedAt) VALUES(1,'fixture',1,'/book','Book','/chapter','Chapter',1,17)")
+            raw.execSQL("INSERT INTO browsing_history(id,sourcePackage,novelId,novelUrl,novelTitle,openedAt) VALUES(1,'fixture',1,'/book','Book',19)")
+            oldRows = snapshot { raw.rawQuery(it, null) }
             oldDefinitions = raw.rawQuery("SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY name", null).use { c -> buildList { while(c.moveToNext()) add(c.getString(0)) } }
         }
         open(object : Migration(35, 36) { override fun migrate(db: SupportSQLiteDatabase) { MIGRATION_35_36.migrate(db); error("Migration fault") } })
@@ -188,7 +207,8 @@ class ReadingStateTest {
         assertEquals("cache", db.chapterDownloadStateDao().find(1)!!.cacheRevision)
         assertNull(db.readingStateStorageDao().find(1)); dao.read(key); assertNull(db.readingStateStorageDao().find(1))
         val after = db.openHelper.readableDatabase.query("SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' AND name NOT IN ('reading_states','reading_state_receipts','reading_state_legacy','reading_state_chapter_identity','reading_state_novel_identity') ORDER BY name").use { c -> buildList { while(c.moveToNext()) add(c.getString(0)) } }
-        assertEquals(oldDefinitions, after); prepare()
+        assertEquals(oldDefinitions, after); assertEquals(oldRows, snapshot { db.openHelper.readableDatabase.query(it) }); prepare()
+        assertEquals(oldRows, snapshot { db.openHelper.readableDatabase.query(it) })
         assertEquals(metadata.copy(read = true, firstReadAt = 789), db.chapterDao().getByUrl(1, key.url))
     }
 }

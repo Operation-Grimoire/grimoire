@@ -57,6 +57,12 @@ class ReadingStateTest {
             rejected(dao.commit(command.copy(input = ReadingCompletionInput.MarkRead(fixtureKey, 101))), ReadingStateRejection.CONFLICT)
             assertEquals(before, library.book(fixtureKey.novel)); assertEquals(bytes, DesktopSavedChapterDao(library).readSnapshot(fixtureKey))
             assertEquals(download, DesktopDownloadDao(library).currentReceipt(fixtureKey)); assertNull(dao.prepare(fixtureKey.copy(url = "/missing")))
+            val other = fixtureKey.copy(url = "/second")
+            library.remember(fixtureKey.novel, fixtureNovel, fixtureChapters + io.grimoire.api.model.novel.Chapter(other.url, "Second"))
+            val second = dao.prepare(other)!!
+            dao.commit(ReadingStateCommand("other", second.binding, ReadingCompletionInput.MarkRead(other, 200), null, 0))
+            assertEquals(200L, dao.read(other)!!.firstReadAt); assertEquals(ReadStatus.UNREAD, dao.read(fixtureKey)!!.status)
+            assertEquals(100L, dao.read(fixtureKey)!!.firstReadAt)
         }
     }
 
