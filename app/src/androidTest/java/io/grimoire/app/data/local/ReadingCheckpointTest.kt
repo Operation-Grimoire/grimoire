@@ -41,7 +41,7 @@ class ReadingCheckpointTest {
     @After fun cleanup() { database?.close(); context.deleteDatabase(name) }
     private fun open(migration: Migration = MIGRATION_34_35) {
         database = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(migration).addCallback(DOWNLOAD_SCHEMA_CALLBACK).build()
+            .addMigrations(migration, MIGRATION_35_36).addCallback(DOWNLOAD_SCHEMA_CALLBACK).build()
         saved = RoomSavedChapterDao(db); dao = RoomReadingCheckpointDao(db, saved)
     }
     private suspend fun seed(content: Boolean = false) {
@@ -205,11 +205,11 @@ class ReadingCheckpointTest {
             assertEquals(34, raw.version)
             raw.rawQuery("SELECT count(*) FROM sqlite_master WHERE name='reading_checkpoints'", null).use { it.moveToFirst(); assertEquals(0, it.getInt(0)) }
         }
-        open(); assertEquals(35, db.openHelper.writableDatabase.version)
+        open(); assertEquals(36, db.openHelper.writableDatabase.version)
         assertEquals(metadata, db.chapterDao().getByUrl(1, key.url)); assertEquals(legacy, db.chapterDao().getContent(1))
         assertEquals("receipt", db.chapterDownloadStateDao().find(1)!!.committedAttemptId)
         assertEquals("cache", db.chapterDownloadStateDao().find(1)!!.cacheRevision); assertNull(dao.read(key))
-        val after = db.openHelper.readableDatabase.query("SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' AND name NOT IN ('reading_checkpoints','room_master_table','checkpoint_chapter_identity','checkpoint_novel_identity') ORDER BY name").use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
+        val after = db.openHelper.readableDatabase.query("SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' AND name NOT IN ('reading_checkpoints','room_master_table','checkpoint_chapter_identity','checkpoint_novel_identity','reading_states','reading_state_receipts','reading_state_legacy','reading_state_chapter_identity','reading_state_novel_identity') ORDER BY name").use { c -> buildList { while (c.moveToNext()) add(c.getString(0)) } }
         assertEquals(definitions, after)
     }
 }

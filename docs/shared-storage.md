@@ -316,3 +316,13 @@ Four additional native ReaderCheckpointAdoptionTest cases cover the production A
 preparation helper with real Room: mapping/reopen, retained fallback evidence, failed/
 uncertain writes and stale source/retired load rejection. The script requires all 41
 native successes; compiling cases alone is not native runtime acceptance.
+
+## Reading-state adapters
+
+`ReadingStateDao` shares preparation, writer registration and guarded completion
+commands across Room and desktop JDBC. Android DB36 and desktop SQL3 add protocol
+records and command receipts. Existing Android completion fields remain the source
+of compatibility state; desktop starts UNKNOWN. The transaction commits value,
+intent revision and receipt together. Legacy Android completion writes invalidate
+old bindings, including same-value writes. The production writers are a separate
+adoption step. See [protocol, migrations and rollback](reading-state-storage.md).

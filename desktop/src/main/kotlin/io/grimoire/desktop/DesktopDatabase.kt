@@ -50,7 +50,7 @@ internal class DesktopDatabase(
             opened = DriverManager.getConnection("jdbc:sqlite:$database")
             connection = opened
             require(connection.scalar("PRAGMA application_id") == APPLICATION_ID.toLong() &&
-                connection.scalar("PRAGMA user_version") in 1L..2L) { "Unsupported desktop database" }
+                connection.scalar("PRAGMA user_version") in 1L..3L) { "Unsupported desktop database" }
             id = connection.query("SELECT value FROM settings WHERE name='id'") { it.getString(1) }.single()
             val phase = connection.query("SELECT value FROM settings WHERE name='phase'") { it.getString(1) }.single()
             require(phase == "active" || phase == "imported") { "Invalid desktop migration phase" }
@@ -63,9 +63,11 @@ internal class DesktopDatabase(
                 statement.execute("PRAGMA synchronous=FULL")
             }
             require(connection.scalar("PRAGMA foreign_keys") == 1L && connection.scalar("PRAGMA synchronous") == 2L)
-            if (connection.scalar("PRAGMA user_version") == 1L) transaction {
-                connection.execute(CREATE_READING_CHECKPOINTS)
-                connection.execute("PRAGMA user_version=2")
+            val oldVersion = connection.scalar("PRAGMA user_version")
+            if (oldVersion < 3L) transaction {
+                if (oldVersion == 1L) connection.execute(CREATE_READING_CHECKPOINTS)
+                createReadingStateTables(connection)
+                connection.execute("PRAGMA user_version=3")
             }
             // The exclusive lease proves the previous process cannot still complete a callback.
             connection.execute("UPDATE contents SET active_attempt=NULL, active_owner=NULL, base_revision=NULL")
@@ -130,7 +132,7 @@ internal class DesktopDatabase(
                 db.createStatement().use { s ->
                     s.execute("PRAGMA synchronous=FULL")
                     s.execute("PRAGMA application_id=$APPLICATION_ID")
-                    s.execute("PRAGMA user_version=2")
+                    s.execute("PRAGMA user_version=3")
                 }
                 db.autoCommit = false
                 db.execute("CREATE TABLE settings(name TEXT PRIMARY KEY, value TEXT NOT NULL)")
@@ -144,6 +146,7 @@ internal class DesktopDatabase(
                     PRIMARY KEY(source_id,novel_url,chapter_url),
                     FOREIGN KEY(source_id,novel_url) REFERENCES books(source_id,novel_url) ON DELETE CASCADE)""")
                 db.execute(CREATE_READING_CHECKPOINTS)
+                createReadingStateTables(db)
                 db.execute("INSERT INTO settings VALUES('id',?),('phase','imported')", UUID.randomUUID().toString())
                 books.forEach { book -> db.execute("INSERT INTO books VALUES(?,?,?)", book.key.sourceId, book.key.url,
                     encodeBook(book).apply { remove("downloaded") }.toString()) }
@@ -262,3 +265,10 @@ private const val CREATE_READING_CHECKPOINTS = """CREATE TABLE reading_checkpoin
     source_id INTEGER NOT NULL, novel_url TEXT NOT NULL, chapter_url TEXT NOT NULL, state TEXT NOT NULL,
     PRIMARY KEY(source_id,novel_url,chapter_url),
     FOREIGN KEY(source_id,novel_url,chapter_url) REFERENCES contents(source_id,novel_url,chapter_url) ON DELETE CASCADE)"""
+
+private fun createReadingStateTables(db: Connection) {
+    db.execute("""CREATE TABLE reading_states(source_id INTEGER NOT NULL, novel_url TEXT NOT NULL, chapter_url TEXT NOT NULL, state TEXT NOT NULL,
+        PRIMARY KEY(source_id,novel_url,chapter_url), FOREIGN KEY(source_id,novel_url) REFERENCES books(source_id,novel_url) ON DELETE CASCADE)""")
+    db.execute("""CREATE TABLE reading_state_receipts(source_id INTEGER NOT NULL, novel_url TEXT NOT NULL, chapter_url TEXT NOT NULL, command_id TEXT NOT NULL, receipt TEXT NOT NULL,
+        PRIMARY KEY(source_id,novel_url,chapter_url,command_id), FOREIGN KEY(source_id,novel_url) REFERENCES books(source_id,novel_url) ON DELETE CASCADE)""")
+}

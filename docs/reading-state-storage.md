@@ -1,9 +1,9 @@
 # Guarded reading-state storage
 
-This is the protocol and migration plan for #447 under #432 and roadmap #397.
+This is the protocol and adapter boundary for #447 under #432 and roadmap #397.
 It extends the [reading-state decisions](reading-state.md) without treating a pure
-proposal as permission to write. The shared protocol is implemented first; platform
-adapters and their migration/runtime evidence are pending in this workstream.
+proposal as permission to write. Room and desktop JDBC implement the same DAO and decision protocol. Production
+reader and playback adoption remain separate work.
 
 ## Protocol boundary
 
@@ -45,7 +45,7 @@ explicit intents permit at most E+1 automatic state transitions, so there are at
 most 2E+1 receipt rows. Repeated viewport/playback no-ops add none. This is linear
 growth with explicit intents, not a fixed storage cap. There is no eviction policy;
 future compaction must define which old commands become stale before discarding
-receipts. The proof plan must check the bound and no-op behavior.
+receipts. Pure protocol tests check the bound; real adapters check that no-ops add no receipts.
 
 The shared decision returns the result, next protocol record and new receipt.
 Adapters commit value, record and receipt together or roll back all three. Replays
@@ -59,7 +59,7 @@ bodies or device-local cached image paths.
 
 ## Android expansion and legacy writers
 
-DB36 will add reading_states (chapterId, state JSON) and reading_state_receipts
+DB36 adds reading_states (chapterId, state JSON) and reading_state_receipts
 (chapterId, commandId, receipt JSON). Both reference chapters with delete cascade;
 receipts do not reference the protocol row. The migration creates empty tables and
 identity/legacy-write invalidation triggers. It does not rewrite chapter/history,
@@ -81,7 +81,7 @@ and opened history remain separate; this adapter cannot claim their success.
 
 ## Desktop expansion
 
-SQL3 will add the same logical record/receipt tables keyed by ChapterKey with a
+SQL3 adds the same logical record/receipt tables keyed by ChapterKey with a
 novel foreign key. The record stores the new value; old desktop libraries have no
 historical completion value. Preparation does not infer one from legacy positions.
 Chapter-list refresh deletes records and receipts for removed chapters before a
@@ -94,7 +94,7 @@ The existing marker, exclusive store lease, legacy file backup and content codec
 remain unchanged. Separate adapter objects in one store can test intent conflicts;
 they do not establish concurrent-process acceptance beyond the existing lease.
 
-## Required proof before completion
+## Verification and proof boundaries
 
 - Pure protocol/strict codec cases: same-value intents, two prepared owners,
   queued visual/audio versus unread, fresh rebind, sequence/session/content mismatch,
@@ -106,6 +106,20 @@ they do not establish concurrent-process acceptance beyond the existing lease.
 - Exact-head CI/review, actual Android ART cases and signed DB36 upgrade/restart/
   downgrade-refusal/recovery evidence. Keep helpers, UI/emulator, phone and real
   process-death/competing-process evidence separate.
+
+Android's eight native `ReadingStateTest` cases use real Room transactions and a
+frozen DB35 schema. Desktop's eight JDBC cases inspect preserved SQL2 tables and
+rows. They include cancellation before commit, an uncertain reply after commit,
+identity retirement, corruption rejection and known-receipt confirmation after
+reopen. The Android suite also checks two independently opened Room owners.
+Desktop retains its exclusive lease; its tests do not claim simultaneous processes.
+Hosted results and signed migration snapshots must be recorded separately from
+compilation or JVM results.
+
+Before upgrading, retain a complete, closed pre-upgrade database/store backup.
+Older Android DB35 and desktop SQL1/2 builds refuse the expanded schema. Downgrade
+requires restoring that coherent backup; changing only the version number or
+removing new tables would discard protocol authority and is unsupported.
 
 The production visual/manual/bulk/Next/TTS writers and shared opened-history writer
 remain later subissues. This protocol does not claim that all current writers

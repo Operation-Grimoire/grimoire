@@ -11,11 +11,14 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.grimoire.app.data.local.MIGRATION_34_35
+import io.grimoire.app.data.local.MIGRATION_35_36
 import io.grimoire.app.data.local.MIGRATION_33_34
 import io.grimoire.app.data.local.DOWNLOAD_SCHEMA_CALLBACK
 import io.grimoire.app.data.local.RoomDownloadDao
 import io.grimoire.reading.storage.DownloadRepository
 import io.grimoire.app.data.local.AppDatabase
+import io.grimoire.app.data.local.RoomReadingStateDao
+import io.grimoire.reading.storage.ReadingStateDao
 import io.grimoire.app.data.local.RoomReadingCheckpointDao
 import io.grimoire.reading.storage.ReadingCheckpointDao
 import io.grimoire.app.data.local.RoomSavedChapterDao
@@ -418,7 +421,7 @@ object DatabaseModule {
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "grimoire.db")
             .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32)
-            .addMigrations(MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35)
+            .addMigrations(MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36)
             .addCallback(DOWNLOAD_SCHEMA_CALLBACK)
             .addCallback(SEED_DEFAULT_CATEGORY)
             .openHelperFactory(ChapterContentPrepassFactory())
@@ -428,6 +431,9 @@ object DatabaseModule {
     @Provides fun provideChapterDao(db: AppDatabase): ChapterDao = db.chapterDao()
     @Provides @Singleton
     fun provideReadingCheckpointDao(dao: RoomReadingCheckpointDao): ReadingCheckpointDao = dao
+
+    @Provides @Singleton
+    fun provideReadingStateDao(dao: RoomReadingStateDao): ReadingStateDao = dao
 
     @Provides @Singleton
     fun provideSavedChapterRepository(dao: RoomSavedChapterDao): SavedChapterRepository = SavedChapterRepository(dao)

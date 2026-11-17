@@ -1,4 +1,4 @@
 {
-  "android": [],
-  "desktop": []
+  "android": ["Updates local reading-state storage. Upgrading preserves existing reading data; returning to an older app requires restoring a complete backup made before this update."],
+  "desktop": ["Updates local reading-state storage. Upgrading preserves the library; returning to an older desktop build requires restoring a complete store backup made before this update."]
 }

@@ -78,3 +78,20 @@ class DesktopReadingCheckpointDao(private val library: LocalLibrary) : ReadingCh
         library.readReadingCheckpoint(key)
     }
 }
+
+class DesktopReadingStateDao(private val library: LocalLibrary) : ReadingStateDao {
+    override suspend fun prepare(key: ChapterKey): PreparedReadingState? = withContext(Dispatchers.IO) {
+        val context = kotlinx.coroutines.currentCoroutineContext()
+        library.prepareReadingState(key) { context.ensureActive() }
+    }
+    override suspend fun register(binding: ReadingStateBinding, content: ChapterStorageObservation,
+        document: io.grimoire.reading.anchor.CanonicalDocument, kind: ReadingStateWriterKind): ReadingStateSession? = withContext(Dispatchers.IO) {
+        val context = kotlinx.coroutines.currentCoroutineContext()
+        library.registerStateWriter(binding, content, document, kind) { context.ensureActive() }
+    }
+    override suspend fun commit(command: ReadingStateCommand): ReadingStateCommit = withContext(Dispatchers.IO) {
+        val context = kotlinx.coroutines.currentCoroutineContext()
+        library.commitReadingState(command) { context.ensureActive() }
+    }
+    override suspend fun read(key: ChapterKey): io.grimoire.reading.state.ReadingCompletionState? = withContext(Dispatchers.IO) { library.readReadingState(key) }
+}
