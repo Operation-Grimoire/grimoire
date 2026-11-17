@@ -540,6 +540,11 @@ class ReaderIntegrationTest {
         val markRead = context.getString(R.string.library_mark_read)
         val markUnread = context.getString(R.string.library_mark_unread)
         val error = context.getString(R.string.reader_completion_save_error)
+        fun markSelection(label: String) {
+            val action = hasText(label) and hasClickAction()
+            compose.waitUntil(10_000) { compose.onAllNodes(action).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNode(action).performClick()
+        }
 
         io {
             db.openHelper.writableDatabase.execSQL(
@@ -551,8 +556,7 @@ class ReaderIntegrationTest {
         select(duplicateLabel)
         select(missingLabel)
         select(otherLabel)
-        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription(markRead).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithContentDescription(markRead).performClick()
+        markSelection(markRead)
         waitText(error)
         assertEquals(untouchedFirst, first())
         assertEquals(crossNovel, secondNovelChapter())
@@ -577,8 +581,7 @@ class ReaderIntegrationTest {
 
         select(selectedLabel, begin = true)
         select(otherLabel)
-        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription(markUnread).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithContentDescription(markUnread).performClick()
+        markSelection(markUnread)
         compose.waitUntil(10_000) { !first().read && !secondNovelChapter().read }
         assertEquals(at, first().firstReadAt)
         assertEquals(crossNovel.copy(firstReadAt = otherAt), secondNovelChapter())
