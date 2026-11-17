@@ -28,7 +28,7 @@ fun encodeReadingStateRecord(value: ReadingStateRecord): String = buildJsonObjec
 }.toString().storageJson()
 
 fun decodeReadingStateRecord(encoded: String): ReadingStateRecord {
-    val j = Json.parseToJsonElement(encoded).jsonObject.fields("format", "incarnation", "revision", "value", "visual", "audio")
+    val j = parseStateObject(encoded).fields("format", "incarnation", "revision", "value", "visual", "audio")
     require(j.number("format").int == 1) { "Unsupported reading state format" }
     val value = j.getValue("value").jsonObject.readValue()
     fun writer(name: String) = j.getValue(name).takeUnless { it == JsonNull }?.jsonObject?.let {
@@ -49,7 +49,7 @@ fun encodeReadingStateReceipt(value: ReadingStateReceipt): String = buildJsonObj
 }.toString().storageJson()
 
 fun decodeReadingStateReceipt(encoded: String): ReadingStateReceipt {
-    val j = Json.parseToJsonElement(encoded).jsonObject.fields("format", "command", "incarnation", "fingerprint", "value", "revision")
+    val j = parseStateObject(encoded).fields("format", "command", "incarnation", "fingerprint", "value", "revision")
     require(j.number("format").int == 1) { "Unsupported reading state receipt" }
     return ReadingStateReceipt(j.string("command"), j.string("incarnation"), j.string("fingerprint"),
         j.getValue("value").jsonObject.readValue(), j.number("revision").long).also {
@@ -112,6 +112,40 @@ fun fingerprintReadingStateCommand(command: ReadingStateCommand): String {
 }
 
 private val fingerprint = Regex("[a-f0-9]{64}")
+/** Check raw members before the JSON tree parser can collapse duplicates, including escaped-equivalent names. */
+private fun parseStateObject(encoded: String): JsonObject {
+    data class Frame(val objectFrame: Boolean, val keys: MutableSet<String> = mutableSetOf(), var expectingKey: Boolean = true)
+    val stack = mutableListOf<Frame>()
+    var index = 0
+    while (index < encoded.length) {
+        when (encoded[index]) {
+            '{' -> stack.add(Frame(true))
+            '[' -> stack.add(Frame(false))
+            '}', ']' -> {
+                require(stack.isNotEmpty() && stack.last().objectFrame == (encoded[index] == '}')) { "Invalid JSON container" }
+                stack.removeAt(stack.lastIndex)
+            }
+            ',' -> stack.lastOrNull()?.takeIf { it.objectFrame }?.expectingKey = true
+            ':' -> stack.lastOrNull()?.takeIf { it.objectFrame }?.expectingKey = false
+            '"' -> {
+                val start = index++
+                while (index < encoded.length && encoded[index] != '"') {
+                    if (encoded[index] == '\\') index++
+                    index++
+                }
+                require(index < encoded.length) { "Unterminated JSON string" }
+                val frame = stack.lastOrNull()
+                if (frame?.objectFrame == true && frame.expectingKey) {
+                    val key = Json.parseToJsonElement(encoded.substring(start, index + 1)).jsonPrimitive.content
+                    require(frame.keys.add(key)) { "Duplicate reading-state JSON member" }
+                }
+            }
+        }
+        index++
+    }
+    require(stack.isEmpty()) { "Unterminated JSON container" }
+    return Json.parseToJsonElement(encoded).jsonObject
+}
 /** SQLite stores UTF-8; JSON escapes preserve even isolated UTF-16 units without encoder replacement. */
 private fun String.storageJson() = buildString {
     for (c in this@storageJson) {

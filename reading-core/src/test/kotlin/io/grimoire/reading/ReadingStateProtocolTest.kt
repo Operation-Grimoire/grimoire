@@ -159,8 +159,15 @@ class ReadingStateProtocolTest {
             json.replace("\"source\":17", "\"source\":17,\"extra\":0"),
             json.replace("\"status\":\"UNREAD\"", "\"status\":\"UNREAD\",\"extra\":0"),
             json.replace("\"sequence\":0", "\"sequence\":0,\"extra\":0"),
-            json.replace("\"presence\":\"ABSENT\"", "\"presence\":\"ABSENT\",\"extra\":0")))
+            json.replace("\"presence\":\"ABSENT\"", "\"presence\":\"ABSENT\",\"extra\":0"),
+            json.replace("\"format\":1", "\"format\":1,\"format\":1"),
+            json.replace("\"revision\":0", "\"revision\":0,\"\\u0072evision\":0"),
+            json.replace("\"sequence\":0", "\"sequence\":0,\"sequence\":0")))
             assertThrows(IllegalArgumentException::class.java) { decodeReadingStateRecord(bad) }
+        val receipt = encodeReadingStateReceipt(first.receipt!!)
+        assertThrows(IllegalArgumentException::class.java) { decodeReadingStateReceipt(receipt.replace("\"format\":1", "\"format\":1,\"format\":1")) }
+        val punctuation = record.copy(value = value.copy(key = key.copy(url = "/{\"format\":1,\"format\":2}")))
+        assertEquals(punctuation, decodeReadingStateRecord(encodeReadingStateRecord(punctuation)))
     }
 
     @Test fun receiptGrowthTracksExplicitIntentsNotRepeatedPlaybackCompletions() {
