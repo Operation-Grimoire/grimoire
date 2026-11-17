@@ -283,6 +283,80 @@ class ReaderIntegrationTest {
         back()
     }
 
+    @Test fun librarySelectedNovelsUseGuardedCompletion() = journey("library-selected-novels") {
+        val secondTitle = "Second selected book"
+        val chapterDao = db.chapterDao()
+        val sqlite = db.openHelper.writableDatabase
+        val otherChapter = ChapterEntity(id = 5, novelId = 3, url = "/unselected", name = "Unselected chapter")
+        io {
+            db.novelDao().upsert(NovelEntity(id = 2, sourceId = LOCAL_SOURCE_ID, url = "local://second-selected", title = secondTitle, favorite = true))
+            db.novelDao().upsert(NovelEntity(id = 3, sourceId = LOCAL_SOURCE_ID, url = "local://unselected", title = "Unselected book", favorite = true))
+            chapterDao.insertAll(listOf(
+                ChapterEntity(id = 3, novelId = 2, url = "/second/first", name = "Another first chapter", readProgress = 0.375f),
+                ChapterEntity(id = 4, novelId = 2, url = "/second/second", name = "Another second chapter", firstReadAt = 42),
+                otherChapter,
+            ))
+            sqlite.execSQL(
+                "CREATE TRIGGER integration_write_fault BEFORE UPDATE OF read ON chapters WHEN OLD.id=4 " +
+                    "BEGIN SELECT RAISE(ABORT,'later selected novel failed'); END"
+            )
+        }
+        val secondBefore = io { chapterDao.getChaptersOnce(2) }
+        val retry = context.getString(R.string.action_retry)
+        val pairSelected = context.resources.getQuantityString(R.plurals.selection_count, 2, 2)
+
+        fun selectPair() {
+            compose.onNodeWithText("Integration book").performTouchInput { longClick() }
+            compose.onNodeWithText(secondTitle).performClick()
+            waitText(pairSelected)
+        }
+
+        activity = ActivityScenario.launch(Intent(context, MainActivity::class.java))
+        waitText("Integration book")
+        waitText(secondTitle)
+        selectPair()
+        compose.onNodeWithText(context.getString(R.string.library_mark_read)).performClick()
+
+        waitText(retry)
+        val firstCommitted = io { chapterDao.getChaptersOnce(1) }
+        assertTrue(firstCommitted.all { it.read && it.firstReadAt != null })
+        assertEquals(secondBefore, io { chapterDao.getChaptersOnce(2) })
+        assertEquals(1L, completionRecord().intentRevision)
+        assertEquals(1, receipts())
+        assertEquals(listOf(otherChapter), io { chapterDao.getChaptersOnce(3) })
+
+        io {
+            sqlite.execSQL("DROP TRIGGER integration_write_fault")
+            sqlite.execSQL(
+                "CREATE TRIGGER integration_write_fault BEFORE UPDATE OF read ON chapters WHEN OLD.novelId=1 " +
+                    "BEGIN SELECT RAISE(ABORT,'confirmed novel must not be written on retry'); END"
+            )
+        }
+        compose.onNodeWithText(retry).performClick()
+        compose.waitUntil(10_000) { io { chapterDao.getChaptersOnce(2).all { it.read } } }
+        assertEquals(firstCommitted, io { chapterDao.getChaptersOnce(1) })
+        assertEquals(1L, completionRecord().intentRevision)
+        assertEquals(1, receipts())
+        val secondCommitted = io { chapterDao.getChaptersOnce(2) }
+        val secondFirstRead = requireNotNull(secondCommitted.single { it.id == 3L }.firstReadAt)
+        assertEquals(
+            secondBefore.map { it.copy(read = true, firstReadAt = it.firstReadAt ?: secondFirstRead) },
+            secondCommitted,
+        )
+        assertEquals(listOf(otherChapter), io { chapterDao.getChaptersOnce(3) })
+
+        io { sqlite.execSQL("DROP TRIGGER integration_write_fault") }
+        selectPair()
+        compose.onNodeWithText(context.getString(R.string.library_mark_unread)).performClick()
+        compose.waitUntil(10_000) { io { (chapterDao.getChaptersOnce(1) + chapterDao.getChaptersOnce(2)).none { it.read } } }
+        assertEquals(firstCommitted.map { it.copy(read = false) }, io { chapterDao.getChaptersOnce(1) })
+        assertEquals(secondCommitted.map { it.copy(read = false) }, io { chapterDao.getChaptersOnce(2) })
+        assertEquals(2L, completionRecord().intentRevision)
+        assertEquals(2, receipts())
+        assertEquals(listOf(otherChapter), io { chapterDao.getChaptersOnce(3) })
+        snapshot("library-selected-novels-passed")
+    }
+
     @Test fun partialWordCountRetryPreservesLaterExplicitUnread() = journey("completion-partial") {
         io {
             db.chapterDao().insertAll(listOf(ChapterEntity(id=3, novelId=1, url="/integration/backfill", name="Backfill chapter",

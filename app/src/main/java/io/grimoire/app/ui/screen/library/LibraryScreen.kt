@@ -93,6 +93,7 @@ import io.grimoire.app.data.preferences.AdultFilter
 import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.MoveToCategorySheet
+import io.grimoire.app.ui.component.ReadingCompletionErrorDialog
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SearchCancelToolbar
 import io.grimoire.app.ui.component.SelectionTopBar
@@ -151,6 +152,8 @@ fun LibraryScreen(
     val importing by viewModel.importing.collectAsStateWithLifecycle()
     val pendingImport by viewModel.pendingImport.collectAsStateWithLifecycle()
     val importMessage by viewModel.importMessage.collectAsStateWithLifecycle()
+    val completionSaving by viewModel.bulkCompletion.saving.collectAsStateWithLifecycle()
+    val completionNotice by viewModel.bulkCompletion.notice.collectAsStateWithLifecycle()
     val persistedCategoryId by viewModel.persistedCategoryId.collectAsStateWithLifecycle()
     val categoriesLoaded by viewModel.categoriesLoaded.collectAsStateWithLifecycle()
     val displayedTabs by viewModel.displayedTabs.collectAsStateWithLifecycle()
@@ -193,6 +196,10 @@ fun LibraryScreen(
     val clearSelection = { selectedIds = emptySet() }
 
     BackHandler(enabled = selectionMode) { clearSelection() }
+
+    completionNotice?.let { notice ->
+        ReadingCompletionErrorDialog(notice, viewModel.bulkCompletion::retry, viewModel.bulkCompletion::dismiss)
+    }
 
     // Let the app nav hide while selecting so the selection bar can replace it.
     LaunchedEffect(selectionMode) { onSelectionActiveChange(selectionMode) }
@@ -478,6 +485,7 @@ fun LibraryScreen(
                 TooltipIconButton(
                     icon = AppIcons.DoneAll,
                     label = stringResource(R.string.library_mark_read),
+                    enabled = !completionSaving,
                     onClick = {
                         viewModel.setNovelsRead(selectedIds, true)
                         clearSelection()
@@ -486,6 +494,7 @@ fun LibraryScreen(
                 TooltipIconButton(
                     icon = AppIcons.RemoveDone,
                     label = stringResource(R.string.library_mark_unread),
+                    enabled = !completionSaving,
                     onClick = {
                         viewModel.setNovelsRead(selectedIds, false)
                         clearSelection()

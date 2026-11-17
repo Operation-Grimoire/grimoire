@@ -27,8 +27,10 @@ import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
 import io.grimoire.app.data.preferences.stateIn
+import io.grimoire.app.data.reading.BulkReadingCompletion
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
 import io.grimoire.app.extension.ExtensionManager
+import io.grimoire.reading.state.NovelReadingCompletionFacade
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,7 +71,10 @@ class LibraryViewModel @Inject constructor(
     private val bookImporter: BookImporter,
     private val downloadManager: DownloadManager,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
+    readingCompletionFacade: NovelReadingCompletionFacade,
 ) : ViewModel() {
+
+    internal val bulkCompletion = BulkReadingCompletion(viewModelScope, readingCompletionFacade)
 
     // True while the picked file is being read/parsed for the preview.
     private val _staging = MutableStateFlow(false)
@@ -390,8 +395,8 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    fun setNovelsRead(ids: Set<Long>, read: Boolean) = viewModelScope.launch {
-        ids.forEach { chapterDao.markAllRead(it, read) }
+    fun setNovelsRead(ids: Set<Long>, read: Boolean) {
+        bulkCompletion.markNovels(ids, read)
     }
 
     fun downloadNovels(ids: Set<Long>) = viewModelScope.launch {
