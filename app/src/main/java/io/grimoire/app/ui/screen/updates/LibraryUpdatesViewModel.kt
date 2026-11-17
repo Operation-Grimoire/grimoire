@@ -9,7 +9,9 @@ import io.grimoire.app.data.local.dao.LibraryUpdateDao
 import io.grimoire.app.data.local.dao.NovelDao
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
+import io.grimoire.app.data.reading.BulkReadingCompletion
 import io.grimoire.app.domain.auth.HiddenCategoriesAuthManager
+import io.grimoire.reading.state.NovelReadingCompletionFacade
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -26,13 +28,22 @@ class LibraryUpdatesViewModel @Inject constructor(
     private val chapterDao: ChapterDao,
     private val downloadManager: DownloadManager,
     novelDao: NovelDao,
-    authManager: HiddenCategoriesAuthManager,
+    private val authManager: HiddenCategoriesAuthManager,
+    readingCompletion: NovelReadingCompletionFacade,
 ) : ViewModel() {
 
-    private val excludeHidden = authManager.isUnlocked.map { !it }.distinctUntilChanged()
+    private data class VisibleEntries(val includesHidden: Boolean, val rows: List<LibraryUpdateEntity>)
 
-    val entries: StateFlow<List<LibraryUpdateEntity>> = excludeHidden
-        .flatMapLatest { libraryUpdateDao.getAll(it) }
+    internal val bulkCompletion = BulkReadingCompletion(viewModelScope, readingCompletion)
+    private var completionRequiresUnlock = false
+
+    private val excludeHidden = authManager.isUnlocked.map { !it }.distinctUntilChanged()
+    private val visibleEntries = excludeHidden
+        .flatMapLatest { exclude -> libraryUpdateDao.getAll(exclude).map { VisibleEntries(!exclude, it) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VisibleEntries(false, emptyList()))
+
+    val entries: StateFlow<List<LibraryUpdateEntity>> = visibleEntries
+        .map { it.rows }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Novel ids the user has opted in to notifications for; surfaced as a separate section above the rest. */
@@ -70,9 +81,28 @@ class LibraryUpdatesViewModel @Inject constructor(
         if (entryIds.isNotEmpty()) libraryUpdateDao.deleteByIds(entryIds.toList())
     }
 
-    fun setEntriesRead(entryIds: Set<Long>, read: Boolean) = viewModelScope.launch {
-        val chapterIds = entryIds.mapNotNull { chaptersByEntryId.value[it]?.id }
-        if (chapterIds.isNotEmpty()) chapterDao.markChapters(chapterIds, read)
+    fun setEntriesRead(entryIds: Set<Long>, read: Boolean) {
+        if (bulkCompletion.saving.value || bulkCompletion.notice.value != null) return
+        val visible = visibleEntries.value
+        // A lock can arrive before Room replaces the previous list.
+        if (visible.includesHidden && !authManager.isUnlocked.value) return
+        val selection = visible.rows.asSequence().filter { it.id in entryIds }.associateBy { it.id }
+        val chapters = chaptersByEntryId.value
+        val chapterIds = entryIds.mapNotNull { id ->
+            val entry = selection[id] ?: return@mapNotNull null
+            chapters[id]?.takeIf { it.novelId == entry.novelId && it.url == entry.chapterUrl }?.id
+        }.distinct()
+        if (chapterIds.isEmpty()) return
+        completionRequiresUnlock = visible.includesHidden
+        bulkCompletion.markChapters(chapterIds, read)
+    }
+
+    internal fun retryEntriesRead() {
+        if (completionRequiresUnlock && !authManager.isUnlocked.value) {
+            bulkCompletion.dismiss()
+        } else {
+            bulkCompletion.retry()
+        }
     }
 
     fun downloadEntries(entryIds: Set<Long>) {

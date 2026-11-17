@@ -7,6 +7,7 @@ import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
@@ -25,6 +26,7 @@ import io.grimoire.app.data.local.RoomSavedChapterDao
 import io.grimoire.app.data.local.entity.*
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.testing.IntegrationTestEntryPoint
+import io.grimoire.app.ui.NAV_TARGET_UPDATES
 import io.grimoire.app.ui.tour.TourId
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
@@ -481,6 +483,110 @@ class ReaderIntegrationTest {
         assertEquals(2, receipts())
         assertNull(checkpoint())
         snapshot("detail-mark-all-passed")
+    }
+
+    @Test fun updatesSelectedEntriesUseGuardedCompletion() = journey("updates-selected-completion") {
+        val otherNovelUrl = "local://updates-other"
+        val crossNovel = ChapterEntity(
+            id = 3, novelId = 2, url = "/updates/cross-novel", name = "Cross-novel chapter",
+            readProgress = 0.25f, readAnchorItemIndex = 3, readAnchorItemOffset = 8,
+        )
+        val missingUrl = "/updates/missing"
+        val laterChapter = ChapterEntity(id = 4, novelId = 1, url = missingUrl, name = "Chapter added after selection")
+        val selectedLabel = "Selected chapter entry"
+        val duplicateLabel = "Duplicate chapter entry"
+        val missingLabel = "Unavailable chapter entry"
+        val otherLabel = "Selected entry in another novel"
+        val foundAt = System.currentTimeMillis()
+        fun entry(id: Long, url: String, label: String, novelId: Long = 1) = LibraryUpdateEntity(
+            id = id,
+            novelId = novelId,
+            sourcePackage = LOCAL_PKG,
+            novelUrl = if (novelId == 1L) novelUrl else otherNovelUrl,
+            novelTitle = if (novelId == 1L) "Integration book" else "Other updates novel",
+            chapterUrl = url,
+            chapterName = label,
+            foundAt = foundAt - id * 1000,
+        )
+        val unselected = io {
+            db.novelDao().upsert(
+                NovelEntity(id = 2, sourceId = LOCAL_SOURCE_ID, url = otherNovelUrl, title = "Other updates novel"),
+            )
+            db.chapterDao().insertAll(listOf(crossNovel))
+            val second = requireNotNull(db.chapterDao().getByUrl(1, "/integration/second"))
+            db.libraryUpdateDao().insertAll(listOf(
+                entry(1, key.url, selectedLabel),
+                entry(2, key.url, duplicateLabel),
+                entry(3, missingUrl, missingLabel),
+                entry(4, crossNovel.url, otherLabel, novelId = 2),
+                entry(5, second.url, "Unselected chapter entry"),
+            ))
+            second
+        }
+        val untouchedFirst = first()
+        fun secondNovelChapter() = io { requireNotNull(db.chapterDao().getByUrl(2, crossNovel.url)) }
+        activity = ActivityScenario.launch(
+            Intent(context, MainActivity::class.java).putExtra(MainActivity.EXTRA_NAV_TARGET, NAV_TARGET_UPDATES),
+        )
+        waitText(selectedLabel)
+        val list = compose.onNode(
+            hasScrollToIndexAction() and SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange),
+        )
+        fun select(label: String, begin: Boolean = false) {
+            list.performScrollToNode(hasText(label))
+            val row = compose.onNodeWithText(label)
+            if (begin) row.performTouchInput { longClick(center) } else row.performClick()
+        }
+        val markRead = context.getString(R.string.library_mark_read)
+        val markUnread = context.getString(R.string.library_mark_unread)
+        val error = context.getString(R.string.reader_completion_save_error)
+
+        io {
+            db.openHelper.writableDatabase.execSQL(
+                """CREATE TRIGGER integration_write_fault BEFORE UPDATE OF read ON chapters
+                    WHEN OLD.id=3 BEGIN SELECT RAISE(ABORT,'updates batch write failure'); END""",
+            )
+        }
+        select(selectedLabel, begin = true)
+        select(duplicateLabel)
+        select(missingLabel)
+        select(otherLabel)
+        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription(markRead).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription(markRead).performClick()
+        waitText(error)
+        assertEquals(untouchedFirst, first())
+        assertEquals(crossNovel, secondNovelChapter())
+        assertEquals(0, receipts())
+        snapshot("updates-selected-completion-error")
+
+        io {
+            db.openHelper.writableDatabase.execSQL("DROP TRIGGER integration_write_fault")
+            db.chapterDao().insertAll(listOf(laterChapter))
+        }
+        compose.onNodeWithText(context.getString(R.string.action_retry)).performClick()
+        compose.waitUntil(10_000) { first().read && secondNovelChapter().read }
+        val at = requireNotNull(first().firstReadAt)
+        val otherAt = requireNotNull(secondNovelChapter().firstReadAt)
+        assertEquals(1L, completionRecord().intentRevision)
+        assertEquals(1, receipts())
+        assertEquals(crossNovel.copy(read = true, firstReadAt = otherAt), secondNovelChapter())
+        assertEquals(laterChapter, io { db.chapterDao().getByUrl(1, missingUrl) })
+        assertNull(io { db.readingStateStorageDao().find(laterChapter.id) })
+        assertEquals(unselected, io { db.chapterDao().getByUrl(1, unselected.url) })
+        compose.waitUntil(10_000) { compose.onAllNodesWithText(error).fetchSemanticsNodes().isEmpty() }
+
+        select(selectedLabel, begin = true)
+        select(otherLabel)
+        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription(markUnread).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription(markUnread).performClick()
+        compose.waitUntil(10_000) { !first().read && !secondNovelChapter().read }
+        assertEquals(at, first().firstReadAt)
+        assertEquals(crossNovel.copy(firstReadAt = otherAt), secondNovelChapter())
+        assertEquals(2L, completionRecord().intentRevision)
+        assertEquals(2, receipts())
+        assertEquals(unselected, io { db.chapterDao().getByUrl(1, unselected.url) })
+        compose.waitForIdle()
+        snapshot("updates-selected-completion-passed")
     }
 
     @Test fun failedCheckpointSaveCanBeDismissedAndRetriedWithoutLosingInput() = journey("retry") {

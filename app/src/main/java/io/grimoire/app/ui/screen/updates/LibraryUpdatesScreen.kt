@@ -57,6 +57,7 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.LibraryUpdateEntity
 import io.grimoire.app.ui.component.ChapterItem
 import io.grimoire.app.ui.component.ChapterStatusTrailing
+import io.grimoire.app.ui.component.ReadingCompletionErrorDialog
 import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.SwipeTabRow
@@ -103,6 +104,11 @@ fun LibraryUpdatesScreen(
     val entries by viewModel.entries.collectAsState()
     val chaptersByEntryId by viewModel.chaptersByEntryId.collectAsState()
     val subscribedNovelIds by viewModel.subscribedNovelIds.collectAsState()
+    val completionSaving by viewModel.bulkCompletion.saving.collectAsState()
+    val completionNotice by viewModel.bulkCompletion.notice.collectAsState()
+    completionNotice?.let { notice ->
+        ReadingCompletionErrorDialog(notice, viewModel::retryEntriesRead, viewModel.bulkCompletion::dismiss)
+    }
     var menuExpanded by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
     // Groups start expanded; this tracks the ones the user has collapsed, so a
@@ -236,6 +242,7 @@ fun LibraryUpdatesScreen(
                 )
                 TooltipIconButton(
                     visible = showMarkRead,
+                    enabled = !completionSaving,
                     icon = AppIcons.DoneAll,
                     label = stringResource(R.string.library_mark_read),
                     onClick = {
@@ -245,6 +252,7 @@ fun LibraryUpdatesScreen(
                 )
                 TooltipIconButton(
                     visible = showMarkUnread,
+                    enabled = !completionSaving,
                     icon = AppIcons.RemoveDone,
                     label = stringResource(R.string.library_mark_unread),
                     onClick = {
