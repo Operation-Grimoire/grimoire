@@ -21,6 +21,7 @@ import io.grimoire.app.MainActivity
 import io.grimoire.app.R
 import io.grimoire.app.data.book.LOCAL_PKG
 import io.grimoire.app.data.book.LOCAL_SOURCE_ID
+import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.RoomReadingCheckpointDao
 import io.grimoire.app.data.local.RoomSavedChapterDao
 import io.grimoire.app.data.local.entity.*
@@ -509,6 +510,8 @@ class ReaderIntegrationTest {
             foundAt = foundAt - id * 1000,
         )
         val unselected = io {
+            // Both seeded chapters already have saved bodies. Give them a settled status before startup recovery.
+            db.chapterDao().setDownloadStatusBatch(listOf(1L, 2L), ChapterDownloadStatus.DOWNLOADED.ordinal)
             db.novelDao().upsert(
                 NovelEntity(id = 2, sourceId = LOCAL_SOURCE_ID, url = otherNovelUrl, title = "Other updates novel"),
             )
