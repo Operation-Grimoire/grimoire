@@ -189,6 +189,68 @@ class ReaderIntegrationTest {
         back()
     }
 
+    @Test fun visualCompletionNeedsFreshScrollAfterLayoutAndExplicitUnread() = journey("visual-completion") {
+        openFirst()
+        val list = compose.onNode(hasScrollToIndexAction())
+        val error = context.getString(R.string.reader_completion_save_error)
+        compose.waitUntil(10_000) { io { db.readingStateStorageDao().find(1) != null } && completionRecord().visual != null }
+        val firstWriter = requireNotNull(completionRecord().visual).id
+        swipe()
+        list.performScrollToIndex(pages.size + 1)
+        compose.waitForIdle()
+        assertFalse(first().read)
+        assertEquals(0, receipts())
+
+        fun approachEnd() {
+            list.performScrollToIndex(pages.size - 3)
+            repeat(5) {
+                if (!first().read && compose.onAllNodesWithText(error).fetchSemanticsNodes().isEmpty()) swipe()
+            }
+        }
+        approachEnd()
+        compose.waitUntil(10_000) { first().read }
+        val at = requireNotNull(first().firstReadAt)
+        assertEquals(0L, completionRecord().intentRevision)
+        assertEquals(1, receipts())
+
+        list.performTouchInput { click(center) }
+        val markUnread = context.getString(R.string.reader_mark_unread)
+        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription(markUnread).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription(markUnread).performClick()
+        compose.waitUntil(10_000) { !first().read && completionRecord().visual?.id?.let { it != firstWriter } == true }
+        assertEquals(1L, completionRecord().intentRevision)
+        list.performScrollToIndex(0)
+        list.performScrollToIndex(pages.size + 1)
+        compose.waitForIdle()
+        assertFalse(first().read)
+        assertEquals(2, receipts())
+
+        io {
+            db.openHelper.writableDatabase.execSQL(
+                "CREATE TRIGGER integration_write_fault BEFORE UPDATE OF read ON chapters WHEN OLD.id=1 " +
+                    "BEGIN SELECT RAISE(ABORT,'visual completion write failure'); END"
+            )
+        }
+        approachEnd()
+        waitText(error)
+        val retryWriter = requireNotNull(completionRecord().visual).id
+        compose.onNodeWithText(context.getString(R.string.action_close)).performClick()
+        requireNotNull(activity).onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        waitText(error)
+        assertEquals(retryWriter, completionRecord().visual?.id)
+        assertFalse(first().read)
+        assertEquals(2, receipts())
+        io { db.openHelper.writableDatabase.execSQL("DROP TRIGGER integration_write_fault") }
+        compose.onNodeWithText(context.getString(R.string.action_retry)).performClick()
+        compose.waitUntil(10_000) { first().read }
+        assertEquals(at, first().firstReadAt)
+        assertEquals(1L, completionRecord().intentRevision)
+        assertEquals(3, receipts())
+        snapshot("visual-completion-passed")
+        back()
+        assertNull(completionRecord().visual)
+    }
+
     @Test fun manualReadFailureRetriesExactCommandAndUnreadSurvivesReopen() = journey("manual-retry") {
         openFirst(); showReaderActions()
         io { db.openHelper.writableDatabase.execSQL("CREATE TRIGGER integration_write_fault BEFORE UPDATE OF read ON chapters WHEN OLD.id=1 BEGIN SELECT RAISE(ABORT,'completion write failure'); END") }

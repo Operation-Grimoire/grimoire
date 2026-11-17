@@ -5,7 +5,7 @@ API 35 emulator gate for the real `MainActivity`, Hilt graph, Room store and
 reader UI. Local content keeps these tests independent of websites, extension
 parsers, credentials and external services.
 
-The maintained suite exercises five paths:
+The maintained suite exercises six paths:
 
 - Actual touch input, Back flush, cold Activity close/relaunch and configuration
   recreation restore the committed paragraph while networking is disabled.
@@ -22,6 +22,10 @@ The maintained suite exercises five paths:
 - A global downloaded-word-count backfill fault reports a committed read as partial.
   A later explicit unread persists, and retrying the old read receipt fills the word
   count without changing that unread or adding another completion intent/receipt.
+- Scrolling to the end through layout alone leaves the chapter unread even after
+  earlier user input. Consumed user scroll completes it. Explicit unread replaces
+  visual authority, and fresh scroll can complete it again while preserving the
+  original first-read time. Back retires the exact writer.
 
 Fixture setup uses a debug-only Hilt entry point to existing bindings. It does not
 replace providers or add a production test switch. The interface is in
@@ -53,7 +57,7 @@ retains the existing extension-host workflow and its separate ART helper coverag
 The runner refuses non-emulator devices, clears only its disposable fixture app,
 enables airplane mode and disables Wi-Fi/mobile data, then passes the source SHA into the test. The test checks
 that SHA against `BuildConfig`, and independently verifies no active network.
-Five named starts and five paired successful completions are mandatory. Skips,
+Six named starts and six paired successful completions are mandatory. Skips,
 assumptions, duplicates, missing cases, wrong classes/counts and aborted runs fail.
 App/test-helper process crashes in logcat also fail, even if every named status
 reports success; logcat capture must succeed and be nonempty. Cleanup failures

@@ -16,6 +16,7 @@ TESTS = (
     "failedCheckpointSaveCanBeDismissedAndRetriedWithoutLosingInput",
     "manualReadFailureRetriesExactCommandAndUnreadSurvivesReopen",
     "partialWordCountRetryPreservesLaterExplicitUnread",
+    "visualCompletionNeedsFreshScrollAfterLayoutAndExplicitUnread",
 )
 PACKAGE = "io.grimoire.app"
 

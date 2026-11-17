@@ -26,9 +26,13 @@ import io.grimoire.app.data.local.entity.ReaderTextAlign
 import io.grimoire.app.data.local.entity.ReadingHistoryEntity
 import io.grimoire.app.util.ContentLanguages
 import io.grimoire.reading.anchor.ReaderCheckpoints
+import io.grimoire.reading.anchor.ReaderCheckpointLoad
 import io.grimoire.reading.anchor.CheckpointNotice
 import io.grimoire.reading.anchor.LegacyReaderViewport
 import io.grimoire.reading.storage.ReadingCheckpointDao
+import io.grimoire.reading.storage.ReadingStateDao
+import io.grimoire.reading.storage.ReadingStateRejection
+import io.grimoire.reading.storage.ReadingStateSession
 import io.grimoire.reading.state.*
 import io.grimoire.reading.anchor.ReadingProjection
 import io.grimoire.reading.ChapterKey
@@ -86,6 +90,7 @@ class ReaderViewModel @Inject constructor(
     private val chapterLoader: ChapterLoader,
     checkpointDao: ReadingCheckpointDao,
     completionFacade: ReadingStateFacade,
+    readingStateDao: ReadingStateDao,
     private val novelDao: NovelDao,
     private val readingHistoryDao: ReadingHistoryDao,
     private val incognitoManager: io.grimoire.app.data.preferences.IncognitoManager,
@@ -125,12 +130,14 @@ class ReaderViewModel @Inject constructor(
     private val _currentIndex = MutableStateFlow(-1)
 
     private val checkpoints = ReaderCheckpoints(checkpointDao)
-    private val completionCommands = ExplicitReadingCommands(completionFacade)
+    private val completionCommands = ReadingCompletionCommands(completionFacade)
+    private val visualWriter = ReaderVisualWriter(readingStateDao, completionFacade)
     private var completionNovelKey: NovelKey? = null
     private val requestedCompletion = mutableMapOf<ChapterKey, Pair<AcceptedReadingCommand, Boolean>>()
     private val _completionNotice = MutableStateFlow<ReaderCompletionNotice?>(null)
     internal val completionNotice: StateFlow<ReaderCompletionNotice?> = _completionNotice.asStateFlow()
     private var leaving = false
+    private var cleared = false
     private val _saveError = MutableStateFlow<String?>(null)
     internal val saveError: StateFlow<String?> = _saveError.asStateFlow()
     private val _positionNotice = MutableStateFlow<CheckpointNotice?>(null)
@@ -411,6 +418,8 @@ class ReaderViewModel @Inject constructor(
         flushProgress()
         loadPagesJob?.cancel()
         _content.value = null
+        visualWriter.setTarget(null)
+        persistenceScope.launch { synchronizeVisualWriter() }
         _isLoading.value = true
         _error.value = null
         loadPagesJob = viewModelScope.launch {
@@ -448,6 +457,7 @@ class ReaderViewModel @Inject constructor(
                 if (_chapters.value.getOrNull(_currentIndex.value)?.id != chapter.id) return@launch
                 _content.value = prepared
                 _positionNotice.value = prepared.checkpoint?.restore?.notice
+                persistenceScope.launch { synchronizeVisualWriter() }
                 recordWordCount(fresh, loaded.pages)
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -508,8 +518,6 @@ class ReaderViewModel @Inject constructor(
         fraction: Float,
         anchorIndex: Int,
         anchorOffset: Int,
-        lastVisibleIndex: Int,
-        totalItems: Int,
         projection: ReadingProjection,
     ) {
         val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
@@ -521,15 +529,27 @@ class ReaderViewModel @Inject constructor(
         if (checkpoint != null && checkpoints.capture(checkpoint, anchorIndex) != null) _positionNotice.value = null
         livePosition.value = position
         progressWriter.submit(position)
-        val shouldMark = shouldMarkReaderChapterRead(
-            chapter.read, fraction, lastVisibleIndex, totalItems,
+    }
+
+    internal fun visualAuthority(projection: ReadingProjection): ReadingStateSession? =
+        if (leaving) null else visualWriter.authority(projection)
+
+    internal fun completeFromVisualInput(
+        session: ReadingStateSession,
+        projection: ReadingProjection,
+        viewport: AndroidViewportV1,
+    ) {
+        val chapter = _chapters.value.getOrNull(_currentIndex.value) ?: return
+        val content = _content.value ?: return
+        if (leaving || chapter.read || chapter.id != content.chapterId ||
+            content.checkpoint?.let(checkpoints::canRecordPosition) != true ||
+            viewport.total != projection.itemCount) return
+        val policy = readerAutomaticPolicy(
             markAsReadStrategy.value, markAsReadThreshold.value, markAsReadParagraphsFromEnd.value,
         )
-        if (shouldMark) {
-            _chapters.update { list -> list.map { if (it.id == chapterId) it.copy(read = true) else it } }
-            // Read status is prompt; only the frequently changing anchor is debounced.
-            persistenceScope.launch { chapterDao.setRead(chapterId, true) }
-        }
+        val command = visualWriter.capture(session, projection, viewport, policy, completionTime()) ?: return
+        completionCommands.acceptAutomatic(command)
+        persistenceScope.launch { flushCompletions() }
     }
 
     fun flushProgress() {
@@ -541,7 +561,9 @@ class ReaderViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        cleared = true
         leaving = true
+        visualWriter.setTarget(null)
         checkpoints.retire()
         flushProgress()
         persistenceScope.launch { flushCompletions() }
@@ -589,12 +611,26 @@ class ReaderViewModel @Inject constructor(
             flushProgress()
             progressWriter.flush()?.join()
             checkpoints.flush()
+            if (!progressWriter.hasPending() && !completionCommands.hasPending() && _completionNotice.value == null) {
+                visualWriter.setTarget(null)
+                synchronizeVisualWriter()
+            }
             if (progressWriter.hasPending() || completionCommands.hasPending() || _completionNotice.value != null) {
-                leaving = false; load?.let(checkpoints::resume); false
+                resumeAfterFailedExit(load)
+                false
             } else true
         } catch (failure: Exception) {
-            leaving = false; load?.let(checkpoints::resume); positionSaveFailed(failure); false
+            resumeAfterFailedExit(load)
+            positionSaveFailed(failure)
+            false
         }
+    }
+
+    private fun resumeAfterFailedExit(load: ReaderCheckpointLoad?) {
+        if (cleared) return
+        leaving = false
+        load?.let(checkpoints::resume)
+        persistenceScope.launch { synchronizeVisualWriter() }
     }
 
     fun toggleRead() {
@@ -615,6 +651,7 @@ class ReaderViewModel @Inject constructor(
         if (leaving) return
         val accepted = completionCommands.accept(input)
         requestedCompletion[input.key] = accepted to desired
+        if (_content.value?.projection?.document?.key == input.key) visualWriter.setTarget(null)
         persistenceScope.launch { flushCompletions() }
     }
 
@@ -626,11 +663,16 @@ class ReaderViewModel @Inject constructor(
                 ReadingCommandOutcome.Missing -> if (notice == null) notice = ReaderCompletionNotice.CHANGED
                 is ReadingCommandOutcome.Saved -> {
                     val confirmation = outcome.save.confirmation
+                    val visual = attempt.accepted.input as? ReadingCompletionInput.Visual
+                    val rejection = (confirmation as? ReadingStateConfirmation.NotApplied)?.reason
+                    if (visual != null && rejection == ReadingStateRejection.STALE)
+                        visualWriter.invalidate(visual.evidence.loadId)
                     if (outcome.save.current == null && notice == null) notice = ReaderCompletionNotice.CHANGED
                     if (outcome.save.wordCount is ReadingWordCountOutcome.Failed && notice != ReaderCompletionNotice.SAVE_FAILED)
                         notice = ReaderCompletionNotice.WORD_COUNT_FAILED
-                    if (confirmation is ReadingStateConfirmation.NotApplied && notice == null &&
-                        confirmation.reason != io.grimoire.reading.storage.ReadingStateRejection.NO_CHANGE)
+                    val expiredVisual = visual != null &&
+                        (rejection == ReadingStateRejection.STALE || rejection == ReadingStateRejection.INELIGIBLE)
+                    if (notice == null && rejection != null && rejection != ReadingStateRejection.NO_CHANGE && !expiredVisual)
                         notice = ReaderCompletionNotice.CHANGED
                     if (completionCommands.isLatest(attempt.accepted)) outcome.save.current?.let { current ->
                         _chapters.update { list -> list.map {
@@ -641,7 +683,8 @@ class ReaderViewModel @Inject constructor(
                     }
                 }
             }
-            if (completionCommands.isLatest(attempt.accepted) && attempt.outcome !is ReadingCommandOutcome.Failed)
+            if (requestedCompletion[attempt.accepted.input.key]?.first === attempt.accepted &&
+                attempt.outcome !is ReadingCommandOutcome.Failed)
                 requestedCompletion.remove(attempt.accepted.input.key)
         }
         // An earlier uncertain command may have blocked a later input in this flush.
@@ -649,6 +692,22 @@ class ReaderViewModel @Inject constructor(
             completionCommands.hasPending() -> ReaderCompletionNotice.SAVE_FAILED
             _completionNotice.value == ReaderCompletionNotice.CHANGED -> ReaderCompletionNotice.CHANGED
             else -> null
+        }
+        synchronizeVisualWriter()
+    }
+
+    private suspend fun synchronizeVisualWriter() {
+        if (!leaving) {
+            val content = _content.value
+            val key = content?.projection?.document?.key
+            visualWriter.setTarget(content?.takeIf { key != null && key !in requestedCompletion })
+        }
+        try {
+            visualWriter.synchronize(register = !leaving)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            _completionNotice.value = ReaderCompletionNotice.SAVE_FAILED
         }
     }
 

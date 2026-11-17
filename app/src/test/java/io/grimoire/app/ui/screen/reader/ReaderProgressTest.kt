@@ -96,16 +96,9 @@ class ReaderProgressTest {
         assertEquals(listOf(1L, 2L), written)
     }
 
-    @Test fun readTriggersKeepTheirBoundariesAndDoNotUnmarkReadChapters() {
-        fun mark(strategy: MarkAsReadStrategy, fraction: Float = 0f, last: Int = 5, total: Int = 10, read: Boolean = false) =
-            shouldMarkReaderChapterRead(read, fraction, last, total, strategy, 95, 3)
-        assertFalse(mark(MarkAsReadStrategy.PERCENT, fraction = 0.94f))
-        assertTrue(mark(MarkAsReadStrategy.PERCENT, fraction = 0.95f))
-        assertFalse(mark(MarkAsReadStrategy.PARAGRAPHS_FROM_END, last = 5))
-        assertTrue(mark(MarkAsReadStrategy.PARAGRAPHS_FROM_END, last = 6))
-        assertFalse(mark(MarkAsReadStrategy.AT_END, last = 8))
-        assertTrue(mark(MarkAsReadStrategy.AT_END, last = 9))
-        assertFalse(mark(MarkAsReadStrategy.AT_END, last = 9, read = true))
-        assertFalse(mark(MarkAsReadStrategy.AT_END, total = 0))
+    @Test fun readerPreferencesMapToTheMatchingSharedPolicy() {
+        assertEquals(io.grimoire.reading.state.AutomaticReadPolicy.Percent(95), readerAutomaticPolicy(MarkAsReadStrategy.PERCENT, 95, 3))
+        assertEquals(io.grimoire.reading.state.AutomaticReadPolicy.ItemsFromEnd(3), readerAutomaticPolicy(MarkAsReadStrategy.PARAGRAPHS_FROM_END, 95, 3))
+        assertEquals(io.grimoire.reading.state.AutomaticReadPolicy.AtEnd, readerAutomaticPolicy(MarkAsReadStrategy.AT_END, 95, 3))
     }
 }

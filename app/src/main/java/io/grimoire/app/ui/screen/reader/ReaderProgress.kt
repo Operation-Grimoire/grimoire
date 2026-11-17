@@ -4,6 +4,7 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.reading.anchor.ReadingAnchor
 import io.grimoire.reading.anchor.ReaderCheckpointLoad
+import io.grimoire.reading.state.AutomaticReadPolicy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -32,18 +33,14 @@ internal fun ChapterEntity.withReaderPosition(position: ReaderPosition?): Chapte
 internal fun acceptsReaderProgress(currentId: Long?, loadedId: Long?, reportedId: Long): Boolean =
     currentId == reportedId && loadedId == reportedId
 
-internal fun shouldMarkReaderChapterRead(
-    alreadyRead: Boolean,
-    fraction: Float,
-    lastVisibleIndex: Int,
-    totalItems: Int,
+internal fun readerAutomaticPolicy(
     strategy: MarkAsReadStrategy,
     threshold: Int,
     paragraphsFromEnd: Int,
-): Boolean = !alreadyRead && totalItems > 0 && when (strategy) {
-    MarkAsReadStrategy.PERCENT -> fraction >= threshold / 100f
-    MarkAsReadStrategy.PARAGRAPHS_FROM_END -> totalItems - 1 - lastVisibleIndex <= paragraphsFromEnd
-    MarkAsReadStrategy.AT_END -> lastVisibleIndex >= totalItems - 1
+): AutomaticReadPolicy = when (strategy) {
+    MarkAsReadStrategy.PERCENT -> AutomaticReadPolicy.Percent(threshold.coerceIn(50, 100))
+    MarkAsReadStrategy.PARAGRAPHS_FROM_END -> AutomaticReadPolicy.ItemsFromEnd(paragraphsFromEnd.coerceIn(0, 20))
+    MarkAsReadStrategy.AT_END -> AutomaticReadPolicy.AtEnd
 }
 
 /** Called on the main thread; writes are serialized even when a flush overlaps an earlier write. */

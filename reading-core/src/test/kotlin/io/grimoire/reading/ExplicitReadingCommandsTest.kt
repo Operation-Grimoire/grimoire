@@ -40,7 +40,7 @@ class ExplicitReadingCommandsTest {
     }
 
     @Test fun rapidAcceptedInputsPrepareInOrderAndPreserveFirstReadTime() = runBlocking<Unit> {
-        val store = Store(); val queue = ExplicitReadingCommands(ReadingStateFacade(store, null))
+        val store = Store(); val queue = ReadingCompletionCommands(ReadingStateFacade(store, null))
         val read = queue.accept(ReadingCompletionInput.MarkRead(key, 100))
         val unread = queue.accept(ReadingCompletionInput.MarkUnread(key))
         val reread = queue.accept(ReadingCompletionInput.MarkRead(key, 900))
@@ -54,7 +54,7 @@ class ExplicitReadingCommandsTest {
     }
 
     @Test fun uncertainReadBlocksOnlyItsChapterAndRetriesIdenticalBeforeUnread() = runBlocking<Unit> {
-        val store = Store(); val queue = ExplicitReadingCommands(ReadingStateFacade(store, null))
+        val store = Store(); val queue = ReadingCompletionCommands(ReadingStateFacade(store, null))
         queue.accept(ReadingCompletionInput.MarkRead(key, 100)); queue.accept(ReadingCompletionInput.MarkUnread(key))
         queue.accept(ReadingCompletionInput.MarkRead(other, 200))
         store.loseReply = true
@@ -71,7 +71,7 @@ class ExplicitReadingCommandsTest {
 
     @Test fun partialBackfillAllowsLaterUnreadAndOldRetryNeverPublishesOldRead() = runBlocking<Unit> {
         val store = Store(); var broken = true
-        val queue = ExplicitReadingCommands(ReadingStateFacade(store) { if (broken) throw IOException("Backfill") })
+        val queue = ReadingCompletionCommands(ReadingStateFacade(store) { if (broken) throw IOException("Backfill") })
         val read = queue.accept(ReadingCompletionInput.MarkRead(key, 100))
         queue.accept(ReadingCompletionInput.MarkUnread(key))
         val first = queue.flush()
@@ -85,7 +85,7 @@ class ExplicitReadingCommandsTest {
     }
 
     @Test fun cancellationAfterCommitRetainsExactCommandForReceiptRetry() = runBlocking<Unit> {
-        val store = Store(); val queue = ExplicitReadingCommands(ReadingStateFacade(store, null))
+        val store = Store(); val queue = ReadingCompletionCommands(ReadingStateFacade(store, null))
         queue.accept(ReadingCompletionInput.MarkRead(key, 100))
         val reached = CompletableDeferred<Unit>()
         store.afterCommit = { reached.complete(Unit); awaitCancellation() }
@@ -99,7 +99,7 @@ class ExplicitReadingCommandsTest {
     }
 
     @Test fun cancellationInLaterEntryRetainsEarlierSaveForCurrentReconciliation() = runBlocking<Unit> {
-        val store = Store(); val facade = ReadingStateFacade(store, null); val queue = ExplicitReadingCommands(facade)
+        val store = Store(); val facade = ReadingStateFacade(store, null); val queue = ReadingCompletionCommands(facade)
         val first = queue.accept(ReadingCompletionInput.MarkRead(key, 100))
         queue.accept(ReadingCompletionInput.MarkRead(other, 200))
         val reached = CompletableDeferred<Unit>()
@@ -118,7 +118,7 @@ class ExplicitReadingCommandsTest {
     }
 
     @Test fun competingIntentRejectsOldUnknownCommandWithoutRepreparation() = runBlocking<Unit> {
-        val store = Store(); val facade = ReadingStateFacade(store, null); val queue = ExplicitReadingCommands(facade)
+        val store = Store(); val facade = ReadingStateFacade(store, null); val queue = ReadingCompletionCommands(facade)
         queue.accept(ReadingCompletionInput.MarkRead(key, 100)); store.failKey = key
         assertTrue(queue.flush().single().outcome is ReadingCommandOutcome.Failed)
         val old = store.commands.single(); store.failKey = null
@@ -130,7 +130,7 @@ class ExplicitReadingCommandsTest {
     }
 
     @Test fun undeliveredMissingResultCannotBindARecreatedTargetAfterCancellation() = runBlocking<Unit> {
-        val store = Store(); val queue = ExplicitReadingCommands(ReadingStateFacade(store, null))
+        val store = Store(); val queue = ReadingCompletionCommands(ReadingStateFacade(store, null))
         val old = store.records.remove(key)!!
         val missing = queue.accept(ReadingCompletionInput.MarkRead(key, 100))
         queue.accept(ReadingCompletionInput.MarkRead(other, 200))
@@ -147,7 +147,7 @@ class ExplicitReadingCommandsTest {
 
     @Test fun newAcceptanceDuringSuspendedFlushIsPreservedForNextFlush() = runBlocking<Unit> {
         val store = Store(); val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>()
-        val queue = ExplicitReadingCommands(ReadingStateFacade(store) { entered.complete(Unit); release.await() })
+        val queue = ReadingCompletionCommands(ReadingStateFacade(store) { entered.complete(Unit); release.await() })
         val read = queue.accept(ReadingCompletionInput.MarkRead(key, 100))
         val flushing = async { queue.flush() }; entered.await()
         val unread = queue.accept(ReadingCompletionInput.MarkUnread(key)); assertFalse(queue.isLatest(read))
@@ -157,7 +157,7 @@ class ExplicitReadingCommandsTest {
     }
 
     @Test fun missingTargetIsTerminalAndOtherChapterContinues() = runBlocking<Unit> {
-        val store = Store(); val queue = ExplicitReadingCommands(ReadingStateFacade(store, null))
+        val store = Store(); val queue = ReadingCompletionCommands(ReadingStateFacade(store, null))
         queue.accept(ReadingCompletionInput.MarkRead(key, 100)); queue.accept(ReadingCompletionInput.MarkRead(other, 200))
         store.records.remove(key)
         val attempts = queue.flush()
@@ -166,7 +166,7 @@ class ExplicitReadingCommandsTest {
     }
 
     @Test fun nextKeepsAcceptedTimeAndNeverMarksItsSuccessor() = runBlocking<Unit> {
-        val store = Store(); val queue = ExplicitReadingCommands(ReadingStateFacade(store, null))
+        val store = Store(); val queue = ReadingCompletionCommands(ReadingStateFacade(store, null))
         queue.accept(ReadingCompletionInput.Next(key, key, true, 100)); store.failKey = key
         queue.flush(); store.failKey = null; queue.flush()
         assertEquals(ReadingCompletionState(key, ReadStatus.READ, 100), store.read(key))

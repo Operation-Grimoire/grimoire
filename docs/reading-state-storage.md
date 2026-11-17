@@ -126,8 +126,8 @@ Older Android DB35 and desktop SQL1/2 builds refuse the expanded schema. Downgra
 requires restoring that coherent backup; changing only the version number or
 removing new tables would discard protocol authority and is unsupported.
 
-Android reader read/unread and Next adopt this protocol in #454. Visual thresholds,
-TTS and detail/library/updates bulk writers remain legacy callers under #451;
+Android reader read/unread and Next adopt this protocol in #454, followed by
+visual completion in #457. TTS and detail/library/updates bulk writers remain legacy callers under #451;
 their writes still invalidate prepared bindings. Global all-writer ordering and
 shared opened-history adoption remain outstanding.
 
@@ -169,7 +169,7 @@ from the production adoption in #451 and physical-device/process-death acceptanc
 
 ## Reader explicit actions
 
-`ExplicitReadingCommands` owns accepted explicit inputs for one reader instance.
+`ReadingCompletionCommands` owns accepted completion inputs for one reader instance.
 It prepares/submits them in acceptance order. An uncertain command retains the same
 ID, prepared binding and timestamp; later commands for that chapter wait for its
 retry, while commands for other chapters can proceed. Preparation itself may retry
@@ -196,3 +196,13 @@ saves use the reader's persistence scope after ViewModel cancellation. The queue
 is in memory: it supplies no process-death outbox, background retry timer or durable
 UI error journal. Unexecuted phone/process-death checks remain separate from the
 owned-emulator journeys.
+
+The visual writer registers against the loaded projection's original document and
+storage observation. It supplies a session to consumed user scroll and carries
+that session through the corresponding fling. Layout and programmatic movement
+still flow to the independent position observer. A viewport that meets the
+configured threshold enters the same command queue with its immutable writer and
+evidence. Explicit intents detach the visual session when accepted, and a new
+session can take fresh scroll input once those intents settle. Completion results
+come from the guarded transaction and current state. Replacement and exit detach
+local authority and retire the exact durable session.
