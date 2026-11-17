@@ -285,8 +285,8 @@ ART, frozen UTF-16 framing, stale-load rejection and real legacy Room writes.
 Six ChapterObservationTest cases cover real Room observation/absence,
 legacy cache/field preservation, content/identity/restore ABA, live download
 ownership, delayed source access, reopen scope and allocation rollback.
-The script requires 41 native successes total; native execution remains separate
-from compilation and the signed beta.347-to-target DB34 compatibility harness.
+These suites run alongside the checkpoint and reading-state suites below. Native
+execution remains separate from compilation and the signed beta compatibility harness.
 
 ## Session and checkpoint adapters
 
