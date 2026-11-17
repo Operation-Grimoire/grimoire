@@ -1,0 +1,103 @@
+name: Android integration journeys
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: android-integration-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  impact:
+    uses: ./.github/workflows/platform-impact.yml
+  build:
+    needs: impact
+    if: always() && (needs.impact.result != 'success' || needs.impact.outputs.android_ci == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      APP_VERSION_TAG: v0.0.0
+      APP_BETA_NUMBER: '1'
+      APP_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Require successful platform policy
+        if: needs.impact.result != 'success'
+        run: exit 1
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build exact-head production debug host and integration APK
+        run: |
+          bash ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --console=plain
+          mkdir -p build/android-integration
+          cp app/build/outputs/apk/debug/app-debug.apk build/android-integration/host.apk
+          cp app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk build/android-integration/tests.apk
+          cd build/android-integration
+          sha256sum host.apk tests.apk > sha256sums.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-integration-apks
+          path: build/android-integration/
+          if-no-files-found: error
+  emulator:
+    needs: build
+    if: always() && needs.build.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Require successful integration build
+        if: needs.build.result != 'success'
+        run: exit 1
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-integration-apks
+          path: build/android-integration
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run offline production reader journeys
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          INTEGRATION_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -memory 2048
+          script: python .github/scripts/android_integration.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-integration-results
+          path: |
+            build/android-integration/*.json
+            build/android-integration/*.xml
+            build/android-integration/*.log
+            build/android-integration/*.png
+            build/android-integration/sha256sums.txt
+          if-no-files-found: error

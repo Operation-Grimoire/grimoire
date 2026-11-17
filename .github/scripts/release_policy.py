@@ -58,7 +58,8 @@ def impact(paths):
         else:
             # Shared build inputs and unknown future modules fail conservatively.
             targets = PLATFORMS
-        test_only = ("/src/test/" in path or "/src/androidTest/" in path or
+        test_only = (path.startswith("app/src/debug/") or
+                     "/src/test/" in path or "/src/androidTest/" in path or
                      "/src/integrationTest/" in path or
                      Path(path).name.startswith("test_"))
         for p in targets:
