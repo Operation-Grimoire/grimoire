@@ -202,6 +202,10 @@ snapshot; portable identity does not require rewriting historical rows.
 
 ## DAO ordering, identity and failure requirements
 
+The [guarded storage protocol and migration plan](reading-state-storage.md) tracks
+the concrete implementation under #447. Its adapter and migration proof remains
+separate from the pure decision tests below.
+
 The existing checkpoint protocol guards position writes. It does not by itself
 order Android's separate `setRead`, TTS and bulk calls. An in-memory actor alone
 cannot protect against another process or a recreated chapter.
