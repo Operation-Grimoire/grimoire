@@ -40,9 +40,10 @@ flowchart TB
 
 ## Storage and ownership
 
-`library.sqlite` has application ID `0x4752494D` and schema version 3. SQL1 upgrades
-atomically by adding empty checkpoint and reading-state/receipt tables; SQL2 adds
-only the reading-state/receipt tables. These #447 migrations do not rewrite existing rows;
+`library.sqlite` has application ID `0x4752494D` and schema version 3. Upgrading
+from SQL1 to SQL3 atomically adds empty checkpoint and reading-state/receipt tables.
+Upgrading from SQL2 to SQL3 adds only the reading-state/receipt tables: checkpoints
+already exist in SQL2. These #447 migrations do not rewrite existing rows;
 startup still resets abandoned active download ownership under the exclusive lease.
 `books` stores the existing metadata projection; `contents` stores payload,
 explicit codec version, digest, revision, word count and ownership/receipt data.

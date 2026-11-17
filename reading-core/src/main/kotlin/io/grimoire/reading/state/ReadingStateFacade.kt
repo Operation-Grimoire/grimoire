@@ -45,6 +45,7 @@ class ReadingStateFacade(private val dao: ReadingStateDao, private val backfill:
         commandId: String = UUID.randomUUID().toString()): ReadingStateCommand {
         require(input is ReadingCompletionInput.Visual || input is ReadingCompletionInput.Audio)
         require(input.key == session.binding.key && commandId.isNotBlank() && sequence > 0)
+        require((input is ReadingCompletionInput.Visual) == (session.kind == ReadingStateWriterKind.VISUAL)) { "Session kind must match input" }
         return ReadingStateCommand(commandId, session.binding, input, session, sequence)
     }
 

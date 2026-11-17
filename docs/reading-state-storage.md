@@ -133,8 +133,11 @@ already use durable intent ordering.
 ## Completion facade and writer retirement
 
 `ReadingStateFacade` prepares explicit commands with the accepted input timestamp
-and a stable ID. Automatic commands retain their registered session, evidence and
-sequence. Hosts serialize their own accepted explicit intents and retain each
+and a stable ID. Committed read proposals fill a null `firstReadAt` once and
+preserve an existing timestamp. Explicit MarkRead and eligible audio may fill it
+on an already-read row; visual and Next compatibility checks may instead return
+NO_CHANGE. Receipt confirmation never supplies a new timestamp. Automatic commands
+retain their registered session, evidence and sequence. Hosts serialize their own accepted explicit intents and retain each
 immutable command through uncertain IO or cancellation. Retrying submits that
 same command; it never prepares a replacement against newer intent automatically.
 The facade does not own a background queue, active playback or a durable outbox.

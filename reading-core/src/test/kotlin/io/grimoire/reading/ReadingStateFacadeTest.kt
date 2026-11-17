@@ -127,6 +127,10 @@ class ReadingStateFacadeTest {
         val s = session(store, ReadingStateWriterKind.AUDIO); val bad = audio(s).copy(current = audio(s).current.copy(playing = false))
         assertEquals(ReadingStateConfirmation.NotApplied(ReadingStateRejection.INELIGIBLE), facade.submit(facade.prepareAutomatic(s, bad, 1)).confirmation)
         assertEquals(0, effects); assertTrue(store.receipts.isEmpty())
+        for ((wrongSession, wrongInput) in listOf(visual to audio(s), s to input)) {
+            try { facade.prepareAutomatic(wrongSession, wrongInput, 1); fail("Kind mismatch must fail at preparation") }
+            catch (_: IllegalArgumentException) { }
+        }
     }
 
     @Test fun missingTargetAndNoLegacyEffectStayExplicit() = runBlocking<Unit> {
