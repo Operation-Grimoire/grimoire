@@ -57,7 +57,9 @@ fun main(args: Array<String>) {
     val hostApi = HostRuntime.apiVersion
     val networkEnabled = AtomicBoolean(true)
     SourceNetwork.install(DesktopHttpPlatform(networkEnabled))
-    val model = desktopReaderModel(LocalLibrary(data), hostApi, networkEnabled)
+    val library = LocalLibrary(data)
+    val extensions = ExtensionManager(library, hostApi, HttpArtifactFetcher(networkEnabled), listOf(OFFICIAL_REPOSITORY))
+    val model = desktopReaderModel(library, hostApi, networkEnabled, extensions)
     options["--extension"]?.let { model.load(Paths.get(it)) }
     application {
         val scope = rememberCoroutineScope()
@@ -126,11 +128,7 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
                 View.LIBRARY -> LibraryPane(state, enabled, model, Modifier.weight(1f))
                 View.HISTORY -> HistoryPane(state, enabled, model, Modifier.weight(1f))
                 View.BROWSE -> BrowsePane(state, enabled, model, Modifier.weight(1f))
-                View.EXTENSIONS -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Extensions", style = MaterialTheme.typography.headlineSmall)
-                    Text(state.sourceName ?: "No extension open")
-                    OutlinedButton(onClick = openExtension, enabled = enabled) { Text("Open local extension") }
-                }
+                View.EXTENSIONS -> ExtensionsPane(state, enabled, model, openExtension, Modifier.weight(1f))
                 View.SETTINGS -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Settings", style = MaterialTheme.typography.headlineSmall)
                     OfflineToggle(state.offline, enabled, model::offline)
@@ -188,10 +186,15 @@ private fun OfflineToggle(offline: Boolean, enabled: Boolean, change: (Boolean) 
 @Composable
 private fun BrowsePane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier) {
     LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Text(state.sourceName ?: "Browse sources", style = MaterialTheme.typography.headlineSmall) }
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(if (state.sources.isEmpty()) "Browse sources" else "Browse", style = MaterialTheme.typography.headlineSmall)
+                if (state.sources.isNotEmpty()) SourcePicker(state, enabled, model)
+            }
+        }
         when {
             state.sourceName == null -> item {
-                Text("Open an extension to browse its catalog.")
+                Text("Install an extension to browse its catalog.")
                 TextButton(onClick = model::showExtensions, enabled = enabled) { Text("Manage extensions") }
             }
             state.offline -> item { Text("Go online to browse this source.") }

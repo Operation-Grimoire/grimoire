@@ -14,6 +14,7 @@ import org.json.JSONObject
 import java.io.Closeable
 import java.nio.file.Path
 import java.util.UUID
+import java.sql.Connection
 import java.sql.ResultSet
 
 data class ReadPosition(val chapterUrl: String, val paragraph: Int, val offset: Int)
@@ -70,6 +71,16 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
         if (invalidatesPositionEligibility) positionBooks = emptyMap()
         throw failure
     }
+    /** Extension artifacts live beside the store and share its process lease. */
+    internal val extensionDirectory: Path = directory.resolve("extensions")
+
+    @Synchronized internal fun <T> extensionRead(action: (Connection) -> T): T {
+        database.verifyMarker()
+        return action(db)
+    }
+
+    @Synchronized internal fun <T> extensionWrite(action: (Connection) -> T): T = write { action(db) }
+
     @Synchronized fun saved(): List<SavedBook> = refresh().filter { it.favorite }
     @Synchronized fun book(key: NovelKey): SavedBook? {
         database.verifyMarker()

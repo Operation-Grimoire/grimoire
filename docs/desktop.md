@@ -24,8 +24,16 @@ bash ./gradlew :desktop:run
 ```
 
 On Windows, use `./gradlew.bat` instead of `bash ./gradlew`. The window opens in
-**Library**. From the sidebar, choose **Extensions**, then **Open local extension**
-to select a trusted local manifest. Choose **Browse** to open its catalog.
+**Library**. From the sidebar, choose **Extensions**. Desktop downloads the signed
+JAR index of the official repository and lists its extensions. Choose **Install**,
+then **Browse** to open the source's catalog. Installed extensions load from the
+local store at startup, also offline. **Update** and **Remove** are on the same screen.
+To add another repository, enter its index URL and the public key from its publisher,
+check the fingerprint Desktop shows, then choose **Trust repository**. See
+[desktop extension distribution](desktop-extensions.md) for the trust and recovery rules.
+
+For development, **Open local extension** loads a trusted local manifest for the
+current session only.
 Open a novel, add it to the library, and choose an unlocked chapter. **Save chapter
 offline** stores its text and adds the novel to the library. Scroll position is
 saved automatically and flushed on navigation and normal shutdown.
@@ -49,10 +57,11 @@ error; it does not silently fetch replacement content.
 
 ## Trusted local artifacts
 
-This slice does not download plugins or establish remote authenticity. The
-planned signed repository and in-app install flow are defined in
-[desktop extension distribution](desktop-extensions.md). Extension
-code runs with the application's permissions. Only select JARs built from a
+This section covers development manifests. Installed extensions use the signed
+repository flow above instead.
+
+A local manifest does not establish remote authenticity. Extension code runs
+with the application's permissions, installed or local. Only select JARs built from a
 trusted checkout or authenticated through a separately trusted delivery channel.
 The local manifest binds the selected bytes and metadata; computing a hash of an
 untrusted download does not make it trusted.

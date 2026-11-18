@@ -51,7 +51,7 @@ class OpenedHistoryTest {
             assertEquals(ReadPosition("/chapter", 0, 17), library.saved().single().position)
             assertEquals(before, existingTables(database))
         }
-        assertEquals(4L, schemaVersion(database))
+        assertEquals(5L, schemaVersion(database))
         assertEquals(1L, historyTables(database))
     }
 
@@ -127,7 +127,7 @@ class OpenedHistoryTest {
 
     private fun existingTables(database: Path) = DriverManager.getConnection("jdbc:sqlite:$database").use { db ->
         val definitions = db.query("""SELECT name,sql FROM sqlite_master WHERE type='table'
-            AND name NOT LIKE 'sqlite_%' AND name!='opened_history' ORDER BY name""") { it.getString(1) to it.getString(2) }
+            AND name NOT LIKE 'sqlite_%' AND name NOT IN ('opened_history','extension_repositories','installed_extensions') ORDER BY name""") { it.getString(1) to it.getString(2) }
         definitions.associate { (name, sql) ->
             name to (sql to db.query("SELECT * FROM $name ORDER BY 1,2") { row ->
                 (1..row.metaData.columnCount).map(row::getObject)

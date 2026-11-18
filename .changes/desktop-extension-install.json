@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Install, update and remove extensions from signed repositories in the Extensions screen; installed sources appear in Browse and load offline after restart."
+    }
+  ]
+}

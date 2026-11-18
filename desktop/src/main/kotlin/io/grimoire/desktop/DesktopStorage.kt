@@ -41,9 +41,14 @@ class DesktopLibraryDao(private val library: LocalLibrary) : LibraryDao {
 private fun SavedBook.toLibraryEntry() = LibraryEntry(key, novel.title, favorite, novel.author, novel.description)
 
 /** Desktop composition root: backend selection stays outside the reader workflow. */
-fun desktopReaderModel(library: LocalLibrary, hostApi: String, networkEnabled: AtomicBoolean): ReaderModel =
+fun desktopReaderModel(
+    library: LocalLibrary,
+    hostApi: String,
+    networkEnabled: AtomicBoolean,
+    extensions: ExtensionManager? = null,
+): ReaderModel =
     ReaderModel(library, hostApi, networkEnabled, ChapterLoader(SavedChapterRepository(DesktopSavedChapterDao(library))),
-        LibraryRepository(DesktopLibraryDao(library)), DownloadRepository(DesktopDownloadDao(library)))
+        LibraryRepository(DesktopLibraryDao(library)), DownloadRepository(DesktopDownloadDao(library)), extensions = extensions)
 
 class DesktopDownloadDao(private val library: LocalLibrary) : DownloadDao {
     override suspend fun claim(key: ChapterKey): DownloadAttempt? = withContext(Dispatchers.IO) {
