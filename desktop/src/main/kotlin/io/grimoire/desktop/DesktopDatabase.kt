@@ -67,7 +67,8 @@ internal class DesktopDatabase(
             if (oldVersion < DESKTOP_SCHEMA_VERSION) transaction {
                 if (oldVersion == 1L) connection.execute(CREATE_READING_CHECKPOINTS)
                 if (oldVersion < 3L) createReadingStateTables(connection)
-                connection.execute(CREATE_OPENED_HISTORY)
+                if (oldVersion < 4L) connection.execute(CREATE_OPENED_HISTORY)
+                createExtensionTables(connection)
                 connection.execute("PRAGMA user_version=$DESKTOP_SCHEMA_VERSION")
             }
             // The exclusive lease proves the previous process cannot still complete a callback.
@@ -149,6 +150,7 @@ internal class DesktopDatabase(
                 db.execute(CREATE_READING_CHECKPOINTS)
                 createReadingStateTables(db)
                 db.execute(CREATE_OPENED_HISTORY)
+                createExtensionTables(db)
                 db.execute("INSERT INTO settings VALUES('id',?),('phase','imported')", UUID.randomUUID().toString())
                 books.forEach { book -> db.execute("INSERT INTO books VALUES(?,?,?)", book.key.sourceId, book.key.url,
                     encodeBook(book).apply { remove("downloaded") }.toString()) }
@@ -275,7 +277,7 @@ private fun createReadingStateTables(db: Connection) {
         PRIMARY KEY(source_id,novel_url,chapter_url,command_id), FOREIGN KEY(source_id,novel_url) REFERENCES books(source_id,novel_url) ON DELETE CASCADE)""")
 }
 
-private const val DESKTOP_SCHEMA_VERSION = 4L
+private const val DESKTOP_SCHEMA_VERSION = 5L
 
 // History snapshots survive library metadata changes and have no foreign key.
 private const val CREATE_OPENED_HISTORY = """CREATE TABLE opened_history(
@@ -283,3 +285,16 @@ private const val CREATE_OPENED_HISTORY = """CREATE TABLE opened_history(
     source_id INTEGER NOT NULL, novel_url TEXT NOT NULL, chapter_url TEXT NOT NULL,
     novel_title TEXT NOT NULL, chapter_title TEXT NOT NULL, opened_at INTEGER NOT NULL,
     UNIQUE(source_id,novel_url,chapter_url))"""
+
+/** SQL5: trusted repositories and installed extension artifacts. */
+private fun createExtensionTables(db: Connection) {
+    db.execute("""CREATE TABLE extension_repositories(
+        repository TEXT PRIMARY KEY, index_url TEXT NOT NULL, public_key TEXT NOT NULL,
+        sequence INTEGER NOT NULL DEFAULT 0, index_sha256 TEXT, catalog BLOB,
+        enabled INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0,1)),
+        builtin INTEGER NOT NULL DEFAULT 0 CHECK(builtin IN (0,1)))""")
+    db.execute("""CREATE TABLE installed_extensions(
+        pkg TEXT PRIMARY KEY, repository TEXT NOT NULL, repository_key TEXT NOT NULL, metadata TEXT NOT NULL,
+        sha256 TEXT NOT NULL, previous TEXT, library_coordinate TEXT, library_sha256 TEXT,
+        installed_at INTEGER NOT NULL)""")
+}

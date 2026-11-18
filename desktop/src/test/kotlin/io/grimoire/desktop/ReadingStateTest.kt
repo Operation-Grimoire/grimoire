@@ -237,7 +237,7 @@ class ReadingStateTest {
             db.execute("INSERT INTO reading_checkpoints VALUES(17,'/novel','/chapter',?)", encodeReadingCheckpoint(checkpoint))
         }
         fun snapshot() = DriverManager.getConnection("jdbc:sqlite:${directory.resolve("library.sqlite")}").use { db ->
-            val definitions = db.query("SELECT name,sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' AND name NOT IN ('reading_states','reading_state_receipts','opened_history') ORDER BY name") { it.getString(1) to it.getString(2) }
+            val definitions = db.query("SELECT name,sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' AND name NOT IN ('reading_states','reading_state_receipts','opened_history','extension_repositories','installed_extensions') ORDER BY name") { it.getString(1) to it.getString(2) }
             definitions.associate { (name, sql) -> name to (sql to db.query("SELECT * FROM $name ORDER BY 1,2") { row -> (1..row.metaData.columnCount).map { row.getObject(it) } }) }
         }
         val before = snapshot()
@@ -255,6 +255,6 @@ class ReadingStateTest {
             assertEquals("frozen-receipt", DesktopDownloadDao(library).currentReceipt(fixtureKey)!!.attemptId)
             assertEquals(checkpoint.anchor, DesktopReadingCheckpointDao(library).read(fixtureKey))
         }
-        DriverManager.getConnection("jdbc:sqlite:${directory.resolve("library.sqlite")}").use { assertEquals(4, it.query("PRAGMA user_version") { r -> r.getInt(1) }.single()) }
+        DriverManager.getConnection("jdbc:sqlite:${directory.resolve("library.sqlite")}").use { assertEquals(5, it.query("PRAGMA user_version") { r -> r.getInt(1) }.single()) }
     }
 }

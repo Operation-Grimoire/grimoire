@@ -13,10 +13,25 @@ import java.security.MessageDigest
 import java.util.Properties
 import java.util.jar.JarInputStream
 
-/** Operator-selected trusted local artifacts. This is not remote trust or a plugin sandbox. */
+/** Identity a JAR's `Grimoire-*` manifest must match before any of its classes load. */
+data class ExtensionMetadata(
+    val pkg: String,
+    val sourceClass: String,
+    val versionCode: Int,
+    val versionName: String,
+    val sourceVersionCode: Int,
+    val coreApi: String,
+    val hostLibraries: List<String>,
+)
+
+/** A library JAR offered to an extension, already bound to a digest by the caller. */
+class LibraryArtifact(val coordinate: String, val bytes: ByteArray)
+
+/** Verified extension code in its own class loader. This is not a plugin sandbox. */
 class LocalExtension private constructor(
     val source: Source,
     val packageName: String,
+    val versionName: String,
     private val loader: URLClassLoader,
     private val snapshots: List<Path>,
     private val directory: Path,
@@ -31,6 +46,7 @@ class LocalExtension private constructor(
     }
 
     companion object {
+        /** Operator-selected trusted local manifest, for development. */
         fun open(manifest: Path, hostApi: String): LocalExtension {
             val config = Properties().apply { Files.newInputStream(manifest).use(::load) }
             fun required(key: String): String = config.getProperty(key)?.takeIf { it.isNotBlank() }
@@ -39,7 +55,7 @@ class LocalExtension private constructor(
             fun bytes(prefix: String): ByteArray {
                 val path = root.resolve(required("$prefix.file"))
                 require(Files.isRegularFile(path)) { "Invalid JAR: $path" }
-                val limit = 20 * 1024 * 1024
+                val limit = ExtensionIndex.MAX_ARTIFACT_BYTES.toInt()
                 val content = Files.newInputStream(path).use { it.readNBytes(limit + 1) }
                 require(content.size <= limit) { "JAR exceeds 20 MiB: $path" }
                 val expected = required("$prefix.sha256")
@@ -49,55 +65,80 @@ class LocalExtension private constructor(
                 return content
             }
             val sourceBytes = bytes("source")
-            val pkg = required("source.package")
-            val entry = required("source.class")
+            val metadata = ExtensionMetadata(
+                pkg = required("source.package"),
+                sourceClass = required("source.class"),
+                versionCode = required("source.versionCode").toIntOrNull() ?: error("Invalid source.versionCode"),
+                versionName = required("source.versionName"),
+                sourceVersionCode = required("source.sourceVersionCode").toIntOrNull() ?: error("Invalid source.sourceVersionCode"),
+                coreApi = required("source.coreApi"),
+                hostLibraries = hostLibraries(sourceBytes),
+            )
+            val library = if (config.containsKey("library.file")) LibraryArtifact(required("library.coordinate"), bytes("library")) else null
+            return load(sourceBytes, metadata, library, hostApi)
+        }
+
+        /** Checks [bytes] against [expected] and the host without loading any class. */
+        fun verify(bytes: ByteArray, expected: ExtensionMetadata, library: LibraryArtifact?, hostApi: String) {
+            val pkg = expected.pkg
             require(pkg.matches(Regex("io\\.grimoire\\.extension(?:\\.[a-zA-Z_][a-zA-Z_0-9]*)+"))) { "Invalid source package" }
-            require(entry.startsWith("$pkg.") && entry.matches(Regex("[a-zA-Z_0-9.$]+"))) { "Invalid entry point" }
-            val attributes = inspect(sourceBytes, pkg.replace('.', '/') + "/")
-            val expected = mapOf(
+            require(expected.sourceClass.startsWith("$pkg.") && expected.sourceClass.matches(Regex("[a-zA-Z_0-9.$]+"))) { "Invalid entry point" }
+            require(expected.versionCode > 0) { "Invalid versionCode" }
+            require(expected.sourceVersionCode > 0) { "Invalid sourceVersionCode" }
+            val attributes = inspect(bytes, pkg.replace('.', '/') + "/")
+            val manifest = mapOf(
                 "Grimoire-Extension-Format" to "1",
                 "Grimoire-Source-Package" to pkg,
-                "Grimoire-Source-Class" to entry,
-                "Grimoire-Version-Code" to required("source.versionCode"),
-                "Grimoire-Version-Name" to required("source.versionName"),
-                "Grimoire-Source-Version-Code" to required("source.sourceVersionCode"),
-                "Grimoire-Core-Api" to required("source.coreApi"),
+                "Grimoire-Source-Class" to expected.sourceClass,
+                "Grimoire-Version-Code" to expected.versionCode.toString(),
+                "Grimoire-Version-Name" to expected.versionName,
+                "Grimoire-Source-Version-Code" to expected.sourceVersionCode.toString(),
+                "Grimoire-Core-Api" to expected.coreApi,
             )
-            expected.forEach { (key, value) -> require(attributes.getValue(key) == value) { "JAR metadata mismatch: $key" } }
-            val minimum = attributes.getValue("Grimoire-Core-Api")
+            manifest.forEach { (key, value) -> require(attributes.getValue(key) == value) { "JAR metadata mismatch: $key" } }
+            val minimum = expected.coreApi
             require(declaredExtensionApi(minimum) != null && supportsExtensionApi(minimum, hostApi)) {
                 "Extension requires API $minimum; host provides $hostApi"
             }
-            require(required("source.versionCode").toIntOrNull()?.let { it > 0 } == true)
-            val sourceVersion = required("source.sourceVersionCode").toIntOrNull()
-            require(sourceVersion != null && sourceVersion > 0)
-            val requiredLibraries = attributes.getValue("Grimoire-Host-Libraries")?.split(',')
-                ?.map(String::trim)?.filter(String::isNotEmpty) ?: error("Missing Grimoire-Host-Libraries")
-            val libraryBytes = if (config.containsKey("library.file")) bytes("library") else null
-            val libraryCoordinate = if (libraryBytes != null) required("library.coordinate") else null
-            require(libraryCoordinate == null || libraryCoordinate.matches(Regex("io\\.grimoire:extensions-lib:[0-9][a-zA-Z0-9.\\-]*")))
-            require(requiredLibraries.all { it == HostRuntime.jsonCoordinate || it == libraryCoordinate }) {
-                "Unsupported host libraries: ${requiredLibraries.joinToString()}"
+            val required = hostLibraries(attributes)
+            require(required.toSet() == expected.hostLibraries.toSet()) { "JAR metadata mismatch: Grimoire-Host-Libraries" }
+            val coordinate = library?.coordinate
+            require(coordinate == null || coordinate.matches(Regex("io\\.grimoire:extensions-lib:[0-9][a-zA-Z0-9.\\-]*"))) { "Unsupported library coordinate" }
+            require(required.all { it == HostRuntime.jsonCoordinate || it == coordinate }) {
+                "Unsupported host libraries: ${required.joinToString()}"
             }
-            require(libraryBytes == null || libraryCoordinate in requiredLibraries) { "Undeclared host library: $libraryCoordinate" }
-            libraryBytes?.let { inspect(it, "io/grimoire/extensions/lib/") }
+            require(library == null || coordinate in required) { "Undeclared host library: $coordinate" }
+            library?.let { inspect(it.bytes, "io/grimoire/extensions/lib/") }
+        }
 
+        /** [expectedName], when given, must equal the source's SourceInfo name (the repository's listing). */
+        fun load(
+            sourceBytes: ByteArray,
+            expected: ExtensionMetadata,
+            library: LibraryArtifact?,
+            hostApi: String,
+            expectedName: String? = null,
+        ): LocalExtension {
+            verify(sourceBytes, expected, library, hostApi)
             // Load verified snapshots, never a path that can change after verification.
             val directory = Files.createTempDirectory("grimoire-extension-")
             val files = mutableListOf<Path>()
             var loader: URLClassLoader? = null
             try {
-                for ((index, content) in listOfNotNull(sourceBytes, libraryBytes).withIndex()) {
+                for ((index, content) in listOfNotNull(sourceBytes, library?.bytes).withIndex()) {
                     files.add(directory.resolve("$index.jar").also { Files.write(it, content) })
+                    // The class loader reads the central directory; it must describe what was streamed and checked.
+                    sameAsStreamed(files.last(), content)
                 }
                 loader = URLClassLoader(files.map { it.toUri().toURL() }.toTypedArray(), Source::class.java.classLoader)
-                val type = Class.forName(entry, false, loader)
+                val type = Class.forName(expected.sourceClass, false, loader)
                 require(type.classLoader === loader && Source::class.java.isAssignableFrom(type)) { "Invalid source class" }
                 val info = type.getAnnotation(SourceInfo::class.java) ?: error("SourceInfo is missing")
-                require(info.versionCode == sourceVersion) { "SourceInfo version mismatch" }
+                require(info.versionCode == expected.sourceVersionCode) { "SourceInfo version mismatch" }
+                require(expectedName == null || info.name == expectedName) { "SourceInfo name does not match the repository listing" }
                 val source = type.getDeclaredConstructor().newInstance() as Source
                 require(info.name == source.name && info.lang == source.lang) { "SourceInfo identity mismatch" }
-                return LocalExtension(source, pkg, loader, files, directory)
+                return LocalExtension(source, expected.pkg, expected.versionName, loader, files, directory)
             } catch (failure: Throwable) {
                 // Keep the original load failure while attempting every cleanup operation.
                 runCatching { loader?.close() }.exceptionOrNull()?.let(failure::addSuppressed)
@@ -107,7 +148,29 @@ class LocalExtension private constructor(
             }
         }
 
-        private fun inspect(bytes: ByteArray, namespace: String): java.util.jar.Attributes =
+        private fun hostLibraries(bytes: ByteArray) = hostLibraries(inspect(bytes, null))
+
+        private fun sameAsStreamed(file: Path, bytes: ByteArray) {
+            val (attributes, streamed) = JarInputStream(bytes.inputStream()).use { jar ->
+                val names = mutableSetOf<String>()
+                while (true) names.add((jar.nextJarEntry ?: break).name)
+                jar.manifest?.mainAttributes to names
+            }
+            java.util.jar.JarFile(file.toFile()).use { jar ->
+                val central = jar.entries().toList().map { it.name }
+                    .filterNot { it.equals("META-INF/", true) || it.equals("META-INF/MANIFEST.MF", true) }
+                require(central.size == central.toSet().size && central.toSet() == streamed.filterNot { it.equals("META-INF/", true) }.toSet()) {
+                    "JAR central directory differs from its entries"
+                }
+                require(jar.manifest?.mainAttributes == attributes) { "JAR central directory differs from its entries" }
+            }
+        }
+
+        private fun hostLibraries(attributes: java.util.jar.Attributes) =
+            attributes.getValue("Grimoire-Host-Libraries")?.split(',')
+                ?.map(String::trim)?.filter(String::isNotEmpty) ?: error("Missing Grimoire-Host-Libraries")
+
+        private fun inspect(bytes: ByteArray, namespace: String?): java.util.jar.Attributes =
             JarInputStream(bytes.inputStream()).use { jar ->
                 val attributes = jar.manifest?.mainAttributes ?: error("JAR manifest is missing")
                 require(attributes.getValue("Class-Path") == null) { "External JAR Class-Path is unsupported" }
@@ -116,7 +179,7 @@ class LocalExtension private constructor(
                     val entry = jar.nextJarEntry ?: break
                     require(!entry.name.equals("META-INF/MANIFEST.MF", ignoreCase = true)) { "Duplicate JAR manifest" }
                     require(entries.add(entry.name)) { "Duplicate JAR entry" }
-                    require(!entry.name.endsWith(".class") || entry.name.startsWith(namespace)) { "JAR contains host or foreign classes" }
+                    require(namespace == null || !entry.name.endsWith(".class") || entry.name.startsWith(namespace)) { "JAR contains host or foreign classes" }
                 }
                 attributes
             }

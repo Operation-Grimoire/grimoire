@@ -91,7 +91,7 @@ tasks.register<Test>("integrationTest") {
     group = "verification"
     testClassesDirs = integration.output.classesDirs
     classpath = integration.runtimeClasspath
-    exclude("**/ReaderUiTest*")
+    exclude("**/ReaderUiTest*", "**/ExtensionInstallUiTest*")
     dependsOn(readerFixtureJar)
     jvmArgumentProviders.add(objects.newInstance<ReaderFixtureArguments>().apply {
         fixtureJar.set(readerFixtureJar.flatMap { it.archiveFile })
@@ -105,7 +105,7 @@ tasks.register<Test>("uiTest") {
     group = "verification"
     testClassesDirs = integration.output.classesDirs
     classpath = integration.runtimeClasspath
-    include("**/ReaderUiTest*")
+    include("**/ReaderUiTest*", "**/ExtensionInstallUiTest*")
     dependsOn(readerFixtureJar)
     jvmArgumentProviders.add(objects.newInstance<ReaderFixtureArguments>().apply {
         fixtureJar.set(readerFixtureJar.flatMap { it.archiveFile })

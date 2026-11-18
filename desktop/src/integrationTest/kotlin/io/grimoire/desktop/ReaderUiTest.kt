@@ -13,7 +13,6 @@ import io.grimoire.api.model.lang.Language
 import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelPage
-import io.grimoire.api.network.SourceNetwork
 import io.grimoire.reading.*
 import io.grimoire.reading.storage.*
 import io.grimoire.api.model.novel.PageContent
@@ -78,10 +77,9 @@ class ReaderUiTest {
     }
 
     @Test fun readerControlsSaveAndReopenChapterOffline() {
-        val platform = ReaderFixturePlatform()
+        val platform = resetSharedFixturePlatform()
         val allowed = platform.allowed
         val requests = platform.requests
-        SourceNetwork.install(platform)
         val data = temporary.newFolder().toPath()
         var model = desktopReaderModel(LocalLibrary(data), "1.5.0", allowed)
         val active = mutableStateOf(model)

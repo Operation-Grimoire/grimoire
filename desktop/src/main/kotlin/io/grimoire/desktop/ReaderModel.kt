@@ -48,7 +48,16 @@ data class ReaderState(
     val historyRecording: Boolean = false,
     val history: List<DesktopHistoryEntry> = emptyList(),
     val bookOrigin: View = View.LIBRARY,
+    val sources: List<BrowseSource> = emptyList(),
+    val browseSource: Long? = null,
+    val extensionRows: List<ExtensionRow> = emptyList(),
+    val repositories: List<RepositoryView> = emptyList(),
+    val pendingRepository: PendingRepository? = null,
+    val extensionNotice: String? = null,
+    val localExtension: String? = null,
 )
+
+data class BrowseSource(val sourceId: Long, val name: String, val lang: String)
 
 /** Owns operations and source lifetime; the Compose screen only projects this state. */
 class ReaderModel(
@@ -60,6 +69,7 @@ class ReaderModel(
     private val downloads: DownloadRepository,
     checkpointDao: ReadingCheckpointDao = DesktopReadingCheckpointDao(library),
     operationDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val extensions: ExtensionManager? = null,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + operationDispatcher)
     private val checkpoints = ReaderCheckpoints(checkpointDao)
@@ -67,7 +77,10 @@ class ReaderModel(
     private val storageClosed = AtomicBoolean(false)
     private val closeWrites = Mutex()
     private val operationLock = Any()
-    private var extension: LocalExtension? = null
+    // Installed extensions by package, plus at most one development manifest for this session.
+    private val installed = linkedMapOf<String, LocalExtension>()
+    private var sessionExtension: LocalExtension? = null
+    private var extensionFailures: Map<String, String> = emptyMap()
     private val mutable = MutableStateFlow(ReaderState(library = library.saved(), historyRecording = library.historyRecording()))
     // The history worker is drained separately from navigation jobs before closing the store.
     private val historyScope = CoroutineScope(SupervisorJob() + operationDispatcher)
@@ -77,16 +90,140 @@ class ReaderModel(
     private var lastHistoryOpen: Deferred<Result<Unit>>? = null
     val state = mutable.asStateFlow()
 
+    init {
+        // Installed extensions load from the local store before the first frame; no network access.
+        extensions?.let { manager ->
+            try {
+                val (loaded, failures) = manager.loadInstalled()
+                installed.putAll(loaded)
+                extensionFailures = failures
+                publishSources()
+                publishExtensions()
+            } catch (failure: Exception) {
+                // The library stays usable without extensions; the Extensions screen shows why.
+                mutable.update { it.copy(extensionNotice = "Could not load installed extensions: ${failure.message}") }
+            }
+        }
+    }
+
+    private fun extensionFor(sourceId: Long?): LocalExtension? = sourceId?.let { id ->
+        installed.values.firstOrNull { it.sourceId == id } ?: sessionExtension?.takeIf { it.sourceId == id }
+    }
+
+    private fun browseSources(): List<BrowseSource> = (installed.values + listOfNotNull(sessionExtension))
+        .distinctBy { it.sourceId }
+        .map { BrowseSource(it.sourceId, it.source.name, it.source.lang.code) }
+        .sortedBy { it.name.lowercase() }
+
+    /** Publishes the source list and keeps the Browse selection only while its source is still loaded. */
+    private fun publishSources(select: Long? = null) {
+        val sources = browseSources()
+        mutable.update { current ->
+            val keep = select ?: current.browseSource?.takeIf { id -> sources.any { it.sourceId == id } }
+            val chosen = keep ?: sources.firstOrNull()?.sourceId
+            val changed = chosen != current.browseSource
+            current.copy(sources = sources, browseSource = chosen, sourceName = sources.firstOrNull { it.sourceId == chosen }?.name,
+                novels = if (changed) emptyList() else current.novels)
+        }
+    }
+
+    private fun publishExtensions(notice: String? = null) {
+        val manager = extensions ?: return
+        val rows = manager.rows(extensionFailures)
+        val repositories = manager.repositoryViews()
+        mutable.update { it.copy(extensionRows = rows, repositories = repositories, extensionNotice = notice) }
+    }
+
     fun load(manifest: Path) = navigate {
         val loaded = LocalExtension.open(manifest, hostApi)
-        try { extension?.close() }
+        if (loaded.packageName in installed || extensions?.installed()?.any { it.pkg == loaded.packageName } == true) {
+            loaded.close()
+            error("${loaded.source.name} is installed. Remove it before opening a local copy.")
+        }
+        try { sessionExtension?.close() }
         catch (failure: Exception) { loaded.close(); throw failure }
-        extension = loaded
+        sessionExtension = loaded
         val saved = library.saved()
-        val sourceName = loaded.source.name
-        publishView { it.copy(sourceName = sourceName, view = if (it.view == View.EXTENSIONS) View.EXTENSIONS else View.LIBRARY,
+        publishSources(select = loaded.sourceId)
+        publishView { it.copy(localExtension = loaded.source.name, view = if (it.view == View.EXTENSIONS) View.EXTENSIONS else View.LIBRARY,
             novels = emptyList(), book = null, chapter = null, pages = emptyList(), library = saved,
             projection = null, observedAnchor = null, storageObservation = null, checkpointLoad = null, positionNotice = null) }
+    }
+
+    fun refreshRepositories() = operate { refreshCatalogs() }
+
+    private fun refreshCatalogs() {
+        val manager = extensions ?: return
+        check(!state.value.offline) { "Go online to refresh extension repositories" }
+        val failures = manager.refresh()
+        publishExtensions(failures.takeIf { it.isNotEmpty() }?.joinToString("\n"))
+    }
+
+    fun installExtension(row: ExtensionRow) = operate {
+        val manager = extensions ?: return@operate
+        check(!state.value.offline) { "Go online to install extensions" }
+        check(sessionExtension?.packageName != row.pkg) { "Close the local copy of ${row.name} first" }
+        val loaded = try { manager.install(row.repository, row.pkg) }
+        finally { publishExtensions() }
+        val replaced = installed.put(row.pkg, loaded)
+        extensionFailures = extensionFailures - row.pkg
+        runCatching { replaced?.close() }
+        publishSources()
+        publishExtensions("${loaded.source.name} ${loaded.versionName} is installed")
+    }
+
+    fun removeExtension(row: ExtensionRow) = operate {
+        val manager = extensions ?: return@operate
+        manager.remove(row.pkg)
+        extensionFailures = extensionFailures - row.pkg
+        installed.remove(row.pkg)?.let { runCatching { it.close() } }
+        publishSources()
+        publishExtensions("${row.name} is removed. Its library entries and saved chapters are kept.")
+    }
+
+    fun checkRepository(indexUrl: String, publicKey: String) = operate {
+        val manager = extensions ?: return@operate
+        check(!state.value.offline) { "Go online to add a repository" }
+        val pending = manager.check(indexUrl, publicKey)
+        mutable.update { it.copy(pendingRepository = pending, extensionNotice = null) }
+    }
+
+    fun confirmRepository() = operate {
+        val manager = extensions ?: return@operate
+        val pending = state.value.pendingRepository ?: return@operate
+        manager.enroll(pending)
+        mutable.update { it.copy(pendingRepository = null) }
+        // Packages it owns under this key load now instead of after a restart.
+        val (loaded, failures) = manager.loadInstalled { it.repository == pending.trust.repository && it.pkg !in installed }
+        installed.putAll(loaded)
+        extensionFailures = extensionFailures.filterKeys { it !in loaded } + failures
+        publishSources()
+        publishExtensions("${pending.trust.repository} is trusted")
+    }
+
+    fun cancelRepository() = mutable.update { it.copy(pendingRepository = null) }
+
+    fun setRepositoryEnabled(repository: String, enabled: Boolean) = operate {
+        extensions?.setEnabled(repository, enabled) ?: return@operate
+        publishExtensions()
+    }
+
+    fun removeRepository(repository: String) = operate {
+        val manager = extensions ?: return@operate
+        manager.removeRepository(repository)
+        // Revoked trust stops its extensions now, not only after a restart.
+        val revoked = manager.installed().filter { it.repository == repository }.map { it.pkg }
+        revoked.forEach { pkg -> installed.remove(pkg)?.let { runCatching { it.close() } } }
+        extensionFailures = extensionFailures + revoked.associateWith { "Repository $repository is no longer trusted" }
+        publishSources()
+        publishExtensions("$repository is removed")
+    }
+
+    fun selectSource(sourceId: Long) = navigate {
+        check(extensionFor(sourceId) != null) { "This source is no longer installed" }
+        publishSources(select = sourceId)
+        publishView { it.leaveBook(View.BROWSE).copy(novels = emptyList()) }
+        if (!state.value.offline) loadPopularNovels()
     }
 
     fun browse() = navigate {
@@ -101,7 +238,7 @@ class ReaderModel(
 
     private suspend fun loadPopularNovels() {
         check(!state.value.offline) { "Browsing is unavailable offline" }
-        val source = extension?.source as? PopularSource ?: error("Open a compatible local extension first")
+        val source = extensionFor(state.value.browseSource)?.source as? PopularSource ?: error("Choose a source that lists popular titles")
         val novels = source.getPopularNovels(1)
         check(novels.isNotEmpty()) { "The source returned no novels" }
         publishView { it.leaveBook(View.BROWSE).copy(novels = novels) }
@@ -110,7 +247,7 @@ class ReaderModel(
     fun details(novel: Novel) = navigate {
         check(state.value.view == View.BROWSE && novel in state.value.novels) { "This catalog selection is no longer current" }
         check(!state.value.offline) { "Novel refresh is unavailable offline" }
-        val loaded = extension ?: error("Open a compatible local extension first")
+        val loaded = extensionFor(state.value.browseSource) ?: error("This source is no longer installed")
         val source = loaded.source
         check(source is ChapterListSource || source is CursorPaginatedSource) { "This source's chapter list is unsupported" }
         val details = source.getNovelDetails(novel)
@@ -124,7 +261,15 @@ class ReaderModel(
 
     fun showHistory() = navigate { showSection(View.HISTORY) }
 
-    fun showExtensions() = navigate { showSection(View.EXTENSIONS) }
+    fun showExtensions() = navigate {
+        showSection(View.EXTENSIONS)
+        publishExtensions()
+        // First visit online: fetch catalogs never downloaded. Failures stay on this screen.
+        val manager = extensions
+        if (manager != null && !state.value.offline && manager.repositoryViews().any { it.enabled && !it.refreshed }) {
+            try { refreshCatalogs() } catch (failure: Exception) { publishExtensions(failure.message) }
+        }
+    }
 
     fun showSettings() = navigate { showSection(View.SETTINGS) }
 
@@ -218,7 +363,7 @@ class ReaderModel(
                 when {
                     state.value.offline -> ChapterPageAccess.Unavailable(ChapterLoadFailure.OFFLINE)
                     else -> {
-                        val loaded = extension?.takeIf { it.sourceId == book.key.sourceId }
+                        val loaded = extensionFor(book.key.sourceId)
                         val source = loaded?.source as? PageListSource
                         when {
                             loaded == null -> ChapterPageAccess.Unavailable(ChapterLoadFailure.SOURCE_UNAVAILABLE)
@@ -231,7 +376,7 @@ class ReaderModel(
         } catch (failure: ChapterLoadException) {
             error(when (failure.reason) {
                 ChapterLoadFailure.OFFLINE -> "Download this chapter before reading offline"
-                ChapterLoadFailure.SOURCE_UNAVAILABLE -> "Open this novel's extension to read chapters that have not been downloaded"
+                ChapterLoadFailure.SOURCE_UNAVAILABLE -> "Install this novel's extension to read chapters that have not been downloaded"
                 ChapterLoadFailure.PAGES_UNSUPPORTED -> "This source cannot provide chapter pages"
             })
         }
@@ -367,8 +512,9 @@ class ReaderModel(
         scope.coroutineContext.job.cancelAndJoin()
         historyScope.coroutineContext.job.cancelAndJoin()
         withContext(Dispatchers.IO) {
-            extension?.close()
-            extension = null
+            (installed.values + listOfNotNull(sessionExtension)).forEach { runCatching { it.close() } }
+            installed.clear()
+            sessionExtension = null
         }
     }
 
@@ -408,7 +554,9 @@ class ReaderModel(
             scope.launch {
                 try { action() }
                 catch (cancelled: CancellationException) { resumeClaimedReader(previous); throw cancelled }
-                catch (failure: Exception) {
+                catch (fatal: VirtualMachineError) { resumeClaimedReader(previous); throw fatal }
+                // Extension code can fail with an Error (initializer, linkage); report it like any failure.
+                catch (failure: Throwable) {
                     resumeClaimedReader(previous)
                     mutable.update { it.copy(error = failure.message ?: failure.javaClass.simpleName) }
                 }
