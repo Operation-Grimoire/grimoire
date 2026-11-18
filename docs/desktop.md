@@ -49,7 +49,9 @@ error; it does not silently fetch replacement content.
 
 ## Trusted local artifacts
 
-This slice does not download plugins or establish remote authenticity. Extension
+This slice does not download plugins or establish remote authenticity. The
+planned signed repository and in-app install flow are defined in
+[desktop extension distribution](desktop-extensions.md). Extension
 code runs with the application's permissions. Only select JARs built from a
 trusted checkout or authenticated through a separately trusted delivery channel.
 The local manifest binds the selected bytes and metadata; computing a hash of an
