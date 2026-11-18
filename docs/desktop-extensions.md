@@ -54,10 +54,13 @@ key of the official repository.
   epoch seconds and publishes under one concurrency group.
 - `file` values are plain names resolved against the index URL. Desktop
   downloads only over HTTPS. Redirects are allowed because the digest pins the bytes.
+  Index URLs cannot contain a query or fragment.
 - `sha256` is lowercase hex. `size` is the exact byte count, at most 20 MiB.
 - Every entry field must equal the JAR's `Grimoire-*` manifest attribute it
   mirrors. A mismatch rejects the artifact before any class loads.
 - Unknown fields are ignored. Unknown `format` values are rejected.
+- An entry this Desktop cannot run (API or host library) is listed as
+  incompatible. It never rejects the rest of the index.
 
 ## Trust enrollment and revocation
 
@@ -65,15 +68,19 @@ A trusted repository is the tuple *(index URL, repository identifier, Ed25519 pu
 
 - **Official repository.** Desktop ships it enrolled and enabled, with a pinned
   key. It can be disabled but not removed. A key rotation or revocation ships as
-  a Desktop update.
+  a Desktop update. A built-in repository that a Desktop update drops is revoked:
+  its row is deleted and its installed extensions stop loading.
 - **Other repositories.** The user enters the index URL and the repository's
   public key, obtained from the publisher. Desktop downloads the index, verifies
   the signature with that key, then shows the repository identifier, key
   fingerprint and extension count. The repository is enrolled only after the
   user confirms. Desktop never trusts a key it fetched from the repository itself.
-- **One owner per package.** An installed package belongs to the repository that
-  installed it. Another repository cannot update or replace it. To switch, the
-  user removes the extension first.
+- **One owner per package.** An installed package belongs to the repository
+  identifier *and key* that installed it. Another repository, or the same
+  identifier enrolled later under a different key, cannot load, update or
+  replace it. Desktop warns about this when such a repository is added. To
+  switch, the user removes the extension first. Only the official repository may
+  rotate its key, through a Desktop update.
 - **Removing a repository** revokes its trust. Its installed extensions stop
   loading and show as untrusted. The user can remove them or enroll the
   repository again. Library entries, downloaded chapters and reading state are kept.
@@ -129,8 +136,10 @@ stateDiagram-v2
    them atomically to `extensions/artifacts/<sha256>.jar`.
    In one SQLite transaction, record the package, repository, versions, digest,
    library digest and the previous digest for an update.
-4. **Activate.** Load a verified snapshot in a new class loader. If the source
-   class fails to load or its `SourceInfo` does not match the entry, restore the
+4. **Activate.** Load a verified snapshot in a new class loader, after checking
+   that the JAR's central directory lists exactly the entries that were streamed
+   and checked. If the source class fails to load (including an `Error` from its
+   initializer) or its `SourceInfo` name does not match the entry, restore the
    previous digest (update) or delete the record (install). Close the old class
    loader only after the new one is active.
 
@@ -172,9 +181,9 @@ with earlier upgrades.
 
 - `extension_repositories(repository PK, index_url, public_key, sequence,
   index_sha256, catalog, enabled, builtin)`. `catalog` holds the accepted index bytes.
-- `installed_extensions(pkg PK, repository, metadata, sha256, previous,
-  library_coordinate, library_sha256, installed_at)`. `metadata` and `previous`
-  are JSON records of the active and previous artifact.
+- `installed_extensions(pkg PK, repository, repository_key, metadata, sha256,
+  previous, library_coordinate, library_sha256, installed_at)`. `metadata` and
+  `previous` are JSON records of the active and previous artifact.
 
 ## Local manifests
 
