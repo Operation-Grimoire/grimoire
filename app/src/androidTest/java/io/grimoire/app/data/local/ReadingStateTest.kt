@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.grimoire.api.model.novel.*
 import io.grimoire.app.data.local.entity.*
+import io.grimoire.app.data.reading.AndroidOpenedHistory
 import io.grimoire.app.data.reading.CompletionSaveNotice
 import io.grimoire.app.data.tts.TtsChapterInput
 import io.grimoire.app.data.tts.TtsCompletionWriter
@@ -22,6 +23,7 @@ import io.grimoire.reading.anchor.*
 import io.grimoire.reading.state.*
 import io.grimoire.reading.storage.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Test
@@ -68,6 +70,83 @@ class ReadingStateTest {
         return ReadingStateCommand(id, s.binding, input, s, sequence)
     }
     private fun rejected(result: ReadingStateCommit, why: ReadingStateRejection) = assertEquals(ReadingStateCommit.NotApplied(why), result)
+
+    @Test fun openedHistoryReopenKeepsSelectionIdAndQueuedDeletionWins() = runBlocking<Unit> {
+        seed()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val history = AndroidOpenedHistory(db.readingHistoryDao(), db.novelDao(), scope)
+            history.open("legacy.package", false, 100) { metadata }!!.await().getOrThrow()
+            val first = history.entries.first().single()
+            assertEquals("legacy.package", first.sourcePackage)
+            assertEquals(1L, first.novelId)
+            assertEquals(key.novel.url, first.novelUrl)
+            assertEquals(100L, first.openedAt)
+            history.open("legacy.package", false, 200) { metadata.copy(name = "Updated chapter") }!!.await().getOrThrow()
+            assertEquals(first.copy(chapterName = "Updated chapter", openedAt = 200), history.entries.first().single())
+
+            val resolve = CompletableDeferred<ChapterEntity>()
+            val older = history.open("legacy.package", false, 300) { resolve.await() }!!
+            val delete = history.delete(listOf(first.id))!!
+            resolve.complete(metadata)
+            older.await().getOrThrow()
+            delete.await().getOrThrow()
+            assertTrue(history.entries.first().isEmpty())
+            assertEquals(metadata, db.chapterDao().getByUrl(1, key.url))
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test fun openedHistoryClearPreservesIndependentStateAndAllowsLaterOpen() = runBlocking<Unit> {
+        seed()
+        db.novelDao().updateLastReadAt(1, 42)
+        val originalNovel = db.novelDao().getById(1)
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val history = AndroidOpenedHistory(db.readingHistoryDao(), db.novelDao(), scope)
+            assertNull(history.open("legacy.package", true, 50) { error("Incognito must skip resolution") })
+            val resolve = CompletableDeferred<ChapterEntity>()
+            val older = history.open("legacy.package", false, 100) { resolve.await() }!!
+            val clear = history.clear()
+            val newer = history.open("legacy.package", false, 300) { metadata.copy(url = "/new-chapter") }!!
+            resolve.complete(metadata)
+            older.await().getOrThrow()
+            clear.await().getOrThrow()
+            newer.await().getOrThrow()
+            val remaining = history.entries.first().single()
+            assertEquals("/new-chapter", remaining.chapterUrl)
+            assertEquals(300L, remaining.openedAt)
+            assertEquals(originalNovel, db.novelDao().getById(1))
+            assertEquals(metadata, db.chapterDao().getByUrl(1, key.url))
+            assertEquals(legacy, db.chapterDao().getContent(1))
+        } finally {
+            scope.cancel()
+        }
+        db.close()
+        open()
+        assertEquals("/new-chapter", db.readingHistoryDao().getAll().first().single().chapterUrl)
+    }
+
+    @Test fun openedHistoryRoomFailureDoesNotPoisonLaterActions() = runBlocking<Unit> {
+        seed()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val history = AndroidOpenedHistory(db.readingHistoryDao(), db.novelDao(), scope)
+            val sql = db.openHelper.writableDatabase
+            sql.execSQL("CREATE TRIGGER history_fault BEFORE INSERT ON reading_history BEGIN SELECT RAISE(ABORT,'history failure'); END")
+            val failed = history.open("legacy.package", false, 100) { metadata }!!.await()
+            assertTrue(failed.isFailure)
+            assertTrue(history.entries.first().isEmpty())
+            sql.execSQL("DROP TRIGGER history_fault")
+            history.open("legacy.package", false, 300) { metadata }!!.await().getOrThrow()
+            assertEquals(300L, history.entries.first().single().openedAt)
+            history.clear().await().getOrThrow()
+            assertTrue(history.entries.first().isEmpty())
+        } finally {
+            scope.cancel()
+        }
+    }
 
     @Test fun novelMarkAllOrdersSameValueUnreadAndPreservesFieldsAndOtherNovel() = runBlocking<Unit> {
         seed()

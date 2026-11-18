@@ -335,7 +335,26 @@ backfill remains a separate outcome. The operation uses existing chapter receipt
 and introduces no database migration.
 
 Desktop still has no completion UI or automatic policy. Shared opened-history
-adoption remains separate on both platforms.
+storage on Desktop remains a separate slice.
+
+## Opened history on Android
+
+#467 adds a shared history DAO and ordered command queue. Android captures privacy
+and wall-clock time when it accepts an open. It resolves the initial chapter through
+the reader's local lookup and records the open independently of chapter body loading.
+An accepted open can appear in history after a body load fails. Incognito skips the
+write without resolving a history snapshot.
+
+The Android app owns one queue for reading-history opens, selected deletion and clear.
+An earlier accepted open finishes before the deletion or clear. Reopening refreshes
+the existing Room row ID so a queued selection still deletes that row. The existing
+Room schema, source-package identity and display snapshot are preserved. This
+ordering covers the app process, which owns all current writers. The queue keeps
+no durable retry outbox.
+
+Opened history stays independent of browsing history, the novel's last-read time,
+checkpoint/resume position, read flags and first-read statistics. Clearing it
+affects only reading-history entries.
 
 Core JVM tests cover frozen position/UTF-16/overflow and completion/evidence vectors.
 Consumer builds and existing host tests do not establish new state-model ART,

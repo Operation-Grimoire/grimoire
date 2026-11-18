@@ -36,6 +36,8 @@ import io.grimoire.reading.storage.CheckpointCommand
 import io.grimoire.reading.storage.CheckpointCommit
 import io.grimoire.reading.storage.decodeReadingStateRecord
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
@@ -599,6 +601,64 @@ class ReaderIntegrationTest {
         assertEquals(unselected, io { db.chapterDao().getByUrl(1, unselected.url) })
         compose.waitForIdle()
         snapshot("updates-selected-completion-passed")
+    }
+
+    @Test fun privateAndFailedOpensRespectOrderedHistoryClear() = journey("opened-history") {
+        val incognito = bindings.incognito()
+        val history = bindings.openedHistory()
+        val secondUrl = "/integration/second"
+        io { db.chapterDao().deleteContent(2) }
+        try {
+            incognito.set(true)
+            openFirst()
+            // A no-op delete is an ordering barrier for any prior accepted write.
+            io { history.delete(listOf(-1L))!!.await().getOrThrow() }
+            assertTrue(io { history.entries.first().isEmpty() })
+            back()
+        } finally {
+            incognito.set(false)
+        }
+
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(secondName))
+        compose.onNodeWithText(secondName).performClick()
+        waitText(context.getString(R.string.error_source_not_available))
+        val accepted = io {
+            history.delete(listOf(-1L))!!.await().getOrThrow()
+            history.entries.first().single()
+        }
+        assertEquals(secondUrl, accepted.chapterUrl)
+        assertEquals(secondName, accepted.chapterName)
+        assertEquals(LOCAL_PKG, accepted.sourcePackage)
+        val oldChapter = first()
+        back()
+        activity!!.close()
+        activity = ActivityScenario.launch(Intent(context, MainActivity::class.java))
+        val more = context.getString(R.string.nav_more)
+        waitText(more)
+        compose.onNode(hasText(more) and hasClickAction()).performClick()
+        val historyLabel = context.getString(R.string.more_history)
+        waitText(historyLabel)
+        compose.onNode(hasText(historyLabel) and hasClickAction()).performClick()
+        waitText(secondName)
+
+        val rejectedBody = io { requireNotNull(db.chapterDao().getByUrl(1, secondUrl)) }
+        val releaseOpen = CompletableDeferred<ChapterEntity>()
+        val queued = history.open(LOCAL_PKG, false, accepted.openedAt + 1) { releaseOpen.await() }!!
+        try {
+            compose.onNodeWithContentDescription(context.getString(R.string.action_more_actions)).performClick()
+            compose.onNodeWithText(context.getString(R.string.history_clear_reading)).performClick()
+            waitText(context.getString(R.string.history_clear_reading_title))
+            compose.onNodeWithText(context.getString(R.string.action_clear)).performClick()
+            compose.waitForIdle()
+        } finally {
+            releaseOpen.complete(rejectedBody)
+        }
+        io { queued.await().getOrThrow() }
+        waitText(context.getString(R.string.history_reading_empty))
+        assertTrue(io { history.entries.first().isEmpty() })
+        assertEquals(oldChapter, first())
+        assertEquals(rejectedBody, io { db.chapterDao().getByUrl(1, secondUrl) })
+        snapshot("opened-history-passed")
     }
 
     @Test fun failedCheckpointSaveCanBeDismissedAndRetriedWithoutLosingInput() = journey("retry") {
