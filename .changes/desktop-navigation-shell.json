@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "A persistent sidebar moves between Library, Browse, History, Extensions and Settings, and Back from a book or the reader returns to the section that opened it."
+    }
+  ]
+}

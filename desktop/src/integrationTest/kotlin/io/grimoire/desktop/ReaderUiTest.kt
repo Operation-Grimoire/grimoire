@@ -85,16 +85,31 @@ class ReaderUiTest {
         val data = temporary.newFolder().toPath()
         var model = desktopReaderModel(LocalLibrary(data), "1.5.0", allowed)
         val active = mutableStateOf(model)
+        val manifest = readerFixtureManifest(temporary.newFolder().toPath())
+        fun click(label: String) {
+            compose.onNode(hasText(label) and hasClickAction()).performClick()
+            settled(model)
+        }
         try {
-            model.load(readerFixtureManifest(temporary.newFolder().toPath()))
             compose.setContent {
                 key(active.value) {
-                    MaterialTheme { Surface(Modifier.size(1100.dp, 760.dp)) { DesktopReader(active.value, false, null) {} } }
+                    MaterialTheme {
+                        Surface(Modifier.size(1100.dp, 760.dp)) {
+                            DesktopReader(active.value, false, null) { active.value.load(manifest) }
+                        }
+                    }
                 }
             }
-            settled(model)
-            compose.onNodeWithText("Browse").performClick()
-            settled(model)
+            compose.onNode(hasText("Library") and hasClickAction()).assertIsSelected()
+            click("Browse")
+            compose.onNodeWithText("Browse sources").assertIsDisplayed()
+            capture("desktop-shell.png")
+            click("Manage extensions")
+            compose.onNodeWithText("No extension open").assertIsDisplayed()
+            click("Open local extension")
+            compose.onNodeWithText("Reader fixture").assertIsDisplayed()
+            compose.onNode(hasText("Extensions") and hasClickAction()).assertIsSelected()
+            click("Browse")
             val novel = model.state.value.novels.first()
             compose.onNodeWithText(novel.title).performClick()
             settled(model)
@@ -112,12 +127,22 @@ class ReaderUiTest {
             settled(model)
             compose.onNode(hasText(chapter.name) and hasClickAction()).assertIsEnabled()
             val count = requests.get()
+            click("Back")
+            compose.onNodeWithText("Continue reading").assertIsDisplayed()
+            compose.onNode(hasText("Browse") and hasClickAction()).assertIsSelected()
+            click("Back")
+            compose.onNodeWithText("Go online to browse this source.").assertIsDisplayed()
+            click("Settings")
+            compose.onNodeWithText("Offline").assertIsOn().performClick()
+            click("Browse")
+            compose.onNodeWithText(novel.title).assertIsDisplayed()
+            assertEquals(count, requests.get())
             runBlocking { model.close() }
             allowed.set(false)
             model = desktopReaderModel(LocalLibrary(data), "1.5.0", allowed)
             model.offline(true)
             compose.runOnIdle { active.value = model }
-            compose.onNodeWithText("No extension open").assertIsDisplayed()
+            assertNull(model.state.value.sourceName)
             compose.onNodeWithText(novel.title).performClick()
             settled(model)
             compose.onNodeWithText("Continue reading").performClick()
@@ -126,6 +151,10 @@ class ReaderUiTest {
             assertNull(model.state.value.observedAnchor)
             assertEquals(io.grimoire.reading.ChapterKey(model.state.value.book!!.key, chapter.url), model.state.value.projection!!.document!!.key)
             capture("offline-restart.png")
+            click("Back")
+            click("Back")
+            compose.onNode(hasText("Library") and hasClickAction()).assertIsSelected()
+            compose.onNodeWithText(novel.title).assertIsDisplayed()
             assertEquals(count, requests.get())
             assertEquals(4, count) // fixed test extension: catalog, details, chapter list and chapter
         } catch (failure: Throwable) {
@@ -180,7 +209,10 @@ class ReaderUiTest {
             capture("history-controls.png")
             click("Open chapter")
             compose.onNodeWithText(text).assertIsDisplayed()
-            click("History")
+            click("Back")
+            compose.onNodeWithText("Continue reading").assertIsDisplayed()
+            click("Back")
+            compose.onNode(hasText("History") and hasClickAction()).assertIsSelected()
             click("Remove")
             compose.onNodeWithText("No reading history yet.").assertIsDisplayed()
 
