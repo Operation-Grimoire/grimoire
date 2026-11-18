@@ -8,8 +8,8 @@ import androidx.room.PrimaryKey
  * One row per chapter opened in the reader, regardless of read progress or whether the
  * novel is in the library. The novel/chapter fields are denormalized snapshots so the
  * entry keeps rendering even after the chapter list is replaced or the novel is pruned —
- * there is intentionally no foreign key. Re-opening a chapter refreshes [openedAt] via a
- * REPLACE on the unique (sourcePackage, novelUrl, chapterUrl) index.
+ * there is intentionally no foreign key. Re-opening refreshes [openedAt] and the snapshot
+ * for the unique (sourcePackage, novelUrl, chapterUrl) while preserving the row ID.
  */
 @Entity(
     tableName = "reading_history",

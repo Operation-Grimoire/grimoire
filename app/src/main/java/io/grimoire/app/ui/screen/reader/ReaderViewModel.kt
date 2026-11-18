@@ -10,6 +10,7 @@ import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.source.web.PageListSource
 import io.grimoire.app.R
+import io.grimoire.app.data.reading.AndroidOpenedHistory
 import io.grimoire.app.data.reading.CompletionSaveNotice
 import io.grimoire.app.util.imageUrl
 import io.grimoire.app.util.isSeparator
@@ -20,11 +21,9 @@ import io.grimoire.app.data.book.LOCAL_PKG
 import io.grimoire.api.source.sourceIdFor
 import io.grimoire.app.data.local.dao.ChapterDao
 import io.grimoire.app.data.local.dao.NovelDao
-import io.grimoire.app.data.local.dao.ReadingHistoryDao
 import io.grimoire.api.model.lang.Language
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.ReaderTextAlign
-import io.grimoire.app.data.local.entity.ReadingHistoryEntity
 import io.grimoire.app.util.ContentLanguages
 import io.grimoire.reading.anchor.ReaderCheckpoints
 import io.grimoire.reading.anchor.ReaderCheckpointLoad
@@ -64,6 +63,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
@@ -95,7 +95,7 @@ class ReaderViewModel @Inject constructor(
     completionFacade: ReadingStateFacade,
     readingStateDao: ReadingStateDao,
     private val novelDao: NovelDao,
-    private val readingHistoryDao: ReadingHistoryDao,
+    private val openedHistory: AndroidOpenedHistory,
     private val incognitoManager: io.grimoire.app.data.preferences.IncognitoManager,
     private val readerPreferences: ReaderPreferences,
     private val libraryPreferences: LibraryPreferences,
@@ -319,13 +319,17 @@ class ReaderViewModel @Inject constructor(
     val ttsAutoAdvance: StateFlow<Boolean> = ttsPreferences.autoAdvance.stateIn(viewModelScope)
 
     init {
-        viewModelScope.launch {
-            val chapter = if (navNovelId != null) {
+        val requestedChapter = viewModelScope.async {
+            if (navNovelId != null) {
                 chapterDao.getByUrl(navNovelId, initialChapterUrl)
             } else {
                 val sourceId = if (pkg == LOCAL_PKG) LOCAL_SOURCE_ID else sourceIdFor(pkg)
                 chapterDao.getByNovelUrl(sourceId, novelUrl, initialChapterUrl)
-            } ?: run {
+            }
+        }
+        recordHistory { requestedChapter.await() }
+        viewModelScope.launch {
+            val chapter = requestedChapter.await() ?: run {
                 _error.value = localizedContext.getString(R.string.error_chapter_not_found)
                 _isLoading.value = false
                 return@launch
@@ -338,7 +342,6 @@ class ReaderViewModel @Inject constructor(
                     ReaderTextAlign.entries.getOrElse(novel.readerTextAlign) { ReaderTextAlign.AUTO }
                 _novelLanguage.value = novel.language?.let { ContentLanguages.parse(it) }
             }
-            recordHistory(chapter)
             // Metadata only — the per-chapter content is read on demand in loadPages
             // (via getContent). Pulling every chapter's downloaded text here made
             // opening a heavily-downloaded novel slow.
@@ -386,32 +389,16 @@ class ReaderViewModel @Inject constructor(
     /** Records a chapter switch for history and process-death restore. */
     private fun onChapterChanged(url: String) {
         savedStateHandle["chapterUrl"] = url
-        _chapters.value.firstOrNull { it.url == url }?.let { recordHistory(it) }
+        val chapter = _chapters.value.firstOrNull { it.url == url } ?: return
+        recordHistory { chapter }
     }
 
     /**
-     * Logs an opened chapter to the reading history (newest-first), unless incognito is on.
-     * The novel row supplies the denormalized title/cover/url snapshot so the entry renders
-     * even after the chapter is pruned. Best-effort: never blocks or fails chapter loading.
+     * Capture privacy and time before resolving metadata or loading the chapter body.
+     * The history owner runs the accepted event in order with history deletion and clear.
      */
-    private fun recordHistory(chapter: ChapterEntity) {
-        if (incognitoManager.enabled.value) return
-        viewModelScope.launch {
-            val novel = novelDao.getById(chapter.novelId) ?: return@launch
-            readingHistoryDao.upsert(
-                ReadingHistoryEntity(
-                    sourcePackage = pkg,
-                    novelId = novel.id,
-                    novelUrl = novel.url,
-                    novelTitle = novel.title,
-                    novelThumbnailUrl = novel.thumbnailUrl,
-                    chapterUrl = chapter.url,
-                    chapterName = chapter.name,
-                    chapterNumber = chapter.chapterNumber,
-                    openedAt = System.currentTimeMillis(),
-                )
-            )
-        }
+    private fun recordHistory(chapter: suspend () -> ChapterEntity?) {
+        openedHistory.open(pkg, incognitoManager.enabled.value, System.currentTimeMillis(), chapter)
     }
 
     fun loadPages() = loadPages(preloaded = null)

@@ -21,6 +21,7 @@ TESTS = (
     "detailSelectedChaptersUseGuardedCompletion",
     "librarySelectedNovelsUseGuardedCompletion",
     "updatesSelectedEntriesUseGuardedCompletion",
+    "privateAndFailedOpensRespectOrderedHistoryClear",
 )
 PACKAGE = "io.grimoire.app"
 

@@ -1,0 +1,9 @@
+{
+  "android": [
+    {
+      "category": "fix",
+      "text": "Clearing reading history no longer leaves entries from chapter opens that were still waiting to be saved."
+    }
+  ],
+  "desktop": []
+}
