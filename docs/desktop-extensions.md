@@ -144,7 +144,11 @@ stateDiagram-v2
    loader only after the new one is active.
 
 Libraries use the same path. A library is shared by digest. It is kept while any
-installed extension references it.
+installed extension references it, as its active or its previous artifact.
+
+The previous artifact is recorded whole: metadata, extension digest, library
+coordinate and library digest. Restoring it restores the matching library, and
+collection keeps that library until the update activates.
 
 ## Removal
 
