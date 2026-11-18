@@ -15,13 +15,24 @@ runner = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runner)
 
 
-def events():
+def events(class_name=runner.CLASS, tests=runner.TESTS):
     result = []
-    for name in runner.TESTS:
+    for name in tests:
         for code in (1, 0):
-            result.extend([f"INSTRUMENTATION_STATUS: class={runner.CLASS}", f"INSTRUMENTATION_STATUS: test={name}",
-                           f"INSTRUMENTATION_STATUS: numtests={len(runner.TESTS)}", f"INSTRUMENTATION_STATUS_CODE: {code}"])
-    return "\n".join(result) + f"\nOK ({len(runner.TESTS)} tests)\nINSTRUMENTATION_CODE: -1\n"
+            result.extend([f"INSTRUMENTATION_STATUS: class={class_name}", f"INSTRUMENTATION_STATUS: test={name}",
+                           f"INSTRUMENTATION_STATUS: numtests={len(tests)}", f"INSTRUMENTATION_STATUS_CODE: {code}"])
+    summary = "1 test" if len(tests) == 1 else f"{len(tests)} tests"
+    return "\n".join(result) + f"\nOK ({summary})\nINSTRUMENTATION_CODE: -1\n"
+
+
+INTERRUPTED = (
+    f"INSTRUMENTATION_STATUS: class={runner.CHECKPOINT_CLASS}\n"
+    f"INSTRUMENTATION_STATUS: test={runner.INTERRUPT}\n"
+    "INSTRUMENTATION_STATUS: numtests=1\n"
+    "INSTRUMENTATION_STATUS_CODE: 1\n"
+    "INSTRUMENTATION_RESULT: shortMsg=Process crashed.\n"
+    "INSTRUMENTATION_CODE: 0"
+)
 
 
 class IntegrationResultTest(unittest.TestCase):
@@ -71,7 +82,10 @@ class IntegrationResultTest(unittest.TestCase):
                     digest = hashlib.sha256(b"fixture apk").hexdigest()
                     for name in ("host.apk", "tests.apk"): (root / name).write_bytes(b"fixture apk")
                     (root / "sha256sums.txt").write_text(f"{digest} host.apk\n{digest} tests.apk\n", encoding="utf-8")
-                    with patch.dict(os.environ, {"INTEGRATION_SOURCE_SHA": "a" * 40}), patch.object(runner.subprocess, "run", side_effect=command), contextlib.redirect_stdout(io.StringIO()):
+                    with (patch.dict(os.environ, {"INTEGRATION_SOURCE_SHA": "a" * 40}),
+                          patch.object(runner.subprocess, "run", side_effect=command),
+                          patch.object(runner, "run_checkpoint_interruptions", return_value={}),
+                          contextlib.redirect_stdout(io.StringIO())):
                         self.assertEqual(1, runner.main())
                     report = json.loads((root / "report.json").read_text(encoding="utf-8"))
                     self.assertEqual("FAIL", report["result"])
@@ -105,6 +119,55 @@ class IntegrationResultTest(unittest.TestCase):
                        events().replace("INSTRUMENTATION_CODE: -1", ""), events().replace(f"OK ({len(runner.TESTS)} tests)", "")]:
             with self.assertRaises(ValueError):
                 runner.parse_instrumentation(output)
+
+    def test_expected_checkpoint_process_exit_requires_its_exact_start_and_terminal(self):
+        runner.validate_checkpoint_exit(INTERRUPTED)
+        runner.validate_checkpoint_exit(INTERRUPTED.replace("\n", "\r\n"))
+        for output in (
+            INTERRUPTED.replace(runner.INTERRUPT, runner.REOPEN),
+            INTERRUPTED.replace("Process crashed.", "Process failed to start."),
+            INTERRUPTED.replace("STATUS_CODE: 1", "STATUS_CODE: 0"),
+            INTERRUPTED.replace("CODE: 0", "CODE: -1"),
+            events(runner.CHECKPOINT_CLASS, (runner.INTERRUPT,)),
+        ):
+            with self.assertRaises(ValueError):
+                runner.validate_checkpoint_exit(output)
+
+    def test_checkpoint_readback_checks_both_expected_positions_and_new_pids(self):
+        sha = "a" * 40
+        for fault in (None, {"pid": 123}, {"ordinal": 3}, {"fixture": "stale"}, {"sourceSha": "wrong"}):
+            boundary = fixture = None
+
+            def adb(*args, **kwargs):
+                nonlocal boundary, fixture
+                if "instrument" in args:
+                    boundary = args[args.index("checkpointCrashBoundary") + 1]
+                    fixture = args[args.index("checkpointCrashFixture") + 1]
+                    if f"{runner.CHECKPOINT_CLASS}#{runner.INTERRUPT}" in args:
+                        return INTERRUPTED
+                    return events(runner.CHECKPOINT_CLASS, (runner.REOPEN,))
+                if args[-1].endswith("-boundary.json"):
+                    stage = runner.CHECKPOINT_BOUNDARIES[boundary][0]
+                    return json.dumps({"pid": 123, "sourceSha": sha, "boundary": boundary, "fixture": fixture, "stage": stage})
+                if args[-1].endswith("-reopened.json"):
+                    ordinal = runner.CHECKPOINT_BOUNDARIES[boundary][1]
+                    marker = {"pid": 456, "sourceSha": sha, "boundary": boundary, "fixture": fixture,
+                              "ordinal": ordinal, "neighborOrdinal": 2, "oldPid": 123}
+                    return json.dumps(marker | (fault or {}))
+                if "pidof" in args[-1]:
+                    return "stopped"
+                return ""
+
+            with tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                if fault is not None:
+                    with self.assertRaises(ValueError):
+                        runner.run_checkpoint_interruptions(adb, root, sha)
+                else:
+                    result = runner.run_checkpoint_interruptions(adb, root, sha)
+                    self.assertEqual(["before-commit", "before-ack"], list(result))
+                    self.assertEqual([1, 3], [case["reopened"]["ordinal"] for case in result.values()])
+                    self.assertEqual(4, len(list(root.glob("*.json"))))
 
 
 if __name__ == "__main__":
