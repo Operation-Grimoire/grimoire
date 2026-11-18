@@ -52,7 +52,13 @@ internal data class InstalledArtifact(
     val librarySha256: String?,
 )
 
-internal data class InstalledRecord(val repository: String, val current: InstalledArtifact, val previous: InstalledArtifact?) {
+/** [key] is the repository key that installed the package; ownership needs the same id and key. */
+internal data class InstalledRecord(
+    val repository: String,
+    val key: String,
+    val current: InstalledArtifact,
+    val previous: InstalledArtifact?,
+) {
     val pkg get() = current.metadata.pkg
 }
 
@@ -62,10 +68,20 @@ internal data class RepositoryRecord(
     val catalog: ExtensionCatalog?,
     val enabled: Boolean,
     val builtin: Boolean,
-)
+    val catalogProblem: String? = null,
+) {
+    /** The official key may rotate with a Desktop update; other repositories must keep their key. */
+    fun owns(record: InstalledRecord) = record.repository == trust.repository && (builtin || record.key == trust.publicKey)
+}
 
 /** A verified index whose key the user has not confirmed yet. */
-data class PendingRepository(val trust: RepositoryTrust, val fingerprint: String, val catalog: ExtensionCatalog, internal val bytes: ByteArray)
+data class PendingRepository(
+    val trust: RepositoryTrust,
+    val fingerprint: String,
+    val catalog: ExtensionCatalog,
+    internal val bytes: ByteArray,
+    val warning: String? = null,
+)
 
 data class RepositoryView(
     val id: String,
@@ -75,6 +91,7 @@ data class RepositoryView(
     val enabled: Boolean,
     val refreshed: Boolean,
     val extensionCount: Int,
+    val problem: String? = null,
 )
 
 enum class ExtensionStatus { INSTALLED, UPDATE, AVAILABLE, INCOMPATIBLE, CONFLICT, UNAVAILABLE }
@@ -106,13 +123,20 @@ class ExtensionManager(
     init {
         Files.createDirectories(staging)
         Files.createDirectories(artifacts)
-        // Interrupted downloads never resume.
+        // Interrupted writes never resume.
         Files.list(staging).use { files -> files.forEach(Files::deleteIfExists) }
-        library.extensionWrite { db -> builtins.forEach { trust ->
-            db.execute("""INSERT INTO extension_repositories(repository,index_url,public_key,builtin) VALUES(?,?,?,1)
-                ON CONFLICT(repository) DO UPDATE SET index_url=excluded.index_url, public_key=excluded.public_key, builtin=1""",
-                trust.repository, trust.indexUrl, trust.publicKey)
-        } }
+        library.extensionWrite { db ->
+            builtins.forEach { trust ->
+                db.execute("""INSERT INTO extension_repositories(repository,index_url,public_key,builtin) VALUES(?,?,?,1)
+                    ON CONFLICT(repository) DO UPDATE SET index_url=excluded.index_url, public_key=excluded.public_key, builtin=1""",
+                    trust.repository, trust.indexUrl, trust.publicKey)
+            }
+            // A built-in repository dropped by a Desktop update is revoked, not kept as user-trusted.
+            val current = builtins.map { it.repository }.toSet()
+            db.query("SELECT repository FROM extension_repositories WHERE builtin=1") { it.getString(1) }
+                .filter { it !in current }
+                .forEach { db.execute("DELETE FROM extension_repositories WHERE repository=?", it) }
+        }
     }
 
     internal fun repositories(): List<RepositoryRecord> = library.extensionRead(::readRepositories)
@@ -121,7 +145,7 @@ class ExtensionManager(
 
     fun repositoryViews(): List<RepositoryView> = repositories().map { record ->
         RepositoryView(record.trust.repository, record.trust.indexUrl, ExtensionIndex.fingerprint(record.trust.publicKey),
-            record.builtin, record.enabled, record.catalog != null, record.catalog?.extensions?.size ?: 0)
+            record.builtin, record.enabled, record.catalog != null, record.catalog?.extensions?.size ?: 0, record.catalogProblem)
     }
 
     /** Refreshes every enabled repository; returns one message per repository that failed. */
@@ -129,7 +153,7 @@ class ExtensionManager(
         try {
             val (bytes, catalog) = fetchIndex(record.trust, record.accepted)
             val accepted = AcceptedIndex(catalog.sequence, sha256(bytes))
-            if (accepted != record.accepted) library.extensionWrite { db ->
+            if (accepted != record.accepted || record.catalog == null) library.extensionWrite { db ->
                 val stored = db.query("SELECT sequence FROM extension_repositories WHERE repository=?", record.trust.repository) { it.getLong(1) }.single()
                 check(stored <= catalog.sequence) { "A newer index was accepted concurrently" }
                 db.execute("UPDATE extension_repositories SET sequence=?, index_sha256=?, catalog=? WHERE repository=?",
@@ -144,7 +168,9 @@ class ExtensionManager(
     /** Downloads and verifies a repository the user wants to add. Nothing is stored yet. */
     fun check(indexUrl: String, publicKey: String): PendingRepository {
         val url = indexUrl.trim()
-        require(url.startsWith("https://")) { "Repository URL must use HTTPS" }
+        val uri = try { URI(url) } catch (_: java.net.URISyntaxException) { null }
+        require(uri != null && uri.scheme == "https" && uri.host != null) { "Repository URL must use HTTPS" }
+        require(uri.rawQuery == null && uri.rawFragment == null) { "Repository URL cannot contain a query or fragment" }
         val key = publicKey.trim()
         ExtensionIndex.publicKey(key)
         val bytes = fetcher.fetch(url, ExtensionIndex.MAX_INDEX_BYTES.toLong())
@@ -154,7 +180,10 @@ class ExtensionManager(
         val trust = RepositoryTrust(claimed, url, key)
         val catalog = ExtensionIndex.verify(bytes, signature, trust, null)
         require(repositories().none { it.trust.repository == claimed }) { "Repository $claimed is already added" }
-        return PendingRepository(trust, ExtensionIndex.fingerprint(key), catalog, bytes)
+        val orphaned = installed().count { it.repository == claimed && it.key != key }
+        val warning = if (orphaned == 0) null else
+            "$orphaned installed extension(s) came from $claimed under a different key. They stay disabled; remove and reinstall them to trust this key."
+        return PendingRepository(trust, ExtensionIndex.fingerprint(key), catalog, bytes, warning)
     }
 
     fun enroll(pending: PendingRepository) = library.extensionWrite { db ->
@@ -184,13 +213,11 @@ class ExtensionManager(
         val entry = catalog.extensions.firstOrNull { it.pkg == pkg } ?: error("$pkg is not offered by $repository")
         val existing = installed().firstOrNull { it.pkg == pkg }
         if (existing != null) {
-            require(existing.repository == repository) { "$pkg was installed from ${existing.repository}. Remove it first." }
+            require(record.owns(existing)) { "$pkg was installed from ${existing.repository} under another key. Remove it first." }
             require(entry.versionCode > existing.current.metadata.versionCode) { "No newer version of ${entry.name} is available" }
         }
-        require(supportsExtensionApi(entry.coreApi, hostApi)) { "${entry.name} requires API ${entry.coreApi}; Desktop provides $hostApi" }
-        val libraryEntry = entry.hostLibraries.filter { it != HostRuntime.jsonCoordinate }
-            .also { require(it.size <= 1) { "${entry.name} requires more than one extensions library" } }
-            .firstOrNull()?.let { catalog.library(it) ?: error("Missing library $it") }
+        catalog.compatibilityProblem(entry, hostApi)?.let { problem -> throw IllegalArgumentException("${entry.name}: $problem") }
+        val libraryEntry = entry.hostLibraries.firstOrNull { it != HostRuntime.jsonCoordinate }?.let { checkNotNull(catalog.library(it)) }
 
         val libraryBytes = libraryEntry?.let { download(record.trust, it.artifact) }
         val sourceBytes = download(record.trust, entry.artifact)
@@ -201,44 +228,47 @@ class ExtensionManager(
 
         val artifact = InstalledArtifact(entry.metadata, entry.name, entry.lang, entry.artifact.sha256,
             libraryEntry?.coordinate, libraryEntry?.artifact?.sha256)
-        commit(InstalledRecord(repository, artifact, existing?.current))
+        commit(InstalledRecord(repository, record.trust.publicKey, artifact, existing?.current))
         val loaded = try {
-            LocalExtension.load(sourceBytes, entry.metadata, libraryArtifact, hostApi)
+            LocalExtension.load(sourceBytes, entry.metadata, libraryArtifact, hostApi, expectedName = entry.name)
         } catch (failure: Throwable) {
             try { if (existing != null) commit(existing.copy(previous = null)) else delete(pkg) }
             catch (rollback: Throwable) { failure.addSuppressed(rollback) }
             throw failure
         }
-        commit(InstalledRecord(repository, artifact, null))
+        // The new version is active; a failure to forget the previous one is retried at the next startup.
+        runCatching { commit(InstalledRecord(repository, record.trust.publicKey, artifact, null)) }
         return loaded
     }
 
     fun remove(pkg: String) = delete(pkg)
 
     /**
-     * Loads every installed extension from the local store. An update that was committed
-     * but never activated falls back to its previous artifact when the new one fails.
+     * Loads installed extensions from the local store. An update that was committed but never
+     * activated falls back to its previous artifact when the new one fails. One bad record,
+     * including one whose code throws an Error while loading, never stops the others.
      */
-    fun loadInstalled(): Pair<Map<String, LocalExtension>, Map<String, String>> {
-        val trusted = repositories().map { it.trust.repository }.toSet()
-        val records = installed()
-        collectUnreferenced(records)
+    internal fun loadInstalled(only: (InstalledRecord) -> Boolean = { true }): Pair<Map<String, LocalExtension>, Map<String, String>> {
+        val repositories = repositories()
+        val all = installed()
+        if (all.all(only)) collectUnreferenced(all)
         val loaded = linkedMapOf<String, LocalExtension>()
         val failures = linkedMapOf<String, String>()
-        for (record in records) {
-            if (record.repository !in trusted) { failures[record.pkg] = "Repository ${record.repository} is no longer trusted"; continue }
-            try {
-                loaded[record.pkg] = load(record.current)
-                if (record.previous != null) commit(record.copy(previous = null))
-            } catch (failure: Exception) {
-                val previous = record.previous
-                val restored = previous?.let { runCatching { load(it) }.getOrNull() }
-                if (restored != null) {
-                    loaded[record.pkg] = restored
-                    runCatching { commit(InstalledRecord(record.repository, previous, null)) }
-                } else {
-                    failures[record.pkg] = failure.message ?: failure.javaClass.simpleName
-                }
+        for (record in all.filter(only)) {
+            if (repositories.none { it.owns(record) }) { failures[record.pkg] = "Repository ${record.repository} is no longer trusted"; continue }
+            val current = attempt { load(record.current) }
+            if (current.isSuccess) {
+                loaded[record.pkg] = current.getOrThrow()
+                if (record.previous != null) runCatching { commit(record.copy(previous = null)) }
+                continue
+            }
+            val restored = record.previous?.let { previous -> attempt { load(previous) }.getOrNull()?.let { previous to it } }
+            if (restored != null) {
+                loaded[record.pkg] = restored.second
+                runCatching { commit(record.copy(current = restored.first, previous = null)) }
+            } else {
+                val failure = current.exceptionOrNull()!!
+                failures[record.pkg] = failure.message ?: failure.javaClass.simpleName
             }
         }
         return loaded to failures
@@ -249,33 +279,34 @@ class ExtensionManager(
         val repositories = repositories()
         val rows = mutableListOf<ExtensionRow>()
         for (record in installed.values) {
-            val offered = repositories.firstOrNull { it.trust.repository == record.repository }
-                ?.catalog?.extensions?.firstOrNull { it.pkg == record.pkg }
+            val owner = repositories.firstOrNull { it.owns(record) }
+            val catalog = owner?.catalog
+            val offered = catalog?.extensions?.firstOrNull { it.pkg == record.pkg }
             val current = record.current
             val status = when {
                 record.pkg in failures -> ExtensionStatus.UNAVAILABLE
                 offered != null && offered.versionCode > current.metadata.versionCode &&
-                    supportsExtensionApi(offered.coreApi, hostApi) -> ExtensionStatus.UPDATE
+                    catalog.compatibilityProblem(offered, hostApi) == null -> ExtensionStatus.UPDATE
                 else -> ExtensionStatus.INSTALLED
             }
             rows += ExtensionRow(record.pkg, current.name, current.lang, record.repository, current.metadata.versionName,
                 offered?.versionName, status, failures[record.pkg])
         }
         for (repository in repositories.filter { it.enabled }) {
-            for (entry in repository.catalog?.extensions.orEmpty()) {
-                val owner = installed[entry.pkg]
-                if (owner != null) {
-                    val sameVersion = owner.current.metadata.versionCode == entry.versionCode
-                    if (owner.repository == repository.trust.repository && sameVersion && owner.current.sha256 != entry.artifact.sha256) {
-                        rows += ExtensionRow(entry.pkg, entry.name, entry.lang, repository.trust.repository, owner.current.metadata.versionName,
+            val catalog = repository.catalog ?: continue
+            for (entry in catalog.extensions) {
+                val existing = installed[entry.pkg]
+                if (existing != null) {
+                    val sameVersion = existing.current.metadata.versionCode == entry.versionCode
+                    if (repository.owns(existing) && sameVersion && existing.current.sha256 != entry.artifact.sha256) {
+                        rows += ExtensionRow(entry.pkg, entry.name, entry.lang, repository.trust.repository, existing.current.metadata.versionName,
                             entry.versionName, ExtensionStatus.CONFLICT, "Same version with different contents")
                     }
                     continue
                 }
-                val compatible = supportsExtensionApi(entry.coreApi, hostApi)
+                val problem = catalog.compatibilityProblem(entry, hostApi)
                 rows += ExtensionRow(entry.pkg, entry.name, entry.lang, repository.trust.repository, null, entry.versionName,
-                    if (compatible) ExtensionStatus.AVAILABLE else ExtensionStatus.INCOMPATIBLE,
-                    if (compatible) null else "Requires API ${entry.coreApi}")
+                    if (problem == null) ExtensionStatus.AVAILABLE else ExtensionStatus.INCOMPATIBLE, problem)
             }
         }
         return rows
@@ -284,8 +315,13 @@ class ExtensionManager(
     private fun load(artifact: InstalledArtifact): LocalExtension {
         val source = readArtifact(artifact.sha256)
         val library = artifact.libraryCoordinate?.let { LibraryArtifact(it, readArtifact(checkNotNull(artifact.librarySha256))) }
-        return LocalExtension.load(source, artifact.metadata, library, hostApi)
+        return LocalExtension.load(source, artifact.metadata, library, hostApi, expectedName = artifact.name)
     }
+
+    /** Extension code can throw Errors (initializer or linkage failures); only VM failures propagate. */
+    private fun <T> attempt(action: () -> T): Result<T> = try { Result.success(action()) }
+    catch (fatal: VirtualMachineError) { throw fatal }
+    catch (failure: Throwable) { Result.failure(failure) }
 
     private fun readArtifact(digest: String): ByteArray {
         val path = artifacts.resolve("$digest.jar")
@@ -328,11 +364,11 @@ class ExtensionManager(
     }
 
     private fun commit(record: InstalledRecord) = library.extensionWrite { db ->
-        db.execute("""INSERT INTO installed_extensions(pkg,repository,metadata,sha256,previous,library_coordinate,library_sha256,installed_at)
-            VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(pkg) DO UPDATE SET repository=excluded.repository, metadata=excluded.metadata,
-            sha256=excluded.sha256, previous=excluded.previous, library_coordinate=excluded.library_coordinate,
+        db.execute("""INSERT INTO installed_extensions(pkg,repository,repository_key,metadata,sha256,previous,library_coordinate,library_sha256,installed_at)
+            VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(pkg) DO UPDATE SET repository=excluded.repository, repository_key=excluded.repository_key,
+            metadata=excluded.metadata, sha256=excluded.sha256, previous=excluded.previous, library_coordinate=excluded.library_coordinate,
             library_sha256=excluded.library_sha256, installed_at=excluded.installed_at""",
-            record.pkg, record.repository, encode(record.current).toString(), record.current.sha256,
+            record.pkg, record.repository, record.key, encode(record.current).toString(), record.current.sha256,
             record.previous?.let { encode(it).toString() }, record.current.libraryCoordinate, record.current.librarySha256,
             System.currentTimeMillis())
     }
@@ -342,18 +378,22 @@ class ExtensionManager(
     private fun readRepositories(db: Connection) = db.query(
         "SELECT repository,index_url,public_key,sequence,index_sha256,catalog,enabled,builtin FROM extension_repositories ORDER BY builtin DESC, repository",
     ) { row ->
-        val catalog = row.getBytes(6)
+        // A stored catalog this build cannot read is isolated to its repository; refreshing replaces it.
+        val catalog = row.getBytes(6)?.let { bytes -> runCatching { ExtensionIndex.parse(bytes) } }
         RepositoryRecord(
             RepositoryTrust(row.getString(1), row.getString(2), row.getString(3)),
             row.getString(5)?.let { AcceptedIndex(row.getLong(4), it) },
-            catalog?.let(ExtensionIndex::parse),
+            catalog?.getOrNull(),
             row.getInt(7) == 1,
             row.getInt(8) == 1,
+            catalog?.exceptionOrNull()?.let { "Stored catalog is unreadable; refresh to replace it" },
         )
     }
 
-    private fun readInstalled(db: Connection) = db.query("SELECT repository,metadata,previous FROM installed_extensions ORDER BY pkg") { row ->
-        InstalledRecord(row.getString(1), decode(JSONObject(row.getString(2))), row.getString(3)?.let { decode(JSONObject(it)) })
+    private fun readInstalled(db: Connection) = db.query(
+        "SELECT repository,repository_key,metadata,previous FROM installed_extensions ORDER BY pkg",
+    ) { row ->
+        InstalledRecord(row.getString(1), row.getString(2), decode(JSONObject(row.getString(3))), row.getString(4)?.let { decode(JSONObject(it)) })
     }
 
     private fun encode(artifact: InstalledArtifact) = JSONObject()

@@ -1,6 +1,7 @@
 package io.grimoire.desktop
 
 import io.grimoire.reading.declaredExtensionApi
+import io.grimoire.reading.supportsExtensionApi
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -41,6 +42,17 @@ data class ExtensionCatalog(
     val extensions: List<CatalogExtension>,
 ) {
     fun library(coordinate: String) = libraries.firstOrNull { it.coordinate == coordinate }
+
+    /** Why this host cannot install [entry], or null. One unsupported entry never rejects the index. */
+    fun compatibilityProblem(entry: CatalogExtension, hostApi: String): String? {
+        val libraries = entry.hostLibraries.filter { it != HostRuntime.jsonCoordinate }
+        return when {
+            !supportsExtensionApi(entry.coreApi, hostApi) -> "Requires API ${entry.coreApi}"
+            libraries.size > 1 -> "Requires more than one extensions library"
+            libraries.any { library(it) == null } -> "Requires an unsupported host library"
+            else -> null
+        }
+    }
 }
 
 /** Highest index accepted for a repository; replayed or rolled-back indexes are rejected against it. */
@@ -96,11 +108,7 @@ object ExtensionIndex {
             val coreApi = item.getString("coreApi")
             if (declaredExtensionApi(coreApi) == null) fail("$pkg: invalid API requirement")
             val hostLibraries = item.getJSONArray("hostLibraries").let { list -> (0 until list.length()).map(list::getString) }
-            hostLibraries.forEach { coordinate ->
-                if (coordinate != HostRuntime.jsonCoordinate && libraries.none { it.coordinate == coordinate }) {
-                    fail("$pkg: library $coordinate is not provided")
-                }
-            }
+            // Host-library support depends on this build, so it is judged per entry (see compatibilityProblem).
             CatalogExtension(
                 pkg = pkg,
                 name = item.getString("name").also { if (it.isBlank()) fail("$pkg: missing name") },

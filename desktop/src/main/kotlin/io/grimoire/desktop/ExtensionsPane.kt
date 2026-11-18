@@ -107,6 +107,7 @@ private fun RepositoryItem(repository: RepositoryView, enabled: Boolean, model: 
                 Text("Key ${repository.fingerprint}", style = MaterialTheme.typography.bodySmall)
                 Text(if (repository.refreshed) extensionCount(repository.extensionCount) else "Not refreshed yet",
                     style = MaterialTheme.typography.bodySmall)
+                repository.problem?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
             }
             Switch(repository.enabled, { model.setRepositoryEnabled(repository.id, it) }, enabled = enabled)
             if (!repository.builtin) {
@@ -141,6 +142,7 @@ private fun AddRepository(state: ReaderState, enabled: Boolean, model: ReaderMod
                     Text(extensionCount(pending.catalog.extensions.size), style = MaterialTheme.typography.bodySmall)
                     Text("Extensions run with Grimoire's permissions. Trust only publishers you know.",
                         style = MaterialTheme.typography.bodySmall)
+                    pending.warning?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = { model.confirmRepository(); url = ""; key = "" }, enabled = enabled) { Text("Trust repository") }
                         TextButton(onClick = model::cancelRepository) { Text("Cancel") }

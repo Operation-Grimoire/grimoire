@@ -238,6 +238,137 @@ class ExtensionManagerTest {
         }
     }
 
+    @Test fun committedUpdateWhoseInitializerThrowsFallsBackAtStartupInsteadOfCrashing() = runBlocking {
+        val pkg = "io.grimoire.extension.en.initerror"
+        val v1 = fixtureJar(jars, pkg = pkg, versionCode = 1)
+        val v2 = fixtureJar(jars, pkg = pkg, versionCode = 2, failOnLoad = true)
+        repo.publish(fetcher, listOf(v1))
+        session { manager -> manager.refresh(); manager.install(repo.repository, pkg).close() }
+        // Crash after the update committed, before activation: v2 is current, v1 previous.
+        Files.write(data.resolve("extensions/artifacts/${sha256(v2.bytes)}.jar"), v2.bytes)
+        LocalLibrary(data).use { library ->
+            library.extensionWrite { db ->
+                val first = db.query("SELECT metadata FROM installed_extensions") { it.getString(1) }.single()
+                val second = org.json.JSONObject(first).put("versionCode", 2).put("versionName", v2.versionName).put("sha256", sha256(v2.bytes))
+                db.execute("UPDATE installed_extensions SET metadata=?, sha256=?, previous=?", second.toString(), sha256(v2.bytes), first)
+            }
+        }
+        LocalLibrary(data).use { library ->
+            val model = desktopReaderModel(library, host, AtomicBoolean(true), ExtensionManager(library, host, fetcher, listOf(repo.trust)))
+            assertEquals(listOf("Fixture"), model.state.value.sources.map { it.name })
+            model.close()
+        }
+        session { manager -> assertEquals(1, manager.installed().single().current.metadata.versionCode) }
+    }
+
+    @Test fun installedExtensionThatThrowsAnErrorIsReportedAndOthersStillLoad() = runBlocking {
+        val good = fixtureJar(jars, pkg = "io.grimoire.extension.en.good", name = "Good")
+        val bad = fixtureJar(jars, pkg = "io.grimoire.extension.en.bad", name = "Bad")
+        repo.publish(fetcher, listOf(good, bad))
+        session { manager ->
+            manager.refresh()
+            manager.install(repo.repository, good.pkg).close()
+            manager.install(repo.repository, bad.pkg).close()
+        }
+        val broken = fixtureJar(jars, pkg = bad.pkg, name = "Bad", versionCode = bad.versionCode, failOnLoad = true)
+        Files.write(data.resolve("extensions/artifacts/${sha256(broken.bytes)}.jar"), broken.bytes)
+        LocalLibrary(data).use { library ->
+            library.extensionWrite { db ->
+                val metadata = db.query("SELECT metadata FROM installed_extensions WHERE pkg=?", bad.pkg) { it.getString(1) }.single()
+                db.execute("UPDATE installed_extensions SET metadata=?, sha256=? WHERE pkg=?",
+                    org.json.JSONObject(metadata).put("sha256", sha256(broken.bytes)).toString(), sha256(broken.bytes), bad.pkg)
+            }
+        }
+        LocalLibrary(data).use { library ->
+            val model = desktopReaderModel(library, host, AtomicBoolean(true), ExtensionManager(library, host, fetcher, listOf(repo.trust)))
+            assertEquals(listOf("Good"), model.state.value.sources.map { it.name })
+            // The changed record also differs from the catalog at the same version, so it shows a conflict too.
+            assertEquals(setOf(ExtensionStatus.UNAVAILABLE, ExtensionStatus.CONFLICT),
+                model.state.value.extensionRows.filter { it.pkg == bad.pkg }.map { it.status }.toSet())
+            model.close()
+        }
+    }
+
+    @Test fun unreadableStoredCatalogIsIsolatedToItsRepository() {
+        val v1 = fixtureJar(jars)
+        repo.publish(fetcher, listOf(v1))
+        session { manager -> manager.refresh(); manager.install(repo.repository, v1.pkg).close() }
+        LocalLibrary(data).use { library ->
+            library.extensionWrite { db -> db.execute("UPDATE extension_repositories SET catalog=?", "{".toByteArray()) }
+        }
+        session { manager ->
+            assertEquals(setOf(v1.pkg), manager.loadAll().first.keys)
+            val view = manager.repositoryViews().single()
+            assertFalse(view.refreshed)
+            assertNotNull(view.problem)
+            assertEquals(emptyList<String>(), manager.refresh())
+            assertTrue(manager.repositoryViews().single().refreshed)
+        }
+    }
+
+    @Test fun reenrollingARemovedRepositoryUnderAnotherKeyDoesNotTakeOverItsPackages() {
+        val original = TestRepository(repository = "io.grimoire.shared")
+        val v1 = fixtureJar(jars, pkg = "io.grimoire.extension.en.shared")
+        val v2 = fixtureJar(jars, pkg = "io.grimoire.extension.en.shared", versionCode = 2)
+        original.publish(fetcher, listOf(v1))
+        session { manager ->
+            manager.enroll(manager.check(original.indexUrl, original.publicKey))
+            manager.install(original.repository, v1.pkg).close()
+            manager.removeRepository(original.repository)
+        }
+        val impostor = TestRepository(repository = "io.grimoire.shared", indexUrl = "https://evil.example/jar-index.json")
+        impostor.sequence = 9
+        impostor.publish(fetcher, listOf(v2))
+        session { manager ->
+            val pending = manager.check(impostor.indexUrl, impostor.publicKey)
+            assertNotNull(pending.warning)
+            manager.enroll(pending)
+            val (loaded, failures) = manager.loadAll()
+            assertTrue(loaded.isEmpty())
+            assertEquals("Repository io.grimoire.shared is no longer trusted", failures[v1.pkg])
+            assertThrowsMessage("under another key") { manager.install(impostor.repository, v1.pkg) }
+        }
+    }
+
+    @Test fun reenrollingTheSameKeyRestoresItsPackages() {
+        val other = TestRepository(repository = "io.grimoire.same")
+        val v1 = fixtureJar(jars, pkg = "io.grimoire.extension.en.same")
+        other.publish(fetcher, listOf(v1))
+        session { manager ->
+            manager.enroll(manager.check(other.indexUrl, other.publicKey))
+            manager.install(other.repository, v1.pkg).close()
+            manager.removeRepository(other.repository)
+            assertNull(manager.check(other.indexUrl, other.publicKey).warning)
+            manager.enroll(manager.check(other.indexUrl, other.publicKey))
+            val (loaded, failures) = manager.loadInstalled { it.repository == other.repository }
+            loaded.values.forEach { it.close() }
+            assertEquals(setOf(v1.pkg), loaded.keys)
+            assertTrue(failures.isEmpty())
+        }
+    }
+
+    @Test fun builtinDroppedByADesktopUpdateIsRevoked() {
+        val v1 = fixtureJar(jars, pkg = "io.grimoire.extension.en.dropped")
+        repo.publish(fetcher, listOf(v1))
+        session { manager -> manager.refresh(); manager.install(repo.repository, v1.pkg).close() }
+        LocalLibrary(data).use { library ->
+            val manager = ExtensionManager(library, host, fetcher, emptyList())
+            assertTrue(manager.repositoryViews().isEmpty())
+            assertEquals("Repository ${repo.repository} is no longer trusted", manager.loadAll().second[v1.pkg])
+        }
+    }
+
+    @Test fun listingNameMustMatchTheSourceAndQueryUrlsAreRefused() {
+        val v1 = fixtureJar(jars, pkg = "io.grimoire.extension.en.renamed", name = "Real name")
+        repo.publish(fetcher, listOf(v1), repo.index(listOf(v1)) { entry, _ -> entry.put("name", "Listed name") })
+        session { manager ->
+            manager.refresh()
+            assertThrowsMessage("does not match the repository listing") { manager.install(repo.repository, v1.pkg) }
+            assertTrue(manager.installed().isEmpty())
+            assertThrowsMessage("query or fragment") { manager.check("https://repo.example/jar-index.json?token=1", repo.publicKey) }
+        }
+    }
+
     @Test fun sql4StoreUpgradesAtomicallyAndKeepsItsLibrary() {
         LocalLibrary(data).use { it.seed() }
         mutateDatabase(data, "DROP TABLE extension_repositories")

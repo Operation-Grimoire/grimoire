@@ -111,7 +111,14 @@ class LocalExtension private constructor(
             library?.let { inspect(it.bytes, "io/grimoire/extensions/lib/") }
         }
 
-        fun load(sourceBytes: ByteArray, expected: ExtensionMetadata, library: LibraryArtifact?, hostApi: String): LocalExtension {
+        /** [expectedName], when given, must equal the source's SourceInfo name (the repository's listing). */
+        fun load(
+            sourceBytes: ByteArray,
+            expected: ExtensionMetadata,
+            library: LibraryArtifact?,
+            hostApi: String,
+            expectedName: String? = null,
+        ): LocalExtension {
             verify(sourceBytes, expected, library, hostApi)
             // Load verified snapshots, never a path that can change after verification.
             val directory = Files.createTempDirectory("grimoire-extension-")
@@ -120,12 +127,15 @@ class LocalExtension private constructor(
             try {
                 for ((index, content) in listOfNotNull(sourceBytes, library?.bytes).withIndex()) {
                     files.add(directory.resolve("$index.jar").also { Files.write(it, content) })
+                    // The class loader reads the central directory; it must describe what was streamed and checked.
+                    sameAsStreamed(files.last(), content)
                 }
                 loader = URLClassLoader(files.map { it.toUri().toURL() }.toTypedArray(), Source::class.java.classLoader)
                 val type = Class.forName(expected.sourceClass, false, loader)
                 require(type.classLoader === loader && Source::class.java.isAssignableFrom(type)) { "Invalid source class" }
                 val info = type.getAnnotation(SourceInfo::class.java) ?: error("SourceInfo is missing")
                 require(info.versionCode == expected.sourceVersionCode) { "SourceInfo version mismatch" }
+                require(expectedName == null || info.name == expectedName) { "SourceInfo name does not match the repository listing" }
                 val source = type.getDeclaredConstructor().newInstance() as Source
                 require(info.name == source.name && info.lang == source.lang) { "SourceInfo identity mismatch" }
                 return LocalExtension(source, expected.pkg, expected.versionName, loader, files, directory)
@@ -139,6 +149,22 @@ class LocalExtension private constructor(
         }
 
         private fun hostLibraries(bytes: ByteArray) = hostLibraries(inspect(bytes, null))
+
+        private fun sameAsStreamed(file: Path, bytes: ByteArray) {
+            val (attributes, streamed) = JarInputStream(bytes.inputStream()).use { jar ->
+                val names = mutableSetOf<String>()
+                while (true) names.add((jar.nextJarEntry ?: break).name)
+                jar.manifest?.mainAttributes to names
+            }
+            java.util.jar.JarFile(file.toFile()).use { jar ->
+                val central = jar.entries().toList().map { it.name }
+                    .filterNot { it.equals("META-INF/", true) || it.equals("META-INF/MANIFEST.MF", true) }
+                require(central.size == central.toSet().size && central.toSet() == streamed.filterNot { it.equals("META-INF/", true) }.toSet()) {
+                    "JAR central directory differs from its entries"
+                }
+                require(jar.manifest?.mainAttributes == attributes) { "JAR central directory differs from its entries" }
+            }
+        }
 
         private fun hostLibraries(attributes: java.util.jar.Attributes) =
             attributes.getValue("Grimoire-Host-Libraries")?.split(',')

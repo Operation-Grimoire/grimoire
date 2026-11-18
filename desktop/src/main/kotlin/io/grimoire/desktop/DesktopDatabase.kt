@@ -294,7 +294,7 @@ private fun createExtensionTables(db: Connection) {
         enabled INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0,1)),
         builtin INTEGER NOT NULL DEFAULT 0 CHECK(builtin IN (0,1)))""")
     db.execute("""CREATE TABLE installed_extensions(
-        pkg TEXT PRIMARY KEY, repository TEXT NOT NULL, metadata TEXT NOT NULL,
+        pkg TEXT PRIMARY KEY, repository TEXT NOT NULL, repository_key TEXT NOT NULL, metadata TEXT NOT NULL,
         sha256 TEXT NOT NULL, previous TEXT, library_coordinate TEXT, library_sha256 TEXT,
         installed_at INTEGER NOT NULL)""")
 }

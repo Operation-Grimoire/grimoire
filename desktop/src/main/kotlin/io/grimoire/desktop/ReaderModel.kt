@@ -93,11 +93,16 @@ class ReaderModel(
     init {
         // Installed extensions load from the local store before the first frame; no network access.
         extensions?.let { manager ->
-            val (loaded, failures) = manager.loadInstalled()
-            installed.putAll(loaded)
-            extensionFailures = failures
-            publishSources()
-            publishExtensions()
+            try {
+                val (loaded, failures) = manager.loadInstalled()
+                installed.putAll(loaded)
+                extensionFailures = failures
+                publishSources()
+                publishExtensions()
+            } catch (failure: Exception) {
+                // The library stays usable without extensions; the Extensions screen shows why.
+                mutable.update { it.copy(extensionNotice = "Could not load installed extensions: ${failure.message}") }
+            }
         }
     }
 
@@ -131,7 +136,7 @@ class ReaderModel(
 
     fun load(manifest: Path) = navigate {
         val loaded = LocalExtension.open(manifest, hostApi)
-        if (loaded.packageName in installed) {
+        if (loaded.packageName in installed || extensions?.installed()?.any { it.pkg == loaded.packageName } == true) {
             loaded.close()
             error("${loaded.source.name} is installed. Remove it before opening a local copy.")
         }
@@ -188,6 +193,11 @@ class ReaderModel(
         val pending = state.value.pendingRepository ?: return@operate
         manager.enroll(pending)
         mutable.update { it.copy(pendingRepository = null) }
+        // Packages it owns under this key load now instead of after a restart.
+        val (loaded, failures) = manager.loadInstalled { it.repository == pending.trust.repository && it.pkg !in installed }
+        installed.putAll(loaded)
+        extensionFailures = extensionFailures.filterKeys { it !in loaded } + failures
+        publishSources()
         publishExtensions("${pending.trust.repository} is trusted")
     }
 
@@ -544,7 +554,9 @@ class ReaderModel(
             scope.launch {
                 try { action() }
                 catch (cancelled: CancellationException) { resumeClaimedReader(previous); throw cancelled }
-                catch (failure: Exception) {
+                catch (fatal: VirtualMachineError) { resumeClaimedReader(previous); throw fatal }
+                // Extension code can fail with an Error (initializer, linkage); report it like any failure.
+                catch (failure: Throwable) {
                     resumeClaimedReader(previous)
                     mutable.update { it.copy(error = failure.message ?: failure.javaClass.simpleName) }
                 }

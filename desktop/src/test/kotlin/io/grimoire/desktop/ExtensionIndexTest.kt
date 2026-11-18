@@ -55,7 +55,6 @@ class ExtensionIndexTest {
             "Invalid extension package" to { it.put("pkg", "com.example.evil") },
             "invalid source class" to { it.put("sourceClass", "io.grimoire.extension.other.Fixture") },
             "invalid API requirement" to { it.put("coreApi", "1.5.0") },
-            "is not provided" to { it.put("hostLibraries", org.json.JSONArray(listOf("io.grimoire:extensions-lib:9.9.9"))) },
         )
         for ((message, edit) in cases) {
             val bytes = repo.index(listOf(jar)) { entry, _ -> edit(entry) }
@@ -63,6 +62,18 @@ class ExtensionIndexTest {
         }
         val unknownFormat = String(repo.index(listOf(jar))).replace("\"format\":1", "\"format\":2").toByteArray()
         rejects("Unsupported extension index format") { ExtensionIndex.verify(unknownFormat, repo.sign(unknownFormat), repo.trust, null) }
+    }
+
+    @Test fun unsupportedHostLibraryMarksOnlyThatEntryIncompatible() {
+        val other = fixtureJar(temporary.root.toPath(), pkg = "io.grimoire.extension.en.other")
+        val bytes = repo.index(listOf(jar, other)) { entry, built ->
+            if (built === other) entry.put("hostLibraries", org.json.JSONArray(listOf("org.json:json:19990101")))
+        }
+        val catalog = ExtensionIndex.verify(bytes, repo.sign(bytes), repo.trust, null)
+        val byPackage = catalog.extensions.associateBy { it.pkg }
+        assertEquals(null, catalog.compatibilityProblem(byPackage.getValue(jar.pkg), "1.6.0"))
+        assertEquals("Requires an unsupported host library", catalog.compatibilityProblem(byPackage.getValue(other.pkg), "1.6.0"))
+        assertEquals("Requires API 1.5", catalog.compatibilityProblem(byPackage.getValue(jar.pkg), "2.0.0"))
     }
 
     @Test fun invalidPublicKeysAreRejected() {
