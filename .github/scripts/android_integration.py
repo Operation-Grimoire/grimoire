@@ -28,6 +28,7 @@ PACKAGE = "io.grimoire.app"
 CHECKPOINT_CLASS = "io.grimoire.app.integration.CheckpointProcessDeathTest"
 INTERRUPT = "interruptCheckpointSave"
 REOPEN = "verifyCheckpointAfterRestart"
+COMPETE = "competingProcessCannotReplaceNewerCheckpoint"
 CHECKPOINT_BOUNDARIES = {
     "during-debounce": ("pending", 1),
     "before-commit": ("uncommitted", 1),
@@ -38,7 +39,7 @@ CHECKPOINT_BOUNDARIES = {
 def validate_app_logcat(output):
     if not output.strip():
         raise ValueError("Missing application logcat evidence")
-    if re.search(rf"AndroidRuntime:\s+Process: {re.escape(PACKAGE)}(?:\.test)?, PID:", output):
+    if re.search(rf"AndroidRuntime:\s+Process: {re.escape(PACKAGE)}(?:\.test)?(?::[^\s,]+)?, PID:", output):
         raise ValueError("Application/test-helper process crashed; successful test statuses are insufficient")
 
 
@@ -102,21 +103,22 @@ def validate_checkpoint_evidence(marker, sha, boundary, fixture, **expected):
         raise ValueError(f"Checkpoint evidence did not match {identity}")
 
 
+def instrument_checkpoint(adb, method, boundary, fixture, sha, log_name, required=True):
+    return adb("shell", "am", "instrument", "-w", "-r", "-e", "class", f"{CHECKPOINT_CLASS}#{method}",
+               "-e", "integrationFixtures", "true", "-e", "integrationSourceSha", sha,
+               "-e", "checkpointCrashBoundary", boundary, "-e", "checkpointCrashFixture", fixture,
+               PACKAGE + ".test/androidx.test.runner.AndroidJUnitRunner", timeout=65, required=required,
+               log_name=log_name)
+
+
 def run_checkpoint_interruptions(adb, root, sha):
     results = {}
-
-    def instrument(method, boundary, fixture, stage, required):
-        output = adb("shell", "am", "instrument", "-w", "-r", "-e", "class", f"{CHECKPOINT_CLASS}#{method}",
-                     "-e", "integrationFixtures", "true", "-e", "integrationSourceSha", sha,
-                     "-e", "checkpointCrashBoundary", boundary, "-e", "checkpointCrashFixture", fixture,
-                     PACKAGE + ".test/androidx.test.runner.AndroidJUnitRunner", timeout=65, required=required,
-                     log_name=f"checkpoint-{boundary}-{stage}.log")
-        return output
 
     for boundary, (stage, ordinal) in CHECKPOINT_BOUNDARIES.items():
         fixture = uuid.uuid4().hex
         adb("shell", "am", "force-stop", PACKAGE)
-        validate_checkpoint_exit(instrument(INTERRUPT, boundary, fixture, "interrupted", False))
+        validate_checkpoint_exit(instrument_checkpoint(
+            adb, INTERRUPT, boundary, fixture, sha, f"checkpoint-{boundary}-interrupted.log", required=False))
         if adb("shell", f"if pidof {PACKAGE}; then exit 1; else echo stopped; fi") != "stopped":
             raise ValueError(f"Checkpoint process is still running at {boundary}")
         interrupted = json.loads(adb("shell", "run-as", PACKAGE, "cat", f"files/checkpoint-{fixture}-boundary.json"))
@@ -124,7 +126,8 @@ def run_checkpoint_interruptions(adb, root, sha):
         validate_checkpoint_evidence(interrupted, sha, boundary, fixture, stage=stage)
         if boundary == "during-debounce" and (interrupted.get("pendingOrdinal") != 3 or interrupted.get("writeStarted") is not False):
             raise ValueError("Expected block 3 pending before the checkpoint writer started")
-        parse_instrumentation(instrument(REOPEN, boundary, fixture, "verified", True), CHECKPOINT_CLASS, (REOPEN,))
+        parse_instrumentation(instrument_checkpoint(
+            adb, REOPEN, boundary, fixture, sha, f"checkpoint-{boundary}-verified.log"), CHECKPOINT_CLASS, (REOPEN,))
         reopened = json.loads(adb("shell", "run-as", PACKAGE, "cat", f"files/checkpoint-{fixture}-reopened.json"))
         (root / f"checkpoint-{boundary}-reopened.json").write_text(json.dumps(reopened, indent=2), encoding="utf-8")
         validate_checkpoint_evidence(reopened, sha, boundary, fixture, oldPid=interrupted["pid"], ordinal=ordinal, neighborOrdinal=2)
@@ -132,6 +135,21 @@ def run_checkpoint_interruptions(adb, root, sha):
             raise ValueError(f"Checkpoint verification reused the old process at {boundary}")
         results[boundary] = {"interrupted": interrupted, "reopened": reopened}
     return results
+
+
+def run_checkpoint_competition(adb, root, sha):
+    fixture = uuid.uuid4().hex
+    boundary = "competing-writer"
+    adb("shell", "am", "force-stop", PACKAGE)
+    output = instrument_checkpoint(adb, COMPETE, boundary, fixture, sha, "checkpoint-competition.log")
+    parse_instrumentation(output, CHECKPOINT_CLASS, (COMPETE,))
+    marker = json.loads(adb("shell", "run-as", PACKAGE, "cat", f"files/checkpoint-{fixture}-competition.json"))
+    (root / "checkpoint-competition.json").write_text(json.dumps(marker, indent=2), encoding="utf-8")
+    validate_checkpoint_evidence(marker, sha, boundary, fixture, oldOrdinal=3, winnerOrdinal=1, neighborOrdinal=2,
+                                 winnerSequence=1, staleSequence=2, rejection="STALE")
+    if type(marker.get("remotePid")) is not int or marker["remotePid"] <= 0 or marker["remotePid"] == marker["pid"]:
+        raise ValueError("The competing checkpoint writer must run in a separate process")
+    return marker
 
 
 def main():
@@ -204,6 +222,7 @@ def main():
                      PACKAGE + ".test/androidx.test.runner.AndroidJUnitRunner", timeout=240, log_name="instrumentation.log")
         report["executedTests"] = parse_instrumentation(output)
         report["checkpointInterruptions"] = run_checkpoint_interruptions(adb, root, sha)
+        report["checkpointCompetition"] = run_checkpoint_competition(adb, root, sha)
         report["result"] = "PASS"
     except Exception as failure:
         report["error"] = str(failure)
@@ -230,12 +249,14 @@ def main():
                         (root / name).write_bytes(adb("exec-out", "run-as", PACKAGE, "cat", "files/integration-evidence/" + name, binary=True))
             except Exception as failure:
                 report["screenshots"] = str(failure)
-        suite = ET.Element("testsuite", name=CLASS, tests=str(len(TESTS) + len(CHECKPOINT_BOUNDARIES) if report["result"] == "PASS" else 1), failures="0", errors="0" if report["result"] == "PASS" else "1", skipped="0")
+        count = len(TESTS) + len(CHECKPOINT_BOUNDARIES) + 1 if report["result"] == "PASS" else 1
+        suite = ET.Element("testsuite", name=CLASS, tests=str(count), failures="0", errors="0" if report["result"] == "PASS" else "1", skipped="0")
         if report["result"] == "PASS":
             for name in TESTS:
                 ET.SubElement(suite, "testcase", classname=CLASS, name=name)
             for boundary in report["checkpointInterruptions"]:
                 ET.SubElement(suite, "testcase", classname=CHECKPOINT_CLASS, name=boundary)
+            ET.SubElement(suite, "testcase", classname=CHECKPOINT_CLASS, name=COMPETE)
         else:
             case = ET.SubElement(suite, "testcase", classname=CLASS, name="integration_runner")
             ET.SubElement(case, "error", message=report.get("error", "Integration failed")).text = report.get("error")

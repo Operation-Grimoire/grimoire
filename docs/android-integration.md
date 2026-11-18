@@ -107,8 +107,30 @@ The host archives each interruption and clean reopening as separate
 instrumentation logs and phase markers. The three outcomes appear in JUnit
 and the main report. A captured position can be lost until it commits.
 Explicit Back waits for a flush, while a forced exit can bypass lifecycle
-flushes. Signed reader UI behavior under interruption, physical-device tests,
-and competing writers remain in [#435](https://github.com/Operation-Grimoire/grimoire/issues/435).
+flushes. Signed reader UI behavior under interruption and physical-device tests
+remain in [#435](https://github.com/Operation-Grimoire/grimoire/issues/435).
+
+## Competing checkpoint writers
+
+[#476](https://github.com/Operation-Grimoire/grimoire/issues/476) keeps the
+instrumented app process and a private second process alive with separate Room
+connections to the same WAL-backed fixture database. The second process uses a
+debug-only provider that checks the caller UID and opens only the isolated
+fixture. The release manifest excludes this component.
+
+The first process commits block 3 and retains a later command with sequence 2.
+The second process registers the same chapter and commits block 1 with its
+own sequence 1. The original observation is still current, but its session
+has been replaced. Room rejects the first process's delayed command as stale.
+Both live processes read the same winning checkpoint, and a replay on the
+neighboring chapter keeps its original position and authority. The test also
+compares the novel and chapter rows, saved content and opened history.
+
+The runner requires a successful instrumentation result and an evidence record
+with both distinct PIDs, the fixture ID, exact block indices and sequences, the
+stale rejection, and the source SHA. It archives the record and raw log with
+the APK hashes. This exercises competing checkpoint authority through the
+production adapter on the debug emulator. [#435](https://github.com/Operation-Grimoire/grimoire/issues/435)
 
 ## Running and extending the suite
 
