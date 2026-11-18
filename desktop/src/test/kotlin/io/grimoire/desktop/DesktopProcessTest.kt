@@ -129,6 +129,11 @@ class DesktopProcessTest {
 
     @Test fun competingProcessCannotWriteAndKernelReleasesLeaseAfterOwnerDeath() {
         val directory = temporary.newFolder("lease store").toPath()
+        val opened = DesktopOpenedChapter(fixtureKey, "A public novel", "First")
+        LocalLibrary(directory).use {
+            it.seed()
+            it.recordOpenedChapter(opened, 120)
+        }
         val ready = directory.resolve("ready")
         val child = worker(directory, "hold", ready)
         try {
@@ -139,7 +144,10 @@ class DesktopProcessTest {
                 assertEquals("Competing process acquired the store", 23, competitor.exitValue())
             } finally { if (competitor.isAlive) kill(competitor, directory) }
             kill(child, directory)
-            LocalLibrary(directory).use { it.seed(); assertNotNull(it.book(fixtureKey.novel)) }
+            LocalLibrary(directory).use {
+                assertNotNull(it.book(fixtureKey.novel))
+                assertEquals(opened, it.openedHistory().single().chapter)
+            }
         } finally { if (child.isAlive) kill(child, directory) }
     }
 

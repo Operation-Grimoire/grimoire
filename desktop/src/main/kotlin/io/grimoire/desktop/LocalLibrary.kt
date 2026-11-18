@@ -105,6 +105,46 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
 
     @Synchronized fun favorite(key: NovelKey, value: Boolean): SavedBook = updateMembership(key, value) ?: error("Novel is no longer stored")
 
+    @Synchronized internal fun historyRecording(): Boolean {
+        database.verifyMarker()
+        return db.query("SELECT value FROM settings WHERE name='record_opened_history'") { it.getString(1) }.singleOrNull() == "1"
+    }
+
+    @Synchronized internal fun setHistoryRecording(enabled: Boolean) {
+        write {
+            db.execute("INSERT INTO settings VALUES('record_opened_history',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value",
+                if (enabled) "1" else "0")
+        }
+    }
+
+    @Synchronized internal fun openedHistory(): List<DesktopHistoryEntry> {
+        database.verifyMarker()
+        return db.query("""SELECT id,source_id,novel_url,chapter_url,novel_title,chapter_title,opened_at
+            FROM opened_history ORDER BY opened_at DESC,id DESC""") { row ->
+            DesktopHistoryEntry(row.getLong(1),
+                DesktopOpenedChapter(ChapterKey(NovelKey(row.getLong(2), row.getString(3)), row.getString(4)),
+                    row.getString(5), row.getString(6)), row.getLong(7))
+        }
+    }
+
+    @Synchronized internal fun recordOpenedChapter(snapshot: DesktopOpenedChapter, openedAtMillis: Long) {
+        val key = snapshot.key
+        write {
+            db.execute("""INSERT INTO opened_history(source_id,novel_url,chapter_url,novel_title,chapter_title,opened_at)
+                VALUES(?,?,?,?,?,?) ON CONFLICT(source_id,novel_url,chapter_url) DO UPDATE SET
+                novel_title=excluded.novel_title, chapter_title=excluded.chapter_title, opened_at=excluded.opened_at""",
+                key.novel.sourceId, key.novel.url, key.url, snapshot.novelTitle, snapshot.chapterTitle, openedAtMillis)
+        }
+    }
+
+    @Synchronized internal fun deleteOpenedHistory(ids: List<Long>) = write {
+        ids.forEach { db.execute("DELETE FROM opened_history WHERE id=?", it) }
+    }
+
+    @Synchronized internal fun clearOpenedHistory() {
+        write { db.execute("DELETE FROM opened_history") }
+    }
+
     /** Navigation selects a chapter without inventing a position or altering a delayed checkpoint. */
     @Synchronized internal fun selectResumeChapter(key: ChapterKey): SavedBook = write {
         require(eligibility(key) == null) { "Chapter is unavailable or locked" }

@@ -28,7 +28,7 @@ import kotlinx.coroutines.sync.withLock
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 
-enum class View { LIBRARY, BROWSE, BOOK, READER }
+enum class View { LIBRARY, BROWSE, BOOK, READER, HISTORY }
 data class ReaderState(
     val view: View = View.LIBRARY,
     val library: List<SavedBook> = emptyList(),
@@ -45,6 +45,8 @@ data class ReaderState(
     val busy: Boolean = false,
     val offline: Boolean = false,
     val error: String? = null,
+    val historyRecording: Boolean = false,
+    val history: List<DesktopHistoryEntry> = emptyList(),
 )
 
 /** Owns operations and source lifetime; the Compose screen only projects this state. */
@@ -65,7 +67,13 @@ class ReaderModel(
     private val closeWrites = Mutex()
     private val operationLock = Any()
     private var extension: LocalExtension? = null
-    private val mutable = MutableStateFlow(ReaderState(library = library.saved()))
+    private val mutable = MutableStateFlow(ReaderState(library = library.saved(), historyRecording = library.historyRecording()))
+    // The history worker is drained separately from navigation jobs before closing the store.
+    private val historyScope = CoroutineScope(SupervisorJob() + operationDispatcher)
+    private val historyWrites = OpenedHistoryWrites(historyScope, DesktopOpenedHistoryDao(library)) { failure ->
+        System.getLogger("OpenedHistory").log(System.Logger.Level.WARNING, "Reading history action failed (${failure.javaClass.simpleName})")
+    }
+    private var lastHistoryOpen: Deferred<Result<Unit>>? = null
     val state = mutable.asStateFlow()
 
     fun load(manifest: Path) = navigate {
@@ -106,6 +114,36 @@ class ReaderModel(
         publishView { it.copy(view = View.LIBRARY, library = saved, projection = null, observedAnchor = null, storageObservation = null, checkpointLoad = null, positionNotice = null) }
     }
 
+    fun showHistory() = navigate {
+        lastHistoryOpen?.join()
+        val entries = library.openedHistory()
+        publishView { it.copy(view = View.HISTORY, history = entries, book = null, chapter = null, pages = emptyList(),
+            projection = null, observedAnchor = null, storageObservation = null, checkpointLoad = null, positionNotice = null) }
+    }
+
+    fun setHistoryRecording(enabled: Boolean) = operate {
+        try {
+            library.setHistoryRecording(enabled)
+        } finally {
+            val recording = library.historyRecording()
+            mutable.update { it.copy(historyRecording = recording) }
+        }
+    }
+
+    fun removeHistory(id: Long) = changeHistory { historyWrites.delete(listOf(id))!!.await().getOrThrow() }
+
+    fun clearHistory() = changeHistory { historyWrites.clear().await().getOrThrow() }
+
+    private fun changeHistory(change: suspend () -> Unit) = operate {
+        if (state.value.view != View.HISTORY) return@operate
+        try {
+            change()
+        } finally {
+            val entries = library.openedHistory()
+            mutable.update { it.copy(history = entries) }
+        }
+    }
+
     fun openSaved(book: SavedBook) = navigate {
         val stored = library.book(book.key)
         publishView { it.copy(view = View.BOOK, book = stored, chapter = null, pages = emptyList(), projection = null, observedAnchor = null, storageObservation = null, checkpointLoad = null, positionNotice = null) }
@@ -120,9 +158,26 @@ class ReaderModel(
     fun read(chapter: Chapter) = navigate {
         val book = state.value.book ?: error("Open a novel first")
         require(!chapter.locked && book.chapters.any { it == chapter }) { "This chapter is locked or unavailable" }
-        // Retire the old view before storage/source suspension can admit stale callbacks.
-        publishView { it.copy(view = View.BOOK, chapter = null, pages = emptyList(), projection = null, observedAnchor = null, storageObservation = null, checkpointLoad = null, positionNotice = null) }
+        readChapter(book, chapter)
+    }
+
+    fun readHistory(entry: DesktopHistoryEntry) = navigate {
+        require(state.value.view == View.HISTORY && entry in state.value.history) { "This history entry is no longer current" }
+        val key = entry.chapter.key
+        val book = library.book(key.novel) ?: error("This novel is no longer available")
+        val chapter = book.chapters.find { it.url == key.url && !it.locked }
+            ?: error("This chapter is locked or unavailable")
+        readChapter(book, chapter)
+    }
+
+    private suspend fun readChapter(book: SavedBook, chapter: Chapter) {
         val key = ChapterKey(book.key, chapter.url)
+        historyWrites.open(incognito = !state.value.historyRecording, openedAtMillis = System.currentTimeMillis()) {
+            DesktopOpenedChapter(key, book.novel.title, chapter.name)
+        }?.let { lastHistoryOpen = it }
+        // Retire the old view before storage/source suspension can admit stale callbacks.
+        publishView { it.copy(view = View.BOOK, book = book, chapter = null, pages = emptyList(), projection = null,
+            observedAnchor = null, storageObservation = null, checkpointLoad = null, positionNotice = null) }
         val loadedChapter = try {
             chapterLoader.load(key) {
                 when {
@@ -264,6 +319,7 @@ class ReaderModel(
         try {
             // Let the claimed operation finish, then save before cancelling the usable scope.
             scope.coroutineContext.job.children.toList().joinAll()
+            lastHistoryOpen?.join()
             withContext(Dispatchers.IO) {
                 if (!storageClosed.get()) {
                     checkpoints.retire(); flushStoredPositions(); library.close(); storageClosed.set(true)
@@ -274,6 +330,7 @@ class ReaderModel(
             throw failure
         }
         scope.coroutineContext.job.cancelAndJoin()
+        historyScope.coroutineContext.job.cancelAndJoin()
         withContext(Dispatchers.IO) {
             extension?.close()
             extension = null
