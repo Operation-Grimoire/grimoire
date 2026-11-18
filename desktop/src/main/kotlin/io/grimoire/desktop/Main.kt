@@ -97,6 +97,7 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
             Text("Grimoire", style = MaterialTheme.typography.headlineSmall)
             TextButton(onClick = model::showLibrary, enabled = enabled) { Text("Library") }
             TextButton(onClick = model::browse, enabled = enabled && !state.offline && state.sourceName != null) { Text("Browse") }
+            TextButton(onClick = model::showHistory, enabled = enabled) { Text("History") }
             Spacer(Modifier.weight(1f))
             Row(Modifier.toggleable(value = state.offline, enabled = enabled, role = Role.Checkbox, onValueChange = model::offline)) {
                 Checkbox(checked = state.offline, onCheckedChange = null, enabled = enabled)
@@ -112,6 +113,7 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
         }
         when (state.view) {
             View.LIBRARY -> LibraryPane(state, enabled, model, Modifier.weight(1f))
+            View.HISTORY -> HistoryPane(state, enabled, model, Modifier.weight(1f))
             View.BROWSE -> LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 item { Text("Popular", style = MaterialTheme.typography.headlineSmall) }
                 items(state.novels, key = { it.url }) { novel ->

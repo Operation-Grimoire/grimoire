@@ -149,7 +149,8 @@ class ReadingCheckpointTest {
             receipt = DesktopDownloadDao(library).currentReceipt(fixtureKey)
         }
         mutateDatabase(directory, "DROP TABLE reading_state_receipts"); mutateDatabase(directory, "DROP TABLE reading_states")
-        mutateDatabase(directory, "DROP TABLE reading_checkpoints"); mutateDatabase(directory, "PRAGMA user_version=1")
+        mutateDatabase(directory, "DROP TABLE reading_checkpoints"); mutateDatabase(directory, "DROP TABLE opened_history")
+        mutateDatabase(directory, "PRAGMA user_version=1")
         try { LocalLibrary(directory) { if (it == StorageCheckpoint.BEFORE_COMMIT) throw IOException("Migration fault") }; fail("upgrade must roll back") }
         catch (e: IOException) { assertEquals("Migration fault", e.message) }
         DriverManager.getConnection("jdbc:sqlite:${directory.resolve("library.sqlite")}").use { db ->
@@ -160,6 +161,6 @@ class ReadingCheckpointTest {
             assertEquals(before, library.book(fixtureKey.novel)); assertEquals(body, DesktopSavedChapterDao(library).readSnapshot(fixtureKey))
             assertEquals(receipt, DesktopDownloadDao(library).currentReceipt(fixtureKey)); assertNull(DesktopReadingCheckpointDao(library).read(fixtureKey))
         }
-        DriverManager.getConnection("jdbc:sqlite:${directory.resolve("library.sqlite")}").use { assertEquals(3L, it.value("PRAGMA user_version")) }
+        DriverManager.getConnection("jdbc:sqlite:${directory.resolve("library.sqlite")}").use { assertEquals(4L, it.value("PRAGMA user_version")) }
     }
 }

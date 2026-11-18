@@ -334,8 +334,7 @@ keeps the prepared groups for exact Retry, and skips confirmed groups. Word-coun
 backfill remains a separate outcome. The operation uses existing chapter receipts
 and introduces no database migration.
 
-Desktop still has no completion UI or automatic policy. Shared opened-history
-storage on Desktop remains a separate slice.
+Desktop completion UI and automatic completion policy remain outside this slice.
 
 ## Opened history on Android
 
@@ -355,6 +354,20 @@ no durable retry outbox.
 Opened history stays independent of browsing history, the novel's last-read time,
 checkpoint/resume position, read flags and first-read statistics. Clearing it
 affects only reading-history entries.
+
+## Opened history on Desktop
+
+#469 uses the same ordered history interface with a SQLite adapter behind the
+Desktop library lease. Recording defaults to off and the History screen stores
+the user's choice in the local library. The reader checks that choice and captures
+the time and titles when it accepts a chapter open. The event can be recorded even
+if loading the body later fails. Resume restoration, checkpoint writes and offline
+saves never create entries on their own.
+
+Reopening a chapter refreshes its existing row. The queue orders each accepted
+open before a later removal or clear, and the reader drains accepted opens before
+closing the library. Pausing keeps existing entries available for reopening and
+deletion. Clearing history preserves resume positions, downloads and reading state.
 
 Core JVM tests cover frozen position/UTF-16/overflow and completion/evidence vectors.
 Consumer builds and existing host tests do not establish new state-model ART,

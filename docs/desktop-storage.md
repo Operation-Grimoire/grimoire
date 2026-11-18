@@ -40,11 +40,12 @@ flowchart TB
 
 ## Storage and ownership
 
-`library.sqlite` has application ID `0x4752494D` and schema version 3. Upgrading
-from SQL1 to SQL3 atomically adds empty checkpoint and reading-state/receipt tables.
-Upgrading from SQL2 to SQL3 adds only the reading-state/receipt tables: checkpoints
-already exist in SQL2. These #447 migrations do not rewrite existing rows;
-startup still resets abandoned active download ownership under the exclusive lease.
+`library.sqlite` has application ID `0x4752494D` and schema version 4. Upgrading
+from SQL1 adds empty checkpoint, reading-state, receipt and opened-history tables
+in one transaction. SQL2 already has checkpoints, and SQL3 already has
+reading-state and receipt tables. Upgrading from SQL3 adds only opened history.
+These migrations preserve existing rows. Startup still resets abandoned active
+download ownership under the exclusive lease.
 `books` stores the existing metadata projection; `contents` stores payload,
 explicit codec version, digest, revision, word count and ownership/receipt data.
 The downloaded set derives from `has_content`, so an indexed corrupt or missing
@@ -81,6 +82,10 @@ handoff requires atomic rename support. These settings and process tests do not
 prove survival of arbitrary hardware/filesystem failure or sudden power loss.
 
 ## Upgrade and downgrade
+
+Desktop builds that support up to SQL3 refuse to open a SQL4 library. To return
+to one of those builds, close Desktop and restore the full pre-upgrade library
+directory. Replacing the schema version alone cannot restore that backup.
 
 1. Close every older desktop reader. Retain a complete copy of its data directory.
 2. On first open, validate schema1 `library.json` and every indexed chapter file,

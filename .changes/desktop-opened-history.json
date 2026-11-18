@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Use the History tab to opt in to recording opened chapters, revisit recent chapters, and remove individual entries or clear the list."
+    }
+  ]
+}

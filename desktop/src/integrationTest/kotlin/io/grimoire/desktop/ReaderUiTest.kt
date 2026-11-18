@@ -9,6 +9,10 @@ import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
+import io.grimoire.api.model.lang.Language
+import io.grimoire.api.model.novel.Chapter
+import io.grimoire.api.model.novel.Novel
+import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.network.SourceNetwork
 import io.grimoire.reading.*
 import io.grimoire.reading.storage.*
@@ -128,6 +132,85 @@ class ReaderUiTest {
             runCatching { capture("failure.png") }
             throw failure
         } finally { runBlocking { model.close() } }
+    }
+
+    @Test fun historyControlsKeepRecordingOptInAndClearWithoutLosingResume() {
+        val novelKey = NovelKey(17, "/history-book")
+        val novel = Novel(novelKey.url, "History fixture", Language.EN)
+        val chapter = Chapter("/first", "History first")
+        val chapterKey = ChapterKey(novelKey, chapter.url)
+        val text = "Mira followed the harbor lights."
+        val directory = temporary.newFolder().toPath()
+        val library = LocalLibrary(directory).apply {
+            remember(novelKey, novel, listOf(chapter))
+            favorite(novelKey, true)
+            runBlocking {
+                val downloads = DownloadRepository(DesktopDownloadDao(this@apply))
+                val pages = listOf(NovelPage(0, PageContent.Text(text)))
+                assertTrue(downloads.commit(requireNotNull(downloads.claim(chapterKey)), pages) is DownloadCommit.Committed)
+            }
+        }
+        val model = desktopReaderModel(library, "1.6.0", java.util.concurrent.atomic.AtomicBoolean(false))
+        model.offline(true)
+        fun click(label: String) {
+            compose.onNode(hasText(label) and hasClickAction()).performClick()
+            settled(model)
+        }
+        fun openFromLibrary() {
+            click("Library")
+            click(novel.title)
+            compose.onNode(hasText(chapter.name) and hasClickAction()).performClick()
+            settled(model)
+        }
+        try {
+            compose.setContent {
+                MaterialTheme { Surface(Modifier.size(1100.dp, 760.dp)) { DesktopReader(model, false, null) {} } }
+            }
+            openFromLibrary()
+            click("History")
+            val record = compose.onNodeWithText("Record opened chapters")
+            record.assertIsOff()
+            compose.onNodeWithText("No reading history yet.").assertIsDisplayed()
+
+            click("Record opened chapters")
+            record.assertIsOn()
+            openFromLibrary()
+            click("History")
+            compose.onNodeWithText(chapter.name).assertIsDisplayed()
+            capture("history-controls.png")
+            click("Open chapter")
+            compose.onNodeWithText(text).assertIsDisplayed()
+            click("History")
+            click("Remove")
+            compose.onNodeWithText("No reading history yet.").assertIsDisplayed()
+
+            openFromLibrary()
+            click("History")
+            click("Record opened chapters")
+            record.assertIsOff()
+            compose.onNodeWithText(chapter.name).assertIsDisplayed()
+            click("Clear history")
+            click("Clear")
+            compose.onNodeWithText("No reading history yet.").assertIsDisplayed()
+            assertEquals(chapter.url, library.book(novelKey)?.resumeChapterUrl)
+        } catch (failure: Throwable) {
+            runCatching { capture("history-failure.png") }
+            throw failure
+        } finally {
+            runBlocking { model.close() }
+        }
+        val reopened = LocalLibrary(directory)
+        val restarted = desktopReaderModel(reopened, "1.6.0", java.util.concurrent.atomic.AtomicBoolean(false))
+        try {
+            assertFalse(restarted.state.value.historyRecording)
+            restarted.showHistory()
+            settled(restarted)
+            assertTrue(restarted.state.value.history.isEmpty())
+            assertEquals(chapter.url, reopened.book(novelKey)?.resumeChapterUrl)
+            assertNotNull(reopened.downloaded(chapterKey))
+        } finally {
+            runBlocking { restarted.close() }
+        }
     }
 
     private fun settled(model: ReaderModel) {
