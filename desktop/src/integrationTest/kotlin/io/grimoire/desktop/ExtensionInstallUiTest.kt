@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
-import io.grimoire.api.network.SourceNetwork
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.skia.Image
 import org.json.JSONArray
@@ -34,8 +33,7 @@ class ExtensionInstallUiTest {
     @get:Rule val temporary = TemporaryFolder()
 
     @Test fun installFromSignedRepositoryBrowseRestartOfflineAndRemove() {
-        val platform = ReaderFixturePlatform()
-        SourceNetwork.install(platform)
+        val platform = resetSharedFixturePlatform()
         val repository = signedRepository()
         val data = temporary.newFolder().toPath()
         var model = open(data, repository, platform)

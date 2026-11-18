@@ -45,6 +45,15 @@ internal class ReaderFixturePlatform : SourceHttpPlatform {
     })
 }
 
+/** SourceNetwork keeps one platform per process; UI classes share this one and reset it per test. */
+internal val sharedFixturePlatform: ReaderFixturePlatform by lazy {
+    ReaderFixturePlatform().also(io.grimoire.api.network.SourceNetwork::install)
+}
+
+internal fun resetSharedFixturePlatform(): ReaderFixturePlatform = sharedFixturePlatform.apply {
+    allowed.set(true); requests.set(0); catalogGate.set(null); chapterGate.set(null); chapterEntered.set(null)
+}
+
 /** Bind the locally built fixture JAR to the production loader, without putting its classes on the host classpath. */
 internal fun readerFixtureManifest(directory: Path): Path {
     val builtJar = Path.of(checkNotNull(System.getProperty("desktop.readerFixtureJar")))

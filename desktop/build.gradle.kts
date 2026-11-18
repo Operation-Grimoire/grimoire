@@ -106,8 +106,6 @@ tasks.register<Test>("uiTest") {
     testClassesDirs = integration.output.classesDirs
     classpath = integration.runtimeClasspath
     include("**/ReaderUiTest*", "**/ExtensionInstallUiTest*")
-    // SourceNetwork accepts one platform per process; each UI class installs its own fixture.
-    forkEvery = 1
     dependsOn(readerFixtureJar)
     jvmArgumentProviders.add(objects.newInstance<ReaderFixtureArguments>().apply {
         fixtureJar.set(readerFixtureJar.flatMap { it.archiveFile })
