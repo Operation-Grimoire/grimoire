@@ -20,9 +20,13 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.ReadingHistoryEntity
 import io.grimoire.app.data.local.entity.encodeChapterContent
+import io.grimoire.app.ui.screen.reader.ReaderPosition
+import io.grimoire.app.ui.screen.reader.ReaderProgressWriter
 import io.grimoire.reading.ChapterKey
 import io.grimoire.reading.NovelKey
+import io.grimoire.reading.anchor.AnchorPosition
 import io.grimoire.reading.anchor.ProjectedPage
+import io.grimoire.reading.anchor.ReaderCheckpointLoad
 import io.grimoire.reading.anchor.ReaderCheckpoints
 import io.grimoire.reading.anchor.ReaderViewport
 import io.grimoire.reading.anchor.ReadingProjection
@@ -30,9 +34,11 @@ import io.grimoire.reading.storage.CheckpointCommand
 import io.grimoire.reading.storage.CheckpointCommit
 import io.grimoire.reading.storage.ReadingCheckpointDao
 import io.grimoire.reading.storage.decodeReadingCheckpoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Before
@@ -67,7 +73,7 @@ class CheckpointProcessDeathTest {
         check(args.getString("integrationFixtures") == "true")
         assertEquals(BuildConfig.GIT_SHA, args.getString("integrationSourceSha"))
         boundary = requireNotNull(args.getString("checkpointCrashBoundary"))
-        require(boundary == "before-commit" || boundary == "before-ack")
+        require(boundary in setOf("during-debounce", "before-commit", "before-ack"))
         fixture = requireNotNull(args.getString("checkpointCrashFixture"))
         require(fixture.matches(Regex("[a-f0-9]{32}")))
     }
@@ -98,7 +104,7 @@ class CheckpointProcessDeathTest {
             val dao = RoomReadingCheckpointDao(db, saved)
             val checkpoints = ReaderCheckpoints(object : ReadingCheckpointDao by dao {
                 override suspend fun commit(command: CheckpointCommand): CheckpointCommit {
-                    if (command.sequence == 1L) return dao.commit(command)
+                    if (command.sequence == 1L || boundary == "during-debounce") return dao.commit(command)
                     assertEquals(target, command.anchor.key)
                     assertEquals(projection(target).capture(3), command.anchor)
                     assertEquals(2L, command.sequence)
@@ -121,6 +127,7 @@ class CheckpointProcessDeathTest {
                 checkpoints.flush()
                 assertEquals(projection(key).capture(ordinal), dao.read(key))
                 if (key == target) {
+                    if (boundary == "during-debounce") interruptDuringDebounce(db, checkpoints, load)
                     assertEquals(projection(key).capture(3), checkpoints.capture(load, 3))
                     checkpoints.flush()
                     fail("The interrupted save returned to its caller")
@@ -129,8 +136,29 @@ class CheckpointProcessDeathTest {
         } finally { db.close() }
     }
 
-    private suspend fun terminate(stage: String): Nothing {
-        writeEvidence("boundary", JSONObject().put("stage", stage))
+    private suspend fun interruptDuringDebounce(
+        db: AppDatabase,
+        checkpoints: ReaderCheckpoints,
+        load: ReaderCheckpointLoad,
+    ): Nothing = withContext(Dispatchers.Main.immediate) {
+        var writeStarted = false
+        val writer = ReaderProgressWriter(this) { position ->
+            writeStarted = true
+            checkpoints.flush()
+            db.chapterDao().setReadAnchor(position.chapterId, position.fraction, position.anchorIndex, position.anchorOffset)
+        }
+        val anchor = requireNotNull(checkpoints.capture(load, 3))
+        val pendingOrdinal = (anchor.position as AnchorPosition.Block).ordinal
+        assertEquals(3, pendingOrdinal)
+        writer.submit(ReaderPosition(1, 0.8f, 3, 0, contentAnchor = anchor, checkpoint = load))
+        // The timer cannot resume on Main while this block checks the queue and terminates.
+        assertTrue(writer.hasPending())
+        assertFalse(writeStarted)
+        terminate("pending", JSONObject().put("pendingOrdinal", pendingOrdinal).put("writeStarted", writeStarted))
+    }
+
+    private suspend fun terminate(stage: String, details: JSONObject = JSONObject()): Nothing {
+        writeEvidence("boundary", details.put("stage", stage))
         Process.killProcess(Process.myPid())
         awaitCancellation()
     }
@@ -145,7 +173,7 @@ class CheckpointProcessDeathTest {
                 assertTrue(result.moveToFirst())
                 assertEquals("ok", result.getString(0))
             }
-            val expected = if (boundary == "before-commit") 1 else 3
+            val expected = if (boundary == "before-ack") 3 else 1
             val saved = RoomSavedChapterDao(db)
             val dao = RoomReadingCheckpointDao(db, saved)
             val targetState = decodeReadingCheckpoint(requireNotNull(db.readingCheckpointStateDao().find(1)).state)

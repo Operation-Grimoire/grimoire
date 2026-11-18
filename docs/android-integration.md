@@ -75,20 +75,27 @@ failed setup remains visible in the results.
 
 ## Checkpoint process death
 
-[#472](https://github.com/Operation-Grimoire/grimoire/issues/472) adds two separate
-process-death scenarios to the emulator runner. `CheckpointProcessDeathTest`
+The emulator runner covers three process-death boundaries from
+[#472](https://github.com/Operation-Grimoire/grimoire/issues/472) and
+[#474](https://github.com/Operation-Grimoire/grimoire/issues/474). `CheckpointProcessDeathTest`
 uses a fresh WAL-backed Room database for each scenario. A real
 `ReaderCheckpoints` coordinator commits a baseline position and a neighbor
 chapter position. The next capture targets a different block.
 
 | Interruption | Recovery on the same database |
 | --- | --- |
+| After viewport capture while the writer is waiting to flush | The last committed position survives. The pending scroll was held in memory. |
 | After the candidate write inside an open Room transaction | The last committed position survives. |
 | After the DAO commits while the coordinator awaits its result | The new position survives even though the caller received no acknowledgement. |
 
-The first scenario nests the production DAO call in an instrumented Room
-transaction so the test can observe the candidate row before commit. The second
-scenario uses the DAO's normal transaction. Each writes a phase marker and
+The pending-scroll case submits a new capture to the production
+`ReaderProgressWriter` with its 500 ms quiet period. The main thread checks
+the pending queue before the delayed continuation can run and records that
+the write callback has not started. This tests the in-memory loss window
+without relying on timing an emulator swipe. The before-commit case nests the
+production DAO call in an instrumented Room transaction so the test can
+observe the candidate row before commit. The before-acknowledgement case uses
+the DAO's normal transaction. Each writes a phase marker and
 sends SIGKILL to its own instrumentation process. The runner requires the
 expected exit, confirms the process is gone, then runs successful assertions
 under a different PID. A fixture ID and source SHA bind both phase markers to
@@ -96,12 +103,12 @@ the same case. The new process verifies SQLite integrity, the exact target
 restore point, the neighbor checkpoint, saved bodies, legacy progress and
 completion fields, and opened-history rows.
 
-The host archives both interruptions and both clean reopenings as separate
-instrumentation logs and phase markers. Their two outcomes also appear in JUnit
-and the main report. These tests establish the commit boundary for process
-death. They leave the timing of pending scroll samples and debounce, signed
-reader UI behavior during commit, physical-device behavior, and competing
-writers to the remaining acceptance in [#435](https://github.com/Operation-Grimoire/grimoire/issues/435).
+The host archives each interruption and clean reopening as separate
+instrumentation logs and phase markers. The three outcomes appear in JUnit
+and the main report. A captured position can be lost until it commits.
+Explicit Back waits for a flush, while a forced exit can bypass lifecycle
+flushes. Signed reader UI behavior under interruption, physical-device tests,
+and competing writers remain in [#435](https://github.com/Operation-Grimoire/grimoire/issues/435).
 
 ## Running and extending the suite
 
