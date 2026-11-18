@@ -41,7 +41,7 @@ class IntegrationResultTest(unittest.TestCase):
 
     def test_app_and_test_helper_crashes_fail_even_after_successful_statuses(self):
         self.assertEqual(sorted(runner.TESTS), runner.parse_instrumentation(events()))
-        for package in (runner.PACKAGE, runner.PACKAGE + ".test"):
+        for package in (runner.PACKAGE, runner.PACKAGE + ".test", runner.PACKAGE + ":checkpoint_fixture"):
             with self.assertRaises(ValueError):
                 runner.validate_app_logcat(f"E AndroidRuntime: Process: {package}, PID: 123\njava.lang.NoClassDefFoundError: ActivityInvoker")
         runner.validate_app_logcat("E AndroidRuntime: Process: com.example.system, PID: 123")
@@ -85,6 +85,7 @@ class IntegrationResultTest(unittest.TestCase):
                     with (patch.dict(os.environ, {"INTEGRATION_SOURCE_SHA": "a" * 40}),
                           patch.object(runner.subprocess, "run", side_effect=command),
                           patch.object(runner, "run_checkpoint_interruptions", return_value={}),
+                          patch.object(runner, "run_checkpoint_competition", return_value={}),
                           contextlib.redirect_stdout(io.StringIO())):
                         self.assertEqual(1, runner.main())
                     report = json.loads((root / "report.json").read_text(encoding="utf-8"))
@@ -180,6 +181,33 @@ class IntegrationResultTest(unittest.TestCase):
                     self.assertEqual(["during-debounce", "before-commit", "before-ack"], list(result))
                     self.assertEqual([1, 1, 3], [case["reopened"]["ordinal"] for case in result.values()])
                     self.assertEqual(6, len(list(root.glob("*.json"))))
+
+    def test_competing_checkpoint_proof_requires_distinct_pids_and_exact_outcome(self):
+        sha = "a" * 40
+        for fault in (None, {"remotePid": 123}, {"winnerSequence": 2}, {"rejection": "CONFLICT"}, {"fixture": "stale"}):
+            fixture = None
+
+            def adb(*args, **kwargs):
+                nonlocal fixture
+                if "instrument" in args:
+                    fixture = args[args.index("checkpointCrashFixture") + 1]
+                    return events(runner.CHECKPOINT_CLASS, (runner.COMPETE,))
+                if args[-1].endswith("-competition.json"):
+                    marker = {"sourceSha": sha, "boundary": "competing-writer", "fixture": fixture,
+                              "pid": 123, "remotePid": 456, "oldOrdinal": 3, "winnerOrdinal": 1, "neighborOrdinal": 2,
+                              "winnerSequence": 1, "staleSequence": 2, "rejection": "STALE"}
+                    return json.dumps(marker | (fault or {}))
+                return ""
+
+            with tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                if fault is None:
+                    result = runner.run_checkpoint_competition(adb, root, sha)
+                    self.assertEqual(456, result["remotePid"])
+                    self.assertEqual("STALE", result["rejection"])
+                else:
+                    with self.assertRaises(ValueError):
+                        runner.run_checkpoint_competition(adb, root, sha)
 
 
 if __name__ == "__main__":

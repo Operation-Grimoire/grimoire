@@ -20,10 +20,10 @@ import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.app.data.local.entity.NovelEntity
 import io.grimoire.app.data.local.entity.ReadingHistoryEntity
 import io.grimoire.app.data.local.entity.encodeChapterContent
+import io.grimoire.app.testing.CheckpointWriterProvider
 import io.grimoire.app.ui.screen.reader.ReaderPosition
 import io.grimoire.app.ui.screen.reader.ReaderProgressWriter
 import io.grimoire.reading.ChapterKey
-import io.grimoire.reading.NovelKey
 import io.grimoire.reading.anchor.AnchorPosition
 import io.grimoire.reading.anchor.ProjectedPage
 import io.grimoire.reading.anchor.ReaderCheckpointLoad
@@ -32,6 +32,7 @@ import io.grimoire.reading.anchor.ReaderViewport
 import io.grimoire.reading.anchor.ReadingProjection
 import io.grimoire.reading.storage.CheckpointCommand
 import io.grimoire.reading.storage.CheckpointCommit
+import io.grimoire.reading.storage.CheckpointRejection
 import io.grimoire.reading.storage.ReadingCheckpointDao
 import io.grimoire.reading.storage.decodeReadingCheckpoint
 import kotlinx.coroutines.Dispatchers
@@ -50,8 +51,9 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 class CheckpointProcessDeathTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val novel = NovelKey(17, "/checkpoint-fixture")
-    private val target = ChapterKey(novel, "/target")
+    private val target = CheckpointWriterProvider.target
+    private val novel = target.novel
+    private val novelMetadata = NovelEntity(id = 1, sourceId = novel.sourceId, url = novel.url, title = "Fixture")
     private val neighbor = ChapterKey(novel, "/neighbor")
     private val targetMetadata = ChapterEntity(
         id = 1, novelId = 1, url = target.url, name = "Target",
@@ -73,13 +75,13 @@ class CheckpointProcessDeathTest {
         check(args.getString("integrationFixtures") == "true")
         assertEquals(BuildConfig.GIT_SHA, args.getString("integrationSourceSha"))
         boundary = requireNotNull(args.getString("checkpointCrashBoundary"))
-        require(boundary in setOf("during-debounce", "before-commit", "before-ack"))
+        require(boundary in setOf("during-debounce", "before-commit", "before-ack", "competing-writer"))
         fixture = requireNotNull(args.getString("checkpointCrashFixture"))
         require(fixture.matches(Regex("[a-f0-9]{32}")))
     }
 
     private fun marker(stage: String) = AtomicFile(File(context.filesDir, "checkpoint-$fixture-$stage.json"))
-    private fun database() = Room.databaseBuilder(context, AppDatabase::class.java, "checkpoint-$fixture.db")
+    private fun database(name: String = "checkpoint-$fixture.db") = Room.databaseBuilder(context, AppDatabase::class.java, name)
         .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
         .addCallback(DOWNLOAD_SCHEMA_CALLBACK)
         .build()
@@ -89,13 +91,14 @@ class CheckpointProcessDeathTest {
     )
 
     private suspend fun seed(db: AppDatabase) {
-        db.novelDao().upsert(NovelEntity(id = 1, sourceId = novel.sourceId, url = novel.url, title = "Fixture"))
+        db.novelDao().upsert(novelMetadata)
         db.chapterDao().insertAll(listOf(targetMetadata, neighborMetadata))
         for (id in listOf(1L, 2L)) db.chapterDao().upsertContent(ChapterContentEntity(id, content))
         db.readingHistoryDao().upsert(history)
     }
 
     @Test fun interruptCheckpointSave() = runBlocking<Unit> {
+        check(boundary != "competing-writer")
         check(!context.getDatabasePath("checkpoint-$fixture.db").exists())
         val db = database()
         try {
@@ -164,6 +167,7 @@ class CheckpointProcessDeathTest {
     }
 
     @Test fun verifyCheckpointAfterRestart() = runBlocking<Unit> {
+        check(boundary != "competing-writer")
         val oldPid = JSONObject(marker("boundary").readFully().decodeToString()).getInt("pid")
         assertNotEquals(oldPid, Process.myPid())
         assertTrue(context.getDatabasePath("checkpoint-$fixture.db").isFile)
@@ -188,12 +192,80 @@ class CheckpointProcessDeathTest {
             checkpoints.flush()
             assertEquals(projection(target).capture(expected), dao.read(target))
             assertEquals(projection(neighbor).capture(2), dao.read(neighbor))
-            assertEquals(targetMetadata, db.chapterDao().getByUrl(1, target.url))
-            assertEquals(neighborMetadata, db.chapterDao().getByUrl(1, neighbor.url))
-            for (id in listOf(1L, 2L)) assertEquals(content, db.chapterDao().getContent(id))
-            assertEquals(listOf(history), db.readingHistoryDao().getAll().first())
+            assertOriginalLibrary(db)
             writeEvidence("reopened", JSONObject().put("oldPid", oldPid).put("ordinal", expected).put("neighborOrdinal", 2))
         } finally { db.close() }
+    }
+
+    @Test fun competingProcessCannotReplaceNewerCheckpoint() = runBlocking<Unit> {
+        check(boundary == "competing-writer")
+        val name = CheckpointWriterProvider.databaseName(fixture)
+        check(!context.getDatabasePath(name).exists())
+        val db = database(name)
+        try {
+            seed(db)
+            val saved = RoomSavedChapterDao(db)
+            val dao = RoomReadingCheckpointDao(db, saved)
+            suspend fun save(key: ChapterKey, ordinal: Int): CheckpointCommand {
+                val projection = projection(key)
+                val session = requireNotNull(dao.register(requireNotNull(saved.readObserved(key).observation),
+                    requireNotNull(projection.document)))
+                val command = CheckpointCommand(session, 1, requireNotNull(projection.capture(ordinal)))
+                assertEquals(CheckpointCommit.Committed(command.anchor, 1, false), dao.commit(command))
+                return command
+            }
+
+            val neighborCommand = save(neighbor, 2)
+            val original = save(target, 3)
+            val stale = original.copy(sequence = 2, anchor = requireNotNull(projection(target).capture(2)))
+            val client = requireNotNull(context.contentResolver.acquireContentProviderClient(context.packageName + ".checkpoint-fixture"))
+            client.use {
+                // The stable client and the provider's open Room instance keep both processes live.
+                try {
+                    val replaced = requireNotNull(client.call("advance", fixture, null))
+                    val remotePid = replaced.getInt("pid")
+                    assertTrue(remotePid > 0)
+                    assertNotEquals(Process.myPid(), remotePid)
+                    assertEquals(3, replaced.getInt("previousOrdinal"))
+                    val checkpoint = requireNotNull(replaced.getString("checkpoint"))
+                    val winner = decodeReadingCheckpoint(checkpoint)
+                    val anchor = requireNotNull(winner.anchor)
+                    assertNotEquals(original.session.binding.id, winner.binding.id)
+                    assertNotEquals(original.session.observation.scope, winner.binding.observation.scope)
+                    assertEquals(1L, winner.sequence)
+                    assertEquals(projection(target).capture(1), anchor)
+                    assertTrue(saved.isObservationCurrent(original.session.observation))
+                    assertEquals(CheckpointCommit.NotApplied(CheckpointRejection.STALE), dao.commit(stale))
+                    assertEquals(anchor, dao.read(target))
+                    assertEquals(checkpoint, db.readingCheckpointStateDao().find(1)?.state)
+                    assertEquals(CheckpointCommit.Committed(neighborCommand.anchor, 1, true), dao.commit(neighborCommand))
+                    val neighborAnchor = requireNotNull(dao.read(neighbor))
+                    assertEquals(neighborCommand.anchor, neighborAnchor)
+                    assertOriginalLibrary(db)
+
+                    val remoteRead = requireNotNull(client.call("read", fixture, null))
+                    assertEquals(remotePid, remoteRead.getInt("pid"))
+                    assertEquals(checkpoint, remoteRead.getString("checkpoint"))
+                    writeEvidence("competition", JSONObject().put("remotePid", remotePid)
+                        .put("oldOrdinal", replaced.getInt("previousOrdinal"))
+                        .put("winnerOrdinal", (anchor.position as AnchorPosition.Block).ordinal)
+                        .put("neighborOrdinal", (neighborAnchor.position as AnchorPosition.Block).ordinal)
+                        .put("winnerSequence", winner.sequence).put("staleSequence", stale.sequence)
+                        .put("rejection", CheckpointRejection.STALE.name))
+                } finally { client.call("close", fixture, null) }
+            }
+        } finally {
+            db.close()
+            context.deleteDatabase(name)
+        }
+    }
+
+    private suspend fun assertOriginalLibrary(db: AppDatabase) {
+        assertEquals(novelMetadata, db.novelDao().getById(1))
+        assertEquals(targetMetadata, db.chapterDao().getByUrl(1, target.url))
+        assertEquals(neighborMetadata, db.chapterDao().getByUrl(1, neighbor.url))
+        for (id in listOf(1L, 2L)) assertEquals(content, db.chapterDao().getContent(id))
+        assertEquals(listOf(history), db.readingHistoryDao().getAll().first())
     }
 
     private fun writeEvidence(stage: String, details: JSONObject) {
