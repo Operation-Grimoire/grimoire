@@ -127,8 +127,10 @@ class ExtensionManager(
         Files.list(staging).use { files -> files.forEach(Files::deleteIfExists) }
         library.extensionWrite { db ->
             builtins.forEach { trust ->
+                // A rotated key discards the catalog the old key signed; installs wait for an index verified with the new key.
                 db.execute("""INSERT INTO extension_repositories(repository,index_url,public_key,builtin) VALUES(?,?,?,1)
-                    ON CONFLICT(repository) DO UPDATE SET index_url=excluded.index_url, public_key=excluded.public_key, builtin=1""",
+                    ON CONFLICT(repository) DO UPDATE SET index_url=excluded.index_url, public_key=excluded.public_key, builtin=1,
+                    catalog=CASE WHEN extension_repositories.public_key=excluded.public_key THEN extension_repositories.catalog ELSE NULL END""",
                     trust.repository, trust.indexUrl, trust.publicKey)
             }
             // A built-in repository dropped by a Desktop update is revoked, not kept as user-trusted.
@@ -284,9 +286,10 @@ class ExtensionManager(
             val offered = catalog?.extensions?.firstOrNull { it.pkg == record.pkg }
             val current = record.current
             val status = when {
-                record.pkg in failures -> ExtensionStatus.UNAVAILABLE
+                // A newer release may fix a load failure, so it stays installable; the reason is still shown.
                 offered != null && offered.versionCode > current.metadata.versionCode &&
                     catalog.compatibilityProblem(offered, hostApi) == null -> ExtensionStatus.UPDATE
+                record.pkg in failures -> ExtensionStatus.UNAVAILABLE
                 else -> ExtensionStatus.INSTALLED
             }
             rows += ExtensionRow(record.pkg, current.name, current.lang, record.repository, current.metadata.versionName,

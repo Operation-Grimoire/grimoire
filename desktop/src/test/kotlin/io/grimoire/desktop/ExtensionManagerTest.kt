@@ -369,6 +369,43 @@ class ExtensionManagerTest {
         }
     }
 
+    @Test fun unavailableExtensionCanInstallAFixingUpdate() {
+        val pkg = "io.grimoire.extension.en.fixable"
+        val v1 = fixtureJar(jars, pkg = pkg, versionCode = 1)
+        val v2 = fixtureJar(jars, pkg = pkg, versionCode = 2)
+        repo.publish(fetcher, listOf(v1))
+        session { manager -> manager.refresh(); manager.install(repo.repository, pkg).close() }
+        Files.write(data.resolve("extensions/artifacts/${sha256(v1.bytes)}.jar"), byteArrayOf(1))
+        repo.sequence = 2
+        repo.publish(fetcher, listOf(v2))
+        session { manager ->
+            val failures = manager.loadAll().second
+            manager.refresh()
+            val row = manager.rows(failures).single { it.pkg == pkg }
+            assertEquals(ExtensionStatus.UPDATE, row.status)
+            assertEquals("Extension file changed on disk", row.reason)
+            manager.install(repo.repository, pkg).use { assertEquals(v2.versionName, it.versionName) }
+        }
+    }
+
+    @Test fun rotatedOfficialKeyDiscardsTheCatalogSignedByTheOldKey() {
+        val v1 = fixtureJar(jars, pkg = "io.grimoire.extension.en.rotated")
+        repo.publish(fetcher, listOf(v1))
+        session { manager -> manager.refresh() }
+        val rotated = TestRepository(repository = repo.repository, indexUrl = repo.indexUrl)
+        LocalLibrary(data).use { library ->
+            val manager = ExtensionManager(library, host, fetcher, listOf(rotated.trust))
+            assertFalse(manager.repositoryViews().single().refreshed)
+            assertThrowsMessage("Refresh ${repo.repository} before installing") { manager.install(repo.repository, v1.pkg) }
+            // The old key's index no longer verifies; only an index signed by the new key is accepted.
+            assertTrue(manager.refresh().single().contains("signature does not match"))
+            rotated.sequence = 2
+            rotated.publish(fetcher, listOf(v1))
+            assertEquals(emptyList<String>(), manager.refresh())
+            manager.install(repo.repository, v1.pkg).close()
+        }
+    }
+
     @Test fun sql4StoreUpgradesAtomicallyAndKeepsItsLibrary() {
         LocalLibrary(data).use { it.seed() }
         mutateDatabase(data, "DROP TABLE extension_repositories")
