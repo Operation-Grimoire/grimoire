@@ -11,8 +11,13 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -22,6 +27,8 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -59,6 +66,13 @@ fun main(args: Array<String>) {
         Window(
             title = "Grimoire",
             state = rememberWindowState(width = 1150.dp, height = 820.dp),
+            onKeyEvent = { event ->
+                val current = model.state.value
+                val back = event.key == Key.Escape && event.type == KeyEventType.KeyUp &&
+                    current.view.isBookView && !current.busy && !closing
+                if (back) model.back()
+                back
+            },
             onCloseRequest = {
                 if (!closing) {
                     closing = true
@@ -92,63 +106,142 @@ private fun chooseManifest(parent: Frame): Path? = FileDialog(parent, "Open loca
 fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, openExtension: () -> Unit) {
     val state by model.state.collectAsState()
     val enabled = !state.busy && !closing
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Grimoire", style = MaterialTheme.typography.headlineSmall)
-            TextButton(onClick = model::showLibrary, enabled = enabled) { Text("Library") }
-            TextButton(onClick = model::browse, enabled = enabled && !state.offline && state.sourceName != null) { Text("Browse") }
-            TextButton(onClick = model::showHistory, enabled = enabled) { Text("History") }
+    val section = if (state.view.isBookView) state.bookOrigin else state.view
+    Row(Modifier.fillMaxSize()) {
+        DesktopNavigation(section, enabled, model)
+        VerticalDivider()
+        Column(Modifier.weight(1f).fillMaxHeight().padding(horizontal = 24.dp, vertical = 16.dp)) {
+            if (state.view != View.SETTINGS) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    if (state.view.isBookView) TextButton(onClick = model::back, enabled = enabled) { Text("Back") }
+                    Spacer(Modifier.weight(1f))
+                    OfflineToggle(state.offline, enabled, model::offline)
+                }
+            }
+            if (state.busy || closing) LinearProgressIndicator(Modifier.fillMaxWidth())
+            (closeError ?: state.error)?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 12.dp))
+            }
+            when (state.view) {
+                View.LIBRARY -> LibraryPane(state, enabled, model, Modifier.weight(1f))
+                View.HISTORY -> HistoryPane(state, enabled, model, Modifier.weight(1f))
+                View.BROWSE -> BrowsePane(state, enabled, model, Modifier.weight(1f))
+                View.EXTENSIONS -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Extensions", style = MaterialTheme.typography.headlineSmall)
+                    Text(state.sourceName ?: "No extension open")
+                    OutlinedButton(onClick = openExtension, enabled = enabled) { Text("Open local extension") }
+                }
+                View.SETTINGS -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Settings", style = MaterialTheme.typography.headlineSmall)
+                    OfflineToggle(state.offline, enabled, model::offline)
+                    Text("Offline mode disables source requests. Saved chapters stay available.")
+                }
+                View.BOOK, View.READER -> BookPane(state, enabled, model, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+private val View.isBookView: Boolean get() = this == View.BOOK || this == View.READER
+
+@Composable
+private fun DesktopNavigation(section: View, enabled: Boolean, model: ReaderModel) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.width(168.dp).fillMaxHeight()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Grimoire", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(12.dp))
+            SectionButton("Library", section == View.LIBRARY, enabled, model::showLibrary)
+            SectionButton("Browse", section == View.BROWSE, enabled, model::showBrowse)
+            SectionButton("History", section == View.HISTORY, enabled, model::showHistory)
             Spacer(Modifier.weight(1f))
-            Row(Modifier.toggleable(value = state.offline, enabled = enabled, role = Role.Checkbox, onValueChange = model::offline)) {
-                Checkbox(checked = state.offline, onCheckedChange = null, enabled = enabled)
-                Text("Offline", modifier = Modifier.padding(top = 12.dp))
+            SectionButton("Extensions", section == View.EXTENSIONS, enabled, model::showExtensions)
+            SectionButton("Settings", section == View.SETTINGS, enabled, model::showSettings)
+        }
+    }
+}
+
+@Composable
+private fun SectionButton(label: String, active: Boolean, enabled: Boolean, navigate: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    TextButton(
+        onClick = navigate,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth().semantics { selected = active },
+        colors = if (active) ButtonDefaults.textButtonColors(
+            containerColor = colors.secondaryContainer, contentColor = colors.onSecondaryContainer,
+        ) else ButtonDefaults.textButtonColors(contentColor = colors.onSurfaceVariant),
+    ) {
+        Text(label, Modifier.fillMaxWidth())
+    }
+}
+
+@Composable
+private fun OfflineToggle(offline: Boolean, enabled: Boolean, change: (Boolean) -> Unit) {
+    Row(
+        Modifier.toggleable(value = offline, enabled = enabled, role = Role.Checkbox, onValueChange = change),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = offline, onCheckedChange = null, enabled = enabled, modifier = Modifier.padding(end = 8.dp))
+        Text("Offline")
+    }
+}
+
+@Composable
+private fun BrowsePane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier) {
+    LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { Text(state.sourceName ?: "Browse sources", style = MaterialTheme.typography.headlineSmall) }
+        when {
+            state.sourceName == null -> item {
+                Text("Open an extension to browse its catalog.")
+                TextButton(onClick = model::showExtensions, enabled = enabled) { Text("Manage extensions") }
             }
-            TextButton(onClick = openExtension, enabled = enabled) { Text("Open extension") }
+            state.offline -> item { Text("Go online to browse this source.") }
+            state.novels.isEmpty() && enabled -> item {
+                OutlinedButton(onClick = model::browse) { Text("Load popular titles") }
+            }
         }
-        Text(state.sourceName ?: "No extension open", style = MaterialTheme.typography.labelLarge)
-        Spacer(Modifier.height(12.dp))
-        if (state.busy || closing) LinearProgressIndicator(Modifier.fillMaxWidth())
-        (closeError ?: state.error)?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 12.dp))
-        }
-        when (state.view) {
-            View.LIBRARY -> LibraryPane(state, enabled, model, Modifier.weight(1f))
-            View.HISTORY -> HistoryPane(state, enabled, model, Modifier.weight(1f))
-            View.BROWSE -> LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                item { Text("Popular", style = MaterialTheme.typography.headlineSmall) }
-                items(state.novels, key = { it.url }) { novel ->
-                    OutlinedButton(onClick = { model.details(novel) }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-                        Text(novel.title, Modifier.fillMaxWidth().padding(10.dp))
-                    }
+        if (state.sourceName != null && !state.offline) {
+            items(state.novels, key = { it.url }) { novel ->
+                OutlinedButton(onClick = { model.details(novel) }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
+                    Text(novel.title, Modifier.fillMaxWidth().padding(10.dp))
                 }
             }
-            View.BOOK, View.READER -> state.book?.let { book ->
-                Text(book.novel.title, style = MaterialTheme.typography.headlineSmall)
-                book.novel.author?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TextButton(onClick = model::favorite, enabled = enabled) { Text(if (book.favorite) "Remove from library" else "Add to library") }
-                    if (state.view == View.READER) {
-                        TextButton(onClick = model::download, enabled = enabled) {
-                            Text(if (state.chapter?.url in book.downloaded) "Saved offline" else "Save chapter offline")
-                        }
-                    }
+        }
+    }
+}
+
+@Composable
+private fun BookPane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier) {
+    val book = state.book ?: return
+    val current = state.chapter
+    Column(modifier) {
+        Text(book.novel.title, style = MaterialTheme.typography.headlineSmall)
+        book.novel.author?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TextButton(onClick = model::favorite, enabled = enabled) {
+                Text(if (book.favorite) "Remove from library" else "Add to library")
+            }
+            if (current != null) {
+                TextButton(onClick = model::download, enabled = enabled) {
+                    Text(if (current.url in book.downloaded) "Saved offline" else "Save chapter offline")
                 }
-                HorizontalDivider()
-                Row(Modifier.weight(1f).padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    ChapterPane(book, state.chapter, enabled, state.offline, model, Modifier.width(300.dp).fillMaxHeight())
-                    if (state.view == View.READER && state.chapter != null) {
-                        key(book.key, state.chapter!!.url) { ReaderPane(state, model, Modifier.weight(1f)) }
-                    } else {
-                        val description = remember(book.novel.description) { org.jsoup.Jsoup.parse(book.novel.description.orEmpty()).text() }
-                        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            item { Text("${book.chapters.size} chapters", style = MaterialTheme.typography.titleLarge) }
-                            book.resumeChapter()?.let { chapter ->
-                                item { Button(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked &&
-                                    (!state.offline || chapter.url in book.downloaded)) { Text("Continue reading") } }
-                            }
-                            item { Text(description, style = MaterialTheme.typography.bodyLarge) }
+            }
+        }
+        HorizontalDivider()
+        Row(Modifier.weight(1f).padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            ChapterPane(book, current, enabled, state.offline, model, Modifier.width(240.dp).fillMaxHeight())
+            if (current != null) {
+                key(book.key, current.url) { ReaderPane(state, model, Modifier.weight(1f)) }
+            } else {
+                val description = remember(book.novel.description) { org.jsoup.Jsoup.parse(book.novel.description.orEmpty()).text() }
+                LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    item { Text("${book.chapters.size} chapters", style = MaterialTheme.typography.titleLarge) }
+                    book.resumeChapter()?.let { chapter ->
+                        item {
+                            Button(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked &&
+                                (!state.offline || chapter.url in book.downloaded)) { Text("Continue reading") }
                         }
                     }
+                    item { Text(description, style = MaterialTheme.typography.bodyLarge) }
                 }
             }
         }
@@ -160,7 +253,7 @@ private fun LibraryPane(state: ReaderState, enabled: Boolean, model: ReaderModel
     LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("Library", style = MaterialTheme.typography.headlineSmall) }
         if (state.library.isEmpty()) item {
-            Text("Open a local extension to browse, then add a novel to your library. Saved chapters are available offline.")
+            Text("Books you add from Browse appear here.")
         }
         items(state.library, key = { it.key }) { book ->
             OutlinedButton(onClick = { model.openSaved(book) }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {

@@ -23,8 +23,9 @@ bash ./gradlew :reading-core:test :desktop:test
 bash ./gradlew :desktop:run
 ```
 
-On Windows, use `./gradlew.bat` instead of `bash ./gradlew`. The window opens your
-local library. Choose **Open extension** to select a local manifest, then **Browse**.
+On Windows, use `./gradlew.bat` instead of `bash ./gradlew`. The window opens in
+**Library**. From the sidebar, choose **Extensions**, then **Open local extension**
+to select a trusted local manifest. Choose **Browse** to open its catalog.
 Open a novel, add it to the library, and choose an unlocked chapter. **Save chapter
 offline** stores its text and adds the novel to the library. Scroll position is
 saved automatically and flushed on navigation and normal shutdown.

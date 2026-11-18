@@ -78,7 +78,7 @@ class RoyalRoadUiTest {
             model = desktopReaderModel(LocalLibrary(data), "1.5.0", allowed)
             model.offline(true)
             compose.runOnIdle { active.value = model }
-            compose.onNodeWithText("No extension open").assertIsDisplayed()
+            assertNull(model.state.value.sourceName)
             compose.onNodeWithText(novel.title).performClick()
             settled(model)
             compose.onNodeWithText("Continue reading").performClick()
