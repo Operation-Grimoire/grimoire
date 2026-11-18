@@ -64,7 +64,8 @@ key of the official repository.
 A trusted repository is the tuple *(index URL, repository identifier, Ed25519 public key)*.
 
 - **Official repository.** Desktop ships it enrolled and enabled, with a pinned
-  key. A key rotation or revocation ships as a Desktop update.
+  key. It can be disabled but not removed. A key rotation or revocation ships as
+  a Desktop update.
 - **Other repositories.** The user enters the index URL and the repository's
   public key, obtained from the publisher. Desktop downloads the index, verifies
   the signature with that key, then shows the repository identifier, key
@@ -108,25 +109,24 @@ Package rules:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Downloading: user installs or updates
-    Downloading --> Staged: size and SHA-256 match the index
-    Downloading --> Failed: network, size or digest error
-    Staged --> Verified: manifest equals the index entry, API supported,\nnamespace and Class-Path checks pass
-    Staged --> Failed: metadata mismatch
+    [*] --> Downloaded: user installs or updates
+    Downloaded --> Verified: size and SHA-256 match the index, manifest equals\nthe entry, API supported, namespace and Class-Path checks pass
+    Downloaded --> Failed: network, size, digest or metadata error
     Verified --> Committed: atomic move into the artifact store,\nthen one database transaction
     Committed --> Active: class load and SourceInfo identity check
     Committed --> RolledBack: load fails
     RolledBack --> Active: previous artifact restored (update)
     RolledBack --> [*]: record removed (fresh install)
-    Failed --> [*]: staging file deleted
+    Failed --> [*]: nothing written
 ```
 
-1. **Download** into `extensions/staging/` with a streaming SHA-256 and a hard
-   size limit. No class from the file is loaded.
+1. **Download** into memory with a hard size limit (20 MiB). Nothing is written
+   and no class is loaded.
 2. **Verify** the bytes against the index entry and the existing loader checks:
    format, package namespace, entry point, versions, `Grimoire-Core-Api`,
    host libraries, duplicate entries and external `Class-Path`.
-3. **Commit.** Move the file atomically to `extensions/artifacts/<sha256>.jar`.
+3. **Commit.** Write the bytes to `extensions/staging/`, flush them, and move
+   them atomically to `extensions/artifacts/<sha256>.jar`.
    In one SQLite transaction, record the package, repository, versions, digest,
    library digest and the previous digest for an update.
 4. **Activate.** Load a verified snapshot in a new class loader. If the source
@@ -148,7 +148,7 @@ stops listing the source immediately.
 
 At startup Desktop:
 
-1. Deletes everything in `extensions/staging/`. Interrupted downloads never resume.
+1. Deletes everything in `extensions/staging/`. Interrupted writes never resume.
 2. For each installed record, re-hashes the artifact and re-runs the metadata
    and API checks before loading. A missing or changed file, an unsupported API
    after a Desktop update, or a revoked repository marks the extension
@@ -160,7 +160,7 @@ index refreshes, installs and updates need the network. Offline mode blocks them
 
 | Interruption point | State after restart |
 | --- | --- |
-| During download | Staging file deleted. Nothing installed or changed. |
+| During download | Nothing was written. Nothing installed or changed. |
 | After move, before commit | Unreferenced artifact collected. Previous version active. |
 | After commit, before activation | New version loads at startup, with all checks. |
 | Activation failed | Previous version (update) or no record (install). Reason shown. |
@@ -171,10 +171,10 @@ SQL5 adds two tables. SQL4 data is not rewritten. Older builds refuse SQL5, as
 with earlier upgrades.
 
 - `extension_repositories(repository PK, index_url, public_key, sequence,
-  index_sha256, catalog, enabled, builtin)`
-- `installed_extensions(pkg PK, repository, version_code, version_name,
-  source_version_code, core_api, source_class, sha256, previous_sha256,
-  library_coordinate, library_sha256, installed_at)`
+  index_sha256, catalog, enabled, builtin)`. `catalog` holds the accepted index bytes.
+- `installed_extensions(pkg PK, repository, metadata, sha256, previous,
+  library_coordinate, library_sha256, installed_at)`. `metadata` and `previous`
+  are JSON records of the active and previous artifact.
 
 ## Local manifests
 
