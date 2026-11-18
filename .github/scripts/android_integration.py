@@ -28,7 +28,11 @@ PACKAGE = "io.grimoire.app"
 CHECKPOINT_CLASS = "io.grimoire.app.integration.CheckpointProcessDeathTest"
 INTERRUPT = "interruptCheckpointSave"
 REOPEN = "verifyCheckpointAfterRestart"
-CHECKPOINT_BOUNDARIES = {"before-commit": ("uncommitted", 1), "before-ack": ("committed", 3)}
+CHECKPOINT_BOUNDARIES = {
+    "during-debounce": ("pending", 1),
+    "before-commit": ("uncommitted", 1),
+    "before-ack": ("committed", 3),
+}
 
 
 def validate_app_logcat(output):
@@ -118,6 +122,8 @@ def run_checkpoint_interruptions(adb, root, sha):
         interrupted = json.loads(adb("shell", "run-as", PACKAGE, "cat", f"files/checkpoint-{fixture}-boundary.json"))
         (root / f"checkpoint-{boundary}-boundary.json").write_text(json.dumps(interrupted, indent=2), encoding="utf-8")
         validate_checkpoint_evidence(interrupted, sha, boundary, fixture, stage=stage)
+        if boundary == "during-debounce" and (interrupted.get("pendingOrdinal") != 3 or interrupted.get("writeStarted") is not False):
+            raise ValueError("Expected block 3 pending before the checkpoint writer started")
         parse_instrumentation(instrument(REOPEN, boundary, fixture, "verified", True), CHECKPOINT_CLASS, (REOPEN,))
         reopened = json.loads(adb("shell", "run-as", PACKAGE, "cat", f"files/checkpoint-{fixture}-reopened.json"))
         (root / f"checkpoint-{boundary}-reopened.json").write_text(json.dumps(reopened, indent=2), encoding="utf-8")

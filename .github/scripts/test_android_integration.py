@@ -135,7 +135,16 @@ class IntegrationResultTest(unittest.TestCase):
 
     def test_checkpoint_readback_checks_both_expected_positions_and_new_pids(self):
         sha = "a" * 40
-        for fault in (None, {"pid": 123}, {"ordinal": 3}, {"fixture": "stale"}, {"sourceSha": "wrong"}):
+        faults = (
+            (None, {}),
+            ("reopened", {"pid": 123}),
+            ("reopened", {"ordinal": 3}),
+            ("reopened", {"fixture": "stale"}),
+            ("reopened", {"sourceSha": "wrong"}),
+            ("boundary", {"pendingOrdinal": 1}),
+            ("boundary", {"writeStarted": True}),
+        )
+        for phase, fault in faults:
             boundary = fixture = None
 
             def adb(*args, **kwargs):
@@ -148,26 +157,29 @@ class IntegrationResultTest(unittest.TestCase):
                     return events(runner.CHECKPOINT_CLASS, (runner.REOPEN,))
                 if args[-1].endswith("-boundary.json"):
                     stage = runner.CHECKPOINT_BOUNDARIES[boundary][0]
-                    return json.dumps({"pid": 123, "sourceSha": sha, "boundary": boundary, "fixture": fixture, "stage": stage})
+                    marker = {"pid": 123, "sourceSha": sha, "boundary": boundary, "fixture": fixture, "stage": stage}
+                    if boundary == "during-debounce":
+                        marker.update(pendingOrdinal=3, writeStarted=False)
+                    return json.dumps(marker | (fault if phase == "boundary" else {}))
                 if args[-1].endswith("-reopened.json"):
                     ordinal = runner.CHECKPOINT_BOUNDARIES[boundary][1]
                     marker = {"pid": 456, "sourceSha": sha, "boundary": boundary, "fixture": fixture,
                               "ordinal": ordinal, "neighborOrdinal": 2, "oldPid": 123}
-                    return json.dumps(marker | (fault or {}))
+                    return json.dumps(marker | (fault if phase == "reopened" else {}))
                 if "pidof" in args[-1]:
                     return "stopped"
                 return ""
 
             with tempfile.TemporaryDirectory() as folder:
                 root = Path(folder)
-                if fault is not None:
+                if phase is not None:
                     with self.assertRaises(ValueError):
                         runner.run_checkpoint_interruptions(adb, root, sha)
                 else:
                     result = runner.run_checkpoint_interruptions(adb, root, sha)
-                    self.assertEqual(["before-commit", "before-ack"], list(result))
-                    self.assertEqual([1, 3], [case["reopened"]["ordinal"] for case in result.values()])
-                    self.assertEqual(4, len(list(root.glob("*.json"))))
+                    self.assertEqual(["during-debounce", "before-commit", "before-ack"], list(result))
+                    self.assertEqual([1, 1, 3], [case["reopened"]["ordinal"] for case in result.values()])
+                    self.assertEqual(6, len(list(root.glob("*.json"))))
 
 
 if __name__ == "__main__":
