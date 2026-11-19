@@ -27,18 +27,27 @@ import kotlin.system.exitProcess
 fun main(args: Array<String>) {
     val phase = args.getOrNull(0) ?: "session"
     val directory = Path.of(args.getOrNull(1) ?: "build/browser-check").toAbsolutePath()
+    // A native hang never reaches the catch below; dump where it is stuck, then fail.
+    Thread({
+        Thread.sleep(150_000)
+        System.err.println("WATCHDOG: phase $phase still running after 150 s; CEF state ${org.cef.CefApp.getState()}")
+        dumpThreads()
+        Runtime.getRuntime().halt(2)
+    }, "browser-check-watchdog").apply { isDaemon = true }.start()
     try {
         runPhase(phase, directory)
         println("PASS: desktop browser $phase")
         exitProcess(0)
     } catch (failure: Throwable) {
         failure.printStackTrace()
-        Thread.getAllStackTraces().forEach { (thread, stack) ->
-            System.err.println("Thread ${thread.name}: ${thread.state}")
-            stack.forEach { System.err.println("  at $it") }
-        }
+        dumpThreads()
         exitProcess(1)
     }
+}
+
+private fun dumpThreads() = Thread.getAllStackTraces().forEach { (thread, stack) ->
+    System.err.println("Thread ${thread.name}: ${thread.state}")
+    stack.forEach { System.err.println("  at $it") }
 }
 
 private fun runPhase(phase: String, directory: Path) {
