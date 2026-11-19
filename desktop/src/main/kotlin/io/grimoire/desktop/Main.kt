@@ -42,7 +42,9 @@ import io.grimoire.reading.ChapterKey
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.awt.FileDialog
 import java.awt.Frame
 import java.nio.file.Path
@@ -57,10 +59,11 @@ fun main(args: Array<String>) {
         System.getenv("APPDATA") ?: System.getProperty("user.home"), "GrimoireDesktop")
     val hostApi = HostRuntime.apiVersion
     val networkEnabled = AtomicBoolean(true)
-    SourceNetwork.install(DesktopHttpPlatform(networkEnabled))
+    val browser = DesktopBrowser(data.resolve("browser"), networkEnabled)
+    SourceNetwork.install(DesktopHttpPlatform(networkEnabled, browser))
     val library = LocalLibrary(data)
     val extensions = ExtensionManager(library, hostApi, HttpArtifactFetcher(networkEnabled), listOf(OFFICIAL_REPOSITORY))
-    val model = desktopReaderModel(library, hostApi, networkEnabled, extensions)
+    val model = desktopReaderModel(library, hostApi, networkEnabled, extensions, browser)
     options["--extension"]?.let { model.load(Paths.get(it)) }
     application {
         val scope = rememberCoroutineScope()
@@ -80,7 +83,12 @@ fun main(args: Array<String>) {
                 if (!closing) {
                     closing = true
                     scope.launch {
-                        try { model.close(); exitApplication() }
+                        try {
+                            model.close()
+                            // The library is saved; a browser engine that misses its shutdown deadline cannot block exit.
+                            if (!withContext(Dispatchers.IO) { browser.close() }) Runtime.getRuntime().halt(0)
+                            exitApplication()
+                        }
                         catch (failure: Exception) { closeError = "Could not save the library: ${failure.message}"; closing = false }
                     }
                 }

@@ -46,9 +46,11 @@ fun desktopReaderModel(
     hostApi: String,
     networkEnabled: AtomicBoolean,
     extensions: ExtensionManager? = null,
+    browser: DesktopBrowser? = null,
 ): ReaderModel =
     ReaderModel(library, hostApi, networkEnabled, ChapterLoader(SavedChapterRepository(DesktopSavedChapterDao(library))),
-        LibraryRepository(DesktopLibraryDao(library)), DownloadRepository(DesktopDownloadDao(library)), extensions = extensions)
+        LibraryRepository(DesktopLibraryDao(library)), DownloadRepository(DesktopDownloadDao(library)), extensions = extensions,
+        browser = browser)
 
 class DesktopDownloadDao(private val library: LocalLibrary) : DownloadDao {
     override suspend fun claim(key: ChapterKey): DownloadAttempt? = withContext(Dispatchers.IO) {

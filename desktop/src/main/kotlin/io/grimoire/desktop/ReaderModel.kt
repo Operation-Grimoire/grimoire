@@ -5,6 +5,7 @@ import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.api.source.Source
+import io.grimoire.api.source.feature.WebViewLoginSource
 import io.grimoire.api.source.web.ChapterListSource
 import io.grimoire.api.source.web.CursorPaginatedSource
 import io.grimoire.api.source.web.PageListSource
@@ -61,6 +62,9 @@ data class ReaderState(
     val pendingRepository: PendingRepository? = null,
     val extensionNotice: String? = null,
     val localExtension: String? = null,
+    /** Loaded packages whose source offers sign-in, and those currently signed in. */
+    val loginPackages: Set<String> = emptySet(),
+    val signedIn: Set<String> = emptySet(),
 )
 
 data class BrowseSource(val sourceId: Long, val name: String, val lang: String)
@@ -76,6 +80,7 @@ class ReaderModel(
     checkpointDao: ReadingCheckpointDao = DesktopReadingCheckpointDao(library),
     operationDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val extensions: ExtensionManager? = null,
+    private val browser: DesktopBrowser? = null,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + operationDispatcher)
     private val checkpoints = ReaderCheckpoints(checkpointDao)
@@ -137,10 +142,48 @@ class ReaderModel(
     }
 
     private fun publishExtensions(notice: String? = null) {
+        val logins = loginSources().keys
+        mutable.update { it.copy(loginPackages = logins, signedIn = it.signedIn intersect logins) }
         val manager = extensions ?: return
         val rows = manager.rows(extensionFailures)
         val repositories = manager.repositoryViews()
         mutable.update { it.copy(extensionRows = rows, repositories = repositories, extensionNotice = notice) }
+    }
+
+    private fun loginSources(): Map<String, WebViewLoginSource> =
+        if (browser == null) emptyMap()
+        else (installed.values + listOfNotNull(sessionExtension)).mapNotNull { loaded ->
+            (loaded.source as? WebViewLoginSource)?.let { loaded.packageName to it }
+        }.toMap()
+
+    /** Opens the source's sign-in page in a browser window and waits until it closes. */
+    fun signIn(pkg: String) = operate {
+        val running = browser ?: error("Sign-in is unavailable")
+        val source = loginSources()[pkg] ?: error("This source has no sign-in")
+        check(!state.value.offline) { "Go online to sign in" }
+        withContext(Dispatchers.IO) { running.signIn("Sign in to ${source.name}", source.loginUrl, source.loginSuccessUrl) }
+        updateSignIn(pkg, source)
+    }
+
+    fun signOut(pkg: String) = operate {
+        val source = loginSources()[pkg] ?: error("This source has no sign-in")
+        source.logout()
+        updateSignIn(pkg, source)
+    }
+
+    private suspend fun updateSignIn(pkg: String, source: WebViewLoginSource) {
+        val signedIn = source.isLoggedIn()
+        mutable.update { it.copy(signedIn = if (signedIn) it.signedIn + pkg else it.signedIn - pkg) }
+    }
+
+    /** Checks sign-in only when a browser profile exists; otherwise nobody is signed in and Chromium stays off. */
+    private suspend fun refreshSignIns() {
+        if (browser?.profileInUse != true) return mutable.update { it.copy(signedIn = emptySet()) }
+        for ((pkg, source) in loginSources()) {
+            try { updateSignIn(pkg, source) }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: Exception) { mutable.update { it.copy(signedIn = it.signedIn - pkg) } }
+        }
     }
 
     fun load(manifest: Path) = navigate {
@@ -306,6 +349,7 @@ class ReaderModel(
     fun showExtensions() = navigate {
         showSection(View.EXTENSIONS)
         publishExtensions()
+        refreshSignIns()
         // First visit online: fetch catalogs never downloaded. Failures stay on this screen.
         val manager = extensions
         if (manager != null && !state.value.offline && manager.repositoryViews().any { it.enabled && !it.refreshed }) {

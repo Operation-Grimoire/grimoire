@@ -36,7 +36,16 @@ internal fun ExtensionsPane(state: ReaderState, enabled: Boolean, model: ReaderM
             item { SectionHeader("Installed") }
             if (installed.isEmpty()) item { Text("No extensions installed yet. Install one from the list below.") }
             items(installed, key = { "installed:" + it.pkg }) { row ->
-                ExtensionItem(row) {
+                ExtensionItem(row, signIn = when (row.pkg) {
+                    in state.signedIn -> "Signed in"
+                    in state.loginPackages -> "Not signed in"
+                    else -> null
+                }) {
+                    if (row.pkg in state.signedIn) {
+                        TextButton(onClick = { model.signOut(row.pkg) }, enabled = enabled) { Text("Sign out") }
+                    } else if (row.pkg in state.loginPackages) {
+                        OutlinedButton(onClick = { model.signIn(row.pkg) }, enabled = enabled && online) { Text("Sign in") }
+                    }
                     if (row.status == ExtensionStatus.UPDATE) {
                         Button(onClick = { model.installExtension(row) }, enabled = enabled && online) { Text("Update") }
                     }
@@ -78,7 +87,7 @@ private fun SectionHeader(text: String) {
 }
 
 @Composable
-private fun ExtensionItem(row: ExtensionRow, actions: @Composable RowScope.() -> Unit) {
+private fun ExtensionItem(row: ExtensionRow, signIn: String? = null, actions: @Composable RowScope.() -> Unit) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -90,6 +99,7 @@ private fun ExtensionItem(row: ExtensionRow, actions: @Composable RowScope.() ->
                 }
                 Text(listOfNotNull(row.lang.uppercase(), version, row.repository).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                signIn?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 row.reason?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically, content = actions)
