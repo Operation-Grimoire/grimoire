@@ -57,10 +57,12 @@ fun main(args: Array<String>) {
         System.getenv("APPDATA") ?: System.getProperty("user.home"), "GrimoireDesktop")
     val hostApi = HostRuntime.apiVersion
     val networkEnabled = AtomicBoolean(true)
-    SourceNetwork.install(DesktopHttpPlatform(networkEnabled))
+    // Sign-in is paused on Linux until the embedded browser shuts down reliably there (#437).
+    val browser = DesktopBrowser(data.resolve("browser"), networkEnabled).takeIf { DesktopBrowser.supported }
+    SourceNetwork.install(DesktopHttpPlatform(networkEnabled, browser))
     val library = LocalLibrary(data)
     val extensions = ExtensionManager(library, hostApi, HttpArtifactFetcher(networkEnabled), listOf(OFFICIAL_REPOSITORY))
-    val model = desktopReaderModel(library, hostApi, networkEnabled, extensions)
+    val model = desktopReaderModel(library, hostApi, networkEnabled, extensions, browser)
     options["--extension"]?.let { model.load(Paths.get(it)) }
     application {
         val scope = rememberCoroutineScope()
@@ -80,7 +82,10 @@ fun main(args: Array<String>) {
                 if (!closing) {
                     closing = true
                     scope.launch {
-                        try { model.close(); exitApplication() }
+                        try {
+                            model.close()
+                            exitApplication()
+                        }
                         catch (failure: Exception) { closeError = "Could not save the library: ${failure.message}"; closing = false }
                     }
                 }

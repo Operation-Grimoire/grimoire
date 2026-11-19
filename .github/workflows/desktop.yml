@@ -77,6 +77,92 @@ jobs:
             reading-core/build/test-results/
             desktop/build/test-results/
             desktop/build/reports/tests/
+  desktop-browser:
+    # Real embedded Chromium (JCEF): sign-in, shared cookies, restart and bounded shutdown.
+    needs: impact
+    if: always() && (needs.impact.result != 'success' || needs.impact.outputs.desktop_ci == 'true')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, label: windows, args: '' }
+          - { os: macos-latest, label: macos, args: '' }
+          - { os: macos-latest, label: macos-2, args: '' }
+          - { os: macos-latest, label: macos-3, args: '' }
+    name: desktop-browser (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    env:
+      APP_VERSION_TAG: v0.0.0
+      APP_BETA_NUMBER: ${{ github.run_number }}
+      APP_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      JCEF_EXTRA_ARGS: ${{ matrix.args }}
+    steps:
+      - name: Require successful release policy
+        if: needs.impact.result != 'success'
+        shell: bash
+        run: exit 1
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+      - name: Cache the downloaded browser engine
+        uses: actions/cache@v4
+        with:
+          path: desktop/build/browser-check/browser/engine-jcef-152.0.6
+          key: jcef-152.0.6-${{ runner.os }}-${{ runner.arch }}
+      - name: Sign in, share cookies and shut down
+        timeout-minutes: 8
+        shell: bash
+        run: |
+          bash ./gradlew :desktop:browserCheck -PbrowserPhase=lease --console=plain
+          bash ./gradlew :desktop:browserCheck -PbrowserPhase=session --console=plain
+      - name: Restart with the same profile
+        timeout-minutes: 5
+        shell: bash
+        run: bash ./gradlew :desktop:browserCheck -PbrowserPhase=restart --console=plain
+      - name: Recover after terminating the browser helper
+        timeout-minutes: 5
+        shell: bash
+        run: bash ./gradlew :desktop:browserCheck -PbrowserPhase=recovery --console=plain
+      - name: No browser processes left behind (Windows)
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $left = @(Get-CimInstance Win32_Process | Where-Object {
+            $_.Name -eq 'jcef_helper.exe' -or
+              ($_.Name -eq 'java.exe' -and $_.CommandLine -like '*-Dgrimoire.browser.helper=true*')
+          })
+          Write-Host "Leftover browser processes: $($left.Count)"
+          if ($left.Count -ne 0) { exit 1 }
+      - name: No browser processes left behind (macOS)
+        if: always() && runner.os == 'macOS'
+        shell: bash
+        run: |
+          left=$(ps -axo command | grep -Eic '[j]cef|[g]rimoire\.browser\.helper=true' || true)
+          echo "Leftover browser processes: $left"
+          test "$left" -eq 0
+      - name: Print browser crash stack
+        if: failure() && runner.os == 'macOS'
+        shell: bash
+        run: |
+          for report in desktop/build/browser-check/browser/hs_err_pid*.log; do
+            if [ -f "$report" ]; then
+              awk '/^Current thread / { stack=1 } stack && /^(siginfo:|Registers:)/ { exit } stack { print }' "$report"
+            fi
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-browser-${{ matrix.label }}
+          path: desktop/build/browser-check/browser/profile/cef.log
+          if-no-files-found: ignore
   desktop:
     needs: impact
     if: always() && (needs.impact.result != 'success' || needs.impact.outputs.desktop_ci == 'true')

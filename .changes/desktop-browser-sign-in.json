@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Sign in to sources that need an account from the Extensions screen; sources share the signed-in browser's cookies."
+    }
+  ]
+}

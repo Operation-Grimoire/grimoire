@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.compose)
@@ -15,10 +17,12 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
     implementation(libs.okhttp)
+    implementation(libs.browser.sessions.jcef)
     implementation(libs.json) { version { strictly(libs.versions.json.get()) } }
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
     implementation("org.xerial:sqlite-jdbc:3.54.1.0")
     testImplementation(libs.junit)
+    testImplementation("com.squareup.okhttp3:mockwebserver:${libs.versions.okhttp.get()}")
 }
 
 abstract class DesktopTestClasspathArguments : CommandLineArgumentProvider {
@@ -164,4 +168,24 @@ tasks.register<Test>("liveSmoke") {
     systemProperty("desktop.ui.live", "true")
     systemProperty("desktop.ui.evidence", layout.buildDirectory.dir("live-evidence").get().asFile.absolutePath)
     fixtureManifest?.let { systemProperty("desktop.test.manifest", it.absolutePath) }
+}
+
+// Native embedded-browser check: real Chromium, local HTTPS fixture, one process per phase.
+val browserCheck = sourceSets.create("browserTest") {
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += output + compileClasspath
+}
+configurations[browserCheck.implementationConfigurationName].extendsFrom(configurations.implementation.get())
+dependencies {
+    add(browserCheck.implementationConfigurationName, "com.squareup.okhttp3:mockwebserver:${libs.versions.okhttp.get()}")
+    add(browserCheck.implementationConfigurationName, "com.squareup.okhttp3:okhttp-tls:${libs.versions.okhttp.get()}")
+}
+tasks.register<JavaExec>("browserCheck") {
+    description = "Sign in, share cookies with HTTP, restart and shut down real embedded Chromium"
+    group = "verification"
+    classpath = browserCheck.runtimeClasspath
+    mainClass.set("io.grimoire.desktop.BrowserHostCheckKt")
+    timeout.set(Duration.ofMinutes(6))
+    args(providers.gradleProperty("browserPhase").orElse("session").get(),
+        layout.buildDirectory.dir("browser-check").get().asFile.absolutePath)
 }
