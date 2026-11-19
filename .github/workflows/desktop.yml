@@ -84,7 +84,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - { os: windows-latest, label: windows, args: '' }
+          - { os: macos-latest, label: macos, args: '' }
+          - { os: ubuntu-latest, label: linux, args: '' }
+          - { os: ubuntu-latest, label: linux-nosandbox-nogpu, args: '--no-sandbox --disable-gpu' }
+          - { os: ubuntu-latest, label: linux-x11, args: '--no-sandbox --disable-gpu --ozone-platform=x11' }
+    name: desktop-browser (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     env:
@@ -93,6 +99,7 @@ jobs:
       APP_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       GITHUB_ACTOR: ${{ github.actor }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      JCEF_EXTRA_ARGS: ${{ matrix.args }}
     steps:
       - name: Require successful release policy
         if: needs.impact.result != 'success'
@@ -138,7 +145,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: desktop-browser-${{ matrix.os }}
+          name: desktop-browser-${{ matrix.label }}
           path: desktop/build/browser-check/browser/profile/cef.log
           if-no-files-found: ignore
   desktop:

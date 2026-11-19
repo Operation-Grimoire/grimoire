@@ -63,7 +63,9 @@ private fun runPhase(phase: String, directory: Path) {
     val spki = java.util.Base64.getEncoder().encodeToString(
         java.security.MessageDigest.getInstance("SHA-256").digest(certificate.certificate.publicKey.encoded))
     val network = AtomicBoolean(true)
-    val browser = DesktopBrowser(directory.resolve("browser"), network, listOf("--ignore-certificate-errors-spki-list=$spki"))
+    // CI can try extra engine switches per OS, e.g. JCEF_EXTRA_ARGS="--no-sandbox --disable-gpu".
+    val extra = System.getenv("JCEF_EXTRA_ARGS").orEmpty().split(' ').filter { it.isNotBlank() }
+    val browser = DesktopBrowser(directory.resolve("browser"), network, listOf("--ignore-certificate-errors-spki-list=$spki") + extra)
     val platform = DesktopHttpPlatform(network, browser)
     val userAgents = mutableListOf<String?>()
     MockWebServer().use { server ->

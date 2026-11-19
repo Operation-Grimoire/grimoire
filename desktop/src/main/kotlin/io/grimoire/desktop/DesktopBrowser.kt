@@ -59,6 +59,8 @@ class DesktopBrowser(
     private val lockFile = directory.resolve("profile.lock")
     private val lock = Any()
     private var engine: Engine? = null
+    // Native startup runs outside [lock], so close() never waits behind a stuck start.
+    private var starting: CompletableFuture<Engine>? = null
     private var profileLock: Pair<FileChannel, FileLock>? = null
     private var closed = false
 
@@ -70,9 +72,10 @@ class DesktopBrowser(
 
     private fun start(): Engine {
         check(!SwingUtilities.isEventDispatchThread()) { "The browser cannot start on the UI thread" }
-        synchronized(lock) {
+        val (pending, owner) = synchronized(lock) {
             check(!closed) { "Grimoire is closing" }
             engine?.let { return it }
+            starting?.let { return@synchronized it to false }
             if (!Files.exists(natives.resolve("install.lock")) && !networkEnabled.get()) {
                 throw IOException("Go online once to install the browser engine")
             }
@@ -86,13 +89,25 @@ class DesktopBrowser(
                 throw IOException("Another Grimoire window is using the browser profile")
             }
             profileLock = channel to held
-            return try {
-                Engine.start(profile, natives, engineArgs).also { engine = it }
+            CompletableFuture<Engine>().also { starting = it } to true
+        }
+        if (owner) {
+            try {
+                val started = Engine.start(profile, natives, engineArgs)
+                val keep = synchronized(lock) { starting = null; if (!closed) { engine = started; true } else false }
+                if (!keep) {
+                    // close() ran during startup and is waiting for this engine to end.
+                    pending.complete(started)
+                    throw IOException("Grimoire is closing")
+                }
+                pending.complete(started)
             } catch (failure: Throwable) {
-                releaseProfile()
+                synchronized(lock) { if (starting === pending) starting = null; if (!pending.isDone) releaseProfile() }
+                pending.completeExceptionally(failure)
                 throw failure
             }
         }
+        return try { pending.get() } catch (failure: java.util.concurrent.ExecutionException) { throw failure.cause ?: failure }
     }
 
     /**
@@ -110,9 +125,19 @@ class DesktopBrowser(
     /** Returns false if native shutdown missed [deadline]; the caller then ends the process. */
     fun close(deadline: Duration = Duration.ofSeconds(20)): Boolean {
         check(!SwingUtilities.isEventDispatchThread()) { "Close the browser off the UI thread" }
-        val running = synchronized(lock) { closed = true; engine.also { engine = null } }
+        val until = System.nanoTime() + deadline.toNanos()
+        val (running, pending) = synchronized(lock) { closed = true; engine.also { engine = null } to starting }
         try {
-            return running?.shutdown(deadline) ?: true
+            val engine = running ?: pending?.let { future ->
+                // Wait for a start in progress, within the same deadline.
+                try { future.get(deadline.toMillis(), TimeUnit.MILLISECONDS) }
+                catch (_: java.util.concurrent.TimeoutException) {
+                    System.getLogger("DesktopBrowser").log(System.Logger.Level.WARNING,
+                        "Browser engine was still starting at close (state ${CefApp.getState()})")
+                    return false
+                } catch (_: Exception) { null }
+            } ?: return true
+            return engine.shutdown(Duration.ofNanos((until - System.nanoTime()).coerceAtLeast(0)))
         } finally {
             synchronized(lock) { releaseProfile() }
         }
