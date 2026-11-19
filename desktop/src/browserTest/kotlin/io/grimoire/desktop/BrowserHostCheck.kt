@@ -10,8 +10,10 @@ import okhttp3.mockwebserver.RecordedRequest
 import okhttp3.tls.HandshakeCertificates
 import okhttp3.tls.HeldCertificate
 import java.net.InetAddress
+import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import java.security.KeyPair
 import java.security.KeyStore
 import java.time.Duration
@@ -37,7 +39,7 @@ fun main(args: Array<String>) {
         Runtime.getRuntime().halt(2)
     }, "browser-check-watchdog").apply { isDaemon = true }.start()
     try {
-        runPhase(phase, directory)
+        if (phase == "lease") checkUnicodeProfileLease(directory) else runPhase(phase, directory)
         println("PASS: desktop browser $phase")
         exitProcess(0)
     } catch (failure: Throwable) {
@@ -50,6 +52,22 @@ fun main(args: Array<String>) {
 private fun dumpThreads() = Thread.getAllStackTraces().forEach { (thread, stack) ->
     System.err.println("Thread ${thread.name}: ${thread.state}")
     stack.forEach { System.err.println("  at $it") }
+}
+
+private fun checkUnicodeProfileLease(directory: Path) {
+    val data = Files.createDirectories(directory.resolve("browser-\u68ee"))
+    val browser = DesktopBrowser(data, AtomicBoolean(true))
+    FileChannel.open(data.resolve("profile.lock"), StandardOpenOption.CREATE, StandardOpenOption.WRITE).use { channel ->
+        channel.lock().use {
+            val refused = try {
+                runCatching { browser.session() }.exceptionOrNull()
+            } finally {
+                check(browser.close() != BrowserShutdown.INCOMPLETE)
+            }
+            check(refused?.message == "Another Grimoire window is using the browser profile") { "Unicode profile lease: $refused" }
+            check(!browser.profileInUse) { "The refused helper created a profile" }
+        }
+    }
 }
 
 private fun runPhase(phase: String, directory: Path) {

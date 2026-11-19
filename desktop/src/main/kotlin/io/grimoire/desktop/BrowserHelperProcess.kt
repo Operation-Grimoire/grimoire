@@ -2,7 +2,7 @@ package io.grimoire.desktop
 
 import com.google.gson.JsonElement
 import java.io.DataInputStream
-import java.io.DataOutputStream
+import java.io.File
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
@@ -20,6 +20,9 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.jar.Attributes
+import java.util.jar.JarOutputStream
+import java.util.jar.Manifest
 import kotlin.concurrent.thread
 
 enum class BrowserShutdown { GRACEFUL, FORCED, INCOMPLETE }
@@ -28,7 +31,7 @@ internal class BrowserHelperProcess private constructor(
     private val process: Process,
     private val listener: ServerSocket,
     private val token: String,
-    private val argsFile: Path,
+    private val classpathJar: Path,
 ) {
     private val closing = AtomicBoolean()
     private val ready = CompletableFuture<StartedBrowser>()
@@ -101,7 +104,6 @@ internal class BrowserHelperProcess private constructor(
             disconnect(error)
         } finally {
             disconnect()
-            runCatching { Files.deleteIfExists(argsFile) }
         }
     }
 
@@ -141,6 +143,7 @@ internal class BrowserHelperProcess private constructor(
             val until = System.nanoTime() + TimeUnit.SECONDS.toNanos(3)
             while (children.any { it.isAlive } && System.nanoTime() < until) Thread.sleep(25)
         } finally {
+            runCatching { Files.deleteIfExists(classpathJar) }
             stopped.countDown()
         }
     }
@@ -174,7 +177,7 @@ internal class BrowserHelperProcess private constructor(
             Files.createDirectories(directory)
             val listener = ServerSocket()
             val token = UUID.randomUUID().toString()
-            val file = Files.createTempFile("grimoire-browser-", ".args")
+            val file = Files.createTempFile(directory, "grimoire-launch-", ".jar")
             var process: Process? = null
             try {
                 listener.bind(InetSocketAddress(browserLoopback, 0))
@@ -182,20 +185,27 @@ internal class BrowserHelperProcess private constructor(
                 val java = Path.of(System.getProperty("java.home"), "bin", javaName)
                 val opens = listOf("sun.awt", "sun.lwawt", "sun.lwawt.macosx", "java.awt.peer")
                     .map { "--add-opens=java.desktop/$it=ALL-UNNAMED" }
-                val args = opens + listOf(
-                    "-XX:ErrorFile=${directory.toAbsolutePath().resolve("hs_err_pid%p.log")}",
-                    "-cp", System.getProperty("java.class.path"), DesktopBrowserHelper::class.java.name,
-                    listener.localPort.toString(), directory.toAbsolutePath().toString(),
-                ) + engineArgs
-                // Java argument files keep the command below Windows' command-line length limit.
-                Files.writeString(file, args.joinToString("\n") {
-                    "\"" + it.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
-                })
-                process = ProcessBuilder(java.toString(), "-Dgrimoire.browser.helper=true", "@$file")
+                // A manifest keeps long and Unicode classpaths out of the Windows Java launcher.
+                val manifest = Manifest().apply {
+                    mainAttributes[Attributes.Name.MANIFEST_VERSION] = "1.0"
+                    mainAttributes[Attributes.Name.CLASS_PATH] = System.getProperty("java.class.path")
+                        .split(File.pathSeparatorChar)
+                        .joinToString(" ") { Path.of(it).toAbsolutePath().toUri().toASCIIString() }
+                }
+                JarOutputStream(Files.newOutputStream(file), manifest).use { }
+                val command = listOf(java.toString(), "-Dgrimoire.browser.helper=true") + opens + listOf(
+                    "-XX:ErrorFile=hs_err_pid%p.log",
+                    "-cp", file.fileName.toString(), DesktopBrowserHelper::class.java.name,
+                    listener.localPort.toString(),
+                )
+                process = ProcessBuilder(command)
+                    .directory(directory.toFile())
                     .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                     .redirectError(ProcessBuilder.Redirect.INHERIT)
                     .start()
-                DataOutputStream(process.outputStream).use { it.writeUTF(token) }
+                process.outputStream.writer(Charsets.UTF_8).use { input ->
+                    browserJson.toJson(listOf(token) + engineArgs, input)
+                }
                 return BrowserHelperProcess(process, listener, token, file)
             } catch (failure: Exception) {
                 process?.destroyForcibly()

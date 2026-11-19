@@ -128,8 +128,10 @@ through the window, checks that HTTP uses the browser's cookies and User-Agent, 
 out, refuses a second profile user and shuts down within the deadline.
 `-PbrowserPhase=restart` checks the profile in a new process.
 `-PbrowserPhase=recovery` terminates the helper during sign-in, checks that the
-reader can reopen the profile, and exercises forced shutdown. CI runs all phases
-on Windows and macOS and fails if browser processes are left running. See
+reader can reopen the profile, and exercises forced shutdown.
+`-PbrowserPhase=lease` checks the helper can enforce the profile lease in a
+directory with a non-ASCII name. CI runs these checks on Windows and macOS and
+fails if browser processes are left running. See
 [#437](https://github.com/Operation-Grimoire/grimoire/issues/437) for measurements.
 
 ## Verification and limits

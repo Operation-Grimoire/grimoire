@@ -120,7 +120,9 @@ jobs:
       - name: Sign in, share cookies and shut down
         timeout-minutes: 8
         shell: bash
-        run: bash ./gradlew :desktop:browserCheck -PbrowserPhase=session --console=plain
+        run: |
+          bash ./gradlew :desktop:browserCheck -PbrowserPhase=lease --console=plain
+          bash ./gradlew :desktop:browserCheck -PbrowserPhase=session --console=plain
       - name: Restart with the same profile
         timeout-minutes: 5
         shell: bash

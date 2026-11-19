@@ -1,10 +1,10 @@
 package io.grimoire.desktop
 
 import com.google.gson.JsonArray
+import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
 import io.grimoire.sessions.SessionCookie
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.EOFException
 import java.io.IOException
@@ -25,11 +25,12 @@ import kotlin.concurrent.thread
 internal object DesktopBrowserHelper {
     @JvmStatic
     fun main(args: Array<String>) {
-        val token = DataInputStream(System.`in`).use { it.readUTF() }
-        val directory = Path.of(args[1])
-        val result = Socket(browserLoopback, args[0].toInt()).use { socket ->
-            DataOutputStream(socket.getOutputStream()).writeUTF(token)
-            serve(BrowserWire(socket), directory, args.drop(2))
+        val bootstrap = System.`in`.reader(Charsets.UTF_8).use { reader ->
+            JsonParser.parseReader(reader).asJsonArray.map { it.asString }
+        }
+        val result = Socket(browserLoopback, args.single().toInt()).use { socket ->
+            DataOutputStream(socket.getOutputStream()).writeUTF(bootstrap.first())
+            serve(BrowserWire(socket), Path.of("").toAbsolutePath(), bootstrap.drop(1))
         }
         // JCEF registers JVM shutdown hooks. Native disposal has already been attempted.
         Runtime.getRuntime().halt(result)
