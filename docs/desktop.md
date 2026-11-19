@@ -92,9 +92,8 @@ generating the manifest. Its hash and required coordinate are checked too.
 
 ## Embedded browser and sign-in
 
-Desktop embeds Chromium through JCEF (`io.grimoire:browser-sessions-jcef`, CEF 152)
-for sources that need a sign-in or browser cookies. It runs in the app process and
-starts only when needed:
+Desktop starts Chromium through JCEF (`io.grimoire:browser-sessions-jcef`, CEF 152)
+when a source needs sign-in or browser cookies:
 
 - **Sign in** on the Extensions screen, for an installed source that offers it,
   opens the source's login page in a window. The window closes by itself on the
