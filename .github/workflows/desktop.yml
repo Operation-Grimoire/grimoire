@@ -113,20 +113,26 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Compose UI app journey
-        # A normal run takes about 3 minutes; a hang fails here instead of at the job limit.
-        timeout-minutes: 10
+        # A normal run takes about 3 minutes. The watchdog dumps the test worker's threads
+        # while it is still alive; the step timeout is only a backstop.
+        timeout-minutes: 12
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then PREFIX="xvfb-run -a"; else PREFIX=""; fi
-          $PREFIX bash ./gradlew :desktop:uiTest --console=plain
+          $PREFIX bash ./gradlew :desktop:uiTest --console=plain &
+          run=$!
+          for _ in $(seq 540); do
+            if ! kill -0 "$run" 2>/dev/null; then wait "$run"; exit $?; fi
+            sleep 1
+          done
+          echo "::error::UI tests still running after 9 minutes; dumping test worker threads"
+          for pid in $(jps -l | awk '/GradleWorkerMain/ { print $1 }'); do jcmd "$pid" Thread.print || true; done
+          kill "$run" || true
+          bash ./gradlew --stop || true
+          exit 1
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Thread dump of a stuck UI test worker
-        if: failure()
-        shell: bash
-        run: |
-          for pid in $(jps -l | awk '/GradleWorkerMain/ { print $1 }'); do jcmd "$pid" Thread.print || true; done
       - name: Check out the external compatibility fixture
         uses: actions/checkout@v4
         with:
