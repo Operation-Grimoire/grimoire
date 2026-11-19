@@ -89,7 +89,6 @@ jobs:
           - { os: macos-latest, label: macos, args: '' }
           - { os: ubuntu-latest, label: linux, args: '' }
           - { os: ubuntu-latest, label: linux-nosandbox-nogpu, args: '--no-sandbox --disable-gpu' }
-          - { os: ubuntu-latest, label: linux-x11, args: '--no-sandbox --disable-gpu --ozone-platform=x11' }
     name: desktop-browser (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25

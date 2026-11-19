@@ -71,7 +71,7 @@ class DesktopBrowser(
     override fun session(): StartedBrowser = start().started
 
     private fun start(): Engine {
-        check(!SwingUtilities.isEventDispatchThread()) { "The browser cannot start on the UI thread" }
+        check(!onUiThread()) { "The browser cannot start on the UI thread" }
         val (pending, owner) = synchronized(lock) {
             check(!closed) { "Grimoire is closing" }
             engine?.let { return it }
@@ -124,7 +124,7 @@ class DesktopBrowser(
 
     /** Returns false if native shutdown missed [deadline]; the caller then ends the process. */
     fun close(deadline: Duration = Duration.ofSeconds(20)): Boolean {
-        check(!SwingUtilities.isEventDispatchThread()) { "Close the browser off the UI thread" }
+        check(!onUiThread()) { "Close the browser off the UI thread" }
         val until = System.nanoTime() + deadline.toNanos()
         val (running, pending) = synchronized(lock) { closed = true; engine.also { engine = null } to starting }
         try {
@@ -296,5 +296,9 @@ class DesktopBrowser(
 
     companion object {
         const val ENGINE_VERSION = "jcef-152.0.6"
+
+        // SwingUtilities.isEventDispatchThread() would initialize AWT, which on Linux must
+        // happen only after CefApp.startup.
+        private fun onUiThread() = Thread.currentThread().name.startsWith("AWT-EventQueue")
     }
 }
