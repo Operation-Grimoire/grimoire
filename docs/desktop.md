@@ -26,8 +26,10 @@ bash ./gradlew :desktop:run
 On Windows, use `./gradlew.bat` instead of `bash ./gradlew`. The window opens in
 **Library**. From the sidebar, choose **Extensions**. Desktop downloads the signed
 JAR index of the official repository and lists its extensions. Choose **Install**,
-then **Browse** to open the source's catalog. Installed extensions load from the
-local store at startup, also offline. **Update** and **Remove** are on the same screen.
+then **Browse** to open the source's catalog. Browse shows the listings the source
+offers: **Popular**, **Latest** and **Search**. Search runs without source filters.
+**Load more** fetches the next page until a page adds no new titles. Installed
+extensions load from the local store at startup, also offline. **Update** and **Remove** are on the same screen.
 To add another repository, enter its index URL and the public key from its publisher,
 check the fingerprint Desktop shows, then choose **Trust repository**. See
 [desktop extension distribution](desktop-extensions.md) for the trust and recovery rules.
