@@ -75,6 +75,7 @@ private fun runPhase(phase: String, directory: Path) {
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 synchronized(userAgents) { userAgents += request.getHeader("User-Agent") }
+                if (request.path in listOf("/login", "/session", "/wait")) println("Browser fixture visited ${request.path}")
                 return when (request.path?.substringBefore('?')) {
                     "/login" -> MockResponse().setBody("<html><script>location.replace('/session')</script>Signing in</html>")
                     "/wait" -> {
@@ -111,6 +112,7 @@ private fun runPhase(phase: String, directory: Path) {
                     // The sign-in window follows /login -> /session -> /private and closes on the success URL.
                     val signedIn = CompletableFuture.runAsync { browser.signIn("Sign in to fixture", url("/login").toString(), url("/private").toString()) }
                     signedIn.get(60, TimeUnit.SECONDS)
+                    println("Sign-in window closed")
                     check(browser.running && browser.profileInUse)
                     check(fetch("/private") == 200) { "HTTP did not use the browser sign-in" }
                     val agent = synchronized(userAgents) { userAgents.last() }

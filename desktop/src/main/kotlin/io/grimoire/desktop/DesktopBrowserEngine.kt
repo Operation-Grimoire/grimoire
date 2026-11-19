@@ -190,7 +190,8 @@ private class SignInWindow(
     /** UI thread only. */
     fun finish() {
         if (!finishing.compareAndSet(false, true)) return
-        window.isVisible = false
+        // Hiding a JCEF window also sends a native visibility update on macOS.
+        // Keep its host visible until Chromium reports that the browser has closed.
         browser.setCloseAllowed()
         browser.close(true)
     }

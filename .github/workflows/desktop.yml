@@ -146,6 +146,15 @@ jobs:
           left=$(ps -axo command | grep -Eic '[j]cef|[g]rimoire\.browser\.helper=true' || true)
           echo "Leftover browser processes: $left"
           test "$left" -eq 0
+      - name: Print browser crash stack
+        if: failure() && runner.os == 'macOS'
+        shell: bash
+        run: |
+          for report in desktop/build/browser-check/browser/hs_err_pid*.log; do
+            if [ -f "$report" ]; then
+              awk '/^Current thread / { stack=1 } stack && /^(siginfo:|Registers:)/ { exit } stack { print }' "$report"
+            fi
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
