@@ -5,6 +5,7 @@ import io.grimoire.sessions.jcef.JcefCookieStore
 import me.friwi.jcefmaven.CefAppBuilder
 import me.friwi.jcefmaven.MavenCefAppHandlerAdapter
 import org.cef.CefApp
+import org.cef.OS
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.browser.SessionDevToolsBridge
@@ -71,6 +72,7 @@ internal class DesktopBrowserEngine private constructor(
         val until = System.nanoTime() + deadline.toNanos()
         SwingUtilities.invokeAndWait {
             state.windows.values.toList().forEach { it.finish() }
+            sessionBrowser.detachMacVisibilityListener()
             sessionBrowser.setCloseAllowed()
             sessionBrowser.close(true)
         }
@@ -190,14 +192,26 @@ private class SignInWindow(
     /** UI thread only. */
     fun finish() {
         if (!finishing.compareAndSet(false, true)) return
-        // Hiding a JCEF window also sends a native visibility update on macOS.
-        // Keep its host visible until Chromium reports that the browser has closed.
+        browser.detachMacVisibilityListener()
         browser.setCloseAllowed()
         browser.close(true)
     }
 
     fun closed() {
-        SwingUtilities.invokeLater { window.dispose() }
+        SwingUtilities.invokeLater {
+            browser.detachMacVisibilityListener()
+            window.dispose()
+        }
         finished.complete(Unit)
     }
+}
+
+/** JCEF 152 queues visibility changes on AppKit using a view that browser close can release. */
+private fun CefBrowser.detachMacVisibilityListener() {
+    if (!OS.isMacintosh()) return
+    val component = uiComponent
+    // CefBrowserWr registers one hierarchy listener for visibility changes.
+    component.hierarchyListeners
+        .singleOrNull { it.javaClass.enclosingClass == javaClass }
+        ?.let(component::removeHierarchyListener)
 }

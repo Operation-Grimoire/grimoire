@@ -127,20 +127,24 @@ private fun runPhase(phase: String, directory: Path) {
                     check(!browser.profileInUse) { "Expected a fresh profile" }
                     check(fetch("/private") == 401)
                     check(!browser.running) { "Plain HTTP started Chromium" }
-                    // The sign-in window follows /login -> /session -> /private and closes on the success URL.
-                    val signedIn = CompletableFuture.runAsync { browser.signIn("Sign in to fixture", url("/login").toString(), url("/private").toString()) }
-                    signedIn.get(60, TimeUnit.SECONDS)
-                    println("Sign-in window closed")
-                    check(browser.running && browser.profileInUse)
-                    check(fetch("/private") == 200) { "HTTP did not use the browser sign-in" }
-                    val agent = synchronized(userAgents) { userAgents.last() }
-                    check(agent != null && agent.contains("Chrome/")) { "HTTP did not use the browser User-Agent: $agent" }
-                    check(cookies.cookieHeader(url("/private")).contains("login=browser"))
-                    val login = browser.session().store.snapshot(url("/private")).single { it.name == "login" }
-                    check(login.hostOnly && login.secure && login.httpOnly && login.sameSite == SameSite.LAX)
-                    // Source logout: expire through SourceCookies, as Webnovel does.
-                    cookies.setCookie(url("/"), "login=; Max-Age=0; Path=/; Secure")
-                    check(fetch("/private") == 401) { "Logout did not reach HTTP" }
+                    repeat(3) {
+                        // The sign-in window follows /login -> /session -> /private and closes on the success URL.
+                        val signedIn = CompletableFuture.runAsync {
+                            browser.signIn("Sign in to fixture", url("/login").toString(), url("/private").toString())
+                        }
+                        signedIn.get(30, TimeUnit.SECONDS)
+                        println("Sign-in window closed")
+                        check(browser.running && browser.profileInUse)
+                        check(fetch("/private") == 200) { "HTTP did not use the browser sign-in" }
+                        val agent = synchronized(userAgents) { userAgents.last() }
+                        check(agent != null && agent.contains("Chrome/")) { "HTTP did not use the browser User-Agent: $agent" }
+                        check(cookies.cookieHeader(url("/private")).contains("login=browser"))
+                        val login = browser.session().store.snapshot(url("/private")).single { it.name == "login" }
+                        check(login.hostOnly && login.secure && login.httpOnly && login.sameSite == SameSite.LAX)
+                        // Source logout: expire through SourceCookies, as Webnovel does.
+                        cookies.setCookie(url("/"), "login=; Max-Age=0; Path=/; Secure")
+                        check(fetch("/private") == 401) { "Logout did not reach HTTP" }
+                    }
                     cookies.setCookie(url("/"), "remember=yes; Path=/; Secure; Max-Age=3600")
                     cookies.flush()
                     // A second host on the same profile is refused while this one runs.
