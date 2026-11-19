@@ -161,6 +161,58 @@ class ReaderUiTest {
         } finally { runBlocking { model.close() } }
     }
 
+    @OptIn(ExperimentalTestApi::class)
+    @Test fun browseSwitchesListingsSearchesAndPages() {
+        val platform = resetSharedFixturePlatform()
+        val model = desktopReaderModel(LocalLibrary(temporary.newFolder().toPath()), "1.5.0", platform.allowed)
+        val manifest = readerFixtureManifest(temporary.newFolder().toPath())
+        fun click(label: String) {
+            compose.onNode(hasText(label) and hasClickAction()).performScrollTo().performClick()
+            settled(model)
+        }
+        try {
+            model.load(manifest); settled(model)
+            compose.setContent { MaterialTheme { Surface(Modifier.size(1100.dp, 760.dp)) { DesktopReader(model, false, null) {} } } }
+            compose.onNode(hasText("Browse") and hasClickAction()).performClick(); settled(model)
+            compose.onNodeWithText("A fixture novel").assertIsDisplayed()
+            // Page 2 repeats the first title; only the new one is added.
+            click("Load more")
+            assertEquals(listOf("A fixture novel", "A second fixture novel"), model.state.value.novels.map { it.title })
+            click("Load more")
+            compose.onNodeWithText("End of results").assertExists()
+            compose.onNode(hasText("Load more") and hasClickAction()).assertDoesNotExist()
+
+            click("Latest")
+            assertEquals(listOf("A recently updated novel"), model.state.value.novels.map { it.title })
+
+            click("Search")
+            assertTrue(model.state.value.novels.isEmpty())
+            val requests = platform.requests.get()
+            compose.onNode(hasSetTextAction()).performTextInput("second")
+            compose.onNode(hasSetTextAction()).performKeyInput { pressKey(androidx.compose.ui.input.key.Key.Enter) }
+            settled(model)
+            assertEquals(listOf("A second fixture novel"), model.state.value.novels.map { it.title })
+            assertEquals(requests + 1, platform.requests.get())
+            capture("browse-search.png")
+            // The Search button, not the selected Search listing.
+            fun submit(query: String) {
+                compose.onNode(hasSetTextAction()).performTextClearance()
+                compose.onNode(hasSetTextAction()).performTextInput(query)
+                compose.onNode(hasText("Search") and hasClickAction() and !isSelectable()).performClick()
+                settled(model)
+            }
+            submit("missing")
+            compose.onNodeWithText("No results for “missing”.").assertIsDisplayed()
+
+            // Book details open from a search result.
+            submit("fixture")
+            click("A second fixture novel")
+            compose.onNodeWithText("First chapter").assertIsDisplayed()
+        } catch (failure: Throwable) {
+            runCatching { capture("browse-failure.png") }; throw failure
+        } finally { runBlocking { model.close() } }
+    }
+
     @Test fun historyControlsKeepRecordingOptInAndClearWithoutLosingResume() {
         val novelKey = NovelKey(17, "/history-book")
         val novel = Novel(novelKey.url, "History fixture", Language.EN)

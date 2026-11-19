@@ -17,6 +17,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -198,17 +199,63 @@ private fun BrowsePane(state: ReaderState, enabled: Boolean, model: ReaderModel,
                 TextButton(onClick = model::showExtensions, enabled = enabled) { Text("Manage extensions") }
             }
             state.offline -> item { Text("Go online to browse this source.") }
-            state.novels.isEmpty() && enabled -> item {
-                OutlinedButton(onClick = model::browse) { Text("Load popular titles") }
-            }
+            state.browseModes.isEmpty() -> item { Text("${state.sourceName} has no catalog to browse.") }
+            else -> item { BrowseControls(state, enabled, model) }
         }
-        if (state.sourceName != null && !state.offline) {
+        if (state.sourceName != null && !state.offline && state.browseMode != null) {
             items(state.novels, key = { it.url }) { novel ->
                 OutlinedButton(onClick = { model.details(novel) }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
                     Text(novel.title, Modifier.fillMaxWidth().padding(10.dp))
                 }
             }
+            item { BrowseFooter(state, enabled, model) }
         }
+    }
+}
+
+@Composable
+private fun BrowseControls(state: ReaderState, enabled: Boolean, model: ReaderModel) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (state.browseModes.size > 1) {
+            SingleChoiceSegmentedButtonRow {
+                state.browseModes.forEachIndexed { index, mode ->
+                    SegmentedButton(
+                        selected = mode == state.browseMode,
+                        onClick = { if (mode != state.browseMode) model.setBrowseMode(mode) },
+                        enabled = enabled,
+                        shape = SegmentedButtonDefaults.itemShape(index, state.browseModes.size),
+                    ) { Text(mode.label) }
+                }
+            }
+        }
+        if (state.browseMode == BrowseMode.SEARCH) {
+            // Keyed by source so a new source starts with its own empty field.
+            var query by remember(state.browseSource) { mutableStateOf(state.browseQuery) }
+            val submit = { if (query.isNotBlank()) model.search(query) }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(query, { query = it }, singleLine = true, enabled = enabled,
+                    label = { Text("Search ${state.sourceName} by title") },
+                    modifier = Modifier.weight(1f).onPreviewKeyEvent { event ->
+                        val enter = event.key == Key.Enter || event.key == Key.NumPadEnter
+                        if (enter && event.type == KeyEventType.KeyUp) submit()
+                        enter
+                    })
+                Button(onClick = submit, enabled = enabled && query.isNotBlank()) { Text("Search") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BrowseFooter(state: ReaderState, enabled: Boolean, model: ReaderModel) {
+    when {
+        state.browseHasMore -> OutlinedButton(onClick = model::loadMore, enabled = enabled) { Text("Load more") }
+        state.browsePage == 0 && state.browseMode != BrowseMode.SEARCH && enabled ->
+            OutlinedButton(onClick = model::browse) { Text("Load ${state.browseMode?.label?.lowercase()} titles") }
+        state.browsePage > 0 && state.novels.isEmpty() -> Text(
+            if (state.browseMode == BrowseMode.SEARCH) "No results for “${state.browseQuery}”."
+            else "${state.sourceName} returned no titles.")
+        state.browsePage > 0 -> Text("End of results", style = MaterialTheme.typography.labelMedium)
     }
 }
 

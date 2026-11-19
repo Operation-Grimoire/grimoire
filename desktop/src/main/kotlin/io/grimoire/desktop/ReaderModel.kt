@@ -5,7 +5,6 @@ import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelPage
 import io.grimoire.api.model.novel.PageContent
 import io.grimoire.api.source.Source
-import io.grimoire.api.source.feature.PopularSource
 import io.grimoire.api.source.web.ChapterListSource
 import io.grimoire.api.source.web.CursorPaginatedSource
 import io.grimoire.api.source.web.PageListSource
@@ -50,6 +49,13 @@ data class ReaderState(
     val bookOrigin: View = View.LIBRARY,
     val sources: List<BrowseSource> = emptyList(),
     val browseSource: Long? = null,
+    val browseModes: List<BrowseMode> = emptyList(),
+    val browseMode: BrowseMode? = null,
+    /** The submitted search; typing alone does not change it. */
+    val browseQuery: String = "",
+    /** Pages loaded for the current listing; 0 until the first page arrives. */
+    val browsePage: Int = 0,
+    val browseHasMore: Boolean = false,
     val extensionRows: List<ExtensionRow> = emptyList(),
     val repositories: List<RepositoryView> = emptyList(),
     val pendingRepository: PendingRepository? = null,
@@ -121,9 +127,12 @@ class ReaderModel(
         mutable.update { current ->
             val keep = select ?: current.browseSource?.takeIf { id -> sources.any { it.sourceId == id } }
             val chosen = keep ?: sources.firstOrNull()?.sourceId
-            val changed = chosen != current.browseSource
-            current.copy(sources = sources, browseSource = chosen, sourceName = sources.firstOrNull { it.sourceId == chosen }?.name,
-                novels = if (changed) emptyList() else current.novels)
+            val modes = extensionFor(chosen)?.source?.let(::browseModes).orEmpty()
+            val named = current.copy(sources = sources, browseSource = chosen, sourceName = sources.firstOrNull { it.sourceId == chosen }?.name)
+            // A different source starts on its first listing with nothing loaded.
+            if (chosen == current.browseSource && current.browseMode in modes) named.copy(browseModes = modes)
+            else named.copy(browseModes = modes, browseMode = modes.firstOrNull(), browseQuery = "", browsePage = 0,
+                browseHasMore = false, novels = emptyList())
         }
     }
 
@@ -222,26 +231,59 @@ class ReaderModel(
     fun selectSource(sourceId: Long) = navigate {
         check(extensionFor(sourceId) != null) { "This source is no longer installed" }
         publishSources(select = sourceId)
-        publishView { it.leaveBook(View.BROWSE).copy(novels = emptyList()) }
-        if (!state.value.offline) loadPopularNovels()
+        publishView { it.leaveBook(View.BROWSE) }
+        if (state.value.listsWithoutQuery) loadCatalog(reset = true)
     }
 
+    /** Reloads the first page of the current listing. */
     fun browse() = navigate {
-        loadPopularNovels()
+        loadCatalog(reset = true)
     }
 
     fun showBrowse() = navigate {
         showSection(View.BROWSE)
-        val current = state.value
-        if (!current.offline && current.sourceName != null && current.novels.isEmpty()) loadPopularNovels()
+        if (state.value.browsePage == 0 && state.value.listsWithoutQuery) loadCatalog(reset = true)
     }
 
-    private suspend fun loadPopularNovels() {
+    fun setBrowseMode(mode: BrowseMode) = navigate {
+        check(mode in state.value.browseModes) { "This source does not offer ${mode.label.lowercase()} titles" }
+        publishView { it.leaveBook(View.BROWSE).copy(browseMode = mode, browsePage = 0, browseHasMore = false, novels = emptyList()) }
+        if (state.value.listsWithoutQuery) loadCatalog(reset = true)
+    }
+
+    fun search(query: String) = navigate {
+        val text = query.trim()
+        require(text.isNotEmpty()) { "Enter a title to search for" }
+        check(BrowseMode.SEARCH in state.value.browseModes) { "This source cannot search" }
+        publishView { it.leaveBook(View.BROWSE).copy(browseMode = BrowseMode.SEARCH, browseQuery = text, browsePage = 0,
+            browseHasMore = false, novels = emptyList()) }
+        loadCatalog(reset = true)
+    }
+
+    fun loadMore() = navigate {
+        check(state.value.view == View.BROWSE && state.value.browseHasMore) { "There are no more titles to load" }
+        loadCatalog(reset = false)
+    }
+
+    /** Popular and Latest load on arrival; Search waits for a submitted query. */
+    private val ReaderState.listsWithoutQuery: Boolean
+        get() = !offline && browseSource != null && browseMode != null && browseMode != BrowseMode.SEARCH
+
+    private suspend fun loadCatalog(reset: Boolean) {
         check(!state.value.offline) { "Browsing is unavailable offline" }
-        val source = extensionFor(state.value.browseSource)?.source as? PopularSource ?: error("Choose a source that lists popular titles")
-        val novels = source.getPopularNovels(1)
-        check(novels.isNotEmpty()) { "The source returned no novels" }
-        publishView { it.leaveBook(View.BROWSE).copy(novels = novels) }
+        val request = state.value
+        val source = extensionFor(request.browseSource)?.source ?: error("Choose a source to browse")
+        val mode = request.browseMode ?: error("This source has no catalog to browse")
+        val page = if (reset) 1 else request.browsePage + 1
+        val result = catalogPage(source, mode, request.browseQuery, page)
+        publishView { current ->
+            // A result for another source, listing or query is dropped.
+            if (current.browseSource != request.browseSource || current.browseMode != mode || current.browseQuery != request.browseQuery) current
+            else {
+                val listing = mergeCatalog(if (reset) emptyList() else current.novels, result)
+                current.leaveBook(View.BROWSE).copy(novels = listing.novels, browsePage = page, browseHasMore = listing.hasMore)
+            }
+        }
     }
 
     fun details(novel: Novel) = navigate {

@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Browse a source's Popular and Latest lists or search it by title, and load more results page by page."
+    }
+  ]
+}
