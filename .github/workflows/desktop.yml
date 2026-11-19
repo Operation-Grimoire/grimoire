@@ -113,6 +113,8 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Compose UI app journey
+        # A normal run takes about 3 minutes; a hang fails here instead of at the job limit.
+        timeout-minutes: 10
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then PREFIX="xvfb-run -a"; else PREFIX=""; fi
@@ -120,6 +122,11 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Thread dump of a stuck UI test worker
+        if: failure()
+        shell: bash
+        run: |
+          for pid in $(jps -l | awk '/GradleWorkerMain/ { print $1 }'); do jcmd "$pid" Thread.print || true; done
       - name: Check out the external compatibility fixture
         uses: actions/checkout@v4
         with:
