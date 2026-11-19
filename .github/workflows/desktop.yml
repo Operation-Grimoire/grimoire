@@ -87,8 +87,8 @@ jobs:
         include:
           - { os: windows-latest, label: windows, args: '' }
           - { os: macos-latest, label: macos, args: '' }
-          - { os: ubuntu-latest, label: linux, args: '' }
-          - { os: ubuntu-latest, label: linux-nosandbox-nogpu, args: '--no-sandbox --disable-gpu' }
+          - { os: macos-latest, label: macos-2, args: '' }
+          - { os: macos-latest, label: macos-3, args: '' }
     name: desktop-browser (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25

@@ -59,7 +59,8 @@ fun main(args: Array<String>) {
         System.getenv("APPDATA") ?: System.getProperty("user.home"), "GrimoireDesktop")
     val hostApi = HostRuntime.apiVersion
     val networkEnabled = AtomicBoolean(true)
-    val browser = DesktopBrowser(data.resolve("browser"), networkEnabled)
+    // Sign-in is paused on Linux until the embedded browser shuts down reliably there (#437).
+    val browser = DesktopBrowser(data.resolve("browser"), networkEnabled).takeIf { DesktopBrowser.supported }
     SourceNetwork.install(DesktopHttpPlatform(networkEnabled, browser))
     val library = LocalLibrary(data)
     val extensions = ExtensionManager(library, hostApi, HttpArtifactFetcher(networkEnabled), listOf(OFFICIAL_REPOSITORY))
@@ -86,7 +87,7 @@ fun main(args: Array<String>) {
                         try {
                             model.close()
                             // The library is saved; a browser engine that misses its shutdown deadline cannot block exit.
-                            if (!withContext(Dispatchers.IO) { browser.close() }) Runtime.getRuntime().halt(0)
+                            if (browser != null && !withContext(Dispatchers.IO) { browser.close() }) Runtime.getRuntime().halt(0)
                             exitApplication()
                         }
                         catch (failure: Exception) { closeError = "Could not save the library: ${failure.message}"; closing = false }

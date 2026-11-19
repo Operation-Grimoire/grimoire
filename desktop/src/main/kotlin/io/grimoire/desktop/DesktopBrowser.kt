@@ -152,6 +152,7 @@ class DesktopBrowser(
         private val app: CefApp,
         private val client: org.cef.CefClient,
         private val sessionBrowser: CefBrowser,
+        private val sessionHolder: javax.swing.JWindow,
         private val bridge: SessionDevToolsBridge,
         private val store: JcefCookieStore,
         private val terminated: CompletableFuture<Unit>,
@@ -188,13 +189,21 @@ class DesktopBrowser(
             try { store.flush() } catch (_: Exception) {}
             runCatching { store.close() }
             runCatching { bridge.close() }
+            val until = System.nanoTime() + deadline.toNanos()
             SwingUtilities.invokeAndWait {
                 state.windows.values.toList().forEach { it.finish() }
+                sessionBrowser.setCloseAllowed()
+                sessionBrowser.setCloseAllowed()
                 sessionBrowser.close(true)
             }
-            // The last browser's onBeforeClose disposes the app; wait for native termination.
+            // The last browser's onBeforeClose normally disposes the app. On Linux the hidden
+            // cookie browser may never report closing, so dispose anyway after a grace period.
+            if (!state.allClosed.await(BROWSER_CLOSE_GRACE.toMillis(), TimeUnit.MILLISECONDS)) {
+                SwingUtilities.invokeLater { state.dispose(app) }
+            }
+            SwingUtilities.invokeLater { sessionHolder.dispose() }
             return try {
-                terminated.get(deadline.toMillis(), TimeUnit.MILLISECONDS); true
+                terminated.get((until - System.nanoTime()).coerceAtLeast(0), TimeUnit.NANOSECONDS); true
             } catch (_: java.util.concurrent.TimeoutException) {
                 System.getLogger("DesktopBrowser").log(System.Logger.Level.WARNING,
                     "Browser engine did not shut down within ${deadline.seconds} s (state ${CefApp.getState()})")
@@ -212,7 +221,9 @@ class DesktopBrowser(
                 builder.cefSettings.root_cache_path = profile.toString()
                 builder.cefSettings.cache_path = profile.resolve("default").toString()
                 builder.cefSettings.log_file = profile.resolve("cef.log").toString()
-                if (args.isNotEmpty()) builder.addJcefArgs(*args.toTypedArray())
+                // An embedded browser must never stop on Chromium's first-run, default-browser or
+                // keyring prompts; on Linux they block startup. Cookies stay in the app's own profile.
+                builder.addJcefArgs(*(QUIET_ENGINE_ARGS + args).toTypedArray())
                 builder.setAppHandler(object : MavenCefAppHandlerAdapter() {
                     override fun stateHasChanged(next: CefApp.CefAppState) {
                         if (next == CefApp.CefAppState.TERMINATED) terminated.complete(Unit)
@@ -238,7 +249,7 @@ class DesktopBrowser(
                         open -= browser
                         state.windows.remove(browser)?.closed()
                         // JCEF finishes client cleanup after this callback; disposing here avoids racing it.
-                        if (state.closing.get() && open.isEmpty()) app.dispose()
+                        if (state.closing.get() && open.isEmpty()) { state.allClosed.countDown(); state.dispose(app) }
                     }
                 })
                 client.addDisplayHandler(object : CefDisplayHandlerAdapter() {
@@ -247,6 +258,15 @@ class DesktopBrowser(
                     }
                 })
                 val session = client.createBrowser("about:blank", false, false)
+                // The cookie browser needs a native parent window, or Linux never reports it closed
+                // and shutdown stalls. The 1x1 window is realized but never shown.
+                lateinit var holder: javax.swing.JWindow
+                SwingUtilities.invokeAndWait {
+                    holder = javax.swing.JWindow()
+                    holder.contentPane.add(session.uiComponent)
+                    holder.setBounds(-100, -100, 1, 1)
+                    holder.addNotify()
+                }
                 session.createImmediately()
                 val ready = try { created.get(30, TimeUnit.SECONDS) } catch (failure: Exception) {
                     app.dispose(); throw IOException("The browser engine did not start", failure)
@@ -256,7 +276,7 @@ class DesktopBrowser(
                 // Cloudflare binds clearance cookies to the browser's User-Agent; HTTP uses the same one.
                 val userAgent = JsonParser.parseString(bridge.execute("Browser.getVersion", null).get(10, TimeUnit.SECONDS))
                     .asJsonObject.get("userAgent").asString
-                return Engine(app, client, ready, bridge, store, terminated, state, StartedBrowser(store, userAgent))
+                return Engine(app, client, ready, holder, bridge, store, terminated, state, StartedBrowser(store, userAgent))
             }
         }
     }
@@ -264,6 +284,9 @@ class DesktopBrowser(
     private class EngineState {
         val closing = AtomicBoolean()
         val windows = ConcurrentHashMap<CefBrowser, SignInWindow>()
+        val allClosed = java.util.concurrent.CountDownLatch(1)
+        private val disposed = AtomicBoolean()
+        fun dispose(app: CefApp) { if (disposed.compareAndSet(false, true)) app.dispose() }
     }
 
     private class SignInWindow(
@@ -285,6 +308,7 @@ class DesktopBrowser(
         fun finish() {
             if (!finishing.compareAndSet(false, true)) return
             window.isVisible = false
+            browser.setCloseAllowed()
             browser.close(true)
         }
 
@@ -296,6 +320,13 @@ class DesktopBrowser(
 
     companion object {
         const val ENGINE_VERSION = "jcef-152.0.6"
+
+        /** Windows and macOS. On Linux the cookie browser does not close, so shutdown stalls. */
+        val supported: Boolean = !System.getProperty("os.name").orEmpty().lowercase().contains("linux")
+        private val BROWSER_CLOSE_GRACE: Duration = Duration.ofSeconds(5)
+        private val QUIET_ENGINE_ARGS = listOf(
+            "--no-first-run", "--no-default-browser-check", "--password-store=basic", "--use-mock-keychain",
+        )
 
         // SwingUtilities.isEventDispatchThread() would initialize AWT, which on Linux must
         // happen only after CefApp.startup.

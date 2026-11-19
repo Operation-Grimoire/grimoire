@@ -112,6 +112,10 @@ The engine downloads once (about 370 MB installed) into
 when the app closes, after the library is saved. If native shutdown takes longer
 than 20 seconds, the app logs it and ends the process.
 
+Sign-in is available on Windows and macOS. It is paused on Linux: Chromium starts
+there, but the hidden browser that holds cookies never reports closing, so shutdown
+stalls. On Linux, sources carry no cookies, as before.
+
 Not available yet: page rendering for sources that read pages through the browser
 (`SourceDocumentBrowser`, for example GalaxyNovels), and solving Cloudflare
 challenges. Those sources report the challenge instead. Pop-ups during sign-in open
@@ -121,7 +125,7 @@ in the same window.
 through the window, checks that HTTP uses the browser's cookies and User-Agent, signs
 out, refuses a second profile user and shuts down within the deadline.
 `-PbrowserPhase=restart` then checks the same profile in a new process. CI runs both
-on Windows, Linux and macOS and fails if browser processes are left running. See
+on Windows and macOS and fails if browser processes are left running. See
 [#437](https://github.com/Operation-Grimoire/grimoire/issues/437) for measurements.
 
 ## Verification and limits
