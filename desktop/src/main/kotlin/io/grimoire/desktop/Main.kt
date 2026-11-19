@@ -42,9 +42,7 @@ import io.grimoire.reading.ChapterKey
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.awt.FileDialog
 import java.awt.Frame
 import java.nio.file.Path
@@ -86,8 +84,6 @@ fun main(args: Array<String>) {
                     scope.launch {
                         try {
                             model.close()
-                            // The library is saved; a browser engine that misses its shutdown deadline cannot block exit.
-                            if (browser != null && !withContext(Dispatchers.IO) { browser.close() }) Runtime.getRuntime().halt(0)
                             exitApplication()
                         }
                         catch (failure: Exception) { closeError = "Could not save the library: ${failure.message}"; closing = false }

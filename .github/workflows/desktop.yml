@@ -120,25 +120,30 @@ jobs:
       - name: Sign in, share cookies and shut down
         timeout-minutes: 8
         shell: bash
-        run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then PREFIX="xvfb-run -a"; else PREFIX=""; fi
-          $PREFIX bash ./gradlew :desktop:browserCheck -PbrowserPhase=session --console=plain
+        run: bash ./gradlew :desktop:browserCheck -PbrowserPhase=session --console=plain
       - name: Restart with the same profile
         timeout-minutes: 5
         shell: bash
+        run: bash ./gradlew :desktop:browserCheck -PbrowserPhase=restart --console=plain
+      - name: Recover after terminating the browser helper
+        timeout-minutes: 5
+        shell: bash
+        run: bash ./gradlew :desktop:browserCheck -PbrowserPhase=recovery --console=plain
+      - name: No browser processes left behind (Windows)
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
         run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then PREFIX="xvfb-run -a"; else PREFIX=""; fi
-          $PREFIX bash ./gradlew :desktop:browserCheck -PbrowserPhase=restart --console=plain
-      - name: No browser processes left behind
-        if: always()
+          $left = @(Get-CimInstance Win32_Process | Where-Object {
+            $_.Name -eq 'jcef_helper.exe' -or
+              ($_.Name -eq 'java.exe' -and $_.CommandLine -like '*-Dgrimoire.browser.helper=true*')
+          })
+          Write-Host "Leftover browser processes: $($left.Count)"
+          if ($left.Count -ne 0) { exit 1 }
+      - name: No browser processes left behind (macOS)
+        if: always() && runner.os == 'macOS'
         shell: bash
         run: |
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            left=$(tasklist //FI "IMAGENAME eq jcef_helper.exe" | grep -ci jcef_helper || true)
-          else
-            ps -axo pid,command | grep -i jcef | grep -v grep || true
-            left=$(ps -axo command | grep -i jcef | grep -vc grep || true)
-          fi
+          left=$(ps -axo command | grep -Eic '[j]cef|[g]rimoire\.browser\.helper=true' || true)
           echo "Leftover browser processes: $left"
           test "$left" -eq 0
       - uses: actions/upload-artifact@v4

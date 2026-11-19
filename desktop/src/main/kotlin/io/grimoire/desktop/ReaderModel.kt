@@ -583,6 +583,13 @@ class ReaderModel(
     suspend fun close() = closeWrites.withLock {
         synchronized(operationLock) { closing.set(true); checkpoints.retire() }
         try {
+            // Disconnect first so a sign-in window or stuck helper cannot hold a model job open.
+            if (browser != null) {
+                val shutdown = withContext(Dispatchers.IO) { browser.close() }
+                if (shutdown != BrowserShutdown.GRACEFUL) {
+                    System.getLogger("DesktopBrowser").log(System.Logger.Level.WARNING, "Browser helper shutdown: $shutdown")
+                }
+            }
             // Let the claimed operation finish, then save before cancelling the usable scope.
             scope.coroutineContext.job.children.toList().joinAll()
             lastHistoryOpen?.join()
@@ -592,6 +599,7 @@ class ReaderModel(
                 }
             }
         } catch (failure: Exception) {
+            browser?.resumeAfterFailedClose()
             synchronized(operationLock) { closing.set(false); state.value.checkpointLoad?.let(checkpoints::resume) }
             throw failure
         }

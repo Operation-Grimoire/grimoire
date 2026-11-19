@@ -1,5 +1,6 @@
 package io.grimoire.desktop
 
+import io.grimoire.sessions.SameSite
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.mockwebserver.Dispatcher
@@ -15,14 +16,15 @@ import java.security.KeyPair
 import java.security.KeyStore
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.exitProcess
 
 /**
  * Native check of the Desktop browser host with real embedded Chromium against a local HTTPS
- * server. Phases run in separate processes: `session` signs in and writes cookies, `restart`
- * checks that the profile kept them. Each phase ends with a bounded engine shutdown.
+ * server. `session` signs in and writes cookies, `restart` checks persistence and `recovery`
+ * terminates the helper during sign-in. Each phase checks that the helper stops.
  */
 fun main(args: Array<String>) {
     val phase = args.getOrNull(0) ?: "session"
@@ -30,7 +32,7 @@ fun main(args: Array<String>) {
     // A native hang never reaches the catch below; dump where it is stuck, then fail.
     Thread({
         Thread.sleep(150_000)
-        System.err.println("WATCHDOG: phase $phase still running after 150 s; CEF state ${org.cef.CefApp.getState()}")
+        System.err.println("WATCHDOG: phase $phase still running after 150 s")
         dumpThreads()
         Runtime.getRuntime().halt(2)
     }, "browser-check-watchdog").apply { isDaemon = true }.start()
@@ -68,12 +70,17 @@ private fun runPhase(phase: String, directory: Path) {
     val browser = DesktopBrowser(directory.resolve("browser"), network, listOf("--ignore-certificate-errors-spki-list=$spki") + extra)
     val platform = DesktopHttpPlatform(network, browser)
     val userAgents = mutableListOf<String?>()
+    val waitingForSignIn = CompletableFuture<Unit>()
     MockWebServer().use { server ->
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 synchronized(userAgents) { userAgents += request.getHeader("User-Agent") }
                 return when (request.path?.substringBefore('?')) {
                     "/login" -> MockResponse().setBody("<html><script>location.replace('/session')</script>Signing in</html>")
+                    "/wait" -> {
+                        waitingForSignIn.complete(Unit)
+                        MockResponse().setBody("Waiting for sign-in")
+                    }
                     "/session" -> MockResponse().setResponseCode(302).addHeader("Location", "/private")
                         .addHeader("Set-Cookie", "login=browser; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=3600")
                     "/private" -> if (request.getHeader("Cookie")?.contains("login=") == true) MockResponse().setBody("Private chapter")
@@ -93,7 +100,8 @@ private fun runPhase(phase: String, directory: Path) {
             .build()
         fun fetch(path: String) = http.newCall(Request.Builder().url(url(path)).build()).execute().use { it.code }
         val cookies = platform.cookies
-        var closed = false
+        val recovering = phase == "recovery"
+        val shutdown: BrowserShutdown
         try {
             when (phase) {
                 "session" -> {
@@ -108,6 +116,8 @@ private fun runPhase(phase: String, directory: Path) {
                     val agent = synchronized(userAgents) { userAgents.last() }
                     check(agent != null && agent.contains("Chrome/")) { "HTTP did not use the browser User-Agent: $agent" }
                     check(cookies.cookieHeader(url("/private")).contains("login=browser"))
+                    val login = browser.session().store.snapshot(url("/private")).single { it.name == "login" }
+                    check(login.hostOnly && login.secure && login.httpOnly && login.sameSite == SameSite.LAX)
                     // Source logout: expire through SourceCookies, as Webnovel does.
                     cookies.setCookie(url("/"), "login=; Max-Age=0; Path=/; Secure")
                     check(fetch("/private") == 401) { "Logout did not reach HTTP" }
@@ -115,7 +125,8 @@ private fun runPhase(phase: String, directory: Path) {
                     cookies.flush()
                     // A second host on the same profile is refused while this one runs.
                     val second = DesktopBrowser(directory.resolve("browser"), network)
-                    val refused = runCatching { second.session() }.exceptionOrNull()
+                    val refused = try { runCatching { second.session() }.exceptionOrNull() }
+                    finally { second.close() }
                     check(refused?.message == "Another Grimoire window is using the browser profile") { "Second host: $refused" }
                 }
                 "restart" -> {
@@ -125,14 +136,41 @@ private fun runPhase(phase: String, directory: Path) {
                     check(!header.contains("login=")) { "Logout did not persist: $header" }
                     check(fetch("/private") == 401)
                 }
+                "recovery" -> {
+                    val page = url("/private")
+                    check(cookies.cookieHeader(page).contains("remember=yes"))
+                    val originalHelper = ProcessHandle.of(checkNotNull(browser.helperPid)).orElseThrow()
+                    val signIn = CompletableFuture.runAsync { browser.signIn("Waiting for sign-in", url("/wait").toString(), null) }
+                    waitingForSignIn.get(30, TimeUnit.SECONDS)
+                    check(!signIn.isDone)
+                    check(originalHelper.destroyForcibly())
+                    originalHelper.onExit().get(8, TimeUnit.SECONDS)
+                    val failure = runCatching { signIn.get(8, TimeUnit.SECONDS) }.exceptionOrNull()
+                    check(failure is ExecutionException && failure.cause is java.io.IOException) { "Unexpected sign-in result: $failure" }
+
+                    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(6)
+                    while (true) {
+                        try {
+                            check(cookies.cookieHeader(page).contains("remember=yes")) { "Cookie lost after termination" }
+                            break
+                        } catch (stopping: java.io.IOException) {
+                            if (stopping.message != "The browser helper is stopping. Try again." || System.nanoTime() >= deadline) throw stopping
+                            Thread.sleep(50)
+                        }
+                    }
+                    check(browser.helperPid != originalHelper.pid())
+                    check(fetch("/private") == 401)
+                    println("Reader survived helper termination and reused the profile")
+                }
                 else -> error("Unknown phase $phase")
             }
         } finally {
             val started = System.nanoTime()
-            closed = browser.close(Duration.ofSeconds(20))
-            println("shutdown ${if (closed) "completed" else "MISSED DEADLINE"} in ${(System.nanoTime() - started) / 1_000_000} ms")
+            shutdown = browser.close(Duration.ofSeconds(if (recovering) 4 else 20))
+            println("shutdown $shutdown in ${(System.nanoTime() - started) / 1_000_000} ms")
         }
-        check(closed) { "Browser engine missed its shutdown deadline" }
+        check(shutdown != BrowserShutdown.INCOMPLETE) { "Browser helper outlived its shutdown deadline" }
+        if (recovering) check(shutdown == BrowserShutdown.FORCED) { "The forced cleanup path did not run" }
     }
 }
 

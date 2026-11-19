@@ -37,14 +37,9 @@ tasks.test {
     })
 }
 
-// JCEF's macOS window code reads AWT internals; harmless on other systems.
-val jcefJvmArgs = listOf("sun.awt", "sun.lwawt", "sun.lwawt.macosx", "java.awt.peer")
-    .map { "--add-opens=java.desktop/$it=ALL-UNNAMED" }
-
 compose.desktop {
     application {
         mainClass = "io.grimoire.desktop.MainKt"
-        jvmArgs += jcefJvmArgs
         providers.gradleProperty("desktopManifest").orNull?.let { args("--extension", rootProject.file(it).absolutePath) }
         providers.gradleProperty("desktopData").orNull?.let { args("--data", rootProject.file(it).absolutePath) }
     }
@@ -190,7 +185,6 @@ tasks.register<JavaExec>("browserCheck") {
     group = "verification"
     classpath = browserCheck.runtimeClasspath
     mainClass.set("io.grimoire.desktop.BrowserHostCheckKt")
-    jvmArgs(jcefJvmArgs)
     timeout.set(Duration.ofMinutes(6))
     args(providers.gradleProperty("browserPhase").orElse("session").get(),
         layout.buildDirectory.dir("browser-check").get().asFile.absolutePath)

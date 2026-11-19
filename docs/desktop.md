@@ -105,12 +105,14 @@ starts only when needed:
   Once the profile exists, every source request uses its cookies and the browser's
   User-Agent, as on Android.
 
-The engine downloads once (about 370 MB installed) into
-`<data>/browser/engine-jcef-152.0.6`; this needs a connection. The profile is
-`<data>/browser/profile`. Only one running app can use it; a second instance gets
-"Another Grimoire window is using the browser profile". The engine shuts down once,
-when the app closes, after the library is saved. If native shutdown takes longer
-than 20 seconds, the app logs it and ends the process.
+The browser runs in a separate JVM. It downloads the engine once (about 370 MB
+installed) into `<data>/browser/engine-jcef-152.0.6` and keeps cookies in
+`<data>/browser/profile`. One helper holds the profile lease. A second instance
+gets "Another Grimoire window is using the browser profile". If the browser
+crashes, the current browser operation fails and the next attempt can restart
+it with the same profile. On app close, Desktop disconnects browser operations
+and gives the helper up to 20 seconds to exit, including forced cleanup if native
+shutdown stalls. The reader handles library persistence in its own process.
 
 Sign-in is available on Windows and macOS. It is paused on Linux: Chromium starts
 there, but the hidden browser that holds cookies never reports closing, so shutdown
@@ -124,7 +126,9 @@ in the same window.
 `:desktop:browserCheck` runs real Chromium against a local HTTPS server. It signs in
 through the window, checks that HTTP uses the browser's cookies and User-Agent, signs
 out, refuses a second profile user and shuts down within the deadline.
-`-PbrowserPhase=restart` then checks the same profile in a new process. CI runs both
+`-PbrowserPhase=restart` checks the profile in a new process.
+`-PbrowserPhase=recovery` terminates the helper during sign-in, checks that the
+reader can reopen the profile, and exercises forced shutdown. CI runs all phases
 on Windows and macOS and fails if browser processes are left running. See
 [#437](https://github.com/Operation-Grimoire/grimoire/issues/437) for measurements.
 
