@@ -155,7 +155,7 @@ class ReaderModel(
         val saved = library.saved()
         publishSources(select = loaded.sourceId)
         publishView { it.copy(localExtension = loaded.source.name, view = if (it.view == View.EXTENSIONS) View.EXTENSIONS else View.LIBRARY,
-            novels = emptyList(), book = null, chapter = null, pages = emptyList(), library = saved,
+            novels = emptyList(), browsePage = 0, browseHasMore = false, book = null, chapter = null, pages = emptyList(), library = saved,
             projection = null, observedAnchor = null, storageObservation = null, checkpointLoad = null, positionNotice = null) }
     }
 

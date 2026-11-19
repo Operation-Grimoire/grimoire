@@ -182,6 +182,12 @@ class ReaderUiTest {
             compose.onNodeWithText("End of results").assertExists()
             compose.onNode(hasText("Load more") and hasClickAction()).assertDoesNotExist()
 
+            // Reopening the manifest starts the catalog over from the first page.
+            model.load(manifest); settled(model)
+            compose.onNode(hasText("Browse") and hasClickAction()).performClick(); settled(model)
+            assertEquals(listOf("A fixture novel"), model.state.value.novels.map { it.title })
+            compose.onNode(hasText("Load more") and hasClickAction()).assertExists()
+
             click("Latest")
             assertEquals(listOf("A recently updated novel"), model.state.value.novels.map { it.title })
 
