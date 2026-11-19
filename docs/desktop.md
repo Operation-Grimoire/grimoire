@@ -88,9 +88,41 @@ is reused between imports. Loaders close on replacement and shutdown.
 
 `org.json:json:20240303` is provided by the host. Sources requiring the shared
 extensions library also need its trusted JVM JAR passed with `--library` when
-generating the manifest. Its hash and required coordinate are checked too. The
-desktop host currently provides public HTTP only: login cookies and rendered-page
-browsing are unavailable capabilities.
+generating the manifest. Its hash and required coordinate are checked too.
+
+## Embedded browser and sign-in
+
+Desktop embeds Chromium through JCEF (`io.grimoire:browser-sessions-jcef`, CEF 152)
+for sources that need a sign-in or browser cookies. It runs in the app process and
+starts only when needed:
+
+- **Sign in** on the Extensions screen, for an installed source that offers it,
+  opens the source's login page in a window. The window closes by itself on the
+  source's success address, or when you press **Done**. **Sign out** runs the
+  source's own logout.
+- A source reading or writing cookies (`SourceCookies`) starts the engine.
+- Before any of this happens, source requests carry no cookies and Chromium stays off.
+  Once the profile exists, every source request uses its cookies and the browser's
+  User-Agent, as on Android.
+
+The engine downloads once (about 370 MB installed) into
+`<data>/browser/engine-jcef-152.0.6`; this needs a connection. The profile is
+`<data>/browser/profile`. Only one running app can use it; a second instance gets
+"Another Grimoire window is using the browser profile". The engine shuts down once,
+when the app closes, after the library is saved. If native shutdown takes longer
+than 20 seconds, the app logs it and ends the process.
+
+Not available yet: page rendering for sources that read pages through the browser
+(`SourceDocumentBrowser`, for example GalaxyNovels), and solving Cloudflare
+challenges. Those sources report the challenge instead. Pop-ups during sign-in open
+in the same window.
+
+`:desktop:browserCheck` runs real Chromium against a local HTTPS server. It signs in
+through the window, checks that HTTP uses the browser's cookies and User-Agent, signs
+out, refuses a second profile user and shuts down within the deadline.
+`-PbrowserPhase=restart` then checks the same profile in a new process. CI runs both
+on Windows, Linux and macOS and fails if browser processes are left running. See
+[#437](https://github.com/Operation-Grimoire/grimoire/issues/437) for measurements.
 
 ## Verification and limits
 
@@ -161,8 +193,7 @@ downloads retain their original bytes and interpretation. See
 [chapter content](chapter-content.md) for format and rollback details.
 
 Track runtime evidence and remaining acceptance in [#407](https://github.com/Operation-Grimoire/grimoire/issues/407).
-Authenticated/browser-dependent sources, browser lifecycle work, macOS/Linux UI
-acceptance, installers, signing, extension indexes/updates and accounts/sync remain
+Rendered-page sources, Cloudflare challenges, macOS/Linux UI acceptance, installers, signing, extension indexes/updates and accounts/sync remain
 later [#397](https://github.com/Operation-Grimoire/grimoire/issues/397) gates. Stable
 app/API/library releases require an explicit user request. Validate Android changes
 on the exact signed nightly beta after merge.

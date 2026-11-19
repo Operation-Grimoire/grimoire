@@ -77,6 +77,70 @@ jobs:
             reading-core/build/test-results/
             desktop/build/test-results/
             desktop/build/reports/tests/
+  desktop-browser:
+    # Real embedded Chromium (JCEF): sign-in, shared cookies, restart and bounded shutdown.
+    needs: impact
+    if: always() && (needs.impact.result != 'success' || needs.impact.outputs.desktop_ci == 'true')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    env:
+      APP_VERSION_TAG: v0.0.0
+      APP_BETA_NUMBER: ${{ github.run_number }}
+      APP_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Require successful release policy
+        if: needs.impact.result != 'success'
+        shell: bash
+        run: exit 1
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Cache the downloaded browser engine
+        uses: actions/cache@v4
+        with:
+          path: desktop/build/browser-check/browser/engine-jcef-152.0.6
+          key: jcef-152.0.6-${{ runner.os }}-${{ runner.arch }}
+      - name: Sign in, share cookies and shut down
+        timeout-minutes: 8
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then PREFIX="xvfb-run -a"; else PREFIX=""; fi
+          $PREFIX bash ./gradlew :desktop:browserCheck -PbrowserPhase=session --console=plain
+      - name: Restart with the same profile
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then PREFIX="xvfb-run -a"; else PREFIX=""; fi
+          $PREFIX bash ./gradlew :desktop:browserCheck -PbrowserPhase=restart --console=plain
+      - name: No browser processes left behind
+        if: always()
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            left=$(tasklist //FI "IMAGENAME eq jcef_helper.exe" | grep -ci jcef_helper || true)
+          else
+            ps -axo pid,command | grep -i jcef | grep -v grep || true
+            left=$(ps -axo command | grep -i jcef | grep -vc grep || true)
+          fi
+          echo "Leftover browser processes: $left"
+          test "$left" -eq 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-browser-${{ matrix.os }}
+          path: desktop/build/browser-check/browser/profile/cef.log
+          if-no-files-found: ignore
   desktop:
     needs: impact
     if: always() && (needs.impact.result != 'success' || needs.impact.outputs.desktop_ci == 'true')
