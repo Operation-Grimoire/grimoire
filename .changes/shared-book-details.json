@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Book details use the Android layout: cover header with status, source and language, the library button, an expandable description with genres, Start or Continue reading, and chapter rows that show saved and locked chapters."
+    }
+  ]
+}
