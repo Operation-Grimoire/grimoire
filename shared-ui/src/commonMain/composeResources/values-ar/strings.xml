@@ -13,4 +13,26 @@
     <string name="color_theme_forest">الغابة</string>
     <string name="color_theme_rose">الوردي</string>
     <string name="color_theme_midnight">منتصف الليل</string>
+    <string name="action_clear_selection">مسح التحديد</string>
+    <string name="action_select_all">تحديد الكل</string>
+    <string name="filter_all">الكل</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="zero">المحدد: %1$d</item>
+        <item quantity="one">المحدد: %1$d</item>
+        <item quantity="two">المحدد: %1$d</item>
+        <item quantity="few">المحدد: %1$d</item>
+        <item quantity="many">المحدد: %1$d</item>
+        <item quantity="other">المحدد: %1$d</item>
+    </plurals>
+    <string name="filter_included_excluded">%1$d مضمّن · %2$d مستبعد</string>
+    <string name="action_decrease">تقليل</string>
+    <string name="action_increase">زيادة</string>
+    <plurals name="selection_count">
+        <item quantity="zero">المحدد: %1$d</item>
+        <item quantity="one">المحدد: %1$d</item>
+        <item quantity="two">المحدد: %1$d</item>
+        <item quantity="few">المحدد: %1$d</item>
+        <item quantity="many">المحدد: %1$d</item>
+        <item quantity="other">المحدد: %1$d</item>
+    </plurals>
 </resources>

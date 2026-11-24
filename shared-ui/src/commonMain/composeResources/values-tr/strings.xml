@@ -13,4 +13,18 @@
     <string name="color_theme_forest">Orman</string>
     <string name="color_theme_rose">Gül</string>
     <string name="color_theme_midnight">Gece yarısı</string>
+    <string name="action_clear_selection">Seçimi temizle</string>
+    <string name="action_select_all">Tümünü seç</string>
+    <string name="filter_all">Tümü</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="one">%1$d seçildi</item>
+        <item quantity="other">%1$d seçildi</item>
+    </plurals>
+    <string name="filter_included_excluded">%1$d dahil · %2$d hariç</string>
+    <string name="action_decrease">Azalt</string>
+    <string name="action_increase">Artır</string>
+    <plurals name="selection_count">
+        <item quantity="one">%1$d seçildi</item>
+        <item quantity="other">%1$d seçildi</item>
+    </plurals>
 </resources>

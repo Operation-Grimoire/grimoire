@@ -1,5 +1,6 @@
-package io.grimoire.app.ui.component.sheet
+package io.grimoire.ui.component.sheet
 
+import io.grimoire.ui.resources.*
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,9 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
-import io.grimoire.app.R
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import org.jetbrains.compose.resources.stringResource
+import io.grimoire.ui.component.PlainTooltipIconButton
 import io.grimoire.ui.icon.*
 
 /** Numeric setting row: label left, − value + right. One stepper for the whole app. */
@@ -59,9 +59,9 @@ fun StepperRow(
         PlainTooltipIconButton(
             onClick = onDecrement,
             enabled = enabled && decrementEnabled,
-            tooltip = stringResource(R.string.action_decrease),
+            tooltip = stringResource(Res.string.action_decrease),
         ) {
-            Icon(AppIcons.Remove, contentDescription = stringResource(R.string.action_decrease))
+            Icon(AppIcons.Remove, contentDescription = stringResource(Res.string.action_decrease))
         }
         Text(
             text = value,
@@ -78,9 +78,9 @@ fun StepperRow(
         PlainTooltipIconButton(
             onClick = onIncrement,
             enabled = enabled && incrementEnabled,
-            tooltip = stringResource(R.string.action_increase),
+            tooltip = stringResource(Res.string.action_increase),
         ) {
-            Icon(AppIcons.Add, contentDescription = stringResource(R.string.action_increase))
+            Icon(AppIcons.Add, contentDescription = stringResource(Res.string.action_increase))
         }
     }
 }

@@ -39,19 +39,19 @@ import io.grimoire.app.data.preferences.AdultFilter
 import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.data.preferences.SortDirection
 import io.grimoire.app.data.preferences.SortField
-import io.grimoire.app.ui.component.SwipeTabRow
-import io.grimoire.app.ui.component.SwipeTabStyle
+import io.grimoire.ui.component.SwipeTabRow
+import io.grimoire.ui.component.SwipeTabStyle
 import io.grimoire.app.ui.component.sheet.FilterTriState
-import io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow
+import io.grimoire.ui.component.sheet.MultiSelectSummaryRow
 import io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog
 import io.grimoire.app.ui.component.sheet.SearchableTriStateDialog
-import io.grimoire.app.ui.component.sheet.SheetDivider
-import io.grimoire.app.ui.component.sheet.SheetSectionLabel
-import io.grimoire.app.ui.component.sheet.SheetSwitchRow
-import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
+import io.grimoire.ui.component.sheet.SheetDivider
+import io.grimoire.ui.component.sheet.SheetSectionLabel
+import io.grimoire.ui.component.sheet.SheetSwitchRow
+import io.grimoire.ui.component.sheet.SingleChoiceSegmented
 import io.grimoire.app.ui.component.sheet.TriStateFilterRow
-import io.grimoire.app.ui.component.sheet.TriStateSummaryRow
-import io.grimoire.app.ui.component.sheet.sheetListItemColors
+import io.grimoire.ui.component.sheet.TriStateSummaryRow
+import io.grimoire.ui.component.sheet.sheetListItemColors
 
 internal val STATUS_OPTIONS = listOf(
     1 to R.string.library_status_ongoing,
@@ -197,7 +197,7 @@ private fun FilterTab(
         val statusLabels = STATUS_OPTIONS.associate { (ordinal, labelRes) ->
             ordinal.toString() to stringResource(labelRes)
         }
-        io.grimoire.app.ui.component.sheet.TriStateSummaryRow(
+        io.grimoire.ui.component.sheet.TriStateSummaryRow(
             title = stringResource(R.string.library_filter_status),
             includedCount = filterStatuses.size,
             excludedCount = filterStatusesExclude.size,
@@ -224,7 +224,7 @@ private fun FilterTab(
         if (librarySources.size > 1) {
             var showSourcePicker by remember { mutableStateOf(false) }
             val sourceLabels = librarySources.associate { (id, label) -> id.toString() to label }
-            io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow(
+            io.grimoire.ui.component.sheet.MultiSelectSummaryRow(
                 title = stringResource(R.string.library_filter_source),
                 selectedCount = filterSourceIds.size,
                 onClick = { showSourcePicker = true },

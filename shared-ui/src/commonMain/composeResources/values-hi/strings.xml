@@ -13,4 +13,18 @@
     <string name="color_theme_forest">जंगल</string>
     <string name="color_theme_rose">गुलाब</string>
     <string name="color_theme_midnight">आधी रात</string>
+    <string name="action_clear_selection">चयन हटाएँ</string>
+    <string name="action_select_all">सभी चुनें</string>
+    <string name="filter_all">सभी</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="one">%1$d चुना गया</item>
+        <item quantity="other">%1$d चुने गए</item>
+    </plurals>
+    <string name="filter_included_excluded">%1$d शामिल · %2$d बाहर</string>
+    <string name="action_decrease">घटाएँ</string>
+    <string name="action_increase">बढ़ाएँ</string>
+    <plurals name="selection_count">
+        <item quantity="one">%1$d चुना गया</item>
+        <item quantity="other">%1$d चुने गए</item>
+    </plurals>
 </resources>

@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.browse
 
 import io.grimoire.ui.icon.*
 import android.content.Intent
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
@@ -64,10 +64,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.ui.component.AppSearchField
-import io.grimoire.app.ui.component.SelectionTopBar
+import io.grimoire.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.SourceListItem
-import io.grimoire.app.ui.component.TooltipBottomBar
-import io.grimoire.app.ui.component.TooltipIconButton
+import io.grimoire.ui.component.TooltipBottomBar
+import io.grimoire.ui.component.TooltipIconButton
 import io.grimoire.app.util.languageLabel
 import io.grimoire.app.R
 
@@ -273,7 +273,7 @@ fun BrowseScreen(
             sheetState = filterSheetState,
         ) {
             Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
-                io.grimoire.app.ui.component.sheet.SheetTitle(
+                io.grimoire.ui.component.sheet.SheetTitle(
                     stringResource(R.string.browse_filter_sources),
                 )
                 Spacer(Modifier.height(4.dp))
@@ -286,7 +286,7 @@ fun BrowseScreen(
                         .padding(horizontal = 16.dp),
                 )
                 if (ui.languages.size > 1) {
-                    io.grimoire.app.ui.component.sheet.SheetSectionLabel(
+                    io.grimoire.ui.component.sheet.SheetSectionLabel(
                         stringResource(R.string.browse_language),
                     )
                     Spacer(Modifier.height(4.dp))

@@ -4,7 +4,7 @@ import io.grimoire.app.ui.tour.tourTarget
 import io.grimoire.app.ui.tour.TourKey
 import io.grimoire.ui.icon.*
 import android.app.Activity
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
@@ -100,8 +100,8 @@ import io.grimoire.app.util.isSeparator
 import io.grimoire.app.util.text
 import io.grimoire.app.data.tts.TtsPlaybackState
 import io.grimoire.app.ui.component.PrivacyImage
-import io.grimoire.app.ui.component.TooltipBottomBar
-import io.grimoire.app.ui.component.TooltipIconButton
+import io.grimoire.ui.component.TooltipBottomBar
+import io.grimoire.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull

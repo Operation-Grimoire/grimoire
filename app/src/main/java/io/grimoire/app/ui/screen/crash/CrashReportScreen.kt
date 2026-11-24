@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.crash.buildCrashIssueUrl
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import kotlinx.coroutines.launch
 import io.grimoire.app.R
 

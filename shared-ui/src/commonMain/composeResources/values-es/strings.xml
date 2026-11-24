@@ -13,4 +13,20 @@
     <string name="color_theme_forest">Bosque</string>
     <string name="color_theme_rose">Rosa</string>
     <string name="color_theme_midnight">Medianoche</string>
+    <string name="action_clear_selection">Borrar selección</string>
+    <string name="action_select_all">Seleccionar todo</string>
+    <string name="filter_all">Todas</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="one">%1$d seleccionado</item>
+        <item quantity="many">%1$d seleccionados</item>
+        <item quantity="other">%1$d seleccionados</item>
+    </plurals>
+    <string name="filter_included_excluded">%1$d incluidos · %2$d excluidos</string>
+    <string name="action_decrease">Disminuir</string>
+    <string name="action_increase">Aumentar</string>
+    <plurals name="selection_count">
+        <item quantity="one">%1$d seleccionado</item>
+        <item quantity="many">%1$d seleccionados</item>
+        <item quantity="other">%1$d seleccionados</item>
+    </plurals>
 </resources>

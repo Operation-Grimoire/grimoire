@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.settings.backup
 
 import io.grimoire.ui.icon.*
 import android.content.Intent
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult

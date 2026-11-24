@@ -146,7 +146,6 @@
     <plurals name="selection_count">
         <item quantity="other">%1$d dipilih</item>
     </plurals>
-    <string name="action_clear_selection">Hapus pilihan</string>
     <string name="action_select_all">Pilih semua</string>
     <string name="move_to_category_title">Pindahkan ke kategori</string>
     <plurals name="novel_count">
@@ -291,7 +290,6 @@
     <string name="action_decrease">Kurangi</string>
     <string name="action_increase">Tambah</string>
     <string name="action_clear_search">Hapus pencarian</string>
-    <string name="filter_included_excluded">%1$d disertakan · %2$d dikecualikan</string>
     <string name="action_show_more">Tampilkan lebih banyak</string>
     <string name="action_show_less">Tampilkan lebih sedikit</string>
     <string name="action_download">Unduh</string>

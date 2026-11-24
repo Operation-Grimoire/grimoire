@@ -4,7 +4,7 @@ import io.grimoire.ui.icon.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import io.grimoire.app.data.preferences.resolveReaderColorTheme
 import androidx.compose.foundation.clickable
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,8 +28,8 @@ import io.grimoire.app.data.preferences.MarkAsReadStrategy
 import io.grimoire.app.ui.screen.reader.ColorThemePicker
 import io.grimoire.app.ui.screen.reader.FontPicker
 import io.grimoire.app.data.preferences.ReaderOrientation
-import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
-import io.grimoire.app.ui.component.sheet.StepperRow
+import io.grimoire.ui.component.sheet.SingleChoiceSegmented
+import io.grimoire.ui.component.sheet.StepperRow
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
 import io.grimoire.app.R

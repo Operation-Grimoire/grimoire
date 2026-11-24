@@ -3,7 +3,7 @@ package io.grimoire.app.ui.screen.updates
 import io.grimoire.ui.icon.*
 import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.AutoRetryOnReturn
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize

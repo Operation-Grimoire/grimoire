@@ -18,7 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.R
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import io.grimoire.ui.icon.AppIcons
 import io.grimoire.ui.icon.ArrowBack
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader

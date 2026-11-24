@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.settings
 
 import io.grimoire.ui.icon.*
 import androidx.compose.foundation.clickable
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api

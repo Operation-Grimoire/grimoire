@@ -1,8 +1,9 @@
-package io.grimoire.app.ui.component
+package io.grimoire.ui.component
 
+import io.grimoire.ui.resources.*
 import io.grimoire.ui.icon.*
 import androidx.compose.animation.AnimatedVisibility
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.expandVertically
@@ -25,12 +26,11 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
-import io.grimoire.app.R
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 /** True while the hosting [TooltipBottomBar] is visible; lets buttons freeze weight during exit. */
-internal val LocalActionBarVisible = staticCompositionLocalOf { true }
+val LocalActionBarVisible = staticCompositionLocalOf { true }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,12 +40,12 @@ fun SelectionTopBar(
     onSelectAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val clearSelectionLabel = stringResource(R.string.action_clear_selection)
-    val selectAllLabel = stringResource(R.string.action_select_all)
+    val clearSelectionLabel = stringResource(Res.string.action_clear_selection)
+    val selectAllLabel = stringResource(Res.string.action_select_all)
     TopAppBar(
         modifier = modifier,
         title = {
-            Text(pluralStringResource(R.plurals.selection_count, count, count))
+            Text(pluralStringResource(Res.plurals.selection_count, count, count))
         },
         navigationIcon = {
             PlainTooltipIconButton(onClick = onClear, tooltip = clearSelectionLabel) {

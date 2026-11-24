@@ -44,8 +44,12 @@ class LocaleCoverageTest {
             assertEquals("stale in shared ${dir.name}", emptySet<String>(), translated.keys - english.keys)
             for ((key, text) in translated) assertEquals("shared ${dir.name}/$key", formatArgs(english.getValue(key)), formatArgs(text))
         }
-        val app = entries(File(res, "values"))
-        assertEquals("defined in both app and shared resources", emptySet<String>(), app.keys intersect english.keys)
+        // A key still used by Android-only code is copied, not moved; both copies must say the same thing.
+        for (dir in listOf(File(res, "values")) + translations) {
+            val app = entries(dir)
+            val copy = entries(File(sharedRes, dir.name))
+            for (key in app.keys intersect copy.keys) assertEquals("${dir.name}/$key differs between app and shared", app[key], copy[key])
+        }
     }
 
     @Test

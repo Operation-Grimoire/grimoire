@@ -158,7 +158,6 @@
         <item quantity="many">Вибрано: %1$d</item>
         <item quantity="other">Вибрано: %1$d</item>
     </plurals>
-    <string name="action_clear_selection">Скасувати вибір</string>
     <string name="action_select_all">Вибрати все</string>
     <string name="move_to_category_title">Перемістити в категорію</string>
     <plurals name="novel_count">
@@ -315,7 +314,6 @@
     <string name="action_decrease">Зменшити</string>
     <string name="action_increase">Збільшити</string>
     <string name="action_clear_search">Очистити пошук</string>
-    <string name="filter_included_excluded">Включено: %1$d · виключено: %2$d</string>
     <string name="action_show_more">Показати більше</string>
     <string name="action_show_less">Показати менше</string>
     <string name="action_download">Завантажити</string>

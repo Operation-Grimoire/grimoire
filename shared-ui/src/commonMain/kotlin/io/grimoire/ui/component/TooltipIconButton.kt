@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.component
+package io.grimoire.ui.component
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
