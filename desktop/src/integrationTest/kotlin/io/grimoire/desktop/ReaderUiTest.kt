@@ -68,7 +68,7 @@ class ReaderUiTest {
             compose.onNodeWithText("Continue reading").performClick(); settled(model)
             assertEquals(ordinal, model.state.value.checkpointLoad!!.restore.viewport.index)
             assertEquals(0, model.state.value.checkpointLoad!!.restore.viewport.offset)
-            compose.onNodeWithText((paragraphs[ordinal].content as PageContent.Text).text).assertIsDisplayed()
+            compose.onNodeWithText((paragraphs[ordinal].content as PageContent.Text).text.trim()).assertIsDisplayed()
             runBlocking { model.flushPosition() }
             assertEquals(saved, runBlocking { DesktopReadingCheckpointDao(library).read(fixtureKey) })
             capture("checkpoint-restored.png")
@@ -86,7 +86,7 @@ class ReaderUiTest {
         val active = mutableStateOf(model)
         val manifest = readerFixtureManifest(temporary.newFolder().toPath())
         fun click(label: String) {
-            compose.onNode(hasText(label) and hasClickAction()).performClick()
+            compose.onNode((hasText(label) or hasContentDescription(label)) and hasClickAction()).performClick()
             settled(model)
         }
         try {
@@ -120,14 +120,16 @@ class ReaderUiTest {
             assertNull(model.state.value.observedAnchor)
             assertNotNull(model.state.value.projection!!.document)
             capture("reader.png")
-            compose.onNodeWithText("Offline").performClick()
-            compose.onNode(hasText(chapter.name) and hasClickAction()).assertIsNotEnabled()
-            compose.onNodeWithText("Save chapter offline").performClick()
+            // The reader is full-window: chapter list and offline switch live on the book screen.
+            compose.onNode(hasText("Library") and hasClickAction()).assertDoesNotExist()
+            compose.onNode(hasContentDescription("Save chapter offline") and hasClickAction()).performClick()
             settled(model)
-            compose.onNode(hasText(chapter.name) and hasClickAction()).assertIsEnabled()
+            compose.onNode(hasContentDescription("Saved offline")).assertExists()
             val count = requests.get()
             click("Back")
             compose.onNodeWithText("Continue reading").assertIsDisplayed()
+            compose.onNodeWithText("Offline").performClick()
+            compose.onNode(hasText(chapter.name) and hasClickAction()).assertIsEnabled()
             compose.onNode(hasText("Browse") and hasClickAction()).assertIsSelected()
             click("Back")
             compose.onNodeWithText("Go online to browse this source.").assertIsDisplayed()
@@ -168,7 +170,7 @@ class ReaderUiTest {
         val model = desktopReaderModel(LocalLibrary(temporary.newFolder().toPath()), "1.5.0", platform.allowed)
         val manifest = readerFixtureManifest(temporary.newFolder().toPath())
         fun click(label: String) {
-            compose.onNode(hasText(label) and hasClickAction()).performScrollTo().performClick()
+            compose.onNode((hasText(label) or hasContentDescription(label)) and hasClickAction()).performScrollTo().performClick()
             settled(model)
         }
         try {
@@ -239,7 +241,7 @@ class ReaderUiTest {
         val model = desktopReaderModel(library, "1.6.0", java.util.concurrent.atomic.AtomicBoolean(false))
         model.offline(true)
         fun click(label: String) {
-            compose.onNode(hasText(label) and hasClickAction()).performClick()
+            compose.onNode((hasText(label) or hasContentDescription(label)) and hasClickAction()).performClick()
             settled(model)
         }
         fun openFromLibrary() {
@@ -247,6 +249,8 @@ class ReaderUiTest {
             click(novel.title)
             compose.onNode(hasText(chapter.name) and hasClickAction()).performClick()
             settled(model)
+            compose.onNodeWithText(text).assertIsDisplayed()
+            click("Back")
         }
         try {
             compose.setContent {
@@ -302,11 +306,64 @@ class ReaderUiTest {
         }
     }
 
+    @Test fun readerTurnsChaptersAndSettingsSheetChangesTextAndPersists() {
+        val novelKey = NovelKey(23, "/reader-book")
+        val chapters = listOf(Chapter("/one", "Chapter one"), Chapter("/locked", "Locked chapter", locked = true), Chapter("/two", "Chapter two"))
+        val directory = temporary.newFolder().toPath()
+        val library = LocalLibrary(directory).apply {
+            remember(novelKey, Novel(novelKey.url, "Reader book", Language.EN), chapters)
+            favorite(novelKey, true)
+            runBlocking {
+                val downloads = DownloadRepository(DesktopDownloadDao(this@apply))
+                for (chapter in listOf(chapters[0], chapters[2])) {
+                    val pages = listOf(NovelPage(0, PageContent.Text("${chapter.name} begins here.")))
+                    assertTrue(downloads.commit(requireNotNull(downloads.claim(ChapterKey(novelKey, chapter.url))), pages) is DownloadCommit.Committed)
+                }
+            }
+        }
+        val model = desktopReaderModel(library, "1.6.0", java.util.concurrent.atomic.AtomicBoolean(false))
+        model.offline(true)
+        fun click(label: String) {
+            compose.onNode((hasText(label) or hasContentDescription(label)) and hasClickAction()).performClick()
+            settled(model)
+        }
+        try {
+            compose.setContent { Surface(Modifier.size(1100.dp, 760.dp)) { DesktopReader(model, false, null) {} } }
+            click("Reader book")
+            click("Chapter one")
+            compose.onNodeWithText("Chapter one begins here.").assertIsDisplayed()
+            compose.onNode(hasText("Previous") and hasClickAction()).assertIsNotEnabled()
+            // Next skips the locked chapter.
+            click("Next")
+            compose.onNodeWithText("Chapter two begins here.").assertIsDisplayed()
+            compose.onNodeWithText("End of book").assertIsDisplayed()
+            click("Previous")
+            compose.onNodeWithText("Chapter one begins here.").assertIsDisplayed()
+
+            click("Settings")
+            compose.onNode(hasText("Sepia") and hasClickAction()).performClick()
+            compose.onAllNodes(hasContentDescription("Increase") and hasClickAction())[0].performClick()
+            compose.onNode(hasText("Serif") and hasClickAction()).performClick()
+            compose.waitForIdle()
+            val chosen = model.state.value.readerSettings
+            assertEquals(io.grimoire.ui.reader.ReaderColorTheme.SEPIA, chosen.colorTheme)
+            assertEquals(17, chosen.fontSize)
+            assertEquals(io.grimoire.ui.reader.ReaderFont.SERIF, chosen.font)
+            capture("reader-settings.png")
+        } catch (failure: Throwable) {
+            runCatching { capture("reader-settings-failure.png") }
+            throw failure
+        } finally {
+            runBlocking { model.close() }
+        }
+        LocalLibrary(directory).use { assertEquals(17, it.readerSettings().fontSize) }
+    }
+
     @Test fun settingsChangeThemeModeAndPaletteAndKeepThemAfterRestart() {
         val directory = temporary.newFolder().toPath()
         val model = desktopReaderModel(LocalLibrary(directory), "1.6.0", java.util.concurrent.atomic.AtomicBoolean(false))
         fun click(label: String) {
-            compose.onNode(hasText(label) and hasClickAction()).performClick()
+            compose.onNode((hasText(label) or hasContentDescription(label)) and hasClickAction()).performClick()
             settled(model)
         }
         try {
@@ -344,7 +401,9 @@ class ReaderUiTest {
     private fun capture(name: String) {
         val directory = Path.of(checkNotNull(System.getProperty("desktop.ui.evidence")))
         Files.createDirectories(directory)
-        val pixels = compose.onRoot().captureToImage().asSkiaBitmap()
+        // An open sheet or dialog is its own root; capture the topmost one.
+        val roots = compose.onAllNodes(isRoot())
+        val pixels = roots[roots.fetchSemanticsNodes().lastIndex].captureToImage().asSkiaBitmap()
         Image.makeFromBitmap(pixels).use { image ->
             image.encodeToData()!!.use { Files.write(directory.resolve(name), it.bytes) }
         }

@@ -78,10 +78,14 @@ fun main(args: Array<String>) {
             state = rememberWindowState(width = 1150.dp, height = 820.dp),
             onKeyEvent = { event ->
                 val current = model.state.value
-                val back = event.key == Key.Escape && event.type == KeyEventType.KeyUp &&
-                    current.view.isBookView && !current.busy && !closing
-                if (back) model.back()
-                back
+                val ready = event.type == KeyEventType.KeyUp && !current.busy && !closing
+                when {
+                    ready && event.key == Key.Escape && current.view.isBookView -> { model.back(); true }
+                    // Arrow keys turn chapters, like the reader's previous and next buttons.
+                    ready && event.key == Key.DirectionLeft && current.view == View.READER -> { model.readPrevious(); true }
+                    ready && event.key == Key.DirectionRight && current.view == View.READER -> { model.readNext(); true }
+                    else -> false
+                }
             },
             onCloseRequest = {
                 if (!closing) {
@@ -116,6 +120,11 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
     val appearance = state.appearance
     GrimoireMaterialTheme(appearance.colorTheme.scheme(appearance.themeMode.isDark())) {
     Surface(Modifier.fillMaxSize()) {
+    // The reader takes the whole window, like Android's.
+    if (state.view == View.READER && state.projection != null) {
+        ReaderScreen(state.copy(error = closeError ?: state.error), enabled, state.busy || closing, model)
+        return@Surface
+    }
     Row(Modifier.fillMaxSize()) {
         DesktopNavigation(section, enabled, model)
         VerticalDivider()
@@ -295,29 +304,20 @@ private fun BookPane(state: ReaderState, enabled: Boolean, model: ReaderModel, m
             TextButton(onClick = model::favorite, enabled = enabled) {
                 Text(if (book.favorite) "Remove from library" else "Add to library")
             }
-            if (current != null) {
-                TextButton(onClick = model::download, enabled = enabled) {
-                    Text(if (current.url in book.downloaded) "Saved offline" else "Save chapter offline")
-                }
-            }
         }
         HorizontalDivider()
         Row(Modifier.weight(1f).padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            ChapterPane(book, current, enabled, state.offline, model, Modifier.width(240.dp).fillMaxHeight())
-            if (current != null) {
-                key(book.key, current.url) { ReaderPane(state, model, Modifier.weight(1f)) }
-            } else {
-                val description = remember(book.novel.description) { org.jsoup.Jsoup.parse(book.novel.description.orEmpty()).text() }
-                LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    item { Text("${book.chapters.size} chapters", style = MaterialTheme.typography.titleLarge) }
-                    book.resumeChapter()?.let { chapter ->
-                        item {
-                            Button(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked &&
-                                (!state.offline || chapter.url in book.downloaded)) { Text("Continue reading") }
-                        }
+            ChapterPane(book, current, enabled, state.offline, model, Modifier.width(320.dp).fillMaxHeight())
+            val description = remember(book.novel.description) { org.jsoup.Jsoup.parse(book.novel.description.orEmpty()).text() }
+            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                item { Text("${book.chapters.size} chapters", style = MaterialTheme.typography.titleLarge) }
+                book.resumeChapter()?.let { chapter ->
+                    item {
+                        Button(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked &&
+                            (!state.offline || chapter.url in book.downloaded)) { Text("Continue reading") }
                     }
-                    item { Text(description, style = MaterialTheme.typography.bodyLarge) }
                 }
+                item { Text(description, style = MaterialTheme.typography.bodyLarge) }
             }
         }
     }
@@ -364,66 +364,5 @@ private fun ChapterPane(book: SavedBook, current: Chapter?, enabled: Boolean, of
             }
         }
         VerticalScrollbar(rememberScrollbarAdapter(scroll), Modifier.fillMaxHeight().align(androidx.compose.ui.Alignment.CenterEnd))
-    }
-}
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun ReaderPane(state: ReaderState, model: ReaderModel, modifier: Modifier = Modifier) {
-    val book = checkNotNull(state.book)
-    val chapter = checkNotNull(state.chapter)
-    val projection = checkNotNull(state.projection)
-    val position = book.position?.takeIf { it.chapterUrl == chapter.url }
-    val viewport = state.checkpointLoad?.restore?.viewport
-    val initialIndex = (viewport?.index ?: position?.paragraph ?: 0).coerceIn(0, state.pages.lastIndex)
-    val scroll = androidx.compose.runtime.key(projection) {
-        rememberLazyListState(initialIndex, viewport?.offset ?: if (initialIndex == position?.paragraph) position.offset else 0)
-    }
-    var restored by remember(projection) { mutableStateOf(false) }
-    LaunchedEffect(projection) {
-        snapshotFlow { scroll.layoutInfo }.first { it.visibleItemsInfo.isNotEmpty() }
-        if (viewport?.end == true) {
-            scroll.scrollToItem(projection.itemCount - 1)
-            val info = snapshotFlow { scroll.layoutInfo }.first { it.visibleItemsInfo.any { item -> item.index == projection.itemCount - 1 } }
-            val last = info.visibleItemsInfo.last()
-            scroll.scrollBy((last.offset + last.size - info.viewportEndOffset).coerceAtLeast(0).toFloat())
-        }
-        restored = true
-    }
-    val input = remember(projection) { object : NestedScrollConnection {
-        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-            if (restored && source == NestedScrollSource.UserInput && available != Offset.Zero) model.userPosition(projection)
-            return Offset.Zero
-        }
-    } }
-    val key = ChapterKey(book.key, chapter.url)
-    LaunchedEffect(key, projection, restored) {
-        if (!restored) return@LaunchedEffect
-        snapshotFlow { scroll.firstVisibleItemIndex to scroll.firstVisibleItemScrollOffset }.collectLatest { (index, offset) ->
-            model.position(key, index, offset, projection, userInitiated = false)
-            delay(350)
-            model.flushPosition()
-        }
-    }
-    Column(modifier) {
-        Text(chapter.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 16.dp))
-        state.positionNotice?.let { Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp)) }
-        Box(Modifier.weight(1f)) {
-            SelectionContainer {
-                LazyColumn(state = scroll, modifier = Modifier.fillMaxSize().testTag("reader-body")
-                    .onPointerEvent(PointerEventType.Scroll, PointerEventPass.Initial) { if (restored) model.userPosition(projection) }
-                    .nestedScroll(input).padding(end = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    items(projection.body, key = { it.canonicalOrdinal }) { mapped ->
-                        when (val content = mapped.page.content) {
-                            is PageContent.Text -> Text(content.text, style = MaterialTheme.typography.bodyLarge)
-                            is PageContent.Separator -> HorizontalDivider(Modifier.padding(vertical = 12.dp))
-                            is PageContent.Image -> Text("Image unavailable", style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-                }
-            }
-            VerticalScrollbar(rememberScrollbarAdapter(scroll), Modifier.fillMaxHeight().align(androidx.compose.ui.Alignment.CenterEnd)
-                .onPointerEvent(PointerEventType.Press) { if (restored) model.userPosition(projection) })
-        }
     }
 }

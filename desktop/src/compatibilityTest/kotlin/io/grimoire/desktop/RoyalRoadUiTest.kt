@@ -69,7 +69,7 @@ class RoyalRoadUiTest {
             capture("reader.png")
             compose.onNodeWithText("Offline").performClick()
             compose.onNode(hasText(chapter.name) and hasClickAction()).assertIsNotEnabled()
-            compose.onNodeWithText("Save chapter offline").performClick()
+            compose.onNode(hasContentDescription("Save chapter offline") and hasClickAction()).performClick()
             settled(model)
             compose.onNode(hasText(chapter.name) and hasClickAction()).assertIsEnabled()
             val count = requests.get()
