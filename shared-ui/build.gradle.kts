@@ -19,9 +19,19 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(compose.runtime)
+            api(compose.ui)
             api(compose.foundation)
             api(compose.material3)
             implementation(compose.components.resources)
+        }
+        val desktopMain by getting {
+            dependencies { implementation("org.jsoup:jsoup:1.17.2") }
+        }
+        val desktopTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(libs.junit)
+            }
         }
     }
 }

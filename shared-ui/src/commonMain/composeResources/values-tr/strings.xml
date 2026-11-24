@@ -27,4 +27,60 @@
         <item quantity="one">%1$d seçildi</item>
         <item quantity="other">%1$d seçildi</item>
     </plurals>
+    <string name="action_close">Kapat</string>
+    <string name="reader_align_auto">Otomatik</string>
+    <string name="reader_align_center">Orta</string>
+    <string name="reader_align_justify">İki yana yasla</string>
+    <string name="reader_align_left">Sol</string>
+    <string name="reader_align_right">Sağ</string>
+    <string name="reader_animate_grimoire">“grimoire” kelimesini canlandır</string>
+    <string name="reader_animate_grimoire_hint">Ayrıntılar için herhangi bir bölümde biçimlendirilmiş bir kelimeye dokunun</string>
+    <string name="reader_auto_mark_read">Otomatik okundu işaretle</string>
+    <string name="reader_color_theme">Renk teması</string>
+    <string name="reader_display_tab">Görünüm</string>
+    <string name="reader_easter_eggs">Sürprizler</string>
+    <string name="reader_enabled">Etkin</string>
+    <string name="reader_font">Yazı tipi</string>
+    <string name="reader_font_mono">Mono</string>
+    <string name="reader_font_sans">Sans</string>
+    <string name="reader_font_serif">Serif</string>
+    <string name="reader_font_size">Yazı boyutu</string>
+    <string name="reader_grimoire_highlight">Grimoire vurgusu</string>
+    <string name="reader_grimoire_highlight_description">Bölüm metnindeki her “grimoire” kelimesini canlandırır. Buradan veya okuyucu ayarlarından kapatabilirsiniz.</string>
+    <string name="reader_hide_images_hint">Göstermek için dokunun · göz atmak için basılı tutun</string>
+    <string name="reader_hide_images_setting">Görselleri gizle</string>
+    <string name="reader_line_height">Satır yüksekliği</string>
+    <string name="reader_mark_at">İşaretleme noktası</string>
+    <string name="reader_mark_at_end">Sonunda</string>
+    <string name="reader_mark_near_end">Sona yakın</string>
+    <string name="reader_mark_percent">Yüzde</string>
+    <string name="reader_orientation_free">Serbest</string>
+    <string name="reader_orientation_horizontal">Yatay</string>
+    <string name="reader_orientation_vertical">Dikey</string>
+    <plurals name="reader_paragraph_count">
+        <item quantity="one">%1$d paragraf</item>
+        <item quantity="other">%1$d paragraf</item>
+    </plurals>
+    <string name="reader_paragraph_spacing">Paragraf aralığı</string>
+    <string name="reader_privacy">Gizlilik</string>
+    <string name="reader_reading_progress">Okuma ilerlemesi</string>
+    <string name="reader_screen_rotation">Ekran döndürme</string>
+    <string name="reader_show_book_percent" formatted="false">Kitap yüzdesini göster</string>
+    <string name="reader_show_chapter_percent" formatted="false">Bölüm yüzdesini göster</string>
+    <string name="reader_text_alignment">Metin hizalama</string>
+    <string name="reader_text_alignment_hint">Otomatik, romanın diline uyar (sağdan sola yazılan diller sağa hizalanır). Bu roman için hatırlanır.</string>
+    <string name="reader_theme_black">Siyah</string>
+    <string name="reader_theme_dark">Koyu</string>
+    <string name="reader_theme_light">Açık</string>
+    <string name="reader_theme_sepia">Sepya</string>
+    <string name="reader_tts_tab">Sesli okuma</string>
+    <string name="reader_within_last">Sona kalan</string>
+    <string name="action_back">Geri</string>
+    <string name="reader_chapter_progress">Bölüm %%%1$d</string>
+    <string name="reader_book_progress">Kitap %%%1$d</string>
+    <string name="reader_previous">Önceki</string>
+    <string name="reader_settings">Ayarlar</string>
+    <string name="reader_next">Sonraki</string>
+    <string name="reader_next_chapter">Sonraki bölüm →</string>
+    <string name="reader_end_of_book">Kitabın sonu</string>
 </resources>

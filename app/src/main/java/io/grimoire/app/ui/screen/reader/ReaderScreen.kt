@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.reader
 
+import io.grimoire.ui.reader.*
 import io.grimoire.app.ui.tour.tourTarget
 import io.grimoire.app.ui.tour.TourKey
 import io.grimoire.ui.icon.*
@@ -14,54 +15,37 @@ import io.grimoire.reading.state.AndroidViewportV1
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import io.grimoire.reading.anchor.CheckpointNotice
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import io.grimoire.app.data.preferences.resolveReaderColorTheme
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,19 +54,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -100,7 +77,6 @@ import io.grimoire.app.util.isSeparator
 import io.grimoire.app.util.text
 import io.grimoire.app.data.tts.TtsPlaybackState
 import io.grimoire.app.ui.component.PrivacyImage
-import io.grimoire.ui.component.TooltipBottomBar
 import io.grimoire.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -213,14 +189,7 @@ fun ReaderScreen(
     ReaderSystemBarAppearance(colors.background.luminance() > 0.5f)
     val fontFamily = readerFont.fontFamily
     val textLayout = resolveReaderTextLayout(textAlign, novelLanguage)
-    val textStyle = TextStyle(
-        fontSize = fontSize.sp,
-        lineHeight = (fontSize * lineHeightTimes10 / 10f).sp,
-        fontFamily = fontFamily,
-        color = colors.foreground,
-        textAlign = textLayout.textAlign,
-        textDirection = textLayout.textDirection,
-    )
+    val textStyle = readerTextStyle(fontSize, lineHeightTimes10, readerFont, colors, textLayout)
 
     val context = LocalContext.current
     val view = LocalView.current
@@ -427,18 +396,18 @@ fun ReaderScreen(
                 }
                 else -> Column(Modifier.fillMaxSize()) {
                     positionNotice?.let { notice ->
-                        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(checkpointNoticeResource(notice)), style = MaterialTheme.typography.bodySmall,
-                                color = colors.foreground, modifier = Modifier.weight(1f))
-                            if (readerContent?.storageObservation != null && notice != CheckpointNotice.EMPTY) TextButton(
-                                enabled = restoredScrollContent === readerContent,
-                                onClick = {
-                                    if (notice == CheckpointNotice.RELOAD) viewModel.loadPages()
-                                    else projection?.let { viewModel.acceptCheckpointPosition(it, listState.firstVisibleItemIndex) }
-                                },
-                            ) { Text(stringResource(if (notice == CheckpointNotice.RELOAD) R.string.action_retry else R.string.reader_use_position)) }
-                        }
+                        val actionable = readerContent?.storageObservation != null && notice != CheckpointNotice.EMPTY
+                        ReaderPositionNotice(
+                            text = stringResource(checkpointNoticeResource(notice)),
+                            colors = colors,
+                            actionLabel = if (!actionable) null else stringResource(
+                                if (notice == CheckpointNotice.RELOAD) R.string.action_retry else R.string.reader_use_position),
+                            actionEnabled = restoredScrollContent === readerContent,
+                            onAction = {
+                                if (notice == CheckpointNotice.RELOAD) viewModel.loadPages()
+                                else projection?.let { viewModel.acceptCheckpointPosition(it, listState.firstVisibleItemIndex) }
+                            },
+                        )
                     }
                 SelectionContainer(Modifier.weight(1f)) {
                 LazyColumn(
@@ -447,34 +416,13 @@ fun ReaderScreen(
                     modifier = Modifier.fillMaxSize().nestedScroll(positionInput),
                 ) {
                     item(key = "${pageKeyPrefix}title") {
-                        Text(
-                            text = currentChapter?.name ?: "",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = fontFamily,
-                                color = colors.foreground,
-                                textAlign = textLayout.textAlign,
-                                textDirection = textLayout.textDirection,
-                            ),
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                        )
+                        ReaderChapterTitle(currentChapter?.name ?: "", colors, fontFamily, textLayout)
                     }
                     items(projectedPages, key = { "${pageKeyPrefix}page:${it.canonicalOrdinal}" }) { mapped ->
                         val page = mapped.page
                         val imageUrl = page.imageUrl
                         when {
-                            page.isSeparator -> {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = (paragraphSpacing * 2).dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    HorizontalDivider(
-                                        modifier = Modifier.fillMaxWidth(0.4f),
-                                        color = colors.foreground.copy(alpha = 0.4f),
-                                    )
-                                }
-                            }
+                            page.isSeparator -> ReaderSeparator(colors, paragraphSpacing)
                             imageUrl != null -> {
                                 val imageModifier = Modifier
                                     .fillMaxWidth()
@@ -513,24 +461,7 @@ fun ReaderScreen(
                         }
                     }
                     item(key = "${pageKeyPrefix}end") {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 24.dp, bottom = 32.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (hasNext) {
-                                TextButton(onClick = viewModel::navigateNext) {
-                                    Text(stringResource(R.string.reader_next_chapter), color = colors.foreground.copy(alpha = 0.7f))
-                                }
-                            } else {
-                                Text(
-                                    stringResource(R.string.reader_end_of_book),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = colors.foreground.copy(alpha = 0.4f),
-                                )
-                            }
-                        }
+                        ReaderChapterEnd(hasNext, colors, viewModel::navigateNext)
                     }
                 }
                 }
@@ -538,127 +469,83 @@ fun ReaderScreen(
             }
         }
 
-        // Top bar — overlaid, slides in from top. The progress bar slides in with it as a
-        // single unit so the layout below the chrome stays consistent.
-        AnimatedVisibility(
+        // Top bar — overlaid, slides in from top with its progress strip.
+        ReaderTopBar(
             visible = barsVisible,
+            title = currentChapter?.name ?: "",
+            colors = colors,
+            onBack = requestBack,
             modifier = Modifier.align(Alignment.TopCenter),
-            enter = slideInVertically { -it } + fadeIn(),
-            exit = slideOutVertically { -it } + fadeOut(),
+            progressText = readerProgressText(
+                chapterPercent = if (showChapterProgressPercent) ((currentChapter?.readProgress ?: 0f) * 100).toInt() else null,
+                bookPercent = if (showNovelProgressPercent) (novelProgress * 100).toInt() else null,
+            ),
         ) {
-            Column {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colors.background.copy(alpha = 0.95f),
-                    titleContentColor = colors.foreground,
-                    navigationIconContentColor = colors.foreground,
-                    actionIconContentColor = colors.foreground,
-                ),
-                navigationIcon = {
-                    PlainTooltipIconButton(onClick = requestBack, tooltip = stringResource(R.string.action_back)) {
-                        Icon(AppIcons.ArrowBack, contentDescription = stringResource(R.string.action_back))
-                    }
-                },
-                title = {
-                    Text(
-                        currentChapter?.name ?: "",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                actions = {
-                    val chapterImageUrls = visiblePages.mapNotNull { it.imageUrl }
-                    if (hideInlineImages && chapterImageUrls.isNotEmpty()) {
-                        val allRevealed = chapterImageUrls.all { it in revealedImageUrls }
-                        PlainTooltipIconButton(
-                            onClick = {
-                                if (allRevealed) viewModel.hideAllImagesInCurrentChapter()
-                                else viewModel.revealAllImagesInCurrentChapter()
-                            }, tooltip = stringResource(
-                                if (allRevealed) R.string.reader_hide_images
-                                else R.string.reader_reveal_images,
-                            )) {
-                            Icon(
-                                if (allRevealed) AppIcons.HideImage else AppIcons.ImageOutlined,
-                                contentDescription = stringResource(
-                                    if (allRevealed) R.string.reader_hide_images
-                                    else R.string.reader_reveal_images,
-                                ),
-                                tint = colors.foreground,
-                            )
-                        }
-                    }
-                    PlainTooltipIconButton(
-                        onClick = { onOpenWebView(viewModel.chapterWebUrl) },
-                        tooltip = stringResource(R.string.action_open_in_webview),
-                        modifier = Modifier.tourTarget(TourKey.ReaderWebView),
-                    ) {
-                        Icon(
-                            AppIcons.Language,
-                            contentDescription = stringResource(R.string.action_open_in_webview),
-                            tint = colors.foreground,
-                        )
-                    }
-                    PlainTooltipIconButton(
-                        onClick = viewModel::toggleRead,
-                        modifier = Modifier.tourTarget(TourKey.ReaderMarkRead),
-                        tooltip = stringResource(
-                            if (currentChapter?.read == true) R.string.reader_mark_unread
-                            else R.string.reader_mark_read,
+            val chapterImageUrls = visiblePages.mapNotNull { it.imageUrl }
+            if (hideInlineImages && chapterImageUrls.isNotEmpty()) {
+                val allRevealed = chapterImageUrls.all { it in revealedImageUrls }
+                PlainTooltipIconButton(
+                    onClick = {
+                        if (allRevealed) viewModel.hideAllImagesInCurrentChapter()
+                        else viewModel.revealAllImagesInCurrentChapter()
+                    }, tooltip = stringResource(
+                        if (allRevealed) R.string.reader_hide_images
+                        else R.string.reader_reveal_images,
+                    )) {
+                    Icon(
+                        if (allRevealed) AppIcons.HideImage else AppIcons.ImageOutlined,
+                        contentDescription = stringResource(
+                            if (allRevealed) R.string.reader_hide_images
+                            else R.string.reader_reveal_images,
                         ),
-                    ) {
-                        Icon(
-                            if (currentChapter?.read == true) AppIcons.CheckCircle else AppIcons.CheckCircleOutlined,
-                            contentDescription = stringResource(
-                                if (currentChapter?.read == true) R.string.reader_mark_unread
-                                else R.string.reader_mark_read,
-                            ),
-                            tint = if (currentChapter?.read == true) MaterialTheme.colorScheme.primary
-                                   else colors.foreground.copy(alpha = 0.6f),
-                        )
-                    }
-                },
-            )
-            // Thin progress strip directly under the top bar; hides with it.
-            if (showChapterProgressPercent || showNovelProgressPercent) {
-                val chapterPct = ((currentChapter?.readProgress ?: 0f) * 100).toInt().coerceIn(0, 100)
-                val novelPct = (novelProgress * 100).toInt().coerceIn(0, 100)
-                val parts = buildList {
-                    if (showChapterProgressPercent) add(stringResource(R.string.reader_chapter_progress, chapterPct))
-                    if (showNovelProgressPercent) add(stringResource(R.string.reader_book_progress, novelPct))
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(colors.background.copy(alpha = 0.95f))
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                ) {
-                    Text(
-                        text = parts.joinToString(" · "),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = colors.foreground.copy(alpha = 0.7f),
-                        modifier = Modifier.align(Alignment.CenterEnd),
+                        tint = colors.foreground,
                     )
                 }
             }
+            PlainTooltipIconButton(
+                onClick = { onOpenWebView(viewModel.chapterWebUrl) },
+                tooltip = stringResource(R.string.action_open_in_webview),
+                modifier = Modifier.tourTarget(TourKey.ReaderWebView),
+            ) {
+                Icon(
+                    AppIcons.Language,
+                    contentDescription = stringResource(R.string.action_open_in_webview),
+                    tint = colors.foreground,
+                )
+            }
+            PlainTooltipIconButton(
+                onClick = viewModel::toggleRead,
+                modifier = Modifier.tourTarget(TourKey.ReaderMarkRead),
+                tooltip = stringResource(
+                    if (currentChapter?.read == true) R.string.reader_mark_unread
+                    else R.string.reader_mark_read,
+                ),
+            ) {
+                Icon(
+                    if (currentChapter?.read == true) AppIcons.CheckCircle else AppIcons.CheckCircleOutlined,
+                    contentDescription = stringResource(
+                        if (currentChapter?.read == true) R.string.reader_mark_unread
+                        else R.string.reader_mark_read,
+                    ),
+                    tint = if (currentChapter?.read == true) MaterialTheme.colorScheme.primary
+                           else colors.foreground.copy(alpha = 0.6f),
+                )
             }
         }
 
         // Bottom bar — overlaid, slides in from bottom
-        TooltipBottomBar(
+        ReaderBottomBar(
             visible = barsVisible,
+            colors = colors,
+            hasPrevious = hasPrev,
+            hasNext = hasNext,
+            onPrevious = viewModel::navigatePrev,
+            onSettings = { showSettings = true },
+            onNext = viewModel::navigateNext,
             modifier = Modifier.align(Alignment.BottomCenter),
-            enter = slideInVertically { it } + fadeIn(),
-            exit = slideOutVertically { it } + fadeOut(),
-            containerColor = colors.background.copy(alpha = 0.95f),
-            contentColor = colors.foreground,
+            settingsModifier = Modifier.tourTarget(TourKey.ReaderSettings),
+            nextModifier = Modifier.tourTarget(TourKey.ReaderNextChapter),
         ) {
-            TooltipIconButton(
-                icon = AppIcons.NavigateBefore,
-                label = stringResource(R.string.reader_previous),
-                onClick = viewModel::navigatePrev,
-                enabled = hasPrev,
-            )
             TooltipIconButton(
                 visible = ttsEnabled,
                 icon = if (ttsPlayingThisChapter) AppIcons.Pause else AppIcons.PlayArrow,
@@ -674,19 +561,6 @@ fun ReaderScreen(
                 icon = AppIcons.Stop,
                 label = stringResource(R.string.reader_stop),
                 onClick = viewModel::stopTts,
-            )
-            TooltipIconButton(
-                icon = AppIcons.Settings,
-                label = stringResource(R.string.reader_settings),
-                onClick = { showSettings = true },
-                modifier = Modifier.tourTarget(TourKey.ReaderSettings),
-            )
-            TooltipIconButton(
-                icon = AppIcons.NavigateNext,
-                label = stringResource(R.string.reader_next),
-                onClick = viewModel::navigateNext,
-                modifier = Modifier.tourTarget(TourKey.ReaderNextChapter),
-                enabled = hasNext,
             )
         }
     }
@@ -719,11 +593,6 @@ fun ReaderScreen(
             markAsReadStrategy = markAsReadStrategy,
             markAsReadThreshold = markAsReadThreshold,
             markAsReadParagraphsFromEnd = markAsReadParagraphsFromEnd,
-            ttsEnabled = ttsEnabled,
-            ttsEngine = ttsEngine,
-            ttsSpeechRate = ttsSpeechRate,
-            ttsPitch = ttsPitch,
-            ttsAutoAdvance = ttsAutoAdvance,
             onDismiss = { showSettings = false },
             onFontSize = viewModel::setFontSize,
             onLineHeight = viewModel::setLineHeight,
@@ -739,14 +608,23 @@ fun ReaderScreen(
             onMarkAsReadStrategy = viewModel::setMarkAsReadStrategy,
             onMarkAsReadThreshold = viewModel::setMarkAsReadThreshold,
             onMarkAsReadParagraphsFromEnd = viewModel::setMarkAsReadParagraphsFromEnd,
-            onTtsEnabled = viewModel::setTtsEnabled,
-            onTtsEngine = viewModel::setTtsEngine,
-            onTtsSpeechRate = viewModel::setTtsSpeechRate,
-            onTtsPitch = viewModel::setTtsPitch,
-            onTtsAutoAdvance = viewModel::setTtsAutoAdvance,
-            onOpenTtsSettings = {
-                showSettings = false
-                onOpenTtsSettings()
+            ttsTab = {
+                ReaderTtsSettings(
+                    enabled = ttsEnabled,
+                    engine = ttsEngine,
+                    speechRate = ttsSpeechRate,
+                    pitch = ttsPitch,
+                    autoAdvance = ttsAutoAdvance,
+                    onEnabled = viewModel::setTtsEnabled,
+                    onEngine = viewModel::setTtsEngine,
+                    onSpeechRate = viewModel::setTtsSpeechRate,
+                    onPitch = viewModel::setTtsPitch,
+                    onAutoAdvance = viewModel::setTtsAutoAdvance,
+                    onOpenFullSettings = {
+                        showSettings = false
+                        onOpenTtsSettings()
+                    },
+                )
             },
         )
     }

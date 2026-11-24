@@ -25,4 +25,59 @@
     <plurals name="selection_count">
         <item quantity="other">%1$d dipilih</item>
     </plurals>
+    <string name="action_close">Tutup</string>
+    <string name="reader_align_auto">Otomatis</string>
+    <string name="reader_align_center">Tengah</string>
+    <string name="reader_align_justify">Rata kiri-kanan</string>
+    <string name="reader_align_left">Kiri</string>
+    <string name="reader_align_right">Kanan</string>
+    <string name="reader_animate_grimoire">Animasikan kata “grimoire”</string>
+    <string name="reader_animate_grimoire_hint">Ketuk kata bergaya di bab mana pun untuk melihat detail</string>
+    <string name="reader_auto_mark_read">Tandai dibaca otomatis</string>
+    <string name="reader_color_theme">Tema warna</string>
+    <string name="reader_display_tab">Tampilan</string>
+    <string name="reader_easter_eggs">Easter egg</string>
+    <string name="reader_enabled">Aktif</string>
+    <string name="reader_font">Font</string>
+    <string name="reader_font_mono">Mono</string>
+    <string name="reader_font_sans">Sans</string>
+    <string name="reader_font_serif">Serif</string>
+    <string name="reader_font_size">Ukuran font</string>
+    <string name="reader_grimoire_highlight">Sorotan Grimoire</string>
+    <string name="reader_grimoire_highlight_description">Menganimasikan setiap kata “grimoire” dalam teks bab. Matikan di sini atau dari setelan pembaca.</string>
+    <string name="reader_hide_images_hint">Ketuk untuk menampilkan · tahan untuk mengintip</string>
+    <string name="reader_hide_images_setting">Sembunyikan gambar</string>
+    <string name="reader_line_height">Tinggi baris</string>
+    <string name="reader_mark_at">Tandai pada</string>
+    <string name="reader_mark_at_end">Di akhir</string>
+    <string name="reader_mark_near_end">Hampir akhir</string>
+    <string name="reader_mark_percent">Persen</string>
+    <string name="reader_orientation_free">Bebas</string>
+    <string name="reader_orientation_horizontal">Horizontal</string>
+    <string name="reader_orientation_vertical">Vertikal</string>
+    <plurals name="reader_paragraph_count">
+        <item quantity="other">%1$d paragraf terakhir</item>
+    </plurals>
+    <string name="reader_paragraph_spacing">Jarak paragraf</string>
+    <string name="reader_privacy">Privasi</string>
+    <string name="reader_reading_progress">Progres baca</string>
+    <string name="reader_screen_rotation">Rotasi layar</string>
+    <string name="reader_show_book_percent" formatted="false">Tampilkan % buku</string>
+    <string name="reader_show_chapter_percent" formatted="false">Tampilkan % bab</string>
+    <string name="reader_text_alignment">Perataan teks</string>
+    <string name="reader_text_alignment_hint">Otomatis mengikuti bahasa novel (aksara kanan-ke-kiri dirata kanan). Disimpan untuk novel ini.</string>
+    <string name="reader_theme_black">Hitam</string>
+    <string name="reader_theme_dark">Gelap</string>
+    <string name="reader_theme_light">Terang</string>
+    <string name="reader_theme_sepia">Sepia</string>
+    <string name="reader_tts_tab">Bacakan</string>
+    <string name="reader_within_last">Dalam</string>
+    <string name="action_back">Kembali</string>
+    <string name="reader_chapter_progress">Bab %1$d%%</string>
+    <string name="reader_book_progress">Buku %1$d%%</string>
+    <string name="reader_previous">Sebelumnya</string>
+    <string name="reader_settings">Setelan</string>
+    <string name="reader_next">Berikutnya</string>
+    <string name="reader_next_chapter">Bab berikutnya →</string>
+    <string name="reader_end_of_book">Akhir buku</string>
 </resources>

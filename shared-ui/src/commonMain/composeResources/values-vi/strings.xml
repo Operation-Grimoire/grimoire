@@ -25,4 +25,59 @@
     <plurals name="selection_count">
         <item quantity="other">Đã chọn %1$d</item>
     </plurals>
+    <string name="action_close">Đóng</string>
+    <string name="reader_align_auto">Tự động</string>
+    <string name="reader_align_center">Giữa</string>
+    <string name="reader_align_justify">Đều hai bên</string>
+    <string name="reader_align_left">Trái</string>
+    <string name="reader_align_right">Phải</string>
+    <string name="reader_animate_grimoire">Tạo hiệu ứng cho từ “grimoire”</string>
+    <string name="reader_animate_grimoire_hint">Chạm vào một từ có hiệu ứng trong bất kỳ chương nào để xem chi tiết</string>
+    <string name="reader_auto_mark_read">Tự động đánh dấu đã đọc</string>
+    <string name="reader_color_theme">Chủ đề màu</string>
+    <string name="reader_display_tab">Hiển thị</string>
+    <string name="reader_easter_eggs">Bất ngờ ẩn giấu</string>
+    <string name="reader_enabled">Đã bật</string>
+    <string name="reader_font">Phông chữ</string>
+    <string name="reader_font_mono">Đơn cách</string>
+    <string name="reader_font_sans">Không chân</string>
+    <string name="reader_font_serif">Có chân</string>
+    <string name="reader_font_size">Cỡ chữ</string>
+    <string name="reader_grimoire_highlight">Làm nổi bật chữ Grimoire</string>
+    <string name="reader_grimoire_highlight_description">Tạo hiệu ứng cho mọi lần xuất hiện của từ “grimoire” trong nội dung chương. Tắt tại đây hoặc trong cài đặt trình đọc.</string>
+    <string name="reader_hide_images_hint">Chạm để hiện · giữ để xem nhanh</string>
+    <string name="reader_hide_images_setting">Ẩn ảnh</string>
+    <string name="reader_line_height">Giãn dòng</string>
+    <string name="reader_mark_at">Đánh dấu khi</string>
+    <string name="reader_mark_at_end">Ở cuối</string>
+    <string name="reader_mark_near_end">Gần cuối</string>
+    <string name="reader_mark_percent">Phần trăm</string>
+    <string name="reader_orientation_free">Tự do</string>
+    <string name="reader_orientation_horizontal">Ngang</string>
+    <string name="reader_orientation_vertical">Dọc</string>
+    <plurals name="reader_paragraph_count">
+        <item quantity="other">%1$d đoạn</item>
+    </plurals>
+    <string name="reader_paragraph_spacing">Khoảng cách đoạn</string>
+    <string name="reader_privacy">Quyền riêng tư</string>
+    <string name="reader_reading_progress">Tiến độ đọc</string>
+    <string name="reader_screen_rotation">Xoay màn hình</string>
+    <string name="reader_show_book_percent" formatted="false">Hiện % cả truyện</string>
+    <string name="reader_show_chapter_percent" formatted="false">Hiện % chương</string>
+    <string name="reader_text_alignment">Căn lề văn bản</string>
+    <string name="reader_text_alignment_hint">Tự động theo ngôn ngữ của truyện (chữ viết từ phải sang trái sẽ căn phải). Được ghi nhớ riêng cho truyện này.</string>
+    <string name="reader_theme_black">Đen</string>
+    <string name="reader_theme_dark">Tối</string>
+    <string name="reader_theme_light">Sáng</string>
+    <string name="reader_theme_sepia">Màu sepia</string>
+    <string name="reader_tts_tab">Đọc to</string>
+    <string name="reader_within_last">Trong khoảng cuối</string>
+    <string name="action_back">Quay lại</string>
+    <string name="reader_chapter_progress">Chương %1$d%%</string>
+    <string name="reader_book_progress">Cả truyện %1$d%%</string>
+    <string name="reader_previous">Trước</string>
+    <string name="reader_settings">Cài đặt</string>
+    <string name="reader_next">Tiếp</string>
+    <string name="reader_next_chapter">Chương tiếp theo →</string>
+    <string name="reader_end_of_book">Hết truyện</string>
 </resources>

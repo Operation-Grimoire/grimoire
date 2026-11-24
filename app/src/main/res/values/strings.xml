@@ -48,13 +48,6 @@
     <string name="languages_source_language_subtitle">Pick which languages multi-language sources show by default</string>
     <string name="language_picker_title">App language</string>
     <string name="language_option_system">System default</string>
-    <string name="reader_text_alignment">Text alignment</string>
-    <string name="reader_text_alignment_hint">Auto follows the novel’s language (right-to-left scripts read right-aligned). Remembered for this novel.</string>
-    <string name="reader_align_auto">Auto</string>
-    <string name="reader_align_left">Left</string>
-    <string name="reader_align_right">Right</string>
-    <string name="reader_align_center">Center</string>
-    <string name="reader_align_justify">Justify</string>
     <string name="onboarding_welcome_title">Welcome to Grimoire</string>
     <string name="onboarding_reading_title">What languages do you read?</string>
     <string name="onboarding_reading_helper">Sources and multi-language browsing are filtered to these. Leave everything unchecked to show all languages.</string>
@@ -634,51 +627,16 @@
 
     <!-- Reader -->
     <string name="reader_next_chapter">Next chapter →</string>
-    <string name="reader_end_of_book">End of book</string>
     <string name="reader_hide_images">Hide all images in this chapter</string>
     <string name="reader_reveal_images">Reveal all images in this chapter</string>
     <string name="reader_mark_unread">Mark as unread</string>
     <string name="reader_mark_read">Mark as read</string>
-    <string name="reader_chapter_progress">Chapter %1$d%%</string>
-    <string name="reader_book_progress">Book %1$d%%</string>
-    <string name="reader_previous">Previous</string>
     <string name="reader_pause">Pause</string>
     <string name="reader_read_aloud">Read aloud</string>
     <string name="reader_stop">Stop</string>
-    <string name="reader_settings">Settings</string>
-    <string name="reader_next">Next</string>
-    <string name="reader_grimoire_highlight">Grimoire highlight</string>
-    <string name="reader_grimoire_highlight_description">Animates every occurrence of “grimoire” in chapter text. Toggle it off here or from reader settings.</string>
-    <string name="reader_enabled">Enabled</string>
-    <string name="reader_display_tab">Display</string>
-    <string name="reader_tts_tab">Read aloud</string>
     <string name="reader_preview_text">The quick brown fox jumps over the lazy dog. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.</string>
-    <string name="reader_color_theme">Color theme</string>
-    <string name="reader_theme_light">Light</string>
-    <string name="reader_theme_sepia">Sepia</string>
-    <string name="reader_theme_dark">Dark</string>
-    <string name="reader_theme_black">Black</string>
     <string name="reader_font">Font</string>
-    <string name="reader_font_size">Font size</string>
-    <string name="reader_line_height">Line height</string>
-    <string name="reader_paragraph_spacing">Paragraph spacing</string>
-    <string name="reader_screen_rotation">Screen rotation</string>
-    <string name="reader_privacy">Privacy</string>
-    <string name="reader_hide_images_setting">Hide images</string>
-    <string name="reader_hide_images_hint">Tap to reveal · hold to peek</string>
-    <string name="reader_reading_progress">Reading progress</string>
-    <string name="reader_show_chapter_percent" formatted="false">Show chapter %</string>
-    <string name="reader_show_book_percent" formatted="false">Show book %</string>
-    <string name="reader_auto_mark_read">Auto-mark as read</string>
     <string name="reader_mark_at">Mark at</string>
-    <string name="reader_within_last">Within last</string>
-    <plurals name="reader_paragraph_count">
-        <item quantity="one">%1$d paragraph</item>
-        <item quantity="other">%1$d paragraphs</item>
-    </plurals>
-    <string name="reader_easter_eggs">Easter eggs</string>
-    <string name="reader_animate_grimoire">Animate the word “grimoire”</string>
-    <string name="reader_animate_grimoire_hint">Tap a styled word in any chapter for details</string>
     <string name="reader_enable_tts">Enable text-to-speech</string>
     <string name="reader_enable_tts_hint">Show playback controls in the reader</string>
     <string name="reader_speech_engine">Speech engine</string>
@@ -687,9 +645,6 @@
     <string name="reader_pitch">Pitch (on-device only)</string>
     <string name="reader_auto_advance">Auto-advance to next chapter</string>
     <string name="reader_manage_voices">Manage voices &amp; more settings</string>
-    <string name="reader_font_sans">Sans</string>
-    <string name="reader_font_serif">Serif</string>
-    <string name="reader_font_mono">Mono</string>
     <string name="reader_mark_percent">Percent</string>
     <string name="reader_mark_near_end">Near end</string>
     <string name="reader_mark_at_end">At end</string>

@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.reader
 
+import io.grimoire.ui.reader.ReaderTextLayout
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import io.grimoire.api.model.lang.Language

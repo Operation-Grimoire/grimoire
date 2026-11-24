@@ -49,13 +49,6 @@
     <string name="languages_source_language_subtitle">اختر اللغات التي تعرضها المصادر متعددة اللغات افتراضيًا</string>
     <string name="language_picker_title">لغة التطبيق</string>
     <string name="language_option_system">الإعداد الافتراضي للنظام</string>
-    <string name="reader_text_alignment">محاذاة النص</string>
-    <string name="reader_text_alignment_hint">يتبع الوضع التلقائي لغة الرواية (تُحاذى النصوص المكتوبة من اليمين إلى اليسار إلى اليمين). يُحفظ لهذه الرواية.</string>
-    <string name="reader_align_auto">تلقائي</string>
-    <string name="reader_align_left">يسار</string>
-    <string name="reader_align_right">يمين</string>
-    <string name="reader_align_center">وسط</string>
-    <string name="reader_align_justify">ضبط</string>
     <string name="onboarding_welcome_title">مرحبًا بك في Grimoire</string>
     <string name="onboarding_reading_title">ما اللغات التي تقرأ بها؟</string>
     <string name="onboarding_reading_helper">تُصفّى المصادر والتصفّح متعدد اللغات وفقًا لهذه اللغات. اترك الكل دون تحديد لإظهار جميع اللغات.</string>
@@ -699,55 +692,16 @@
 
     <!-- Reader -->
     <string name="reader_next_chapter">الفصل التالي ←</string>
-    <string name="reader_end_of_book">نهاية الكتاب</string>
     <string name="reader_hide_images">إخفاء كل الصور في هذا الفصل</string>
     <string name="reader_reveal_images">كشف كل الصور في هذا الفصل</string>
     <string name="reader_mark_unread">تعليم كغير مقروء</string>
     <string name="reader_mark_read">تعليم كمقروء</string>
-    <string name="reader_chapter_progress">الفصل %1$d%%</string>
-    <string name="reader_book_progress">الكتاب %1$d%%</string>
-    <string name="reader_previous">السابق</string>
     <string name="reader_pause">إيقاف مؤقت</string>
     <string name="reader_read_aloud">القراءة بصوت عالٍ</string>
     <string name="reader_stop">إيقاف</string>
-    <string name="reader_settings">الإعدادات</string>
-    <string name="reader_next">التالي</string>
-    <string name="reader_grimoire_highlight">إبراز كلمة grimoire</string>
-    <string name="reader_grimoire_highlight_description">يحرّك كل ظهور لكلمة «grimoire» في نص الفصل. أوقفه من هنا أو من إعدادات القارئ.</string>
-    <string name="reader_enabled">مفعّل</string>
-    <string name="reader_display_tab">العرض</string>
-    <string name="reader_tts_tab">القراءة بصوت عالٍ</string>
     <string name="reader_preview_text">هذا نص تجريبي لمعاينة شكل الخط وحجمه وتباعد الأسطر. صِف خَلقَ خَودٍ كمثلِ الشمسِ إذ بزغت، يحظى الضجيعُ بها نجلاءَ معطارِ.</string>
-    <string name="reader_color_theme">سمة الألوان</string>
-    <string name="reader_theme_light">فاتح</string>
-    <string name="reader_theme_sepia">بني داكن</string>
-    <string name="reader_theme_dark">داكن</string>
-    <string name="reader_theme_black">أسود</string>
     <string name="reader_font">الخط</string>
-    <string name="reader_font_size">حجم الخط</string>
-    <string name="reader_line_height">ارتفاع السطر</string>
-    <string name="reader_paragraph_spacing">التباعد بين الفقرات</string>
-    <string name="reader_screen_rotation">تدوير الشاشة</string>
-    <string name="reader_privacy">الخصوصية</string>
-    <string name="reader_hide_images_setting">إخفاء الصور</string>
-    <string name="reader_hide_images_hint">انقر للكشف · اضغط مطولًا لإلقاء نظرة</string>
-    <string name="reader_reading_progress">تقدّم القراءة</string>
-    <string name="reader_show_chapter_percent" formatted="false">إظهار نسبة الفصل %</string>
-    <string name="reader_show_book_percent" formatted="false">إظهار نسبة الكتاب %</string>
-    <string name="reader_auto_mark_read">التعليم كمقروء تلقائيًا</string>
     <string name="reader_mark_at">التعليم عند</string>
-    <string name="reader_within_last">ضمن آخر</string>
-    <plurals name="reader_paragraph_count">
-        <item quantity="zero">%1$d فقرة</item>
-        <item quantity="one">%1$d فقرة</item>
-        <item quantity="two">%1$d فقرتان</item>
-        <item quantity="few">%1$d فقرات</item>
-        <item quantity="many">%1$d فقرةً</item>
-        <item quantity="other">%1$d فقرة</item>
-    </plurals>
-    <string name="reader_easter_eggs">مفاجآت مخفية</string>
-    <string name="reader_animate_grimoire">تحريك كلمة «grimoire»</string>
-    <string name="reader_animate_grimoire_hint">انقر على كلمة منسّقة في أي فصل لعرض التفاصيل</string>
     <string name="reader_enable_tts">تفعيل تحويل النص إلى كلام</string>
     <string name="reader_enable_tts_hint">إظهار عناصر التحكم في التشغيل داخل القارئ</string>
     <string name="reader_speech_engine">محرّك الكلام</string>
@@ -756,9 +710,6 @@
     <string name="reader_pitch">طبقة الصوت (على الجهاز فقط)</string>
     <string name="reader_auto_advance">الانتقال تلقائيًا إلى الفصل التالي</string>
     <string name="reader_manage_voices">إدارة الأصوات والمزيد من الإعدادات</string>
-    <string name="reader_font_sans">بلا زوائد</string>
-    <string name="reader_font_serif">بزوائد</string>
-    <string name="reader_font_mono">أحادي المسافة</string>
     <string name="reader_mark_percent">نسبة مئوية</string>
     <string name="reader_mark_near_end">قرب النهاية</string>
     <string name="reader_mark_at_end">عند النهاية</string>

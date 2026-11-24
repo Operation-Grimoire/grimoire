@@ -49,13 +49,6 @@
     <string name="languages_source_language_subtitle">Какие языки по умолчанию показывают многоязычные источники</string>
     <string name="language_picker_title">Язык приложения</string>
     <string name="language_option_system">Как в системе</string>
-    <string name="reader_text_alignment">Выравнивание текста</string>
-    <string name="reader_text_alignment_hint">«Авто» зависит от языка новеллы (письменность справа налево выравнивается по правому краю). Запоминается для этой новеллы.</string>
-    <string name="reader_align_auto">Авто</string>
-    <string name="reader_align_left">По левому краю</string>
-    <string name="reader_align_right">По правому краю</string>
-    <string name="reader_align_center">По центру</string>
-    <string name="reader_align_justify">По ширине</string>
     <string name="onboarding_welcome_title">Добро пожаловать в Grimoire</string>
     <string name="onboarding_reading_title">На каких языках вы читаете?</string>
     <string name="onboarding_reading_helper">Источники и многоязычный обзор будут отфильтрованы по этим языкам. Ничего не отмечайте, чтобы показывать все языки.</string>
@@ -667,53 +660,16 @@
 
     <!-- Reader -->
     <string name="reader_next_chapter">Следующая глава →</string>
-    <string name="reader_end_of_book">Конец книги</string>
     <string name="reader_hide_images">Скрыть все изображения в этой главе</string>
     <string name="reader_reveal_images">Показать все изображения в этой главе</string>
     <string name="reader_mark_unread">Отметить как непрочитанную</string>
     <string name="reader_mark_read">Отметить как прочитанную</string>
-    <string name="reader_chapter_progress">Глава %1$d%%</string>
-    <string name="reader_book_progress">Книга %1$d%%</string>
-    <string name="reader_previous">Назад</string>
     <string name="reader_pause">Пауза</string>
     <string name="reader_read_aloud">Читать вслух</string>
     <string name="reader_stop">Стоп</string>
-    <string name="reader_settings">Настройки</string>
-    <string name="reader_next">Далее</string>
-    <string name="reader_grimoire_highlight">Подсветка «grimoire»</string>
-    <string name="reader_grimoire_highlight_description">Анимирует каждое вхождение слова «grimoire» в тексте главы. Отключить можно здесь или в настройках читалки.</string>
-    <string name="reader_enabled">Включено</string>
-    <string name="reader_display_tab">Отображение</string>
-    <string name="reader_tts_tab">Чтение вслух</string>
     <string name="reader_preview_text">Съешь же ещё этих мягких французских булок, да выпей чаю. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.</string>
-    <string name="reader_color_theme">Цветовая тема</string>
-    <string name="reader_theme_light">Светлая</string>
-    <string name="reader_theme_sepia">Сепия</string>
-    <string name="reader_theme_dark">Тёмная</string>
-    <string name="reader_theme_black">Чёрная</string>
     <string name="reader_font">Шрифт</string>
-    <string name="reader_font_size">Размер шрифта</string>
-    <string name="reader_line_height">Межстрочный интервал</string>
-    <string name="reader_paragraph_spacing">Отступ между абзацами</string>
-    <string name="reader_screen_rotation">Поворот экрана</string>
-    <string name="reader_privacy">Конфиденциальность</string>
-    <string name="reader_hide_images_setting">Скрывать изображения</string>
-    <string name="reader_hide_images_hint">Нажмите, чтобы показать · удерживайте для просмотра</string>
-    <string name="reader_reading_progress">Прогресс чтения</string>
-    <string name="reader_show_chapter_percent" formatted="false">Показывать % главы</string>
-    <string name="reader_show_book_percent" formatted="false">Показывать % книги</string>
-    <string name="reader_auto_mark_read">Автоматически отмечать прочитанным</string>
     <string name="reader_mark_at">Отмечать</string>
-    <string name="reader_within_last">За последние</string>
-    <plurals name="reader_paragraph_count">
-        <item quantity="one">%1$d абзац</item>
-        <item quantity="few">%1$d абзаца</item>
-        <item quantity="many">%1$d абзацев</item>
-        <item quantity="other">%1$d абзаца</item>
-    </plurals>
-    <string name="reader_easter_eggs">Пасхалки</string>
-    <string name="reader_animate_grimoire">Анимировать слово «grimoire»</string>
-    <string name="reader_animate_grimoire_hint">Нажмите на выделенное слово в любой главе, чтобы узнать подробности</string>
     <string name="reader_enable_tts">Включить синтез речи</string>
     <string name="reader_enable_tts_hint">Показывать элементы управления воспроизведением в читалке</string>
     <string name="reader_speech_engine">Движок речи</string>
@@ -722,9 +678,6 @@
     <string name="reader_pitch">Тон (только на устройстве)</string>
     <string name="reader_auto_advance">Автопереход к следующей главе</string>
     <string name="reader_manage_voices">Голоса и другие настройки</string>
-    <string name="reader_font_sans">Без засечек</string>
-    <string name="reader_font_serif">С засечками</string>
-    <string name="reader_font_mono">Моноширинный</string>
     <string name="reader_mark_percent">Процент</string>
     <string name="reader_mark_near_end">Ближе к концу</string>
     <string name="reader_mark_at_end">В конце</string>
