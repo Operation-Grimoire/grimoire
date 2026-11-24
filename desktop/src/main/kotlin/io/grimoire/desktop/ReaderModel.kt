@@ -62,6 +62,7 @@ data class ReaderState(
     val extensionNotice: String? = null,
     val localExtension: String? = null,
     val appearance: DesktopAppearance = DesktopAppearance(),
+    val readerSettings: DesktopReaderSettings = DesktopReaderSettings(),
 )
 
 data class BrowseSource(val sourceId: Long, val name: String, val lang: String)
@@ -88,13 +89,16 @@ class ReaderModel(
     private val installed = linkedMapOf<String, LocalExtension>()
     private var sessionExtension: LocalExtension? = null
     private var extensionFailures: Map<String, String> = emptyMap()
-    private val mutable = MutableStateFlow(ReaderState(library = library.saved(), historyRecording = library.historyRecording(), appearance = library.appearance()))
+    private val mutable = MutableStateFlow(ReaderState(library = library.saved(), historyRecording = library.historyRecording(), appearance = library.appearance(), readerSettings = library.readerSettings()))
     // The history worker is drained separately from navigation jobs before closing the store.
     private val historyScope = CoroutineScope(SupervisorJob() + operationDispatcher)
     private val historyWrites = OpenedHistoryWrites(historyScope, DesktopOpenedHistoryDao(library)) { failure ->
         System.getLogger("OpenedHistory").log(System.Logger.Level.WARNING, "Reading history action failed (${failure.javaClass.simpleName})")
     }
     private var lastHistoryOpen: Deferred<Result<Unit>>? = null
+    // Reader settings save in order without blocking the reader; close drains them.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val settingsScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
     val state = mutable.asStateFlow()
 
     init {
@@ -363,6 +367,32 @@ class ReaderModel(
         }
     }
 
+    /** Applies immediately; the save runs in the background and reports a failure as an error. */
+    fun setReaderSettings(settings: DesktopReaderSettings) {
+        if (closing.get()) return
+        val value = settings.normalized()
+        mutable.update { it.copy(readerSettings = value) }
+        settingsScope.launch {
+            try { library.setReaderSettings(value) }
+            catch (failure: Exception) {
+                mutable.update { it.copy(error = "Could not save reader settings: ${failure.message ?: failure.javaClass.simpleName}") }
+            }
+        }
+    }
+
+    fun readPrevious() = readAdjacent(-1)
+
+    fun readNext() = readAdjacent(1)
+
+    private fun readAdjacent(step: Int) = navigate {
+        val current = state.value
+        check(current.view == View.READER) { "Open a chapter first" }
+        val book = current.book ?: error("Open a novel first")
+        val chapter = current.chapter ?: error("Open a chapter first")
+        val target = adjacentChapter(book.chapters, chapter, step) ?: error(if (step < 0) "This is the first chapter" else "This is the last chapter")
+        readChapter(book, target, current.bookOrigin)
+    }
+
     fun removeHistory(id: Long) = changeHistory { historyWrites.delete(listOf(id))!!.await().getOrThrow() }
 
     fun clearHistory() = changeHistory { historyWrites.clear().await().getOrThrow() }
@@ -552,6 +582,7 @@ class ReaderModel(
             // Let the claimed operation finish, then save before cancelling the usable scope.
             scope.coroutineContext.job.children.toList().joinAll()
             lastHistoryOpen?.join()
+            settingsScope.coroutineContext.job.children.toList().joinAll()
             withContext(Dispatchers.IO) {
                 if (!storageClosed.get()) {
                     checkpoints.retire(); flushStoredPositions(); library.close(); storageClosed.set(true)
@@ -563,6 +594,7 @@ class ReaderModel(
         }
         scope.coroutineContext.job.cancelAndJoin()
         historyScope.coroutineContext.job.cancelAndJoin()
+        settingsScope.coroutineContext.job.cancelAndJoin()
         withContext(Dispatchers.IO) {
             (installed.values + listOfNotNull(sessionExtension)).forEach { runCatching { it.close() } }
             installed.clear()

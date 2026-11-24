@@ -19,6 +19,15 @@ apps. Strings used by shared composables are Compose Multiplatform resources in
 Android app. `LocaleCoverageTest` checks both sets. Move a screen's composables here
 before giving Desktop its own version of that screen.
 
+The reader is shared this way: `io.grimoire.ui.reader` has the reader color themes and
+fonts, paragraph rendering, the top and bottom bars, the chapter end and the display
+settings sheet. Each app keeps its own scroll, position-saving and read-aloud logic.
+Android passes its read-aloud tab and screen rotation; Desktop hides both, image
+privacy and automatic mark-as-read, and saves its reader settings in the desktop
+settings table. Desktop keeps text alignment as one setting for all books; Android
+remembers it per novel. Chapter HTML renders through `readerHtml`, which uses
+`AnnotatedString.fromHtml` on Android and jsoup on Desktop.
+
 ## Build and run
 
 Use JDK 17 and the package-read credentials described in [CONTRIBUTING](../CONTRIBUTING.md).

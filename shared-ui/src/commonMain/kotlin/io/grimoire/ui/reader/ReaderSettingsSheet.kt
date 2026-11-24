@@ -51,11 +51,13 @@ fun ReaderSettingsSheet(
     /** Null hides screen rotation, which only Android offers. */
     orientation: ReaderOrientation?,
     textAlign: ReaderTextAlign,
-    hideInlineImages: Boolean,
+    /** Null hides the image privacy switch. */
+    hideInlineImages: Boolean?,
     showChapterProgressPercent: Boolean,
     showNovelProgressPercent: Boolean,
     grimoireEasterEggEnabled: Boolean,
-    markAsReadStrategy: MarkAsReadStrategy,
+    /** Null hides automatic mark-as-read. */
+    markAsReadStrategy: MarkAsReadStrategy?,
     markAsReadThreshold: Int,
     markAsReadParagraphsFromEnd: Int,
     onDismiss: () -> Unit,
@@ -141,11 +143,13 @@ private fun ReaderDisplaySettings(
     colorTheme: ReaderColorTheme,
     orientation: ReaderOrientation?,
     textAlign: ReaderTextAlign,
-    hideInlineImages: Boolean,
+    /** Null hides the image privacy switch. */
+    hideInlineImages: Boolean?,
     showChapterProgressPercent: Boolean,
     showNovelProgressPercent: Boolean,
     grimoireEasterEggEnabled: Boolean,
-    markAsReadStrategy: MarkAsReadStrategy,
+    /** Null hides automatic mark-as-read. */
+    markAsReadStrategy: MarkAsReadStrategy?,
     markAsReadThreshold: Int,
     markAsReadParagraphsFromEnd: Int,
     onFontSize: (Int) -> Unit,
@@ -300,6 +304,7 @@ private fun ReaderDisplaySettings(
                 color = dividerColor,
             )
 
+            if (hideInlineImages != null) {
             SheetSectionLabel(stringResource(Res.string.reader_privacy))
             SheetSwitchRow(
                 title = stringResource(Res.string.reader_hide_images_setting),
@@ -307,6 +312,7 @@ private fun ReaderDisplaySettings(
                 checked = hideInlineImages,
                 onCheckedChange = onHideInlineImages,
             )
+            }
 
             SheetSectionLabel(stringResource(Res.string.reader_reading_progress))
             SheetSwitchRow(
@@ -320,6 +326,7 @@ private fun ReaderDisplaySettings(
                 onCheckedChange = onShowNovelProgressPercent,
             )
 
+            if (markAsReadStrategy != null) {
             SheetSectionLabel(stringResource(Res.string.reader_auto_mark_read))
             Spacer(Modifier.height(6.dp))
             SingleChoiceSegmented(
@@ -358,6 +365,7 @@ private fun ReaderDisplaySettings(
                     modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 6.dp),
                 )
                 MarkAsReadStrategy.AT_END -> Unit
+            }
             }
 
             SheetSectionLabel(stringResource(Res.string.reader_easter_eggs))

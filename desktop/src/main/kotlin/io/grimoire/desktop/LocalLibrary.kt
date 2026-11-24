@@ -152,6 +152,17 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
         }
     }
 
+    @Synchronized fun readerSettings(): DesktopReaderSettings {
+        database.verifyMarker()
+        return decodeReaderSettings(db.query("SELECT value FROM settings WHERE name='reader'") { it.getString(1) }.singleOrNull())
+    }
+
+    @Synchronized fun setReaderSettings(settings: DesktopReaderSettings) {
+        write {
+            db.execute("INSERT INTO settings VALUES('reader',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value", settings.normalized().encode())
+        }
+    }
+
     @Synchronized internal fun openedHistory(): List<DesktopHistoryEntry> {
         database.verifyMarker()
         return db.query("""SELECT id,source_id,novel_url,chapter_url,novel_title,chapter_title,opened_at

@@ -1,0 +1,14 @@
+{
+  "android": [
+    {
+      "category": "fix",
+      "text": "Screen readers announce disabled reader and bottom-bar buttons as disabled, and bottom-bar labels also appear when a mouse hovers over them."
+    }
+  ],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "The reader now uses the whole window like the Android app, with chapter and book progress, previous and next chapter buttons (also the left and right arrow keys), and the Android reader settings for color theme, font, size, line height, paragraph spacing and alignment."
+    }
+  ]
+}
