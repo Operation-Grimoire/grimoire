@@ -13,4 +13,22 @@
     <string name="color_theme_forest">Las</string>
     <string name="color_theme_rose">Róża</string>
     <string name="color_theme_midnight">Północ</string>
+    <string name="action_clear_selection">Wyczyść zaznaczenie</string>
+    <string name="action_select_all">Zaznacz wszystko</string>
+    <string name="filter_all">Wszystkie</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="one">Wybrano: %1$d</item>
+        <item quantity="few">Wybrano: %1$d</item>
+        <item quantity="many">Wybrano: %1$d</item>
+        <item quantity="other">Wybrano: %1$d</item>
+    </plurals>
+    <string name="filter_included_excluded">Uwzględnione: %1$d · wykluczone: %2$d</string>
+    <string name="action_decrease">Zmniejsz</string>
+    <string name="action_increase">Zwiększ</string>
+    <plurals name="selection_count">
+        <item quantity="one">Wybrano: %1$d</item>
+        <item quantity="few">Wybrano: %1$d</item>
+        <item quantity="many">Wybrano: %1$d</item>
+        <item quantity="other">Wybrano: %1$d</item>
+    </plurals>
 </resources>

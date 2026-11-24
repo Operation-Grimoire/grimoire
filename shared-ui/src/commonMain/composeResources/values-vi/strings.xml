@@ -13,4 +13,16 @@
     <string name="color_theme_forest">Rừng xanh</string>
     <string name="color_theme_rose">Hoa hồng</string>
     <string name="color_theme_midnight">Nửa đêm</string>
+    <string name="action_clear_selection">Bỏ chọn</string>
+    <string name="action_select_all">Chọn tất cả</string>
+    <string name="filter_all">Tất cả</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="other">Đã chọn %1$d</item>
+    </plurals>
+    <string name="filter_included_excluded">%1$d bao gồm · %2$d loại trừ</string>
+    <string name="action_decrease">Giảm</string>
+    <string name="action_increase">Tăng</string>
+    <plurals name="selection_count">
+        <item quantity="other">Đã chọn %1$d</item>
+    </plurals>
 </resources>

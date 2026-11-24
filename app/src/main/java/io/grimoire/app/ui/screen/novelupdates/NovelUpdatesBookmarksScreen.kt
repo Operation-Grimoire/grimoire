@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.novelupdates
 
 import io.grimoire.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

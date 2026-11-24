@@ -13,4 +13,16 @@
     <string name="color_theme_forest">フォレスト</string>
     <string name="color_theme_rose">ローズ</string>
     <string name="color_theme_midnight">ミッドナイト</string>
+    <string name="action_clear_selection">選択を解除</string>
+    <string name="action_select_all">すべて選択</string>
+    <string name="filter_all">すべて</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="other">%1$d件選択中</item>
+    </plurals>
+    <string name="filter_included_excluded">%1$d件を含む · %2$d件を除外</string>
+    <string name="action_decrease">減らす</string>
+    <string name="action_increase">増やす</string>
+    <plurals name="selection_count">
+        <item quantity="other">%1$d件選択中</item>
+    </plurals>
 </resources>

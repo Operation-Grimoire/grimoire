@@ -13,4 +13,16 @@
     <string name="color_theme_forest">ป่าไม้</string>
     <string name="color_theme_rose">กุหลาบ</string>
     <string name="color_theme_midnight">เที่ยงคืน</string>
+    <string name="action_clear_selection">ล้างการเลือก</string>
+    <string name="action_select_all">เลือกทั้งหมด</string>
+    <string name="filter_all">ทั้งหมด</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="other">เลือกแล้ว %1$d รายการ</item>
+    </plurals>
+    <string name="filter_included_excluded">รวม %1$d · ไม่รวม %2$d</string>
+    <string name="action_decrease">ลด</string>
+    <string name="action_increase">เพิ่ม</string>
+    <plurals name="selection_count">
+        <item quantity="other">เลือกแล้ว %1$d รายการ</item>
+    </plurals>
 </resources>

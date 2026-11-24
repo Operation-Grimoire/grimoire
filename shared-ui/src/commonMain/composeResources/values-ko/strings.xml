@@ -13,4 +13,16 @@
     <string name="color_theme_forest">숲</string>
     <string name="color_theme_rose">장미</string>
     <string name="color_theme_midnight">한밤</string>
+    <string name="action_clear_selection">선택 해제</string>
+    <string name="action_select_all">모두 선택</string>
+    <string name="filter_all">전체</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="other">%1$d개 선택됨</item>
+    </plurals>
+    <string name="filter_included_excluded">%1$d개 포함 · %2$d개 제외</string>
+    <string name="action_decrease">줄이기</string>
+    <string name="action_increase">늘리기</string>
+    <plurals name="selection_count">
+        <item quantity="other">%1$d개 선택됨</item>
+    </plurals>
 </resources>

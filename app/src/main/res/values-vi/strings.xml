@@ -146,7 +146,6 @@
     <plurals name="selection_count">
         <item quantity="other">Đã chọn %1$d</item>
     </plurals>
-    <string name="action_clear_selection">Bỏ chọn</string>
     <string name="action_select_all">Chọn tất cả</string>
     <string name="move_to_category_title">Chuyển vào danh mục</string>
     <plurals name="novel_count">
@@ -291,7 +290,6 @@
     <string name="action_decrease">Giảm</string>
     <string name="action_increase">Tăng</string>
     <string name="action_clear_search">Xóa tìm kiếm</string>
-    <string name="filter_included_excluded">%1$d bao gồm · %2$d loại trừ</string>
     <string name="action_show_more">Xem thêm</string>
     <string name="action_show_less">Thu gọn</string>
     <string name="action_download">Tải xuống</string>

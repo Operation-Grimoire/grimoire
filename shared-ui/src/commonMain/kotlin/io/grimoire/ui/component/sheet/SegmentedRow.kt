@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.component.sheet
+package io.grimoire.ui.component.sheet
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth

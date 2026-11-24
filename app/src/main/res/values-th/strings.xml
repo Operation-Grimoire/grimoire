@@ -145,7 +145,6 @@
     <plurals name="selection_count">
         <item quantity="other">เลือกแล้ว %1$d รายการ</item>
     </plurals>
-    <string name="action_clear_selection">ล้างการเลือก</string>
     <string name="action_select_all">เลือกทั้งหมด</string>
     <string name="move_to_category_title">ย้ายไปยังหมวดหมู่</string>
     <plurals name="novel_count">
@@ -290,7 +289,6 @@
     <string name="action_decrease">ลด</string>
     <string name="action_increase">เพิ่ม</string>
     <string name="action_clear_search">ล้างการค้นหา</string>
-    <string name="filter_included_excluded">รวม %1$d · ไม่รวม %2$d</string>
     <string name="action_show_more">แสดงเพิ่มเติม</string>
     <string name="action_show_less">แสดงน้อยลง</string>
     <string name="action_download">ดาวน์โหลด</string>

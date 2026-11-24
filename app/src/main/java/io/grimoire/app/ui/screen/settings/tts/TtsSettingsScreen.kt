@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.settings.tts
 
 import io.grimoire.ui.icon.*
 import androidx.compose.foundation.clickable
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,7 +35,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.tts.TtsEngineType
-import io.grimoire.app.ui.component.sheet.StepperRow
+import io.grimoire.ui.component.sheet.StepperRow
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
 import io.grimoire.app.R
 

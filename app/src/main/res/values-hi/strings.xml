@@ -150,7 +150,6 @@
         <item quantity="one">%1$d चुना गया</item>
         <item quantity="other">%1$d चुने गए</item>
     </plurals>
-    <string name="action_clear_selection">चयन हटाएँ</string>
     <string name="action_select_all">सभी चुनें</string>
     <string name="move_to_category_title">श्रेणी में ले जाएँ</string>
     <plurals name="novel_count">
@@ -299,7 +298,6 @@
     <string name="action_decrease">घटाएँ</string>
     <string name="action_increase">बढ़ाएँ</string>
     <string name="action_clear_search">खोज साफ़ करें</string>
-    <string name="filter_included_excluded">%1$d शामिल · %2$d बाहर</string>
     <string name="action_show_more">और दिखाएँ</string>
     <string name="action_show_less">कम दिखाएँ</string>
     <string name="action_download">डाउनलोड करें</string>

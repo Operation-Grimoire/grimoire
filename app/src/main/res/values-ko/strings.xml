@@ -146,7 +146,6 @@
     <plurals name="selection_count">
         <item quantity="other">%1$d개 선택됨</item>
     </plurals>
-    <string name="action_clear_selection">선택 해제</string>
     <string name="action_select_all">모두 선택</string>
     <string name="move_to_category_title">카테고리로 이동</string>
     <plurals name="novel_count">
@@ -291,7 +290,6 @@
     <string name="action_decrease">줄이기</string>
     <string name="action_increase">늘리기</string>
     <string name="action_clear_search">검색어 지우기</string>
-    <string name="filter_included_excluded">%1$d개 포함 · %2$d개 제외</string>
     <string name="action_show_more">더 보기</string>
     <string name="action_show_less">간략히 보기</string>
     <string name="action_download">다운로드</string>

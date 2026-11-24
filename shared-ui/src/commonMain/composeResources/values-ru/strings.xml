@@ -13,4 +13,22 @@
     <string name="color_theme_forest">Лес</string>
     <string name="color_theme_rose">Роза</string>
     <string name="color_theme_midnight">Полночь</string>
+    <string name="action_clear_selection">Снять выделение</string>
+    <string name="action_select_all">Выбрать все</string>
+    <string name="filter_all">Все</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="one">Выбрано: %1$d</item>
+        <item quantity="few">Выбрано: %1$d</item>
+        <item quantity="many">Выбрано: %1$d</item>
+        <item quantity="other">Выбрано: %1$d</item>
+    </plurals>
+    <string name="filter_included_excluded">Включено: %1$d · исключено: %2$d</string>
+    <string name="action_decrease">Уменьшить</string>
+    <string name="action_increase">Увеличить</string>
+    <plurals name="selection_count">
+        <item quantity="one">Выбрано: %1$d</item>
+        <item quantity="few">Выбрано: %1$d</item>
+        <item quantity="many">Выбрано: %1$d</item>
+        <item quantity="other">Выбрано: %1$d</item>
+    </plurals>
 </resources>

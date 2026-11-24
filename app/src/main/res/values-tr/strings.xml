@@ -148,7 +148,6 @@
         <item quantity="one">%1$d seçildi</item>
         <item quantity="other">%1$d seçildi</item>
     </plurals>
-    <string name="action_clear_selection">Seçimi temizle</string>
     <string name="action_select_all">Tümünü seç</string>
     <string name="move_to_category_title">Kategoriye taşı</string>
     <plurals name="novel_count">
@@ -297,7 +296,6 @@
     <string name="action_decrease">Azalt</string>
     <string name="action_increase">Artır</string>
     <string name="action_clear_search">Aramayı temizle</string>
-    <string name="filter_included_excluded">%1$d dahil · %2$d hariç</string>
     <string name="action_show_more">Daha fazla göster</string>
     <string name="action_show_less">Daha az göster</string>
     <string name="action_download">İndir</string>

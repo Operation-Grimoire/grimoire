@@ -6,7 +6,7 @@ import io.grimoire.ui.icon.*
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import io.grimoire.app.ui.component.rememberDelayedVisibility
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -103,9 +103,9 @@ import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.MoveToCategorySheet
 import io.grimoire.app.ui.component.ReadingCompletionErrorDialog
 import io.grimoire.app.ui.screen.library.HiddenCategoriesUnlockDialog
-import io.grimoire.app.ui.component.TooltipBottomBar
-import io.grimoire.app.ui.component.SelectionTopBar
-import io.grimoire.app.ui.component.TooltipIconButton
+import io.grimoire.ui.component.TooltipBottomBar
+import io.grimoire.ui.component.SelectionTopBar
+import io.grimoire.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.rememberShimmerAlpha
 import io.grimoire.ui.theme.premiumGold
 import kotlinx.coroutines.launch
@@ -311,26 +311,26 @@ fun NovelDetailScreen(
             sheetState = notifSheetState,
         ) {
             Column(modifier = Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
-                io.grimoire.app.ui.component.sheet.SheetTitle(stringResource(R.string.novel_new_chapters_title))
+                io.grimoire.ui.component.sheet.SheetTitle(stringResource(R.string.novel_new_chapters_title))
                 Text(
                     stringResource(R.string.novel_new_chapters_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 4.dp),
                 )
-                io.grimoire.app.ui.component.sheet.SheetSwitchRow(
+                io.grimoire.ui.component.sheet.SheetSwitchRow(
                     title = stringResource(R.string.novel_notify_new),
                     hint = stringResource(R.string.novel_notify_new_description),
                     checked = notifyOnNewChapters,
                     onCheckedChange = { viewModel.setNotifyOnNewChapters(it) },
                 )
-                io.grimoire.app.ui.component.sheet.SheetSwitchRow(
+                io.grimoire.ui.component.sheet.SheetSwitchRow(
                     title = stringResource(R.string.novel_notify_locked),
                     hint = stringResource(R.string.novel_notify_locked_description),
                     checked = notifyOnNewLockedChapters,
                     onCheckedChange = { viewModel.setNotifyOnNewLockedChapters(it) },
                 )
-                io.grimoire.app.ui.component.sheet.SheetSwitchRow(
+                io.grimoire.ui.component.sheet.SheetSwitchRow(
                     title = stringResource(R.string.novel_auto_download_new),
                     hint = stringResource(R.string.novel_auto_download_new_description),
                     checked = autoDownloadNewChapters,

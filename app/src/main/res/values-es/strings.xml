@@ -154,7 +154,6 @@
         <item quantity="many">%1$d seleccionados</item>
         <item quantity="other">%1$d seleccionados</item>
     </plurals>
-    <string name="action_clear_selection">Borrar selección</string>
     <string name="action_select_all">Seleccionar todo</string>
     <string name="move_to_category_title">Mover a categoría</string>
     <plurals name="novel_count">
@@ -307,7 +306,6 @@
     <string name="action_decrease">Disminuir</string>
     <string name="action_increase">Aumentar</string>
     <string name="action_clear_search">Borrar búsqueda</string>
-    <string name="filter_included_excluded">%1$d incluidos · %2$d excluidos</string>
     <string name="action_show_more">Mostrar más</string>
     <string name="action_show_less">Mostrar menos</string>
     <string name="action_download">Descargar</string>

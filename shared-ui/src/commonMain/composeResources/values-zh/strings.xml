@@ -13,4 +13,16 @@
     <string name="color_theme_forest">森林</string>
     <string name="color_theme_rose">玫瑰</string>
     <string name="color_theme_midnight">午夜</string>
+    <string name="action_clear_selection">清除选择</string>
+    <string name="action_select_all">全选</string>
+    <string name="filter_all">全部</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="other">已选择 %1$d 项</item>
+    </plurals>
+    <string name="filter_included_excluded">包含 %1$d 项 · 排除 %2$d 项</string>
+    <string name="action_decrease">减小</string>
+    <string name="action_increase">增大</string>
+    <plurals name="selection_count">
+        <item quantity="other">已选择 %1$d 项</item>
+    </plurals>
 </resources>

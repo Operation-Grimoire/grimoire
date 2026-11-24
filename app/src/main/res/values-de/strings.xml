@@ -149,7 +149,6 @@
         <item quantity="one">%1$d ausgewählt</item>
         <item quantity="other">%1$d ausgewählt</item>
     </plurals>
-    <string name="action_clear_selection">Auswahl aufheben</string>
     <string name="action_select_all">Alle auswählen</string>
     <string name="move_to_category_title">In Kategorie verschieben</string>
     <plurals name="novel_count">
@@ -298,7 +297,6 @@
     <string name="action_decrease">Verringern</string>
     <string name="action_increase">Erhöhen</string>
     <string name="action_clear_search">Suche leeren</string>
-    <string name="filter_included_excluded">%1$d eingeschlossen · %2$d ausgeschlossen</string>
     <string name="action_show_more">Mehr anzeigen</string>
     <string name="action_show_less">Weniger anzeigen</string>
     <string name="action_download">Herunterladen</string>

@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.extensions
 
 import io.grimoire.ui.icon.*
 import android.content.Intent
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -86,13 +86,13 @@ import io.grimoire.app.extension.repo.ExtensionItem
 import io.grimoire.app.ui.PendingAddRepo
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.SearchCancelToolbar
-import io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow
+import io.grimoire.ui.component.sheet.MultiSelectSummaryRow
 import io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog
-import io.grimoire.app.ui.component.sheet.SheetDivider
-import io.grimoire.app.ui.component.sheet.SheetSectionLabel
-import io.grimoire.app.ui.component.sheet.SheetTitle
-import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
-import io.grimoire.app.ui.component.sheet.sheetListItemColors
+import io.grimoire.ui.component.sheet.SheetDivider
+import io.grimoire.ui.component.sheet.SheetSectionLabel
+import io.grimoire.ui.component.sheet.SheetTitle
+import io.grimoire.ui.component.sheet.SingleChoiceSegmented
+import io.grimoire.ui.component.sheet.sheetListItemColors
 import io.grimoire.app.ui.component.LinkText
 import io.grimoire.app.ui.component.SourceListItem
 import io.grimoire.app.util.ContentLanguages

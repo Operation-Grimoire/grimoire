@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.webview
 
 import io.grimoire.ui.icon.*
 import android.annotation.SuppressLint
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import android.os.Message
 import android.util.Log
 import android.view.ViewGroup

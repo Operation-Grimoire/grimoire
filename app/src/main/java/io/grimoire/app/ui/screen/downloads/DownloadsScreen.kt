@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.downloads
 
 import io.grimoire.ui.icon.*
 import androidx.activity.compose.BackHandler
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -67,9 +67,9 @@ import coil.compose.AsyncImage
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.download.canManageDownloads
 import io.grimoire.app.data.local.entity.ChapterEntity
-import io.grimoire.app.ui.component.TooltipBottomBar
-import io.grimoire.app.ui.component.SelectionTopBar
-import io.grimoire.app.ui.component.TooltipIconButton
+import io.grimoire.ui.component.TooltipBottomBar
+import io.grimoire.ui.component.SelectionTopBar
+import io.grimoire.ui.component.TooltipIconButton
 import io.grimoire.app.R
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -120,10 +120,10 @@ fun DownloadsScreen(
                     .navigationBarsPadding()
                     .padding(bottom = 16.dp),
             ) {
-                io.grimoire.app.ui.component.sheet.SheetTitle(
+                io.grimoire.ui.component.sheet.SheetTitle(
                     stringResource(R.string.downloads_settings),
                 )
-                io.grimoire.app.ui.component.sheet.StepperRow(
+                io.grimoire.ui.component.sheet.StepperRow(
                     label = stringResource(R.string.downloads_parallel),
                     hint = stringResource(R.string.downloads_parallel_summary),
                     value = concurrency.toString(),

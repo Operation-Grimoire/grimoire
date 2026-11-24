@@ -4,7 +4,7 @@ import io.grimoire.app.data.book.LOCAL_PKG
 
 import io.grimoire.ui.icon.*
 import androidx.activity.compose.BackHandler
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -58,11 +58,11 @@ import io.grimoire.app.data.local.entity.LibraryUpdateEntity
 import io.grimoire.app.ui.component.ChapterItem
 import io.grimoire.app.ui.component.ChapterStatusTrailing
 import io.grimoire.app.ui.component.ReadingCompletionErrorDialog
-import io.grimoire.app.ui.component.TooltipBottomBar
-import io.grimoire.app.ui.component.SelectionTopBar
-import io.grimoire.app.ui.component.SwipeTabRow
-import io.grimoire.app.ui.component.SwipeTabStyle
-import io.grimoire.app.ui.component.TooltipIconButton
+import io.grimoire.ui.component.TooltipBottomBar
+import io.grimoire.ui.component.SelectionTopBar
+import io.grimoire.ui.component.SwipeTabRow
+import io.grimoire.ui.component.SwipeTabStyle
+import io.grimoire.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.dayKey
 import io.grimoire.app.ui.component.dayLabel
 import io.grimoire.app.ui.component.timeLabel

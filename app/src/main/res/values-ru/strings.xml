@@ -158,7 +158,6 @@
         <item quantity="many">Выбрано: %1$d</item>
         <item quantity="other">Выбрано: %1$d</item>
     </plurals>
-    <string name="action_clear_selection">Снять выделение</string>
     <string name="action_select_all">Выбрать все</string>
     <string name="move_to_category_title">Переместить в категорию</string>
     <plurals name="novel_count">
@@ -315,7 +314,6 @@
     <string name="action_decrease">Уменьшить</string>
     <string name="action_increase">Увеличить</string>
     <string name="action_clear_search">Очистить поиск</string>
-    <string name="filter_included_excluded">Включено: %1$d · исключено: %2$d</string>
     <string name="action_show_more">Показать больше</string>
     <string name="action_show_less">Свернуть</string>
     <string name="action_download">Скачать</string>

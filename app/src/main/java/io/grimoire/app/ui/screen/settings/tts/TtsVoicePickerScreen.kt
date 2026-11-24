@@ -3,7 +3,7 @@ package io.grimoire.app.ui.screen.settings.tts
 import io.grimoire.ui.icon.*
 import android.content.Intent
 import android.widget.Toast
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

@@ -146,7 +146,6 @@
     <plurals name="selection_count">
         <item quantity="other">%1$d件選択中</item>
     </plurals>
-    <string name="action_clear_selection">選択を解除</string>
     <string name="action_select_all">すべて選択</string>
     <string name="move_to_category_title">カテゴリに移動</string>
     <plurals name="novel_count">
@@ -291,7 +290,6 @@
     <string name="action_decrease">減らす</string>
     <string name="action_increase">増やす</string>
     <string name="action_clear_search">検索をクリア</string>
-    <string name="filter_included_excluded">%1$d件を含む · %2$d件を除外</string>
     <string name="action_show_more">もっと見る</string>
     <string name="action_show_less">折りたたむ</string>
     <string name="action_download">ダウンロード</string>

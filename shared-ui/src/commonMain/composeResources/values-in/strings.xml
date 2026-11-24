@@ -13,4 +13,16 @@
     <string name="color_theme_forest">Hutan</string>
     <string name="color_theme_rose">Mawar</string>
     <string name="color_theme_midnight">Tengah Malam</string>
+    <string name="action_clear_selection">Hapus pilihan</string>
+    <string name="action_select_all">Pilih semua</string>
+    <string name="filter_all">Semua</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="other">%1$d dipilih</item>
+    </plurals>
+    <string name="filter_included_excluded">%1$d disertakan · %2$d dikecualikan</string>
+    <string name="action_decrease">Kurangi</string>
+    <string name="action_increase">Tambah</string>
+    <plurals name="selection_count">
+        <item quantity="other">%1$d dipilih</item>
+    </plurals>
 </resources>

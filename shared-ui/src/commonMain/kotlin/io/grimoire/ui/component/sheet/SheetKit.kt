@@ -1,5 +1,6 @@
-package io.grimoire.app.ui.component.sheet
+package io.grimoire.ui.component.sheet
 
+import io.grimoire.ui.resources.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,10 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
-import io.grimoire.app.R
 import io.grimoire.ui.icon.*
 
 /**
@@ -131,10 +131,10 @@ fun MultiSelectSummaryRow(
         trailingContent = {
             SummaryTrailing(
                 text = if (selectedCount == 0) {
-                    stringResource(R.string.filter_all)
+                    stringResource(Res.string.filter_all)
                 } else {
                     pluralStringResource(
-                        R.plurals.source_filter_selected_count,
+                        Res.plurals.source_filter_selected_count,
                         selectedCount,
                         selectedCount,
                     )
@@ -167,9 +167,9 @@ fun TriStateSummaryRow(
         trailingContent = {
             SummaryTrailing(
                 text = if (!active) {
-                    stringResource(R.string.filter_all)
+                    stringResource(Res.string.filter_all)
                 } else {
-                    stringResource(R.string.filter_included_excluded, includedCount, excludedCount)
+                    stringResource(Res.string.filter_included_excluded, includedCount, excludedCount)
                 },
                 active = active,
                 enabled = enabled,

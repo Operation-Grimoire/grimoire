@@ -146,7 +146,6 @@
     <plurals name="selection_count">
         <item quantity="other">已選取 %1$d 項</item>
     </plurals>
-    <string name="action_clear_selection">清除選取</string>
     <string name="action_select_all">全選</string>
     <string name="move_to_category_title">移至分類</string>
     <plurals name="novel_count">
@@ -291,7 +290,6 @@
     <string name="action_decrease">減少</string>
     <string name="action_increase">增加</string>
     <string name="action_clear_search">清除搜尋</string>
-    <string name="filter_included_excluded">包含 %1$d 項 · 排除 %2$d 項</string>
     <string name="action_show_more">顯示更多</string>
     <string name="action_show_less">顯示較少</string>
     <string name="action_download">下載</string>

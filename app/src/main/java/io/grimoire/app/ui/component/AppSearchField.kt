@@ -3,7 +3,7 @@ package io.grimoire.app.ui.component
 import io.grimoire.app.R
 import io.grimoire.ui.icon.*
 import androidx.compose.foundation.layout.fillMaxWidth
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
