@@ -281,8 +281,6 @@
     <string name="action_decrease">ลด</string>
     <string name="action_increase">เพิ่ม</string>
     <string name="action_clear_search">ล้างการค้นหา</string>
-    <string name="action_show_more">แสดงเพิ่มเติม</string>
-    <string name="action_show_less">แสดงน้อยลง</string>
     <string name="action_download">ดาวน์โหลด</string>
     <string name="action_open_extensions">เปิดส่วนขยาย</string>
     <string name="content_description_in_library">อยู่ในคลัง</string>
@@ -336,15 +334,12 @@
     <string name="source_filter_no_matches">ไม่มีรายการที่ตรงกัน</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">อยู่ในคลัง</string>
     <string name="novel_action_add_to_library">เพิ่มลงคลัง</string>
     <string name="novel_action_remove_from_library">นำออกจากคลัง</string>
     <string name="novel_action_change_category">เปลี่ยนหมวดหมู่</string>
     <string name="novel_loading">กำลังโหลด…</string>
     <string name="novel_expand">ขยาย</string>
     <string name="novel_collapse">ยุบ</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">ให้คะแนน</string>
     <string name="novel_edit_field_title">ชื่อเรื่อง</string>
     <string name="novel_edit_field_author">ผู้แต่ง</string>
     <string name="novel_edit_field_status">สถานะ</string>
@@ -367,13 +362,10 @@
     <string name="novel_source_missing_message">ไม่ได้ติดตั้ง %1$s ในอุปกรณ์นี้ ข้อมูลที่บันทึกไว้และตอนที่ดาวน์โหลดแล้วยังใช้ได้ แต่คุณจะดึงตอนใหม่หรือเปิดแหล่งที่มาไม่ได้จนกว่าจะติดตั้งส่วนขยายนั้นอีกครั้ง</string>
     <string name="novel_source_missing_generic">แหล่งที่มาของนิยายเรื่องนี้</string>
     <string name="novel_source_missing_named">“%1$s”</string>
-    <string name="novel_source_uninstalled">ถอนการติดตั้งแหล่งที่มาแล้ว</string>
-    <string name="novel_source_uninstalled_named">%1$s (ถอนการติดตั้งแล้ว)</string>
     <string name="novel_cover_url_title">URL รูปปก</string>
     <string name="novel_cover_replace_image">แทนที่ด้วยรูปภาพ</string>
     <string name="novel_cover_replace_url">แทนที่ด้วย URL</string>
     <string name="novel_cover_reset">รีเซ็ตเป็นปกจากแหล่งที่มา</string>
-    <string name="novel_metadata_edited">แก้ไขแล้ว — แตะเพื่อเปลี่ยน</string>
     <string name="novel_downloads_title">ดาวน์โหลด</string>
     <string name="novel_downloads_progress">ดาวน์โหลดแล้ว %1$d / %2$d</string>
     <string name="novel_download_all">ดาวน์โหลดทั้งหมด</string>

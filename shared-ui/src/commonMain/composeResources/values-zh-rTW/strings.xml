@@ -85,4 +85,18 @@
     <string name="library_locked_chapters">鎖定章節</string>
     <string name="library_notifications_enabled">已啟用通知</string>
     <string name="novel_your_rating">你的評分</string>
+    <string name="action_show_less">顯示較少</string>
+    <string name="action_show_more">顯示更多</string>
+    <string name="library_status_cancelled">已停更</string>
+    <string name="library_status_completed">已完結</string>
+    <string name="library_status_hiatus">暫停連載</string>
+    <string name="library_status_ongoing">連載中</string>
+    <string name="library_status_unknown">未知</string>
+    <string name="novel_action_add_to_library">加入書櫃</string>
+    <string name="novel_action_in_library">已在書櫃中</string>
+    <string name="novel_action_rate">評分</string>
+    <string name="novel_action_webview">WebView</string>
+    <string name="novel_metadata_edited">已編輯，輕觸即可變更</string>
+    <string name="novel_source_uninstalled">來源已解除安裝</string>
+    <string name="novel_source_uninstalled_named">%1$s（已解除安裝）</string>
 </resources>

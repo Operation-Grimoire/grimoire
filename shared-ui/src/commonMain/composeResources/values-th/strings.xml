@@ -85,4 +85,18 @@
     <string name="library_locked_chapters">ตอนที่ถูกล็อก</string>
     <string name="library_notifications_enabled">เปิดการแจ้งเตือนแล้ว</string>
     <string name="novel_your_rating">คะแนนของคุณ</string>
+    <string name="action_show_less">แสดงน้อยลง</string>
+    <string name="action_show_more">แสดงเพิ่มเติม</string>
+    <string name="library_status_cancelled">ยกเลิกแล้ว</string>
+    <string name="library_status_completed">จบแล้ว</string>
+    <string name="library_status_hiatus">หยุดพัก</string>
+    <string name="library_status_ongoing">กำลังดำเนินเรื่อง</string>
+    <string name="library_status_unknown">ไม่ทราบ</string>
+    <string name="novel_action_add_to_library">เพิ่มลงคลัง</string>
+    <string name="novel_action_in_library">อยู่ในคลัง</string>
+    <string name="novel_action_rate">ให้คะแนน</string>
+    <string name="novel_action_webview">WebView</string>
+    <string name="novel_metadata_edited">แก้ไขแล้ว — แตะเพื่อเปลี่ยน</string>
+    <string name="novel_source_uninstalled">ถอนการติดตั้งแหล่งที่มาแล้ว</string>
+    <string name="novel_source_uninstalled_named">%1$s (ถอนการติดตั้งแล้ว)</string>
 </resources>

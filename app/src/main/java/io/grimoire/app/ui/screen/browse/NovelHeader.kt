@@ -49,10 +49,12 @@ import io.grimoire.app.ui.component.ImageAction
 import io.grimoire.app.ui.component.rememberShimmerAlpha
 import io.grimoire.app.ui.component.ShimmerBox
 import io.grimoire.app.ui.component.ZoomableCoverImage
-import io.grimoire.app.ui.component.localizedDisplayName
-import io.grimoire.app.ui.component.icon
+import io.grimoire.ui.component.localizedDisplayName
+import io.grimoire.ui.component.icon
 import java.util.Locale
 import io.grimoire.app.R
+import io.grimoire.ui.novel.HeaderField
+import io.grimoire.ui.novel.NovelHeaderContent
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -135,161 +137,39 @@ internal fun NovelHeader(
         }
     }
 
-    Row(
-        modifier = modifier.fillMaxWidth().padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        ZoomableCoverImage(
-            model = coverModel,
-            contentDescription = novel.title,
-            saveBaseName = novel.title,
-            extraActions = coverActions,
-            modifier = Modifier
-                .width(140.dp)
-                .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(8.dp)),
-        )
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    novel.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .longPressToEdit(EditableField.TITLE, onEditField),
+    NovelHeaderContent(
+        novel = novel,
+        cover = { coverModifier ->
+                ZoomableCoverImage(
+                    model = coverModel,
+                    contentDescription = novel.title,
+                    saveBaseName = novel.title,
+                    extraActions = coverActions,
+                    modifier = coverModifier,
                 )
-                OverrideIndicator(overrides.title != null) { onEditField(EditableField.TITLE) }
+        },
+        sourceName = sourceName,
+        isLocal = isLocal,
+        sourceMissing = sourceMissing,
+        missingSourceName = missingSourceName,
+        onSourceMissingClick = onSourceMissingClick,
+        onRatingClick = { showRatingInfo = true },
+        overridden = { field ->
+            when (field) {
+                HeaderField.TITLE -> overrides.title != null
+                HeaderField.AUTHOR -> overrides.author != null
+                HeaderField.STATUS -> overrides.status != null
             }
-            if (!novel.author.isNullOrBlank()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        novel.author!!,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .longPressToEdit(EditableField.AUTHOR, onEditField),
-                    )
-                    OverrideIndicator(overrides.author != null) { onEditField(EditableField.AUTHOR) }
-                }
-            }
-            FlowRow(
-                modifier = Modifier.padding(top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    MetaChip(
-                        text = novel.status.localizedDisplayName(),
-                        icon = novel.status.icon,
-                        modifier = Modifier.longPressToEdit(EditableField.STATUS, onEditField),
-                    )
-                    OverrideIndicator(overrides.status != null) { onEditField(EditableField.STATUS) }
-                }
-                novel.rating?.let { rating ->
-                    MetaChip(
-                        text = buildString {
-                            append(String.format(Locale.getDefault(), "%.1f", rating.coerceIn(0f, 5f)))
-                            novel.ratingCount?.takeIf { it > 0 }?.let { append(" (").append(it).append(')') }
-                        },
-                        icon = AppIcons.Star,
-                        iconTint = MaterialTheme.colorScheme.primary,
-                        onClick = { showRatingInfo = true },
-                    )
-                }
-                if (sourceMissing) {
-                    // Extension gone: name the source when the repo index still knows it,
-                    // so it's clear which one to reinstall.
-                    MetaChip(
-                        text = missingSourceName
-                            ?.let { stringResource(R.string.novel_source_uninstalled_named, it) }
-                            ?: stringResource(R.string.novel_source_uninstalled),
-                        icon = AppIcons.WarningAmber,
-                        iconTint = MaterialTheme.colorScheme.error,
-                        onClick = onSourceMissingClick,
-                    )
-                } else if (isLocal) {
-                    MetaChip(text = "EPUB", icon = AppIcons.Book)
-                } else if (sourceName.isNotBlank()) {
-                    MetaChip(text = sourceName, icon = AppIcons.ExtensionFilled)
-                    val lang = novel.language
-                        .takeIf { it != Language.UNKNOWN && it != Language.MULTI }?.displayName.orEmpty()
-                    if (lang.isNotEmpty()) MetaChip(text = lang)
-                }
-            }
-        }
-    }
-}
-
-/**
- * Compact tonal chip for a single piece of novel metadata (status / rating / source /
- * language). Optional [icon] and [onClick]; clickable chips clip their ripple to the
- * chip shape. Kept header-local so the shared list/quick-view labels stay unchanged.
- */
-@Composable
-private fun MetaChip(
-    text: String,
-    modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
-    iconTint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    onClick: (() -> Unit)? = null,
-) {
-    Surface(
+        },
+        onEditField = { field ->
+            onEditField(when (field) {
+                HeaderField.TITLE -> EditableField.TITLE
+                HeaderField.AUTHOR -> EditableField.AUTHOR
+                HeaderField.STATUS -> EditableField.STATUS
+            })
+        },
         modifier = modifier,
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    ) {
-        Row(
-            modifier = (if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconTint,
-                    modifier = Modifier.size(14.dp),
-                )
-            }
-            Text(text, style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}
-
-/**
- * Long-press a metadata field to open its single-field edit sheet (#152).
- * Uses [combinedClickable] so the press shows the standard ripple/darken feedback;
- * a plain tap is a no-op (editing is intentionally long-press only).
- */
-@OptIn(ExperimentalFoundationApi::class)
-internal fun Modifier.longPressToEdit(
-    field: EditableField,
-    onEdit: (EditableField) -> Unit,
-): Modifier = composed {
-    combinedClickable(
-        onClick = {},
-        onLongClick = { onEdit(field) },
     )
-}
-
-/**
- * Small pencil shown next to a metadata field that the user has overridden (#152).
- * Tapping it opens that field's edit sheet. Renders nothing when [overridden] is false.
- */
-@Composable
-internal fun OverrideIndicator(overridden: Boolean, onClick: () -> Unit) {
-    if (!overridden) return
-    IconButton(onClick = onClick, modifier = Modifier.size(24.dp)) {
-        Icon(
-            AppIcons.EditOutlined,
-            contentDescription = stringResource(R.string.novel_metadata_edited),
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(14.dp),
-        )
-    }
 }
 
 @Composable

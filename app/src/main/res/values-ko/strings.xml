@@ -282,8 +282,6 @@
     <string name="action_decrease">줄이기</string>
     <string name="action_increase">늘리기</string>
     <string name="action_clear_search">검색어 지우기</string>
-    <string name="action_show_more">더 보기</string>
-    <string name="action_show_less">간략히 보기</string>
     <string name="action_download">다운로드</string>
     <string name="action_open_extensions">확장 기능 열기</string>
     <string name="content_description_in_library">서재에 있음</string>
@@ -337,15 +335,12 @@
     <string name="source_filter_no_matches">일치하는 항목 없음</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">서재에 있음</string>
     <string name="novel_action_add_to_library">서재에 추가</string>
     <string name="novel_action_remove_from_library">서재에서 삭제</string>
     <string name="novel_action_change_category">카테고리 변경</string>
     <string name="novel_loading">불러오는 중…</string>
     <string name="novel_expand">펼치기</string>
     <string name="novel_collapse">접기</string>
-    <string name="novel_action_webview">웹뷰</string>
-    <string name="novel_action_rate">평가</string>
     <string name="novel_edit_field_title">제목</string>
     <string name="novel_edit_field_author">작가</string>
     <string name="novel_edit_field_status">상태</string>
@@ -368,13 +363,10 @@
     <string name="novel_source_missing_message">%1$s이(가) 이 기기에 설치되어 있지 않아요. 저장된 정보와 다운로드한 챕터는 그대로 볼 수 있지만, 확장 기능을 다시 설치하기 전까지는 새 챕터를 가져오거나 소스를 열 수 없어요.</string>
     <string name="novel_source_missing_generic">이 소설의 소스</string>
     <string name="novel_source_missing_named">“%1$s”</string>
-    <string name="novel_source_uninstalled">소스 제거됨</string>
-    <string name="novel_source_uninstalled_named">%1$s (제거됨)</string>
     <string name="novel_cover_url_title">표지 이미지 URL</string>
     <string name="novel_cover_replace_image">이미지로 교체</string>
     <string name="novel_cover_replace_url">URL로 교체</string>
     <string name="novel_cover_reset">소스 표지로 초기화</string>
-    <string name="novel_metadata_edited">편집됨 · 탭하여 변경</string>
     <string name="novel_downloads_title">다운로드</string>
     <string name="novel_downloads_progress">%1$d / %2$d 다운로드됨</string>
     <string name="novel_download_all">모두 다운로드</string>

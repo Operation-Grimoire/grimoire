@@ -88,4 +88,18 @@
     <string name="library_locked_chapters">लॉक किए गए अध्याय</string>
     <string name="library_notifications_enabled">सूचनाएँ चालू हैं</string>
     <string name="novel_your_rating">आपकी रेटिंग</string>
+    <string name="action_show_less">कम दिखाएँ</string>
+    <string name="action_show_more">और दिखाएँ</string>
+    <string name="library_status_cancelled">रद्द</string>
+    <string name="library_status_completed">पूरा</string>
+    <string name="library_status_hiatus">रुका हुआ</string>
+    <string name="library_status_ongoing">जारी</string>
+    <string name="library_status_unknown">अज्ञात</string>
+    <string name="novel_action_add_to_library">लाइब्रेरी में जोड़ें</string>
+    <string name="novel_action_in_library">लाइब्रेरी में</string>
+    <string name="novel_action_rate">रेट करें</string>
+    <string name="novel_action_webview">WebView</string>
+    <string name="novel_metadata_edited">संपादित — बदलने के लिए टैप करें</string>
+    <string name="novel_source_uninstalled">स्रोत अनइंस्टॉल हो गया</string>
+    <string name="novel_source_uninstalled_named">%1$s (अनइंस्टॉल)</string>
 </resources>

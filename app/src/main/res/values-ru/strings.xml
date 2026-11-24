@@ -306,8 +306,6 @@
     <string name="action_decrease">Уменьшить</string>
     <string name="action_increase">Увеличить</string>
     <string name="action_clear_search">Очистить поиск</string>
-    <string name="action_show_more">Показать больше</string>
-    <string name="action_show_less">Свернуть</string>
     <string name="action_download">Скачать</string>
     <string name="action_open_extensions">Открыть расширения</string>
     <string name="content_description_in_library">В библиотеке</string>
@@ -367,15 +365,12 @@
     <string name="source_filter_no_matches">Нет совпадений</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">В библиотеке</string>
     <string name="novel_action_add_to_library">В библиотеку</string>
     <string name="novel_action_remove_from_library">Удалить из библиотеки</string>
     <string name="novel_action_change_category">Изменить категорию</string>
     <string name="novel_loading">Загрузка…</string>
     <string name="novel_expand">Развернуть</string>
     <string name="novel_collapse">Свернуть</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">Оценить</string>
     <string name="novel_edit_field_title">название</string>
     <string name="novel_edit_field_author">автора</string>
     <string name="novel_edit_field_status">статус</string>
@@ -398,13 +393,10 @@
     <string name="novel_source_missing_message">%1$s не установлен на этом устройстве. Сохранённые данные и скачанные главы по-прежнему доступны, но получать новые главы и открывать источник можно будет только после переустановки его расширения.</string>
     <string name="novel_source_missing_generic">Источник этой новеллы</string>
     <string name="novel_source_missing_named">«%1$s»</string>
-    <string name="novel_source_uninstalled">Источник удалён</string>
-    <string name="novel_source_uninstalled_named">%1$s (удалён)</string>
     <string name="novel_cover_url_title">URL обложки</string>
     <string name="novel_cover_replace_image">Заменить изображением</string>
     <string name="novel_cover_replace_url">Заменить по URL</string>
     <string name="novel_cover_reset">Вернуть обложку источника</string>
-    <string name="novel_metadata_edited">Изменено — нажмите, чтобы править</string>
     <string name="novel_downloads_title">Загрузки</string>
     <string name="novel_downloads_progress">Скачано %1$d / %2$d</string>
     <string name="novel_download_all">Скачать все</string>

@@ -298,8 +298,6 @@
     <string name="action_decrease">Diminuer</string>
     <string name="action_increase">Augmenter</string>
     <string name="action_clear_search">Effacer la recherche</string>
-    <string name="action_show_more">Afficher plus</string>
-    <string name="action_show_less">Afficher moins</string>
     <string name="action_download">Télécharger</string>
     <string name="action_open_extensions">Ouvrir les extensions</string>
     <string name="content_description_in_library">Dans la bibliothèque</string>
@@ -357,15 +355,12 @@
     <string name="source_filter_no_matches">Aucune correspondance</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">Dans la bibliothèque</string>
     <string name="novel_action_add_to_library">Ajouter à la bibliothèque</string>
     <string name="novel_action_remove_from_library">Retirer de la bibliothèque</string>
     <string name="novel_action_change_category">Changer de catégorie</string>
     <string name="novel_loading">Chargement…</string>
     <string name="novel_expand">Développer</string>
     <string name="novel_collapse">Réduire</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">Noter</string>
     <string name="novel_edit_field_title">le titre</string>
     <string name="novel_edit_field_author">l’auteur</string>
     <string name="novel_edit_field_status">le statut</string>
@@ -388,13 +383,10 @@
     <string name="novel_source_missing_message">%1$s n’est pas installée sur cet appareil. Vos informations enregistrées et les chapitres téléchargés restent disponibles, mais vous ne pourrez ni récupérer de nouveaux chapitres ni ouvrir la source tant que vous n’aurez pas réinstallé son extension.</string>
     <string name="novel_source_missing_generic">La source de ce roman</string>
     <string name="novel_source_missing_named">« %1$s »</string>
-    <string name="novel_source_uninstalled">Source désinstallée</string>
-    <string name="novel_source_uninstalled_named">%1$s (désinstallée)</string>
     <string name="novel_cover_url_title">URL de l’image de couverture</string>
     <string name="novel_cover_replace_image">Remplacer par une image</string>
     <string name="novel_cover_replace_url">Remplacer par une URL</string>
     <string name="novel_cover_reset">Rétablir la couverture de la source</string>
-    <string name="novel_metadata_edited">Modifié — appuyez pour changer</string>
     <string name="novel_downloads_title">Téléchargements</string>
     <string name="novel_downloads_progress">%1$d / %2$d téléchargés</string>
     <string name="novel_download_all">Tout télécharger</string>

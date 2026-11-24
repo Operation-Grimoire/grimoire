@@ -85,4 +85,18 @@
     <string name="library_locked_chapters">잠긴 챕터</string>
     <string name="library_notifications_enabled">알림 사용 중</string>
     <string name="novel_your_rating">내 평점</string>
+    <string name="action_show_less">간략히 보기</string>
+    <string name="action_show_more">더 보기</string>
+    <string name="library_status_cancelled">연재 중단</string>
+    <string name="library_status_completed">완결</string>
+    <string name="library_status_hiatus">휴재</string>
+    <string name="library_status_ongoing">연재 중</string>
+    <string name="library_status_unknown">알 수 없음</string>
+    <string name="novel_action_add_to_library">서재에 추가</string>
+    <string name="novel_action_in_library">서재에 있음</string>
+    <string name="novel_action_rate">평가</string>
+    <string name="novel_action_webview">웹뷰</string>
+    <string name="novel_metadata_edited">편집됨 · 탭하여 변경</string>
+    <string name="novel_source_uninstalled">소스 제거됨</string>
+    <string name="novel_source_uninstalled_named">%1$s (제거됨)</string>
 </resources>

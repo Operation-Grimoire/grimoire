@@ -85,4 +85,18 @@
     <string name="library_locked_chapters">Bab terkunci</string>
     <string name="library_notifications_enabled">Notifikasi diaktifkan</string>
     <string name="novel_your_rating">Rating Anda</string>
+    <string name="action_show_less">Tampilkan lebih sedikit</string>
+    <string name="action_show_more">Tampilkan lebih banyak</string>
+    <string name="library_status_cancelled">Dibatalkan</string>
+    <string name="library_status_completed">Tamat</string>
+    <string name="library_status_hiatus">Hiatus</string>
+    <string name="library_status_ongoing">Berlanjut</string>
+    <string name="library_status_unknown">Tidak diketahui</string>
+    <string name="novel_action_add_to_library">Tambahkan ke pustaka</string>
+    <string name="novel_action_in_library">Di pustaka</string>
+    <string name="novel_action_rate">Beri rating</string>
+    <string name="novel_action_webview">WebView</string>
+    <string name="novel_metadata_edited">Diedit — ketuk untuk mengubah</string>
+    <string name="novel_source_uninstalled">Sumber dicopot</string>
+    <string name="novel_source_uninstalled_named">%1$s (dicopot)</string>
 </resources>

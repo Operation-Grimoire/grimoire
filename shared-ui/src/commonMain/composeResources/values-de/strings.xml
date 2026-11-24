@@ -88,4 +88,18 @@
     <string name="library_locked_chapters">Gesperrte Kapitel</string>
     <string name="library_notifications_enabled">Benachrichtigungen aktiviert</string>
     <string name="novel_your_rating">Deine Bewertung</string>
+    <string name="action_show_less">Weniger anzeigen</string>
+    <string name="action_show_more">Mehr anzeigen</string>
+    <string name="library_status_cancelled">Abgebrochen</string>
+    <string name="library_status_completed">Abgeschlossen</string>
+    <string name="library_status_hiatus">Pausiert</string>
+    <string name="library_status_ongoing">Laufend</string>
+    <string name="library_status_unknown">Unbekannt</string>
+    <string name="novel_action_add_to_library">Zur Bibliothek</string>
+    <string name="novel_action_in_library">In Bibliothek</string>
+    <string name="novel_action_rate">Bewerten</string>
+    <string name="novel_action_webview">WebView</string>
+    <string name="novel_metadata_edited">Bearbeitet – zum Ändern tippen</string>
+    <string name="novel_source_uninstalled">Quelle deinstalliert</string>
+    <string name="novel_source_uninstalled_named">%1$s (deinstalliert)</string>
 </resources>

@@ -296,8 +296,6 @@
     <string name="action_decrease">Diminuisci</string>
     <string name="action_increase">Aumenta</string>
     <string name="action_clear_search">Cancella ricerca</string>
-    <string name="action_show_more">Mostra di più</string>
-    <string name="action_show_less">Mostra meno</string>
     <string name="action_download">Scarica</string>
     <string name="action_open_extensions">Apri estensioni</string>
     <string name="content_description_in_library">In libreria</string>
@@ -355,15 +353,12 @@
     <string name="source_filter_no_matches">Nessun risultato</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">In libreria</string>
     <string name="novel_action_add_to_library">Aggiungi alla libreria</string>
     <string name="novel_action_remove_from_library">Rimuovi dalla libreria</string>
     <string name="novel_action_change_category">Cambia categoria</string>
     <string name="novel_loading">Caricamento…</string>
     <string name="novel_expand">Espandi</string>
     <string name="novel_collapse">Comprimi</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">Valuta</string>
     <string name="novel_edit_field_title">titolo</string>
     <string name="novel_edit_field_author">autore</string>
     <string name="novel_edit_field_status">stato</string>
@@ -386,13 +381,10 @@
     <string name="novel_source_missing_message">%1$s non è installata su questo dispositivo. I dettagli salvati e i capitoli scaricati restano disponibili, ma non potrai scaricare nuovi capitoli né aprire la fonte finché non reinstalli la sua estensione.</string>
     <string name="novel_source_missing_generic">La fonte di questo romanzo</string>
     <string name="novel_source_missing_named">“%1$s”</string>
-    <string name="novel_source_uninstalled">Fonte disinstallata</string>
-    <string name="novel_source_uninstalled_named">%1$s (disinstallata)</string>
     <string name="novel_cover_url_title">URL dell’immagine di copertina</string>
     <string name="novel_cover_replace_image">Sostituisci con un’immagine</string>
     <string name="novel_cover_replace_url">Sostituisci con un URL</string>
     <string name="novel_cover_reset">Ripristina la copertina della fonte</string>
-    <string name="novel_metadata_edited">Modificato · tocca per cambiare</string>
     <string name="novel_downloads_title">Download</string>
     <string name="novel_downloads_progress">%1$d / %2$d scaricati</string>
     <string name="novel_download_all">Scarica tutti</string>

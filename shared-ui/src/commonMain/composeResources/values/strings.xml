@@ -88,4 +88,18 @@
     <string name="library_locked_chapters">Locked chapters</string>
     <string name="library_notifications_enabled">Notifications enabled</string>
     <string name="novel_your_rating">Your rating</string>
+    <string name="action_show_less">Show less</string>
+    <string name="action_show_more">Show more</string>
+    <string name="library_status_cancelled">Cancelled</string>
+    <string name="library_status_completed">Completed</string>
+    <string name="library_status_hiatus">Hiatus</string>
+    <string name="library_status_ongoing">Ongoing</string>
+    <string name="library_status_unknown">Unknown</string>
+    <string name="novel_action_add_to_library">Add to library</string>
+    <string name="novel_action_in_library">In library</string>
+    <string name="novel_action_rate">Rate</string>
+    <string name="novel_action_webview">WebView</string>
+    <string name="novel_metadata_edited">Edited — tap to change</string>
+    <string name="novel_source_uninstalled">Source uninstalled</string>
+    <string name="novel_source_uninstalled_named">%1$s (uninstalled)</string>
 </resources>

@@ -41,7 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.annotation.StringRes
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelStatus
-import io.grimoire.app.ui.component.localizedDisplayName
+import io.grimoire.ui.component.localizedDisplayName
 import io.grimoire.app.R
 import io.grimoire.app.ui.component.dialog.FullScreenDialog
 import sh.calvin.reorderable.ReorderableColumn

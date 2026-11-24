@@ -282,8 +282,6 @@
     <string name="action_decrease">Giảm</string>
     <string name="action_increase">Tăng</string>
     <string name="action_clear_search">Xóa tìm kiếm</string>
-    <string name="action_show_more">Xem thêm</string>
-    <string name="action_show_less">Thu gọn</string>
     <string name="action_download">Tải xuống</string>
     <string name="action_open_extensions">Mở tiện ích</string>
     <string name="content_description_in_library">Trong thư viện</string>
@@ -337,15 +335,12 @@
     <string name="source_filter_no_matches">Không có kết quả phù hợp</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">Trong thư viện</string>
     <string name="novel_action_add_to_library">Thêm vào thư viện</string>
     <string name="novel_action_remove_from_library">Xóa khỏi thư viện</string>
     <string name="novel_action_change_category">Đổi danh mục</string>
     <string name="novel_loading">Đang tải…</string>
     <string name="novel_expand">Mở rộng</string>
     <string name="novel_collapse">Thu gọn</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">Đánh giá</string>
     <string name="novel_edit_field_title">tiêu đề</string>
     <string name="novel_edit_field_author">tác giả</string>
     <string name="novel_edit_field_status">trạng thái</string>
@@ -368,13 +363,10 @@
     <string name="novel_source_missing_message">%1$s chưa được cài trên thiết bị này. Thông tin đã lưu và các chương đã tải vẫn dùng được, nhưng bạn không thể tải chương mới hay mở nguồn cho đến khi cài lại tiện ích của nguồn đó.</string>
     <string name="novel_source_missing_generic">Nguồn của truyện này</string>
     <string name="novel_source_missing_named">“%1$s”</string>
-    <string name="novel_source_uninstalled">Đã gỡ nguồn</string>
-    <string name="novel_source_uninstalled_named">%1$s (đã gỡ)</string>
     <string name="novel_cover_url_title">URL ảnh bìa</string>
     <string name="novel_cover_replace_image">Thay bằng ảnh</string>
     <string name="novel_cover_replace_url">Thay bằng URL</string>
     <string name="novel_cover_reset">Khôi phục ảnh bìa của nguồn</string>
-    <string name="novel_metadata_edited">Đã sửa — chạm để thay đổi</string>
     <string name="novel_downloads_title">Tải xuống</string>
     <string name="novel_downloads_progress">Đã tải %1$d / %2$d</string>
     <string name="novel_download_all">Tải tất cả</string>

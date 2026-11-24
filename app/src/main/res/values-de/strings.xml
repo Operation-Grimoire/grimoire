@@ -289,8 +289,6 @@
     <string name="action_decrease">Verringern</string>
     <string name="action_increase">Erhöhen</string>
     <string name="action_clear_search">Suche leeren</string>
-    <string name="action_show_more">Mehr anzeigen</string>
-    <string name="action_show_less">Weniger anzeigen</string>
     <string name="action_download">Herunterladen</string>
     <string name="action_open_extensions">Erweiterungen öffnen</string>
     <string name="content_description_in_library">In der Bibliothek</string>
@@ -346,15 +344,12 @@
     <string name="source_filter_no_matches">Keine Treffer</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">In Bibliothek</string>
     <string name="novel_action_add_to_library">Zur Bibliothek</string>
     <string name="novel_action_remove_from_library">Aus Bibliothek entfernen</string>
     <string name="novel_action_change_category">Kategorie ändern</string>
     <string name="novel_loading">Wird geladen…</string>
     <string name="novel_expand">Ausklappen</string>
     <string name="novel_collapse">Einklappen</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">Bewerten</string>
     <string name="novel_edit_field_title">Titel</string>
     <string name="novel_edit_field_author">Autor</string>
     <string name="novel_edit_field_status">Status</string>
@@ -377,13 +372,10 @@
     <string name="novel_source_missing_message">%1$s ist auf diesem Gerät nicht installiert. Deine gespeicherten Details und heruntergeladenen Kapitel sind weiterhin verfügbar, aber du kannst keine neuen Kapitel abrufen oder die Quelle öffnen, bis du ihre Erweiterung neu installierst.</string>
     <string name="novel_source_missing_generic">Die Quelle dieses Romans</string>
     <string name="novel_source_missing_named">„%1$s“</string>
-    <string name="novel_source_uninstalled">Quelle deinstalliert</string>
-    <string name="novel_source_uninstalled_named">%1$s (deinstalliert)</string>
     <string name="novel_cover_url_title">URL des Coverbilds</string>
     <string name="novel_cover_replace_image">Durch Bild ersetzen</string>
     <string name="novel_cover_replace_url">Durch URL ersetzen</string>
     <string name="novel_cover_reset">Auf Cover der Quelle zurücksetzen</string>
-    <string name="novel_metadata_edited">Bearbeitet – zum Ändern tippen</string>
     <string name="novel_downloads_title">Downloads</string>
     <string name="novel_downloads_progress">%1$d / %2$d heruntergeladen</string>
     <string name="novel_download_all">Alle herunterladen</string>

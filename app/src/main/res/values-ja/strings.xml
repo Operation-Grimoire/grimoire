@@ -282,8 +282,6 @@
     <string name="action_decrease">減らす</string>
     <string name="action_increase">増やす</string>
     <string name="action_clear_search">検索をクリア</string>
-    <string name="action_show_more">もっと見る</string>
-    <string name="action_show_less">折りたたむ</string>
     <string name="action_download">ダウンロード</string>
     <string name="action_open_extensions">拡張機能を開く</string>
     <string name="content_description_in_library">ライブラリに追加済み</string>
@@ -337,15 +335,12 @@
     <string name="source_filter_no_matches">一致なし</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">ライブラリに追加済み</string>
     <string name="novel_action_add_to_library">ライブラリに追加</string>
     <string name="novel_action_remove_from_library">ライブラリから削除</string>
     <string name="novel_action_change_category">カテゴリを変更</string>
     <string name="novel_loading">読み込み中…</string>
     <string name="novel_expand">展開</string>
     <string name="novel_collapse">折りたたむ</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">評価</string>
     <string name="novel_edit_field_title">タイトル</string>
     <string name="novel_edit_field_author">著者</string>
     <string name="novel_edit_field_status">ステータス</string>
@@ -368,13 +363,10 @@
     <string name="novel_source_missing_message">%1$s はこの端末にインストールされていません。保存済みの情報とダウンロード済みの章は引き続き利用できますが、拡張機能を再インストールするまで新しい章の取得やソースを開くことはできません。</string>
     <string name="novel_source_missing_generic">この小説のソース</string>
     <string name="novel_source_missing_named">「%1$s」</string>
-    <string name="novel_source_uninstalled">ソースはアンインストール済み</string>
-    <string name="novel_source_uninstalled_named">%1$s（アンインストール済み）</string>
     <string name="novel_cover_url_title">表紙画像の URL</string>
     <string name="novel_cover_replace_image">画像で置き換え</string>
     <string name="novel_cover_replace_url">URL で置き換え</string>
     <string name="novel_cover_reset">ソースの表紙に戻す</string>
-    <string name="novel_metadata_edited">編集済み — タップで変更</string>
     <string name="novel_downloads_title">ダウンロード</string>
     <string name="novel_downloads_progress">%1$d / %2$d ダウンロード済み</string>
     <string name="novel_download_all">すべてダウンロード</string>

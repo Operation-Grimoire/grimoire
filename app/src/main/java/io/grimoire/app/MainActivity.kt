@@ -23,7 +23,7 @@ import io.grimoire.app.ui.NAV_TARGET_EXTENSIONS
 import io.grimoire.app.ui.PendingAddRepo
 import io.grimoire.app.ui.isAddRepoLink
 import io.grimoire.app.ui.parseAddRepoLink
-import io.grimoire.app.ui.component.LocalSynopsisRenderLinks
+import io.grimoire.ui.component.LocalSynopsisRenderLinks
 import io.grimoire.app.ui.component.ProvideAppHaptics
 import io.grimoire.app.ui.theme.GrimoireTheme
 import io.grimoire.app.ui.update.AppUpdateUi

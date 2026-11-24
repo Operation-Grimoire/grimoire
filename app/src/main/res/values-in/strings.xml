@@ -282,8 +282,6 @@
     <string name="action_decrease">Kurangi</string>
     <string name="action_increase">Tambah</string>
     <string name="action_clear_search">Hapus pencarian</string>
-    <string name="action_show_more">Tampilkan lebih banyak</string>
-    <string name="action_show_less">Tampilkan lebih sedikit</string>
     <string name="action_download">Unduh</string>
     <string name="action_open_extensions">Buka ekstensi</string>
     <string name="content_description_in_library">Di pustaka</string>
@@ -337,15 +335,12 @@
     <string name="source_filter_no_matches">Tidak ada yang cocok</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">Di pustaka</string>
     <string name="novel_action_add_to_library">Tambahkan ke pustaka</string>
     <string name="novel_action_remove_from_library">Hapus dari pustaka</string>
     <string name="novel_action_change_category">Ubah kategori</string>
     <string name="novel_loading">Memuat…</string>
     <string name="novel_expand">Luaskan</string>
     <string name="novel_collapse">Ciutkan</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">Beri rating</string>
     <string name="novel_edit_field_title">judul</string>
     <string name="novel_edit_field_author">penulis</string>
     <string name="novel_edit_field_status">status</string>
@@ -368,13 +363,10 @@
     <string name="novel_source_missing_message">%1$s tidak terpasang di perangkat ini. Detail yang tersimpan dan bab yang sudah diunduh masih tersedia, tetapi Anda tidak dapat mengambil bab baru atau membuka sumbernya sampai ekstensinya dipasang ulang.</string>
     <string name="novel_source_missing_generic">Sumber novel ini</string>
     <string name="novel_source_missing_named">“%1$s”</string>
-    <string name="novel_source_uninstalled">Sumber dicopot</string>
-    <string name="novel_source_uninstalled_named">%1$s (dicopot)</string>
     <string name="novel_cover_url_title">URL gambar sampul</string>
     <string name="novel_cover_replace_image">Ganti dengan gambar</string>
     <string name="novel_cover_replace_url">Ganti dengan URL</string>
     <string name="novel_cover_reset">Kembalikan ke sampul sumber</string>
-    <string name="novel_metadata_edited">Diedit — ketuk untuk mengubah</string>
     <string name="novel_downloads_title">Unduhan</string>
     <string name="novel_downloads_progress">%1$d / %2$d diunduh</string>
     <string name="novel_download_all">Unduh semua</string>

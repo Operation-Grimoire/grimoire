@@ -306,8 +306,6 @@
     <string name="action_decrease">Зменшити</string>
     <string name="action_increase">Збільшити</string>
     <string name="action_clear_search">Очистити пошук</string>
-    <string name="action_show_more">Показати більше</string>
-    <string name="action_show_less">Показати менше</string>
     <string name="action_download">Завантажити</string>
     <string name="action_open_extensions">Відкрити розширення</string>
     <string name="content_description_in_library">У бібліотеці</string>
@@ -367,15 +365,12 @@
     <string name="source_filter_no_matches">Немає збігів</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">У бібліотеці</string>
     <string name="novel_action_add_to_library">Додати до бібліотеки</string>
     <string name="novel_action_remove_from_library">Вилучити з бібліотеки</string>
     <string name="novel_action_change_category">Змінити категорію</string>
     <string name="novel_loading">Завантаження…</string>
     <string name="novel_expand">Розгорнути</string>
     <string name="novel_collapse">Згорнути</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">Оцінити</string>
     <string name="novel_edit_field_title">назву</string>
     <string name="novel_edit_field_author">автора</string>
     <string name="novel_edit_field_status">статус</string>
@@ -398,13 +393,10 @@
     <string name="novel_source_missing_message">%1$s не встановлено на цьому пристрої. Збережені дані й завантажені розділи залишаються доступними, але ви не зможете отримувати нові розділи чи відкрити джерело, доки не встановите його розширення знову.</string>
     <string name="novel_source_missing_generic">Джерело цієї новели</string>
     <string name="novel_source_missing_named">«%1$s»</string>
-    <string name="novel_source_uninstalled">Джерело видалено</string>
-    <string name="novel_source_uninstalled_named">%1$s (видалено)</string>
     <string name="novel_cover_url_title">URL обкладинки</string>
     <string name="novel_cover_replace_image">Замінити зображенням</string>
     <string name="novel_cover_replace_url">Замінити за URL</string>
     <string name="novel_cover_reset">Повернути обкладинку джерела</string>
-    <string name="novel_metadata_edited">Змінено — торкніться, щоб редагувати</string>
     <string name="novel_downloads_title">Завантаження</string>
     <string name="novel_downloads_progress">Завантажено %1$d / %2$d</string>
     <string name="novel_download_all">Завантажити всі</string>
