@@ -25,4 +25,59 @@
     <plurals name="selection_count">
         <item quantity="other">%1$d件選択中</item>
     </plurals>
+    <string name="action_close">閉じる</string>
+    <string name="reader_align_auto">自動</string>
+    <string name="reader_align_center">中央揃え</string>
+    <string name="reader_align_justify">両端揃え</string>
+    <string name="reader_align_left">左揃え</string>
+    <string name="reader_align_right">右揃え</string>
+    <string name="reader_animate_grimoire">「grimoire」という単語をアニメーション表示</string>
+    <string name="reader_animate_grimoire_hint">章の中の装飾された単語をタップすると詳細を表示します</string>
+    <string name="reader_auto_mark_read">自動で既読にする</string>
+    <string name="reader_color_theme">カラーテーマ</string>
+    <string name="reader_display_tab">表示</string>
+    <string name="reader_easter_eggs">イースターエッグ</string>
+    <string name="reader_enabled">有効</string>
+    <string name="reader_font">フォント</string>
+    <string name="reader_font_mono">等幅</string>
+    <string name="reader_font_sans">サンセリフ</string>
+    <string name="reader_font_serif">セリフ</string>
+    <string name="reader_font_size">文字サイズ</string>
+    <string name="reader_grimoire_highlight">Grimoire ハイライト</string>
+    <string name="reader_grimoire_highlight_description">章の本文に出てくる「grimoire」をすべてアニメーション表示します。ここまたはリーダー設定でオフにできます。</string>
+    <string name="reader_hide_images_hint">タップで表示 · 長押しでのぞき見</string>
+    <string name="reader_hide_images_setting">画像を隠す</string>
+    <string name="reader_line_height">行間</string>
+    <string name="reader_mark_at">既読にするタイミング</string>
+    <string name="reader_mark_at_end">最後</string>
+    <string name="reader_mark_near_end">終わり近く</string>
+    <string name="reader_mark_percent">パーセント</string>
+    <string name="reader_orientation_free">自由</string>
+    <string name="reader_orientation_horizontal">横</string>
+    <string name="reader_orientation_vertical">縦</string>
+    <plurals name="reader_paragraph_count">
+        <item quantity="other">%1$d段落</item>
+    </plurals>
+    <string name="reader_paragraph_spacing">段落の間隔</string>
+    <string name="reader_privacy">プライバシー</string>
+    <string name="reader_reading_progress">読書の進捗</string>
+    <string name="reader_screen_rotation">画面の向き</string>
+    <string name="reader_show_book_percent" formatted="false">全体の % を表示</string>
+    <string name="reader_show_chapter_percent" formatted="false">章の % を表示</string>
+    <string name="reader_text_alignment">文字揃え</string>
+    <string name="reader_text_alignment_hint">「自動」では小説の言語に合わせます（右から左に書く文字は右揃えになります）。この小説ごとに記憶されます。</string>
+    <string name="reader_theme_black">ブラック</string>
+    <string name="reader_theme_dark">ダーク</string>
+    <string name="reader_theme_light">ライト</string>
+    <string name="reader_theme_sepia">セピア</string>
+    <string name="reader_tts_tab">読み上げ</string>
+    <string name="reader_within_last">最後から</string>
+    <string name="action_back">戻る</string>
+    <string name="reader_chapter_progress">章 %1$d%%</string>
+    <string name="reader_book_progress">全体 %1$d%%</string>
+    <string name="reader_previous">前へ</string>
+    <string name="reader_settings">設定</string>
+    <string name="reader_next">次へ</string>
+    <string name="reader_next_chapter">次の章 →</string>
+    <string name="reader_end_of_book">本の終わり</string>
 </resources>

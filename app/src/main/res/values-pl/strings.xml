@@ -49,13 +49,6 @@
     <string name="languages_source_language_subtitle">Wybierz, które języki domyślnie pokazują źródła wielojęzyczne</string>
     <string name="language_picker_title">Język aplikacji</string>
     <string name="language_option_system">Domyślny systemowy</string>
-    <string name="reader_text_alignment">Wyrównanie tekstu</string>
-    <string name="reader_text_alignment_hint">Tryb automatyczny dopasowuje się do języka powieści (pisma od prawej do lewej są wyrównane do prawej). Zapamiętywane dla tej powieści.</string>
-    <string name="reader_align_auto">Auto</string>
-    <string name="reader_align_left">Do lewej</string>
-    <string name="reader_align_right">Do prawej</string>
-    <string name="reader_align_center">Do środka</string>
-    <string name="reader_align_justify">Wyjustuj</string>
     <string name="onboarding_welcome_title">Witaj w Grimoire</string>
     <string name="onboarding_reading_title">W jakich językach czytasz?</string>
     <string name="onboarding_reading_helper">Źródła i przeglądanie wielojęzyczne będą filtrowane według tych języków. Nie zaznaczaj niczego, aby pokazywać wszystkie języki.</string>
@@ -667,53 +660,16 @@
 
     <!-- Reader -->
     <string name="reader_next_chapter">Następny rozdział →</string>
-    <string name="reader_end_of_book">Koniec książki</string>
     <string name="reader_hide_images">Ukryj wszystkie obrazy w tym rozdziale</string>
     <string name="reader_reveal_images">Pokaż wszystkie obrazy w tym rozdziale</string>
     <string name="reader_mark_unread">Oznacz jako nieprzeczytany</string>
     <string name="reader_mark_read">Oznacz jako przeczytany</string>
-    <string name="reader_chapter_progress">Rozdział %1$d%%</string>
-    <string name="reader_book_progress">Książka %1$d%%</string>
-    <string name="reader_previous">Poprzedni</string>
     <string name="reader_pause">Wstrzymaj</string>
     <string name="reader_read_aloud">Czytaj na głos</string>
     <string name="reader_stop">Zatrzymaj</string>
-    <string name="reader_settings">Ustawienia</string>
-    <string name="reader_next">Następny</string>
-    <string name="reader_grimoire_highlight">Wyróżnienie „grimoire”</string>
-    <string name="reader_grimoire_highlight_description">Animuje każde wystąpienie słowa „grimoire” w tekście rozdziału. Wyłącz to tutaj lub w ustawieniach czytnika.</string>
-    <string name="reader_enabled">Włączone</string>
-    <string name="reader_display_tab">Wyświetlanie</string>
-    <string name="reader_tts_tab">Czytanie na głos</string>
     <string name="reader_preview_text">Pchnąć w tę łódź jeża lub ośm skrzyń fig. Zażółć gęślą jaźń. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</string>
-    <string name="reader_color_theme">Motyw kolorystyczny</string>
-    <string name="reader_theme_light">Jasny</string>
-    <string name="reader_theme_sepia">Sepia</string>
-    <string name="reader_theme_dark">Ciemny</string>
-    <string name="reader_theme_black">Czarny</string>
     <string name="reader_font">Czcionka</string>
-    <string name="reader_font_size">Rozmiar czcionki</string>
-    <string name="reader_line_height">Wysokość linii</string>
-    <string name="reader_paragraph_spacing">Odstęp między akapitami</string>
-    <string name="reader_screen_rotation">Obrót ekranu</string>
-    <string name="reader_privacy">Prywatność</string>
-    <string name="reader_hide_images_setting">Ukryj obrazy</string>
-    <string name="reader_hide_images_hint">Dotknij, aby odkryć · przytrzymaj, aby podejrzeć</string>
-    <string name="reader_reading_progress">Postęp czytania</string>
-    <string name="reader_show_chapter_percent" formatted="false">Pokaż % rozdziału</string>
-    <string name="reader_show_book_percent" formatted="false">Pokaż % książki</string>
-    <string name="reader_auto_mark_read">Automatycznie oznaczaj jako przeczytane</string>
     <string name="reader_mark_at">Oznacz przy</string>
-    <string name="reader_within_last">Przed końcem</string>
-    <plurals name="reader_paragraph_count">
-        <item quantity="one">%1$d akapit</item>
-        <item quantity="few">%1$d akapity</item>
-        <item quantity="many">%1$d akapitów</item>
-        <item quantity="other">%1$d akapitu</item>
-    </plurals>
-    <string name="reader_easter_eggs">Easter eggi</string>
-    <string name="reader_animate_grimoire">Animuj słowo „grimoire”</string>
-    <string name="reader_animate_grimoire_hint">Dotknij wyróżnionego słowa w dowolnym rozdziale, aby zobaczyć szczegóły</string>
     <string name="reader_enable_tts">Włącz syntezę mowy</string>
     <string name="reader_enable_tts_hint">Pokazuj w czytniku sterowanie odtwarzaniem</string>
     <string name="reader_speech_engine">Silnik mowy</string>
@@ -722,9 +678,6 @@
     <string name="reader_pitch">Wysokość głosu (tylko na urządzeniu)</string>
     <string name="reader_auto_advance">Automatycznie przechodź do następnego rozdziału</string>
     <string name="reader_manage_voices">Zarządzaj głosami i innymi ustawieniami</string>
-    <string name="reader_font_sans">Bezszeryfowa</string>
-    <string name="reader_font_serif">Szeryfowa</string>
-    <string name="reader_font_mono">Stała szerokość</string>
     <string name="reader_mark_percent">Procent</string>
     <string name="reader_mark_near_end">Blisko końca</string>
     <string name="reader_mark_at_end">Na końcu</string>

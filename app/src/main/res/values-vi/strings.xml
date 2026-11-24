@@ -49,13 +49,6 @@
     <string name="languages_source_language_subtitle">Chọn các ngôn ngữ mà nguồn đa ngôn ngữ hiển thị theo mặc định</string>
     <string name="language_picker_title">Ngôn ngữ ứng dụng</string>
     <string name="language_option_system">Mặc định của hệ thống</string>
-    <string name="reader_text_alignment">Căn lề văn bản</string>
-    <string name="reader_text_alignment_hint">Tự động theo ngôn ngữ của truyện (chữ viết từ phải sang trái sẽ căn phải). Được ghi nhớ riêng cho truyện này.</string>
-    <string name="reader_align_auto">Tự động</string>
-    <string name="reader_align_left">Trái</string>
-    <string name="reader_align_right">Phải</string>
-    <string name="reader_align_center">Giữa</string>
-    <string name="reader_align_justify">Đều hai bên</string>
     <string name="onboarding_welcome_title">Chào mừng đến với Grimoire</string>
     <string name="onboarding_reading_title">Bạn đọc những ngôn ngữ nào?</string>
     <string name="onboarding_reading_helper">Các nguồn và mục duyệt đa ngôn ngữ sẽ được lọc theo những ngôn ngữ này. Bỏ chọn tất cả để hiện mọi ngôn ngữ.</string>
@@ -619,50 +612,16 @@
 
     <!-- Reader -->
     <string name="reader_next_chapter">Chương tiếp theo →</string>
-    <string name="reader_end_of_book">Hết truyện</string>
     <string name="reader_hide_images">Ẩn tất cả ảnh trong chương này</string>
     <string name="reader_reveal_images">Hiện tất cả ảnh trong chương này</string>
     <string name="reader_mark_unread">Đánh dấu chưa đọc</string>
     <string name="reader_mark_read">Đánh dấu đã đọc</string>
-    <string name="reader_chapter_progress">Chương %1$d%%</string>
-    <string name="reader_book_progress">Cả truyện %1$d%%</string>
-    <string name="reader_previous">Trước</string>
     <string name="reader_pause">Tạm dừng</string>
     <string name="reader_read_aloud">Đọc to</string>
     <string name="reader_stop">Dừng</string>
-    <string name="reader_settings">Cài đặt</string>
-    <string name="reader_next">Tiếp</string>
-    <string name="reader_grimoire_highlight">Làm nổi bật chữ Grimoire</string>
-    <string name="reader_grimoire_highlight_description">Tạo hiệu ứng cho mọi lần xuất hiện của từ “grimoire” trong nội dung chương. Tắt tại đây hoặc trong cài đặt trình đọc.</string>
-    <string name="reader_enabled">Đã bật</string>
-    <string name="reader_display_tab">Hiển thị</string>
-    <string name="reader_tts_tab">Đọc to</string>
     <string name="reader_preview_text">Con cáo nâu nhanh nhẹn nhảy qua chú chó lười biếng. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.</string>
-    <string name="reader_color_theme">Chủ đề màu</string>
-    <string name="reader_theme_light">Sáng</string>
-    <string name="reader_theme_sepia">Màu sepia</string>
-    <string name="reader_theme_dark">Tối</string>
-    <string name="reader_theme_black">Đen</string>
     <string name="reader_font">Phông chữ</string>
-    <string name="reader_font_size">Cỡ chữ</string>
-    <string name="reader_line_height">Giãn dòng</string>
-    <string name="reader_paragraph_spacing">Khoảng cách đoạn</string>
-    <string name="reader_screen_rotation">Xoay màn hình</string>
-    <string name="reader_privacy">Quyền riêng tư</string>
-    <string name="reader_hide_images_setting">Ẩn ảnh</string>
-    <string name="reader_hide_images_hint">Chạm để hiện · giữ để xem nhanh</string>
-    <string name="reader_reading_progress">Tiến độ đọc</string>
-    <string name="reader_show_chapter_percent" formatted="false">Hiện % chương</string>
-    <string name="reader_show_book_percent" formatted="false">Hiện % cả truyện</string>
-    <string name="reader_auto_mark_read">Tự động đánh dấu đã đọc</string>
     <string name="reader_mark_at">Đánh dấu khi</string>
-    <string name="reader_within_last">Trong khoảng cuối</string>
-    <plurals name="reader_paragraph_count">
-        <item quantity="other">%1$d đoạn</item>
-    </plurals>
-    <string name="reader_easter_eggs">Bất ngờ ẩn giấu</string>
-    <string name="reader_animate_grimoire">Tạo hiệu ứng cho từ “grimoire”</string>
-    <string name="reader_animate_grimoire_hint">Chạm vào một từ có hiệu ứng trong bất kỳ chương nào để xem chi tiết</string>
     <string name="reader_enable_tts">Bật chuyển văn bản thành giọng nói</string>
     <string name="reader_enable_tts_hint">Hiện nút điều khiển phát trong trình đọc</string>
     <string name="reader_speech_engine">Công cụ giọng nói</string>
@@ -671,9 +630,6 @@
     <string name="reader_pitch">Cao độ (chỉ trên thiết bị)</string>
     <string name="reader_auto_advance">Tự động chuyển sang chương tiếp theo</string>
     <string name="reader_manage_voices">Quản lý giọng đọc &amp; cài đặt khác</string>
-    <string name="reader_font_sans">Không chân</string>
-    <string name="reader_font_serif">Có chân</string>
-    <string name="reader_font_mono">Đơn cách</string>
     <string name="reader_mark_percent">Phần trăm</string>
     <string name="reader_mark_near_end">Gần cuối</string>
     <string name="reader_mark_at_end">Ở cuối</string>

@@ -29,4 +29,61 @@
         <item quantity="many">%1$d sélectionnés</item>
         <item quantity="other">%1$d sélectionnés</item>
     </plurals>
+    <string name="action_close">Fermer</string>
+    <string name="reader_align_auto">Auto</string>
+    <string name="reader_align_center">Centré</string>
+    <string name="reader_align_justify">Justifié</string>
+    <string name="reader_align_left">Gauche</string>
+    <string name="reader_align_right">Droite</string>
+    <string name="reader_animate_grimoire">Animer le mot « grimoire »</string>
+    <string name="reader_animate_grimoire_hint">Appuyez sur un mot stylisé dans n’importe quel chapitre pour en savoir plus</string>
+    <string name="reader_auto_mark_read">Marquer auto comme lu</string>
+    <string name="reader_color_theme">Thème de couleur</string>
+    <string name="reader_display_tab">Affichage</string>
+    <string name="reader_easter_eggs">Petites surprises</string>
+    <string name="reader_enabled">Activé</string>
+    <string name="reader_font">Police</string>
+    <string name="reader_font_mono">Chasse fixe</string>
+    <string name="reader_font_sans">Sans empattement</string>
+    <string name="reader_font_serif">Avec empattement</string>
+    <string name="reader_font_size">Taille de police</string>
+    <string name="reader_grimoire_highlight">Surbrillance Grimoire</string>
+    <string name="reader_grimoire_highlight_description">Anime chaque occurrence de « grimoire » dans le texte des chapitres. Désactivez-la ici ou dans les paramètres du lecteur.</string>
+    <string name="reader_hide_images_hint">Appuyez pour afficher · maintenez pour un aperçu</string>
+    <string name="reader_hide_images_setting">Masquer les images</string>
+    <string name="reader_line_height">Interligne</string>
+    <string name="reader_mark_at">Marquer à</string>
+    <string name="reader_mark_at_end">À la fin</string>
+    <string name="reader_mark_near_end">Près de la fin</string>
+    <string name="reader_mark_percent">Pourcentage</string>
+    <string name="reader_orientation_free">Libre</string>
+    <string name="reader_orientation_horizontal">Paysage</string>
+    <string name="reader_orientation_vertical">Portrait</string>
+    <plurals name="reader_paragraph_count">
+        <item quantity="one">%1$d paragraphe</item>
+        <item quantity="many">%1$d paragraphes</item>
+        <item quantity="other">%1$d paragraphes</item>
+    </plurals>
+    <string name="reader_paragraph_spacing">Espacement des paragraphes</string>
+    <string name="reader_privacy">Confidentialité</string>
+    <string name="reader_reading_progress">Progression de lecture</string>
+    <string name="reader_screen_rotation">Rotation de l’écran</string>
+    <string name="reader_show_book_percent" formatted="false">Afficher le % du livre</string>
+    <string name="reader_show_chapter_percent" formatted="false">Afficher le % du chapitre</string>
+    <string name="reader_text_alignment">Alignement du texte</string>
+    <string name="reader_text_alignment_hint">Auto suit la langue du roman (les écritures de droite à gauche sont alignées à droite). Mémorisé pour ce roman.</string>
+    <string name="reader_theme_black">Noir</string>
+    <string name="reader_theme_dark">Sombre</string>
+    <string name="reader_theme_light">Clair</string>
+    <string name="reader_theme_sepia">Sépia</string>
+    <string name="reader_tts_tab">Lecture à voix haute</string>
+    <string name="reader_within_last">Dans les derniers</string>
+    <string name="action_back">Retour</string>
+    <string name="reader_chapter_progress">Chapitre %1$d %%</string>
+    <string name="reader_book_progress">Livre %1$d %%</string>
+    <string name="reader_previous">Précédent</string>
+    <string name="reader_settings">Paramètres</string>
+    <string name="reader_next">Suivant</string>
+    <string name="reader_next_chapter">Chapitre suivant →</string>
+    <string name="reader_end_of_book">Fin du livre</string>
 </resources>

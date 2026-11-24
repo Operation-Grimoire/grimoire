@@ -1,6 +1,5 @@
-package io.grimoire.app.ui.screen.reader
+package io.grimoire.ui.reader
 
-import android.os.SystemClock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,22 +22,23 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlin.time.TimeSource
 
-internal class GrimoireWaveClock {
+class GrimoireWaveClock {
     var matchingParagraphs by mutableIntStateOf(0)
     val phase = mutableStateOf(0f)
 }
 
 @Composable
-internal fun GrimoireWaveTicker(wave: GrimoireWaveClock, enabled: Boolean) {
+fun GrimoireWaveTicker(wave: GrimoireWaveClock, enabled: Boolean) {
     val active = enabled && wave.matchingParagraphs > 0
     if (active) {
         LaunchedEffect(wave) {
+            val start = TimeSource.Monotonic.markNow()
             while (true) {
-                wave.phase.value = grimoireWavePhase(SystemClock.uptimeMillis())
+                wave.phase.value = grimoireWavePhase(start.elapsedNow().inWholeMilliseconds)
                 delay(100)
             }
         }
@@ -46,7 +46,7 @@ internal fun GrimoireWaveTicker(wave: GrimoireWaveClock, enabled: Boolean) {
 }
 
 @Composable
-internal fun ReaderParagraph(
+fun ReaderParagraph(
     formattedText: String?,
     plainText: String,
     highlighted: Boolean,
@@ -60,12 +60,12 @@ internal fun ReaderParagraph(
 ) {
     // Sources that opt into rich formatting populate
     // `formattedText` with the constrained-HTML subset that
-    // AnnotatedString.fromHtml understands (<i>, <b>, <u>,
+    // readerHtml understands (<i>, <b>, <u>,
     // <a>, <br>, &nbsp;). Otherwise fall back to plain text.
     // Cached per page so we don't re-parse HTML on every
     // recomposition (scroll, TTS highlight, etc.).
     val rendered = remember(formattedText, plainText) {
-        formattedText?.let { AnnotatedString.fromHtml(it) }
+        formattedText?.let { readerHtml(it) }
             ?: AnnotatedString(plainText.trim())
     }
     val grimoireMatches = remember(rendered) {

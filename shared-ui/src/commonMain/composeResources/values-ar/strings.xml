@@ -35,4 +35,64 @@
         <item quantity="many">المحدد: %1$d</item>
         <item quantity="other">المحدد: %1$d</item>
     </plurals>
+    <string name="action_close">إغلاق</string>
+    <string name="reader_align_auto">تلقائي</string>
+    <string name="reader_align_center">وسط</string>
+    <string name="reader_align_justify">ضبط</string>
+    <string name="reader_align_left">يسار</string>
+    <string name="reader_align_right">يمين</string>
+    <string name="reader_animate_grimoire">تحريك كلمة «grimoire»</string>
+    <string name="reader_animate_grimoire_hint">انقر على كلمة منسّقة في أي فصل لعرض التفاصيل</string>
+    <string name="reader_auto_mark_read">التعليم كمقروء تلقائيًا</string>
+    <string name="reader_color_theme">سمة الألوان</string>
+    <string name="reader_display_tab">العرض</string>
+    <string name="reader_easter_eggs">مفاجآت مخفية</string>
+    <string name="reader_enabled">مفعّل</string>
+    <string name="reader_font">الخط</string>
+    <string name="reader_font_mono">أحادي المسافة</string>
+    <string name="reader_font_sans">بلا زوائد</string>
+    <string name="reader_font_serif">بزوائد</string>
+    <string name="reader_font_size">حجم الخط</string>
+    <string name="reader_grimoire_highlight">إبراز كلمة grimoire</string>
+    <string name="reader_grimoire_highlight_description">يحرّك كل ظهور لكلمة «grimoire» في نص الفصل. أوقفه من هنا أو من إعدادات القارئ.</string>
+    <string name="reader_hide_images_hint">انقر للكشف · اضغط مطولًا لإلقاء نظرة</string>
+    <string name="reader_hide_images_setting">إخفاء الصور</string>
+    <string name="reader_line_height">ارتفاع السطر</string>
+    <string name="reader_mark_at">التعليم عند</string>
+    <string name="reader_mark_at_end">عند النهاية</string>
+    <string name="reader_mark_near_end">قرب النهاية</string>
+    <string name="reader_mark_percent">نسبة مئوية</string>
+    <string name="reader_orientation_free">حر</string>
+    <string name="reader_orientation_horizontal">أفقي</string>
+    <string name="reader_orientation_vertical">عمودي</string>
+    <plurals name="reader_paragraph_count">
+        <item quantity="zero">%1$d فقرة</item>
+        <item quantity="one">%1$d فقرة</item>
+        <item quantity="two">%1$d فقرتان</item>
+        <item quantity="few">%1$d فقرات</item>
+        <item quantity="many">%1$d فقرةً</item>
+        <item quantity="other">%1$d فقرة</item>
+    </plurals>
+    <string name="reader_paragraph_spacing">التباعد بين الفقرات</string>
+    <string name="reader_privacy">الخصوصية</string>
+    <string name="reader_reading_progress">تقدّم القراءة</string>
+    <string name="reader_screen_rotation">تدوير الشاشة</string>
+    <string name="reader_show_book_percent" formatted="false">إظهار نسبة الكتاب %</string>
+    <string name="reader_show_chapter_percent" formatted="false">إظهار نسبة الفصل %</string>
+    <string name="reader_text_alignment">محاذاة النص</string>
+    <string name="reader_text_alignment_hint">يتبع الوضع التلقائي لغة الرواية (تُحاذى النصوص المكتوبة من اليمين إلى اليسار إلى اليمين). يُحفظ لهذه الرواية.</string>
+    <string name="reader_theme_black">أسود</string>
+    <string name="reader_theme_dark">داكن</string>
+    <string name="reader_theme_light">فاتح</string>
+    <string name="reader_theme_sepia">بني داكن</string>
+    <string name="reader_tts_tab">القراءة بصوت عالٍ</string>
+    <string name="reader_within_last">ضمن آخر</string>
+    <string name="action_back">رجوع</string>
+    <string name="reader_chapter_progress">الفصل %1$d%%</string>
+    <string name="reader_book_progress">الكتاب %1$d%%</string>
+    <string name="reader_previous">السابق</string>
+    <string name="reader_settings">الإعدادات</string>
+    <string name="reader_next">التالي</string>
+    <string name="reader_next_chapter">الفصل التالي ←</string>
+    <string name="reader_end_of_book">نهاية الكتاب</string>
 </resources>

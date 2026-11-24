@@ -25,8 +25,8 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
-import io.grimoire.app.ui.screen.reader.ColorThemePicker
-import io.grimoire.app.ui.screen.reader.FontPicker
+import io.grimoire.ui.reader.ReaderColorThemePicker
+import io.grimoire.ui.reader.FontPicker
 import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.ui.component.sheet.SingleChoiceSegmented
 import io.grimoire.ui.component.sheet.StepperRow
@@ -74,7 +74,7 @@ fun ReaderSettingsScreen(
                     headlineContent = { Text(stringResource(R.string.reader_settings_color_theme)) },
                     supportingContent = {
                         Column(modifier = Modifier.padding(top = 4.dp)) {
-                            ColorThemePicker(
+                            ReaderColorThemePicker(
                                 selected = colorTheme,
                                 onSelect = viewModel::setReaderColorTheme,
                             )
