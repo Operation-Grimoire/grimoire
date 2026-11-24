@@ -83,4 +83,9 @@
     <string name="reader_next">Weiter</string>
     <string name="reader_next_chapter">Nächstes Kapitel →</string>
     <string name="reader_end_of_book">Ende des Buchs</string>
+    <string name="library_auto_download_enabled">Auto-Download aktiviert</string>
+    <string name="library_epub_badge">EPUB</string>
+    <string name="library_locked_chapters">Gesperrte Kapitel</string>
+    <string name="library_notifications_enabled">Benachrichtigungen aktiviert</string>
+    <string name="novel_your_rating">Deine Bewertung</string>
 </resources>

@@ -217,7 +217,6 @@
     <string name="library_local_source">Lokal</string>
     <string name="library_unknown_source">Quelle %1$d</string>
     <string name="library_locked_chapters">Gesperrte Kapitel</string>
-    <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">Benachrichtigungen aktiviert</string>
     <string name="library_auto_download_enabled">Auto-Download aktiviert</string>
 

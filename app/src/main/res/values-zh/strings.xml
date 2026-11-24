@@ -211,7 +211,6 @@
     <string name="library_local_source">本地</string>
     <string name="library_unknown_source">书源 %1$d</string>
     <string name="library_locked_chapters">锁定章节</string>
-    <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">已开启通知</string>
     <string name="library_auto_download_enabled">已开启自动下载</string>
 

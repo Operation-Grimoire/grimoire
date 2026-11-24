@@ -1,5 +1,6 @@
-package io.grimoire.app.ui.screen.library
+package io.grimoire.ui.library
 
+import io.grimoire.ui.resources.*
 import io.grimoire.ui.icon.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,15 +15,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
-import io.grimoire.app.R
-import io.grimoire.app.data.local.entity.NovelChapterStats
-import io.grimoire.app.data.local.entity.effectiveTotal
-import io.grimoire.app.data.local.entity.readPercent
 import io.grimoire.ui.theme.premiumGold
 
-internal data class NovelBadgeVisibility(
+data class NovelBadgeVisibility(
     val showRead: Boolean,
     val showDownloaded: Boolean,
     val showLocked: Boolean,
@@ -30,8 +27,8 @@ internal data class NovelBadgeVisibility(
     val any: Boolean get() = showRead || showDownloaded || showLocked
 }
 
-internal fun resolveBadgeVisibility(
-    stats: NovelChapterStats?,
+fun resolveBadgeVisibility(
+    stats: ChapterCounts?,
     includeLockedInTotals: Boolean,
     showReadBadge: Boolean,
     showDownloadedBadge: Boolean,
@@ -46,8 +43,8 @@ internal fun resolveBadgeVisibility(
 }
 
 @Composable
-internal fun NovelStatsRowInline(
-    stats: NovelChapterStats?,
+fun NovelStatsRowInline(
+    stats: ChapterCounts?,
     includeLockedInTotals: Boolean,
     visibility: NovelBadgeVisibility,
     modifier: Modifier = Modifier,
@@ -79,7 +76,7 @@ internal fun NovelStatsRowInline(
         if (stats != null && visibility.showLocked) {
             InlineBadge(
                 icon = AppIcons.Lock,
-                contentDescription = stringResource(R.string.library_locked_chapters),
+                contentDescription = stringResource(Res.string.library_locked_chapters),
                 text = "${stats.lockedCount}",
                 tint = MaterialTheme.colorScheme.premiumGold,
             )
@@ -87,7 +84,7 @@ internal fun NovelStatsRowInline(
         if (userRating != null) {
             InlineBadge(
                 icon = AppIcons.Star,
-                contentDescription = stringResource(R.string.novel_your_rating),
+                contentDescription = stringResource(Res.string.novel_your_rating),
                 text = "$userRating/10",
                 tint = MaterialTheme.colorScheme.primary,
             )
@@ -117,8 +114,8 @@ private fun InlineBadge(
 }
 
 @Composable
-internal fun NovelReadBadgeOverlay(
-    stats: NovelChapterStats,
+fun NovelReadBadgeOverlay(
+    stats: ChapterCounts,
     includeLockedInTotals: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -153,7 +150,7 @@ internal fun NovelReadBadgeOverlay(
 }
 
 @Composable
-internal fun NovelCountBadgeOverlay(
+fun NovelCountBadgeOverlay(
     count: Int,
     icon: ImageVector,
     iconContentDescription: String?,
@@ -189,7 +186,7 @@ internal fun NovelCountBadgeOverlay(
  * novel having a rating and on the "Show rating badge" preference.
  */
 @Composable
-internal fun NovelRatingBadgeOverlay(
+fun NovelRatingBadgeOverlay(
     rating: Int,
     modifier: Modifier = Modifier,
 ) {
@@ -205,7 +202,7 @@ internal fun NovelRatingBadgeOverlay(
     ) {
         Icon(
             AppIcons.Star,
-            contentDescription = stringResource(R.string.novel_your_rating),
+            contentDescription = stringResource(Res.string.novel_your_rating),
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(11.dp),
         )
@@ -223,7 +220,7 @@ internal fun NovelRatingBadgeOverlay(
  * the novel being local and on the user's "Show EPUB badge" preference.
  */
 @Composable
-internal fun NovelEpubBadgeOverlay(
+fun NovelEpubBadgeOverlay(
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -238,12 +235,12 @@ internal fun NovelEpubBadgeOverlay(
     ) {
         Icon(
             AppIcons.MenuBook,
-            contentDescription = stringResource(R.string.library_epub_badge),
+            contentDescription = stringResource(Res.string.library_epub_badge),
             tint = Color.White,
             modifier = Modifier.size(11.dp),
         )
         Text(
-            text = stringResource(R.string.library_epub_badge),
+            text = stringResource(Res.string.library_epub_badge),
             style = MaterialTheme.typography.labelSmall,
             color = Color.White,
         )
@@ -258,7 +255,7 @@ internal fun NovelEpubBadgeOverlay(
  * only render this when at least one flag is set.
  */
 @Composable
-internal fun NovelStatusBadgeOverlay(
+fun NovelStatusBadgeOverlay(
     showNotify: Boolean,
     showAutoDownload: Boolean,
     modifier: Modifier = Modifier,
@@ -276,7 +273,7 @@ internal fun NovelStatusBadgeOverlay(
         if (showNotify) {
             Icon(
                 AppIcons.Notifications,
-                contentDescription = stringResource(R.string.library_notifications_enabled),
+                contentDescription = stringResource(Res.string.library_notifications_enabled),
                 tint = Color.White,
                 modifier = Modifier.size(11.dp),
             )
@@ -284,7 +281,7 @@ internal fun NovelStatusBadgeOverlay(
         if (showAutoDownload) {
             Icon(
                 AppIcons.CloudDownload,
-                contentDescription = stringResource(R.string.library_auto_download_enabled),
+                contentDescription = stringResource(Res.string.library_auto_download_enabled),
                 tint = Color.White,
                 modifier = Modifier.size(11.dp),
             )

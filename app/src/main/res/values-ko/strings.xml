@@ -212,7 +212,6 @@
     <string name="library_local_source">로컬</string>
     <string name="library_unknown_source">소스 %1$d</string>
     <string name="library_locked_chapters">잠긴 챕터</string>
-    <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">알림 사용 중</string>
     <string name="library_auto_download_enabled">자동 다운로드 사용 중</string>
 

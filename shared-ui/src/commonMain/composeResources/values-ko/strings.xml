@@ -80,4 +80,9 @@
     <string name="reader_next">다음</string>
     <string name="reader_next_chapter">다음 챕터 →</string>
     <string name="reader_end_of_book">책의 끝</string>
+    <string name="library_auto_download_enabled">자동 다운로드 사용 중</string>
+    <string name="library_epub_badge">EPUB</string>
+    <string name="library_locked_chapters">잠긴 챕터</string>
+    <string name="library_notifications_enabled">알림 사용 중</string>
+    <string name="novel_your_rating">내 평점</string>
 </resources>

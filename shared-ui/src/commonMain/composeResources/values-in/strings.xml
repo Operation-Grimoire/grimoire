@@ -80,4 +80,9 @@
     <string name="reader_next">Berikutnya</string>
     <string name="reader_next_chapter">Bab berikutnya →</string>
     <string name="reader_end_of_book">Akhir buku</string>
+    <string name="library_auto_download_enabled">Unduh otomatis diaktifkan</string>
+    <string name="library_epub_badge">EPUB</string>
+    <string name="library_locked_chapters">Bab terkunci</string>
+    <string name="library_notifications_enabled">Notifikasi diaktifkan</string>
+    <string name="novel_your_rating">Rating Anda</string>
 </resources>

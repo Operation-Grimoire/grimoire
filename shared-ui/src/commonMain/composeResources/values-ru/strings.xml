@@ -89,4 +89,9 @@
     <string name="reader_next">Далее</string>
     <string name="reader_next_chapter">Следующая глава →</string>
     <string name="reader_end_of_book">Конец книги</string>
+    <string name="library_auto_download_enabled">Автозагрузка включена</string>
+    <string name="library_epub_badge">EPUB</string>
+    <string name="library_locked_chapters">Закрытые главы</string>
+    <string name="library_notifications_enabled">Уведомления включены</string>
+    <string name="novel_your_rating">Ваша оценка</string>
 </resources>

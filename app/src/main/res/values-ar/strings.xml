@@ -242,7 +242,6 @@
     <string name="library_local_source">محلي</string>
     <string name="library_unknown_source">المصدر %1$d</string>
     <string name="library_locked_chapters">فصول مقفلة</string>
-    <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">الإشعارات مفعّلة</string>
     <string name="library_auto_download_enabled">التنزيل التلقائي مفعّل</string>
 

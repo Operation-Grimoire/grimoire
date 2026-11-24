@@ -83,4 +83,9 @@
     <string name="reader_next">Sonraki</string>
     <string name="reader_next_chapter">Sonraki bölüm →</string>
     <string name="reader_end_of_book">Kitabın sonu</string>
+    <string name="library_auto_download_enabled">Otomatik indirme etkin</string>
+    <string name="library_epub_badge">EPUB</string>
+    <string name="library_locked_chapters">Kilitli bölümler</string>
+    <string name="library_notifications_enabled">Bildirimler etkin</string>
+    <string name="novel_your_rating">Puanınız</string>
 </resources>

@@ -80,4 +80,9 @@
     <string name="reader_next">ถัดไป</string>
     <string name="reader_next_chapter">ตอนถัดไป →</string>
     <string name="reader_end_of_book">จบเล่ม</string>
+    <string name="library_auto_download_enabled">เปิดดาวน์โหลดอัตโนมัติแล้ว</string>
+    <string name="library_epub_badge">EPUB</string>
+    <string name="library_locked_chapters">ตอนที่ถูกล็อก</string>
+    <string name="library_notifications_enabled">เปิดการแจ้งเตือนแล้ว</string>
+    <string name="novel_your_rating">คะแนนของคุณ</string>
 </resources>

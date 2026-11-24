@@ -33,7 +33,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import io.grimoire.ui.component.ColorThemePicker
+import io.grimoire.ui.library.ChapterCounts
+import io.grimoire.ui.library.NovelCoverCard
 import io.grimoire.ui.component.ThemeModeSegmentedRow
 import io.grimoire.ui.icon.*
 import io.grimoire.ui.theme.GrimoireMaterialTheme
@@ -65,6 +71,7 @@ fun main(args: Array<String>) {
     val hostApi = HostRuntime.apiVersion
     val networkEnabled = AtomicBoolean(true)
     SourceNetwork.install(DesktopHttpPlatform(networkEnabled))
+    installCoverLoader(data, networkEnabled)
     val library = LocalLibrary(data)
     val extensions = ExtensionManager(library, hostApi, HttpArtifactFetcher(networkEnabled), listOf(OFFICIAL_REPOSITORY))
     val model = desktopReaderModel(library, hostApi, networkEnabled, extensions)
@@ -220,29 +227,39 @@ private fun OfflineToggle(offline: Boolean, enabled: Boolean, change: (Boolean) 
 
 @Composable
 private fun BrowsePane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier) {
-    LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
+    val full: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope) -> GridItemSpan = { GridItemSpan(it.maxLineSpan) }
+    LazyVerticalGrid(GridCells.Adaptive(COVER_WIDTH), modifier, horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item(span = full) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(if (state.sources.isEmpty()) "Browse sources" else "Browse", style = MaterialTheme.typography.headlineSmall)
                 if (state.sources.isNotEmpty()) SourcePicker(state, enabled, model)
             }
         }
         when {
-            state.sourceName == null -> item {
-                Text("Install an extension to browse its catalog.")
-                TextButton(onClick = model::showExtensions, enabled = enabled) { Text("Manage extensions") }
+            state.sourceName == null -> item(span = full) {
+                Column {
+                    Text("Install an extension to browse its catalog.")
+                    TextButton(onClick = model::showExtensions, enabled = enabled) { Text("Manage extensions") }
+                }
             }
-            state.offline -> item { Text("Go online to browse this source.") }
-            state.browseModes.isEmpty() -> item { Text("${state.sourceName} has no catalog to browse.") }
-            else -> item { BrowseControls(state, enabled, model) }
+            state.offline -> item(span = full) { Text("Go online to browse this source.") }
+            state.browseModes.isEmpty() -> item(span = full) { Text("${state.sourceName} has no catalog to browse.") }
+            else -> item(span = full) { BrowseControls(state, enabled, model) }
         }
         if (state.sourceName != null && !state.offline && state.browseMode != null) {
             items(state.novels, key = { it.url }) { novel ->
-                OutlinedButton(onClick = { model.details(novel) }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-                    Text(novel.title, Modifier.fillMaxWidth().padding(10.dp))
-                }
+                NovelCoverCard(
+                    title = novel.title,
+                    cover = { BookCover(novel.thumbnailUrl, novel.title, it) },
+                    stats = null, includeLockedInTotals = false, showReadBadge = false, showDownloadedBadge = false,
+                    showLockedBadge = false, showRatingBadge = false, showEpubBadge = false, isEpub = false,
+                    notify = false, autoDownload = false, userRating = null, selected = false,
+                    onClick = { if (enabled) model.details(novel) }, onLongClick = {},
+                )
             }
-            item { BrowseFooter(state, enabled, model) }
+            // Grid rows get the full width; keep the footer button its natural size.
+            item(span = full) { Box(contentAlignment = Alignment.CenterStart) { BrowseFooter(state, enabled, model) } }
         }
     }
 }
@@ -325,21 +342,48 @@ private fun BookPane(state: ReaderState, enabled: Boolean, model: ReaderModel, m
 
 @Composable
 private fun LibraryPane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier = Modifier) {
-    LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Text("Library", style = MaterialTheme.typography.headlineSmall) }
-        if (state.library.isEmpty()) item {
-            Text("Books you add from Browse appear here.")
+    var query by remember { mutableStateOf("") }
+    val books = remember(state.library, query) { filterLibrary(state.library, query) }
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Library", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
+            if (state.library.isNotEmpty()) OutlinedTextField(query, { query = it }, singleLine = true,
+                label = { Text("Search library") }, modifier = Modifier.width(320.dp))
         }
-        items(state.library, key = { it.key }) { book ->
-            OutlinedButton(onClick = { model.openSaved(book) }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.fillMaxWidth().padding(12.dp)) {
-                    Text(book.novel.title, style = MaterialTheme.typography.titleLarge)
-                    Text("${book.downloaded.size} chapters saved offline")
-                }
+        when {
+            state.library.isEmpty() -> Text("Books you add from Browse appear here.")
+            books.isEmpty() -> Text("No books match \u201c${query.trim()}\u201d.")
+        }
+        LazyVerticalGrid(GridCells.Adaptive(COVER_WIDTH), Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(books, key = { it.key.toString() }) { book ->
+                NovelCoverCard(
+                    title = book.novel.title,
+                    cover = { BookCover(book.novel.thumbnailUrl, book.novel.title, it) },
+                    stats = book.counts(), includeLockedInTotals = false, showReadBadge = false, showDownloadedBadge = true,
+                    showLockedBadge = false, showRatingBadge = false, showEpubBadge = false, isEpub = false,
+                    notify = false, autoDownload = false, userRating = null, selected = false,
+                    onClick = { if (enabled) model.openSaved(book) }, onLongClick = {},
+                )
             }
         }
     }
 }
+
+private val COVER_WIDTH = 140.dp
+
+/** Saved books whose title or author contains [query], ignoring case. */
+internal fun filterLibrary(books: List<SavedBook>, query: String): List<SavedBook> {
+    val text = query.trim()
+    if (text.isEmpty()) return books
+    return books.filter { it.novel.title.contains(text, ignoreCase = true) || it.novel.author?.contains(text, ignoreCase = true) == true }
+}
+
+/** Downloaded and locked counts for the library badges; desktop does not count read chapters here yet. */
+internal fun SavedBook.counts() = ChapterCounts(
+    total = chapters.size, readCount = 0, downloadedCount = downloaded.count { url -> chapters.any { it.url == url } },
+    lockedCount = chapters.count { it.locked },
+)
 
 @Composable
 private fun ChapterPane(book: SavedBook, current: Chapter?, enabled: Boolean, offline: Boolean, model: ReaderModel, modifier: Modifier = Modifier) {

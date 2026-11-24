@@ -80,4 +80,9 @@
     <string name="reader_next">下一個</string>
     <string name="reader_next_chapter">下一章 →</string>
     <string name="reader_end_of_book">全書完</string>
+    <string name="library_auto_download_enabled">已啟用自動下載</string>
+    <string name="library_epub_badge">EPUB</string>
+    <string name="library_locked_chapters">鎖定章節</string>
+    <string name="library_notifications_enabled">已啟用通知</string>
+    <string name="novel_your_rating">你的評分</string>
 </resources>

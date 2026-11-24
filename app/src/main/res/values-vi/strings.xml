@@ -212,7 +212,6 @@
     <string name="library_local_source">Cục bộ</string>
     <string name="library_unknown_source">Nguồn %1$d</string>
     <string name="library_locked_chapters">Chương bị khóa</string>
-    <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">Đã bật thông báo</string>
     <string name="library_auto_download_enabled">Đã bật tự động tải</string>
 
