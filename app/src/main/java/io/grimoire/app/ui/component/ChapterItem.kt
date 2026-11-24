@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.component
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.background
@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
-import io.grimoire.app.ui.theme.premiumGold
+import io.grimoire.ui.theme.premiumGold
 import io.grimoire.app.R
 import java.text.DateFormat
 import java.util.Date

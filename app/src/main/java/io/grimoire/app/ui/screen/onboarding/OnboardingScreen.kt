@@ -44,9 +44,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.ArrowBack
-import io.grimoire.app.ui.icon.ArrowForward
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.ArrowBack
+import io.grimoire.ui.icon.ArrowForward
 import kotlinx.coroutines.launch
 
 private const val ONBOARDING_STEP_COUNT = 6

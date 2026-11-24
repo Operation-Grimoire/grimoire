@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.OpenInNew
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.OpenInNew
 
 /**
  * Compact outlined action card with a leading icon, title, optional subtitle,

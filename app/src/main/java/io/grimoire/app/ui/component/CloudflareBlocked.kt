@@ -21,7 +21,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.grimoire.app.R
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 
 /**
  * Error state for a Cloudflare challenge the silent interceptor couldn't

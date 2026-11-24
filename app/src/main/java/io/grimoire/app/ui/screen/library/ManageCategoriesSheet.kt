@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.library
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll

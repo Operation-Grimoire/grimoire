@@ -3,6 +3,8 @@ package io.grimoire.desktop
 import io.grimoire.api.model.novel.*
 import io.grimoire.reading.*
 import io.grimoire.reading.storage.*
+import io.grimoire.ui.theme.ColorTheme
+import io.grimoire.ui.theme.ThemeMode
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import org.junit.Assert.*
@@ -29,6 +31,20 @@ class LocalLibraryTest {
         // Same predicate used by the old writer: it refuses schema2 before touching any book.
         assertNotEquals(1, JSONObject(Files.readString(directory.resolve("library.json"))).getInt("schema"))
         LocalLibrary(directory).use { assertEquals(ReadPosition("/chapter", 0, 17), it.saved().single().position) }
+    }
+
+    @Test fun appearanceDefaultsPersistsAcrossReopenAndIgnoresUnknownValues() {
+        val directory = temporary.newFolder().toPath()
+        LocalLibrary(directory).use { store ->
+            assertEquals(DesktopAppearance(ThemeMode.SYSTEM, ColorTheme.DEFAULT), store.appearance())
+            store.setAppearance(DesktopAppearance(ThemeMode.DARK, ColorTheme.OCEAN))
+        }
+        LocalLibrary(directory).use { store ->
+            assertEquals(DesktopAppearance(ThemeMode.DARK, ColorTheme.OCEAN), store.appearance())
+            // A value written by a newer build falls back instead of failing startup.
+            store.extensionWrite { it.execute("UPDATE settings SET value='SEPIA' WHERE name='color_theme'") }
+            assertEquals(DesktopAppearance(ThemeMode.DARK, ColorTheme.DEFAULT), store.appearance())
+        }
     }
 
     @Test fun versionTwoImportPreservesControlCharactersAndExactLegacyBytes() {

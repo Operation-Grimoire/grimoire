@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appearance_theme_system">跟隨系統</string>
+    <string name="appearance_theme_light">淺色</string>
+    <string name="appearance_theme_dark">深色</string>
+    <string name="appearance_color_palette">調色盤</string>
+    <string name="appearance_color_palette_summary">選擇整個應用程式使用的強調色調色盤。</string>
+    <string name="appearance_color_palette_disabled">關閉「動態色彩」即可選擇自訂調色盤。</string>
+    <string name="color_theme_default">預設</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">海洋</string>
+    <string name="color_theme_sunset">夕陽</string>
+    <string name="color_theme_forest">森林</string>
+    <string name="color_theme_rose">玫瑰</string>
+    <string name="color_theme_midnight">午夜</string>
+</resources>

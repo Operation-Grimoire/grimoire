@@ -19,8 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.R
 import io.grimoire.app.ui.component.PlainTooltipIconButton
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.ArrowBack
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.ArrowBack
 import io.grimoire.app.ui.screen.settings.common.SettingsSectionHeader
 
 @OptIn(ExperimentalMaterial3Api::class)

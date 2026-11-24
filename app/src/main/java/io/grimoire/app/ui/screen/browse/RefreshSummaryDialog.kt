@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.grimoire.app.R
-import io.grimoire.app.ui.theme.premiumGold
+import io.grimoire.ui.theme.premiumGold
 
 @Composable
 internal fun RefreshSummaryDialog(

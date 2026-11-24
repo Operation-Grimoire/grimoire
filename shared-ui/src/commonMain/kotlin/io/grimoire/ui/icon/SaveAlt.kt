@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.icon
+package io.grimoire.ui.icon
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor

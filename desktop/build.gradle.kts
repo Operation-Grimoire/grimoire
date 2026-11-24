@@ -12,6 +12,7 @@ java {
 
 dependencies {
     implementation(project(":reading-core"))
+    implementation(project(":shared-ui"))
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
     implementation(libs.okhttp)

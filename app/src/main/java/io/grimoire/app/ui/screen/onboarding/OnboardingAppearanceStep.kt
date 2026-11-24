@@ -39,12 +39,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
-import io.grimoire.app.data.preferences.ThemeMode
-import io.grimoire.app.ui.component.ColorThemePicker
-import io.grimoire.app.ui.component.ThemeModeSegmentedRow
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.AutoStories
-import io.grimoire.app.ui.icon.ColorLens
+import io.grimoire.ui.theme.ThemeMode
+import io.grimoire.ui.component.ColorThemePicker
+import io.grimoire.ui.component.ThemeModeSegmentedRow
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.AutoStories
+import io.grimoire.ui.icon.ColorLens
 
 @Composable
 internal fun OnboardingAppearanceStep(

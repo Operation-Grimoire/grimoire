@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appearance_theme_system">النظام</string>
+    <string name="appearance_theme_light">فاتحة</string>
+    <string name="appearance_theme_dark">داكنة</string>
+    <string name="appearance_color_palette">لوحة الألوان</string>
+    <string name="appearance_color_palette_summary">اختر لوحة الألوان المميزة المستخدمة في التطبيق.</string>
+    <string name="appearance_color_palette_disabled">أوقف الألوان الديناميكية لاختيار لوحة مخصصة.</string>
+    <string name="color_theme_default">الافتراضية</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">المحيط</string>
+    <string name="color_theme_sunset">الغروب</string>
+    <string name="color_theme_forest">الغابة</string>
+    <string name="color_theme_rose">الوردي</string>
+    <string name="color_theme_midnight">منتصف الليل</string>
+</resources>

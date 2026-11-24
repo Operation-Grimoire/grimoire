@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.settings.github
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import android.content.ClipData
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.content.ClipboardManager

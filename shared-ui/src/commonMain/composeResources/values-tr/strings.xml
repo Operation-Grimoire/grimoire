@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appearance_theme_system">Sistem</string>
+    <string name="appearance_theme_light">Açık</string>
+    <string name="appearance_theme_dark">Koyu</string>
+    <string name="appearance_color_palette">Renk paleti</string>
+    <string name="appearance_color_palette_summary">Uygulama genelinde kullanılan vurgu paletini seçin.</string>
+    <string name="appearance_color_palette_disabled">Özel bir palet seçmek için Dinamik Renk’i kapatın.</string>
+    <string name="color_theme_default">Varsayılan</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">Okyanus</string>
+    <string name="color_theme_sunset">Gün batımı</string>
+    <string name="color_theme_forest">Orman</string>
+    <string name="color_theme_rose">Gül</string>
+    <string name="color_theme_midnight">Gece yarısı</string>
+</resources>

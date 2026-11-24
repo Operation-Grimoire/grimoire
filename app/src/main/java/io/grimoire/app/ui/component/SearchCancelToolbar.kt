@@ -20,8 +20,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.Close
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.Close
 
 /**
  * The floating-pill counterpart shown while a search field is open: a single X

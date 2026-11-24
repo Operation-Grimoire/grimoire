@@ -12,7 +12,7 @@ If something here drifts from the code, **trust the code and update this file**.
 - **Compose BOM 2026.02.01**, Material 3
 - **minSdk 26**, **targetSdk 36** (compileSdk API 36.1), Java 11 / jvmTarget 11
 - Hilt 2.59.2, Room 2.7.1, Navigation-Compose 2.8.9, Coil 2.7, OkHttp 4.12, DataStore 1.1, WorkManager 2.10
-- **Icons are Material Symbols (Outlined)**, not `material-icons-extended` (that dependency is removed). Every icon is an `AppIcons.<Name>` extension `val` in `ui/icon/`, fetched from Google's Material Symbols render endpoint. Reference `AppIcons.Search` etc.; never `Icons.Default.*`.
+- **Icons are Material Symbols (Outlined)**, not `material-icons-extended` (that dependency is removed). Every icon is an `AppIcons.<Name>` extension `val` in `shared-ui`'s `io.grimoire.ui.icon` package (shared with Desktop), fetched from Google's Material Symbols render endpoint. Reference `AppIcons.Search` etc.; never `Icons.Default.*`.
 - `androidx.media` 1.7 is the legacy `MediaSessionCompat` — TTS still uses it; do **not** introduce media3 in a single screen without migrating the whole TTS playback service at once
 - `biometric:1.2.0-alpha05` + `security-crypto:1.1.0-beta01` are intentionally alpha/beta; watch for breakage on bumps
 - Release builds run **without R8** (`isMinifyEnabled = false`). Don't enable minify in a one-off PR without adding the Hilt / Room / serialization keep rules
@@ -28,7 +28,8 @@ ui/                  Compose UI (Scaffold, NavHost, screens, ViewModels)
   screen/              browse / downloads / extensions / library / migrate /
                        more / novelupdates / reader / settings (15 subscreens) /
                        tasks / updates / webview
-  theme/, update/
+  theme/               Android wrapper (dynamic color, system bars); palettes live in :shared-ui
+  update/
 data/
   local/               Room: AppDatabase, 6 DAOs, 7 entities
   preferences/         14 DataStore-backed pref classes + PreferenceStore
@@ -150,13 +151,14 @@ merge or validate does not authorize publishing stable. See CONTRIBUTING's
 - **Don't enable R8** in a refactor PR without adding the keep rules in the same commit.
 - **Don't bypass the extension API**. App-side code should depend on `io.grimoire:extensions-api` interfaces, not concrete extension classes (the app never loads extension code into its own classloader).
 - **Check API requirements before loading code.** `ExtensionLoader` rejects malformed or unsupported `grimoire.extension.minApi` declarations before class loading/cache reuse. `installedExtensions` retains these package records with a null `Source`; runtime consumers use the filtered `extensions` list. Legacy APKs without the declaration keep the metadata probe.
-- **Don't use `Icons.*` or re-add `material-icons-extended`**. Add an icon by fetching its Material Symbol into `ui/icon/AppIcons.<Name>.kt` (mirror an existing file), then reference `AppIcons.<Name>`.
+- **Don't use `Icons.*` or re-add `material-icons-extended`**. Add an icon by fetching its Material Symbol into `shared-ui/src/commonMain/kotlin/io/grimoire/ui/icon/<Name>.kt` (mirror an existing file), then reference `AppIcons.<Name>`.
 
 ## Quick file map
 
 | Looking for | File |
 |-------------|------|
-| Icons (Material Symbols registry) | `ui/icon/AppIcons.<Name>.kt` (one per icon) |
+| Icons (Material Symbols registry) | `shared-ui/.../io/grimoire/ui/icon/<Name>.kt` (one per icon) |
+| Compose UI shared with Desktop (theme, palettes, appearance controls) | `shared-ui/src/commonMain` (`io.grimoire.ui.*`); strings in `composeResources/values*/strings.xml`. See [`docs/desktop.md`](docs/desktop.md#shared-ui) |
 | Swipeable tabs (any screen/sheet) | `ui/component/SwipeTabRow.kt` |
 | Guided tours | `ui/tour/TourSteps.kt` (the catalog) + `TourController.kt`; tag an anchor with `Modifier.tourTarget(TourKey.X)`. Tours for screens that need a novel (detail, reader) use `TourTrigger.FirstVisit` and never navigate. Rules in `TourRulesTest` |
 | Rich synopsis rendering (HTML + auto-linked URLs) | `ui/component/RichSynopsis.kt` (+ `RichSynopsisTest`), consumed by `ExpandableText.kt`; link toggle via `LocalSynopsisRenderLinks` / `UiPreferences.renderSynopsisLinks` |
@@ -170,5 +172,5 @@ merge or validate does not authorize publishing stable. See CONTRIBUTING's
 | TTS playback | `data/tts/TtsPlaybackManager.kt` + `TtsPlaybackService.kt` |
 | GitHub OAuth | `auth/github/*` and `di/GitHubAuthModule.kt` |
 | Extension discovery | `extension/ExtensionLoader.kt`, `extension/ExtensionManager.kt` |
-| UI language + translations | `util/AppLocale.kt` (system per-app language on 13+), `res/xml/locales_config.xml`, `res/values-*/` (18 translations; Indonesian lives in `values-in`). A new string needs every translation or `LocaleCoverageTest` fails; it also fails when the locale lists drift |
+| UI language + translations | `util/AppLocale.kt` (system per-app language on 13+), `res/xml/locales_config.xml`, `res/values-*/` (18 translations; Indonesian lives in `values-in`). A new string needs every translation or `LocaleCoverageTest` fails; it also fails when the locale lists drift. Strings used by `:shared-ui` composables live in its `composeResources` instead, with the same locales |
 | Source identity (derived from package, not declared) | `LoadedExtension.id` (← `sourceIdFor()` in the API); legacy ids re-keyed by `data/local/SourceIdMigrator.kt` |

@@ -56,13 +56,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.grimoire.app.R
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.Backup
-import io.grimoire.app.ui.icon.CheckCircle
-import io.grimoire.app.ui.icon.Download
-import io.grimoire.app.ui.icon.NewReleases
-import io.grimoire.app.ui.icon.Notifications
-import io.grimoire.app.ui.icon.Shield
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.Backup
+import io.grimoire.ui.icon.CheckCircle
+import io.grimoire.ui.icon.Download
+import io.grimoire.ui.icon.NewReleases
+import io.grimoire.ui.icon.Notifications
+import io.grimoire.ui.icon.Shield
 
 @Composable
 internal fun OnboardingNotificationsStep(

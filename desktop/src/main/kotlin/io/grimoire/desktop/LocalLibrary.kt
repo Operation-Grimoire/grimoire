@@ -1,5 +1,7 @@
 package io.grimoire.desktop
 
+import io.grimoire.ui.theme.ColorTheme
+import io.grimoire.ui.theme.ThemeMode
 import io.grimoire.api.model.novel.Chapter
 import io.grimoire.api.model.novel.Novel
 import io.grimoire.api.model.novel.NovelPage
@@ -16,6 +18,8 @@ import java.nio.file.Path
 import java.util.UUID
 import java.sql.Connection
 import java.sql.ResultSet
+
+data class DesktopAppearance(val themeMode: ThemeMode = ThemeMode.SYSTEM, val colorTheme: ColorTheme = ColorTheme.DEFAULT)
 
 data class ReadPosition(val chapterUrl: String, val paragraph: Int, val offset: Int)
 data class SavedBook(
@@ -125,6 +129,26 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
         write {
             db.execute("INSERT INTO settings VALUES('record_opened_history',?) ON CONFLICT(name) DO UPDATE SET value=excluded.value",
                 if (enabled) "1" else "0")
+        }
+    }
+
+    /** Unknown or missing values fall back to the defaults, so a newer build's choice never blocks startup. */
+    @Synchronized fun appearance(): DesktopAppearance {
+        database.verifyMarker()
+        val values = db.query("SELECT name, value FROM settings WHERE name IN ('theme_mode','color_theme')") {
+            it.getString(1) to it.getString(2)
+        }.toMap()
+        return DesktopAppearance(
+            ThemeMode.entries.firstOrNull { it.name == values["theme_mode"] } ?: ThemeMode.SYSTEM,
+            ColorTheme.entries.firstOrNull { it.name == values["color_theme"] } ?: ColorTheme.DEFAULT,
+        )
+    }
+
+    @Synchronized fun setAppearance(appearance: DesktopAppearance) {
+        write {
+            for ((name, value) in listOf("theme_mode" to appearance.themeMode.name, "color_theme" to appearance.colorTheme.name)) {
+                db.execute("INSERT INTO settings VALUES(?,?) ON CONFLICT(name) DO UPDATE SET value=excluded.value", name, value)
+            }
         }
     }
 

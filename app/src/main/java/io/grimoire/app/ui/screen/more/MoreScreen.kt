@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.more
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding

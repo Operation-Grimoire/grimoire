@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.settings.tts
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import android.content.Intent
 import android.widget.Toast
 import io.grimoire.app.ui.component.PlainTooltipIconButton

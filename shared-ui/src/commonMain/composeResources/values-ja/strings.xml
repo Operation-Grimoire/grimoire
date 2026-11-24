@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appearance_theme_system">システム</string>
+    <string name="appearance_theme_light">ライト</string>
+    <string name="appearance_theme_dark">ダーク</string>
+    <string name="appearance_color_palette">カラーパレット</string>
+    <string name="appearance_color_palette_summary">アプリ全体で使うアクセントカラーのパレットを選択します。</string>
+    <string name="appearance_color_palette_disabled">カスタムパレットを選ぶには、ダイナミックカラーをオフにしてください。</string>
+    <string name="color_theme_default">デフォルト</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">オーシャン</string>
+    <string name="color_theme_sunset">サンセット</string>
+    <string name="color_theme_forest">フォレスト</string>
+    <string name="color_theme_rose">ローズ</string>
+    <string name="color_theme_midnight">ミッドナイト</string>
+</resources>

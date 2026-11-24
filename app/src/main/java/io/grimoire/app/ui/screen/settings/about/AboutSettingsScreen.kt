@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.settings.about
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper

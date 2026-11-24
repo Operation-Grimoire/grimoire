@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.updates
 
 import io.grimoire.app.data.book.LOCAL_PKG
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.activity.compose.BackHandler
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -66,7 +66,7 @@ import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.dayKey
 import io.grimoire.app.ui.component.dayLabel
 import io.grimoire.app.ui.component.timeLabel
-import io.grimoire.app.ui.theme.premiumGold
+import io.grimoire.ui.theme.premiumGold
 import io.grimoire.app.R
 
 /** New chapters from one novel found in a single library refresh, identified by [key]. */

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appearance_theme_system">Системна</string>
+    <string name="appearance_theme_light">Світла</string>
+    <string name="appearance_theme_dark">Темна</string>
+    <string name="appearance_color_palette">Колірна палітра</string>
+    <string name="appearance_color_palette_summary">Виберіть акцентну палітру для всього застосунку.</string>
+    <string name="appearance_color_palette_disabled">Вимкніть динамічний колір, щоб вибрати власну палітру.</string>
+    <string name="color_theme_default">Типова</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">Океан</string>
+    <string name="color_theme_sunset">Захід сонця</string>
+    <string name="color_theme_forest">Ліс</string>
+    <string name="color_theme_rose">Троянда</string>
+    <string name="color_theme_midnight">Північ</string>
+</resources>

@@ -2,23 +2,10 @@
 <resources>
     <!-- Appearance -->
     <string name="appearance_theme">थीम</string>
-    <string name="appearance_theme_system">सिस्टम</string>
-    <string name="appearance_theme_light">हल्की</string>
-    <string name="appearance_theme_dark">गहरी</string>
     <string name="appearance_dynamic_color">डायनैमिक कलर</string>
     <string name="appearance_dynamic_color_summary">रंगों को अपने वॉलपेपर के अनुसार ढालें</string>
     <string name="appearance_synopsis_links">सारांश में लिंक</string>
     <string name="appearance_synopsis_links_summary">उपन्यास के विवरण में वेब लिंक को टैप करने लायक लिंक के रूप में दिखाएँ</string>
-    <string name="appearance_color_palette">रंग पैलेट</string>
-    <string name="appearance_color_palette_summary">पूरे ऐप में इस्तेमाल होने वाला एक्सेंट पैलेट चुनें।</string>
-    <string name="appearance_color_palette_disabled">अपना पैलेट चुनने के लिए डायनैमिक कलर बंद करें।</string>
-    <string name="color_theme_default">डिफ़ॉल्ट</string>
-    <string name="color_theme_grimoire">Grimoire</string>
-    <string name="color_theme_ocean">सागर</string>
-    <string name="color_theme_sunset">सूर्यास्त</string>
-    <string name="color_theme_forest">जंगल</string>
-    <string name="color_theme_rose">गुलाब</string>
-    <string name="color_theme_midnight">आधी रात</string>
 
     <!-- Behavior -->
     <string name="behavior_haptics">हैप्टिक फ़ीडबैक</string>

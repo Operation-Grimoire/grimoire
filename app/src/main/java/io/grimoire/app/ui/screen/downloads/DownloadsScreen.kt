@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.downloads
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.activity.compose.BackHandler
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.ExperimentalFoundationApi

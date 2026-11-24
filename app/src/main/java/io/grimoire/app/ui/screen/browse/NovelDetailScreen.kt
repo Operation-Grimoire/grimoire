@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.browse
 
 import io.grimoire.app.ui.tour.tourTarget
 import io.grimoire.app.ui.tour.TourKey
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -107,7 +107,7 @@ import io.grimoire.app.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SelectionTopBar
 import io.grimoire.app.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.rememberShimmerAlpha
-import io.grimoire.app.ui.theme.premiumGold
+import io.grimoire.ui.theme.premiumGold
 import kotlinx.coroutines.launch
 import io.grimoire.app.R
 

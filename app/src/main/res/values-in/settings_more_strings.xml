@@ -2,23 +2,10 @@
 <resources>
     <!-- Appearance -->
     <string name="appearance_theme">Tema</string>
-    <string name="appearance_theme_system">Sistem</string>
-    <string name="appearance_theme_light">Terang</string>
-    <string name="appearance_theme_dark">Gelap</string>
     <string name="appearance_dynamic_color">Warna Dinamis</string>
     <string name="appearance_dynamic_color_summary">Sesuaikan warna dengan wallpaper Anda</string>
     <string name="appearance_synopsis_links">Tautan di sinopsis</string>
     <string name="appearance_synopsis_links_summary">Tampilkan tautan web di deskripsi novel sebagai tautan yang bisa diketuk</string>
-    <string name="appearance_color_palette">Palet warna</string>
-    <string name="appearance_color_palette_summary">Pilih palet aksen yang dipakai di seluruh aplikasi.</string>
-    <string name="appearance_color_palette_disabled">Matikan Warna Dinamis untuk memilih palet kustom.</string>
-    <string name="color_theme_default">Default</string>
-    <string name="color_theme_grimoire">Grimoire</string>
-    <string name="color_theme_ocean">Samudra</string>
-    <string name="color_theme_sunset">Senja</string>
-    <string name="color_theme_forest">Hutan</string>
-    <string name="color_theme_rose">Mawar</string>
-    <string name="color_theme_midnight">Tengah Malam</string>
 
     <!-- Behavior -->
     <string name="behavior_haptics">Umpan balik haptik</string>

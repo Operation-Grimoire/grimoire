@@ -1,6 +1,6 @@
 package io.grimoire.app.ui
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
 import io.grimoire.app.R

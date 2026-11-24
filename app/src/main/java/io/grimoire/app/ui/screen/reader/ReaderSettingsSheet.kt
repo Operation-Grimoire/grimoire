@@ -42,9 +42,9 @@ import io.grimoire.app.ui.component.sheet.SheetSectionLabel
 import io.grimoire.app.ui.component.sheet.SheetSwitchRow
 import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
 import io.grimoire.app.ui.component.sheet.StepperRow
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.KeyboardArrowRight
-import io.grimoire.app.ui.icon.RecordVoiceOver
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.KeyboardArrowRight
+import io.grimoire.ui.icon.RecordVoiceOver
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

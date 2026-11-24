@@ -1,23 +1,10 @@
 <resources>
     <!-- Appearance -->
     <string name="appearance_theme">Design</string>
-    <string name="appearance_theme_system">Systemstandard</string>
-    <string name="appearance_theme_light">Hell</string>
-    <string name="appearance_theme_dark">Dunkel</string>
     <string name="appearance_dynamic_color">Dynamische Farben</string>
     <string name="appearance_dynamic_color_summary">Farben an dein Hintergrundbild anpassen</string>
     <string name="appearance_synopsis_links">Links in Beschreibungen</string>
     <string name="appearance_synopsis_links_summary">Weblinks in Romanbeschreibungen als antippbare Links darstellen</string>
-    <string name="appearance_color_palette">Farbpalette</string>
-    <string name="appearance_color_palette_summary">Wähle die Akzentpalette für die ganze App.</string>
-    <string name="appearance_color_palette_disabled">Schalte „Dynamische Farben“ aus, um eine eigene Palette zu wählen.</string>
-    <string name="color_theme_default">Standard</string>
-    <string name="color_theme_grimoire">Grimoire</string>
-    <string name="color_theme_ocean">Ozean</string>
-    <string name="color_theme_sunset">Abendrot</string>
-    <string name="color_theme_forest">Wald</string>
-    <string name="color_theme_rose">Rosé</string>
-    <string name="color_theme_midnight">Mitternacht</string>
 
     <!-- Behavior -->
     <string name="behavior_haptics">Haptisches Feedback</string>

@@ -2,23 +2,10 @@
 <resources>
     <!-- Appearance -->
     <string name="appearance_theme">Tema</string>
-    <string name="appearance_theme_system">Sistema</string>
-    <string name="appearance_theme_light">Claro</string>
-    <string name="appearance_theme_dark">Oscuro</string>
     <string name="appearance_dynamic_color">Color dinámico</string>
     <string name="appearance_dynamic_color_summary">Adaptar los colores a tu fondo de pantalla</string>
     <string name="appearance_synopsis_links">Enlaces en las sinopsis</string>
     <string name="appearance_synopsis_links_summary">Mostrar los enlaces web de las descripciones de las novelas como enlaces que se pueden tocar</string>
-    <string name="appearance_color_palette">Paleta de colores</string>
-    <string name="appearance_color_palette_summary">Elige la paleta de acento que se usa en toda la app.</string>
-    <string name="appearance_color_palette_disabled">Desactiva Color dinámico para elegir una paleta personalizada.</string>
-    <string name="color_theme_default">Predeterminado</string>
-    <string name="color_theme_grimoire">Grimoire</string>
-    <string name="color_theme_ocean">Océano</string>
-    <string name="color_theme_sunset">Atardecer</string>
-    <string name="color_theme_forest">Bosque</string>
-    <string name="color_theme_rose">Rosa</string>
-    <string name="color_theme_midnight">Medianoche</string>
 
     <!-- Behavior -->
     <string name="behavior_haptics">Respuesta háptica</string>

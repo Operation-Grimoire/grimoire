@@ -6,6 +6,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asSkiaBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
@@ -299,6 +300,39 @@ class ReaderUiTest {
         } finally {
             runBlocking { restarted.close() }
         }
+    }
+
+    @Test fun settingsChangeThemeModeAndPaletteAndKeepThemAfterRestart() {
+        val directory = temporary.newFolder().toPath()
+        val model = desktopReaderModel(LocalLibrary(directory), "1.6.0", java.util.concurrent.atomic.AtomicBoolean(false))
+        fun click(label: String) {
+            compose.onNode(hasText(label) and hasClickAction()).performClick()
+            settled(model)
+        }
+        try {
+            compose.setContent { Surface(Modifier.size(1100.dp, 760.dp)) { DesktopReader(model, false, null) {} } }
+            click("Settings")
+            compose.onNode(hasText("Settings") and hasClickAction()).assertIsSelected()
+            compose.onNode(hasText("System") and hasClickAction()).assertIsSelected()
+            compose.onNode(hasText("Default") and hasClickAction()).assertIsSelected()
+            click("Dark")
+            click("Ocean")
+            compose.onNode(hasText("Dark") and hasClickAction()).assertIsSelected()
+            compose.onNode(hasText("Ocean") and hasClickAction()).assertIsSelected()
+            assertEquals(DesktopAppearance(io.grimoire.ui.theme.ThemeMode.DARK, io.grimoire.ui.theme.ColorTheme.OCEAN), model.state.value.appearance)
+            // The window background follows the dark palette.
+            val pixels = compose.onRoot().captureToImage().asSkiaBitmap()
+            val background = io.grimoire.ui.theme.OceanDark.background
+            val corner = pixels.getColor(pixels.width - 4, pixels.height - 4)
+            assertEquals(background.toArgb(), corner)
+            capture("settings-appearance-dark.png")
+        } catch (failure: Throwable) {
+            runCatching { capture("settings-appearance-failure.png") }
+            throw failure
+        } finally {
+            runBlocking { model.close() }
+        }
+        LocalLibrary(directory).use { assertEquals(DesktopAppearance(io.grimoire.ui.theme.ThemeMode.DARK, io.grimoire.ui.theme.ColorTheme.OCEAN), it.appearance()) }
     }
 
     private fun settled(model: ReaderModel) {

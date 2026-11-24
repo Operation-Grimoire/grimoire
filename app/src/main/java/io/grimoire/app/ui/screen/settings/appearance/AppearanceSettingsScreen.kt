@@ -19,12 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
-import io.grimoire.app.data.preferences.ThemeMode
-import io.grimoire.app.ui.component.ColorThemePicker
+import io.grimoire.ui.theme.ThemeMode
+import io.grimoire.ui.component.ColorThemePicker
 import io.grimoire.app.ui.component.PlainTooltipIconButton
-import io.grimoire.app.ui.component.ThemeModeSegmentedRow
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.ArrowBack
+import io.grimoire.ui.component.ThemeModeSegmentedRow
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.ArrowBack
 import io.grimoire.app.ui.screen.settings.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

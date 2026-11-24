@@ -12,7 +12,12 @@ class LocaleCoverageTest {
 
     private val res = File("src/main/res")
 
-    private val translations: List<File> = res.listFiles { f ->
+    // Strings used by Compose UI shared with Desktop; same folder qualifiers as the app.
+    private val sharedRes = File("../shared-ui/src/commonMain/composeResources")
+
+    private val translations: List<File> = translationsIn(res)
+
+    private fun translationsIn(root: File): List<File> = root.listFiles { f ->
         f.isDirectory && f.name.startsWith("values-") && f.listFiles { x -> x.name.endsWith("strings.xml") }!!.isNotEmpty()
     }!!.sortedBy { it.name }
 
@@ -25,6 +30,22 @@ class LocaleCoverageTest {
             assertEquals("missing in ${dir.name}", emptySet<String>(), english.keys - translated.keys)
             assertEquals("stale in ${dir.name}", emptySet<String>(), translated.keys - english.keys)
         }
+    }
+
+    @Test
+    fun `shared UI strings cover the same languages with exactly the english keys`() {
+        val english = entries(File(sharedRes, "values"))
+        val shared = translationsIn(sharedRes)
+        assertTrue(english.isNotEmpty())
+        assertEquals(translations.map { it.name }, shared.map { it.name })
+        for (dir in shared) {
+            val translated = entries(dir)
+            assertEquals("missing in shared ${dir.name}", emptySet<String>(), english.keys - translated.keys)
+            assertEquals("stale in shared ${dir.name}", emptySet<String>(), translated.keys - english.keys)
+            for ((key, text) in translated) assertEquals("shared ${dir.name}/$key", formatArgs(english.getValue(key)), formatArgs(text))
+        }
+        val app = entries(File(res, "values"))
+        assertEquals("defined in both app and shared resources", emptySet<String>(), app.keys intersect english.keys)
     }
 
     @Test

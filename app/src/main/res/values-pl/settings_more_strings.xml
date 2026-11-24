@@ -2,23 +2,10 @@
 <resources>
     <!-- Appearance -->
     <string name="appearance_theme">Motyw</string>
-    <string name="appearance_theme_system">Systemowy</string>
-    <string name="appearance_theme_light">Jasny</string>
-    <string name="appearance_theme_dark">Ciemny</string>
     <string name="appearance_dynamic_color">Kolory dynamiczne</string>
     <string name="appearance_dynamic_color_summary">Dopasuj kolory do tapety</string>
     <string name="appearance_synopsis_links">Linki w opisach</string>
     <string name="appearance_synopsis_links_summary">Wyświetlaj adresy internetowe w opisach powieści jako klikalne linki</string>
-    <string name="appearance_color_palette">Paleta kolorów</string>
-    <string name="appearance_color_palette_summary">Wybierz paletę akcentów używaną w całej aplikacji.</string>
-    <string name="appearance_color_palette_disabled">Wyłącz kolory dynamiczne, aby wybrać własną paletę.</string>
-    <string name="color_theme_default">Domyślna</string>
-    <string name="color_theme_grimoire">Grimoire</string>
-    <string name="color_theme_ocean">Ocean</string>
-    <string name="color_theme_sunset">Zachód słońca</string>
-    <string name="color_theme_forest">Las</string>
-    <string name="color_theme_rose">Róża</string>
-    <string name="color_theme_midnight">Północ</string>
 
     <!-- Behavior -->
     <string name="behavior_haptics">Wibracje dotykowe</string>

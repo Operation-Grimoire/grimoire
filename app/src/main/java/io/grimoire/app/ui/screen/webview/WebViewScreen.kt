@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.webview
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import android.annotation.SuppressLint
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import android.content.ClipData

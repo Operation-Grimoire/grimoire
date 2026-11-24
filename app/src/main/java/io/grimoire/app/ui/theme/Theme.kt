@@ -2,9 +2,6 @@ package io.grimoire.app.ui.theme
 
 import android.app.Activity
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
@@ -12,8 +9,11 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import io.grimoire.app.data.preferences.ColorTheme
-import io.grimoire.app.data.preferences.ThemeMode
+import io.grimoire.ui.theme.ColorTheme
+import io.grimoire.ui.theme.GrimoireMaterialTheme
+import io.grimoire.ui.theme.ThemeMode
+import io.grimoire.ui.theme.isDark
+import io.grimoire.ui.theme.scheme
 
 @Composable
 fun GrimoireTheme(
@@ -22,11 +22,7 @@ fun GrimoireTheme(
     colorTheme: ColorTheme = ColorTheme.DEFAULT,
     content: @Composable () -> Unit,
 ) {
-    val darkTheme = when (themeMode) {
-        ThemeMode.SYSTEM -> isSystemInDarkTheme()
-        ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
-    }
+    val darkTheme = themeMode.isDark()
 
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
@@ -48,19 +44,5 @@ fun GrimoireTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content,
-    )
-}
-
-private fun ColorTheme.scheme(dark: Boolean): ColorScheme = when (this) {
-    ColorTheme.DEFAULT -> if (dark) DefaultDark else DefaultLight
-    ColorTheme.GRIMOIRE -> if (dark) GrimoireDark else GrimoireLight
-    ColorTheme.OCEAN -> if (dark) OceanDark else OceanLight
-    ColorTheme.SUNSET -> if (dark) SunsetDark else SunsetLight
-    ColorTheme.FOREST -> if (dark) ForestDark else ForestLight
-    ColorTheme.ROSE -> if (dark) RoseDark else RoseLight
-    ColorTheme.MIDNIGHT -> if (dark) MidnightDark else MidnightLight
+    GrimoireMaterialTheme(colorScheme, content)
 }

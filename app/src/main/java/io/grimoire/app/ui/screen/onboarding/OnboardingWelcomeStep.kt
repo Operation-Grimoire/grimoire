@@ -61,12 +61,12 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import io.grimoire.app.R
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.CheckCircle
-import io.grimoire.app.ui.icon.ErrorOutline
-import io.grimoire.app.ui.icon.KeyboardArrowRight
-import io.grimoire.app.ui.icon.Restore
-import io.grimoire.app.ui.icon.Translate
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.CheckCircle
+import io.grimoire.ui.icon.ErrorOutline
+import io.grimoire.ui.icon.KeyboardArrowRight
+import io.grimoire.ui.icon.Restore
+import io.grimoire.ui.icon.Translate
 import io.grimoire.app.util.AppLocale
 
 @OptIn(ExperimentalMaterial3Api::class)

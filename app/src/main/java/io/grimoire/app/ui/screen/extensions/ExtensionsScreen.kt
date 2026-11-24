@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.extensions
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import android.content.Intent
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.activity.compose.BackHandler

@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.icon
+package io.grimoire.ui.icon
 
 /**
  * Central registry of the app's icons. Each icon is an extension `val` on this object,

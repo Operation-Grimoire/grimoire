@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.component
+package io.grimoire.ui.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -28,33 +28,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import io.grimoire.app.R
-import io.grimoire.app.data.preferences.ColorTheme
-import io.grimoire.app.data.preferences.ThemeMode
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.Check
-import io.grimoire.app.ui.theme.DefaultDark
-import io.grimoire.app.ui.theme.DefaultLight
-import io.grimoire.app.ui.theme.ForestDark
-import io.grimoire.app.ui.theme.ForestLight
-import io.grimoire.app.ui.theme.GrimoireDark
-import io.grimoire.app.ui.theme.GrimoireLight
-import io.grimoire.app.ui.theme.MidnightDark
-import io.grimoire.app.ui.theme.MidnightLight
-import io.grimoire.app.ui.theme.OceanDark
-import io.grimoire.app.ui.theme.OceanLight
-import io.grimoire.app.ui.theme.RoseDark
-import io.grimoire.app.ui.theme.RoseLight
-import io.grimoire.app.ui.theme.SunsetDark
-import io.grimoire.app.ui.theme.SunsetLight
+import io.grimoire.ui.resources.*
+import io.grimoire.ui.theme.ColorTheme
+import io.grimoire.ui.theme.scheme
+import org.jetbrains.compose.resources.stringResource
+import io.grimoire.ui.theme.ThemeMode
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.Check
 
 /** Segmented button row for choosing between System, Light, and Dark theme modes. */
 @Composable
-internal fun ThemeModeSegmentedRow(
+fun ThemeModeSegmentedRow(
     selected: ThemeMode,
     onSelected: (ThemeMode) -> Unit,
     modifier: Modifier = Modifier,
@@ -73,7 +60,7 @@ internal fun ThemeModeSegmentedRow(
 
 /** Horizontal swatch row for picking one of the built-in [ColorTheme] palettes. */
 @Composable
-internal fun ColorThemePicker(
+fun ColorThemePicker(
     selected: ColorTheme,
     enabled: Boolean,
     darkPreview: Boolean,
@@ -85,14 +72,14 @@ internal fun ColorThemePicker(
     Column(modifier = modifier.padding(vertical = 8.dp)) {
         Column(Modifier.padding(headerPadding)) {
             Text(
-                text = stringResource(R.string.appearance_color_palette),
+                text = stringResource(Res.string.appearance_color_palette),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             val supporting = if (enabled) {
-                stringResource(R.string.appearance_color_palette_summary)
+                stringResource(Res.string.appearance_color_palette_summary)
             } else {
-                stringResource(R.string.appearance_color_palette_disabled)
+                stringResource(Res.string.appearance_color_palette_disabled)
             }
             Text(
                 text = supporting,
@@ -125,18 +112,8 @@ internal fun ColorThemePicker(
     }
 }
 
-private fun previewSwatches(theme: ColorTheme, dark: Boolean): Triple<Color, Color, Color> {
-    val scheme = when (theme) {
-        ColorTheme.DEFAULT -> if (dark) DefaultDark else DefaultLight
-        ColorTheme.GRIMOIRE -> if (dark) GrimoireDark else GrimoireLight
-        ColorTheme.OCEAN -> if (dark) OceanDark else OceanLight
-        ColorTheme.SUNSET -> if (dark) SunsetDark else SunsetLight
-        ColorTheme.FOREST -> if (dark) ForestDark else ForestLight
-        ColorTheme.ROSE -> if (dark) RoseDark else RoseLight
-        ColorTheme.MIDNIGHT -> if (dark) MidnightDark else MidnightLight
-    }
-    return Triple(scheme.primary, scheme.secondary, scheme.tertiary)
-}
+private fun previewSwatches(theme: ColorTheme, dark: Boolean): Triple<Color, Color, Color> =
+    theme.scheme(dark).let { Triple(it.primary, it.secondary, it.tertiary) }
 
 @Composable
 private fun ColorThemeChip(
@@ -210,23 +187,23 @@ private fun SwatchDot(color: Color, alpha: Float) {
 }
 
 @Composable
-internal fun ThemeMode.localizedDisplayName(): String = stringResource(
+fun ThemeMode.localizedDisplayName(): String = stringResource(
     when (this) {
-        ThemeMode.SYSTEM -> R.string.appearance_theme_system
-        ThemeMode.LIGHT -> R.string.appearance_theme_light
-        ThemeMode.DARK -> R.string.appearance_theme_dark
+        ThemeMode.SYSTEM -> Res.string.appearance_theme_system
+        ThemeMode.LIGHT -> Res.string.appearance_theme_light
+        ThemeMode.DARK -> Res.string.appearance_theme_dark
     },
 )
 
 @Composable
-internal fun ColorTheme.localizedDisplayName(): String = stringResource(
+fun ColorTheme.localizedDisplayName(): String = stringResource(
     when (this) {
-        ColorTheme.DEFAULT -> R.string.color_theme_default
-        ColorTheme.GRIMOIRE -> R.string.color_theme_grimoire
-        ColorTheme.OCEAN -> R.string.color_theme_ocean
-        ColorTheme.SUNSET -> R.string.color_theme_sunset
-        ColorTheme.FOREST -> R.string.color_theme_forest
-        ColorTheme.ROSE -> R.string.color_theme_rose
-        ColorTheme.MIDNIGHT -> R.string.color_theme_midnight
+        ColorTheme.DEFAULT -> Res.string.color_theme_default
+        ColorTheme.GRIMOIRE -> Res.string.color_theme_grimoire
+        ColorTheme.OCEAN -> Res.string.color_theme_ocean
+        ColorTheme.SUNSET -> Res.string.color_theme_sunset
+        ColorTheme.FOREST -> Res.string.color_theme_forest
+        ColorTheme.ROSE -> Res.string.color_theme_rose
+        ColorTheme.MIDNIGHT -> Res.string.color_theme_midnight
     },
 )

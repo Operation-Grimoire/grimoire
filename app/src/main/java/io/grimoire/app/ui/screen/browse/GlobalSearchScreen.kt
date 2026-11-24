@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.rememberPagerState
 import io.grimoire.app.ui.component.PlainTooltipIconButton

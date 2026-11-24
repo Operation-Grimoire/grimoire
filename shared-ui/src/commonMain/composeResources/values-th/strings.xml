@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appearance_theme_system">ตามระบบ</string>
+    <string name="appearance_theme_light">สว่าง</string>
+    <string name="appearance_theme_dark">มืด</string>
+    <string name="appearance_color_palette">ชุดสี</string>
+    <string name="appearance_color_palette_summary">เลือกชุดสีเน้นที่ใช้ทั่วทั้งแอป</string>
+    <string name="appearance_color_palette_disabled">ปิดสีไดนามิกเพื่อเลือกชุดสีเอง</string>
+    <string name="color_theme_default">ค่าเริ่มต้น</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">มหาสมุทร</string>
+    <string name="color_theme_sunset">อาทิตย์อัสดง</string>
+    <string name="color_theme_forest">ป่าไม้</string>
+    <string name="color_theme_rose">กุหลาบ</string>
+    <string name="color_theme_midnight">เที่ยงคืน</string>
+</resources>

@@ -61,6 +61,7 @@ data class ReaderState(
     val pendingRepository: PendingRepository? = null,
     val extensionNotice: String? = null,
     val localExtension: String? = null,
+    val appearance: DesktopAppearance = DesktopAppearance(),
 )
 
 data class BrowseSource(val sourceId: Long, val name: String, val lang: String)
@@ -87,7 +88,7 @@ class ReaderModel(
     private val installed = linkedMapOf<String, LocalExtension>()
     private var sessionExtension: LocalExtension? = null
     private var extensionFailures: Map<String, String> = emptyMap()
-    private val mutable = MutableStateFlow(ReaderState(library = library.saved(), historyRecording = library.historyRecording()))
+    private val mutable = MutableStateFlow(ReaderState(library = library.saved(), historyRecording = library.historyRecording(), appearance = library.appearance()))
     // The history worker is drained separately from navigation jobs before closing the store.
     private val historyScope = CoroutineScope(SupervisorJob() + operationDispatcher)
     private val historyWrites = OpenedHistoryWrites(historyScope, DesktopOpenedHistoryDao(library)) { failure ->
@@ -350,6 +351,15 @@ class ReaderModel(
         } finally {
             val recording = library.historyRecording()
             mutable.update { it.copy(historyRecording = recording) }
+        }
+    }
+
+    fun setAppearance(appearance: DesktopAppearance) = operate {
+        try {
+            library.setAppearance(appearance)
+        } finally {
+            val stored = library.appearance()
+            mutable.update { it.copy(appearance = stored) }
         }
     }
 
