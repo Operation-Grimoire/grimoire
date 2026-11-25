@@ -98,9 +98,10 @@ class ReaderIntegrationTest {
             bindings.analytics().crashReportsEnabled.set(false)
             bindings.analytics().usageAnalyticsEnabled.set(false)
             db.clearAllTables()
-            // Keep status badge flags enabled on the baseline favorite so the post-suite
+            // Keep auto-download enabled on the baseline favorite so the post-suite
             // uninstrumented cold launch always renders NovelStatusBadgeOverlay regardless
-            // of which ReaderIntegrationTest method executes last.
+            // of which ReaderIntegrationTest method executes last, without toggling
+            // LibraryUpdatesScreen into its Subscribed-only tab.
             db.novelDao().upsert(
                 NovelEntity(
                     id = 1,
@@ -108,7 +109,6 @@ class ReaderIntegrationTest {
                     url = novelUrl,
                     title = "Integration book",
                     favorite = true,
-                    notifyOnNewChapters = true,
                     autoDownloadNewChapters = true,
                 ),
             )
