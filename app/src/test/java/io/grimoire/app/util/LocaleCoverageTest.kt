@@ -53,6 +53,20 @@ class LocaleCoverageTest {
     }
 
     @Test
+    fun `shared UI compose resources are packaged into merged Android assets`() {
+        val mergedAssets = File(
+            requireNotNull(System.getProperty("grimoire.mergedAssetsDir")) {
+                "grimoire.mergedAssetsDir system property must be provided by :app Gradle config"
+            },
+        )
+        val expectedDirs = listOf("values") + translations.map { it.name }
+        for (dir in expectedDirs) {
+            val packaged = File(mergedAssets, "composeResources/io.grimoire.ui.resources/$dir/strings.commonMain.cvr")
+            assertTrue("Missing packaged Compose resource in Android assets: $packaged", packaged.isFile && packaged.length() > 0)
+        }
+    }
+
+    @Test
     fun `translations keep the english format arguments`() {
         val english = entries(File(res, "values"))
         for (dir in translations) {

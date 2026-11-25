@@ -11,6 +11,10 @@ kotlin {
         namespace = "io.grimoire.ui"
         compileSdk = 36
         minSdk = 26
+        // Package Compose Multiplatform composeResources into Android assets so
+        // DefaultAndroidResourceReader opens them via AssetManager instead of
+        // falling back to InstrumentationRegistry.
+        androidResources.enable = true
         compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
     jvm("desktop") {

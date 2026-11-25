@@ -152,6 +152,7 @@ merge or validate does not authorize publishing stable. See CONTRIBUTING's
 - **Don't bypass the extension API**. App-side code should depend on `io.grimoire:extensions-api` interfaces, not concrete extension classes (the app never loads extension code into its own classloader).
 - **Check API requirements before loading code.** `ExtensionLoader` rejects malformed or unsupported `grimoire.extension.minApi` declarations before class loading/cache reuse. `installedExtensions` retains these package records with a null `Source`; runtime consumers use the filtered `extensions` list. Legacy APKs without the declaration keep the metadata probe.
 - **Don't use `Icons.*` or re-add `material-icons-extended`**. Add an icon by fetching its Material Symbol into `shared-ui/src/commonMain/kotlin/io/grimoire/ui/icon/<Name>.kt` (mirror an existing file), then reference `AppIcons.<Name>`.
+- **Don't omit `androidResources.enable = true` in Android KMP library modules that use `composeResources`**. AGP 9's `com.android.kotlin.multiplatform.library` disables Android resources/assets by default, causing Compose Multiplatform to silently skip packaging `.cvr` files into APK `assets/` (`LocaleCoverageTest` guards `:shared-ui`'s merged assets, and `verifyNoTestDependenciesInRelease` keeps `androidx.test.*` / `junit` out of `releaseRuntimeClasspath`).
 
 ## Quick file map
 

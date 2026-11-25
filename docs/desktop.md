@@ -16,7 +16,9 @@ Material Symbols icons (`AppIcons`) and the theme controls. Composables take pla
 state and callbacks; Android ViewModels and the desktop `ReaderModel` stay in their
 apps. Strings used by shared composables are Compose Multiplatform resources in
 `shared-ui/src/commonMain/composeResources`, with the same 18 translations as the
-Android app. `LocaleCoverageTest` checks both sets. Move a screen's composables here
+Android app. `:shared-ui`'s `androidLibrary` target keeps `androidResources.enable = true`
+so AGP 9 packages those compiled `.cvr` resources into Android APK `assets/`.
+`LocaleCoverageTest` checks both the translations and the merged Android assets. Move a screen's composables here
 before giving Desktop its own version of that screen.
 
 The reader is shared this way: `io.grimoire.ui.reader` has the reader color themes and

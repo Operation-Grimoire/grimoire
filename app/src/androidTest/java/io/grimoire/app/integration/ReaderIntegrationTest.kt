@@ -98,7 +98,20 @@ class ReaderIntegrationTest {
             bindings.analytics().crashReportsEnabled.set(false)
             bindings.analytics().usageAnalyticsEnabled.set(false)
             db.clearAllTables()
-            db.novelDao().upsert(NovelEntity(id = 1, sourceId = LOCAL_SOURCE_ID, url = novelUrl, title = "Integration book", favorite = true))
+            // Keep auto-download enabled on the baseline favorite so the post-suite
+            // uninstrumented cold launch always renders NovelStatusBadgeOverlay regardless
+            // of which ReaderIntegrationTest method executes last, without toggling
+            // LibraryUpdatesScreen into its Subscribed-only tab.
+            db.novelDao().upsert(
+                NovelEntity(
+                    id = 1,
+                    sourceId = LOCAL_SOURCE_ID,
+                    url = novelUrl,
+                    title = "Integration book",
+                    favorite = true,
+                    autoDownloadNewChapters = true,
+                ),
+            )
             db.chapterDao().insertAll(listOf(
                 ChapterEntity(id = 1, novelId = 1, url = key.url, name = firstName, chapterNumber = 1f, downloadStatus = 2),
                 ChapterEntity(id = 2, novelId = 1, url = "/integration/second", name = secondName, chapterNumber = 2f, downloadStatus = 2),
@@ -314,6 +327,11 @@ class ReaderIntegrationTest {
             compose.onNodeWithText("Integration book").performTouchInput { longClick() }
             compose.onNodeWithText(secondTitle).performClick()
             waitText(pairSelected)
+        }
+
+        // Ensure shared-ui Compose resources are packaged in APK assets, not only java_res.
+        context.assets.open("composeResources/io.grimoire.ui.resources/values/strings.commonMain.cvr").use {
+            assertTrue(it.read() >= 0)
         }
 
         activity = ActivityScenario.launch(Intent(context, MainActivity::class.java))

@@ -84,6 +84,7 @@ class IntegrationResultTest(unittest.TestCase):
                     (root / "sha256sums.txt").write_text(f"{digest} host.apk\n{digest} tests.apk\n", encoding="utf-8")
                     with (patch.dict(os.environ, {"INTEGRATION_SOURCE_SHA": "a" * 40}),
                           patch.object(runner.subprocess, "run", side_effect=command),
+                          patch.object(runner, "run_cold_launch_smoke", return_value={"pid": 123}),
                           patch.object(runner, "run_checkpoint_interruptions", return_value={}),
                           patch.object(runner, "run_checkpoint_competition", return_value={}),
                           contextlib.redirect_stdout(io.StringIO())):
@@ -208,6 +209,40 @@ class IntegrationResultTest(unittest.TestCase):
                 else:
                     with self.assertRaises(ValueError):
                         runner.run_checkpoint_competition(adb, root, sha)
+
+
+    def test_cold_launch_smoke_requires_live_uninstrumented_process_without_crash(self):
+        cases = (
+            (None, "Status: ok\nActivity: io.grimoire.app/.MainActivity", ["420", "420"], "I ActivityTaskManager: Displayed"),
+            ("start-error", "Status: ok\nError: Activity class does not exist.", ["420", "420"], "I ActivityTaskManager: Displayed"),
+            ("missing-status", "Starting: Intent { cmp=io.grimoire.app/.MainActivity }", ["420", "420"], "I ActivityTaskManager: Displayed"),
+            ("exited", "Status: ok", ["420", ""], "I ActivityTaskManager: Displayed"),
+            ("restarted", "Status: ok", ["420", "421"], "I ActivityTaskManager: Displayed"),
+            ("crashed", "Status: ok", ["420", "420"], f"E AndroidRuntime: Process: {runner.PACKAGE}, PID: 420\nIllegalStateException"),
+        )
+        for label, start_out, pids, logcat in cases:
+            pid_iter = iter(pids)
+            calls = []
+
+            def adb(*args, **kwargs):
+                calls.append(args)
+                if args[:3] == ("shell", "am", "start"):
+                    return start_out
+                if args[:2] == ("shell", "pidof"):
+                    return next(pid_iter)
+                if args[:2] == ("logcat", "-d"):
+                    return logcat
+                return ""
+
+            with tempfile.TemporaryDirectory() as folder:
+                if label is None:
+                    result = runner.run_cold_launch_smoke(adb, Path(folder), settle_seconds=0)
+                    self.assertEqual({"pid": 420}, result)
+                    self.assertEqual(("shell", "am", "force-stop", runner.PACKAGE), calls[0])
+                    self.assertEqual(("shell", "am", "force-stop", runner.PACKAGE), calls[-1])
+                else:
+                    with self.assertRaises(ValueError, msg=label):
+                        runner.run_cold_launch_smoke(adb, Path(folder), settle_seconds=0)
 
 
 if __name__ == "__main__":

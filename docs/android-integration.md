@@ -41,7 +41,9 @@ instrumentation. ActivityScenario's helper activities then resolve in the host
 alongside the host's existing monitor classes. Splitting those helpers into the test APK
 while their `ActivityInvoker` interface is deduplicated into the host causes a
 separate helper process to crash and delays each Activity close by about 45 seconds
-(#456). This dependency and its activities are excluded from release builds.
+(#456). This dependency and its activities are excluded from release builds;
+`:app:verifyNoTestDependenciesInRelease` fails `testDebugUnitTest` and `assembleRelease` if any
+`androidx.test` or `junit` dependency leaks into `releaseRuntimeClasspath`.
 Debug compilation pins monitor to the same 1.6.1 version already in the host
 runtime, so trusted-base dependency preparation also covers the offline head build.
 
@@ -65,7 +67,10 @@ that SHA against `BuildConfig`, and independently verifies no active network.
 All named UI starts and paired successful completions are mandatory. Skips,
 assumptions, duplicates, missing cases, wrong classes/counts and aborted runs fail.
 An unexpected app/test-helper crash in logcat fails the gate even if every test
-reports success. Logcat capture must succeed and be nonempty. Cleanup failures
+reports success. After `ReaderIntegrationTest`, the runner also force-stops the
+package and launches `MainActivity` once via plain `am start -W` (without
+instrumentation) to verify the process stays up and logcat stays crash-free when
+`InstrumentationRegistry` is absent. Logcat capture must succeed and be nonempty. Cleanup failures
 retain the original instrumentation failure alongside the logcat error.
 The parser has deterministic negative tests in the Python policy job.
 

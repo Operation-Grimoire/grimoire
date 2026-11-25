@@ -137,6 +137,28 @@ def run_checkpoint_interruptions(adb, root, sha):
     return results
 
 
+def run_cold_launch_smoke(adb, root, settle_seconds=3):
+    """Launch MainActivity without instrumentation so host-only crashes are not masked."""
+    adb("shell", "am", "force-stop", PACKAGE)
+    start_output = adb(
+        "shell", "am", "start", "-W", "-n", f"{PACKAGE}/.MainActivity",
+        log_name="cold-launch.log",
+    )
+    if not re.search(r"^Status:\s*ok\s*$", start_output, re.M) or re.search(r"^Error:", start_output, re.M):
+        raise ValueError(f"Uninstrumented MainActivity launch failed: {start_output}")
+    initial_pid = adb("shell", "pidof", PACKAGE, required=False).split()
+    if len(initial_pid) != 1 or not initial_pid[0].isdigit():
+        raise ValueError(f"Expected one live uninstrumented process after launch, got: {initial_pid}")
+    if settle_seconds > 0:
+        time.sleep(settle_seconds)
+    settled_pid = adb("shell", "pidof", PACKAGE, required=False).split()
+    if settled_pid != initial_pid:
+        raise ValueError(f"Uninstrumented process exited or restarted during settle: {initial_pid} -> {settled_pid}")
+    validate_app_logcat(adb("logcat", "-d", "-v", "threadtime"))
+    adb("shell", "am", "force-stop", PACKAGE)
+    return {"pid": int(initial_pid[0])}
+
+
 def run_checkpoint_competition(adb, root, sha):
     fixture = uuid.uuid4().hex
     boundary = "competing-writer"
@@ -221,6 +243,7 @@ def main():
                      "-e", "integrationFixtures", "true", "-e", "integrationSourceSha", sha,
                      PACKAGE + ".test/androidx.test.runner.AndroidJUnitRunner", timeout=240, log_name="instrumentation.log")
         report["executedTests"] = parse_instrumentation(output)
+        report["coldLaunch"] = run_cold_launch_smoke(adb, root)
         report["checkpointInterruptions"] = run_checkpoint_interruptions(adb, root, sha)
         report["checkpointCompetition"] = run_checkpoint_competition(adb, root, sha)
         report["result"] = "PASS"
@@ -249,11 +272,12 @@ def main():
                         (root / name).write_bytes(adb("exec-out", "run-as", PACKAGE, "cat", "files/integration-evidence/" + name, binary=True))
             except Exception as failure:
                 report["screenshots"] = str(failure)
-        count = len(TESTS) + len(CHECKPOINT_BOUNDARIES) + 1 if report["result"] == "PASS" else 1
+        count = len(TESTS) + len(CHECKPOINT_BOUNDARIES) + 2 if report["result"] == "PASS" else 1
         suite = ET.Element("testsuite", name=CLASS, tests=str(count), failures="0", errors="0" if report["result"] == "PASS" else "1", skipped="0")
         if report["result"] == "PASS":
             for name in TESTS:
                 ET.SubElement(suite, "testcase", classname=CLASS, name=name)
+            ET.SubElement(suite, "testcase", classname=f"{PACKAGE}.MainActivity", name="coldLaunchWithoutInstrumentation")
             for boundary in report["checkpointInterruptions"]:
                 ET.SubElement(suite, "testcase", classname=CHECKPOINT_CLASS, name=boundary)
             ET.SubElement(suite, "testcase", classname=CHECKPOINT_CLASS, name=COMPETE)

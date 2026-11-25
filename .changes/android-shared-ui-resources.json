@@ -1,0 +1,9 @@
+{
+  "android": [
+    {
+      "category": "fix",
+      "text": "Package shared UI string resources into Android assets so Library and other screens do not crash on launch."
+    }
+  ],
+  "desktop": []
+}
