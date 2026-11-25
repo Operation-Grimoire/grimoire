@@ -1,12 +1,31 @@
 package io.grimoire.desktop
 
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -151,5 +170,57 @@ internal fun DesktopErrorBanner(message: String, onDismiss: () -> Unit, modifier
                 Icon(AppIcons.Close, contentDescription = "Dismiss")
             }
         }
+    }
+}
+
+private const val NAV_MS = 300
+private const val OUTGOING_MS = 90
+private const val INCOMING_MS = NAV_MS - OUTGOING_MS
+
+private fun View.hierarchyDepth(): Int = when (this) {
+    View.READER -> 2
+    View.BOOK -> 1
+    else -> 0
+}
+
+/**
+ * Material 3 motion matching Android's `NavTransitions.kt`: Shared Axis X for hierarchical
+ * drill-in/back and Fade-Through for lateral tab switches.
+ */
+internal fun desktopNavTransition(from: View, to: View, slideDistancePx: Int): ContentTransform {
+    val fromDepth = from.hierarchyDepth()
+    val toDepth = to.hierarchyDepth()
+    if (fromDepth != toDepth) {
+        return sharedAxisX(forward = toDepth > fromDepth, slideDistancePx = slideDistancePx)
+    }
+    return (fadeIn(tween(INCOMING_MS, delayMillis = OUTGOING_MS, easing = LinearOutSlowInEasing)) +
+        scaleIn(tween(INCOMING_MS, delayMillis = OUTGOING_MS, easing = LinearOutSlowInEasing), initialScale = 0.96f)) togetherWith
+        fadeOut(tween(OUTGOING_MS, easing = FastOutLinearInEasing))
+}
+
+internal fun sharedAxisX(forward: Boolean, slideDistancePx: Int): ContentTransform {
+    val enter = slideInHorizontally(
+        animationSpec = tween(NAV_MS, easing = FastOutSlowInEasing),
+        initialOffsetX = { if (forward) slideDistancePx else -slideDistancePx },
+    ) + fadeIn(tween(INCOMING_MS, delayMillis = OUTGOING_MS, easing = LinearOutSlowInEasing))
+    val exit = slideOutHorizontally(
+        animationSpec = tween(NAV_MS, easing = FastOutSlowInEasing),
+        targetOffsetX = { if (forward) -slideDistancePx else slideDistancePx },
+    ) + fadeOut(tween(OUTGOING_MS, easing = FastOutLinearInEasing))
+    return enter togetherWith exit
+}
+
+/** Subtle GPU-composited scale lift when hovering desktop cover cards. */
+internal fun Modifier.desktopCardHover(): Modifier = composed {
+    val source = remember { MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (hovered) 1.03f else 1f,
+        animationSpec = tween(150, easing = FastOutSlowInEasing),
+        label = "cardHoverScale",
+    )
+    this.hoverable(source).graphicsLayer {
+        scaleX = scale
+        scaleY = scale
     }
 }

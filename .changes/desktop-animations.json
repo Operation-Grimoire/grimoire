@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Added Android-matching Material 3 navigation transitions (Shared Axis X for book/reader drill-in and Fade-Through for tab switches), cover crossfades and hover lift, animated search/status/error reveals, scroll-linked Book Details title fade, and smooth list item placement animations."
+    }
+  ]
+}

@@ -17,6 +17,7 @@ import coil3.SingletonImageLoader
 import coil3.compose.AsyncImage
 import coil3.disk.DiskCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import coil3.request.crossfade
 import okhttp3.OkHttpClient
 import okio.Path.Companion.toOkioPath
 import java.io.IOException
@@ -33,6 +34,7 @@ fun installCoverLoader(data: Path, networkEnabled: AtomicBoolean) {
         .build()
     SingletonImageLoader.setSafe { context ->
         ImageLoader.Builder(context)
+            .crossfade(200)
             .components { add(OkHttpNetworkFetcherFactory(callFactory = { client })) }
             .diskCache { DiskCache.Builder().directory(data.resolve("cover-cache").toOkioPath()).maxSizeBytes(256L * 1024 * 1024).build() }
             .build()

@@ -1,7 +1,18 @@
 package io.grimoire.desktop
 
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,6 +34,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -108,38 +120,68 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
     val enabled = !state.busy && !closing
     val section = if (state.view.isBookView) state.bookOrigin else state.view
     val appearance = state.appearance
+    val slideDistancePx = with(LocalDensity.current) { 30.dp.roundToPx() }
+    val inReader = state.view == View.READER && state.projection != null
+    val readerTransition = updateTransition(targetState = inReader, label = "readerTransition")
+    var lastReaderState by remember { mutableStateOf<ReaderState?>(null) }
+    if (inReader) lastReaderState = state
+    LaunchedEffect(readerTransition.currentState, readerTransition.targetState) {
+        if (!readerTransition.currentState && !readerTransition.targetState) lastReaderState = null
+    }
     GrimoireMaterialTheme(appearance.colorTheme.scheme(appearance.themeMode.isDark())) {
     CompositionLocalProvider(LocalCoversOnline provides !state.offline) {
     Surface(Modifier.fillMaxSize()) {
-    // The reader takes the whole window, like Android's.
-    if (state.view == View.READER && state.projection != null) {
-        ReaderScreen(state.copy(error = closeError ?: state.error), enabled, state.busy || closing, model)
-        return@Surface
-    }
-    Row(Modifier.fillMaxSize()) {
-        DesktopNavigation(section, state.offline, enabled, model)
-        Box(Modifier.weight(1f).fillMaxHeight()) {
-            Crossfade(targetState = state.view, animationSpec = tween(150), label = "desktopView") { view ->
-                when (view) {
-                    View.LIBRARY -> LibraryPane(state, enabled, model, Modifier.fillMaxSize())
-                    View.HISTORY -> HistoryPane(state, enabled, model, Modifier.fillMaxSize())
-                    View.BROWSE -> BrowsePane(state, enabled, model, Modifier.fillMaxSize())
-                    View.EXTENSIONS -> ExtensionsPane(state, enabled, model, openExtension, Modifier.fillMaxSize())
-                    View.SETTINGS -> SettingsPane(state, enabled, model, Modifier.fillMaxSize())
-                    View.BOOK, View.READER -> BookScreen(state, enabled, model, Modifier.fillMaxSize())
+    // Smoothly transition between the navigation shell and the full-window reader.
+    readerTransition.AnimatedContent(
+        transitionSpec = { sharedAxisX(forward = targetState, slideDistancePx = slideDistancePx) },
+    ) { showingReader ->
+        if (showingReader) {
+            val readerState = if (inReader) state else lastReaderState
+            if (readerState != null) {
+                ReaderScreen(readerState.copy(error = closeError ?: readerState.error), enabled && inReader, state.busy || closing, model)
+            }
+        } else {
+            Row(Modifier.fillMaxSize()) {
+                DesktopNavigation(section, state.offline, enabled, model)
+                Box(Modifier.weight(1f).fillMaxHeight()) {
+                    AnimatedContent(
+                        targetState = state.view,
+                        transitionSpec = { desktopNavTransition(initialState, targetState, slideDistancePx) },
+                        label = "desktopView",
+                    ) { view ->
+                        when (view) {
+                            View.LIBRARY -> LibraryPane(state, enabled, model, Modifier.fillMaxSize())
+                            View.HISTORY -> HistoryPane(state, enabled, model, Modifier.fillMaxSize())
+                            View.BROWSE -> BrowsePane(state, enabled, model, Modifier.fillMaxSize())
+                            View.EXTENSIONS -> ExtensionsPane(state, enabled, model, openExtension, Modifier.fillMaxSize())
+                            View.SETTINGS -> SettingsPane(state, enabled, model, Modifier.fillMaxSize())
+                            View.BOOK, View.READER -> BookScreen(state, enabled, model, Modifier.fillMaxSize())
+                        }
+                    }
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = state.busy || closing,
+                        enter = fadeIn(tween(120)),
+                        exit = fadeOut(tween(200)),
+                        modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
+                    ) {
+                        LinearProgressIndicator(Modifier.fillMaxWidth())
+                    }
+                    val error = closeError ?: state.error
+                    var dismissedError by remember(error) { mutableStateOf(false) }
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = error != null && !dismissedError,
+                        enter = slideInVertically(tween(220, easing = LinearOutSlowInEasing)) { it / 2 } + fadeIn(tween(180)),
+                        exit = slideOutVertically(tween(150, easing = FastOutLinearInEasing)) { it / 2 } + fadeOut(tween(150)),
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp).widthIn(max = 560.dp),
+                    ) {
+                        if (error != null) {
+                            DesktopErrorBanner(
+                                message = error,
+                                onDismiss = { dismissedError = true },
+                            )
+                        }
+                    }
                 }
-            }
-            if (state.busy || closing) {
-                LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter))
-            }
-            val error = closeError ?: state.error
-            var dismissedError by remember(error) { mutableStateOf(false) }
-            if (error != null && !dismissedError) {
-                DesktopErrorBanner(
-                    message = error,
-                    onDismiss = { dismissedError = true },
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp).widthIn(max = 560.dp),
-                )
             }
         }
     }
@@ -257,7 +299,11 @@ private fun DesktopNavigation(section: View, offline: Boolean, enabled: Boolean,
         SectionItem("Browse", AppIcons.Explore, AppIcons.ExploreFilled, section == View.BROWSE, enabled, model::showBrowse)
         SectionItem("History", AppIcons.History, AppIcons.History, section == View.HISTORY, enabled, model::showHistory)
         Spacer(Modifier.weight(1f))
-        if (offline) {
+        AnimatedVisibility(
+            visible = offline,
+            enter = expandVertically(tween(200, easing = FastOutSlowInEasing)) + fadeIn(tween(180)),
+            exit = shrinkVertically(tween(150, easing = FastOutLinearInEasing)) + fadeOut(tween(120)),
+        ) {
             Surface(
                 onClick = { if (enabled) model.offline(false) },
                 enabled = enabled,
@@ -354,6 +400,7 @@ private fun BrowsePane(state: ReaderState, enabled: Boolean, model: ReaderModel,
                                         showLockedBadge = false, showRatingBadge = false, showEpubBadge = false, isEpub = false,
                                         notify = false, autoDownload = false, userRating = null, selected = false,
                                         onClick = { if (enabled) model.details(novel) }, onLongClick = {},
+                                        modifier = Modifier.animateItem().desktopCardHover(),
                                     )
                                 }
                                 item(span = full) {
@@ -400,7 +447,11 @@ private fun BrowseControls(state: ReaderState, enabled: Boolean, model: ReaderMo
                 }
             }
         }
-        if (state.browseMode == BrowseMode.SEARCH) {
+        AnimatedVisibility(
+            visible = state.browseMode == BrowseMode.SEARCH,
+            enter = expandVertically(tween(200, easing = FastOutSlowInEasing)) + fadeIn(tween(180)),
+            exit = shrinkVertically(tween(150, easing = FastOutLinearInEasing)) + fadeOut(tween(120)),
+        ) {
             // Keyed by source so a new source starts with its own empty field.
             var query by remember(state.browseSource) { mutableStateOf(state.browseQuery) }
             val submit = { if (query.isNotBlank()) model.search(query) }
@@ -498,6 +549,7 @@ private fun LibraryPane(state: ReaderState, enabled: Boolean, model: ReaderModel
                                 showLockedBadge = false, showRatingBadge = false, showEpubBadge = false, isEpub = false,
                                 notify = false, autoDownload = false, userRating = null, selected = false,
                                 onClick = { if (enabled) model.openSaved(book) }, onLongClick = {},
+                                modifier = Modifier.animateItem().desktopCardHover(),
                             )
                         }
                     }
