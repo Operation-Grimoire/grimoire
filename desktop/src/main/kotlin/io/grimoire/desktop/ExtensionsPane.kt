@@ -208,28 +208,31 @@ private fun RepositoriesDialog(
         onDismissRequest = onDismiss,
         title = { Text("Extension repositories") },
         text = {
-            LazyColumn(
+            Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth().heightIn(max = 460.dp),
             ) {
                 state.error?.let { error ->
-                    item(key = "repo-error") {
-                        Surface(
-                            color = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(12.dp))
-                        }
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(12.dp))
                     }
                 }
-                items(state.repositories, key = { "repository:" + it.id }) { repository ->
-                    RepositoryItem(repository, enabled, model)
-                }
-                item(key = "add-repo") {
-                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
-                    AddRepository(state, enabled && online, model)
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+                ) {
+                    items(state.repositories, key = { "repository:" + it.id }) { repository ->
+                        RepositoryItem(repository, enabled, model)
+                    }
+                    item(key = "add-repo") {
+                        HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                        AddRepository(state, enabled && online, model)
+                    }
                 }
             }
         },
