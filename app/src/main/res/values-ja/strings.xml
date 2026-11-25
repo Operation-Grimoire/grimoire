@@ -212,7 +212,6 @@
     <string name="library_local_source">ローカル</string>
     <string name="library_unknown_source">ソース %1$d</string>
     <string name="library_locked_chapters">ロックされた章</string>
-    <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">通知オン</string>
     <string name="library_auto_download_enabled">自動ダウンロードオン</string>
 

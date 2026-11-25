@@ -80,4 +80,9 @@
     <string name="reader_next">Tiếp</string>
     <string name="reader_next_chapter">Chương tiếp theo →</string>
     <string name="reader_end_of_book">Hết truyện</string>
+    <string name="library_auto_download_enabled">Đã bật tự động tải</string>
+    <string name="library_epub_badge">EPUB</string>
+    <string name="library_locked_chapters">Chương bị khóa</string>
+    <string name="library_notifications_enabled">Đã bật thông báo</string>
+    <string name="novel_your_rating">Đánh giá của bạn</string>
 </resources>

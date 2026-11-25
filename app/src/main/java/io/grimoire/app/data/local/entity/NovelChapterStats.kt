@@ -20,3 +20,7 @@ fun NovelChapterStats.readPercent(includeLocked: Boolean): Int {
     val denom = effectiveTotal(includeLocked)
     return if (denom > 0) (readCount * 100 / denom).coerceIn(0, 100) else 0
 }
+
+/** Portable counts for the shared library badges. */
+fun NovelChapterStats.counts(): io.grimoire.ui.library.ChapterCounts =
+    io.grimoire.ui.library.ChapterCounts(total, readCount, downloadedCount, lockedCount)

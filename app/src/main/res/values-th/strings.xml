@@ -211,7 +211,6 @@
     <string name="library_local_source">ในเครื่อง</string>
     <string name="library_unknown_source">แหล่งที่มา %1$d</string>
     <string name="library_locked_chapters">ตอนที่ถูกล็อก</string>
-    <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">เปิดการแจ้งเตือนแล้ว</string>
     <string name="library_auto_download_enabled">เปิดดาวน์โหลดอัตโนมัติแล้ว</string>
 

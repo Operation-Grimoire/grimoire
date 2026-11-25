@@ -230,7 +230,6 @@
     <string name="library_local_source">Локальный</string>
     <string name="library_unknown_source">Источник %1$d</string>
     <string name="library_locked_chapters">Закрытые главы</string>
-    <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">Уведомления включены</string>
     <string name="library_auto_download_enabled">Автозагрузка включена</string>
 

@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Library and Browse show book covers in the Android app's grid, with saved-chapter badges and a library search; covers stay available offline once loaded."
+    }
+  ]
+}

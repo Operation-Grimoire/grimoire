@@ -95,4 +95,9 @@
     <string name="reader_next">التالي</string>
     <string name="reader_next_chapter">الفصل التالي ←</string>
     <string name="reader_end_of_book">نهاية الكتاب</string>
+    <string name="library_auto_download_enabled">التنزيل التلقائي مفعّل</string>
+    <string name="library_epub_badge">EPUB</string>
+    <string name="library_locked_chapters">فصول مقفلة</string>
+    <string name="library_notifications_enabled">الإشعارات مفعّلة</string>
+    <string name="novel_your_rating">تقييمك</string>
 </resources>

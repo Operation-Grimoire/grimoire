@@ -83,4 +83,9 @@
     <string name="reader_next">अगला</string>
     <string name="reader_next_chapter">अगला अध्याय →</string>
     <string name="reader_end_of_book">किताब समाप्त</string>
+    <string name="library_auto_download_enabled">ऑटो-डाउनलोड चालू है</string>
+    <string name="library_epub_badge">EPUB</string>
+    <string name="library_locked_chapters">लॉक किए गए अध्याय</string>
+    <string name="library_notifications_enabled">सूचनाएँ चालू हैं</string>
+    <string name="novel_your_rating">आपकी रेटिंग</string>
 </resources>

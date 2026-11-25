@@ -16,6 +16,9 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
     implementation(libs.okhttp)
+    // Book covers: Coil 3 supports Compose Desktop; Android keeps Coil 2.
+    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
     implementation(libs.json) { version { strictly(libs.versions.json.get()) } }
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
     implementation("org.xerial:sqlite-jdbc:3.54.1.0")

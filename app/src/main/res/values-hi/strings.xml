@@ -218,7 +218,6 @@
     <string name="library_local_source">लोकल</string>
     <string name="library_unknown_source">स्रोत %1$d</string>
     <string name="library_locked_chapters">लॉक किए गए अध्याय</string>
-    <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">सूचनाएँ चालू हैं</string>
     <string name="library_auto_download_enabled">ऑटो-डाउनलोड चालू है</string>
 

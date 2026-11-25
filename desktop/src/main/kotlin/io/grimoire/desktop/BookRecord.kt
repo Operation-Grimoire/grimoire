@@ -9,6 +9,7 @@ internal fun encodeBook(book: SavedBook): JSONObject = JSONObject()
     .put("sourceId", book.key.sourceId).put("url", book.key.url).put("title", book.novel.title)
     .put("language", book.novel.language.name).put("author", book.novel.author)
     .put("description", book.novel.description).put("favorite", book.favorite)
+    .put("thumbnailUrl", book.novel.thumbnailUrl).put("genres", JSONArray(book.novel.genres)).put("status", book.novel.status.name)
     .put("downloaded", JSONArray(book.downloaded.toList()))
     .put("chapters", JSONArray(book.chapters.map { chapter -> JSONObject()
         .put("url", chapter.url).put("name", chapter.name).put("locked", chapter.locked)
@@ -22,7 +23,11 @@ internal fun decodeBook(root: JSONObject): SavedBook {
     val novel = Novel(key.url, root.getString("title"), Language.valueOf(root.getString("language")),
         author = root.optString("author").takeIf(String::isNotEmpty),
         description = root.optString("description").takeIf(String::isNotEmpty),
-        status = NovelStatus.UNKNOWN, initialized = true)
+        // Cover, genres and status were added later; older records read without them.
+        thumbnailUrl = root.optString("thumbnailUrl").takeIf(String::isNotEmpty),
+        genres = root.optJSONArray("genres")?.let { array -> (0 until array.length()).map(array::getString) }.orEmpty(),
+        status = NovelStatus.entries.firstOrNull { it.name == root.optString("status") } ?: NovelStatus.UNKNOWN,
+        initialized = true)
     val chapters = root.getJSONArray("chapters").let { array -> (0 until array.length()).map { index ->
         val c = array.getJSONObject(index)
         Chapter(c.getString("url"), c.getString("name"), c.getLong("uploadDate"), c.getFloat("number"), locked = c.getBoolean("locked"))

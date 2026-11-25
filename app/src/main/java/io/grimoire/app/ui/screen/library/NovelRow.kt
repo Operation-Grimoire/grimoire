@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.library
 
+import io.grimoire.ui.library.*
 import io.grimoire.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.grimoire.app.R
 import io.grimoire.app.data.local.entity.NovelChapterStats
+import io.grimoire.app.data.local.entity.counts
 import io.grimoire.app.data.local.entity.NovelEntity
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -61,7 +63,7 @@ internal fun NovelRow(
             headlineContent = { Text(novel.effectiveTitle, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             supportingContent = run {
                 val visibility = resolveBadgeVisibility(
-                    stats = stats,
+                    stats = stats?.counts(),
                     includeLockedInTotals = includeLockedInTotals,
                     showReadBadge = showReadBadge,
                     showDownloadedBadge = showDownloadedBadge,
@@ -72,7 +74,7 @@ internal fun NovelRow(
                     visibility.any || ratingForRow != null -> {
                         {
                             NovelStatsRowInline(
-                                stats = stats,
+                                stats = stats?.counts(),
                                 includeLockedInTotals = includeLockedInTotals,
                                 visibility = visibility,
                                 userRating = ratingForRow,

@@ -212,7 +212,6 @@
     <string name="library_local_source">本機</string>
     <string name="library_unknown_source">來源 %1$d</string>
     <string name="library_locked_chapters">鎖定章節</string>
-    <string name="library_epub_badge">EPUB</string>
     <string name="library_notifications_enabled">已啟用通知</string>
     <string name="library_auto_download_enabled">已啟用自動下載</string>
 
