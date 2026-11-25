@@ -120,7 +120,7 @@ class ReaderUiTest {
             assertNull(model.state.value.observedAnchor)
             assertNotNull(model.state.value.projection!!.document)
             capture("reader.png")
-            // The reader is full-window: chapter list and offline switch live on the book screen.
+            // The reader is full-window: chapter list lives on the book screen and offline mode lives in Settings.
             compose.onNode(hasText("Library") and hasClickAction()).assertDoesNotExist()
             compose.onNode(hasContentDescription("Save chapter offline") and hasClickAction()).performClick()
             settled(model)
@@ -128,13 +128,16 @@ class ReaderUiTest {
             val count = requests.get()
             click("Back")
             compose.onNodeWithText("Continue reading").assertIsDisplayed()
-            compose.onNodeWithText("Offline").performClick()
-            compose.onNode(hasText(chapter.name) and hasClickAction()).assertIsEnabled()
             compose.onNode(hasText("Browse") and hasClickAction()).assertIsSelected()
-            click("Back")
+            click("Settings")
+            compose.onNodeWithText("Offline mode").assertIsOff().performClick()
+            settled(model)
+            compose.onNodeWithText("Offline").assertIsDisplayed()
+            click("Browse")
             compose.onNodeWithText("Go online to browse this source.").assertIsDisplayed()
             click("Settings")
-            compose.onNodeWithText("Offline").assertIsOn().performClick()
+            compose.onNodeWithText("Offline mode").assertIsOn().performClick()
+            settled(model)
             click("Browse")
             compose.onNodeWithText(novel.title).assertIsDisplayed()
             assertEquals(count, requests.get())
@@ -169,8 +172,10 @@ class ReaderUiTest {
         val platform = resetSharedFixturePlatform()
         val model = desktopReaderModel(LocalLibrary(temporary.newFolder().toPath()), "1.5.0", platform.allowed)
         val manifest = readerFixtureManifest(temporary.newFolder().toPath())
-        fun click(label: String) {
-            compose.onNode((hasText(label) or hasContentDescription(label)) and hasClickAction()).performScrollTo().performClick()
+        fun click(label: String, scroll: Boolean = false) {
+            val node = compose.onNode((hasText(label) or hasContentDescription(label)) and hasClickAction())
+            if (scroll) node.performScrollTo()
+            node.performClick()
             settled(model)
         }
         try {
@@ -179,9 +184,9 @@ class ReaderUiTest {
             compose.onNode(hasText("Browse") and hasClickAction()).performClick(); settled(model)
             compose.onNodeWithText("A fixture novel").assertIsDisplayed()
             // Page 2 repeats the first title; only the new one is added.
-            click("Load more")
+            click("Load more", scroll = true)
             assertEquals(listOf("A fixture novel", "A second fixture novel"), model.state.value.novels.map { it.title })
-            click("Load more")
+            click("Load more", scroll = true)
             compose.onNodeWithText("End of results").assertExists()
             compose.onNode(hasText("Load more") and hasClickAction()).assertDoesNotExist()
 
@@ -215,7 +220,7 @@ class ReaderUiTest {
 
             // Book details open from a search result.
             submit("fixture")
-            click("A second fixture novel")
+            click("A second fixture novel", scroll = true)
             compose.onNodeWithText("First chapter").assertIsDisplayed()
         } catch (failure: Throwable) {
             runCatching { capture("browse-failure.png") }; throw failure

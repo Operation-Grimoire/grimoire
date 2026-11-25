@@ -7,17 +7,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.grimoire.ui.component.ChapterRow
 import io.grimoire.ui.component.ExpandableText
+import io.grimoire.ui.component.PlainTooltipIconButton
 import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.ArrowBack
 import io.grimoire.ui.icon.DownloadDone
 import io.grimoire.ui.icon.FileDownloadOff
 import io.grimoire.ui.icon.Lock
@@ -27,14 +33,27 @@ import io.grimoire.ui.novel.NovelHeaderContent
 import io.grimoire.ui.theme.premiumGold
 
 /** Book details built from the Android novel details components. */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier) {
     val book = state.book ?: return
     val sourceName = state.sources.firstOrNull { it.sourceId == book.key.sourceId }?.name.orEmpty()
     val resume = book.resumeChapter()
     val scroll = rememberLazyListState()
-    Box(modifier.fillMaxWidth()) {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                navigationIcon = {
+                    PlainTooltipIconButton(onClick = model::back, tooltip = "Back", enabled = enabled) {
+                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                title = { Text(book.novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            )
+        },
+    ) { padding ->
+    Box(Modifier.fillMaxSize().padding(padding)) {
         LazyColumn(state = scroll, modifier = Modifier.widthIn(max = 960.dp).fillMaxHeight().align(Alignment.TopCenter)) {
             item {
                 NovelHeaderContent(
@@ -104,5 +123,6 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
             }
         }
         VerticalScrollbar(rememberScrollbarAdapter(scroll), Modifier.fillMaxHeight().align(Alignment.CenterEnd))
+    }
     }
 }
