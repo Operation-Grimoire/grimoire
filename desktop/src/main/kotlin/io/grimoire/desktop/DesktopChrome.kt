@@ -13,11 +13,14 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.grimoire.ui.component.PlainTooltipIconButton
 import io.grimoire.ui.icon.AppIcons
 import io.grimoire.ui.icon.Clear
+import io.grimoire.ui.icon.Close
 import io.grimoire.ui.icon.ErrorOutline
 import io.grimoire.ui.icon.Search
 
@@ -73,6 +76,7 @@ internal fun DesktopSearchField(
             ),
             modifier = Modifier
                 .fillMaxWidth()
+                .semantics { contentDescription = placeholder }
                 .let { base ->
                     if (onSearch == null) base
                     else base.onPreviewKeyEvent { event ->
@@ -126,9 +130,9 @@ internal fun DesktopEmptyState(
     }
 }
 
-/** Tonal error banner overlaid at the bottom of the workspace so errors never jump the layout. */
+/** Dismissible tonal error banner overlaid at the bottom of the workspace so errors never jump the layout. */
 @Composable
-internal fun DesktopErrorBanner(message: String, modifier: Modifier = Modifier) {
+internal fun DesktopErrorBanner(message: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         color = MaterialTheme.colorScheme.errorContainer,
         contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -137,12 +141,15 @@ internal fun DesktopErrorBanner(message: String, modifier: Modifier = Modifier) 
         modifier = modifier,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(AppIcons.ErrorOutline, contentDescription = null)
-            Text(message, style = MaterialTheme.typography.bodyMedium)
+            Text(message, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f, fill = false))
+            PlainTooltipIconButton(onClick = onDismiss, tooltip = "Dismiss") {
+                Icon(AppIcons.Close, contentDescription = "Dismiss")
+            }
         }
     }
 }

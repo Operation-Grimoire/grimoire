@@ -131,9 +131,12 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
             if (state.busy || closing) {
                 LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter))
             }
-            (closeError ?: state.error)?.let { error ->
+            val error = closeError ?: state.error
+            var dismissedError by remember(error) { mutableStateOf(false) }
+            if (error != null && !dismissedError) {
                 DesktopErrorBanner(
                     message = error,
+                    onDismiss = { dismissedError = true },
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp).widthIn(max = 560.dp),
                 )
             }
