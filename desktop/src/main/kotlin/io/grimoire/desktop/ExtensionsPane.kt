@@ -1,6 +1,7 @@
 package io.grimoire.desktop
 
 import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,45 +37,12 @@ internal fun ExtensionsPane(state: ReaderState, enabled: Boolean, model: ReaderM
     val available = state.extensionRows.filter { it.status !in installedStatuses }
         .filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) || it.lang.equals(query.trim(), ignoreCase = true) }
 
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { Text("Extensions") },
-                actions = {
-                    if (state.repositories.isNotEmpty()) {
-                        DesktopSearchField(
-                            value = query,
-                            onValueChange = { query = it },
-                            placeholder = "Search extensions",
-                            enabled = enabled,
-                            modifier = Modifier.width(280.dp).padding(end = 8.dp),
-                        )
-                        PlainTooltipIconButton(
-                            onClick = model::refreshRepositories,
-                            tooltip = "Refresh",
-                            enabled = enabled && online,
-                        ) {
-                            Icon(AppIcons.Refresh, contentDescription = "Refresh")
-                        }
-                        PlainTooltipIconButton(
-                            onClick = { showRepositories = true },
-                            tooltip = "Repositories",
-                            enabled = enabled,
-                        ) {
-                            Icon(AppIcons.Storage, contentDescription = "Repositories")
-                        }
-                    }
-                },
-            )
-        },
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            LazyColumn(
-                state = scroll,
-                contentPadding = PaddingValues(vertical = 8.dp),
-                modifier = Modifier.widthIn(max = 840.dp).fillMaxHeight().align(Alignment.TopCenter),
-            ) {
+    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        LazyColumn(
+            state = scroll,
+            contentPadding = PaddingValues(top = DESKTOP_HEADER_HEIGHT + 8.dp, bottom = 24.dp),
+            modifier = Modifier.widthIn(max = 840.dp).fillMaxHeight().align(Alignment.TopCenter),
+        ) {
                 state.extensionNotice?.let { notice ->
                     item(key = "notice") {
                         Surface(
@@ -181,8 +149,37 @@ internal fun ExtensionsPane(state: ReaderState, enabled: Boolean, model: ReaderM
                     )
                 }
             }
-            VerticalScrollbar(rememberScrollbarAdapter(scroll), Modifier.fillMaxHeight().align(Alignment.CenterEnd))
-        }
+        VerticalScrollbar(
+            rememberScrollbarAdapter(scroll),
+            Modifier.fillMaxHeight().align(Alignment.CenterEnd).padding(top = DESKTOP_HEADER_HEIGHT),
+        )
+        DesktopHeaderBar(
+            title = { Text("Extensions") },
+            actions = {
+                if (state.repositories.isNotEmpty()) {
+                    DesktopSearchField(
+                        value = query,
+                        onValueChange = { query = it },
+                        placeholder = "Search extensions",
+                        enabled = enabled,
+                        modifier = Modifier.width(240.dp),
+                    )
+                    DesktopIconCircle(
+                        icon = AppIcons.Refresh,
+                        tooltip = "Refresh",
+                        onClick = model::refreshRepositories,
+                        enabled = enabled && online,
+                    )
+                    DesktopIconCircle(
+                        icon = AppIcons.Storage,
+                        tooltip = "Repositories",
+                        onClick = { showRepositories = true },
+                        enabled = enabled,
+                    )
+                }
+            },
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 
     if (showRepositories) {
