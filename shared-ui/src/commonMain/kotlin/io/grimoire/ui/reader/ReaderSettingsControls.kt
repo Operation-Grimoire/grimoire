@@ -1,5 +1,6 @@
-package io.grimoire.app.ui.screen.reader
+package io.grimoire.ui.reader
 
+import io.grimoire.ui.resources.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
-import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,34 +27,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import io.grimoire.app.data.local.entity.ReaderTextAlign
-import androidx.compose.ui.res.stringResource
-import io.grimoire.app.data.preferences.MarkAsReadStrategy
-import io.grimoire.app.data.preferences.ReaderColorTheme
-import io.grimoire.app.data.preferences.ReaderFont
-import io.grimoire.app.data.preferences.ReaderOrientation
-import io.grimoire.app.R
-
-internal data class ReaderColors(val background: Color, val foreground: Color)
-
-internal val ReaderColorTheme.readerColors: ReaderColors
-    get() = when (this) {
-        ReaderColorTheme.LIGHT -> ReaderColors(Color.White, Color(0xFF1A1A1A))
-        ReaderColorTheme.SEPIA -> ReaderColors(Color(0xFFFBF0D9), Color(0xFF4A3728))
-        ReaderColorTheme.DARK -> ReaderColors(Color(0xFF1E1E2E), Color(0xFFCDD6F4))
-        ReaderColorTheme.BLACK -> ReaderColors(Color.Black, Color(0xFFCCCCCC))
-    }
-
-internal val ReaderFont.fontFamily: FontFamily
-    get() = when (this) {
-        ReaderFont.DEFAULT -> FontFamily.Default
-        ReaderFont.SERIF -> FontFamily.Serif
-        ReaderFont.MONOSPACE -> FontFamily.Monospace
-    }
-
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
-internal fun ColorThemePicker(
+fun ReaderColorThemePicker(
     selected: ReaderColorTheme,
     onSelect: (ReaderColorTheme) -> Unit,
     modifier: Modifier = Modifier,
@@ -79,10 +55,10 @@ internal fun ColorThemePicker(
                 Text(
                     text = stringResource(
                         when (theme) {
-                            ReaderColorTheme.LIGHT -> R.string.reader_theme_light
-                            ReaderColorTheme.SEPIA -> R.string.reader_theme_sepia
-                            ReaderColorTheme.DARK -> R.string.reader_theme_dark
-                            ReaderColorTheme.BLACK -> R.string.reader_theme_black
+                            ReaderColorTheme.LIGHT -> Res.string.reader_theme_light
+                            ReaderColorTheme.SEPIA -> Res.string.reader_theme_sepia
+                            ReaderColorTheme.DARK -> Res.string.reader_theme_dark
+                            ReaderColorTheme.BLACK -> Res.string.reader_theme_black
                         },
                     ),
                     color = tc.foreground,
@@ -94,7 +70,7 @@ internal fun ColorThemePicker(
 }
 
 @Composable
-internal fun FontPicker(
+fun FontPicker(
     selected: ReaderFont,
     onSelect: (ReaderFont) -> Unit,
     modifier: Modifier = Modifier,
@@ -103,9 +79,9 @@ internal fun FontPicker(
         ReaderFont.entries.forEach { font ->
             val isSelected = font == selected
             val label = when (font) {
-                ReaderFont.DEFAULT -> stringResource(R.string.reader_font_sans)
-                ReaderFont.SERIF -> stringResource(R.string.reader_font_serif)
-                ReaderFont.MONOSPACE -> stringResource(R.string.reader_font_mono)
+                ReaderFont.DEFAULT -> stringResource(Res.string.reader_font_sans)
+                ReaderFont.SERIF -> stringResource(Res.string.reader_font_serif)
+                ReaderFont.MONOSPACE -> stringResource(Res.string.reader_font_mono)
             }
             Box(
                 modifier = Modifier
@@ -139,7 +115,3 @@ internal fun FontPicker(
         }
     }
 }
-
-
-
-

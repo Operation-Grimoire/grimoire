@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.reader
 
+import io.grimoire.ui.reader.*
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

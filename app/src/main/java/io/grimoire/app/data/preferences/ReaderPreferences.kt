@@ -3,19 +3,10 @@ package io.grimoire.app.data.preferences
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class ReaderFont { DEFAULT, SERIF, MONOSPACE }
-enum class ReaderColorTheme { LIGHT, SEPIA, DARK, BLACK }
-enum class ReaderOrientation { FREE, PORTRAIT, LANDSCAPE }
-
-/**
- * How the reader decides a chapter is "done" and auto-flips its `read` flag.
- *
- * Percentage doesn't scale well: on long chapters it requires scrolling past 85–95% of
- * paragraphs before mark-as-read fires, even though the user may have finished the meaningful
- * content and stopped at author-note / Q&A tail sections. The paragraph-from-end strategies
- * are length-agnostic.
- */
-enum class MarkAsReadStrategy { PERCENT, PARAGRAPHS_FROM_END, AT_END }
+typealias ReaderFont = io.grimoire.ui.reader.ReaderFont
+typealias ReaderColorTheme = io.grimoire.ui.reader.ReaderColorTheme
+typealias ReaderOrientation = io.grimoire.ui.reader.ReaderOrientation
+typealias MarkAsReadStrategy = io.grimoire.ui.reader.MarkAsReadStrategy
 
 @Singleton
 class ReaderPreferences @Inject constructor(store: PreferenceStore) {
@@ -41,4 +32,4 @@ class ReaderPreferences @Inject constructor(store: PreferenceStore) {
 }
 
 internal fun resolveReaderColorTheme(saved: ReaderColorTheme?, systemDark: Boolean): ReaderColorTheme =
-    saved ?: if (systemDark) ReaderColorTheme.DARK else ReaderColorTheme.LIGHT
+    io.grimoire.ui.reader.resolveReaderColorTheme(saved, systemDark)

@@ -13,4 +13,77 @@
     <string name="color_theme_forest">Bosque</string>
     <string name="color_theme_rose">Rosa</string>
     <string name="color_theme_midnight">Medianoche</string>
+    <string name="action_clear_selection">Borrar selección</string>
+    <string name="action_select_all">Seleccionar todo</string>
+    <string name="filter_all">Todas</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="one">%1$d seleccionado</item>
+        <item quantity="many">%1$d seleccionados</item>
+        <item quantity="other">%1$d seleccionados</item>
+    </plurals>
+    <string name="filter_included_excluded">%1$d incluidos · %2$d excluidos</string>
+    <string name="action_decrease">Disminuir</string>
+    <string name="action_increase">Aumentar</string>
+    <plurals name="selection_count">
+        <item quantity="one">%1$d seleccionado</item>
+        <item quantity="many">%1$d seleccionados</item>
+        <item quantity="other">%1$d seleccionados</item>
+    </plurals>
+    <string name="action_close">Cerrar</string>
+    <string name="reader_align_auto">Automática</string>
+    <string name="reader_align_center">Centrada</string>
+    <string name="reader_align_justify">Justificada</string>
+    <string name="reader_align_left">Izquierda</string>
+    <string name="reader_align_right">Derecha</string>
+    <string name="reader_animate_grimoire">Animar la palabra “grimoire”</string>
+    <string name="reader_animate_grimoire_hint">Toca una palabra con estilo en cualquier capítulo para ver detalles</string>
+    <string name="reader_auto_mark_read">Marcar como leído automáticamente</string>
+    <string name="reader_color_theme">Tema de color</string>
+    <string name="reader_display_tab">Visualización</string>
+    <string name="reader_easter_eggs">Huevos de pascua</string>
+    <string name="reader_enabled">Activado</string>
+    <string name="reader_font">Fuente tipográfica</string>
+    <string name="reader_font_mono">Mono</string>
+    <string name="reader_font_sans">Sans</string>
+    <string name="reader_font_serif">Serif</string>
+    <string name="reader_font_size">Tamaño de letra</string>
+    <string name="reader_grimoire_highlight">Resaltado de Grimoire</string>
+    <string name="reader_grimoire_highlight_description">Anima cada aparición de “grimoire” en el texto del capítulo. Desactívalo aquí o en la configuración del lector.</string>
+    <string name="reader_hide_images_hint">Toca para mostrar · mantén presionado para ver</string>
+    <string name="reader_hide_images_setting">Ocultar imágenes</string>
+    <string name="reader_line_height">Interlineado</string>
+    <string name="reader_mark_at">Marcar en</string>
+    <string name="reader_mark_at_end">Al final</string>
+    <string name="reader_mark_near_end">Cerca del final</string>
+    <string name="reader_mark_percent">Porcentaje</string>
+    <string name="reader_orientation_free">Libre</string>
+    <string name="reader_orientation_horizontal">Horizontal</string>
+    <string name="reader_orientation_vertical">Vertical</string>
+    <plurals name="reader_paragraph_count">
+        <item quantity="one">%1$d párrafo</item>
+        <item quantity="many">%1$d párrafos</item>
+        <item quantity="other">%1$d párrafos</item>
+    </plurals>
+    <string name="reader_paragraph_spacing">Espacio entre párrafos</string>
+    <string name="reader_privacy">Privacidad</string>
+    <string name="reader_reading_progress">Progreso de lectura</string>
+    <string name="reader_screen_rotation">Rotación de pantalla</string>
+    <string name="reader_show_book_percent" formatted="false">Mostrar % del libro</string>
+    <string name="reader_show_chapter_percent" formatted="false">Mostrar % del capítulo</string>
+    <string name="reader_text_alignment">Alineación del texto</string>
+    <string name="reader_text_alignment_hint">Automática sigue el idioma de la novela (los sistemas de escritura de derecha a izquierda se alinean a la derecha). Se recuerda para esta novela.</string>
+    <string name="reader_theme_black">Negro</string>
+    <string name="reader_theme_dark">Oscuro</string>
+    <string name="reader_theme_light">Claro</string>
+    <string name="reader_theme_sepia">Sepia</string>
+    <string name="reader_tts_tab">Lectura en voz alta</string>
+    <string name="reader_within_last">Dentro de los últimos</string>
+    <string name="action_back">Atrás</string>
+    <string name="reader_chapter_progress">Capítulo %1$d%%</string>
+    <string name="reader_book_progress">Libro %1$d%%</string>
+    <string name="reader_previous">Anterior</string>
+    <string name="reader_settings">Configuración</string>
+    <string name="reader_next">Siguiente</string>
+    <string name="reader_next_chapter">Siguiente capítulo →</string>
+    <string name="reader_end_of_book">Fin del libro</string>
 </resources>

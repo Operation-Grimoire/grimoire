@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
 import io.grimoire.ui.theme.ThemeMode
 import io.grimoire.ui.component.ColorThemePicker
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import io.grimoire.ui.component.ThemeModeSegmentedRow
 import io.grimoire.ui.icon.AppIcons
 import io.grimoire.ui.icon.ArrowBack

@@ -5,7 +5,7 @@ import io.grimoire.app.ui.tour.TourKey
 import io.grimoire.ui.icon.*
 import android.net.Uri
 import io.grimoire.app.data.book.BOOK_MIME_TYPES
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import io.grimoire.app.ui.component.ScrollToTopButton
 import io.grimoire.app.ui.component.showScrollToTop
 import androidx.activity.compose.BackHandler
@@ -94,12 +94,12 @@ import io.grimoire.app.data.preferences.NovelTypeFilter
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.MoveToCategorySheet
 import io.grimoire.app.ui.component.ReadingCompletionErrorDialog
-import io.grimoire.app.ui.component.TooltipBottomBar
+import io.grimoire.ui.component.TooltipBottomBar
 import io.grimoire.app.ui.component.SearchCancelToolbar
-import io.grimoire.app.ui.component.SelectionTopBar
-import io.grimoire.app.ui.component.SwipeTabRow
-import io.grimoire.app.ui.component.SwipeTabStyle
-import io.grimoire.app.ui.component.TooltipIconButton
+import io.grimoire.ui.component.SelectionTopBar
+import io.grimoire.ui.component.SwipeTabRow
+import io.grimoire.ui.component.SwipeTabStyle
+import io.grimoire.ui.component.TooltipIconButton
 import io.grimoire.app.ui.component.rememberDelayedVisibility
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -1,5 +1,6 @@
-package io.grimoire.app.ui.screen.reader
+package io.grimoire.ui.reader
 
+import io.grimoire.ui.resources.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -23,32 +24,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.grimoire.app.R
-import io.grimoire.app.data.local.entity.ReaderTextAlign
-import io.grimoire.app.data.preferences.MarkAsReadStrategy
-import io.grimoire.app.data.preferences.ReaderColorTheme
-import io.grimoire.app.data.preferences.ReaderFont
-import io.grimoire.app.data.preferences.ReaderOrientation
-import io.grimoire.app.data.tts.TtsEngineType
-import io.grimoire.app.ui.component.ActionLinkCard
-import io.grimoire.app.ui.component.SwipeTabRow
-import io.grimoire.app.ui.component.SwipeTabStyle
-import io.grimoire.app.ui.component.sheet.SheetSectionLabel
-import io.grimoire.app.ui.component.sheet.SheetSwitchRow
-import io.grimoire.app.ui.component.sheet.SingleChoiceSegmented
-import io.grimoire.app.ui.component.sheet.StepperRow
-import io.grimoire.ui.icon.AppIcons
-import io.grimoire.ui.icon.KeyboardArrowRight
-import io.grimoire.ui.icon.RecordVoiceOver
+import io.grimoire.ui.component.SwipeTabRow
+import io.grimoire.ui.component.SwipeTabStyle
+import io.grimoire.ui.component.sheet.SheetSectionLabel
+import io.grimoire.ui.component.sheet.SheetSwitchRow
+import io.grimoire.ui.component.sheet.SingleChoiceSegmented
+import io.grimoire.ui.component.sheet.StepperRow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun ReaderSettingsSheet(
+fun ReaderSettingsSheet(
     sheetState: SheetState,
     colors: ReaderColors,
     textStyle: TextStyle,
@@ -58,20 +48,18 @@ internal fun ReaderSettingsSheet(
     paragraphSpacing: Int,
     readerFont: ReaderFont,
     colorTheme: ReaderColorTheme,
-    orientation: ReaderOrientation,
+    /** Null hides screen rotation, which only Android offers. */
+    orientation: ReaderOrientation?,
     textAlign: ReaderTextAlign,
-    hideInlineImages: Boolean,
+    /** Null hides the image privacy switch. */
+    hideInlineImages: Boolean?,
     showChapterProgressPercent: Boolean,
     showNovelProgressPercent: Boolean,
     grimoireEasterEggEnabled: Boolean,
-    markAsReadStrategy: MarkAsReadStrategy,
+    /** Null hides automatic mark-as-read. */
+    markAsReadStrategy: MarkAsReadStrategy?,
     markAsReadThreshold: Int,
     markAsReadParagraphsFromEnd: Int,
-    ttsEnabled: Boolean,
-    ttsEngine: TtsEngineType,
-    ttsSpeechRate: Int,
-    ttsPitch: Int,
-    ttsAutoAdvance: Boolean,
     onDismiss: () -> Unit,
     onFontSize: (Int) -> Unit,
     onLineHeight: (Int) -> Unit,
@@ -87,28 +75,15 @@ internal fun ReaderSettingsSheet(
     onMarkAsReadStrategy: (MarkAsReadStrategy) -> Unit,
     onMarkAsReadThreshold: (Int) -> Unit,
     onMarkAsReadParagraphsFromEnd: (Int) -> Unit,
-    onTtsEnabled: (Boolean) -> Unit,
-    onTtsEngine: (TtsEngineType) -> Unit,
-    onTtsSpeechRate: (Int) -> Unit,
-    onTtsPitch: (Int) -> Unit,
-    onTtsAutoAdvance: (Boolean) -> Unit,
-    onOpenTtsSettings: () -> Unit,
+    /** Read-aloud settings tab; null shows display settings only. */
+    ttsTab: (@Composable () -> Unit)? = null,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         scrimColor = Color.Transparent,
     ) {
-        SwipeTabRow(
-            tabs = listOf(
-                stringResource(R.string.reader_display_tab),
-                stringResource(R.string.reader_tts_tab),
-            ),
-            style = SwipeTabStyle.Secondary,
-            // Inside a sheet: wrap the page height instead of filling the screen.
-            fillHeight = false,
-        ) { page ->
-        if (page == 0) {
+        val display: @Composable () -> Unit = {
             ReaderDisplaySettings(
                 colors = colors,
                 textStyle = textStyle,
@@ -142,24 +117,19 @@ internal fun ReaderSettingsSheet(
                 onMarkAsReadThreshold = onMarkAsReadThreshold,
                 onMarkAsReadParagraphsFromEnd = onMarkAsReadParagraphsFromEnd,
             )
-        } else {
-            ReaderTtsSettings(
-                enabled = ttsEnabled,
-                engine = ttsEngine,
-                speechRate = ttsSpeechRate,
-                pitch = ttsPitch,
-                autoAdvance = ttsAutoAdvance,
-                onEnabled = onTtsEnabled,
-                onEngine = onTtsEngine,
-                onSpeechRate = onTtsSpeechRate,
-                onPitch = onTtsPitch,
-                onAutoAdvance = onTtsAutoAdvance,
-                onOpenFullSettings = onOpenTtsSettings,
-            )
         }
-        }
+        if (ttsTab == null) display() else SwipeTabRow(
+            tabs = listOf(
+                stringResource(Res.string.reader_display_tab),
+                stringResource(Res.string.reader_tts_tab),
+            ),
+            style = SwipeTabStyle.Secondary,
+            // Inside a sheet: wrap the page height instead of filling the screen.
+            fillHeight = false,
+        ) { page -> if (page == 0) display() else ttsTab() }
     }
 }
+
 
 @Composable
 private fun ReaderDisplaySettings(
@@ -171,13 +141,15 @@ private fun ReaderDisplaySettings(
     paragraphSpacing: Int,
     readerFont: ReaderFont,
     colorTheme: ReaderColorTheme,
-    orientation: ReaderOrientation,
+    orientation: ReaderOrientation?,
     textAlign: ReaderTextAlign,
-    hideInlineImages: Boolean,
+    /** Null hides the image privacy switch. */
+    hideInlineImages: Boolean?,
     showChapterProgressPercent: Boolean,
     showNovelProgressPercent: Boolean,
     grimoireEasterEggEnabled: Boolean,
-    markAsReadStrategy: MarkAsReadStrategy,
+    /** Null hides automatic mark-as-read. */
+    markAsReadStrategy: MarkAsReadStrategy?,
     markAsReadThreshold: Int,
     markAsReadParagraphsFromEnd: Int,
     onFontSize: (Int) -> Unit,
@@ -234,9 +206,9 @@ private fun ReaderDisplaySettings(
                     )
                     HorizontalDivider(color = dividerColor)
                 }
-                SheetSectionLabel(stringResource(R.string.reader_color_theme))
+                SheetSectionLabel(stringResource(Res.string.reader_color_theme))
             Spacer(Modifier.height(6.dp))
-            ColorThemePicker(
+            ReaderColorThemePicker(
                 selected = colorTheme,
                 onSelect = onColorTheme,
                 modifier = Modifier
@@ -244,7 +216,7 @@ private fun ReaderDisplaySettings(
                     .padding(horizontal = 16.dp),
             )
 
-            SheetSectionLabel(stringResource(R.string.reader_font))
+            SheetSectionLabel(stringResource(Res.string.reader_font))
             Spacer(Modifier.height(6.dp))
             FontPicker(
                 selected = readerFont,
@@ -260,7 +232,7 @@ private fun ReaderDisplaySettings(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 StepperRow(
-                    label = stringResource(R.string.reader_font_size),
+                    label = stringResource(Res.string.reader_font_size),
                     value = "${fontSize}sp",
                     onDecrement = { onFontSize(fontSize - 1) },
                     onIncrement = { onFontSize(fontSize + 1) },
@@ -269,8 +241,8 @@ private fun ReaderDisplaySettings(
                 )
 
                 StepperRow(
-                    label = stringResource(R.string.reader_line_height),
-                    value = "%.1f×".format(lineHeightTimes10 / 10f),
+                    label = stringResource(Res.string.reader_line_height),
+                    value = "${lineHeightTimes10 / 10}.${lineHeightTimes10 % 10}×",
                     onDecrement = { onLineHeight(lineHeightTimes10 - 1) },
                     onIncrement = { onLineHeight(lineHeightTimes10 + 1) },
                     decrementEnabled = lineHeightTimes10 > 10,
@@ -278,7 +250,7 @@ private fun ReaderDisplaySettings(
                 )
 
                 StepperRow(
-                    label = stringResource(R.string.reader_paragraph_spacing),
+                    label = stringResource(Res.string.reader_paragraph_spacing),
                     value = "${paragraphSpacing}dp",
                     onDecrement = { onParagraphSpacing(paragraphSpacing - 4) },
                     onIncrement = { onParagraphSpacing(paragraphSpacing + 4) },
@@ -287,7 +259,7 @@ private fun ReaderDisplaySettings(
                 )
             }
 
-            SheetSectionLabel(stringResource(R.string.reader_text_alignment))
+            SheetSectionLabel(stringResource(Res.string.reader_text_alignment))
             Spacer(Modifier.height(6.dp))
             SingleChoiceSegmented(
                 options = ReaderTextAlign.entries,
@@ -295,22 +267,23 @@ private fun ReaderDisplaySettings(
                 onSelect = onTextAlign,
                 label = { value ->
                     when (value) {
-                        ReaderTextAlign.AUTO -> stringResource(R.string.reader_align_auto)
-                        ReaderTextAlign.LEFT -> stringResource(R.string.reader_align_left)
-                        ReaderTextAlign.RIGHT -> stringResource(R.string.reader_align_right)
-                        ReaderTextAlign.CENTER -> stringResource(R.string.reader_align_center)
-                        ReaderTextAlign.JUSTIFY -> stringResource(R.string.reader_align_justify)
+                        ReaderTextAlign.AUTO -> stringResource(Res.string.reader_align_auto)
+                        ReaderTextAlign.LEFT -> stringResource(Res.string.reader_align_left)
+                        ReaderTextAlign.RIGHT -> stringResource(Res.string.reader_align_right)
+                        ReaderTextAlign.CENTER -> stringResource(Res.string.reader_align_center)
+                        ReaderTextAlign.JUSTIFY -> stringResource(Res.string.reader_align_justify)
                     }
                 },
             )
             Text(
-                text = stringResource(R.string.reader_text_alignment_hint),
+                text = stringResource(Res.string.reader_text_alignment_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
             )
 
-            SheetSectionLabel(stringResource(R.string.reader_screen_rotation))
+            if (orientation != null) {
+            SheetSectionLabel(stringResource(Res.string.reader_screen_rotation))
             Spacer(Modifier.height(6.dp))
             SingleChoiceSegmented(
                 options = ReaderOrientation.entries,
@@ -318,39 +291,43 @@ private fun ReaderDisplaySettings(
                 onSelect = onOrientation,
                 label = { value ->
                     when (value) {
-                        ReaderOrientation.FREE -> stringResource(R.string.reader_orientation_free)
-                        ReaderOrientation.PORTRAIT -> stringResource(R.string.reader_orientation_vertical)
-                        ReaderOrientation.LANDSCAPE -> stringResource(R.string.reader_orientation_horizontal)
+                        ReaderOrientation.FREE -> stringResource(Res.string.reader_orientation_free)
+                        ReaderOrientation.PORTRAIT -> stringResource(Res.string.reader_orientation_vertical)
+                        ReaderOrientation.LANDSCAPE -> stringResource(Res.string.reader_orientation_horizontal)
                     }
                 },
             )
+            }
 
             HorizontalDivider(
                 modifier = Modifier.padding(top = 14.dp, bottom = 2.dp),
                 color = dividerColor,
             )
 
-            SheetSectionLabel(stringResource(R.string.reader_privacy))
+            if (hideInlineImages != null) {
+            SheetSectionLabel(stringResource(Res.string.reader_privacy))
             SheetSwitchRow(
-                title = stringResource(R.string.reader_hide_images_setting),
-                hint = stringResource(R.string.reader_hide_images_hint),
+                title = stringResource(Res.string.reader_hide_images_setting),
+                hint = stringResource(Res.string.reader_hide_images_hint),
                 checked = hideInlineImages,
                 onCheckedChange = onHideInlineImages,
             )
+            }
 
-            SheetSectionLabel(stringResource(R.string.reader_reading_progress))
+            SheetSectionLabel(stringResource(Res.string.reader_reading_progress))
             SheetSwitchRow(
-                title = stringResource(R.string.reader_show_chapter_percent),
+                title = stringResource(Res.string.reader_show_chapter_percent),
                 checked = showChapterProgressPercent,
                 onCheckedChange = onShowChapterProgressPercent,
             )
             SheetSwitchRow(
-                title = stringResource(R.string.reader_show_book_percent),
+                title = stringResource(Res.string.reader_show_book_percent),
                 checked = showNovelProgressPercent,
                 onCheckedChange = onShowNovelProgressPercent,
             )
 
-            SheetSectionLabel(stringResource(R.string.reader_auto_mark_read))
+            if (markAsReadStrategy != null) {
+            SheetSectionLabel(stringResource(Res.string.reader_auto_mark_read))
             Spacer(Modifier.height(6.dp))
             SingleChoiceSegmented(
                 options = MarkAsReadStrategy.entries,
@@ -358,15 +335,15 @@ private fun ReaderDisplaySettings(
                 onSelect = onMarkAsReadStrategy,
                 label = { value ->
                     when (value) {
-                        MarkAsReadStrategy.PERCENT -> stringResource(R.string.reader_mark_percent)
-                        MarkAsReadStrategy.PARAGRAPHS_FROM_END -> stringResource(R.string.reader_mark_near_end)
-                        MarkAsReadStrategy.AT_END -> stringResource(R.string.reader_mark_at_end)
+                        MarkAsReadStrategy.PERCENT -> stringResource(Res.string.reader_mark_percent)
+                        MarkAsReadStrategy.PARAGRAPHS_FROM_END -> stringResource(Res.string.reader_mark_near_end)
+                        MarkAsReadStrategy.AT_END -> stringResource(Res.string.reader_mark_at_end)
                     }
                 },
             )
             when (markAsReadStrategy) {
                 MarkAsReadStrategy.PERCENT -> StepperRow(
-                    label = stringResource(R.string.reader_mark_at),
+                    label = stringResource(Res.string.reader_mark_at),
                     value = "$markAsReadThreshold%",
                     onDecrement = { onMarkAsReadThreshold(markAsReadThreshold - 5) },
                     onIncrement = { onMarkAsReadThreshold(markAsReadThreshold + 5) },
@@ -375,9 +352,9 @@ private fun ReaderDisplaySettings(
                     modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 6.dp),
                 )
                 MarkAsReadStrategy.PARAGRAPHS_FROM_END -> StepperRow(
-                    label = stringResource(R.string.reader_within_last),
+                    label = stringResource(Res.string.reader_within_last),
                     value = pluralStringResource(
-                        R.plurals.reader_paragraph_count,
+                        Res.plurals.reader_paragraph_count,
                         markAsReadParagraphsFromEnd,
                         markAsReadParagraphsFromEnd,
                     ),
@@ -389,11 +366,12 @@ private fun ReaderDisplaySettings(
                 )
                 MarkAsReadStrategy.AT_END -> Unit
             }
+            }
 
-            SheetSectionLabel(stringResource(R.string.reader_easter_eggs))
+            SheetSectionLabel(stringResource(Res.string.reader_easter_eggs))
             SheetSwitchRow(
-                title = stringResource(R.string.reader_animate_grimoire),
-                hint = stringResource(R.string.reader_animate_grimoire_hint),
+                title = stringResource(Res.string.reader_animate_grimoire),
+                hint = stringResource(Res.string.reader_animate_grimoire_hint),
                 checked = grimoireEasterEggEnabled,
                 onCheckedChange = onGrimoireEasterEggEnabled,
             )
@@ -426,99 +404,6 @@ private fun ReaderPreviewCard(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-        )
-    }
-}
-
-@Composable
-private fun ReaderTtsSettings(
-    enabled: Boolean,
-    engine: TtsEngineType,
-    speechRate: Int,
-    pitch: Int,
-    autoAdvance: Boolean,
-    onEnabled: (Boolean) -> Unit,
-    onEngine: (TtsEngineType) -> Unit,
-    onSpeechRate: (Int) -> Unit,
-    onPitch: (Int) -> Unit,
-    onAutoAdvance: (Boolean) -> Unit,
-    onOpenFullSettings: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(top = 4.dp, bottom = 16.dp),
-    ) {
-        SheetSwitchRow(
-            title = stringResource(R.string.reader_enable_tts),
-            hint = stringResource(R.string.reader_enable_tts_hint),
-            checked = enabled,
-            onCheckedChange = onEnabled,
-        )
-
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = 4.dp),
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-        )
-
-        SheetSectionLabel(stringResource(R.string.reader_speech_engine), enabled = enabled)
-        Spacer(Modifier.height(6.dp))
-        SingleChoiceSegmented(
-            options = TtsEngineType.entries,
-            selected = engine,
-            onSelect = onEngine,
-            enabled = enabled,
-            label = { value ->
-                when (value) {
-                    TtsEngineType.DEVICE -> stringResource(R.string.reader_on_device)
-                    TtsEngineType.ELEVENLABS -> "ElevenLabs"
-                }
-            },
-        )
-
-        Spacer(Modifier.height(8.dp))
-        Column(
-            modifier = Modifier.padding(start = 16.dp, end = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            StepperRow(
-                label = stringResource(R.string.reader_speech_rate),
-                value = "%.2f×".format(speechRate / 100f),
-                onDecrement = { onSpeechRate(speechRate - 5) },
-                onIncrement = { onSpeechRate(speechRate + 5) },
-                decrementEnabled = speechRate > 25,
-                incrementEnabled = speechRate < 300,
-                enabled = enabled,
-            )
-
-            StepperRow(
-                label = stringResource(R.string.reader_pitch),
-                value = "%.2f×".format(pitch / 100f),
-                onDecrement = { onPitch(pitch - 5) },
-                onIncrement = { onPitch(pitch + 5) },
-                decrementEnabled = pitch > 50,
-                incrementEnabled = pitch < 200,
-                enabled = enabled && engine == TtsEngineType.DEVICE,
-            )
-        }
-
-        Spacer(Modifier.height(4.dp))
-        SheetSwitchRow(
-            title = stringResource(R.string.reader_auto_advance),
-            checked = autoAdvance,
-            onCheckedChange = onAutoAdvance,
-            enabled = enabled,
-        )
-
-        Spacer(Modifier.height(8.dp))
-        ActionLinkCard(
-            title = stringResource(R.string.reader_manage_voices),
-            leadingIcon = AppIcons.RecordVoiceOver,
-            trailingIcon = AppIcons.KeyboardArrowRight,
-            onClick = onOpenFullSettings,
-            modifier = Modifier.padding(horizontal = 16.dp),
         )
     }
 }

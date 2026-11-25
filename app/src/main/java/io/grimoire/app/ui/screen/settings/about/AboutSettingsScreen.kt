@@ -46,7 +46,7 @@ import io.grimoire.app.BuildConfig
 import io.grimoire.app.R
 import io.grimoire.app.data.preferences.UpdateChannel
 import io.grimoire.app.data.update.releaseChangelogUrl
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import io.grimoire.app.ui.update.AppUpdateViewModel
 import io.grimoire.app.ui.update.CheckState
 import io.grimoire.app.ui.update.openGitHubReleasePage

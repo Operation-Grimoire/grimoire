@@ -49,13 +49,6 @@
     <string name="languages_source_language_subtitle">Escolha quais idiomas as fontes multilíngues mostram por padrão</string>
     <string name="language_picker_title">Idioma do app</string>
     <string name="language_option_system">Padrão do sistema</string>
-    <string name="reader_text_alignment">Alinhamento do texto</string>
-    <string name="reader_text_alignment_hint">O modo automático segue o idioma da novel (escritas da direita para a esquerda ficam alinhadas à direita). Fica salvo para esta novel.</string>
-    <string name="reader_align_auto">Automático</string>
-    <string name="reader_align_left">Esquerda</string>
-    <string name="reader_align_right">Direita</string>
-    <string name="reader_align_center">Centro</string>
-    <string name="reader_align_justify">Justificado</string>
     <string name="onboarding_welcome_title">Boas-vindas ao Grimoire</string>
     <string name="onboarding_reading_title">Em quais idiomas você lê?</string>
     <string name="onboarding_reading_helper">As fontes e a exploração multilíngue são filtradas por estes idiomas. Deixe tudo desmarcado para mostrar todos os idiomas.</string>
@@ -154,7 +147,6 @@
         <item quantity="many">%1$d selecionados</item>
         <item quantity="other">%1$d selecionados</item>
     </plurals>
-    <string name="action_clear_selection">Limpar seleção</string>
     <string name="action_select_all">Selecionar tudo</string>
     <string name="move_to_category_title">Mover para categoria</string>
     <plurals name="novel_count">
@@ -307,7 +299,6 @@
     <string name="action_decrease">Diminuir</string>
     <string name="action_increase">Aumentar</string>
     <string name="action_clear_search">Limpar pesquisa</string>
-    <string name="filter_included_excluded">%1$d incluídos · %2$d excluídos</string>
     <string name="action_show_more">Mostrar mais</string>
     <string name="action_show_less">Mostrar menos</string>
     <string name="action_download">Baixar</string>
@@ -653,52 +644,16 @@
 
     <!-- Reader -->
     <string name="reader_next_chapter">Próximo capítulo →</string>
-    <string name="reader_end_of_book">Fim do livro</string>
     <string name="reader_hide_images">Ocultar todas as imagens deste capítulo</string>
     <string name="reader_reveal_images">Revelar todas as imagens deste capítulo</string>
     <string name="reader_mark_unread">Marcar como não lido</string>
     <string name="reader_mark_read">Marcar como lido</string>
-    <string name="reader_chapter_progress">Capítulo %1$d%%</string>
-    <string name="reader_book_progress">Livro %1$d%%</string>
-    <string name="reader_previous">Anterior</string>
     <string name="reader_pause">Pausar</string>
     <string name="reader_read_aloud">Ler em voz alta</string>
     <string name="reader_stop">Parar</string>
-    <string name="reader_settings">Configurações</string>
-    <string name="reader_next">Próximo</string>
-    <string name="reader_grimoire_highlight">Destaque do Grimoire</string>
-    <string name="reader_grimoire_highlight_description">Anima cada ocorrência de “grimoire” no texto do capítulo. Desative aqui ou nas configurações do leitor.</string>
-    <string name="reader_enabled">Ativado</string>
-    <string name="reader_display_tab">Exibição</string>
-    <string name="reader_tts_tab">Voz alta</string>
     <string name="reader_preview_text">Um pequeno jabuti xereta viu dez cegonhas felizes. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.</string>
-    <string name="reader_color_theme">Tema de cores</string>
-    <string name="reader_theme_light">Claro</string>
-    <string name="reader_theme_sepia">Sépia</string>
-    <string name="reader_theme_dark">Escuro</string>
-    <string name="reader_theme_black">Preto</string>
     <string name="reader_font">Tipo de letra</string>
-    <string name="reader_font_size">Tamanho do texto</string>
-    <string name="reader_line_height">Altura da linha</string>
-    <string name="reader_paragraph_spacing">Espaçamento entre parágrafos</string>
-    <string name="reader_screen_rotation">Rotação da tela</string>
-    <string name="reader_privacy">Privacidade</string>
-    <string name="reader_hide_images_setting">Ocultar imagens</string>
-    <string name="reader_hide_images_hint">Toque para revelar · segure para espiar</string>
-    <string name="reader_reading_progress">Progresso de leitura</string>
-    <string name="reader_show_chapter_percent" formatted="false">Mostrar % do capítulo</string>
-    <string name="reader_show_book_percent" formatted="false">Mostrar % do livro</string>
-    <string name="reader_auto_mark_read">Marcar como lido automaticamente</string>
     <string name="reader_mark_at">Marcar em</string>
-    <string name="reader_within_last">Nos últimos</string>
-    <plurals name="reader_paragraph_count">
-        <item quantity="one">%1$d parágrafo</item>
-        <item quantity="many">%1$d parágrafos</item>
-        <item quantity="other">%1$d parágrafos</item>
-    </plurals>
-    <string name="reader_easter_eggs">Surpresas</string>
-    <string name="reader_animate_grimoire">Animar a palavra “grimoire”</string>
-    <string name="reader_animate_grimoire_hint">Toque em uma palavra estilizada em qualquer capítulo para ver detalhes</string>
     <string name="reader_enable_tts">Ativar texto para fala</string>
     <string name="reader_enable_tts_hint">Mostrar controles de reprodução no leitor</string>
     <string name="reader_speech_engine">Mecanismo de voz</string>
@@ -707,9 +662,6 @@
     <string name="reader_pitch">Tom (só no dispositivo)</string>
     <string name="reader_auto_advance">Avançar automaticamente para o próximo capítulo</string>
     <string name="reader_manage_voices">Gerenciar vozes e mais configurações</string>
-    <string name="reader_font_sans">Sem serifa</string>
-    <string name="reader_font_serif">Serifada</string>
-    <string name="reader_font_mono">Monoespaçada</string>
     <string name="reader_mark_percent">Porcentagem</string>
     <string name="reader_mark_near_end">Perto do fim</string>
     <string name="reader_mark_at_end">No fim</string>

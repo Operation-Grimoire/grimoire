@@ -13,4 +13,74 @@
     <string name="color_theme_forest">Forest</string>
     <string name="color_theme_rose">Rose</string>
     <string name="color_theme_midnight">Midnight</string>
+    <string name="action_clear_selection">Clear selection</string>
+    <string name="action_select_all">Select all</string>
+    <string name="filter_all">All</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="filter_included_excluded">%1$d included · %2$d excluded</string>
+    <string name="action_decrease">Decrease</string>
+    <string name="action_increase">Increase</string>
+    <plurals name="selection_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="action_close">Close</string>
+    <string name="reader_align_auto">Auto</string>
+    <string name="reader_align_center">Center</string>
+    <string name="reader_align_justify">Justify</string>
+    <string name="reader_align_left">Left</string>
+    <string name="reader_align_right">Right</string>
+    <string name="reader_animate_grimoire">Animate the word “grimoire”</string>
+    <string name="reader_animate_grimoire_hint">Tap a styled word in any chapter for details</string>
+    <string name="reader_auto_mark_read">Auto-mark as read</string>
+    <string name="reader_color_theme">Color theme</string>
+    <string name="reader_display_tab">Display</string>
+    <string name="reader_easter_eggs">Easter eggs</string>
+    <string name="reader_enabled">Enabled</string>
+    <string name="reader_font">Font</string>
+    <string name="reader_font_mono">Mono</string>
+    <string name="reader_font_sans">Sans</string>
+    <string name="reader_font_serif">Serif</string>
+    <string name="reader_font_size">Font size</string>
+    <string name="reader_grimoire_highlight">Grimoire highlight</string>
+    <string name="reader_grimoire_highlight_description">Animates every occurrence of “grimoire” in chapter text. Toggle it off here or from reader settings.</string>
+    <string name="reader_hide_images_hint">Tap to reveal · hold to peek</string>
+    <string name="reader_hide_images_setting">Hide images</string>
+    <string name="reader_line_height">Line height</string>
+    <string name="reader_mark_at">Mark at</string>
+    <string name="reader_mark_at_end">At end</string>
+    <string name="reader_mark_near_end">Near end</string>
+    <string name="reader_mark_percent">Percent</string>
+    <string name="reader_orientation_free">Free</string>
+    <string name="reader_orientation_horizontal">Horizontal</string>
+    <string name="reader_orientation_vertical">Vertical</string>
+    <plurals name="reader_paragraph_count">
+        <item quantity="one">%1$d paragraph</item>
+        <item quantity="other">%1$d paragraphs</item>
+    </plurals>
+    <string name="reader_paragraph_spacing">Paragraph spacing</string>
+    <string name="reader_privacy">Privacy</string>
+    <string name="reader_reading_progress">Reading progress</string>
+    <string name="reader_screen_rotation">Screen rotation</string>
+    <string name="reader_show_book_percent" formatted="false">Show book %</string>
+    <string name="reader_show_chapter_percent" formatted="false">Show chapter %</string>
+    <string name="reader_text_alignment">Text alignment</string>
+    <string name="reader_text_alignment_hint">Auto follows the novel’s language (right-to-left scripts read right-aligned). Remembered for this novel.</string>
+    <string name="reader_theme_black">Black</string>
+    <string name="reader_theme_dark">Dark</string>
+    <string name="reader_theme_light">Light</string>
+    <string name="reader_theme_sepia">Sepia</string>
+    <string name="reader_tts_tab">Read aloud</string>
+    <string name="reader_within_last">Within last</string>
+    <string name="action_back">Back</string>
+    <string name="reader_chapter_progress">Chapter %1$d%%</string>
+    <string name="reader_book_progress">Book %1$d%%</string>
+    <string name="reader_previous">Previous</string>
+    <string name="reader_settings">Settings</string>
+    <string name="reader_next">Next</string>
+    <string name="reader_next_chapter">Next chapter →</string>
+    <string name="reader_end_of_book">End of book</string>
 </resources>

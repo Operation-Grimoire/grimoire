@@ -1,7 +1,7 @@
 package io.grimoire.app.ui.screen.novelupdates
 
 import io.grimoire.ui.icon.*
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,7 +33,7 @@ import io.grimoire.app.data.novelupdates.NuLanguages
 import io.grimoire.app.data.novelupdates.NuListingFilter
 import io.grimoire.app.data.novelupdates.NuRankingType
 import io.grimoire.app.ui.component.dialog.FullScreenDialog
-import io.grimoire.app.ui.component.sheet.MultiSelectSummaryRow
+import io.grimoire.ui.component.sheet.MultiSelectSummaryRow
 import io.grimoire.app.ui.component.sheet.SearchableMultiSelectDialog
 import io.grimoire.app.R
 

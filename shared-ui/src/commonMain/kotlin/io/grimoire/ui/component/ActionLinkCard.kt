@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.component
+package io.grimoire.ui.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement

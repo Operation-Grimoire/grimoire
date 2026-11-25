@@ -13,4 +13,71 @@
     <string name="color_theme_forest">森林</string>
     <string name="color_theme_rose">玫瑰</string>
     <string name="color_theme_midnight">午夜</string>
+    <string name="action_clear_selection">清除選取</string>
+    <string name="action_select_all">全選</string>
+    <string name="filter_all">全部</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="other">已選取 %1$d 項</item>
+    </plurals>
+    <string name="filter_included_excluded">包含 %1$d 項 · 排除 %2$d 項</string>
+    <string name="action_decrease">減少</string>
+    <string name="action_increase">增加</string>
+    <plurals name="selection_count">
+        <item quantity="other">已選取 %1$d 項</item>
+    </plurals>
+    <string name="action_close">關閉</string>
+    <string name="reader_align_auto">自動</string>
+    <string name="reader_align_center">置中</string>
+    <string name="reader_align_justify">左右對齊</string>
+    <string name="reader_align_left">靠左</string>
+    <string name="reader_align_right">靠右</string>
+    <string name="reader_animate_grimoire">為「grimoire」一詞加上動畫</string>
+    <string name="reader_animate_grimoire_hint">在任一章節中輕觸帶有樣式的字詞即可查看詳情</string>
+    <string name="reader_auto_mark_read">自動標為已讀</string>
+    <string name="reader_color_theme">色彩主題</string>
+    <string name="reader_display_tab">顯示</string>
+    <string name="reader_easter_eggs">彩蛋</string>
+    <string name="reader_enabled">已啟用</string>
+    <string name="reader_font">字型</string>
+    <string name="reader_font_mono">等寬</string>
+    <string name="reader_font_sans">無襯線</string>
+    <string name="reader_font_serif">襯線</string>
+    <string name="reader_font_size">字型大小</string>
+    <string name="reader_grimoire_highlight">Grimoire 醒目標示</string>
+    <string name="reader_grimoire_highlight_description">為章節內文中每個「grimoire」加上動畫。可在此處或閱讀器設定中關閉。</string>
+    <string name="reader_hide_images_hint">輕觸以顯示 · 按住以預覽</string>
+    <string name="reader_hide_images_setting">隱藏圖片</string>
+    <string name="reader_line_height">行高</string>
+    <string name="reader_mark_at">標記時機</string>
+    <string name="reader_mark_at_end">讀到結尾</string>
+    <string name="reader_mark_near_end">接近結尾</string>
+    <string name="reader_mark_percent">百分比</string>
+    <string name="reader_orientation_free">自由</string>
+    <string name="reader_orientation_horizontal">橫向</string>
+    <string name="reader_orientation_vertical">直向</string>
+    <plurals name="reader_paragraph_count">
+        <item quantity="other">%1$d 段內</item>
+    </plurals>
+    <string name="reader_paragraph_spacing">段落間距</string>
+    <string name="reader_privacy">隱私權</string>
+    <string name="reader_reading_progress">閱讀進度</string>
+    <string name="reader_screen_rotation">螢幕旋轉</string>
+    <string name="reader_show_book_percent" formatted="false">顯示全書 %</string>
+    <string name="reader_show_chapter_percent" formatted="false">顯示本章 %</string>
+    <string name="reader_text_alignment">文字對齊</string>
+    <string name="reader_text_alignment_hint">「自動」會依小說的語言決定（由右至左書寫的文字會靠右對齊）。此設定會針對這本小說記住。</string>
+    <string name="reader_theme_black">純黑</string>
+    <string name="reader_theme_dark">深色</string>
+    <string name="reader_theme_light">淺色</string>
+    <string name="reader_theme_sepia">復古</string>
+    <string name="reader_tts_tab">朗讀</string>
+    <string name="reader_within_last">在最後</string>
+    <string name="action_back">返回</string>
+    <string name="reader_chapter_progress">本章 %1$d%%</string>
+    <string name="reader_book_progress">全書 %1$d%%</string>
+    <string name="reader_previous">上一個</string>
+    <string name="reader_settings">設定</string>
+    <string name="reader_next">下一個</string>
+    <string name="reader_next_chapter">下一章 →</string>
+    <string name="reader_end_of_book">全書完</string>
 </resources>

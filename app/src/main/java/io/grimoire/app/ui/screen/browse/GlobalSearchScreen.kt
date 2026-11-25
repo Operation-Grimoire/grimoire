@@ -3,7 +3,7 @@ package io.grimoire.app.ui.screen.browse
 import io.grimoire.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.rememberPagerState
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -48,8 +48,8 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import io.grimoire.app.ui.component.AppSearchField
 import io.grimoire.app.ui.component.NovelQuickViewSheet
-import io.grimoire.app.ui.component.SwipeTabRow
-import io.grimoire.app.ui.component.SwipeTabStyle
+import io.grimoire.ui.component.SwipeTabRow
+import io.grimoire.ui.component.SwipeTabStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage

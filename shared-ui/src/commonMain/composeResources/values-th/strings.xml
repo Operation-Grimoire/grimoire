@@ -13,4 +13,71 @@
     <string name="color_theme_forest">ป่าไม้</string>
     <string name="color_theme_rose">กุหลาบ</string>
     <string name="color_theme_midnight">เที่ยงคืน</string>
+    <string name="action_clear_selection">ล้างการเลือก</string>
+    <string name="action_select_all">เลือกทั้งหมด</string>
+    <string name="filter_all">ทั้งหมด</string>
+    <plurals name="source_filter_selected_count">
+        <item quantity="other">เลือกแล้ว %1$d รายการ</item>
+    </plurals>
+    <string name="filter_included_excluded">รวม %1$d · ไม่รวม %2$d</string>
+    <string name="action_decrease">ลด</string>
+    <string name="action_increase">เพิ่ม</string>
+    <plurals name="selection_count">
+        <item quantity="other">เลือกแล้ว %1$d รายการ</item>
+    </plurals>
+    <string name="action_close">ปิด</string>
+    <string name="reader_align_auto">อัตโนมัติ</string>
+    <string name="reader_align_center">กึ่งกลาง</string>
+    <string name="reader_align_justify">เต็มบรรทัด</string>
+    <string name="reader_align_left">ชิดซ้าย</string>
+    <string name="reader_align_right">ชิดขวา</string>
+    <string name="reader_animate_grimoire">ทำให้คำว่า “grimoire” เคลื่อนไหว</string>
+    <string name="reader_animate_grimoire_hint">แตะคำที่มีสไตล์พิเศษในตอนใดก็ได้เพื่อดูรายละเอียด</string>
+    <string name="reader_auto_mark_read">ทำเครื่องหมายว่าอ่านแล้วอัตโนมัติ</string>
+    <string name="reader_color_theme">ธีมสี</string>
+    <string name="reader_display_tab">การแสดงผล</string>
+    <string name="reader_easter_eggs">อีสเตอร์เอ้ก</string>
+    <string name="reader_enabled">เปิดใช้งาน</string>
+    <string name="reader_font">ฟอนต์</string>
+    <string name="reader_font_mono">โมโน</string>
+    <string name="reader_font_sans">ซานส์</string>
+    <string name="reader_font_serif">เซริฟ</string>
+    <string name="reader_font_size">ขนาดตัวอักษร</string>
+    <string name="reader_grimoire_highlight">ไฮไลต์ Grimoire</string>
+    <string name="reader_grimoire_highlight_description">ทำให้คำว่า “grimoire” ทุกคำในเนื้อหาตอนเคลื่อนไหว ปิดได้ที่นี่หรือในการตั้งค่าตัวอ่าน</string>
+    <string name="reader_hide_images_hint">แตะเพื่อแสดง · กดค้างเพื่อแอบดู</string>
+    <string name="reader_hide_images_setting">ซ่อนรูปภาพ</string>
+    <string name="reader_line_height">ระยะห่างบรรทัด</string>
+    <string name="reader_mark_at">ทำเครื่องหมายเมื่อ</string>
+    <string name="reader_mark_at_end">เมื่อจบ</string>
+    <string name="reader_mark_near_end">ใกล้จบ</string>
+    <string name="reader_mark_percent">เปอร์เซ็นต์</string>
+    <string name="reader_orientation_free">อิสระ</string>
+    <string name="reader_orientation_horizontal">แนวนอน</string>
+    <string name="reader_orientation_vertical">แนวตั้ง</string>
+    <plurals name="reader_paragraph_count">
+        <item quantity="other">%1$d ย่อหน้าสุดท้าย</item>
+    </plurals>
+    <string name="reader_paragraph_spacing">ระยะห่างย่อหน้า</string>
+    <string name="reader_privacy">ความเป็นส่วนตัว</string>
+    <string name="reader_reading_progress">ความคืบหน้าการอ่าน</string>
+    <string name="reader_screen_rotation">การหมุนหน้าจอ</string>
+    <string name="reader_show_book_percent" formatted="false">แสดง % ของเล่ม</string>
+    <string name="reader_show_chapter_percent" formatted="false">แสดง % ของตอน</string>
+    <string name="reader_text_alignment">การจัดแนวข้อความ</string>
+    <string name="reader_text_alignment_hint">อัตโนมัติจะจัดตามภาษาของนิยาย (อักษรที่เขียนจากขวาไปซ้ายจะชิดขวา) และจำไว้สำหรับนิยายเรื่องนี้</string>
+    <string name="reader_theme_black">ดำ</string>
+    <string name="reader_theme_dark">มืด</string>
+    <string name="reader_theme_light">สว่าง</string>
+    <string name="reader_theme_sepia">ซีเปีย</string>
+    <string name="reader_tts_tab">อ่านออกเสียง</string>
+    <string name="reader_within_last">ภายใน</string>
+    <string name="action_back">กลับ</string>
+    <string name="reader_chapter_progress">ตอน %1$d%%</string>
+    <string name="reader_book_progress">เล่ม %1$d%%</string>
+    <string name="reader_previous">ก่อนหน้า</string>
+    <string name="reader_settings">การตั้งค่า</string>
+    <string name="reader_next">ถัดไป</string>
+    <string name="reader_next_chapter">ตอนถัดไป →</string>
+    <string name="reader_end_of_book">จบเล่ม</string>
 </resources>

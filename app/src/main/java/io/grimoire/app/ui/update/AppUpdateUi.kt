@@ -32,7 +32,7 @@ import io.grimoire.app.BuildConfig
 import io.grimoire.app.data.update.DownloadState
 import io.grimoire.app.data.update.ReleaseInfo
 import io.grimoire.app.R
-import io.grimoire.app.ui.component.ActionLinkCard
+import io.grimoire.ui.component.ActionLinkCard
 import io.grimoire.app.ui.component.ValueTransitionPill
 
 @Composable

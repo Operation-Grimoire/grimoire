@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.novelupdates
 
 import io.grimoire.ui.icon.*
 import android.content.Intent
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement

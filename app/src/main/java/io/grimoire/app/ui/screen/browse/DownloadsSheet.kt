@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
 import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
-import io.grimoire.app.ui.component.sheet.SheetTitle
+import io.grimoire.ui.component.sheet.SheetTitle
 import io.grimoire.ui.icon.*
 
 /** Bottom sheet of bulk download actions, each enabled per the current download state. */

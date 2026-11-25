@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.settings.github
 
 import io.grimoire.ui.icon.*
 import android.content.ClipData
-import io.grimoire.app.ui.component.PlainTooltipIconButton
+import io.grimoire.ui.component.PlainTooltipIconButton
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent

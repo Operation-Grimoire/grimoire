@@ -49,13 +49,6 @@
     <string name="languages_source_language_subtitle">चुनें कि कई भाषाओं वाले स्रोत डिफ़ॉल्ट रूप से कौन-सी भाषाएँ दिखाएँ</string>
     <string name="language_picker_title">ऐप की भाषा</string>
     <string name="language_option_system">सिस्टम डिफ़ॉल्ट</string>
-    <string name="reader_text_alignment">टेक्स्ट संरेखण</string>
-    <string name="reader_text_alignment_hint">ऑटो उपन्यास की भाषा के अनुसार चलता है (दाएँ से बाएँ लिखी जाने वाली लिपियाँ दाईं ओर संरेखित होती हैं)। यह इस उपन्यास के लिए याद रखा जाता है।</string>
-    <string name="reader_align_auto">ऑटो</string>
-    <string name="reader_align_left">बाएँ</string>
-    <string name="reader_align_right">दाएँ</string>
-    <string name="reader_align_center">बीच में</string>
-    <string name="reader_align_justify">जस्टिफ़ाई</string>
     <string name="onboarding_welcome_title">Grimoire में आपका स्वागत है</string>
     <string name="onboarding_reading_title">आप कौन-सी भाषाएँ पढ़ते हैं?</string>
     <string name="onboarding_reading_helper">स्रोत और कई भाषाओं वाली ब्राउज़िंग इन्हीं भाषाओं तक सीमित रहेंगे। सभी भाषाएँ दिखाने के लिए कुछ भी न चुनें।</string>
@@ -150,7 +143,6 @@
         <item quantity="one">%1$d चुना गया</item>
         <item quantity="other">%1$d चुने गए</item>
     </plurals>
-    <string name="action_clear_selection">चयन हटाएँ</string>
     <string name="action_select_all">सभी चुनें</string>
     <string name="move_to_category_title">श्रेणी में ले जाएँ</string>
     <plurals name="novel_count">
@@ -299,7 +291,6 @@
     <string name="action_decrease">घटाएँ</string>
     <string name="action_increase">बढ़ाएँ</string>
     <string name="action_clear_search">खोज साफ़ करें</string>
-    <string name="filter_included_excluded">%1$d शामिल · %2$d बाहर</string>
     <string name="action_show_more">और दिखाएँ</string>
     <string name="action_show_less">कम दिखाएँ</string>
     <string name="action_download">डाउनलोड करें</string>
@@ -637,51 +628,16 @@
 
     <!-- Reader -->
     <string name="reader_next_chapter">अगला अध्याय →</string>
-    <string name="reader_end_of_book">किताब समाप्त</string>
     <string name="reader_hide_images">इस अध्याय की सभी इमेज छिपाएँ</string>
     <string name="reader_reveal_images">इस अध्याय की सभी इमेज दिखाएँ</string>
     <string name="reader_mark_unread">अनपढ़ा मार्क करें</string>
     <string name="reader_mark_read">पढ़ा हुआ मार्क करें</string>
-    <string name="reader_chapter_progress">अध्याय %1$d%%</string>
-    <string name="reader_book_progress">किताब %1$d%%</string>
-    <string name="reader_previous">पिछला</string>
     <string name="reader_pause">रोकें</string>
     <string name="reader_read_aloud">पढ़कर सुनाएँ</string>
     <string name="reader_stop">बंद करें</string>
-    <string name="reader_settings">सेटिंग्स</string>
-    <string name="reader_next">अगला</string>
-    <string name="reader_grimoire_highlight">Grimoire हाइलाइट</string>
-    <string name="reader_grimoire_highlight_description">अध्याय के टेक्स्ट में “grimoire” शब्द जहाँ भी आए, उसे एनिमेट करता है। इसे यहाँ से या रीडर सेटिंग्स से बंद करें।</string>
-    <string name="reader_enabled">चालू</string>
-    <string name="reader_display_tab">डिस्प्ले</string>
-    <string name="reader_tts_tab">पढ़कर सुनाएँ</string>
     <string name="reader_preview_text">तेज़ भूरी लोमड़ी आलसी कुत्ते के ऊपर से कूद गई। Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.</string>
-    <string name="reader_color_theme">रंग थीम</string>
-    <string name="reader_theme_light">हल्की</string>
-    <string name="reader_theme_sepia">सीपिया</string>
-    <string name="reader_theme_dark">गहरी</string>
-    <string name="reader_theme_black">काली</string>
     <string name="reader_font">फ़ॉन्ट</string>
-    <string name="reader_font_size">फ़ॉन्ट साइज़</string>
-    <string name="reader_line_height">पंक्ति की ऊँचाई</string>
-    <string name="reader_paragraph_spacing">पैराग्राफ़ के बीच की दूरी</string>
-    <string name="reader_screen_rotation">स्क्रीन रोटेशन</string>
-    <string name="reader_privacy">निजता</string>
-    <string name="reader_hide_images_setting">इमेज छिपाएँ</string>
-    <string name="reader_hide_images_hint">दिखाने के लिए टैप करें · झलक के लिए दबाकर रखें</string>
-    <string name="reader_reading_progress">पढ़ने की प्रगति</string>
-    <string name="reader_show_chapter_percent" formatted="false">अध्याय % दिखाएँ</string>
-    <string name="reader_show_book_percent" formatted="false">किताब % दिखाएँ</string>
-    <string name="reader_auto_mark_read">अपने-आप पढ़ा हुआ मार्क करें</string>
     <string name="reader_mark_at">कब मार्क करें</string>
-    <string name="reader_within_last">अंत से</string>
-    <plurals name="reader_paragraph_count">
-        <item quantity="one">%1$d पैराग्राफ़</item>
-        <item quantity="other">%1$d पैराग्राफ़</item>
-    </plurals>
-    <string name="reader_easter_eggs">ईस्टर एग</string>
-    <string name="reader_animate_grimoire">“grimoire” शब्द को एनिमेट करें</string>
-    <string name="reader_animate_grimoire_hint">जानकारी के लिए किसी भी अध्याय में स्टाइल किए गए शब्द पर टैप करें</string>
     <string name="reader_enable_tts">टेक्स्ट-टू-स्पीच चालू करें</string>
     <string name="reader_enable_tts_hint">रीडर में प्लेबैक कंट्रोल दिखाएँ</string>
     <string name="reader_speech_engine">स्पीच इंजन</string>
@@ -690,9 +646,6 @@
     <string name="reader_pitch">पिच (केवल डिवाइस पर)</string>
     <string name="reader_auto_advance">अगले अध्याय पर अपने-आप जाएँ</string>
     <string name="reader_manage_voices">आवाज़ें और अन्य सेटिंग्स प्रबंधित करें</string>
-    <string name="reader_font_sans">सैन्स</string>
-    <string name="reader_font_serif">सेरिफ़</string>
-    <string name="reader_font_mono">मोनो</string>
     <string name="reader_mark_percent">प्रतिशत</string>
     <string name="reader_mark_near_end">अंत के पास</string>
     <string name="reader_mark_at_end">अंत में</string>

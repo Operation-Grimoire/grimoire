@@ -49,13 +49,6 @@
     <string name="languages_source_language_subtitle">다국어 소스에서 기본으로 표시할 언어를 선택하세요</string>
     <string name="language_picker_title">앱 언어</string>
     <string name="language_option_system">시스템 기본값</string>
-    <string name="reader_text_alignment">텍스트 정렬</string>
-    <string name="reader_text_alignment_hint">자동은 소설의 언어를 따라요(오른쪽에서 왼쪽으로 쓰는 문자는 오른쪽 정렬). 이 소설에 대해 기억돼요.</string>
-    <string name="reader_align_auto">자동</string>
-    <string name="reader_align_left">왼쪽</string>
-    <string name="reader_align_right">오른쪽</string>
-    <string name="reader_align_center">가운데</string>
-    <string name="reader_align_justify">양쪽 정렬</string>
     <string name="onboarding_welcome_title">Grimoire에 오신 것을 환영해요</string>
     <string name="onboarding_reading_title">어떤 언어로 읽으시나요?</string>
     <string name="onboarding_reading_helper">소스와 다국어 탐색이 이 언어들로 필터링돼요. 모든 언어를 표시하려면 전부 선택 해제하세요.</string>
@@ -146,7 +139,6 @@
     <plurals name="selection_count">
         <item quantity="other">%1$d개 선택됨</item>
     </plurals>
-    <string name="action_clear_selection">선택 해제</string>
     <string name="action_select_all">모두 선택</string>
     <string name="move_to_category_title">카테고리로 이동</string>
     <plurals name="novel_count">
@@ -291,7 +283,6 @@
     <string name="action_decrease">줄이기</string>
     <string name="action_increase">늘리기</string>
     <string name="action_clear_search">검색어 지우기</string>
-    <string name="filter_included_excluded">%1$d개 포함 · %2$d개 제외</string>
     <string name="action_show_more">더 보기</string>
     <string name="action_show_less">간략히 보기</string>
     <string name="action_download">다운로드</string>
@@ -621,50 +612,16 @@
 
     <!-- Reader -->
     <string name="reader_next_chapter">다음 챕터 →</string>
-    <string name="reader_end_of_book">책의 끝</string>
     <string name="reader_hide_images">이 챕터의 이미지 모두 숨기기</string>
     <string name="reader_reveal_images">이 챕터의 이미지 모두 보기</string>
     <string name="reader_mark_unread">안 읽음으로 표시</string>
     <string name="reader_mark_read">읽음으로 표시</string>
-    <string name="reader_chapter_progress">챕터 %1$d%%</string>
-    <string name="reader_book_progress">책 %1$d%%</string>
-    <string name="reader_previous">이전</string>
     <string name="reader_pause">일시정지</string>
     <string name="reader_read_aloud">읽어주기</string>
     <string name="reader_stop">중지</string>
-    <string name="reader_settings">설정</string>
-    <string name="reader_next">다음</string>
-    <string name="reader_grimoire_highlight">Grimoire 하이라이트</string>
-    <string name="reader_grimoire_highlight_description">챕터 본문에 나오는 모든 “grimoire”에 애니메이션을 적용해요. 여기나 뷰어 설정에서 끌 수 있어요.</string>
-    <string name="reader_enabled">사용</string>
-    <string name="reader_display_tab">화면</string>
-    <string name="reader_tts_tab">읽어주기</string>
     <string name="reader_preview_text">다람쥐 헌 쳇바퀴에 타고파. 조용한 밤, 오래된 책장을 넘기자 잊혀진 이야기가 다시 깨어났다.</string>
-    <string name="reader_color_theme">색상 테마</string>
-    <string name="reader_theme_light">밝게</string>
-    <string name="reader_theme_sepia">세피아</string>
-    <string name="reader_theme_dark">어둡게</string>
-    <string name="reader_theme_black">검정</string>
     <string name="reader_font">글꼴</string>
-    <string name="reader_font_size">글꼴 크기</string>
-    <string name="reader_line_height">줄 간격</string>
-    <string name="reader_paragraph_spacing">문단 간격</string>
-    <string name="reader_screen_rotation">화면 회전</string>
-    <string name="reader_privacy">개인정보 보호</string>
-    <string name="reader_hide_images_setting">이미지 숨기기</string>
-    <string name="reader_hide_images_hint">탭하여 보기 · 길게 눌러 살짝 보기</string>
-    <string name="reader_reading_progress">읽기 진행도</string>
-    <string name="reader_show_chapter_percent" formatted="false">챕터 % 표시</string>
-    <string name="reader_show_book_percent" formatted="false">책 % 표시</string>
-    <string name="reader_auto_mark_read">자동으로 읽음 표시</string>
     <string name="reader_mark_at">표시 시점</string>
-    <string name="reader_within_last">마지막 범위</string>
-    <plurals name="reader_paragraph_count">
-        <item quantity="other">문단 %1$d개</item>
-    </plurals>
-    <string name="reader_easter_eggs">이스터 에그</string>
-    <string name="reader_animate_grimoire">“grimoire” 단어에 애니메이션 적용</string>
-    <string name="reader_animate_grimoire_hint">챕터에서 꾸며진 단어를 탭하면 자세히 볼 수 있어요</string>
     <string name="reader_enable_tts">텍스트 음성 변환 사용</string>
     <string name="reader_enable_tts_hint">뷰어에 재생 컨트롤 표시</string>
     <string name="reader_speech_engine">음성 엔진</string>
@@ -673,9 +630,6 @@
     <string name="reader_pitch">음높이 (기기 내장 엔진 전용)</string>
     <string name="reader_auto_advance">다음 챕터로 자동 넘기기</string>
     <string name="reader_manage_voices">음성 관리 및 추가 설정</string>
-    <string name="reader_font_sans">고딕</string>
-    <string name="reader_font_serif">명조</string>
-    <string name="reader_font_mono">고정폭</string>
     <string name="reader_mark_percent">퍼센트</string>
     <string name="reader_mark_near_end">끝부분 근처</string>
     <string name="reader_mark_at_end">끝에서</string>
