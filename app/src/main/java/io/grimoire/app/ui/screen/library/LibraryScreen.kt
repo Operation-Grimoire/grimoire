@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.library
 
 import io.grimoire.app.ui.tour.tourTarget
 import io.grimoire.app.ui.tour.TourKey
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import android.net.Uri
 import io.grimoire.app.data.book.BOOK_MIME_TYPES
 import io.grimoire.app.ui.component.PlainTooltipIconButton

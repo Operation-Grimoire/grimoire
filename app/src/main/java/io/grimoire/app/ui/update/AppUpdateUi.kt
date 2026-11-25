@@ -2,9 +2,9 @@ package io.grimoire.app.ui.update
 
 import android.content.Context
 import android.widget.Toast
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.Description
-import io.grimoire.app.ui.icon.SystemUpdateAlt
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.Description
+import io.grimoire.ui.icon.SystemUpdateAlt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues

@@ -31,7 +31,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import io.grimoire.ui.component.ColorThemePicker
+import io.grimoire.ui.component.ThemeModeSegmentedRow
+import io.grimoire.ui.icon.*
+import io.grimoire.ui.theme.GrimoireMaterialTheme
+import io.grimoire.ui.theme.isDark
+import io.grimoire.ui.theme.scheme
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
@@ -87,12 +94,8 @@ fun main(args: Array<String>) {
             },
         ) {
             SideEffect { window.minimumSize = java.awt.Dimension(900, 600) }
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                Surface(Modifier.fillMaxSize()) {
-                    DesktopReader(model, closing, closeError) {
-                        chooseManifest(window)?.let(model::load)
-                    }
-                }
+            DesktopReader(model, closing, closeError) {
+                chooseManifest(window)?.let(model::load)
             }
         }
     }
@@ -110,6 +113,9 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
     val state by model.state.collectAsState()
     val enabled = !state.busy && !closing
     val section = if (state.view.isBookView) state.bookOrigin else state.view
+    val appearance = state.appearance
+    GrimoireMaterialTheme(appearance.colorTheme.scheme(appearance.themeMode.isDark())) {
+    Surface(Modifier.fillMaxSize()) {
     Row(Modifier.fillMaxSize()) {
         DesktopNavigation(section, enabled, model)
         VerticalDivider()
@@ -130,12 +136,35 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
                 View.HISTORY -> HistoryPane(state, enabled, model, Modifier.weight(1f))
                 View.BROWSE -> BrowsePane(state, enabled, model, Modifier.weight(1f))
                 View.EXTENSIONS -> ExtensionsPane(state, enabled, model, openExtension, Modifier.weight(1f))
-                View.SETTINGS -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Settings", style = MaterialTheme.typography.headlineSmall)
-                    OfflineToggle(state.offline, enabled, model::offline)
-                    Text("Offline mode disables source requests. Saved chapters stay available.")
-                }
+                View.SETTINGS -> SettingsPane(state, enabled, model, Modifier.weight(1f))
                 View.BOOK, View.READER -> BookPane(state, enabled, model, Modifier.weight(1f))
+            }
+        }
+    }
+    }
+    }
+}
+
+@Composable
+private fun SettingsPane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier) {
+    val appearance = state.appearance
+    LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item { Text("Settings", style = MaterialTheme.typography.headlineSmall) }
+        item { Text("Appearance", style = MaterialTheme.typography.titleMedium) }
+        item {
+            ThemeModeSegmentedRow(appearance.themeMode, { if (enabled) model.setThemeMode(it) },
+                Modifier.widthIn(max = 480.dp))
+        }
+        item {
+            ColorThemePicker(appearance.colorTheme, enabled, appearance.themeMode.isDark(),
+                model::setColorTheme,
+                headerPadding = PaddingValues(0.dp), rowContentPadding = PaddingValues(0.dp))
+        }
+        item { HorizontalDivider() }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OfflineToggle(state.offline, enabled, model::offline)
+                Text("Offline mode disables source requests. Saved chapters stay available.")
             }
         }
     }
@@ -145,32 +174,28 @@ private val View.isBookView: Boolean get() = this == View.BOOK || this == View.R
 
 @Composable
 private fun DesktopNavigation(section: View, enabled: Boolean, model: ReaderModel) {
-    Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.width(168.dp).fillMaxHeight()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Grimoire", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(12.dp))
-            SectionButton("Library", section == View.LIBRARY, enabled, model::showLibrary)
-            SectionButton("Browse", section == View.BROWSE, enabled, model::showBrowse)
-            SectionButton("History", section == View.HISTORY, enabled, model::showHistory)
-            Spacer(Modifier.weight(1f))
-            SectionButton("Extensions", section == View.EXTENSIONS, enabled, model::showExtensions)
-            SectionButton("Settings", section == View.SETTINGS, enabled, model::showSettings)
-        }
+    NavigationRail(Modifier.fillMaxHeight(), header = {
+        Text("Grimoire", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 12.dp))
+    }) {
+        SectionItem("Library", AppIcons.LocalLibrary, AppIcons.LocalLibraryFilled, section == View.LIBRARY, enabled, model::showLibrary)
+        SectionItem("Browse", AppIcons.Explore, AppIcons.ExploreFilled, section == View.BROWSE, enabled, model::showBrowse)
+        SectionItem("History", AppIcons.History, AppIcons.History, section == View.HISTORY, enabled, model::showHistory)
+        Spacer(Modifier.weight(1f))
+        SectionItem("Extensions", AppIcons.Extension, AppIcons.ExtensionFilled, section == View.EXTENSIONS, enabled, model::showExtensions)
+        SectionItem("Settings", AppIcons.Settings, AppIcons.Settings, section == View.SETTINGS, enabled, model::showSettings)
+        Spacer(Modifier.height(12.dp))
     }
 }
 
 @Composable
-private fun SectionButton(label: String, active: Boolean, enabled: Boolean, navigate: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    TextButton(
+private fun SectionItem(label: String, icon: ImageVector, selectedIcon: ImageVector, active: Boolean, enabled: Boolean, navigate: () -> Unit) {
+    NavigationRailItem(
+        selected = active,
         onClick = navigate,
         enabled = enabled,
-        modifier = Modifier.fillMaxWidth().semantics { selected = active },
-        colors = if (active) ButtonDefaults.textButtonColors(
-            containerColor = colors.secondaryContainer, contentColor = colors.onSecondaryContainer,
-        ) else ButtonDefaults.textButtonColors(contentColor = colors.onSurfaceVariant),
-    ) {
-        Text(label, Modifier.fillMaxWidth())
-    }
+        icon = { Icon(if (active) selectedIcon else icon, contentDescription = null) },
+        label = { Text(label) },
+    )
 }
 
 @Composable

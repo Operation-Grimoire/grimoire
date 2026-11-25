@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Choose a light, dark or system theme and one of the Android app's color palettes in Settings; the navigation rail uses the Android app's icons."
+    }
+  ]
+}

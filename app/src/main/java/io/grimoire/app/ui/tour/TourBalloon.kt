@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.tour
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.animateIntOffsetAsState

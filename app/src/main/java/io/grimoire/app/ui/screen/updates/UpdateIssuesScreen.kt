@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.updates
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.foundation.clickable
 import io.grimoire.app.ui.component.AutoRetryOnReturn
 import io.grimoire.app.ui.component.PlainTooltipIconButton

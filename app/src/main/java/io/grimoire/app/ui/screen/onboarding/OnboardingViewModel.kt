@@ -10,9 +10,9 @@ import io.grimoire.app.data.backup.RestoreResult
 import io.grimoire.app.data.crash.AptabaseCrashReporter
 import io.grimoire.app.data.preferences.AnalyticsPreferences
 import io.grimoire.app.data.preferences.AppLanguagePreferences
-import io.grimoire.app.data.preferences.ColorTheme
+import io.grimoire.ui.theme.ColorTheme
 import io.grimoire.app.data.preferences.OnboardingPreferences
-import io.grimoire.app.data.preferences.ThemeMode
+import io.grimoire.ui.theme.ThemeMode
 import io.grimoire.app.data.preferences.UiPreferences
 import io.grimoire.app.data.preferences.stateIn
 import io.grimoire.app.extension.ExtensionManager

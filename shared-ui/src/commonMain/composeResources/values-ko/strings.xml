@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appearance_theme_system">시스템</string>
+    <string name="appearance_theme_light">밝게</string>
+    <string name="appearance_theme_dark">어둡게</string>
+    <string name="appearance_color_palette">색상 팔레트</string>
+    <string name="appearance_color_palette_summary">앱 전체에 사용할 강조 색상 팔레트를 선택하세요.</string>
+    <string name="appearance_color_palette_disabled">사용자 지정 팔레트를 선택하려면 동적 색상을 끄세요.</string>
+    <string name="color_theme_default">기본</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">바다</string>
+    <string name="color_theme_sunset">노을</string>
+    <string name="color_theme_forest">숲</string>
+    <string name="color_theme_rose">장미</string>
+    <string name="color_theme_midnight">한밤</string>
+</resources>

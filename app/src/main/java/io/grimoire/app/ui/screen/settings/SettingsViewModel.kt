@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.grimoire.app.data.preferences.BrowseDisplayMode
 import io.grimoire.app.data.preferences.BrowsePreferences
-import io.grimoire.app.data.preferences.ColorTheme
+import io.grimoire.ui.theme.ColorTheme
 import io.grimoire.app.data.preferences.LibraryDisplayMode
 import io.grimoire.app.data.preferences.LibraryPreferences
 import io.grimoire.app.data.preferences.MarkAsReadStrategy
@@ -14,7 +14,7 @@ import io.grimoire.app.data.preferences.ReaderColorTheme
 import io.grimoire.app.data.preferences.ReaderFont
 import io.grimoire.app.data.preferences.ReaderOrientation
 import io.grimoire.app.data.preferences.ReaderPreferences
-import io.grimoire.app.data.preferences.ThemeMode
+import io.grimoire.ui.theme.ThemeMode
 import io.grimoire.app.data.preferences.UiPreferences
 import io.grimoire.app.data.preferences.stateIn
 import kotlinx.coroutines.launch

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appearance_theme_system">Sistema</string>
+    <string name="appearance_theme_light">Claro</string>
+    <string name="appearance_theme_dark">Escuro</string>
+    <string name="appearance_color_palette">Paleta de cores</string>
+    <string name="appearance_color_palette_summary">Escolha a paleta de destaque usada em todo o app.</string>
+    <string name="appearance_color_palette_disabled">Desative a Cor dinâmica para escolher uma paleta personalizada.</string>
+    <string name="color_theme_default">Padrão</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">Oceano</string>
+    <string name="color_theme_sunset">Pôr do sol</string>
+    <string name="color_theme_forest">Floresta</string>
+    <string name="color_theme_rose">Rosa</string>
+    <string name="color_theme_midnight">Meia-noite</string>
+</resources>

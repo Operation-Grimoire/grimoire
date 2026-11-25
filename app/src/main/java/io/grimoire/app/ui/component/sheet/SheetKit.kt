@@ -22,7 +22,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.grimoire.app.R
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 
 /**
  * Trailing content for the summary rows: the current-selection text plus a

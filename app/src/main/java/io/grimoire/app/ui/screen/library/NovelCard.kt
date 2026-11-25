@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.library
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,7 +27,7 @@ import coil.compose.AsyncImage
 import io.grimoire.app.R
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.NovelEntity
-import io.grimoire.app.ui.theme.premiumGold
+import io.grimoire.ui.theme.premiumGold
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

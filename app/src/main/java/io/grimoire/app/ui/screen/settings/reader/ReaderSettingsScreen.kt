@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.settings.reader
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import io.grimoire.app.data.preferences.resolveReaderColorTheme
 import androidx.compose.foundation.clickable

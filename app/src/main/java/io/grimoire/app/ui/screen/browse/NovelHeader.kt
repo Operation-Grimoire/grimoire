@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest

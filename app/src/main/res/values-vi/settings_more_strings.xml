@@ -2,23 +2,10 @@
 <resources>
     <!-- Appearance -->
     <string name="appearance_theme">Chủ đề</string>
-    <string name="appearance_theme_system">Hệ thống</string>
-    <string name="appearance_theme_light">Sáng</string>
-    <string name="appearance_theme_dark">Tối</string>
     <string name="appearance_dynamic_color">Màu động</string>
     <string name="appearance_dynamic_color_summary">Điều chỉnh màu theo hình nền của bạn</string>
     <string name="appearance_synopsis_links">Liên kết trong tóm tắt</string>
     <string name="appearance_synopsis_links_summary">Hiển thị liên kết web trong phần mô tả truyện dưới dạng liên kết có thể chạm</string>
-    <string name="appearance_color_palette">Bảng màu</string>
-    <string name="appearance_color_palette_summary">Chọn bảng màu nhấn dùng trong toàn ứng dụng.</string>
-    <string name="appearance_color_palette_disabled">Tắt Màu động để chọn bảng màu tùy chỉnh.</string>
-    <string name="color_theme_default">Mặc định</string>
-    <string name="color_theme_grimoire">Grimoire</string>
-    <string name="color_theme_ocean">Đại dương</string>
-    <string name="color_theme_sunset">Hoàng hôn</string>
-    <string name="color_theme_forest">Rừng xanh</string>
-    <string name="color_theme_rose">Hoa hồng</string>
-    <string name="color_theme_midnight">Nửa đêm</string>
 
     <!-- Behavior -->
     <string name="behavior_haptics">Phản hồi xúc giác</string>

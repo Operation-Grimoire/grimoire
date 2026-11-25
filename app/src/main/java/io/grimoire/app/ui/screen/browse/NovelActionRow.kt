@@ -2,7 +2,7 @@ package io.grimoire.app.ui.screen.browse
 
 import io.grimoire.app.ui.tour.tourTarget
 import io.grimoire.app.ui.tour.TourKey
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState

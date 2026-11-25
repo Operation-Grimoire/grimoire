@@ -8,6 +8,17 @@ selects its backend adapter; see [shared storage](shared-storage.md). Both packa
 formats use the extension repository's existing source;
 the application does not compile or copy a Royal Road implementation.
 
+## Shared UI
+
+`:shared-ui` is a Kotlin Multiplatform module with Android and desktop JVM targets.
+It holds Compose UI that both apps render: the color palettes and typography, the
+Material Symbols icons (`AppIcons`) and the theme controls. Composables take plain
+state and callbacks; Android ViewModels and the desktop `ReaderModel` stay in their
+apps. Strings used by shared composables are Compose Multiplatform resources in
+`shared-ui/src/commonMain/composeResources`, with the same 18 translations as the
+Android app. `LocaleCoverageTest` checks both sets. Move a screen's composables here
+before giving Desktop its own version of that screen.
+
 ## Build and run
 
 Use JDK 17 and the package-read credentials described in [CONTRIBUTING](../CONTRIBUTING.md).

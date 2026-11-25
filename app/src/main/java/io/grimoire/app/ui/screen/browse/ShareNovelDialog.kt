@@ -42,9 +42,9 @@ import coil.compose.AsyncImage
 import io.grimoire.app.R
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.ContentCopy
-import io.grimoire.app.ui.icon.Share
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.ContentCopy
+import io.grimoire.ui.icon.Share
 
 /**
  * Full-screen share surface: the rendered card takes the page, with the share

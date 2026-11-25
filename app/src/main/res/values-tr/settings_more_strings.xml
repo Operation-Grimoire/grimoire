@@ -2,23 +2,10 @@
 <resources>
     <!-- Appearance -->
     <string name="appearance_theme">Tema</string>
-    <string name="appearance_theme_system">Sistem</string>
-    <string name="appearance_theme_light">Açık</string>
-    <string name="appearance_theme_dark">Koyu</string>
     <string name="appearance_dynamic_color">Dinamik Renk</string>
     <string name="appearance_dynamic_color_summary">Renkleri duvar kâğıdınıza uyarla</string>
     <string name="appearance_synopsis_links">Özetlerdeki bağlantılar</string>
     <string name="appearance_synopsis_links_summary">Roman açıklamalarındaki web bağlantılarını dokunulabilir bağlantı olarak göster</string>
-    <string name="appearance_color_palette">Renk paleti</string>
-    <string name="appearance_color_palette_summary">Uygulama genelinde kullanılan vurgu paletini seçin.</string>
-    <string name="appearance_color_palette_disabled">Özel bir palet seçmek için Dinamik Renk’i kapatın.</string>
-    <string name="color_theme_default">Varsayılan</string>
-    <string name="color_theme_grimoire">Grimoire</string>
-    <string name="color_theme_ocean">Okyanus</string>
-    <string name="color_theme_sunset">Gün batımı</string>
-    <string name="color_theme_forest">Orman</string>
-    <string name="color_theme_rose">Gül</string>
-    <string name="color_theme_midnight">Gece yarısı</string>
 
     <!-- Behavior -->
     <string name="behavior_haptics">Dokunsal geri bildirim</string>

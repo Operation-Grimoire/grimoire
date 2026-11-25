@@ -21,6 +21,9 @@ dependencyResolutionManagement {
         maven {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/Operation-Grimoire/grimoire-extensions-api")
+            content {
+                includeGroupByRegex("io\\.grimoire(\\..*)?")
+            }
             credentials {
                 username = System.getenv("GITHUB_ACTOR") ?: ""
                 password = System.getenv("GITHUB_TOKEN") ?: ""
@@ -29,6 +32,9 @@ dependencyResolutionManagement {
         maven {
             name = "BrowserSessionsPackages"
             url = uri("https://maven.pkg.github.com/Operation-Grimoire/browser-sessions")
+            content {
+                includeGroupByRegex("io\\.grimoire(\\..*)?")
+            }
             credentials {
                 username = System.getenv("GITHUB_ACTOR") ?: ""
                 password = System.getenv("GITHUB_TOKEN") ?: ""
@@ -42,7 +48,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "Grimoire"
 include(":app")
-include(":reading-core", ":desktop")
+include(":reading-core", ":shared-ui", ":desktop")
 
 // Opt-in cross-repository development; released dependency pins remain the default.
 providers.gradleProperty("grimoireApiDir").orNull?.let { apiDirectory ->

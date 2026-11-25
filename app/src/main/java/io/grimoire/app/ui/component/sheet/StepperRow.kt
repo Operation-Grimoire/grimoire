@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import io.grimoire.app.R
 import io.grimoire.app.ui.component.PlainTooltipIconButton
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 
 /** Numeric setting row: label left, − value + right. One stepper for the whole app. */
 @Composable

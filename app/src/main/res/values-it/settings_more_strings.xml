@@ -2,23 +2,10 @@
 <resources>
     <!-- Appearance -->
     <string name="appearance_theme">Tema</string>
-    <string name="appearance_theme_system">Sistema</string>
-    <string name="appearance_theme_light">Chiaro</string>
-    <string name="appearance_theme_dark">Scuro</string>
     <string name="appearance_dynamic_color">Colori dinamici</string>
     <string name="appearance_dynamic_color_summary">Adatta i colori allo sfondo</string>
     <string name="appearance_synopsis_links">Link nelle sinossi</string>
     <string name="appearance_synopsis_links_summary">Mostra i link web nelle descrizioni dei romanzi come link toccabili</string>
-    <string name="appearance_color_palette">Tavolozza colori</string>
-    <string name="appearance_color_palette_summary">Scegli la tavolozza dei colori d’accento usata nell’app.</string>
-    <string name="appearance_color_palette_disabled">Disattiva Colori dinamici per scegliere una tavolozza personalizzata.</string>
-    <string name="color_theme_default">Predefinito</string>
-    <string name="color_theme_grimoire">Grimoire</string>
-    <string name="color_theme_ocean">Oceano</string>
-    <string name="color_theme_sunset">Tramonto</string>
-    <string name="color_theme_forest">Foresta</string>
-    <string name="color_theme_rose">Rosa</string>
-    <string name="color_theme_midnight">Mezzanotte</string>
 
     <!-- Behavior -->
     <string name="behavior_haptics">Feedback aptico</string>

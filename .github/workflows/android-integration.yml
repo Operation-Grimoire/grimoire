@@ -64,7 +64,7 @@ jobs:
           GITHUB_TOKEN: ''
           GH_TOKEN: ''
         run: |
-          bash ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-daemon --no-configuration-cache -Pkotlin.compiler.execution.strategy=in-process --console=plain
+          bash ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --no-configuration-cache -Pkotlin.compiler.execution.strategy=in-process --console=plain
           mkdir -p build/android-integration
           cp app/build/outputs/apk/debug/app-debug.apk build/android-integration/host.apk
           cp app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk build/android-integration/tests.apk

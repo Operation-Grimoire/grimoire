@@ -2,23 +2,10 @@
 <resources>
     <!-- Appearance -->
     <string name="appearance_theme">Thème</string>
-    <string name="appearance_theme_system">Système</string>
-    <string name="appearance_theme_light">Clair</string>
-    <string name="appearance_theme_dark">Sombre</string>
     <string name="appearance_dynamic_color">Couleurs dynamiques</string>
     <string name="appearance_dynamic_color_summary">Adapter les couleurs à votre fond d’écran</string>
     <string name="appearance_synopsis_links">Liens dans les synopsis</string>
     <string name="appearance_synopsis_links_summary">Afficher les liens web des descriptions de romans comme liens cliquables</string>
-    <string name="appearance_color_palette">Palette de couleurs</string>
-    <string name="appearance_color_palette_summary">Choisissez la palette d’accent utilisée dans l’application.</string>
-    <string name="appearance_color_palette_disabled">Désactivez Couleurs dynamiques pour choisir une palette personnalisée.</string>
-    <string name="color_theme_default">Par défaut</string>
-    <string name="color_theme_grimoire">Grimoire</string>
-    <string name="color_theme_ocean">Océan</string>
-    <string name="color_theme_sunset">Coucher de soleil</string>
-    <string name="color_theme_forest">Forêt</string>
-    <string name="color_theme_rose">Rose</string>
-    <string name="color_theme_midnight">Minuit</string>
 
     <!-- Behavior -->
     <string name="behavior_haptics">Retour haptique</string>

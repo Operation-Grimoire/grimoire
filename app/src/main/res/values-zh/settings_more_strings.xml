@@ -1,23 +1,10 @@
 <resources>
     <!-- 外观 -->
     <string name="appearance_theme">主题</string>
-    <string name="appearance_theme_system">跟随系统</string>
-    <string name="appearance_theme_light">浅色</string>
-    <string name="appearance_theme_dark">深色</string>
     <string name="appearance_dynamic_color">动态取色</string>
     <string name="appearance_dynamic_color_summary">根据壁纸调整应用配色</string>
     <string name="appearance_synopsis_links">简介中的链接</string>
     <string name="appearance_synopsis_links_summary">将小说简介中的网页地址显示为可点击链接</string>
-    <string name="appearance_color_palette">配色方案</string>
-    <string name="appearance_color_palette_summary">选择应用使用的强调色方案。</string>
-    <string name="appearance_color_palette_disabled">关闭动态取色后可选择自定义配色。</string>
-    <string name="color_theme_default">默认</string>
-    <string name="color_theme_grimoire">Grimoire</string>
-    <string name="color_theme_ocean">海洋</string>
-    <string name="color_theme_sunset">落日</string>
-    <string name="color_theme_forest">森林</string>
-    <string name="color_theme_rose">玫瑰</string>
-    <string name="color_theme_midnight">午夜</string>
 
     <!-- 行为 -->
     <string name="behavior_haptics">触感反馈</string>

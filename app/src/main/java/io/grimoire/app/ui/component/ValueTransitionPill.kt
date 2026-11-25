@@ -17,8 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.ArrowForward
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.ArrowForward
 
 /**
  * Single-line pill showing a `from -> to` transition (such as version

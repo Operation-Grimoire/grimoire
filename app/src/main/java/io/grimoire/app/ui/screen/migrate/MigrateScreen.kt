@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.migrate
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.foundation.layout.Box
 import io.grimoire.app.ui.component.PlainTooltipIconButton
 import androidx.compose.foundation.layout.fillMaxSize

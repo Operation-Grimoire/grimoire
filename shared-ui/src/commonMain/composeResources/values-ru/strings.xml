@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appearance_theme_system">Системная</string>
+    <string name="appearance_theme_light">Светлая</string>
+    <string name="appearance_theme_dark">Тёмная</string>
+    <string name="appearance_color_palette">Цветовая палитра</string>
+    <string name="appearance_color_palette_summary">Выберите акцентную палитру для всего приложения.</string>
+    <string name="appearance_color_palette_disabled">Отключите динамические цвета, чтобы выбрать свою палитру.</string>
+    <string name="color_theme_default">По умолчанию</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">Океан</string>
+    <string name="color_theme_sunset">Закат</string>
+    <string name="color_theme_forest">Лес</string>
+    <string name="color_theme_rose">Роза</string>
+    <string name="color_theme_midnight">Полночь</string>
+</resources>

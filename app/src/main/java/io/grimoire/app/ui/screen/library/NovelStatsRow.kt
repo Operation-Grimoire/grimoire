@@ -1,6 +1,6 @@
 package io.grimoire.app.ui.screen.library
 
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -20,7 +20,7 @@ import io.grimoire.app.R
 import io.grimoire.app.data.local.entity.NovelChapterStats
 import io.grimoire.app.data.local.entity.effectiveTotal
 import io.grimoire.app.data.local.entity.readPercent
-import io.grimoire.app.ui.theme.premiumGold
+import io.grimoire.ui.theme.premiumGold
 
 internal data class NovelBadgeVisibility(
     val showRead: Boolean,

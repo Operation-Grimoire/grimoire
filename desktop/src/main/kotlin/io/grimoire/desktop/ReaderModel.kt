@@ -18,6 +18,8 @@ import io.grimoire.reading.ChapterLoadException
 import io.grimoire.reading.storage.*
 import io.grimoire.reading.anchor.*
 import io.grimoire.reading.encodeChapterContent
+import io.grimoire.ui.theme.ColorTheme
+import io.grimoire.ui.theme.ThemeMode
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -61,6 +63,7 @@ data class ReaderState(
     val pendingRepository: PendingRepository? = null,
     val extensionNotice: String? = null,
     val localExtension: String? = null,
+    val appearance: DesktopAppearance = DesktopAppearance(),
 )
 
 data class BrowseSource(val sourceId: Long, val name: String, val lang: String)
@@ -87,7 +90,7 @@ class ReaderModel(
     private val installed = linkedMapOf<String, LocalExtension>()
     private var sessionExtension: LocalExtension? = null
     private var extensionFailures: Map<String, String> = emptyMap()
-    private val mutable = MutableStateFlow(ReaderState(library = library.saved(), historyRecording = library.historyRecording()))
+    private val mutable = MutableStateFlow(ReaderState(library = library.saved(), historyRecording = library.historyRecording(), appearance = library.appearance()))
     // The history worker is drained separately from navigation jobs before closing the store.
     private val historyScope = CoroutineScope(SupervisorJob() + operationDispatcher)
     private val historyWrites = OpenedHistoryWrites(historyScope, DesktopOpenedHistoryDao(library)) { failure ->
@@ -350,6 +353,21 @@ class ReaderModel(
         } finally {
             val recording = library.historyRecording()
             mutable.update { it.copy(historyRecording = recording) }
+        }
+    }
+
+    fun setAppearance(appearance: DesktopAppearance) = updateAppearance { library.setAppearance(appearance) }
+
+    fun setThemeMode(themeMode: ThemeMode) = updateAppearance { library.setThemeMode(themeMode) }
+
+    fun setColorTheme(colorTheme: ColorTheme) = updateAppearance { library.setColorTheme(colorTheme) }
+
+    private fun updateAppearance(write: () -> Unit) = operate {
+        try {
+            write()
+        } finally {
+            val stored = library.appearance()
+            mutable.update { it.copy(appearance = stored) }
         }
     }
 

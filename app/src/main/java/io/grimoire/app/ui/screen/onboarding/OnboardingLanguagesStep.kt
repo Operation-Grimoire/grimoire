@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.dp
 import io.grimoire.api.model.lang.Language
 import io.grimoire.app.R
 import io.grimoire.app.ui.component.AppSearchField
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.Language as LanguageIcon
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.Language as LanguageIcon
 
 @Composable
 internal fun OnboardingLanguagesStep(

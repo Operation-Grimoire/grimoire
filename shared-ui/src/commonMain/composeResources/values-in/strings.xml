@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appearance_theme_system">Sistem</string>
+    <string name="appearance_theme_light">Terang</string>
+    <string name="appearance_theme_dark">Gelap</string>
+    <string name="appearance_color_palette">Palet warna</string>
+    <string name="appearance_color_palette_summary">Pilih palet aksen yang dipakai di seluruh aplikasi.</string>
+    <string name="appearance_color_palette_disabled">Matikan Warna Dinamis untuk memilih palet kustom.</string>
+    <string name="color_theme_default">Default</string>
+    <string name="color_theme_grimoire">Grimoire</string>
+    <string name="color_theme_ocean">Samudra</string>
+    <string name="color_theme_sunset">Senja</string>
+    <string name="color_theme_forest">Hutan</string>
+    <string name="color_theme_rose">Mawar</string>
+    <string name="color_theme_midnight">Tengah Malam</string>
+</resources>

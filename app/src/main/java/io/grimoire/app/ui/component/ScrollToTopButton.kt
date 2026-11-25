@@ -26,8 +26,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import io.grimoire.app.R
-import io.grimoire.app.ui.icon.AppIcons
-import io.grimoire.app.ui.icon.KeyboardDoubleArrowUp
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.KeyboardDoubleArrowUp
 
 /** How many items must scroll past before the jump-to-top button appears. */
 private const val SCROLL_TOP_THRESHOLD = 10

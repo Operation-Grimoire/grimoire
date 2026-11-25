@@ -11,6 +11,7 @@
 /build
 /reading-core/build/
 /desktop/build/
+/shared-ui/build/
 /desktop/tools/__pycache__/
 /.github/scripts/__pycache__/
 /captures

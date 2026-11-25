@@ -1,21 +1,11 @@
 package io.grimoire.app.data.preferences
 
+import io.grimoire.ui.theme.ColorTheme
+import io.grimoire.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 import javax.inject.Singleton
-
-enum class ThemeMode { SYSTEM, LIGHT, DARK }
-
-enum class ColorTheme(val displayName: String) {
-    DEFAULT("Default"),
-    GRIMOIRE("Grimoire"),
-    OCEAN("Ocean"),
-    SUNSET("Sunset"),
-    FOREST("Forest"),
-    ROSE("Rose"),
-    MIDNIGHT("Midnight"),
-}
 
 /** Everything the activity needs before it can draw the first themed frame. */
 data class UiThemeState(

@@ -16,7 +16,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.grimoire.app.R
 import io.grimoire.app.ui.component.PlainTooltipIconButton
-import io.grimoire.app.ui.icon.*
+import io.grimoire.ui.icon.*
 
 /**
  * M3 full-screen dialog: close (X) left, title, optional confirm action right.
