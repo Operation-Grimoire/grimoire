@@ -58,8 +58,8 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
                     showRating = false,
                 )
             }
-            // Continue where the reader left off, or start at the first readable chapter.
-            val target = resume ?: book.chapters.firstOrNull { !it.locked }
+            // Continue where the reader left off, or start at the first readable chapter in reading order.
+            val target = resume ?: readingOrder(book.chapters).firstOrNull { !it.locked }
             if (target != null) item {
                 Button(
                     onClick = { model.read(target) },
