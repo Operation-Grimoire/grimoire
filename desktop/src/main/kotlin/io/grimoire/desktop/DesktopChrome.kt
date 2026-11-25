@@ -17,6 +17,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -48,6 +49,14 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
+import java.awt.Cursor
+import java.awt.MouseInfo
+import java.awt.Point
+import java.awt.Rectangle
+import java.awt.Window as AwtWindow
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -194,18 +203,22 @@ private fun WindowControlGlyph(
 ) {
     val hoverSource = remember { MutableInteractionSource() }
     val hovered by hoverSource.collectIsHoveredAsState()
+    val contentColor = LocalContentColor.current
     val bg by animateColorAsState(
         targetValue = when {
             hovered && isClose -> MaterialTheme.colorScheme.error.copy(alpha = 0.85f)
-            hovered -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+            hovered -> contentColor.copy(alpha = 0.12f)
             else -> Color.Transparent
         },
         animationSpec = tween(110),
         label = "winCtrlBg",
     )
     val fg by animateColorAsState(
-        targetValue = if (hovered && isClose) MaterialTheme.colorScheme.onError
-        else MaterialTheme.colorScheme.onSurfaceVariant,
+        targetValue = when {
+            hovered && isClose -> MaterialTheme.colorScheme.onError
+            hovered -> contentColor
+            else -> contentColor.copy(alpha = 0.78f)
+        },
         animationSpec = tween(110),
         label = "winCtrlFg",
     )
@@ -221,6 +234,82 @@ private fun WindowControlGlyph(
     ) {
         Canvas(Modifier.size(16.dp)) { draw(fg) }
     }
+}
+
+private enum class ResizeEdge(val cursor: Int, val left: Boolean = false, val right: Boolean = false, val top: Boolean = false, val bottom: Boolean = false) {
+    LEFT(Cursor.W_RESIZE_CURSOR, left = true),
+    RIGHT(Cursor.E_RESIZE_CURSOR, right = true),
+    TOP(Cursor.N_RESIZE_CURSOR, top = true),
+    BOTTOM(Cursor.S_RESIZE_CURSOR, bottom = true),
+    TOP_LEFT(Cursor.NW_RESIZE_CURSOR, left = true, top = true),
+    TOP_RIGHT(Cursor.NE_RESIZE_CURSOR, right = true, top = true),
+    BOTTOM_LEFT(Cursor.SW_RESIZE_CURSOR, left = true, bottom = true),
+    BOTTOM_RIGHT(Cursor.SE_RESIZE_CURSOR, right = true, bottom = true),
+}
+
+/** Invisible perimeter edge and corner handles so an undecorated desktop window remains freely resizable. */
+@Composable
+internal fun WindowResizeOverlay(window: AwtWindow, enabled: Boolean) {
+    if (!enabled) return
+    val edge = 5.dp
+    val corner = 12.dp
+    Box(Modifier.fillMaxSize()) {
+        ResizeHandle(window, ResizeEdge.LEFT, Modifier.align(Alignment.CenterStart).fillMaxHeight().padding(vertical = corner).width(edge))
+        ResizeHandle(window, ResizeEdge.RIGHT, Modifier.align(Alignment.CenterEnd).fillMaxHeight().padding(vertical = corner).width(edge))
+        ResizeHandle(window, ResizeEdge.TOP, Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal = corner).height(edge))
+        ResizeHandle(window, ResizeEdge.BOTTOM, Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = corner).height(edge))
+        ResizeHandle(window, ResizeEdge.TOP_LEFT, Modifier.align(Alignment.TopStart).size(corner))
+        ResizeHandle(window, ResizeEdge.TOP_RIGHT, Modifier.align(Alignment.TopEnd).size(corner))
+        ResizeHandle(window, ResizeEdge.BOTTOM_LEFT, Modifier.align(Alignment.BottomStart).size(corner))
+        ResizeHandle(window, ResizeEdge.BOTTOM_RIGHT, Modifier.align(Alignment.BottomEnd).size(corner))
+    }
+}
+
+@Composable
+private fun ResizeHandle(window: AwtWindow, edge: ResizeEdge, modifier: Modifier) {
+    val icon = remember(edge) { PointerIcon(Cursor.getPredefinedCursor(edge.cursor)) }
+    Box(
+        modifier = modifier
+            .pointerHoverIcon(icon)
+            .pointerInput(window, edge) {
+                var startMouse: Point? = null
+                var startBounds: Rectangle? = null
+                detectDragGestures(
+                    onDragStart = {
+                        startMouse = MouseInfo.getPointerInfo()?.location
+                        startBounds = window.bounds
+                    },
+                    onDragEnd = { startMouse = null; startBounds = null },
+                    onDragCancel = { startMouse = null; startBounds = null },
+                ) { change, _ ->
+                    change.consume()
+                    val origin = startMouse ?: return@detectDragGestures
+                    val bounds = startBounds ?: return@detectDragGestures
+                    val now = MouseInfo.getPointerInfo()?.location ?: return@detectDragGestures
+                    val dx = now.x - origin.x
+                    val dy = now.y - origin.y
+                    val minW = window.minimumSize.width.coerceAtLeast(640)
+                    val minH = window.minimumSize.height.coerceAtLeast(480)
+                    var x = bounds.x
+                    var y = bounds.y
+                    var w = bounds.width
+                    var h = bounds.height
+                    if (edge.right) w = (bounds.width + dx).coerceAtLeast(minW)
+                    if (edge.bottom) h = (bounds.height + dy).coerceAtLeast(minH)
+                    if (edge.left) {
+                        val clampedW = (bounds.width - dx).coerceAtLeast(minW)
+                        x = bounds.x + (bounds.width - clampedW)
+                        w = clampedW
+                    }
+                    if (edge.top) {
+                        val clampedH = (bounds.height - dy).coerceAtLeast(minH)
+                        y = bounds.y + (bounds.height - clampedH)
+                        h = clampedH
+                    }
+                    window.setBounds(x, y, w, h)
+                }
+            },
+    )
 }
 
 /**

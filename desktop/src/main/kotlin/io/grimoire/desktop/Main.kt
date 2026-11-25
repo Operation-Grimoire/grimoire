@@ -115,7 +115,7 @@ fun main(args: Array<String>) {
             },
             onCloseRequest = requestClose,
         ) {
-            SideEffect { window.minimumSize = java.awt.Dimension(900, 600) }
+            SideEffect { window.minimumSize = java.awt.Dimension(760, 520) }
             val maximized = windowState.placement == WindowPlacement.Maximized
             val chrome = remember(maximized) {
                 WindowChrome(
@@ -133,8 +133,11 @@ fun main(args: Array<String>) {
                 )
             }
             CompositionLocalProvider(LocalWindowChrome provides chrome) {
-                DesktopReader(model, closing, closeError) {
-                    chooseManifest(window)?.let(model::load)
+                Box(Modifier.fillMaxSize()) {
+                    DesktopReader(model, closing, closeError) {
+                        chooseManifest(window)?.let(model::load)
+                    }
+                    WindowResizeOverlay(window = window, enabled = !maximized)
                 }
             }
         }
