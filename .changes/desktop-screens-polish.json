@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "History, Extensions and Book Details now match Android Grimoire: History groups entries by day with book covers, clickable rows and a Switch for recording; Extensions uses clean list rows, top-bar search and a Repositories dialog; Book Details adds a chapter sort toggle and Play CTA icon."
+    }
+  ]
+}
