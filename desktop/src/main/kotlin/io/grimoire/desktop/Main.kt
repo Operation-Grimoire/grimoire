@@ -1,60 +1,42 @@
 package io.grimoire.desktop
 
-import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import io.grimoire.ui.component.ColorThemePicker
-import io.grimoire.ui.library.ChapterCounts
-import io.grimoire.ui.library.NovelCoverCard
-import io.grimoire.ui.component.ThemeModeSegmentedRow
-import io.grimoire.ui.icon.*
-import io.grimoire.ui.theme.GrimoireMaterialTheme
-import io.grimoire.ui.theme.isDark
-import io.grimoire.ui.theme.scheme
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import io.grimoire.api.model.novel.Chapter
-import io.grimoire.api.model.novel.PageContent
 import io.grimoire.api.network.SourceNetwork
-import io.grimoire.reading.ChapterKey
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.collectLatest
+import io.grimoire.ui.component.ColorThemePicker
+import io.grimoire.ui.component.ThemeModeSegmentedRow
+import io.grimoire.ui.icon.*
+import io.grimoire.ui.library.ChapterCounts
+import io.grimoire.ui.library.NovelCoverCard
+import io.grimoire.ui.theme.GrimoireMaterialTheme
+import io.grimoire.ui.theme.isDark
+import io.grimoire.ui.theme.scheme
 import kotlinx.coroutines.launch
 import java.awt.FileDialog
 import java.awt.Frame
@@ -97,6 +79,7 @@ fun main(args: Array<String>) {
             onCloseRequest = {
                 if (!closing) {
                     closing = true
+                    closeError = null
                     scope.launch {
                         try { model.close(); exitApplication() }
                         catch (failure: Exception) { closeError = "Could not save the library: ${failure.message}"; closing = false }
@@ -134,27 +117,29 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
         return@Surface
     }
     Row(Modifier.fillMaxSize()) {
-        DesktopNavigation(section, enabled, model)
-        VerticalDivider()
-        Column(Modifier.weight(1f).fillMaxHeight().padding(horizontal = 24.dp, vertical = 16.dp)) {
-            if (state.view != View.SETTINGS) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    if (state.view.isBookView) TextButton(onClick = model::back, enabled = enabled) { Text("Back") }
-                    Spacer(Modifier.weight(1f))
-                    OfflineToggle(state.offline, enabled, model::offline)
+        DesktopNavigation(section, state.offline, enabled, model)
+        Box(Modifier.weight(1f).fillMaxHeight()) {
+            Crossfade(targetState = state.view, animationSpec = tween(150), label = "desktopView") { view ->
+                when (view) {
+                    View.LIBRARY -> LibraryPane(state, enabled, model, Modifier.fillMaxSize())
+                    View.HISTORY -> HistoryPane(state, enabled, model, Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp))
+                    View.BROWSE -> BrowsePane(state, enabled, model, Modifier.fillMaxSize())
+                    View.EXTENSIONS -> ExtensionsPane(state, enabled, model, openExtension, Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp))
+                    View.SETTINGS -> SettingsPane(state, enabled, model, Modifier.fillMaxSize())
+                    View.BOOK, View.READER -> BookScreen(state, enabled, model, Modifier.fillMaxSize())
                 }
             }
-            if (state.busy || closing) LinearProgressIndicator(Modifier.fillMaxWidth())
-            (closeError ?: state.error)?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 12.dp))
+            if (state.busy || closing) {
+                LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter))
             }
-            when (state.view) {
-                View.LIBRARY -> LibraryPane(state, enabled, model, Modifier.weight(1f))
-                View.HISTORY -> HistoryPane(state, enabled, model, Modifier.weight(1f))
-                View.BROWSE -> BrowsePane(state, enabled, model, Modifier.weight(1f))
-                View.EXTENSIONS -> ExtensionsPane(state, enabled, model, openExtension, Modifier.weight(1f))
-                View.SETTINGS -> SettingsPane(state, enabled, model, Modifier.weight(1f))
-                View.BOOK, View.READER -> BookScreen(state, enabled, model, Modifier.weight(1f))
+            val error = closeError ?: state.error
+            var dismissedError by remember(error) { mutableStateOf(false) }
+            if (error != null && !dismissedError) {
+                DesktopErrorBanner(
+                    message = error,
+                    onDismiss = { dismissedError = true },
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp).widthIn(max = 560.dp),
+                )
             }
         }
     }
@@ -163,27 +148,76 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsPane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier) {
     val appearance = state.appearance
-    LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item { Text("Settings", style = MaterialTheme.typography.headlineSmall) }
-        item { Text("Appearance", style = MaterialTheme.typography.titleMedium) }
-        item {
-            ThemeModeSegmentedRow(appearance.themeMode, { if (enabled) model.setThemeMode(it) },
-                Modifier.widthIn(max = 480.dp))
-        }
-        item {
-            ColorThemePicker(appearance.colorTheme, enabled, appearance.themeMode.isDark(),
-                model::setColorTheme,
-                headerPadding = PaddingValues(0.dp), rowContentPadding = PaddingValues(0.dp))
-        }
-        item { HorizontalDivider() }
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OfflineToggle(state.offline, enabled, model::offline)
-                Text("Offline mode disables source requests. Saved chapters stay available.")
+    val scroll = rememberLazyListState()
+    Scaffold(
+        modifier = modifier,
+        topBar = { TopAppBar(title = { Text("Settings") }) },
+    ) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            LazyColumn(
+                state = scroll,
+                contentPadding = PaddingValues(vertical = 8.dp),
+                modifier = Modifier.widthIn(max = 720.dp).fillMaxHeight().align(Alignment.TopCenter),
+            ) {
+                item {
+                    Text(
+                        "Appearance",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
+                    )
+                }
+                item {
+                    ListItem(
+                        headlineContent = { Text("Theme") },
+                        supportingContent = {
+                            ThemeModeSegmentedRow(
+                                appearance.themeMode,
+                                { if (enabled) model.setThemeMode(it) },
+                                Modifier.padding(top = 8.dp).widthIn(max = 420.dp),
+                            )
+                        },
+                    )
+                }
+                item {
+                    ColorThemePicker(
+                        appearance.colorTheme,
+                        enabled,
+                        appearance.themeMode.isDark(),
+                        model::setColorTheme,
+                    )
+                }
+                item { HorizontalDivider(Modifier.padding(vertical = 8.dp)) }
+                item {
+                    Text(
+                        "Network",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
+                    )
+                }
+                item {
+                    ListItem(
+                        leadingContent = { Icon(AppIcons.FileDownloadOff, contentDescription = null) },
+                        headlineContent = { Text("Offline mode") },
+                        supportingContent = { Text("Disable source requests. Saved chapters stay available.") },
+                        trailingContent = {
+                            Switch(checked = state.offline, onCheckedChange = null, enabled = enabled)
+                        },
+                        modifier = Modifier.toggleable(
+                            value = state.offline,
+                            enabled = enabled,
+                            role = Role.Switch,
+                            onValueChange = model::offline,
+                        ),
+                    )
+                }
             }
+            VerticalScrollbar(rememberScrollbarAdapter(scroll), Modifier.fillMaxHeight().align(Alignment.CenterEnd))
         }
     }
 }
@@ -191,14 +225,57 @@ private fun SettingsPane(state: ReaderState, enabled: Boolean, model: ReaderMode
 private val View.isBookView: Boolean get() = this == View.BOOK || this == View.READER
 
 @Composable
-private fun DesktopNavigation(section: View, enabled: Boolean, model: ReaderModel) {
-    NavigationRail(Modifier.fillMaxHeight(), header = {
-        Text("Grimoire", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 12.dp))
-    }) {
+private fun DesktopNavigation(section: View, offline: Boolean, enabled: Boolean, model: ReaderModel) {
+    NavigationRail(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxHeight(),
+        header = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(top = 12.dp, bottom = 8.dp),
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(40.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(AppIcons.AutoStories, contentDescription = null, modifier = Modifier.size(22.dp))
+                    }
+                }
+                Text(
+                    "Grimoire",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+    ) {
         SectionItem("Library", AppIcons.LocalLibrary, AppIcons.LocalLibraryFilled, section == View.LIBRARY, enabled, model::showLibrary)
         SectionItem("Browse", AppIcons.Explore, AppIcons.ExploreFilled, section == View.BROWSE, enabled, model::showBrowse)
         SectionItem("History", AppIcons.History, AppIcons.History, section == View.HISTORY, enabled, model::showHistory)
         Spacer(Modifier.weight(1f))
+        if (offline) {
+            Surface(
+                onClick = { if (enabled) model.offline(false) },
+                enabled = enabled,
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                ) {
+                    Icon(AppIcons.FileDownloadOff, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text("Offline", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
         SectionItem("Extensions", AppIcons.Extension, AppIcons.ExtensionFilled, section == View.EXTENSIONS, enabled, model::showExtensions)
         SectionItem("Settings", AppIcons.Settings, AppIcons.Settings, section == View.SETTINGS, enabled, model::showSettings)
         Spacer(Modifier.height(12.dp))
@@ -216,68 +293,110 @@ private fun SectionItem(label: String, icon: ImageVector, selectedIcon: ImageVec
     )
 }
 
-@Composable
-private fun OfflineToggle(offline: Boolean, enabled: Boolean, change: (Boolean) -> Unit) {
-    Row(
-        Modifier.toggleable(value = offline, enabled = enabled, role = Role.Checkbox, onValueChange = change),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Checkbox(checked = offline, onCheckedChange = null, enabled = enabled, modifier = Modifier.padding(end = 8.dp))
-        Text("Offline")
-    }
-}
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BrowsePane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier) {
     val full: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope) -> GridItemSpan = { GridItemSpan(it.maxLineSpan) }
-    LazyVerticalGrid(GridCells.Adaptive(COVER_WIDTH), modifier, horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item(span = full) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(if (state.sources.isEmpty()) "Browse sources" else "Browse", style = MaterialTheme.typography.headlineSmall)
-                if (state.sources.isNotEmpty()) SourcePicker(state, enabled, model)
-            }
-        }
-        when {
-            state.sourceName == null -> item(span = full) {
-                Column {
-                    Text("Install an extension to browse its catalog.")
-                    TextButton(onClick = model::showExtensions, enabled = enabled) { Text("Manage extensions") }
+    val gridState = rememberLazyGridState()
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text(if (state.sources.isEmpty()) "Browse sources" else "Browse") },
+                actions = {
+                    if (state.sources.isNotEmpty()) {
+                        Box(Modifier.padding(end = 16.dp)) { SourcePicker(state, enabled, model) }
+                    }
+                },
+            )
+        },
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            when {
+                state.sourceName == null -> DesktopEmptyState(
+                    icon = AppIcons.Extension,
+                    title = "No sources installed",
+                    subtitle = "Install an extension to browse its catalog.",
+                    actionLabel = "Manage extensions",
+                    onAction = model::showExtensions,
+                    actionEnabled = enabled,
+                )
+                state.offline -> DesktopEmptyState(
+                    icon = AppIcons.FileDownloadOff,
+                    title = "Offline mode",
+                    subtitle = "Go online to browse this source.",
+                    actionLabel = "Go online",
+                    onAction = { model.offline(false) },
+                    actionEnabled = enabled,
+                )
+                state.browseModes.isEmpty() -> DesktopEmptyState(
+                    icon = AppIcons.Explore,
+                    title = "No catalog available",
+                    subtitle = "${state.sourceName} has no catalog to browse.",
+                )
+                else -> {
+                    BrowseControls(state, enabled, model)
+                    if (state.browseMode != null) {
+                        Box(Modifier.weight(1f).fillMaxWidth()) {
+                            LazyVerticalGrid(
+                                state = gridState,
+                                columns = GridCells.Adaptive(COVER_WIDTH),
+                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                items(state.novels, key = { it.url }) { novel ->
+                                    NovelCoverCard(
+                                        title = novel.title,
+                                        cover = { BookCover(novel.thumbnailUrl, novel.title, it) },
+                                        stats = null, includeLockedInTotals = false, showReadBadge = false, showDownloadedBadge = false,
+                                        showLockedBadge = false, showRatingBadge = false, showEpubBadge = false, isEpub = false,
+                                        notify = false, autoDownload = false, userRating = null, selected = false,
+                                        onClick = { if (enabled) model.details(novel) }, onLongClick = {},
+                                    )
+                                }
+                                item(span = full) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                    ) {
+                                        BrowseFooter(state, enabled, model)
+                                    }
+                                }
+                            }
+                            VerticalScrollbar(rememberScrollbarAdapter(gridState), Modifier.fillMaxHeight().align(Alignment.CenterEnd))
+                        }
+                    }
                 }
             }
-            state.offline -> item(span = full) { Text("Go online to browse this source.") }
-            state.browseModes.isEmpty() -> item(span = full) { Text("${state.sourceName} has no catalog to browse.") }
-            else -> item(span = full) { BrowseControls(state, enabled, model) }
-        }
-        if (state.sourceName != null && !state.offline && state.browseMode != null) {
-            items(state.novels, key = { it.url }) { novel ->
-                NovelCoverCard(
-                    title = novel.title,
-                    cover = { BookCover(novel.thumbnailUrl, novel.title, it) },
-                    stats = null, includeLockedInTotals = false, showReadBadge = false, showDownloadedBadge = false,
-                    showLockedBadge = false, showRatingBadge = false, showEpubBadge = false, isEpub = false,
-                    notify = false, autoDownload = false, userRating = null, selected = false,
-                    onClick = { if (enabled) model.details(novel) }, onLongClick = {},
-                )
-            }
-            // Grid rows get the full width; keep the footer button its natural size.
-            item(span = full) { Box(contentAlignment = Alignment.CenterStart) { BrowseFooter(state, enabled, model) } }
         }
     }
 }
 
 @Composable
 private fun BrowseControls(state: ReaderState, enabled: Boolean, model: ReaderModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp),
+    ) {
         if (state.browseModes.size > 1) {
-            SingleChoiceSegmentedButtonRow {
-                state.browseModes.forEachIndexed { index, mode ->
-                    SegmentedButton(
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                state.browseModes.forEach { mode ->
+                    val icon = when (mode) {
+                        BrowseMode.POPULAR -> AppIcons.Explosion
+                        BrowseMode.LATEST -> AppIcons.AvgTime
+                        BrowseMode.SEARCH -> AppIcons.Search
+                    }
+                    FilterChip(
                         selected = mode == state.browseMode,
                         onClick = { if (mode != state.browseMode) model.setBrowseMode(mode) },
                         enabled = enabled,
-                        shape = SegmentedButtonDefaults.itemShape(index, state.browseModes.size),
-                    ) { Text(mode.label) }
+                        label = { Text(mode.label) },
+                        leadingIcon = {
+                            Icon(icon, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize))
+                        },
+                    )
                 }
             }
         }
@@ -286,14 +405,15 @@ private fun BrowseControls(state: ReaderState, enabled: Boolean, model: ReaderMo
             var query by remember(state.browseSource) { mutableStateOf(state.browseQuery) }
             val submit = { if (query.isNotBlank()) model.search(query) }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(query, { query = it }, singleLine = true, enabled = enabled,
-                    label = { Text("Search ${state.sourceName} by title") },
-                    modifier = Modifier.weight(1f).onPreviewKeyEvent { event ->
-                        val enter = event.key == Key.Enter || event.key == Key.NumPadEnter
-                        if (enter && event.type == KeyEventType.KeyUp) submit()
-                        enter
-                    })
-                Button(onClick = submit, enabled = enabled && query.isNotBlank()) { Text("Search") }
+                DesktopSearchField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = "Search ${state.sourceName} by title",
+                    enabled = enabled,
+                    onSearch = submit,
+                    modifier = Modifier.weight(1f),
+                )
+                FilledTonalButton(onClick = submit, enabled = enabled && query.isNotBlank()) { Text("Search") }
             }
         }
     }
@@ -302,41 +422,87 @@ private fun BrowseControls(state: ReaderState, enabled: Boolean, model: ReaderMo
 @Composable
 private fun BrowseFooter(state: ReaderState, enabled: Boolean, model: ReaderModel) {
     when {
-        state.browseHasMore -> OutlinedButton(onClick = model::loadMore, enabled = enabled) { Text("Load more") }
+        state.browseHasMore -> FilledTonalButton(onClick = model::loadMore, enabled = enabled) { Text("Load more") }
         state.browsePage == 0 && state.browseMode != BrowseMode.SEARCH && enabled ->
-            OutlinedButton(onClick = model::browse) { Text("Load ${state.browseMode?.label?.lowercase()} titles") }
+            FilledTonalButton(onClick = model::browse) { Text("Load ${state.browseMode?.label?.lowercase()} titles") }
         state.browsePage > 0 && state.novels.isEmpty() -> Text(
             if (state.browseMode == BrowseMode.SEARCH) "No results for “${state.browseQuery}”."
-            else "${state.sourceName} returned no titles.")
-        state.browsePage > 0 -> Text("End of results", style = MaterialTheme.typography.labelMedium)
+            else "${state.sourceName} returned no titles.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        state.browsePage > 0 -> Text(
+            "End of results",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LibraryPane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier = Modifier) {
     var query by remember { mutableStateOf("") }
     val books = remember(state.library, query) { filterLibrary(state.library, query) }
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Library", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-            if (state.library.isNotEmpty()) OutlinedTextField(query, { query = it }, singleLine = true,
-                label = { Text("Search library") }, modifier = Modifier.width(320.dp))
-        }
-        when {
-            state.library.isEmpty() -> Text("Books you add from Browse appear here.")
-            books.isEmpty() -> Text("No books match \u201c${query.trim()}\u201d.")
-        }
-        LazyVerticalGrid(GridCells.Adaptive(COVER_WIDTH), Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(books, key = { it.key.toString() }) { book ->
-                NovelCoverCard(
-                    title = book.novel.title,
-                    cover = { BookCover(book.novel.thumbnailUrl, book.novel.title, it) },
-                    stats = book.counts(), includeLockedInTotals = false, showReadBadge = false, showDownloadedBadge = true,
-                    showLockedBadge = false, showRatingBadge = false, showEpubBadge = false, isEpub = false,
-                    notify = false, autoDownload = false, userRating = null, selected = false,
-                    onClick = { if (enabled) model.openSaved(book) }, onLongClick = {},
+    val gridState = rememberLazyGridState()
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text("Library") },
+                actions = {
+                    if (state.library.isNotEmpty()) {
+                        DesktopSearchField(
+                            value = query,
+                            onValueChange = { query = it },
+                            placeholder = "Search library",
+                            enabled = enabled,
+                            modifier = Modifier.width(300.dp).padding(end = 16.dp),
+                        )
+                    }
+                },
+            )
+        },
+    ) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            when {
+                state.library.isEmpty() -> DesktopEmptyState(
+                    icon = AppIcons.LocalLibrary,
+                    title = "Your library is empty",
+                    subtitle = "Books you add from Browse appear here.",
+                    actionLabel = "Browse sources",
+                    onAction = model::showBrowse,
+                    actionEnabled = enabled,
                 )
+                books.isEmpty() -> DesktopEmptyState(
+                    icon = AppIcons.SearchOff,
+                    title = "No matching books",
+                    subtitle = "No books match \u201c${query.trim()}\u201d.",
+                    actionLabel = "Clear search",
+                    onAction = { query = "" },
+                    actionEnabled = enabled,
+                )
+                else -> {
+                    LazyVerticalGrid(
+                        state = gridState,
+                        columns = GridCells.Adaptive(COVER_WIDTH),
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(books, key = { it.key.toString() }) { book ->
+                            NovelCoverCard(
+                                title = book.novel.title,
+                                cover = { BookCover(book.novel.thumbnailUrl, book.novel.title, it) },
+                                stats = book.counts(), includeLockedInTotals = false, showReadBadge = false, showDownloadedBadge = true,
+                                showLockedBadge = false, showRatingBadge = false, showEpubBadge = false, isEpub = false,
+                                notify = false, autoDownload = false, userRating = null, selected = false,
+                                onClick = { if (enabled) model.openSaved(book) }, onLongClick = {},
+                            )
+                        }
+                    }
+                    VerticalScrollbar(rememberScrollbarAdapter(gridState), Modifier.fillMaxHeight().align(Alignment.CenterEnd))
+                }
             }
         }
     }

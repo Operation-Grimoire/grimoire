@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Desktop shell, Library, Browse, Settings and Book Details now use Material 3 top app bars, a tonal navigation rail with an offline status indicator, borderless pill search fields, Android-style Browse mode chips, illustrated empty states, and a Settings switch for Offline mode."
+    }
+  ]
+}

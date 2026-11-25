@@ -3,12 +3,16 @@ package io.grimoire.desktop
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.grimoire.ui.icon.AppIcons
+import io.grimoire.ui.icon.ArrowDropDown
+import io.grimoire.ui.icon.Explore
 
 private val installedStatuses = setOf(ExtensionStatus.INSTALLED, ExtensionStatus.UPDATE, ExtensionStatus.UNAVAILABLE)
 
@@ -157,9 +161,35 @@ private fun AddRepository(state: ReaderState, enabled: Boolean, model: ReaderMod
 @Composable
 internal fun SourcePicker(state: ReaderState, enabled: Boolean, model: ReaderModel) {
     var open by remember { mutableStateOf(false) }
+    val label = state.sourceName ?: "Choose a source"
+    if (state.sources.size <= 1) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            ) {
+                Icon(AppIcons.Explore, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(label, style = MaterialTheme.typography.labelLarge)
+            }
+        }
+        return
+    }
     Box {
-        OutlinedButton(onClick = { open = true }, enabled = enabled && state.sources.size > 1) {
-            Text(state.sourceName ?: "Choose a source")
+        FilledTonalButton(
+            onClick = { open = true },
+            enabled = enabled,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+        ) {
+            Icon(AppIcons.Explore, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(label)
+            Spacer(Modifier.width(4.dp))
+            Icon(AppIcons.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp))
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             state.sources.forEach { source ->
