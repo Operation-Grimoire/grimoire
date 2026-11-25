@@ -49,11 +49,13 @@ runtime, so trusted-base dependency preparation also covers the offline head bui
 
 `.github/workflows/android-integration.yml` runs for Android/shared impact on pull
 requests and master. A token-scoped step first builds the trusted base commit to
-resolve published dependencies, without a persistent Gradle/Kotlin daemon or
-configuration cache. The exact head then builds offline with both token environment
-variables empty. Credentials are never stored in properties or passed to head code.
-A dependency-pin change needs trusted-base dependency preparation; the build never
-falls back to supplying a token to the head. The workflow
+resolve authenticated GitHub Packages dependencies, without a persistent
+Gradle/Kotlin daemon or configuration cache. The exact head then builds with both
+token environment variables empty, reusing the cached GitHub Packages artifacts
+while still allowing public Gradle plugins and dependencies to resolve. Credentials
+are never stored in properties or passed to head code. A GitHub Packages pin change
+still needs trusted-base dependency preparation; the build never falls back to
+supplying a token to the head. The workflow
 hashes the debug host/test APKs, then runs a fresh headless API 35 emulator. It
 retains the existing extension-host workflow and its separate ART helper coverage.
 

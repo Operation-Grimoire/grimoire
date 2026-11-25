@@ -21,6 +21,9 @@ dependencyResolutionManagement {
         maven {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/Operation-Grimoire/grimoire-extensions-api")
+            content {
+                includeGroupByRegex("io\\.grimoire(\\..*)?")
+            }
             credentials {
                 username = System.getenv("GITHUB_ACTOR") ?: ""
                 password = System.getenv("GITHUB_TOKEN") ?: ""
@@ -29,6 +32,9 @@ dependencyResolutionManagement {
         maven {
             name = "BrowserSessionsPackages"
             url = uri("https://maven.pkg.github.com/Operation-Grimoire/browser-sessions")
+            content {
+                includeGroupByRegex("io\\.grimoire(\\..*)?")
+            }
             credentials {
                 username = System.getenv("GITHUB_ACTOR") ?: ""
                 password = System.getenv("GITHUB_TOKEN") ?: ""

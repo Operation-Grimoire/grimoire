@@ -18,6 +18,8 @@ import io.grimoire.reading.ChapterLoadException
 import io.grimoire.reading.storage.*
 import io.grimoire.reading.anchor.*
 import io.grimoire.reading.encodeChapterContent
+import io.grimoire.ui.theme.ColorTheme
+import io.grimoire.ui.theme.ThemeMode
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -354,9 +356,15 @@ class ReaderModel(
         }
     }
 
-    fun setAppearance(appearance: DesktopAppearance) = operate {
+    fun setAppearance(appearance: DesktopAppearance) = updateAppearance { library.setAppearance(appearance) }
+
+    fun setThemeMode(themeMode: ThemeMode) = updateAppearance { library.setThemeMode(themeMode) }
+
+    fun setColorTheme(colorTheme: ColorTheme) = updateAppearance { library.setColorTheme(colorTheme) }
+
+    private fun updateAppearance(write: () -> Unit) = operate {
         try {
-            library.setAppearance(appearance)
+            write()
         } finally {
             val stored = library.appearance()
             mutable.update { it.copy(appearance = stored) }

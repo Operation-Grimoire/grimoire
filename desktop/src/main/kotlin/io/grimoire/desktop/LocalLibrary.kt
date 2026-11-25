@@ -146,10 +146,17 @@ class LocalLibrary internal constructor(directory: Path, checkpoint: (StorageChe
 
     @Synchronized fun setAppearance(appearance: DesktopAppearance) {
         write {
-            for ((name, value) in listOf("theme_mode" to appearance.themeMode.name, "color_theme" to appearance.colorTheme.name)) {
-                db.execute("INSERT INTO settings VALUES(?,?) ON CONFLICT(name) DO UPDATE SET value=excluded.value", name, value)
-            }
+            setSetting("theme_mode", appearance.themeMode.name)
+            setSetting("color_theme", appearance.colorTheme.name)
         }
+    }
+
+    @Synchronized fun setThemeMode(themeMode: ThemeMode) = write { setSetting("theme_mode", themeMode.name) }
+
+    @Synchronized fun setColorTheme(colorTheme: ColorTheme) = write { setSetting("color_theme", colorTheme.name) }
+
+    private fun setSetting(name: String, value: String) {
+        db.execute("INSERT INTO settings VALUES(?,?) ON CONFLICT(name) DO UPDATE SET value=excluded.value", name, value)
     }
 
     @Synchronized internal fun openedHistory(): List<DesktopHistoryEntry> {

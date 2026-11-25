@@ -41,9 +41,22 @@ class LocalLibraryTest {
         }
         LocalLibrary(directory).use { store ->
             assertEquals(DesktopAppearance(ThemeMode.DARK, ColorTheme.OCEAN), store.appearance())
-            // A value written by a newer build falls back instead of failing startup.
+            // A value written by a newer build falls back instead of failing startup, and changing the other field preserves it.
             store.extensionWrite { it.execute("UPDATE settings SET value='SEPIA' WHERE name='color_theme'") }
             assertEquals(DesktopAppearance(ThemeMode.DARK, ColorTheme.DEFAULT), store.appearance())
+            store.setThemeMode(ThemeMode.LIGHT)
+            assertEquals(DesktopAppearance(ThemeMode.LIGHT, ColorTheme.DEFAULT), store.appearance())
+            val rawPalette = store.extensionRead { db ->
+                db.query("SELECT value FROM settings WHERE name='color_theme'") { it.getString(1) }.singleOrNull()
+            }
+            assertEquals("SEPIA", rawPalette)
+            store.extensionWrite { it.execute("UPDATE settings SET value='EINK' WHERE name='theme_mode'") }
+            store.setColorTheme(ColorTheme.FOREST)
+            assertEquals(DesktopAppearance(ThemeMode.SYSTEM, ColorTheme.FOREST), store.appearance())
+            val rawMode = store.extensionRead { db ->
+                db.query("SELECT value FROM settings WHERE name='theme_mode'") { it.getString(1) }.singleOrNull()
+            }
+            assertEquals("EINK", rawMode)
         }
     }
 

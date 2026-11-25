@@ -152,12 +152,12 @@ private fun SettingsPane(state: ReaderState, enabled: Boolean, model: ReaderMode
         item { Text("Settings", style = MaterialTheme.typography.headlineSmall) }
         item { Text("Appearance", style = MaterialTheme.typography.titleMedium) }
         item {
-            ThemeModeSegmentedRow(appearance.themeMode, { if (enabled) model.setAppearance(appearance.copy(themeMode = it)) },
+            ThemeModeSegmentedRow(appearance.themeMode, { if (enabled) model.setThemeMode(it) },
                 Modifier.widthIn(max = 480.dp))
         }
         item {
             ColorThemePicker(appearance.colorTheme, enabled, appearance.themeMode.isDark(),
-                { model.setAppearance(appearance.copy(colorTheme = it)) },
+                model::setColorTheme,
                 headerPadding = PaddingValues(0.dp), rowContentPadding = PaddingValues(0.dp))
         }
         item { HorizontalDivider() }
