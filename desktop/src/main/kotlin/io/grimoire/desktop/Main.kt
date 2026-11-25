@@ -79,6 +79,7 @@ fun main(args: Array<String>) {
             onCloseRequest = {
                 if (!closing) {
                     closing = true
+                    closeError = null
                     scope.launch {
                         try { model.close(); exitApplication() }
                         catch (failure: Exception) { closeError = "Could not save the library: ${failure.message}"; closing = false }
