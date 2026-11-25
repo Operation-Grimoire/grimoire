@@ -294,7 +294,17 @@ class ReaderIntegrationTest {
         val sqlite = db.openHelper.writableDatabase
         val otherChapter = ChapterEntity(id = 5, novelId = 3, url = "/unselected", name = "Unselected chapter")
         io {
-            db.novelDao().upsert(NovelEntity(id = 2, sourceId = LOCAL_SOURCE_ID, url = "local://second-selected", title = secondTitle, favorite = true))
+            db.novelDao().upsert(
+                NovelEntity(
+                    id = 2,
+                    sourceId = LOCAL_SOURCE_ID,
+                    url = "local://second-selected",
+                    title = secondTitle,
+                    favorite = true,
+                    notifyOnNewChapters = true,
+                    autoDownloadNewChapters = true,
+                ),
+            )
             db.novelDao().upsert(NovelEntity(id = 3, sourceId = LOCAL_SOURCE_ID, url = "local://unselected", title = "Unselected book", favorite = true))
             chapterDao.insertAll(listOf(
                 ChapterEntity(id = 3, novelId = 2, url = "/second/first", name = "Another first chapter", readProgress = 0.375f),
@@ -314,6 +324,11 @@ class ReaderIntegrationTest {
             compose.onNodeWithText("Integration book").performTouchInput { longClick() }
             compose.onNodeWithText(secondTitle).performClick()
             waitText(pairSelected)
+        }
+
+        // Ensure shared-ui Compose resources are packaged in APK assets, not only java_res.
+        context.assets.open("composeResources/io.grimoire.ui.resources/values/strings.commonMain.cvr").use {
+            assertTrue(it.read() >= 0)
         }
 
         activity = ActivityScenario.launch(Intent(context, MainActivity::class.java))

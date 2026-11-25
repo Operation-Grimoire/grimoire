@@ -1,3 +1,6 @@
+import com.android.build.api.artifact.SingleArtifact
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import java.util.Properties
 
 plugins {
@@ -135,7 +138,11 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("io.grimoire:extensions-api:$extensionsApiVersion")
-    implementation("com.github.aptabase:aptabase-kotlin:0.0.8") // privacy-first analytics
+    implementation("com.github.aptabase:aptabase-kotlin:0.0.8") { // privacy-first analytics
+        // Upstream POM leaks androidx.test:monitor into production runtime;
+        // debug/androidTest declare it explicitly below for ActivityScenario (#456).
+        exclude(group = "androidx.test")
+    }
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
@@ -173,4 +180,70 @@ dependencies {
     // Align the compile graph with the host's existing runtime version and trusted CI cache.
     debugImplementation(libs.androidx.test.monitor)
     debugImplementation(libs.androidx.compose.ui.tooling)
+}
+
+abstract class MergedAssetsArguments : CommandLineArgumentProvider {
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val assetsDir: DirectoryProperty
+    override fun asArguments() = listOf("-Dgrimoire.mergedAssetsDir=${assetsDir.get().asFile.absolutePath}")
+}
+
+abstract class VerifyReleaseRuntimeClasspathTask : DefaultTask() {
+    @get:Input
+    abstract val runtimeModules: ListProperty<String>
+
+    @TaskAction
+    fun verify() {
+        val forbidden = runtimeModules.get().filter { coord ->
+            val group = coord.substringBefore(':')
+            group == "androidx.test" || group.startsWith("androidx.test.") || group == "junit"
+        }
+        check(forbidden.isEmpty()) {
+            "Test-only dependencies leaked into releaseRuntimeClasspath: ${forbidden.joinToString()}"
+        }
+    }
+}
+
+androidComponents.onVariants { variant ->
+    val unitTestName = "test${variant.name.replaceFirstChar { it.uppercase() }}UnitTest"
+    val mergedAssets = variant.artifacts.get(SingleArtifact.ASSETS)
+    tasks.matching { it.name == unitTestName }.configureEach {
+        if (this is Test) {
+            jvmArgumentProviders.add(objects.newInstance<MergedAssetsArguments>().apply {
+                assetsDir.set(mergedAssets)
+            })
+        }
+    }
+}
+
+androidComponents.onVariants(androidComponents.selector().withBuildType("release")) { variant ->
+    val verifyReleaseDeps = tasks.register<VerifyReleaseRuntimeClasspathTask>(
+        "verifyNoTestDependenciesInRelease",
+    ) {
+        description = "Fails if test-only dependencies (androidx.test, junit) leak into releaseRuntimeClasspath."
+        group = "verification"
+        runtimeModules.set(
+            variant.runtimeConfiguration.incoming.resolutionResult.rootComponent.map { root ->
+                val modules = linkedSetOf<String>()
+                val queue = ArrayDeque(listOf(root))
+                val visited = hashSetOf(root)
+                while (queue.isNotEmpty()) {
+                    val node = queue.removeFirst()
+                    (node.id as? ModuleComponentIdentifier)?.let { id ->
+                        modules.add("${id.group}:${id.module}:${id.version}")
+                    }
+                    for (dep in node.dependencies) {
+                        if (dep is ResolvedDependencyResult && visited.add(dep.selected)) {
+                            queue.add(dep.selected)
+                        }
+                    }
+                }
+                modules.sorted()
+            },
+        )
+    }
+    tasks.matching { it.name == "testDebugUnitTest" || it.name == "assembleRelease" }.configureEach {
+        dependsOn(verifyReleaseDeps)
+    }
 }
