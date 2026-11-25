@@ -120,7 +120,7 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
                 ) {
                     Text("${book.chapters.size} chapters", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                     if (book.chapters.size > 1) {
-                        val sortTooltip = if (newestFirst) "Oldest first" else "Newest first"
+                        val sortTooltip = "Reverse chapter order"
                         PlainTooltipIconButton(onClick = { newestFirst = !newestFirst }, tooltip = sortTooltip) {
                             Icon(AppIcons.SwapVert, contentDescription = sortTooltip)
                         }

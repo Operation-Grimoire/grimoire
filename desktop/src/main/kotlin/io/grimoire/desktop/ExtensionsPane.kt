@@ -212,6 +212,18 @@ private fun RepositoriesDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth().heightIn(max = 460.dp),
             ) {
+                state.error?.let { error ->
+                    item(key = "repo-error") {
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(12.dp))
+                        }
+                    }
+                }
                 items(state.repositories, key = { "repository:" + it.id }) { repository ->
                     RepositoryItem(repository, enabled, model)
                 }
