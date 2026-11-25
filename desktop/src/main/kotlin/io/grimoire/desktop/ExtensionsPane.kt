@@ -219,7 +219,13 @@ private fun RepositoriesDialog(
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(12.dp))
+                        Text(
+                            error,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 4,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(12.dp),
+                        )
                     }
                 }
                 LazyColumn(
