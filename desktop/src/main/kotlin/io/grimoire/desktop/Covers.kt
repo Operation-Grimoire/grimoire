@@ -3,6 +3,13 @@ package io.grimoire.desktop
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import coil3.ImageLoader
@@ -32,13 +39,28 @@ fun installCoverLoader(data: Path, networkEnabled: AtomicBoolean) {
     }
 }
 
+/** Tracks whether desktop network requests are enabled so offline cover failures retry when back online. */
+internal val LocalCoversOnline = compositionLocalOf { true }
+
 /** A book cover, or an empty tile when the source gave none or it cannot load. */
 @Composable
 fun BookCover(url: String?, title: String, modifier: Modifier) {
-    AsyncImage(
-        model = url,
-        contentDescription = title,
-        contentScale = ContentScale.Crop,
-        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
-    )
+    val online = LocalCoversOnline.current
+    var failedOffline by remember(url) { mutableStateOf(false) }
+    var retryKey by remember(url) { mutableStateOf(0) }
+    LaunchedEffect(online, failedOffline) {
+        if (online && failedOffline) {
+            failedOffline = false
+            retryKey++
+        }
+    }
+    key(retryKey) {
+        AsyncImage(
+            model = url,
+            contentDescription = title,
+            contentScale = ContentScale.Crop,
+            onError = { if (!online) failedOffline = true },
+            modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
+        )
+    }
 }

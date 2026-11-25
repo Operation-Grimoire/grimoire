@@ -126,6 +126,7 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
     val section = if (state.view.isBookView) state.bookOrigin else state.view
     val appearance = state.appearance
     GrimoireMaterialTheme(appearance.colorTheme.scheme(appearance.themeMode.isDark())) {
+    CompositionLocalProvider(LocalCoversOnline provides !state.offline) {
     Surface(Modifier.fillMaxSize()) {
     // The reader takes the whole window, like Android's.
     if (state.view == View.READER && state.projection != null) {
@@ -156,6 +157,7 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
                 View.BOOK, View.READER -> BookPane(state, enabled, model, Modifier.weight(1f))
             }
         }
+    }
     }
     }
     }
@@ -380,10 +382,13 @@ internal fun filterLibrary(books: List<SavedBook>, query: String): List<SavedBoo
 }
 
 /** Downloaded and locked counts for the library badges; desktop does not count read chapters here yet. */
-internal fun SavedBook.counts() = ChapterCounts(
-    total = chapters.size, readCount = 0, downloadedCount = downloaded.count { url -> chapters.any { it.url == url } },
-    lockedCount = chapters.count { it.locked },
-)
+internal fun SavedBook.counts(): ChapterCounts {
+    val chapterUrls = chapters.mapTo(HashSet(chapters.size)) { it.url }
+    return ChapterCounts(
+        total = chapters.size, readCount = 0, downloadedCount = downloaded.count { it in chapterUrls },
+        lockedCount = chapters.count { it.locked },
+    )
+}
 
 @Composable
 private fun ChapterPane(book: SavedBook, current: Chapter?, enabled: Boolean, offline: Boolean, model: ReaderModel, modifier: Modifier = Modifier) {
