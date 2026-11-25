@@ -1,0 +1,9 @@
+{
+  "android": [],
+  "desktop": [
+    {
+      "category": "feature",
+      "text": "Redesigned the desktop shell with a frameless edge-to-edge window and integrated window controls, a full desktop sidebar with item counts and soft hover states, floating gradient headers that content scrolls under, circular hairline action buttons, and compact 38dp pill search fields."
+    }
+  ]
+}

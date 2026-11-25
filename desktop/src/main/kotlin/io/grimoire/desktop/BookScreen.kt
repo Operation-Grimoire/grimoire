@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -55,27 +56,10 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
     val displayedChapters = remember(ordered, newestFirst) { if (newestFirst) ordered.asReversed() else ordered }
     val scroll = rememberLazyListState()
     val showBarTitle by remember { derivedStateOf { scroll.firstVisibleItemIndex > 0 } }
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    PlainTooltipIconButton(onClick = model::back, tooltip = "Back", enabled = enabled) {
-                        Icon(AppIcons.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                title = {
-                    AnimatedVisibility(visible = showBarTitle, enter = fadeIn(tween(180)), exit = fadeOut(tween(120))) {
-                        Text(book.novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                },
-            )
-        },
-    ) { padding ->
-    Box(Modifier.fillMaxSize().padding(padding)) {
+    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
             state = scroll,
-            contentPadding = PaddingValues(bottom = 24.dp),
+            contentPadding = PaddingValues(top = DESKTOP_HEADER_HEIGHT + 4.dp, bottom = 24.dp),
             modifier = Modifier.widthIn(max = 960.dp).fillMaxHeight().align(Alignment.TopCenter),
         ) {
             item {
@@ -160,7 +144,20 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
                 )
             }
         }
-        VerticalScrollbar(rememberScrollbarAdapter(scroll), Modifier.fillMaxHeight().align(Alignment.CenterEnd))
-    }
+        VerticalScrollbar(
+            rememberScrollbarAdapter(scroll),
+            Modifier.fillMaxHeight().align(Alignment.CenterEnd).padding(top = DESKTOP_HEADER_HEIGHT),
+        )
+        DesktopHeaderBar(
+            navigationIcon = {
+                DesktopIconCircle(icon = AppIcons.ArrowBack, tooltip = "Back", onClick = model::back, enabled = enabled)
+            },
+            title = {
+                AnimatedVisibility(visible = showBarTitle, enter = fadeIn(tween(180)), exit = fadeOut(tween(120))) {
+                    Text(book.novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            },
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 }

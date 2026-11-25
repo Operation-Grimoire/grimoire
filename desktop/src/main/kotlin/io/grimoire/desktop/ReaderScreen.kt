@@ -125,17 +125,21 @@ internal fun ReaderScreen(state: ReaderState, enabled: Boolean, busy: Boolean, m
     val wave = remember { GrimoireWaveClock() }
     GrimoireWaveTicker(wave, settings.grimoireEasterEgg)
 
+    val chrome = LocalWindowChrome.current
     Column(Modifier.fillMaxSize().background(colors.background)) {
-        ReaderTopBar(
-            visible = barsVisible,
-            title = chapter.name,
-            colors = colors,
-            onBack = { if (enabled) model.back() },
-            progressText = progressText,
-        ) {
-            val label = if (saved) "Saved offline" else "Save chapter offline"
-            PlainTooltipIconButton(onClick = model::download, tooltip = label, enabled = enabled && !saved) {
-                Icon(if (saved) AppIcons.DownloadDone else AppIcons.Download, contentDescription = label)
+        chrome.dragArea(Modifier.fillMaxWidth()) {
+            ReaderTopBar(
+                visible = barsVisible,
+                title = chapter.name,
+                colors = colors,
+                onBack = { if (enabled) model.back() },
+                progressText = progressText,
+            ) {
+                val label = if (saved) "Saved offline" else "Save chapter offline"
+                PlainTooltipIconButton(onClick = model::download, tooltip = label, enabled = enabled && !saved) {
+                    Icon(if (saved) AppIcons.DownloadDone else AppIcons.Download, contentDescription = label)
+                }
+                chrome.controls?.invoke()
             }
         }
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())

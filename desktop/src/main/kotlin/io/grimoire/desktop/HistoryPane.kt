@@ -1,6 +1,7 @@
 package io.grimoire.desktop
 
 import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -45,30 +46,14 @@ internal fun HistoryPane(state: ReaderState, enabled: Boolean, model: ReaderMode
     }
     val today = LocalDate.now(zone)
 
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { Text("Reading history") },
-                actions = {
-                    PlainTooltipIconButton(
-                        onClick = { confirmClear = true },
-                        tooltip = "Clear history",
-                        enabled = enabled && state.history.isNotEmpty(),
-                    ) {
-                        Icon(AppIcons.DeleteSweep, contentDescription = "Clear history")
-                    }
-                },
-            )
-        },
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 840.dp)
-                    .fillMaxHeight()
-                    .align(Alignment.TopCenter),
-            ) {
+    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = 840.dp)
+                .fillMaxHeight()
+                .align(Alignment.TopCenter)
+                .padding(top = DESKTOP_HEADER_HEIGHT),
+        ) {
                 ListItem(
                     leadingContent = { Icon(AppIcons.History, contentDescription = null) },
                     headlineContent = { Text("Record opened chapters") },
@@ -176,10 +161,24 @@ internal fun HistoryPane(state: ReaderState, enabled: Boolean, model: ReaderMode
                     }
                 }
             }
-            if (state.history.isNotEmpty()) {
-                VerticalScrollbar(rememberScrollbarAdapter(scroll), Modifier.fillMaxHeight().align(Alignment.CenterEnd))
-            }
+        if (state.history.isNotEmpty()) {
+            VerticalScrollbar(
+                rememberScrollbarAdapter(scroll),
+                Modifier.fillMaxHeight().align(Alignment.CenterEnd).padding(top = DESKTOP_HEADER_HEIGHT),
+            )
         }
+        DesktopHeaderBar(
+            title = { Text("Reading history") },
+            actions = {
+                DesktopIconCircle(
+                    icon = AppIcons.DeleteSweep,
+                    tooltip = "Clear history",
+                    onClick = { confirmClear = true },
+                    enabled = enabled && state.history.isNotEmpty(),
+                )
+            },
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 
     if (confirmClear) {
