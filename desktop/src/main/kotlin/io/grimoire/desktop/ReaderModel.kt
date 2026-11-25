@@ -306,21 +306,51 @@ class ReaderModel(
         publishView { it.leaveBook(View.BOOK).copy(book = book, bookOrigin = View.BROWSE) }
     }
 
-    fun showLibrary() = navigate { showSection(View.LIBRARY) }
+    fun showLibrary() {
+        synchronized(operationLock) {
+            if (!state.value.busy && !closing.get() && state.value.view != View.READER) {
+                mutable.update { it.leaveBook(View.LIBRARY) }
+            }
+        }
+        navigate { showSection(View.LIBRARY) }
+    }
 
-    fun showHistory() = navigate { showSection(View.HISTORY) }
+    fun showHistory() {
+        synchronized(operationLock) {
+            if (!state.value.busy && !closing.get() && state.value.view != View.READER) {
+                mutable.update { it.leaveBook(View.HISTORY) }
+            }
+        }
+        navigate { showSection(View.HISTORY) }
+    }
 
-    fun showExtensions() = navigate {
-        showSection(View.EXTENSIONS)
-        publishExtensions()
-        // First visit online: fetch catalogs never downloaded. Failures stay on this screen.
-        val manager = extensions
-        if (manager != null && !state.value.offline && manager.repositoryViews().any { it.enabled && !it.refreshed }) {
-            try { refreshCatalogs() } catch (failure: Exception) { publishExtensions(failure.message) }
+    fun showExtensions() {
+        synchronized(operationLock) {
+            if (!state.value.busy && !closing.get() && state.value.view != View.READER) {
+                mutable.update { it.leaveBook(View.EXTENSIONS) }
+            }
+        }
+        navigate {
+            showSection(View.EXTENSIONS)
+            publishExtensions()
+            // First visit online: fetch catalogs never downloaded. Failures stay on this screen.
+            val manager = extensions
+            if (manager != null && !state.value.offline && manager.repositoryViews().any { it.enabled && !it.refreshed }) {
+                try { refreshCatalogs() } catch (failure: Exception) { publishExtensions(failure.message) }
+            }
         }
     }
 
-    fun showSettings() = navigate { showSection(View.SETTINGS) }
+    fun showSettings() {
+        synchronized(operationLock) {
+            if (state.value.busy || closing.get()) return
+            if (state.value.view != View.READER) {
+                mutable.update { it.leaveBook(View.SETTINGS).copy(error = null) }
+                return
+            }
+        }
+        navigate { showSection(View.SETTINGS) }
+    }
 
     fun back() = navigate {
         val current = state.value
@@ -351,27 +381,49 @@ class ReaderModel(
         observedAnchor = null, storageObservation = null, checkpointLoad = null, positionNotice = null,
     )
 
-    fun setHistoryRecording(enabled: Boolean) = operate {
-        try {
-            library.setHistoryRecording(enabled)
-        } finally {
-            val recording = library.historyRecording()
-            mutable.update { it.copy(historyRecording = recording) }
+    fun setHistoryRecording(enabled: Boolean) {
+        if (closing.get()) return
+        mutable.update { it.copy(historyRecording = enabled, error = null) }
+        settingsScope.launch {
+            try {
+                library.setHistoryRecording(enabled)
+            } catch (failure: Exception) {
+                val stored = runCatching { library.historyRecording() }.getOrElse { !enabled }
+                mutable.update { it.copy(historyRecording = stored, error = "Could not save history setting: ${failure.message ?: failure.javaClass.simpleName}") }
+            }
         }
     }
 
-    fun setAppearance(appearance: DesktopAppearance) = updateAppearance { library.setAppearance(appearance) }
+    fun setAppearance(appearance: DesktopAppearance) = updateAppearance(
+        optimistic = { appearance },
+        write = { library.setAppearance(appearance) },
+    )
 
-    fun setThemeMode(themeMode: ThemeMode) = updateAppearance { library.setThemeMode(themeMode) }
+    fun setThemeMode(themeMode: ThemeMode) = updateAppearance(
+        optimistic = { it.copy(themeMode = themeMode) },
+        write = { library.setThemeMode(themeMode) },
+    )
 
-    fun setColorTheme(colorTheme: ColorTheme) = updateAppearance { library.setColorTheme(colorTheme) }
+    fun setColorTheme(colorTheme: ColorTheme) = updateAppearance(
+        optimistic = { it.copy(colorTheme = colorTheme) },
+        write = { library.setColorTheme(colorTheme) },
+    )
 
-    private fun updateAppearance(write: () -> Unit) = operate {
-        try {
-            write()
-        } finally {
-            val stored = library.appearance()
-            mutable.update { it.copy(appearance = stored) }
+    private fun updateAppearance(optimistic: (DesktopAppearance) -> DesktopAppearance, write: () -> Unit) {
+        if (closing.get()) return
+        mutable.update { it.copy(appearance = optimistic(it.appearance), error = null) }
+        settingsScope.launch {
+            try {
+                write()
+            } catch (failure: Exception) {
+                val stored = runCatching { library.appearance() }.getOrNull()
+                mutable.update {
+                    it.copy(
+                        appearance = stored ?: it.appearance,
+                        error = "Could not save appearance: ${failure.message ?: failure.javaClass.simpleName}",
+                    )
+                }
+            }
         }
     }
 
@@ -415,9 +467,16 @@ class ReaderModel(
         }
     }
 
-    fun openSaved(book: SavedBook) = navigate {
-        val stored = library.book(book.key)
-        publishView { it.leaveBook(View.BOOK).copy(book = stored, bookOrigin = View.LIBRARY) }
+    fun openSaved(book: SavedBook) {
+        synchronized(operationLock) {
+            if (!state.value.busy && !closing.get() && state.value.view != View.READER) {
+                mutable.update { it.leaveBook(View.BOOK).copy(book = book, bookOrigin = View.LIBRARY) }
+            }
+        }
+        navigate {
+            val stored = library.book(book.key)
+            publishView { it.leaveBook(View.BOOK).copy(book = stored, bookOrigin = View.LIBRARY) }
+        }
     }
 
     fun favorite() = operate {

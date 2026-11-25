@@ -154,6 +154,7 @@ internal fun ReaderScreen(state: ReaderState, enabled: Boolean, busy: Boolean, m
                     contentPadding = PaddingValues(horizontal = 32.dp, vertical = 16.dp),
                     modifier = Modifier.fillMaxHeight().widthIn(max = 820.dp).align(Alignment.TopCenter).testTag("reader-body")
                         .onPointerEvent(PointerEventType.Scroll, PointerEventPass.Initial) { if (restored) model.userPosition(projection) }
+                        .smoothDesktopScroll(scroll)
                         .nestedScroll(input),
                 ) {
                     // List indexes are projection indexes (saved positions use them), so the title and the

@@ -165,6 +165,22 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
     LaunchedEffect(readerTransition.currentState, readerTransition.targetState) {
         if (!readerTransition.currentState && !readerTransition.targetState) lastReaderState = null
     }
+    // Preserve scroll position across top-level tab switches so returning to a tab is instant.
+    val libraryGridState = rememberLazyGridState()
+    val browseGridState = rememberLazyGridState()
+    val historyListState = rememberLazyListState()
+    val extensionsListState = rememberLazyListState()
+    val settingsListState = rememberLazyListState()
+    // Debounce the top progress bar so sub-180ms local operations never flicker.
+    var showProgress by remember { mutableStateOf(false) }
+    LaunchedEffect(state.busy, closing) {
+        if (state.busy || closing) {
+            kotlinx.coroutines.delay(180)
+            showProgress = true
+        } else {
+            showProgress = false
+        }
+    }
     GrimoireMaterialTheme(appearance.colorTheme.scheme(appearance.themeMode.isDark())) {
     CompositionLocalProvider(LocalCoversOnline provides !state.offline) {
     Surface(
@@ -195,18 +211,18 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
                         label = "desktopView",
                     ) { view ->
                         when (view) {
-                            View.LIBRARY -> LibraryPane(state, enabled, model, Modifier.fillMaxSize())
-                            View.HISTORY -> HistoryPane(state, enabled, model, Modifier.fillMaxSize())
-                            View.BROWSE -> BrowsePane(state, enabled, model, Modifier.fillMaxSize())
-                            View.EXTENSIONS -> ExtensionsPane(state, enabled, model, openExtension, Modifier.fillMaxSize())
-                            View.SETTINGS -> SettingsPane(state, enabled, model, Modifier.fillMaxSize())
+                            View.LIBRARY -> LibraryPane(state, enabled, model, libraryGridState, Modifier.fillMaxSize())
+                            View.HISTORY -> HistoryPane(state, enabled, model, historyListState, Modifier.fillMaxSize())
+                            View.BROWSE -> BrowsePane(state, enabled, model, browseGridState, Modifier.fillMaxSize())
+                            View.EXTENSIONS -> ExtensionsPane(state, enabled, model, openExtension, extensionsListState, Modifier.fillMaxSize())
+                            View.SETTINGS -> SettingsPane(state, enabled, model, settingsListState, Modifier.fillMaxSize())
                             View.BOOK, View.READER -> BookScreen(state, enabled, model, Modifier.fillMaxSize())
                         }
                     }
                     androidx.compose.animation.AnimatedVisibility(
-                        visible = state.busy || closing,
+                        visible = showProgress,
                         enter = fadeIn(tween(120)),
-                        exit = fadeOut(tween(200)),
+                        exit = fadeOut(tween(160)),
                         modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
                     ) {
                         LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -236,14 +252,19 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
 }
 
 @Composable
-private fun SettingsPane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier) {
+private fun SettingsPane(
+    state: ReaderState,
+    enabled: Boolean,
+    model: ReaderModel,
+    scroll: androidx.compose.foundation.lazy.LazyListState,
+    modifier: Modifier,
+) {
     val appearance = state.appearance
-    val scroll = rememberLazyListState()
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
             state = scroll,
             contentPadding = PaddingValues(top = DESKTOP_HEADER_HEIGHT + 8.dp, bottom = 24.dp),
-            modifier = Modifier.widthIn(max = 720.dp).fillMaxHeight().align(Alignment.TopCenter),
+            modifier = Modifier.widthIn(max = 720.dp).fillMaxHeight().align(Alignment.TopCenter).smoothDesktopScroll(scroll),
         ) {
             item {
                 Text(
@@ -405,7 +426,7 @@ private fun SidebarItem(
             hovered && enabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
             else -> Color.Transparent
         },
-        animationSpec = tween(120),
+        animationSpec = tween(80),
         label = "sidebarItemBg",
     )
     val content by animateColorAsState(
@@ -414,7 +435,7 @@ private fun SidebarItem(
             active -> MaterialTheme.colorScheme.onSurface
             else -> MaterialTheme.colorScheme.onSurfaceVariant
         },
-        animationSpec = tween(120),
+        animationSpec = tween(80),
         label = "sidebarItemFg",
     )
     Row(
@@ -454,9 +475,14 @@ private fun SidebarItem(
 }
 
 @Composable
-private fun BrowsePane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier) {
+private fun BrowsePane(
+    state: ReaderState,
+    enabled: Boolean,
+    model: ReaderModel,
+    gridState: androidx.compose.foundation.lazy.grid.LazyGridState,
+    modifier: Modifier,
+) {
     val full: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope) -> GridItemSpan = { GridItemSpan(it.maxLineSpan) }
-    val gridState = rememberLazyGridState()
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize().padding(top = DESKTOP_HEADER_HEIGHT)) {
             when {
@@ -491,7 +517,7 @@ private fun BrowsePane(state: ReaderState, enabled: Boolean, model: ReaderModel,
                                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
                                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier.fillMaxSize().smoothDesktopScroll(gridState),
                             ) {
                                 items(state.novels, key = { it.url }) { novel ->
                                     NovelCoverCard(
@@ -600,10 +626,15 @@ private fun BrowseFooter(state: ReaderState, enabled: Boolean, model: ReaderMode
 }
 
 @Composable
-private fun LibraryPane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier = Modifier) {
+private fun LibraryPane(
+    state: ReaderState,
+    enabled: Boolean,
+    model: ReaderModel,
+    gridState: androidx.compose.foundation.lazy.grid.LazyGridState,
+    modifier: Modifier = Modifier,
+) {
     var query by remember { mutableStateOf("") }
     val books = remember(state.library, query) { filterLibrary(state.library, query) }
-    val gridState = rememberLazyGridState()
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when {
             state.library.isEmpty() -> DesktopEmptyState(
@@ -629,7 +660,7 @@ private fun LibraryPane(state: ReaderState, enabled: Boolean, model: ReaderModel
                     contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = DESKTOP_HEADER_HEIGHT + 12.dp, bottom = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().smoothDesktopScroll(gridState),
                 ) {
                     items(books, key = { it.key.toString() }) { book ->
                         NovelCoverCard(
