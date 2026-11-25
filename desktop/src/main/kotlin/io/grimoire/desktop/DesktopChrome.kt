@@ -532,16 +532,24 @@ internal fun Modifier.desktopCardHover(): Modifier = composed {
 
 /**
  * Smooths discrete desktop mouse-wheel detents with a frame-synced exponential glide while leaving
- * fractional trackpad gestures 1:1.
+ * fractional trackpad gestures 1:1. Intercepts on `PointerEventPass.Initial` before the scrollable's
+ * `Main` pass so wheel events are never applied twice.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun Modifier.smoothDesktopScroll(state: ScrollableState): Modifier = composed {
     val scope = rememberCoroutineScope()
     val stepPx = with(LocalDensity.current) { 72.dp.toPx() }
     val driver = remember(state, stepPx) { SmoothWheelDriver(state, scope, stepPx) }
-    this.onPointerEvent(PointerEventType.Scroll, PointerEventPass.Main) { event ->
+    this.onPointerEvent(PointerEventType.Scroll, PointerEventPass.Initial) { event ->
+        if (event.changes.any { it.isConsumed }) return@onPointerEvent
+        val wheel = event.nativeEvent as? java.awt.event.MouseWheelEvent
+        val isDiscreteWheel = wheel == null || (
+            wheel.scrollType == java.awt.event.MouseWheelEvent.WHEEL_UNIT_SCROLL &&
+                abs(wheel.preciseWheelRotation - kotlin.math.round(wheel.preciseWheelRotation)) < 0.01
+            )
         val deltaY = event.changes.fold(0f) { acc, change -> acc + change.scrollDelta.y }
-        if (abs(deltaY) >= 0.5f) {
+        val isIntegerDelta = abs(deltaY) >= 1f && abs(deltaY - kotlin.math.round(deltaY)) < 0.01f
+        if (isDiscreteWheel && isIntegerDelta) {
             event.changes.forEach { it.consume() }
             driver.enqueue(deltaY)
         }

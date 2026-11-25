@@ -28,6 +28,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 enum class View { LIBRARY, BROWSE, BOOK, READER, HISTORY, EXTENSIONS, SETTINGS }
 data class ReaderState(
@@ -101,6 +102,8 @@ class ReaderModel(
     // Reader settings save in order without blocking the reader; close drains them.
     @OptIn(ExperimentalCoroutinesApi::class)
     private val settingsScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
+    private val appearanceGeneration = AtomicLong(0)
+    private val historyRecordingGeneration = AtomicLong(0)
     val state = mutable.asStateFlow()
 
     init {
@@ -383,13 +386,19 @@ class ReaderModel(
 
     fun setHistoryRecording(enabled: Boolean) {
         if (closing.get()) return
+        val gen = historyRecordingGeneration.incrementAndGet()
         mutable.update { it.copy(historyRecording = enabled, error = null) }
         settingsScope.launch {
             try {
                 library.setHistoryRecording(enabled)
             } catch (failure: Exception) {
                 val stored = runCatching { library.historyRecording() }.getOrElse { !enabled }
-                mutable.update { it.copy(historyRecording = stored, error = "Could not save history setting: ${failure.message ?: failure.javaClass.simpleName}") }
+                mutable.update { current ->
+                    current.copy(
+                        historyRecording = if (historyRecordingGeneration.get() == gen) stored else current.historyRecording,
+                        error = "Could not save history setting: ${failure.message ?: failure.javaClass.simpleName}",
+                    )
+                }
             }
         }
     }
@@ -411,15 +420,16 @@ class ReaderModel(
 
     private fun updateAppearance(optimistic: (DesktopAppearance) -> DesktopAppearance, write: () -> Unit) {
         if (closing.get()) return
+        val gen = appearanceGeneration.incrementAndGet()
         mutable.update { it.copy(appearance = optimistic(it.appearance), error = null) }
         settingsScope.launch {
             try {
                 write()
             } catch (failure: Exception) {
                 val stored = runCatching { library.appearance() }.getOrNull()
-                mutable.update {
-                    it.copy(
-                        appearance = stored ?: it.appearance,
+                mutable.update { current ->
+                    current.copy(
+                        appearance = if (appearanceGeneration.get() == gen && stored != null) stored else current.appearance,
                         error = "Could not save appearance: ${failure.message ?: failure.javaClass.simpleName}",
                     )
                 }
