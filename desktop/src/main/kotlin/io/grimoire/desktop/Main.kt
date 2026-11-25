@@ -6,6 +6,7 @@ import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -121,17 +122,24 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
     val appearance = state.appearance
     val slideDistancePx = with(LocalDensity.current) { 30.dp.roundToPx() }
     val inReader = state.view == View.READER && state.projection != null
+    val readerTransition = updateTransition(targetState = inReader, label = "readerTransition")
+    var lastReaderState by remember { mutableStateOf<ReaderState?>(null) }
+    if (inReader) lastReaderState = state
+    LaunchedEffect(readerTransition.currentState, readerTransition.targetState) {
+        if (!readerTransition.currentState && !readerTransition.targetState) lastReaderState = null
+    }
     GrimoireMaterialTheme(appearance.colorTheme.scheme(appearance.themeMode.isDark())) {
     CompositionLocalProvider(LocalCoversOnline provides !state.offline) {
     Surface(Modifier.fillMaxSize()) {
     // Smoothly transition between the navigation shell and the full-window reader.
-    AnimatedContent(
-        targetState = inReader,
+    readerTransition.AnimatedContent(
         transitionSpec = { sharedAxisX(forward = targetState, slideDistancePx = slideDistancePx) },
-        label = "readerTransition",
     ) { showingReader ->
-        if (showingReader && state.projection != null) {
-            ReaderScreen(state.copy(error = closeError ?: state.error), enabled, state.busy || closing, model)
+        if (showingReader) {
+            val readerState = if (inReader) state else lastReaderState
+            if (readerState != null) {
+                ReaderScreen(readerState.copy(error = closeError ?: readerState.error), enabled && inReader, state.busy || closing, model)
+            }
         } else {
             Row(Modifier.fillMaxSize()) {
                 DesktopNavigation(section, state.offline, enabled, model)
