@@ -2,9 +2,11 @@ package io.grimoire.ui.component
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
@@ -25,6 +27,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
@@ -87,11 +94,12 @@ fun RowScope.TooltipIconButton(
         targetValue = if (pressed) 8.dp else 0.dp,
         label = "tooltipIconShift",
     )
-    // A pointer hovering shows the label too, so mouse users can read it without a long press.
-    val hoverSource = remember { MutableInteractionSource() }
-    val hovered by hoverSource.collectIsHoveredAsState()
+    // Hovering or focusing reveals the label too, so mouse and keyboard users can read it without a long press.
+    val interactionSource = remember { MutableInteractionSource() }
+    val hovered by interactionSource.collectIsHoveredAsState()
+    val focused by interactionSource.collectIsFocusedAsState()
     val labelProgress by animateFloatAsState(
-        targetValue = if ((pressed || hovered) && effectiveVisible) 1f else 0f,
+        targetValue = if ((pressed || hovered || focused) && effectiveVisible) 1f else 0f,
         label = "tooltipLabelProgress",
     )
 
@@ -100,10 +108,19 @@ fun RowScope.TooltipIconButton(
             .weight(weight.coerceAtLeast(0.0001f))
             .height(56.dp)
             .graphicsLayer { this.alpha = alpha }
-            .hoverable(hoverSource)
+            .hoverable(interactionSource)
             .then(
                 if (effectiveVisible) {
                     Modifier
+                        .focusable(enabled = enabled, interactionSource = interactionSource)
+                        .onKeyEvent { event ->
+                            if (currentEnabled && event.type == KeyEventType.KeyUp &&
+                                (event.key == Key.Enter || event.key == Key.NumPadEnter || event.key == Key.Spacebar)
+                            ) {
+                                currentOnClick()
+                                true
+                            } else false
+                        }
                         .semantics(mergeDescendants = true) {
                             role = Role.Button
                             if (!enabled) disabled()
