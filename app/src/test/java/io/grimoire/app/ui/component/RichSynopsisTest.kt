@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.ui.component.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

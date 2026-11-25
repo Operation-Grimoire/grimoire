@@ -100,4 +100,18 @@
     <string name="library_locked_chapters">فصول مقفلة</string>
     <string name="library_notifications_enabled">الإشعارات مفعّلة</string>
     <string name="novel_your_rating">تقييمك</string>
+    <string name="action_show_less">عرض أقل</string>
+    <string name="action_show_more">عرض المزيد</string>
+    <string name="library_status_cancelled">ملغاة</string>
+    <string name="library_status_completed">مكتملة</string>
+    <string name="library_status_hiatus">متوقفة مؤقتًا</string>
+    <string name="library_status_ongoing">مستمرة</string>
+    <string name="library_status_unknown">غير معروفة</string>
+    <string name="novel_action_add_to_library">إضافة إلى المكتبة</string>
+    <string name="novel_action_in_library">في المكتبة</string>
+    <string name="novel_action_rate">تقييم</string>
+    <string name="novel_action_webview">WebView</string>
+    <string name="novel_metadata_edited">معدّل — انقر للتغيير</string>
+    <string name="novel_source_uninstalled">أُلغي تثبيت المصدر</string>
+    <string name="novel_source_uninstalled_named">%1$s (أُلغي تثبيته)</string>
 </resources>

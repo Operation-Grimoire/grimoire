@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.ui.component.*
 import io.grimoire.ui.icon.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import io.grimoire.ui.component.PlainTooltipIconButton
@@ -39,8 +40,6 @@ import io.grimoire.app.data.download.ChapterDownloadStatus
 import io.grimoire.app.data.local.entity.ChapterEntity
 import io.grimoire.ui.theme.premiumGold
 import io.grimoire.app.R
-import java.text.DateFormat
-import java.util.Date
 
 /**
  * Standard chapter row used by Novel Details and Updates. Renders the chapter
@@ -66,49 +65,15 @@ fun ChapterItem(
     modifier: Modifier = Modifier,
     containerColor: Color = Color.Unspecified,
 ) {
-    // Read chapters dim to signal "done"; locked chapters instead use a gold
-    // accent to signal "premium", so the two states stay visually distinct.
-    val contentAlpha = if (chapter.read && !chapter.locked) 0.38f else 1f
-    val headlineColor = if (chapter.locked) {
-        MaterialTheme.colorScheme.premiumGold
-    } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha)
-    }
-    val dateText = remember(chapter.uploadDate) {
-        if (chapter.uploadDate > 0L) formatChapterDate(chapter.uploadDate) else null
-    }
-    val progressText = if (!chapter.read && chapter.readProgress > 0f) {
-        "${(chapter.readProgress * 100).toInt()}%"
-    } else null
-    val subText = listOfNotNull(dateText, progressText).joinToString(" · ").takeIf { it.isNotEmpty() }
-
-    ListItem(
-        colors = if (selected) {
-            ListItemDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-            )
-        } else {
-            ListItemDefaults.colors(containerColor = containerColor)
-        },
-        headlineContent = {
-            Text(
-                chapter.name,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = headlineColor,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        },
-        supportingContent = if (subText != null) {
-            {
-                Text(
-                    subText,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        } else null,
-        trailingContent = {
+    ChapterRow(
+        name = chapter.name,
+        uploadDate = chapter.uploadDate,
+        read = chapter.read,
+        readProgress = chapter.readProgress,
+        locked = chapter.locked,
+        selected = selected,
+        containerColor = containerColor,
+        trailing = {
             ChapterStatusTrailing(
                 chapter = chapter,
                 selectionMode = selectionMode,
@@ -120,14 +85,13 @@ fun ChapterItem(
                 onRedownload = onRedownload,
             )
         },
-        modifier = modifier.combinedClickable(
-            onClick = when {
-                selectionMode -> onToggleSelection
-                chapter.locked -> onLockedClick
-                else -> onClick
-            },
-            onLongClick = onToggleSelection,
-        ),
+        onClick = when {
+            selectionMode -> onToggleSelection
+            chapter.locked -> onLockedClick
+            else -> onClick
+        },
+        onLongClick = onToggleSelection,
+        modifier = modifier,
     )
 }
 
@@ -329,6 +293,3 @@ private fun BoxScope.RefreshBadgeSpinner() {
         CircularProgressIndicator(modifier = Modifier.size(10.dp), strokeWidth = 1.5.dp)
     }
 }
-
-private fun formatChapterDate(millis: Long): String =
-    DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(millis))

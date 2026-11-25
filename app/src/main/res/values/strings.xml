@@ -289,8 +289,6 @@
     <string name="action_decrease">Decrease</string>
     <string name="action_increase">Increase</string>
     <string name="action_clear_search">Clear search</string>
-    <string name="action_show_more">Show more</string>
-    <string name="action_show_less">Show less</string>
     <string name="action_download">Download</string>
     <string name="action_open_extensions">Open extensions</string>
     <string name="content_description_in_library">In library</string>
@@ -346,15 +344,12 @@
     <string name="source_filter_no_matches">No matches</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">In library</string>
     <string name="novel_action_add_to_library">Add to library</string>
     <string name="novel_action_remove_from_library">Remove from library</string>
     <string name="novel_action_change_category">Change category</string>
     <string name="novel_loading">Loading…</string>
     <string name="novel_expand">Expand</string>
     <string name="novel_collapse">Collapse</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">Rate</string>
     <string name="novel_edit_field_title">title</string>
     <string name="novel_edit_field_author">author</string>
     <string name="novel_edit_field_status">status</string>
@@ -377,13 +372,10 @@
     <string name="novel_source_missing_message">%1$s isn\'t installed on this device. Your saved details and any downloaded chapters are still available, but you can\'t fetch new chapters or open the source until you reinstall its extension.</string>
     <string name="novel_source_missing_generic">This novel\'s source</string>
     <string name="novel_source_missing_named">\"%1$s\"</string>
-    <string name="novel_source_uninstalled">Source uninstalled</string>
-    <string name="novel_source_uninstalled_named">%1$s (uninstalled)</string>
     <string name="novel_cover_url_title">Cover image URL</string>
     <string name="novel_cover_replace_image">Replace with image</string>
     <string name="novel_cover_replace_url">Replace with URL</string>
     <string name="novel_cover_reset">Reset to source cover</string>
-    <string name="novel_metadata_edited">Edited — tap to change</string>
     <string name="novel_downloads_title">Downloads</string>
     <string name="novel_downloads_progress">%1$d / %2$d downloaded</string>
     <string name="novel_download_all">Download all</string>

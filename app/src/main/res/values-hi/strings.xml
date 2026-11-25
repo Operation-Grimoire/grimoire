@@ -290,8 +290,6 @@
     <string name="action_decrease">घटाएँ</string>
     <string name="action_increase">बढ़ाएँ</string>
     <string name="action_clear_search">खोज साफ़ करें</string>
-    <string name="action_show_more">और दिखाएँ</string>
-    <string name="action_show_less">कम दिखाएँ</string>
     <string name="action_download">डाउनलोड करें</string>
     <string name="action_open_extensions">एक्सटेंशन खोलें</string>
     <string name="content_description_in_library">लाइब्रेरी में</string>
@@ -347,15 +345,12 @@
     <string name="source_filter_no_matches">कोई मेल नहीं</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">लाइब्रेरी में</string>
     <string name="novel_action_add_to_library">लाइब्रेरी में जोड़ें</string>
     <string name="novel_action_remove_from_library">लाइब्रेरी से हटाएँ</string>
     <string name="novel_action_change_category">श्रेणी बदलें</string>
     <string name="novel_loading">लोड हो रहा है…</string>
     <string name="novel_expand">फैलाएँ</string>
     <string name="novel_collapse">समेटें</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">रेट करें</string>
     <string name="novel_edit_field_title">शीर्षक</string>
     <string name="novel_edit_field_author">लेखक</string>
     <string name="novel_edit_field_status">स्थिति</string>
@@ -378,13 +373,10 @@
     <string name="novel_source_missing_message">%1$s इस डिवाइस पर इंस्टॉल नहीं है। आपकी सेव की गई जानकारी और डाउनलोड किए गए अध्याय अब भी उपलब्ध हैं, लेकिन जब तक आप इसका एक्सटेंशन फिर से इंस्टॉल नहीं करते, आप नए अध्याय नहीं ला सकते या स्रोत नहीं खोल सकते।</string>
     <string name="novel_source_missing_generic">इस उपन्यास का स्रोत</string>
     <string name="novel_source_missing_named">“%1$s”</string>
-    <string name="novel_source_uninstalled">स्रोत अनइंस्टॉल हो गया</string>
-    <string name="novel_source_uninstalled_named">%1$s (अनइंस्टॉल)</string>
     <string name="novel_cover_url_title">कवर इमेज URL</string>
     <string name="novel_cover_replace_image">इमेज से बदलें</string>
     <string name="novel_cover_replace_url">URL से बदलें</string>
     <string name="novel_cover_reset">स्रोत वाला कवर रीसेट करें</string>
-    <string name="novel_metadata_edited">संपादित — बदलने के लिए टैप करें</string>
     <string name="novel_downloads_title">डाउनलोड</string>
     <string name="novel_downloads_progress">%1$d / %2$d डाउनलोड हुए</string>
     <string name="novel_download_all">सभी डाउनलोड करें</string>

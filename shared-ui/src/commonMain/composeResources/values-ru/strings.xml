@@ -94,4 +94,18 @@
     <string name="library_locked_chapters">Закрытые главы</string>
     <string name="library_notifications_enabled">Уведомления включены</string>
     <string name="novel_your_rating">Ваша оценка</string>
+    <string name="action_show_less">Свернуть</string>
+    <string name="action_show_more">Показать больше</string>
+    <string name="library_status_cancelled">Заброшена</string>
+    <string name="library_status_completed">Завершена</string>
+    <string name="library_status_hiatus">Перерыв</string>
+    <string name="library_status_ongoing">Выходит</string>
+    <string name="library_status_unknown">Неизвестно</string>
+    <string name="novel_action_add_to_library">В библиотеку</string>
+    <string name="novel_action_in_library">В библиотеке</string>
+    <string name="novel_action_rate">Оценить</string>
+    <string name="novel_action_webview">WebView</string>
+    <string name="novel_metadata_edited">Изменено — нажмите, чтобы править</string>
+    <string name="novel_source_uninstalled">Источник удалён</string>
+    <string name="novel_source_uninstalled_named">%1$s (удалён)</string>
 </resources>

@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.screen.browse
 
+import io.grimoire.ui.novel.*
 import io.grimoire.app.ui.tour.tourTarget
 import io.grimoire.app.ui.tour.TourKey
 import io.grimoire.ui.icon.*
@@ -98,7 +99,7 @@ import io.grimoire.app.ui.component.ChapterItem
 import io.grimoire.app.ui.component.CloudflareBlockedCard
 import io.grimoire.app.ui.component.FastScroller
 import io.grimoire.app.ui.component.showScrollToTop
-import io.grimoire.app.ui.component.ExpandableText
+import io.grimoire.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.MoveToCategorySheet
 import io.grimoire.app.ui.component.ReadingCompletionErrorDialog
@@ -110,6 +111,7 @@ import io.grimoire.app.ui.component.rememberShimmerAlpha
 import io.grimoire.ui.theme.premiumGold
 import kotlinx.coroutines.launch
 import io.grimoire.app.R
+import io.grimoire.ui.novel.OverrideIndicator
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -927,6 +929,7 @@ fun NovelDetailScreen(
                                 onEditCategory = { showCategoryDialog = true },
                                 userRating = userRating,
                                 onRate = { showRateDialog = true },
+                                addToLibraryModifier = Modifier.tourTarget(TourKey.NovelAddToLibrary),
                             )
                         }
                     }

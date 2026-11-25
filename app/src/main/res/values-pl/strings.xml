@@ -306,8 +306,6 @@
     <string name="action_decrease">Zmniejsz</string>
     <string name="action_increase">Zwiększ</string>
     <string name="action_clear_search">Wyczyść wyszukiwanie</string>
-    <string name="action_show_more">Pokaż więcej</string>
-    <string name="action_show_less">Pokaż mniej</string>
     <string name="action_download">Pobierz</string>
     <string name="action_open_extensions">Otwórz rozszerzenia</string>
     <string name="content_description_in_library">W bibliotece</string>
@@ -367,15 +365,12 @@
     <string name="source_filter_no_matches">Brak wyników</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">W bibliotece</string>
     <string name="novel_action_add_to_library">Dodaj do biblioteki</string>
     <string name="novel_action_remove_from_library">Usuń z biblioteki</string>
     <string name="novel_action_change_category">Zmień kategorię</string>
     <string name="novel_loading">Wczytywanie…</string>
     <string name="novel_expand">Rozwiń</string>
     <string name="novel_collapse">Zwiń</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">Oceń</string>
     <string name="novel_edit_field_title">tytuł</string>
     <string name="novel_edit_field_author">autor</string>
     <string name="novel_edit_field_status">status</string>
@@ -398,13 +393,10 @@
     <string name="novel_source_missing_message">%1$s nie jest zainstalowane na tym urządzeniu. Zapisane informacje i pobrane rozdziały są nadal dostępne, ale nie możesz pobierać nowych rozdziałów ani otworzyć źródła, dopóki nie zainstalujesz ponownie jego rozszerzenia.</string>
     <string name="novel_source_missing_generic">Źródło tej powieści</string>
     <string name="novel_source_missing_named">„%1$s”</string>
-    <string name="novel_source_uninstalled">Źródło odinstalowane</string>
-    <string name="novel_source_uninstalled_named">%1$s (odinstalowane)</string>
     <string name="novel_cover_url_title">URL okładki</string>
     <string name="novel_cover_replace_image">Zastąp obrazem</string>
     <string name="novel_cover_replace_url">Zastąp adresem URL</string>
     <string name="novel_cover_reset">Przywróć okładkę ze źródła</string>
-    <string name="novel_metadata_edited">Edytowano — dotknij, aby zmienić</string>
     <string name="novel_downloads_title">Pobieranie</string>
     <string name="novel_downloads_progress">Pobrano %1$d / %2$d</string>
     <string name="novel_download_all">Pobierz wszystkie</string>

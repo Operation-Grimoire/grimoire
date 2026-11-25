@@ -49,7 +49,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.grimoire.app.data.novelupdates.NovelUpdatesEndpoints
 import io.grimoire.app.data.novelupdates.NuReview
 import io.grimoire.app.extension.repo.ExtensionItem
-import io.grimoire.app.ui.component.ExpandableText
+import io.grimoire.ui.component.ExpandableText
 import io.grimoire.app.ui.component.GenreChips
 import io.grimoire.app.ui.component.ZoomableCoverImage
 import io.grimoire.app.ui.screen.extensions.InstallState

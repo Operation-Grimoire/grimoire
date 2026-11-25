@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.ui.component.*
 import io.grimoire.ui.icon.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column

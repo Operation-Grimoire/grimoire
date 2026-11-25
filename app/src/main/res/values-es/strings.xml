@@ -298,8 +298,6 @@
     <string name="action_decrease">Disminuir</string>
     <string name="action_increase">Aumentar</string>
     <string name="action_clear_search">Borrar búsqueda</string>
-    <string name="action_show_more">Mostrar más</string>
-    <string name="action_show_less">Mostrar menos</string>
     <string name="action_download">Descargar</string>
     <string name="action_open_extensions">Abrir extensiones</string>
     <string name="content_description_in_library">En la biblioteca</string>
@@ -357,15 +355,12 @@
     <string name="source_filter_no_matches">Sin coincidencias</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">En la biblioteca</string>
     <string name="novel_action_add_to_library">Agregar a la biblioteca</string>
     <string name="novel_action_remove_from_library">Quitar de la biblioteca</string>
     <string name="novel_action_change_category">Cambiar categoría</string>
     <string name="novel_loading">Cargando…</string>
     <string name="novel_expand">Expandir</string>
     <string name="novel_collapse">Contraer</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">Calificar</string>
     <string name="novel_edit_field_title">título</string>
     <string name="novel_edit_field_author">autor</string>
     <string name="novel_edit_field_status">estado</string>
@@ -388,13 +383,10 @@
     <string name="novel_source_missing_message">%1$s no está instalada en este dispositivo. Los datos guardados y los capítulos descargados siguen disponibles, pero no podrás obtener capítulos nuevos ni abrir la fuente hasta que vuelvas a instalar su extensión.</string>
     <string name="novel_source_missing_generic">La fuente de esta novela</string>
     <string name="novel_source_missing_named">“%1$s”</string>
-    <string name="novel_source_uninstalled">Fuente desinstalada</string>
-    <string name="novel_source_uninstalled_named">%1$s (desinstalada)</string>
     <string name="novel_cover_url_title">URL de la imagen de portada</string>
     <string name="novel_cover_replace_image">Reemplazar con una imagen</string>
     <string name="novel_cover_replace_url">Reemplazar con una URL</string>
     <string name="novel_cover_reset">Restablecer la portada de la fuente</string>
-    <string name="novel_metadata_edited">Editado: toca para cambiar</string>
     <string name="novel_downloads_title">Descargas</string>
     <string name="novel_downloads_progress">%1$d / %2$d descargados</string>
     <string name="novel_download_all">Descargar todo</string>

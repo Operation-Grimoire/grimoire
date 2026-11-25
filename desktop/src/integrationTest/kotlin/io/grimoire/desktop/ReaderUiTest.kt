@@ -330,6 +330,12 @@ class ReaderUiTest {
         try {
             compose.setContent { Surface(Modifier.size(1100.dp, 760.dp)) { DesktopReader(model, false, null) {} } }
             click("Reader book")
+            // Book details: header, library action, continue, chapter rows with their states.
+            compose.onNode(hasText("In library") and hasClickAction()).assertExists()
+            compose.onNodeWithText("3 chapters").assertExists()
+            compose.onNode(hasText("Start reading") and hasClickAction()).assertIsEnabled()
+            compose.onNode(hasText("Locked chapter") and hasClickAction()).assertIsNotEnabled()
+            capture("book-details.png")
             click("Chapter one")
             compose.onNodeWithText("Chapter one begins here.").assertIsDisplayed()
             compose.onNode(hasText("Previous") and hasClickAction()).assertIsNotEnabled()

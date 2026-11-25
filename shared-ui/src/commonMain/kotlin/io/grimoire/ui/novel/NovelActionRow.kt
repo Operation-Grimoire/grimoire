@@ -1,7 +1,6 @@
-package io.grimoire.app.ui.screen.browse
+package io.grimoire.ui.novel
 
-import io.grimoire.app.ui.tour.tourTarget
-import io.grimoire.app.ui.tour.TourKey
+import io.grimoire.ui.resources.*
 import io.grimoire.ui.icon.*
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
@@ -30,8 +29,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
-import io.grimoire.app.R
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Prominent action row shown directly below [NovelHeader] (#bookmark-surfacing).
@@ -46,7 +44,7 @@ import io.grimoire.app.R
  * cross-fades its icon/label/tint between the add and in-library states.
  */
 @Composable
-internal fun NovelActionRow(
+fun NovelActionRow(
     inLibrary: Boolean,
     onToggleLibrary: () -> Unit,
     showWebView: Boolean,
@@ -56,6 +54,11 @@ internal fun NovelActionRow(
     userRating: Int?,
     onRate: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Lets Android attach its guided-tour anchor. */
+    addToLibraryModifier: Modifier = Modifier,
+    /** Category and rating buttons; a platform without them passes false. */
+    showCategory: Boolean = true,
+    showRating: Boolean = true,
 ) {
     // Retain the last name so the category button can animate out without its label
     // blanking mid-collapse (the screen passes null once the novel leaves the library).
@@ -77,7 +80,7 @@ internal fun NovelActionRow(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (inLibraryWeight > 0.001f) {
+        if (showCategory && inLibraryWeight > 0.001f) {
             NovelActionButton(
                 modifier = Modifier.weight(inLibraryWeight),
                 icon = AppIcons.Label,
@@ -88,11 +91,11 @@ internal fun NovelActionRow(
             )
         }
         NovelActionButton(
-            modifier = Modifier.weight(1f).tourTarget(TourKey.NovelAddToLibrary),
+            modifier = Modifier.weight(1f).then(addToLibraryModifier),
             icon = if (inLibrary) AppIcons.Bookmark else AppIcons.BookmarkBorder,
             label = stringResource(
-                if (inLibrary) R.string.novel_action_in_library
-                else R.string.novel_action_add_to_library,
+                if (inLibrary) Res.string.novel_action_in_library
+                else Res.string.novel_action_add_to_library,
             ),
             active = inLibrary,
             onClick = onToggleLibrary,
@@ -101,18 +104,18 @@ internal fun NovelActionRow(
             NovelActionButton(
                 modifier = Modifier.weight(1f),
                 icon = AppIcons.Language,
-                label = stringResource(R.string.novel_action_webview),
+                label = stringResource(Res.string.novel_action_webview),
                 active = false,
                 onClick = onOpenWebView,
             )
         }
         // Rating is a library-only action: it grows/shrinks with the same weight as the
         // category button so the row reflows smoothly when the library is toggled.
-        if (inLibraryWeight > 0.001f) {
+        if (showRating && inLibraryWeight > 0.001f) {
             NovelActionButton(
                 modifier = Modifier.weight(inLibraryWeight),
                 icon = AppIcons.Star,
-                label = if (userRating != null) "$userRating/10" else stringResource(R.string.novel_action_rate),
+                label = if (userRating != null) "$userRating/10" else stringResource(Res.string.novel_action_rate),
                 active = userRating != null,
                 onClick = onRate,
                 contentAlpha = inLibraryWeight.coerceIn(0f, 1f),

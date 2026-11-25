@@ -85,4 +85,18 @@
     <string name="library_locked_chapters">Chương bị khóa</string>
     <string name="library_notifications_enabled">Đã bật thông báo</string>
     <string name="novel_your_rating">Đánh giá của bạn</string>
+    <string name="action_show_less">Thu gọn</string>
+    <string name="action_show_more">Xem thêm</string>
+    <string name="library_status_cancelled">Đã hủy</string>
+    <string name="library_status_completed">Hoàn thành</string>
+    <string name="library_status_hiatus">Tạm ngưng</string>
+    <string name="library_status_ongoing">Đang tiến hành</string>
+    <string name="library_status_unknown">Không rõ</string>
+    <string name="novel_action_add_to_library">Thêm vào thư viện</string>
+    <string name="novel_action_in_library">Trong thư viện</string>
+    <string name="novel_action_rate">Đánh giá</string>
+    <string name="novel_action_webview">WebView</string>
+    <string name="novel_metadata_edited">Đã sửa — chạm để thay đổi</string>
+    <string name="novel_source_uninstalled">Đã gỡ nguồn</string>
+    <string name="novel_source_uninstalled_named">%1$s (đã gỡ)</string>
 </resources>

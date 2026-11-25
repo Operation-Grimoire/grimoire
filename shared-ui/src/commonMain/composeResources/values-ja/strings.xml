@@ -85,4 +85,18 @@
     <string name="library_locked_chapters">ロックされた章</string>
     <string name="library_notifications_enabled">通知オン</string>
     <string name="novel_your_rating">自分の評価</string>
+    <string name="action_show_less">折りたたむ</string>
+    <string name="action_show_more">もっと見る</string>
+    <string name="library_status_cancelled">打ち切り</string>
+    <string name="library_status_completed">完結</string>
+    <string name="library_status_hiatus">休載中</string>
+    <string name="library_status_ongoing">連載中</string>
+    <string name="library_status_unknown">不明</string>
+    <string name="novel_action_add_to_library">ライブラリに追加</string>
+    <string name="novel_action_in_library">ライブラリに追加済み</string>
+    <string name="novel_action_rate">評価</string>
+    <string name="novel_action_webview">WebView</string>
+    <string name="novel_metadata_edited">編集済み — タップで変更</string>
+    <string name="novel_source_uninstalled">ソースはアンインストール済み</string>
+    <string name="novel_source_uninstalled_named">%1$s（アンインストール済み）</string>
 </resources>

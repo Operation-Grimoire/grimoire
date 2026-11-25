@@ -85,4 +85,18 @@
     <string name="library_locked_chapters">锁定章节</string>
     <string name="library_notifications_enabled">已开启通知</string>
     <string name="novel_your_rating">我的评分</string>
+    <string name="action_show_less">收起</string>
+    <string name="action_show_more">展开</string>
+    <string name="library_status_cancelled">已取消</string>
+    <string name="library_status_completed">已完结</string>
+    <string name="library_status_hiatus">暂停更新</string>
+    <string name="library_status_ongoing">连载中</string>
+    <string name="library_status_unknown">未知</string>
+    <string name="novel_action_add_to_library">加入书库</string>
+    <string name="novel_action_in_library">已在书库</string>
+    <string name="novel_action_rate">评分</string>
+    <string name="novel_action_webview">内置网页</string>
+    <string name="novel_metadata_edited">已编辑，点按可修改</string>
+    <string name="novel_source_uninstalled">书源已卸载</string>
+    <string name="novel_source_uninstalled_named">%1$s（已卸载）</string>
 </resources>

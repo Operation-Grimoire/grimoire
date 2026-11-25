@@ -154,7 +154,7 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
                 View.BROWSE -> BrowsePane(state, enabled, model, Modifier.weight(1f))
                 View.EXTENSIONS -> ExtensionsPane(state, enabled, model, openExtension, Modifier.weight(1f))
                 View.SETTINGS -> SettingsPane(state, enabled, model, Modifier.weight(1f))
-                View.BOOK, View.READER -> BookPane(state, enabled, model, Modifier.weight(1f))
+                View.BOOK, View.READER -> BookScreen(state, enabled, model, Modifier.weight(1f))
             }
         }
     }
@@ -313,36 +313,6 @@ private fun BrowseFooter(state: ReaderState, enabled: Boolean, model: ReaderMode
 }
 
 @Composable
-private fun BookPane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier) {
-    val book = state.book ?: return
-    val current = state.chapter
-    Column(modifier) {
-        Text(book.novel.title, style = MaterialTheme.typography.headlineSmall)
-        book.novel.author?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TextButton(onClick = model::favorite, enabled = enabled) {
-                Text(if (book.favorite) "Remove from library" else "Add to library")
-            }
-        }
-        HorizontalDivider()
-        Row(Modifier.weight(1f).padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            ChapterPane(book, current, enabled, state.offline, model, Modifier.width(320.dp).fillMaxHeight())
-            val description = remember(book.novel.description) { org.jsoup.Jsoup.parse(book.novel.description.orEmpty()).text() }
-            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                item { Text("${book.chapters.size} chapters", style = MaterialTheme.typography.titleLarge) }
-                book.resumeChapter()?.let { chapter ->
-                    item {
-                        Button(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked &&
-                            (!state.offline || chapter.url in book.downloaded)) { Text("Continue reading") }
-                    }
-                }
-                item { Text(description, style = MaterialTheme.typography.bodyLarge) }
-            }
-        }
-    }
-}
-
-@Composable
 private fun LibraryPane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier = Modifier) {
     var query by remember { mutableStateOf("") }
     val books = remember(state.library, query) { filterLibrary(state.library, query) }
@@ -390,28 +360,3 @@ internal fun SavedBook.counts(): ChapterCounts {
     )
 }
 
-@Composable
-private fun ChapterPane(book: SavedBook, current: Chapter?, enabled: Boolean, offline: Boolean, model: ReaderModel, modifier: Modifier = Modifier) {
-    val scroll = rememberLazyListState()
-    Box(modifier) {
-        LazyColumn(state = scroll, modifier = Modifier.fillMaxSize().padding(end = 12.dp)) {
-            items(book.chapters, key = { it.url }) { chapter ->
-                TextButton(onClick = { model.read(chapter) }, enabled = enabled && !chapter.locked &&
-                    (!offline || chapter.url in book.downloaded), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.fillMaxWidth()) {
-                        Text(chapter.name, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        val status = when {
-                            chapter.locked -> "Locked"
-                            chapter.url == current?.url -> "Reading"
-                            chapter.url in book.downloaded -> "Saved offline"
-                            offline -> "Not downloaded"
-                            else -> null
-                        }
-                        status?.let { Text(it, style = MaterialTheme.typography.labelSmall) }
-                    }
-                }
-            }
-        }
-        VerticalScrollbar(rememberScrollbarAdapter(scroll), Modifier.fillMaxHeight().align(androidx.compose.ui.Alignment.CenterEnd))
-    }
-}

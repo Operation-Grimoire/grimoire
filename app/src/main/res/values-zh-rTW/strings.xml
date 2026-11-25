@@ -282,8 +282,6 @@
     <string name="action_decrease">減少</string>
     <string name="action_increase">增加</string>
     <string name="action_clear_search">清除搜尋</string>
-    <string name="action_show_more">顯示更多</string>
-    <string name="action_show_less">顯示較少</string>
     <string name="action_download">下載</string>
     <string name="action_open_extensions">開啟擴充功能</string>
     <string name="content_description_in_library">已在書櫃中</string>
@@ -337,15 +335,12 @@
     <string name="source_filter_no_matches">沒有符合的項目</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">已在書櫃中</string>
     <string name="novel_action_add_to_library">加入書櫃</string>
     <string name="novel_action_remove_from_library">從書櫃移除</string>
     <string name="novel_action_change_category">變更分類</string>
     <string name="novel_loading">載入中…</string>
     <string name="novel_expand">展開</string>
     <string name="novel_collapse">收合</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">評分</string>
     <string name="novel_edit_field_title">標題</string>
     <string name="novel_edit_field_author">作者</string>
     <string name="novel_edit_field_status">狀態</string>
@@ -368,13 +363,10 @@
     <string name="novel_source_missing_message">此裝置未安裝 %1$s。你儲存的資料和已下載的章節仍可使用，但在重新安裝對應的擴充功能前，無法抓取新章節或開啟來源。</string>
     <string name="novel_source_missing_generic">這本小說的來源</string>
     <string name="novel_source_missing_named">「%1$s」</string>
-    <string name="novel_source_uninstalled">來源已解除安裝</string>
-    <string name="novel_source_uninstalled_named">%1$s（已解除安裝）</string>
     <string name="novel_cover_url_title">封面圖片網址</string>
     <string name="novel_cover_replace_image">以圖片取代</string>
     <string name="novel_cover_replace_url">以網址取代</string>
     <string name="novel_cover_reset">重設為來源封面</string>
-    <string name="novel_metadata_edited">已編輯，輕觸即可變更</string>
     <string name="novel_downloads_title">下載</string>
     <string name="novel_downloads_progress">已下載 %1$d / %2$d</string>
     <string name="novel_download_all">全部下載</string>

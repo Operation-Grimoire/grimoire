@@ -88,4 +88,18 @@
     <string name="library_locked_chapters">Kilitli bölümler</string>
     <string name="library_notifications_enabled">Bildirimler etkin</string>
     <string name="novel_your_rating">Puanınız</string>
+    <string name="action_show_less">Daha az göster</string>
+    <string name="action_show_more">Daha fazla göster</string>
+    <string name="library_status_cancelled">İptal edildi</string>
+    <string name="library_status_completed">Tamamlandı</string>
+    <string name="library_status_hiatus">Ara verildi</string>
+    <string name="library_status_ongoing">Devam ediyor</string>
+    <string name="library_status_unknown">Bilinmiyor</string>
+    <string name="novel_action_add_to_library">Kitaplığa ekle</string>
+    <string name="novel_action_in_library">Kitaplıkta</string>
+    <string name="novel_action_rate">Puanla</string>
+    <string name="novel_action_webview">WebView</string>
+    <string name="novel_metadata_edited">Düzenlendi — değiştirmek için dokunun</string>
+    <string name="novel_source_uninstalled">Kaynak kaldırıldı</string>
+    <string name="novel_source_uninstalled_named">%1$s (kaldırıldı)</string>
 </resources>

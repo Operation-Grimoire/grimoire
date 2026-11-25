@@ -288,8 +288,6 @@
     <string name="action_decrease">Azalt</string>
     <string name="action_increase">Artır</string>
     <string name="action_clear_search">Aramayı temizle</string>
-    <string name="action_show_more">Daha fazla göster</string>
-    <string name="action_show_less">Daha az göster</string>
     <string name="action_download">İndir</string>
     <string name="action_open_extensions">Uzantıları aç</string>
     <string name="content_description_in_library">Kitaplıkta</string>
@@ -345,15 +343,12 @@
     <string name="source_filter_no_matches">Eşleşme yok</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">Kitaplıkta</string>
     <string name="novel_action_add_to_library">Kitaplığa ekle</string>
     <string name="novel_action_remove_from_library">Kitaplıktan kaldır</string>
     <string name="novel_action_change_category">Kategoriyi değiştir</string>
     <string name="novel_loading">Yükleniyor…</string>
     <string name="novel_expand">Genişlet</string>
     <string name="novel_collapse">Daralt</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">Puanla</string>
     <string name="novel_edit_field_title">başlık</string>
     <string name="novel_edit_field_author">yazar</string>
     <string name="novel_edit_field_status">durum</string>
@@ -376,13 +371,10 @@
     <string name="novel_source_missing_message">%1$s bu cihazda yüklü değil. Kayıtlı bilgileriniz ve indirilen bölümler hâlâ kullanılabilir, ancak uzantısını yeniden yükleyene kadar yeni bölüm alamaz veya kaynağı açamazsınız.</string>
     <string name="novel_source_missing_generic">Bu romanın kaynağı</string>
     <string name="novel_source_missing_named">“%1$s”</string>
-    <string name="novel_source_uninstalled">Kaynak kaldırıldı</string>
-    <string name="novel_source_uninstalled_named">%1$s (kaldırıldı)</string>
     <string name="novel_cover_url_title">Kapak görseli URL’si</string>
     <string name="novel_cover_replace_image">Görselle değiştir</string>
     <string name="novel_cover_replace_url">URL ile değiştir</string>
     <string name="novel_cover_reset">Kaynak kapağına sıfırla</string>
-    <string name="novel_metadata_edited">Düzenlendi — değiştirmek için dokunun</string>
     <string name="novel_downloads_title">İndirmeler</string>
     <string name="novel_downloads_progress">%1$d / %2$d indirildi</string>
     <string name="novel_download_all">Tümünü indir</string>

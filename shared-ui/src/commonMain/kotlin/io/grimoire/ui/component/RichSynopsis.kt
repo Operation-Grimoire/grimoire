@@ -1,4 +1,4 @@
-package io.grimoire.app.ui.component
+package io.grimoire.ui.component
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -10,7 +10,7 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.fromHtml
+import io.grimoire.ui.reader.readerHtml
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 
@@ -43,7 +43,7 @@ fun rememberSynopsisAnnotatedString(text: String): AnnotatedString {
     }
 }
 
-internal fun buildSynopsisAnnotatedString(
+fun buildSynopsisAnnotatedString(
     text: String,
     renderLinks: Boolean,
     linkColor: Color,
@@ -56,10 +56,7 @@ internal fun buildSynopsisAnnotatedString(
     )
 
     if (containsHtmlMarkup(text)) {
-        val parsed = AnnotatedString.fromHtml(
-            htmlString = text,
-            linkStyles = if (renderLinks) linkStyles else null,
-        )
+        val parsed = readerHtml(text, linkStyles = if (renderLinks) linkStyles else null)
         return if (renderLinks) parsed else parsed.withoutLinkAnnotations()
     }
 
@@ -77,7 +74,7 @@ internal fun buildSynopsisAnnotatedString(
 }
 
 /** A run of synopsis text, either plain or a detected link. */
-internal sealed interface SynopsisSegment {
+sealed interface SynopsisSegment {
     data class Plain(val text: String) : SynopsisSegment
     data class Link(val text: String, val url: String) : SynopsisSegment
 }
@@ -96,9 +93,9 @@ private val URL_REGEX = Regex("""(?:https?://|www\.)[^\s]+""", RegexOption.IGNOR
 // Punctuation that commonly trails a URL in prose and shouldn't be part of it.
 private const val URL_TRAILING = ".,!?;:)]}>\"'"
 
-internal fun containsHtmlMarkup(text: String): Boolean = HTML_MARKUP.containsMatchIn(text)
+fun containsHtmlMarkup(text: String): Boolean = HTML_MARKUP.containsMatchIn(text)
 
-internal fun parsePlainSynopsis(text: String, detectLinks: Boolean): List<SynopsisSegment> {
+fun parsePlainSynopsis(text: String, detectLinks: Boolean): List<SynopsisSegment> {
     if (!detectLinks || text.isEmpty()) return listOf(SynopsisSegment.Plain(text))
 
     val segments = mutableListOf<SynopsisSegment>()

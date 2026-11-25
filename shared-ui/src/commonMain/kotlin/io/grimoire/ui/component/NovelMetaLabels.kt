@@ -1,5 +1,6 @@
-package io.grimoire.app.ui.component
+package io.grimoire.ui.component
 
+import io.grimoire.ui.resources.*
 import io.grimoire.ui.icon.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,9 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import io.grimoire.api.model.novel.NovelStatus
-import io.grimoire.app.R
 import java.util.Locale
 
 @Composable
@@ -87,11 +87,11 @@ val NovelStatus.displayName: String
 @Composable
 fun NovelStatus.localizedDisplayName(): String = stringResource(
     when (this) {
-        NovelStatus.UNKNOWN -> R.string.library_status_unknown
-        NovelStatus.ONGOING -> R.string.library_status_ongoing
-        NovelStatus.COMPLETED -> R.string.library_status_completed
-        NovelStatus.HIATUS -> R.string.library_status_hiatus
-        NovelStatus.CANCELLED -> R.string.library_status_cancelled
+        NovelStatus.UNKNOWN -> Res.string.library_status_unknown
+        NovelStatus.ONGOING -> Res.string.library_status_ongoing
+        NovelStatus.COMPLETED -> Res.string.library_status_completed
+        NovelStatus.HIATUS -> Res.string.library_status_hiatus
+        NovelStatus.CANCELLED -> Res.string.library_status_cancelled
     },
 )
 

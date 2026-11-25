@@ -1,5 +1,6 @@
 package io.grimoire.app.ui.component
 
+import io.grimoire.ui.component.*
 import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size

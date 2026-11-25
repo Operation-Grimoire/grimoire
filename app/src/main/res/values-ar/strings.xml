@@ -322,8 +322,6 @@
     <string name="action_decrease">تقليل</string>
     <string name="action_increase">زيادة</string>
     <string name="action_clear_search">مسح البحث</string>
-    <string name="action_show_more">عرض المزيد</string>
-    <string name="action_show_less">عرض أقل</string>
     <string name="action_download">تنزيل</string>
     <string name="action_open_extensions">فتح الإضافات</string>
     <string name="content_description_in_library">في المكتبة</string>
@@ -387,15 +385,12 @@
     <string name="source_filter_no_matches">لا توجد نتائج مطابقة</string>
 
     <!-- Novel details -->
-    <string name="novel_action_in_library">في المكتبة</string>
     <string name="novel_action_add_to_library">إضافة إلى المكتبة</string>
     <string name="novel_action_remove_from_library">إزالة من المكتبة</string>
     <string name="novel_action_change_category">تغيير الفئة</string>
     <string name="novel_loading">جارٍ التحميل…</string>
     <string name="novel_expand">توسيع</string>
     <string name="novel_collapse">طي</string>
-    <string name="novel_action_webview">WebView</string>
-    <string name="novel_action_rate">تقييم</string>
     <string name="novel_edit_field_title">العنوان</string>
     <string name="novel_edit_field_author">المؤلف</string>
     <string name="novel_edit_field_status">الحالة</string>
@@ -418,13 +413,10 @@
     <string name="novel_source_missing_message">%1$s غير مثبّت على هذا الجهاز. لا تزال التفاصيل المحفوظة وأي فصول منزّلة متاحة، لكن لا يمكنك جلب فصول جديدة أو فتح المصدر حتى تعيد تثبيت إضافته.</string>
     <string name="novel_source_missing_generic">مصدر هذه الرواية</string>
     <string name="novel_source_missing_named">«%1$s»</string>
-    <string name="novel_source_uninstalled">أُلغي تثبيت المصدر</string>
-    <string name="novel_source_uninstalled_named">%1$s (أُلغي تثبيته)</string>
     <string name="novel_cover_url_title">عنوان URL لصورة الغلاف</string>
     <string name="novel_cover_replace_image">الاستبدال بصورة</string>
     <string name="novel_cover_replace_url">الاستبدال بعنوان URL</string>
     <string name="novel_cover_reset">إعادة تعيين غلاف المصدر</string>
-    <string name="novel_metadata_edited">معدّل — انقر للتغيير</string>
     <string name="novel_downloads_title">التنزيلات</string>
     <string name="novel_downloads_progress">تم تنزيل %1$d / %2$d</string>
     <string name="novel_download_all">تنزيل الكل</string>

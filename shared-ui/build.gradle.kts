@@ -23,6 +23,7 @@ kotlin {
             api(compose.foundation)
             api(compose.material3)
             implementation(compose.components.resources)
+            api(project(":reading-core"))
         }
         val desktopMain by getting {
             dependencies { implementation("org.jsoup:jsoup:1.17.2") }
