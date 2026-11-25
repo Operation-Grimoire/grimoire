@@ -102,7 +102,8 @@ class ReaderModel(
     // Reader settings save in order without blocking the reader; close drains them.
     @OptIn(ExperimentalCoroutinesApi::class)
     private val settingsScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
-    private val appearanceGeneration = AtomicLong(0)
+    private val themeModeGeneration = AtomicLong(0)
+    private val colorThemeGeneration = AtomicLong(0)
     private val historyRecordingGeneration = AtomicLong(0)
     val state = mutable.asStateFlow()
 
@@ -404,23 +405,35 @@ class ReaderModel(
     }
 
     fun setAppearance(appearance: DesktopAppearance) = updateAppearance(
+        updatesThemeMode = true,
+        updatesColorTheme = true,
         optimistic = { appearance },
         write = { library.setAppearance(appearance) },
     )
 
     fun setThemeMode(themeMode: ThemeMode) = updateAppearance(
+        updatesThemeMode = true,
+        updatesColorTheme = false,
         optimistic = { it.copy(themeMode = themeMode) },
         write = { library.setThemeMode(themeMode) },
     )
 
     fun setColorTheme(colorTheme: ColorTheme) = updateAppearance(
+        updatesThemeMode = false,
+        updatesColorTheme = true,
         optimistic = { it.copy(colorTheme = colorTheme) },
         write = { library.setColorTheme(colorTheme) },
     )
 
-    private fun updateAppearance(optimistic: (DesktopAppearance) -> DesktopAppearance, write: () -> Unit) {
+    private fun updateAppearance(
+        updatesThemeMode: Boolean,
+        updatesColorTheme: Boolean,
+        optimistic: (DesktopAppearance) -> DesktopAppearance,
+        write: () -> Unit,
+    ) {
         if (closing.get()) return
-        val gen = appearanceGeneration.incrementAndGet()
+        val modeGen = if (updatesThemeMode) themeModeGeneration.incrementAndGet() else null
+        val colorGen = if (updatesColorTheme) colorThemeGeneration.incrementAndGet() else null
         mutable.update { it.copy(appearance = optimistic(it.appearance), error = null) }
         settingsScope.launch {
             try {
@@ -428,8 +441,12 @@ class ReaderModel(
             } catch (failure: Exception) {
                 val stored = runCatching { library.appearance() }.getOrNull()
                 mutable.update { current ->
+                    val reconciled = if (stored == null) current.appearance else current.appearance.copy(
+                        themeMode = if (modeGen != null && themeModeGeneration.get() == modeGen) stored.themeMode else current.appearance.themeMode,
+                        colorTheme = if (colorGen != null && colorThemeGeneration.get() == colorGen) stored.colorTheme else current.appearance.colorTheme,
+                    )
                     current.copy(
-                        appearance = if (appearanceGeneration.get() == gen && stored != null) stored else current.appearance,
+                        appearance = reconciled,
                         error = "Could not save appearance: ${failure.message ?: failure.javaClass.simpleName}",
                     )
                 }
