@@ -53,6 +53,14 @@ class DesktopReaderSettingsTest {
         assertEquals("/2", adjacentChapter(newestFirst, newestFirst[2], 1)?.url)
         assertNull(adjacentChapter(newestFirst, newestFirst[0], 1))
         assertEquals("/2", adjacentChapter(newestFirst, newestFirst[0], -1)?.url)
+        // Unnumbered interludes keep their relative position in both ascending and newest-first lists.
+        val withInterlude = listOf(
+            Chapter("/1", "One", chapterNumber = 1f),
+            Chapter("/interlude", "Interlude", chapterNumber = -1f),
+            Chapter("/2", "Two", chapterNumber = 2f),
+        )
+        assertEquals(listOf("/1", "/interlude", "/2"), readingOrder(withInterlude).map { it.url })
+        assertEquals(listOf("/1", "/interlude", "/2"), readingOrder(withInterlude.reversed()).map { it.url })
     }
 
     @Test fun chapterReadFractionProratesPartiallyVisibleLastRow() {

@@ -51,9 +51,14 @@ internal fun decodeReaderSettings(raw: String?): DesktopReaderSettings {
     ).normalized()
 }
 
-/** Chapters in reading order: ascending [Chapter.chapterNumber] when numbered, otherwise source order. */
-internal fun readingOrder(chapters: List<Chapter>): List<Chapter> =
-    if (chapters.any { it.chapterNumber >= 0f }) chapters.sortedBy { it.chapterNumber } else chapters
+/** Chapters in reading order: ascending [Chapter.chapterNumber] when all are numbered, or reversed when newest-first. */
+internal fun readingOrder(chapters: List<Chapter>): List<Chapter> {
+    if (chapters.size < 2) return chapters
+    if (chapters.all { it.chapterNumber >= 0f }) return chapters.sortedBy { it.chapterNumber }
+    val firstNumbered = chapters.firstOrNull { it.chapterNumber >= 0f } ?: return chapters
+    val lastNumbered = chapters.last { it.chapterNumber >= 0f }
+    return if (firstNumbered.chapterNumber > lastNumbered.chapterNumber) chapters.asReversed() else chapters
+}
 
 /** The nearest readable chapter before ([step] = -1) or after ([step] = 1) [current] in reading order. */
 internal fun adjacentChapter(chapters: List<Chapter>, current: Chapter, step: Int): Chapter? {
