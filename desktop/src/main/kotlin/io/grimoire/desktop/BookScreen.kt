@@ -1,5 +1,9 @@
 package io.grimoire.desktop
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +54,7 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
     var newestFirst by remember(book.key) { mutableStateOf(false) }
     val displayedChapters = remember(ordered, newestFirst) { if (newestFirst) ordered.asReversed() else ordered }
     val scroll = rememberLazyListState()
+    val showBarTitle by remember { derivedStateOf { scroll.firstVisibleItemIndex > 0 } }
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -58,7 +64,11 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
                         Icon(AppIcons.ArrowBack, contentDescription = "Back")
                     }
                 },
-                title = { Text(book.novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                title = {
+                    AnimatedVisibility(visible = showBarTitle, enter = fadeIn(tween(180)), exit = fadeOut(tween(120))) {
+                        Text(book.novel.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                },
             )
         },
     ) { padding ->
@@ -138,6 +148,7 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
                     selected = false,
                     enabled = enabled && !chapter.locked && (!state.offline || saved),
                     onClick = { model.read(chapter) },
+                    modifier = Modifier.animateItem(),
                     trailing = {
                         when {
                             chapter.locked -> Icon(AppIcons.Lock, "Locked", tint = MaterialTheme.colorScheme.premiumGold)

@@ -169,7 +169,7 @@ internal fun HistoryPane(state: ReaderState, enabled: Boolean, model: ReaderMode
                                             }
                                         }
                                     },
-                                    modifier = Modifier.clickable(enabled = enabled) { model.readHistory(entry) },
+                                    modifier = Modifier.animateItem().clickable(enabled = enabled) { model.readHistory(entry) },
                                 )
                             }
                         }
