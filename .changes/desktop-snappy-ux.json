@@ -2,7 +2,7 @@
   "android": [],
   "desktop": [
     {
-      "category": "improvement",
+      "category": "feature",
       "text": "Make desktop navigation, settings, and scrolling feel instant and smooth with optimistic toggles, zero-delay tab transitions, preserved tab scroll positions, debounced progress bar, and frame-synced mouse-wheel scrolling"
     }
   ]
