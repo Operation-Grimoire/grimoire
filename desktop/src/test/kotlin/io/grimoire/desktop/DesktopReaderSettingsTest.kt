@@ -45,4 +45,15 @@ class DesktopReaderSettingsTest {
         assertNull(adjacentChapter(chapters, chapters[2], 1))
         assertNull(adjacentChapter(chapters, Chapter("/missing", "Missing"), 1))
     }
+
+    @Test fun chapterReadFractionProratesPartiallyVisibleLastRow() {
+        // Single long paragraph taller than viewport: starts at 25%, reaches 100% only at the bottom.
+        assertEquals(0.25f, chapterReadFraction(1, lastVisibleIndex = 0, lastVisibleOffset = 0, lastVisibleSize = 2000, viewportEnd = 500), 1e-4f)
+        assertEquals(1.0f, chapterReadFraction(1, lastVisibleIndex = 0, lastVisibleOffset = -1500, lastVisibleSize = 2000, viewportEnd = 500), 1e-4f)
+        // Multi-paragraph chapter where the final long paragraph only shows its top 10%.
+        assertEquals(0.91f, chapterReadFraction(10, lastVisibleIndex = 9, lastVisibleOffset = 400, lastVisibleSize = 1000, viewportEnd = 500), 1e-4f)
+        assertEquals(1.0f, chapterReadFraction(10, lastVisibleIndex = 9, lastVisibleOffset = -500, lastVisibleSize = 1000, viewportEnd = 500), 1e-4f)
+        // Empty chapter.
+        assertEquals(0f, chapterReadFraction(0, lastVisibleIndex = 0, lastVisibleOffset = 0, lastVisibleSize = 0, viewportEnd = 500), 1e-4f)
+    }
 }
