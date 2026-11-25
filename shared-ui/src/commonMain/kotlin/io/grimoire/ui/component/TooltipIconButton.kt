@@ -112,7 +112,6 @@ fun RowScope.TooltipIconButton(
             .then(
                 if (effectiveVisible) {
                     Modifier
-                        .focusable(enabled = enabled, interactionSource = interactionSource)
                         .onKeyEvent { event ->
                             if (currentEnabled && event.type == KeyEventType.KeyUp &&
                                 (event.key == Key.Enter || event.key == Key.NumPadEnter || event.key == Key.Spacebar)
@@ -121,6 +120,7 @@ fun RowScope.TooltipIconButton(
                                 true
                             } else false
                         }
+                        .focusable(enabled = enabled, interactionSource = interactionSource)
                         .semantics(mergeDescendants = true) {
                             role = Role.Button
                             if (!enabled) disabled()

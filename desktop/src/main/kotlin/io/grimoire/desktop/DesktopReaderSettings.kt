@@ -51,12 +51,17 @@ internal fun decodeReaderSettings(raw: String?): DesktopReaderSettings {
     ).normalized()
 }
 
-/** The nearest readable chapter before ([step] = -1) or after ([step] = 1) [current] in source order. */
+/** Chapters in reading order: ascending [Chapter.chapterNumber] when numbered, otherwise source order. */
+internal fun readingOrder(chapters: List<Chapter>): List<Chapter> =
+    if (chapters.any { it.chapterNumber >= 0f }) chapters.sortedBy { it.chapterNumber } else chapters
+
+/** The nearest readable chapter before ([step] = -1) or after ([step] = 1) [current] in reading order. */
 internal fun adjacentChapter(chapters: List<Chapter>, current: Chapter, step: Int): Chapter? {
-    val index = chapters.indexOfFirst { it.url == current.url }
+    val ordered = readingOrder(chapters)
+    val index = ordered.indexOfFirst { it.url == current.url }
     if (index < 0) return null
     return generateSequence(index + step) { it + step }
-        .takeWhile { it in chapters.indices }
-        .map { chapters[it] }
+        .takeWhile { it in ordered.indices }
+        .map { ordered[it] }
         .firstOrNull { !it.locked }
 }

@@ -116,10 +116,11 @@ internal fun ReaderScreen(state: ReaderState, enabled: Boolean, busy: Boolean, m
             )
         }
     }
-    val chapterIndex = book.chapters.indexOfFirst { it.url == chapter.url }.coerceAtLeast(0)
+    val orderedChapters = remember(book.chapters) { readingOrder(book.chapters) }
+    val chapterIndex = orderedChapters.indexOfFirst { it.url == chapter.url }.coerceAtLeast(0)
     val progressText = readerProgressText(
         chapterPercent = if (settings.showChapterPercent) (chapterFraction * 100).toInt() else null,
-        bookPercent = if (settings.showBookPercent) ((chapterIndex + chapterFraction) * 100 / book.chapters.size.coerceAtLeast(1)).toInt() else null,
+        bookPercent = if (settings.showBookPercent) ((chapterIndex + chapterFraction) * 100 / orderedChapters.size.coerceAtLeast(1)).toInt() else null,
     )
     val wave = remember { GrimoireWaveClock() }
     GrimoireWaveTicker(wave, settings.grimoireEasterEgg)

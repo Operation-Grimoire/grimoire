@@ -44,6 +44,15 @@ class DesktopReaderSettingsTest {
         assertNull(adjacentChapter(chapters, chapters[0], -1))
         assertNull(adjacentChapter(chapters, chapters[2], 1))
         assertNull(adjacentChapter(chapters, Chapter("/missing", "Missing"), 1))
+        // Sources returning newest-first numbered chapters still navigate in ascending reading order.
+        val newestFirst = listOf(
+            Chapter("/3", "Three", chapterNumber = 3f),
+            Chapter("/2", "Two", chapterNumber = 2f),
+            Chapter("/1", "One", chapterNumber = 1f),
+        )
+        assertEquals("/2", adjacentChapter(newestFirst, newestFirst[2], 1)?.url)
+        assertNull(adjacentChapter(newestFirst, newestFirst[0], 1))
+        assertEquals("/2", adjacentChapter(newestFirst, newestFirst[0], -1)?.url)
     }
 
     @Test fun chapterReadFractionProratesPartiallyVisibleLastRow() {
