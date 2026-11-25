@@ -60,7 +60,7 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
         LazyColumn(
             state = scroll,
             contentPadding = PaddingValues(top = DESKTOP_HEADER_HEIGHT + 4.dp, bottom = 24.dp),
-            modifier = Modifier.widthIn(max = 960.dp).fillMaxHeight().align(Alignment.TopCenter),
+            modifier = Modifier.widthIn(max = 960.dp).fillMaxHeight().align(Alignment.TopCenter).smoothDesktopScroll(scroll),
         ) {
             item {
                 NovelHeaderContent(

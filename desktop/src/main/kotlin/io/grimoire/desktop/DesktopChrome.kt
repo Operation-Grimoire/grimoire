@@ -2,22 +2,25 @@ package io.grimoire.desktop
 
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -30,8 +33,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
@@ -49,9 +55,17 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.exp
 import java.awt.Cursor
 import java.awt.MouseInfo
 import java.awt.Point
@@ -462,9 +476,11 @@ internal fun DesktopErrorBanner(message: String, onDismiss: () -> Unit, modifier
     }
 }
 
-private const val NAV_MS = 300
-private const val OUTGOING_MS = 90
-private const val INCOMING_MS = NAV_MS - OUTGOING_MS
+private val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
+private const val TAB_IN_MS = 140
+private const val TAB_OUT_MS = 80
+private const val DRILL_IN_MS = 180
+private const val DRILL_OUT_MS = 130
 
 private fun View.hierarchyDepth(): Int = when (this) {
     View.READER -> 2
@@ -473,8 +489,8 @@ private fun View.hierarchyDepth(): Int = when (this) {
 }
 
 /**
- * Material 3 motion matching Android's `NavTransitions.kt`: Shared Axis X for hierarchical
- * drill-in/back and Fade-Through for lateral tab switches.
+ * Snappy, zero-dead-gap desktop navigation motion: instant simultaneous crossfade + subtle vertical
+ * nudge for lateral tab switches, and crisp horizontal slide for hierarchical drill-in/back.
  */
 internal fun desktopNavTransition(from: View, to: View, slideDistancePx: Int): ContentTransform {
     val fromDepth = from.hierarchyDepth()
@@ -482,34 +498,94 @@ internal fun desktopNavTransition(from: View, to: View, slideDistancePx: Int): C
     if (fromDepth != toDepth) {
         return sharedAxisX(forward = toDepth > fromDepth, slideDistancePx = slideDistancePx)
     }
-    return (fadeIn(tween(INCOMING_MS, delayMillis = OUTGOING_MS, easing = LinearOutSlowInEasing)) +
-        scaleIn(tween(INCOMING_MS, delayMillis = OUTGOING_MS, easing = LinearOutSlowInEasing), initialScale = 0.96f)) togetherWith
-        fadeOut(tween(OUTGOING_MS, easing = FastOutLinearInEasing))
+    return (fadeIn(tween(TAB_IN_MS, easing = EmphasizedDecelerate)) +
+        slideInVertically(tween(TAB_IN_MS, easing = EmphasizedDecelerate)) { 8 }) togetherWith
+        fadeOut(tween(TAB_OUT_MS, easing = FastOutLinearInEasing))
 }
 
 internal fun sharedAxisX(forward: Boolean, slideDistancePx: Int): ContentTransform {
     val enter = slideInHorizontally(
-        animationSpec = tween(NAV_MS, easing = FastOutSlowInEasing),
+        animationSpec = tween(DRILL_IN_MS, easing = EmphasizedDecelerate),
         initialOffsetX = { if (forward) slideDistancePx else -slideDistancePx },
-    ) + fadeIn(tween(INCOMING_MS, delayMillis = OUTGOING_MS, easing = LinearOutSlowInEasing))
+    ) + fadeIn(tween(DRILL_IN_MS - 40, easing = EmphasizedDecelerate))
     val exit = slideOutHorizontally(
-        animationSpec = tween(NAV_MS, easing = FastOutSlowInEasing),
+        animationSpec = tween(DRILL_OUT_MS, easing = FastOutLinearInEasing),
         targetOffsetX = { if (forward) -slideDistancePx else slideDistancePx },
-    ) + fadeOut(tween(OUTGOING_MS, easing = FastOutLinearInEasing))
+    ) + fadeOut(tween(DRILL_OUT_MS - 30, easing = FastOutLinearInEasing))
     return enter togetherWith exit
 }
 
-/** Subtle GPU-composited scale lift when hovering desktop cover cards. */
+/** Spring-driven GPU-composited hover lift for desktop cover cards. */
 internal fun Modifier.desktopCardHover(): Modifier = composed {
     val source = remember { MutableInteractionSource() }
     val hovered by source.collectIsHoveredAsState()
     val scale by animateFloatAsState(
-        targetValue = if (hovered) 1.03f else 1f,
-        animationSpec = tween(150, easing = FastOutSlowInEasing),
+        targetValue = if (hovered) 1.028f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow),
         label = "cardHoverScale",
     )
     this.hoverable(source).graphicsLayer {
         scaleX = scale
         scaleY = scale
+    }
+}
+
+/**
+ * Smooths discrete desktop mouse-wheel detents with a frame-synced exponential glide while leaving
+ * fractional trackpad gestures 1:1. Intercepts on `PointerEventPass.Initial` before the scrollable's
+ * `Main` pass so wheel events are never applied twice.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+internal fun Modifier.smoothDesktopScroll(state: ScrollableState): Modifier = composed {
+    val scope = rememberCoroutineScope()
+    val stepPx = with(LocalDensity.current) { 72.dp.toPx() }
+    val driver = remember(state, stepPx) { SmoothWheelDriver(state, scope, stepPx) }
+    this.onPointerEvent(PointerEventType.Scroll, PointerEventPass.Initial) { event ->
+        if (event.changes.any { it.isConsumed }) return@onPointerEvent
+        val wheel = event.nativeEvent as? java.awt.event.MouseWheelEvent
+        val isDiscreteWheel = wheel == null || (
+            wheel.scrollType == java.awt.event.MouseWheelEvent.WHEEL_UNIT_SCROLL &&
+                abs(wheel.preciseWheelRotation - kotlin.math.round(wheel.preciseWheelRotation)) < 0.01
+            )
+        val deltaY = event.changes.fold(0f) { acc, change -> acc + change.scrollDelta.y }
+        val isIntegerDelta = abs(deltaY) >= 1f && abs(deltaY - kotlin.math.round(deltaY)) < 0.01f
+        if (isDiscreteWheel && isIntegerDelta) {
+            event.changes.forEach { it.consume() }
+            driver.enqueue(deltaY)
+        }
+    }
+}
+
+private class SmoothWheelDriver(
+    private val state: ScrollableState,
+    private val scope: kotlinx.coroutines.CoroutineScope,
+    private val stepPx: Float,
+) {
+    private var pending = 0f
+    private var job: Job? = null
+
+    fun enqueue(deltaY: Float) {
+        val px = deltaY * stepPx
+        // Reversing scroll direction cancels residual momentum immediately.
+        pending = if (pending != 0f && (pending > 0f) != (px > 0f)) px else pending + px
+        if (job?.isActive == true) return
+        job = scope.launch {
+            try {
+                var lastNanos = 0L
+                while (abs(pending) >= 0.5f) {
+                    val frameNanos = withFrameNanos { it }
+                    val dt = if (lastNanos == 0L) 1f / 60f
+                    else ((frameNanos - lastNanos) / 1_000_000_000f).coerceIn(1f / 240f, 1f / 20f)
+                    lastNanos = frameNanos
+                    val fraction = 1f - exp(-dt * 18f)
+                    val step = if (abs(pending) < 1.5f) pending else pending * fraction
+                    val consumed = state.scrollBy(step)
+                    pending -= step
+                    if (abs(consumed) < 0.01f) break
+                }
+            } finally {
+                pending = 0f
+            }
+        }
     }
 }

@@ -32,12 +32,17 @@ import java.time.format.FormatStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun HistoryPane(state: ReaderState, enabled: Boolean, model: ReaderModel, modifier: Modifier = Modifier) {
+internal fun HistoryPane(
+    state: ReaderState,
+    enabled: Boolean,
+    model: ReaderModel,
+    scroll: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
+    modifier: Modifier = Modifier,
+) {
     var confirmClear by remember { mutableStateOf(false) }
     val zone = remember { ZoneId.systemDefault() }
     val timeFormat = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withZone(zone) }
     val dateFormat = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
-    val scroll = rememberLazyListState()
     val coversByNovel = remember(state.library) {
         state.library.associate { it.key to it.novel.thumbnailUrl }
     }
@@ -84,7 +89,7 @@ internal fun HistoryPane(state: ReaderState, enabled: Boolean, model: ReaderMode
                     LazyColumn(
                         state = scroll,
                         contentPadding = PaddingValues(bottom = 24.dp),
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        modifier = Modifier.weight(1f).fillMaxWidth().smoothDesktopScroll(scroll),
                     ) {
                         groupedByDay.forEach { (day, entries) ->
                             val dayHeader = when (day) {

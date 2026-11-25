@@ -28,6 +28,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 enum class View { LIBRARY, BROWSE, BOOK, READER, HISTORY, EXTENSIONS, SETTINGS }
 data class ReaderState(
@@ -101,6 +102,9 @@ class ReaderModel(
     // Reader settings save in order without blocking the reader; close drains them.
     @OptIn(ExperimentalCoroutinesApi::class)
     private val settingsScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
+    private val themeModeGeneration = AtomicLong(0)
+    private val colorThemeGeneration = AtomicLong(0)
+    private val historyRecordingGeneration = AtomicLong(0)
     val state = mutable.asStateFlow()
 
     init {
@@ -306,21 +310,51 @@ class ReaderModel(
         publishView { it.leaveBook(View.BOOK).copy(book = book, bookOrigin = View.BROWSE) }
     }
 
-    fun showLibrary() = navigate { showSection(View.LIBRARY) }
+    fun showLibrary() {
+        synchronized(operationLock) {
+            if (!state.value.busy && !closing.get() && state.value.view != View.READER) {
+                mutable.update { it.leaveBook(View.LIBRARY) }
+            }
+        }
+        navigate { showSection(View.LIBRARY) }
+    }
 
-    fun showHistory() = navigate { showSection(View.HISTORY) }
+    fun showHistory() {
+        synchronized(operationLock) {
+            if (!state.value.busy && !closing.get() && state.value.view != View.READER) {
+                mutable.update { it.leaveBook(View.HISTORY) }
+            }
+        }
+        navigate { showSection(View.HISTORY) }
+    }
 
-    fun showExtensions() = navigate {
-        showSection(View.EXTENSIONS)
-        publishExtensions()
-        // First visit online: fetch catalogs never downloaded. Failures stay on this screen.
-        val manager = extensions
-        if (manager != null && !state.value.offline && manager.repositoryViews().any { it.enabled && !it.refreshed }) {
-            try { refreshCatalogs() } catch (failure: Exception) { publishExtensions(failure.message) }
+    fun showExtensions() {
+        synchronized(operationLock) {
+            if (!state.value.busy && !closing.get() && state.value.view != View.READER) {
+                mutable.update { it.leaveBook(View.EXTENSIONS) }
+            }
+        }
+        navigate {
+            showSection(View.EXTENSIONS)
+            publishExtensions()
+            // First visit online: fetch catalogs never downloaded. Failures stay on this screen.
+            val manager = extensions
+            if (manager != null && !state.value.offline && manager.repositoryViews().any { it.enabled && !it.refreshed }) {
+                try { refreshCatalogs() } catch (failure: Exception) { publishExtensions(failure.message) }
+            }
         }
     }
 
-    fun showSettings() = navigate { showSection(View.SETTINGS) }
+    fun showSettings() {
+        synchronized(operationLock) {
+            if (state.value.busy || closing.get()) return
+            if (state.value.view != View.READER) {
+                mutable.update { it.leaveBook(View.SETTINGS).copy(error = null) }
+                return
+            }
+        }
+        navigate { showSection(View.SETTINGS) }
+    }
 
     fun back() = navigate {
         val current = state.value
@@ -351,39 +385,90 @@ class ReaderModel(
         observedAnchor = null, storageObservation = null, checkpointLoad = null, positionNotice = null,
     )
 
-    fun setHistoryRecording(enabled: Boolean) = operate {
-        try {
-            library.setHistoryRecording(enabled)
-        } finally {
-            val recording = library.historyRecording()
-            mutable.update { it.copy(historyRecording = recording) }
+    fun setHistoryRecording(enabled: Boolean) {
+        synchronized(operationLock) {
+            if (closing.get()) return
+            val gen = historyRecordingGeneration.incrementAndGet()
+            mutable.update { it.copy(historyRecording = enabled, error = null) }
+            settingsScope.launch {
+                try {
+                    library.setHistoryRecording(enabled)
+                } catch (failure: Exception) {
+                    val stored = runCatching { library.historyRecording() }.getOrElse { !enabled }
+                    mutable.update { current ->
+                        current.copy(
+                            historyRecording = if (historyRecordingGeneration.get() == gen) stored else current.historyRecording,
+                            error = "Could not save history setting: ${failure.message ?: failure.javaClass.simpleName}",
+                        )
+                    }
+                }
+            }
         }
     }
 
-    fun setAppearance(appearance: DesktopAppearance) = updateAppearance { library.setAppearance(appearance) }
+    fun setAppearance(appearance: DesktopAppearance) = updateAppearance(
+        updatesThemeMode = true,
+        updatesColorTheme = true,
+        optimistic = { appearance },
+        write = { library.setAppearance(appearance) },
+    )
 
-    fun setThemeMode(themeMode: ThemeMode) = updateAppearance { library.setThemeMode(themeMode) }
+    fun setThemeMode(themeMode: ThemeMode) = updateAppearance(
+        updatesThemeMode = true,
+        updatesColorTheme = false,
+        optimistic = { it.copy(themeMode = themeMode) },
+        write = { library.setThemeMode(themeMode) },
+    )
 
-    fun setColorTheme(colorTheme: ColorTheme) = updateAppearance { library.setColorTheme(colorTheme) }
+    fun setColorTheme(colorTheme: ColorTheme) = updateAppearance(
+        updatesThemeMode = false,
+        updatesColorTheme = true,
+        optimistic = { it.copy(colorTheme = colorTheme) },
+        write = { library.setColorTheme(colorTheme) },
+    )
 
-    private fun updateAppearance(write: () -> Unit) = operate {
-        try {
-            write()
-        } finally {
-            val stored = library.appearance()
-            mutable.update { it.copy(appearance = stored) }
+    private fun updateAppearance(
+        updatesThemeMode: Boolean,
+        updatesColorTheme: Boolean,
+        optimistic: (DesktopAppearance) -> DesktopAppearance,
+        write: () -> Unit,
+    ) {
+        synchronized(operationLock) {
+            if (closing.get()) return
+            val modeGen = if (updatesThemeMode) themeModeGeneration.incrementAndGet() else null
+            val colorGen = if (updatesColorTheme) colorThemeGeneration.incrementAndGet() else null
+            mutable.update { it.copy(appearance = optimistic(it.appearance), error = null) }
+            settingsScope.launch {
+                try {
+                    write()
+                } catch (failure: Exception) {
+                    val stored = runCatching { library.appearance() }.getOrNull()
+                    mutable.update { current ->
+                        val reconciled = if (stored == null) current.appearance else current.appearance.copy(
+                            themeMode = if (modeGen != null && themeModeGeneration.get() == modeGen) stored.themeMode else current.appearance.themeMode,
+                            colorTheme = if (colorGen != null && colorThemeGeneration.get() == colorGen) stored.colorTheme else current.appearance.colorTheme,
+                        )
+                        current.copy(
+                            appearance = reconciled,
+                            error = "Could not save appearance: ${failure.message ?: failure.javaClass.simpleName}",
+                        )
+                    }
+                }
+            }
         }
     }
 
     /** Applies immediately; the save runs in the background and reports a failure as an error. */
     fun setReaderSettings(settings: DesktopReaderSettings) {
-        if (closing.get()) return
-        val value = settings.normalized()
-        mutable.update { it.copy(readerSettings = value) }
-        settingsScope.launch {
-            try { library.setReaderSettings(value) }
-            catch (failure: Exception) {
-                mutable.update { it.copy(error = "Could not save reader settings: ${failure.message ?: failure.javaClass.simpleName}") }
+        synchronized(operationLock) {
+            if (closing.get()) return
+            val value = settings.normalized()
+            mutable.update { it.copy(readerSettings = value) }
+            settingsScope.launch {
+                try { library.setReaderSettings(value) }
+                catch (failure: Exception) {
+                    mutable.update { it.copy(error = "Could not save reader settings: ${failure.message ?: failure.javaClass.simpleName}") }
+                }
             }
         }
     }
@@ -415,9 +500,16 @@ class ReaderModel(
         }
     }
 
-    fun openSaved(book: SavedBook) = navigate {
-        val stored = library.book(book.key)
-        publishView { it.leaveBook(View.BOOK).copy(book = stored, bookOrigin = View.LIBRARY) }
+    fun openSaved(book: SavedBook) {
+        synchronized(operationLock) {
+            if (!state.value.busy && !closing.get() && state.value.view != View.READER) {
+                mutable.update { it.leaveBook(View.BOOK).copy(book = book, bookOrigin = View.LIBRARY) }
+            }
+        }
+        navigate {
+            val stored = library.book(book.key)
+            publishView { it.leaveBook(View.BOOK).copy(book = stored, bookOrigin = View.LIBRARY) }
+        }
     }
 
     fun favorite() = operate {

@@ -28,11 +28,17 @@ private val installedStatuses = setOf(ExtensionStatus.INSTALLED, ExtensionStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun ExtensionsPane(state: ReaderState, enabled: Boolean, model: ReaderModel, openLocal: () -> Unit, modifier: Modifier = Modifier) {
+internal fun ExtensionsPane(
+    state: ReaderState,
+    enabled: Boolean,
+    model: ReaderModel,
+    openLocal: () -> Unit,
+    scroll: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
+    modifier: Modifier = Modifier,
+) {
     var query by remember { mutableStateOf("") }
     var showRepositories by remember { mutableStateOf(false) }
     val online = !state.offline
-    val scroll = rememberLazyListState()
     val installed = state.extensionRows.filter { it.status in installedStatuses }
     val available = state.extensionRows.filter { it.status !in installedStatuses }
         .filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) || it.lang.equals(query.trim(), ignoreCase = true) }
@@ -41,7 +47,7 @@ internal fun ExtensionsPane(state: ReaderState, enabled: Boolean, model: ReaderM
         LazyColumn(
             state = scroll,
             contentPadding = PaddingValues(top = DESKTOP_HEADER_HEIGHT + 8.dp, bottom = 24.dp),
-            modifier = Modifier.widthIn(max = 840.dp).fillMaxHeight().align(Alignment.TopCenter),
+            modifier = Modifier.widthIn(max = 840.dp).fillMaxHeight().align(Alignment.TopCenter).smoothDesktopScroll(scroll),
         ) {
                 state.extensionNotice?.let { notice ->
                     item(key = "notice") {
