@@ -122,9 +122,9 @@ fun DesktopReader(model: ReaderModel, closing: Boolean, closeError: String?, ope
             Crossfade(targetState = state.view, animationSpec = tween(150), label = "desktopView") { view ->
                 when (view) {
                     View.LIBRARY -> LibraryPane(state, enabled, model, Modifier.fillMaxSize())
-                    View.HISTORY -> HistoryPane(state, enabled, model, Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp))
+                    View.HISTORY -> HistoryPane(state, enabled, model, Modifier.fillMaxSize())
                     View.BROWSE -> BrowsePane(state, enabled, model, Modifier.fillMaxSize())
-                    View.EXTENSIONS -> ExtensionsPane(state, enabled, model, openExtension, Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp))
+                    View.EXTENSIONS -> ExtensionsPane(state, enabled, model, openExtension, Modifier.fillMaxSize())
                     View.SETTINGS -> SettingsPane(state, enabled, model, Modifier.fillMaxSize())
                     View.BOOK, View.READER -> BookScreen(state, enabled, model, Modifier.fillMaxSize())
                 }

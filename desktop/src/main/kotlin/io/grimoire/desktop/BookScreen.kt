@@ -15,6 +15,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,6 +31,8 @@ import io.grimoire.ui.icon.ArrowBack
 import io.grimoire.ui.icon.DownloadDone
 import io.grimoire.ui.icon.FileDownloadOff
 import io.grimoire.ui.icon.Lock
+import io.grimoire.ui.icon.PlayArrow
+import io.grimoire.ui.icon.SwapVert
 import io.grimoire.ui.novel.MetaChip
 import io.grimoire.ui.novel.NovelActionRow
 import io.grimoire.ui.novel.NovelHeaderContent
@@ -39,6 +45,9 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
     val book = state.book ?: return
     val sourceName = state.sources.firstOrNull { it.sourceId == book.key.sourceId }?.name.orEmpty()
     val resume = book.resumeChapter()
+    val ordered = remember(book.chapters) { readingOrder(book.chapters) }
+    var newestFirst by remember(book.key) { mutableStateOf(false) }
+    val displayedChapters = remember(ordered, newestFirst) { if (newestFirst) ordered.asReversed() else ordered }
     val scroll = rememberLazyListState()
     Scaffold(
         modifier = modifier,
@@ -54,7 +63,11 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
         },
     ) { padding ->
     Box(Modifier.fillMaxSize().padding(padding)) {
-        LazyColumn(state = scroll, modifier = Modifier.widthIn(max = 960.dp).fillMaxHeight().align(Alignment.TopCenter)) {
+        LazyColumn(
+            state = scroll,
+            contentPadding = PaddingValues(bottom = 24.dp),
+            modifier = Modifier.widthIn(max = 960.dp).fillMaxHeight().align(Alignment.TopCenter),
+        ) {
             item {
                 NovelHeaderContent(
                     novel = book.novel,
@@ -78,13 +91,17 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
                 )
             }
             // Continue where the reader left off, or start at the first readable chapter in reading order.
-            val target = resume ?: readingOrder(book.chapters).firstOrNull { !it.locked }
+            val target = resume ?: ordered.firstOrNull { !it.locked }
             if (target != null) item {
                 Button(
                     onClick = { model.read(target) },
                     enabled = enabled && !target.locked && (!state.offline || target.url in book.downloaded),
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                ) { Text(if (resume != null) "Continue reading" else "Start reading") }
+                ) {
+                    Icon(AppIcons.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (resume != null) "Continue reading" else "Start reading")
+                }
             }
             book.novel.description?.takeIf { it.isNotBlank() }?.let { description ->
                 item { ExpandableText(description, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
@@ -97,10 +114,20 @@ internal fun BookScreen(state: ReaderState, enabled: Boolean, model: ReaderModel
             }
             item {
                 HorizontalDivider(Modifier.padding(top = 12.dp))
-                Text("${book.chapters.size} chapters", style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
+                ) {
+                    Text("${book.chapters.size} chapters", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    if (book.chapters.size > 1) {
+                        val sortTooltip = if (newestFirst) "Oldest first" else "Newest first"
+                        PlainTooltipIconButton(onClick = { newestFirst = !newestFirst }, tooltip = sortTooltip) {
+                            Icon(AppIcons.SwapVert, contentDescription = sortTooltip)
+                        }
+                    }
+                }
             }
-            items(book.chapters, key = { it.url }) { chapter ->
+            items(displayedChapters, key = { it.url }) { chapter ->
                 val saved = chapter.url in book.downloaded
                 ChapterRow(
                     name = chapter.name,
