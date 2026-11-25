@@ -386,19 +386,21 @@ class ReaderModel(
     )
 
     fun setHistoryRecording(enabled: Boolean) {
-        if (closing.get()) return
-        val gen = historyRecordingGeneration.incrementAndGet()
-        mutable.update { it.copy(historyRecording = enabled, error = null) }
-        settingsScope.launch {
-            try {
-                library.setHistoryRecording(enabled)
-            } catch (failure: Exception) {
-                val stored = runCatching { library.historyRecording() }.getOrElse { !enabled }
-                mutable.update { current ->
-                    current.copy(
-                        historyRecording = if (historyRecordingGeneration.get() == gen) stored else current.historyRecording,
-                        error = "Could not save history setting: ${failure.message ?: failure.javaClass.simpleName}",
-                    )
+        synchronized(operationLock) {
+            if (closing.get()) return
+            val gen = historyRecordingGeneration.incrementAndGet()
+            mutable.update { it.copy(historyRecording = enabled, error = null) }
+            settingsScope.launch {
+                try {
+                    library.setHistoryRecording(enabled)
+                } catch (failure: Exception) {
+                    val stored = runCatching { library.historyRecording() }.getOrElse { !enabled }
+                    mutable.update { current ->
+                        current.copy(
+                            historyRecording = if (historyRecordingGeneration.get() == gen) stored else current.historyRecording,
+                            error = "Could not save history setting: ${failure.message ?: failure.javaClass.simpleName}",
+                        )
+                    }
                 }
             }
         }
@@ -431,24 +433,26 @@ class ReaderModel(
         optimistic: (DesktopAppearance) -> DesktopAppearance,
         write: () -> Unit,
     ) {
-        if (closing.get()) return
-        val modeGen = if (updatesThemeMode) themeModeGeneration.incrementAndGet() else null
-        val colorGen = if (updatesColorTheme) colorThemeGeneration.incrementAndGet() else null
-        mutable.update { it.copy(appearance = optimistic(it.appearance), error = null) }
-        settingsScope.launch {
-            try {
-                write()
-            } catch (failure: Exception) {
-                val stored = runCatching { library.appearance() }.getOrNull()
-                mutable.update { current ->
-                    val reconciled = if (stored == null) current.appearance else current.appearance.copy(
-                        themeMode = if (modeGen != null && themeModeGeneration.get() == modeGen) stored.themeMode else current.appearance.themeMode,
-                        colorTheme = if (colorGen != null && colorThemeGeneration.get() == colorGen) stored.colorTheme else current.appearance.colorTheme,
-                    )
-                    current.copy(
-                        appearance = reconciled,
-                        error = "Could not save appearance: ${failure.message ?: failure.javaClass.simpleName}",
-                    )
+        synchronized(operationLock) {
+            if (closing.get()) return
+            val modeGen = if (updatesThemeMode) themeModeGeneration.incrementAndGet() else null
+            val colorGen = if (updatesColorTheme) colorThemeGeneration.incrementAndGet() else null
+            mutable.update { it.copy(appearance = optimistic(it.appearance), error = null) }
+            settingsScope.launch {
+                try {
+                    write()
+                } catch (failure: Exception) {
+                    val stored = runCatching { library.appearance() }.getOrNull()
+                    mutable.update { current ->
+                        val reconciled = if (stored == null) current.appearance else current.appearance.copy(
+                            themeMode = if (modeGen != null && themeModeGeneration.get() == modeGen) stored.themeMode else current.appearance.themeMode,
+                            colorTheme = if (colorGen != null && colorThemeGeneration.get() == colorGen) stored.colorTheme else current.appearance.colorTheme,
+                        )
+                        current.copy(
+                            appearance = reconciled,
+                            error = "Could not save appearance: ${failure.message ?: failure.javaClass.simpleName}",
+                        )
+                    }
                 }
             }
         }
@@ -456,13 +460,15 @@ class ReaderModel(
 
     /** Applies immediately; the save runs in the background and reports a failure as an error. */
     fun setReaderSettings(settings: DesktopReaderSettings) {
-        if (closing.get()) return
-        val value = settings.normalized()
-        mutable.update { it.copy(readerSettings = value) }
-        settingsScope.launch {
-            try { library.setReaderSettings(value) }
-            catch (failure: Exception) {
-                mutable.update { it.copy(error = "Could not save reader settings: ${failure.message ?: failure.javaClass.simpleName}") }
+        synchronized(operationLock) {
+            if (closing.get()) return
+            val value = settings.normalized()
+            mutable.update { it.copy(readerSettings = value) }
+            settingsScope.launch {
+                try { library.setReaderSettings(value) }
+                catch (failure: Exception) {
+                    mutable.update { it.copy(error = "Could not save reader settings: ${failure.message ?: failure.javaClass.simpleName}") }
+                }
             }
         }
     }
