@@ -106,8 +106,14 @@ internal fun ReaderScreen(state: ReaderState, enabled: Boolean, busy: Boolean, m
     val chapterFraction by remember(projection) {
         derivedStateOf {
             val info = scroll.layoutInfo
-            val last = info.visibleItemsInfo.lastOrNull()
-            if (last == null || info.totalItemsCount == 0) 0f else (last.index + 1f) / info.totalItemsCount
+            val last = info.visibleItemsInfo.lastOrNull() ?: return@derivedStateOf 0f
+            chapterReadFraction(
+                totalItemsCount = info.totalItemsCount,
+                lastVisibleIndex = last.index,
+                lastVisibleOffset = last.offset,
+                lastVisibleSize = last.size,
+                viewportEnd = info.viewportEndOffset - info.afterContentPadding,
+            )
         }
     }
     val chapterIndex = book.chapters.indexOfFirst { it.url == chapter.url }.coerceAtLeast(0)
@@ -234,6 +240,20 @@ internal fun ReaderScreen(state: ReaderState, enabled: Boolean, busy: Boolean, m
             onMarkAsReadParagraphsFromEnd = {},
         )
     }
+}
+
+/** Share of the chapter scrolled into view, prorating a partially visible final visible row. */
+internal fun chapterReadFraction(
+    totalItemsCount: Int,
+    lastVisibleIndex: Int,
+    lastVisibleOffset: Int,
+    lastVisibleSize: Int,
+    viewportEnd: Int,
+): Float {
+    if (totalItemsCount <= 0) return 0f
+    val visiblePortion = if (lastVisibleSize <= 0) 1f
+    else ((viewportEnd - lastVisibleOffset).toFloat() / lastVisibleSize).coerceIn(0f, 1f)
+    return ((lastVisibleIndex + visiblePortion) / totalItemsCount).coerceIn(0f, 1f)
 }
 
 /** A short sample of the chapter for the settings preview, like Android's. */
