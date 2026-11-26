@@ -89,33 +89,24 @@ All route constants live in `AppRoutes.kt`. The externally-visible `NAV_TARGET_U
 
 ## Build / test
 
-The maintained `:desktop` JVM target and `:reading-core` module are documented in
-[`docs/desktop.md`](docs/desktop.md). Android delegates minimum-API decisions and
-chapter serialization to reading-core. New chapter writes use explicit content
+The desktop application has moved to [`Operation-Grimoire/grimoire-desktop`](https://github.com/Operation-Grimoire/grimoire-desktop) (see [`docs/desktop.md`](docs/desktop.md)). This repository owns `:app`, `:shared-ui`, and `:reading-core` (published as `io.grimoire:reading-core` to GitHub Packages). Android delegates minimum-API decisions and
+chapter serialization to `:reading-core`. New chapter writes use explicit content
 version 2. DB34 retains legacy payloads unchanged and adds guarded download
-attempt/receipt state in a separate table; desktop reads schema1 files
-unchanged and writes new chapter files as schema2/content version 2.
+attempt/receipt state in a separate table.
 See [`docs/chapter-content.md`](docs/chapter-content.md) for migration and rollback.
 Reader/TTS selection uses shared `ChapterLoader`: saved, then preloaded, then
 platform source access, with cancellation checks and original-page provenance.
-Saved chapter reads in the Android reader/TTS and desktop reader use the shared
-`SavedChapterDao` contract and `SavedChapterRepository`. Room and file adapters
+Saved chapter reads in the Android reader/TTS use the shared
+`SavedChapterDao` contract and `SavedChapterRepository`. Room adapters
 remain platform-owned; see [`docs/shared-storage.md`](docs/shared-storage.md).
-Library metadata/membership use `LibraryDao`/`LibraryRepository` with Room/file
-adapters. Android detail/quick-view toggles and desktop membership commands use
-this boundary; category/bulk operations retain their existing platform paths.
-Guarded `ReadingStateDao` commands now share one protocol through Room (DB36)
-and desktop JDBC (SQL3). Legacy completion writes invalidate old Android bindings;
-Android reader explicit read/unread, Next, visual and TTS completion use the shared
-facade/command queue. Bulk completion and opened-history callers remain
-adoption steps. See
-[`docs/reading-state-storage.md`](docs/reading-state-storage.md) for migration,
-receipt replay and rollback boundaries.
-Desktop loads trusted local packaged JARs, not source copies.
-Run shared/desktop unit checks and the packaged-source fixture/UI journeys when
-changing this boundary. Live reading, fixture results and native window lifecycle
-are separate acceptance evidence. Desktop browser/login, installers and sync remain
-outside the initial reading slice.
+Library metadata/membership use `LibraryDao`/`LibraryRepository` with Room
+adapters. Android detail/quick-view toggles use this boundary; category/bulk
+operations retain their existing platform paths.
+Guarded `ReadingStateDao` commands share one protocol through Room (DB36).
+Legacy completion writes invalidate old Android bindings; Android reader explicit
+read/unread, Next, visual and TTS completion use the shared facade/command queue.
+See [`docs/reading-state-storage.md`](docs/reading-state-storage.md) for
+migration, receipt replay and rollback boundaries.
 
 ```bash
 ./gradlew :app:compileDebugKotlin            # fast typecheck
@@ -159,7 +150,7 @@ merge or validate does not authorize publishing stable. See CONTRIBUTING's
 | Looking for | File |
 |-------------|------|
 | Icons (Material Symbols registry) | `shared-ui/.../io/grimoire/ui/icon/<Name>.kt` (one per icon) |
-| Compose UI shared with Desktop (theme, palettes, appearance controls) | `shared-ui/src/commonMain` (`io.grimoire.ui.*`); strings in `composeResources/values*/strings.xml`. See [`docs/desktop.md`](docs/desktop.md#shared-ui) |
+| Shared UI components (theme, palettes, appearance controls, reader widgets) | `shared-ui/src/commonMain` (`io.grimoire.ui.*`); strings in `composeResources/values*/strings.xml` |
 | Swipeable tabs (any screen/sheet) | `ui/component/SwipeTabRow.kt` |
 | Guided tours | `ui/tour/TourSteps.kt` (the catalog) + `TourController.kt`; tag an anchor with `Modifier.tourTarget(TourKey.X)`. Tours for screens that need a novel (detail, reader) use `TourTrigger.FirstVisit` and never navigate. Rules in `TourRulesTest` |
 | Rich synopsis rendering (HTML + auto-linked URLs) | `ui/component/RichSynopsis.kt` (+ `RichSynopsisTest`), consumed by `ExpandableText.kt`; link toggle via `LocalSynopsisRenderLinks` / `UiPreferences.renderSynopsisLinks` |

@@ -111,10 +111,10 @@ The release `versionCode` is derived from the latest git tag (`vMAJOR.MINOR.PATC
 
 ## Contributing
 
-The maintained desktop JVM reading target, trusted local extension setup and
-offline checks are documented in [Desktop reading slice](docs/desktop.md).
+The desktop application (Tauri v2 + Rust UI backed by the shared JVM extension runtime) lives in [`Operation-Grimoire/grimoire-desktop`](https://github.com/Operation-Grimoire/grimoire-desktop) and consumes `:reading-core` published from this repository.
 
 - Bug reports / feature requests: open an issue
+- Desktop app: see [`grimoire-desktop`](https://github.com/Operation-Grimoire/grimoire-desktop)
 - Extension contributions: see [`grimoire-extensions`](https://github.com/Operation-Grimoire/grimoire-extensions)
 - App contributions: see [`CLAUDE.md`](./CLAUDE.md) for an architecture / convention overview before touching the screen / VM layout
 

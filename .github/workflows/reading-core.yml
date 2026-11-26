@@ -1,0 +1,81 @@
+name: Reading Core
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+    paths:
+      - 'reading-core/**'
+      - 'gradle/libs.versions.toml'
+      - '.github/workflows/reading-core.yml'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Optional release version (e.g. v1.0.0). Leave blank to publish 1.0.0-SNAPSHOT.'
+        required: false
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: reading-core-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - name: Run reading-core tests
+        run: ./gradlew :reading-core:test --console=plain
+        env:
+          APP_VERSION_TAG: v0.0.0
+          APP_BETA_NUMBER: '1'
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: test
+    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - name: Validate optional release version
+        id: rel
+        env:
+          REQUESTED_TAG: ${{ github.event.inputs.tag || '' }}
+        run: |
+          if [ -n "$REQUESTED_TAG" ] && ! echo "$REQUESTED_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Version '$REQUESTED_TAG' is not vX.Y.Z" >&2
+            exit 1
+          fi
+          echo "tag=$REQUESTED_TAG" >> "$GITHUB_OUTPUT"
+      - name: Publish io.grimoire:reading-core to GitHub Packages
+        run: ./gradlew :reading-core:publishReadingCorePublicationToGitHubPackagesRepository --console=plain
+        env:
+          APP_VERSION_TAG: v0.0.0
+          APP_BETA_NUMBER: '1'
+          READING_CORE_RELEASE_TAG: ${{ steps.rel.outputs.tag }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
