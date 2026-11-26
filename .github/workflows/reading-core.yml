@@ -39,12 +39,14 @@ jobs:
       - name: Run reading-core tests
         run: ./gradlew :reading-core:test --console=plain
         env:
+          APP_VERSION_TAG: v0.0.0
+          APP_BETA_NUMBER: '1'
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
     needs: test
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -72,6 +74,8 @@ jobs:
       - name: Publish io.grimoire:reading-core to GitHub Packages
         run: ./gradlew :reading-core:publishReadingCorePublicationToGitHubPackagesRepository --console=plain
         env:
+          APP_VERSION_TAG: v0.0.0
+          APP_BETA_NUMBER: '1'
           READING_CORE_RELEASE_TAG: ${{ steps.rel.outputs.tag }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
