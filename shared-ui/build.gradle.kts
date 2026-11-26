@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
 }
 
-// Compose UI shared by the Android app and Desktop. Platform state holders stay in each app.
+// Shared Compose UI library (theme, icons, reader and novel components) consumed by Android.
 kotlin {
     androidLibrary {
         namespace = "io.grimoire.ui"
@@ -17,9 +17,6 @@ kotlin {
         androidResources.enable = true
         compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
-    jvm("desktop") {
-        compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-    }
     sourceSets {
         commonMain.dependencies {
             api(compose.runtime)
@@ -28,15 +25,6 @@ kotlin {
             api(compose.material3)
             implementation(compose.components.resources)
             api(project(":reading-core"))
-        }
-        val desktopMain by getting {
-            dependencies { implementation("org.jsoup:jsoup:1.17.2") }
-        }
-        val desktopTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-                implementation(libs.junit)
-            }
         }
     }
 }

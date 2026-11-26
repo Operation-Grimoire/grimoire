@@ -48,7 +48,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "Grimoire"
 include(":app")
-include(":reading-core", ":shared-ui", ":desktop")
+include(":reading-core", ":shared-ui")
 
 // Opt-in cross-repository development; released dependency pins remain the default.
 providers.gradleProperty("grimoireApiDir").orNull?.let { apiDirectory ->
